@@ -1,5 +1,5 @@
 import topologic
-from mathutils import Matrix
+# from mathutils import Matrix This is Blender-specific. We need a workaround.
 import collections
 
 class Vertex(topologic.Vertex):
@@ -55,10 +55,10 @@ class Vertex(topologic.Vertex):
             x = round(vertex.X(), mantissa)
             y = round(vertex.Y(), mantissa)
             z = round(vertex.Z(), mantissa)
-            matrix = Matrix([[1,0,0,x],
+            matrix = [[1,0,0,x],
                     [0,1,0,y],
                     [0,0,1,z],
-                    [0,0,0,1]])
+                    [0,0,0,1]]
             if outputType == "XYZ":
                 output = [x,y,z]
             elif outputType == "XY":
@@ -77,10 +77,7 @@ class Vertex(topologic.Vertex):
                 output = matrix
             return output
         else:
-            if outputType == "Matrix":
-                return Matrix()
-            else:
-                return None
+            return None
 
     
     @staticmethod
