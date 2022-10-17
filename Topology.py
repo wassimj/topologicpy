@@ -1,4 +1,4 @@
-import topologic
+from topologicpy import topologic
 import Wire
 import Dictionary
 import Face

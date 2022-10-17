@@ -1,4 +1,4 @@
-import topologic
+from topologicpy import topologic
 import math
 import Topology
 import Cell

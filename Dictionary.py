@@ -1,4 +1,4 @@
-import topologic
+from topologicpy import topologic
 from topologic import IntAttribute, DoubleAttribute, StringAttribute, ListAttribute
 
 class Dictionary(topologic.Dictionary):

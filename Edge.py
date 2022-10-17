@@ -1,4 +1,4 @@
-import topologic
+from topologicpy import topologic
 import numpy as np
 import numpy.linalg as la
 from numpy import pi

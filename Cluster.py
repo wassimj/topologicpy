@@ -1,4 +1,4 @@
-import topologic
+from topologicpy import topologic
 
 class Cluster(topologic.Cluster):
     @staticmethod

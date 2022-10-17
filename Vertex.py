@@ -1,29 +1,30 @@
-import topologic
+from topologicpy import topologic
 # from mathutils import Matrix This is Blender-specific. We need a workaround.
 import collections
 
 class Vertex(topologic.Vertex):
     @staticmethod
-    def VertexByCoordinates(x, y, z):
+    def ByCoordinates(x, y, z):
         """
+        Description
+        -----------
+        This method creates a topologic Vertex located at the coordinates specified by the x, y, z input parameters.
+
         Parameters
         ----------
-        x : TYPE
-            DESCRIPTION.
-        y : TYPE
-            DESCRIPTION.
-        z : TYPE
-            DESCRIPTION.
+        x : float
+            The X coordinate.
+        y : float
+            The Y coordinate.
+        z : float
+            The Z coodinate.
 
         Returns
         -------
-        vert : TYPE
-            DESCRIPTION.
+        vert : topologic.Vertex
+            The created topologic Vertex.
 
         """
-        # x = item[0]
-        # y = item[1]
-        # z = item[2]
         vert = None
         try:
             vert = topologic.Vertex.ByCoordinates(x, y, z)
@@ -32,24 +33,27 @@ class Vertex(topologic.Vertex):
         return vert
     
     @staticmethod
-    def VertexCoordinates(vertex, outputType, mantissa):
+    def Coordinates(vertex, outputType="XYZ", mantissa=3):
         """
+        Description
+        -----------
+        This method returns the coordinates of the input topologic Vertex in the format specified by the outputType input parameter and with a mantissa specified by the mantissa input parameter.
+
         Parameters
         ----------
-        vertex : TYPE
-            DESCRIPTION.
-        outputType : TYPE
-            DESCRIPTION.
-        mantissa : TYPE
-            DESCRIPTION.
+        vertex : topologic.Vertex.
+            The topologic Vertex.
+        outputType : string, optional
+            The desired output type. Could be one of "XYZ", "XY", "XZ", "YZ", "X", "Y", "Z", "Matrix". The default is "XYZ".
+        mantissa : int, optional
+            The desired mantissa. The default is 3.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        float, list, or matrix
+            The coordinates of the input topologic Vertex.
 
         """
-        # vertex, outputType, mantissa = item
         if vertex:
             output = None
             x = round(vertex.X(), mantissa)
@@ -81,53 +85,62 @@ class Vertex(topologic.Vertex):
 
     
     @staticmethod
-    def VertexDistance(v, t):
+    def Distance(vertex, topology, mantissa=3):
         """
+        Description
+        -----------
+        This method returns the distance between the input topologic Vertex and the input topology specified by the mantissa input parameter.
+
         Parameters
         ----------
-        v : TYPE
-            DESCRIPTION.
-        t : TYPE
-            DESCRIPTION.
+        vertex : topologic.Vertex
+            The topologic Vertex.
+        ttopology : topologic.Topology
+            The topologic Topology.
+        mantissa: int, optional.
+            The desired mantissa. The default is 3.
 
         Returns
         -------
-        dist : TYPE
-            DESCRIPTION.
+        dist : float
+            The distance between the topologic Vertex and the topologic Topology.
 
         """
-        # v, t = item
-        assert isinstance(v, topologic.Vertex), "Vertex.Distance: input is not a Topologic Vertex"
-        assert isinstance(t, topologic.Topology), "Vertex.Distance: input is not a Topologic Topology"
-        if v and t:
-            dist = topologic.VertexUtility.Distance(v, t)
+        assert isinstance(vertex, topologic.Vertex), "Vertex.Distance: input is not a Topologic Vertex"
+        assert isinstance(topology, topologic.Topology), "Vertex.Distance: input is not a Topologic Topology"
+        if vertex and topology:
+            dist = round(topologic.VertexUtility.Distance(vertex, topology), mantissa)
         else:
             dist = None
         return dist
     
     @staticmethod
-    def VertexEnclosingCell(vertex, topology, exclusive, tolerance=0.0001):
+    def EnclosingCell(vertex, topology, exclusive=True, tolerance=0.0001):
         """
+        Description
+        -----------
+        This method returns the list of Cells found in the input topology parameter that enclose the input vertex parameter. If exclusive is set to True, only a list of a maximum of one topologic Cell is returned.
+
         Parameters
         ----------
-        vertex : TYPE
-            DESCRIPTION.
-        topology : TYPE
-            DESCRIPTION.
-        exclusive : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        vertex : topologic.Vertex
+            The topologic Vertex.
+        topology : topologic.Topology
+            The topologic Topology.
+        exclusive : boolean, optional
+            If set to True, return only the first found enclosing topologic Cell. The default is True.
+        tolerance : float, optional
+            The tolerance for finding if the vertex is enclosed in a Cell. The default is 0.0001.
 
         Raises
         ------
         Exception
-            DESCRIPTION.
+            Raises an error if the input Topology does not contain any Cells.
 
         Returns
         -------
-        enclosingCells : TYPE
-            DESCRIPTION.
+        enclosingCells : [topologic.Cell]
+            The list of enclosing topologic Cells.
 
         """
         
@@ -143,7 +156,6 @@ class Vertex(topologic.Vertex):
                 z.append(aVertex.Z())
             return ([min(x), min(y), min(z), max(x), max(y), max(z)])
         
-        # vertex, topology, exclusive, tolerance = input
         if isinstance(topology, topologic.Cell):
             cells = [topology]
         elif isinstance(topology, topologic.Cluster) or isinstance(topology, topologic.CellComplex):
@@ -167,25 +179,27 @@ class Vertex(topologic.Vertex):
 
     
     @staticmethod
-    def VertexNearestVertex(vertex, topology, useKDTree):
+    def NearestVertex(vertex, topology, useKDTree=True):
         """
+        Description
+        -----------
+        This method returns the topologic Vertex found in the input topology parameter that is the nearest to the input vertex parameter. If useKDTree is set to True, the algorithm uses the KDTree search method.
+
         Parameters
         ----------
-        vertex : TYPE
-            DESCRIPTION.
-        topology : TYPE
-            DESCRIPTION.
-        useKDTree : TYPE
-            DESCRIPTION.
+        vertex : topologic.Vertex
+            The topologic Vertex.
+        topology : topologic.Topology
+            THe topologic Topology to search for the nearest topologic Vertex.
+        useKDTree : boolean, optional
+            if set to True, the algorithm will use a KDTree method to search for the nearest topologic Vertex.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Vertex
+            The nearest topologic Vertex.
 
-        """
-        # vertex, topology, useKDTree = input
-        
+        """        
         def SED(a, b):
             """Compute the squared Euclidean distance between X and Y."""
             p1 = (a.X(), a.Y(), a.Z())
@@ -311,22 +325,25 @@ class Vertex(topologic.Vertex):
 
     
     @staticmethod
-    def VertexProject(vertex, face):
+    def Project(vertex, face):
         """
+        Description
+        -----------
+        This method projects the input vertex parameter unto the input face parameter.
+
         Parameters
         ----------
-        vertex : TYPE
-            DESCRIPTION.
-        face : TYPE
-            DESCRIPTION.
+        vertex : topologic.Vertex
+            The topologic Vertex.
+        face : topologic.Face
+            the topologic Face.
 
         Returns
         -------
-        projected_vertex : TYPE
-            DESCRIPTION.
+        projected_vertex : topologic.Vertex
+            The projected topologic Vertex of the input topologic Vertex unto the input topologic Face.
 
         """
-        # vertex, face = item
         projected_vertex = None
         if vertex and face:
             if (face.Type() == topologic.Face.Type()) and (vertex.Type() == topologic.Vertex.Type()):

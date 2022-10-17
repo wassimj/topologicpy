@@ -1,4 +1,4 @@
-import topologic
+from topologicpy import topologic
 import math
 import numpy as np
 from numpy import arctan, pi, signbit
