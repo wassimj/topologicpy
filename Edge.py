@@ -1,179 +1,161 @@
-from topologicpy import topologic
+import topologic
 import numpy as np
 import numpy.linalg as la
 from numpy import pi
 
 class Edge(topologic.Edge):
     @staticmethod
-    def EdgeAngle(edgeA, edgeB, mantissa, bracket):
+    def Angle(edgeA, edgeB, mantissa=3, bracket=False):
         """
+        Description
+        -----------
+        Returns the angle in degrees between the two input topologic Edges.
+
         Parameters
         ----------
-        edgeA : TYPE
-            DESCRIPTION.
-        edgeB : TYPE
-            DESCRIPTION.
-        mantissa : TYPE
-            DESCRIPTION.
-        bracket : TYPE
-            DESCRIPTION.
+        edgeA : topologic.Edge
+            The first topologic Edge.
+        edgeB : topologic Edge
+            The second topologic Edge.
+        mantissa : int, optional
+            The desired mantissa. The default is 3.
+        bracket : bool
+            If set to True, the returned angle is bracketed between 0 and 180. The default is False.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        float
+            The angle in degrees between the two input topologic Edges.
 
         """
-        # edgeA, edgeB, mantissa, bracket = item
-        
-        def angle_between(v1, v2):
-            """ Returns the angle in radians between vectors 'v1' and 'v2' """
-            n_v1=la.norm(v1)
-            n_v2=la.norm(v2)
-            if (abs(np.log10(n_v1/n_v2)) > 10):
-                v1 = v1/n_v1
-                v2 = v2/n_v2
-            cosang = np.dot(v1, v2)
-            sinang = la.norm(np.cross(v1, v2))
-            return np.arctan2(sinang, cosang)
-        
+
         if not isinstance(edgeA, topologic.Edge) or not isinstance(edgeB, topologic.Edge):
             return None
-        dirA = Edge.EdgeDirection(edgeA, mantissa)
-        dirB = Edge.EdgeDirection(edgeB, mantissa)
-        ang = angle_between(dirA, dirB) * 180 / pi # convert to degrees
+        dirA = Edge.Direction(edgeA, mantissa)
+        dirB = Edge.Direction(edgeB, mantissa)
+        ang = topologic_lib.angle_between(dirA, dirB) * 180 / pi # convert to degrees
         if bracket:
             if ang > 90:
                 ang = 180 - ang
         return round(ang, mantissa)
-    
+
     @staticmethod
-    def unitizeVector(vector):
+    def ByStartVertexEndVertex(vertexA, vertexB, tolerance=0.0001):
         """
+        Description
+        -----------
+        Creates a straight topologic Edge that connects the input vertices.
+
         Parameters
         ----------
-        vector : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        unitVector : TYPE
-            DESCRIPTION.
-
-        """
-        mag = 0
-        for value in vector:
-            mag += value ** 2
-        mag = mag ** 0.5
-        unitVector = []
-        for i in range(len(vector)):
-            unitVector.append(vector[i] / mag)
-        return unitVector
-    
-    @staticmethod
-    def EdgeByStartVertexEndVertex(sv, ev, tolerance=0.0001):
-        """
-        Parameters
-        ----------
-        sv : TYPE
-            DESCRIPTION.
-        ev : TYPE
-            DESCRIPTION.
+        vertexA : topologic.Vertex
+            The start topologic Vertex.
+        vertexB : toopologic.Vertex
+            The end topologic Vertex.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The tolerance to decide if an Edge can be created. The default is 0.0001.
 
         Returns
         -------
-        edge : TYPE
-            DESCRIPTION.
+        edge : topologic.Edge
+            The created topologic Edge.
 
         """
-        # sv = item[0]
-        # ev = item[1]
-        # tol = item[2]
         edge = None
-        if not sv or not ev:
+        if not vertexA or not vertexB:
             return None
-        if topologic.Topology.IsSame(sv, ev):
+        if not isinstance(vertexA, topologic.Vertex):
             return None
-        if topologic.VertexUtility.Distance(sv, ev) < tolerance:
+        if not isinstance(vertexB, topologic.Vertex):
+            return None
+        if topologic.Topology.IsSame(vertexA, vertexB):
+            return None
+        if topologic.VertexUtility.Distance(vertexA, vertexB) < tolerance:
             return None
         try:
-            edge = topologic.Edge.ByStartVertexEndVertex(sv, ev)
+            edge = topologic.Edge.ByStartVertexEndVertex(vertexA, vertexB)
         except:
             edge = None
         return edge
     
     @staticmethod
-    def EdgeByVertices(item):
+    def ByVertices(vertices):
         """
+        Description
+        -----------
+        Creates a straight topologic Edge that connects the input topologic Vertices.
+
         Parameters
         ----------
-        item : list
-            DESCRIPTION.
+        vertices : list
+            The list of topologic Vertices.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Edge
+            The created topologic Edge.
 
         """
-        assert isinstance(item, list), "Edge.ByVertices - Error: Input is not a list"
-        vertices = [x for x in item if isinstance(x, topologic.Vertex)]
-        if len(vertices) < 2:
+        if not isinstance(vertices, list):
             return None
-        elif len(vertices) == 2:
-            return topologic.Edge.ByStartVertexEndVertex(vertices[0], vertices[-1])
-        else:
-            edges = []
-            for i in range(len(vertices)-1):
-                edges.append(topologic.Edge.ByStartVertexEndVertex(vertices[i], vertices[i+1]))
-            return edges
+        vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        if len(vertexList) < 2:
+            return None
+        return topologic.Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1])
     
     @staticmethod
-    def EdgeDirection(edge, mantissa):
+    def Direction(edge, mantissa=3):
         """
+        Description
+        -----------
+        Returns the direction of the input topologic Edge.
+
         Parameters
         ----------
-        edge : TYPE
-            DESCRIPTION.
-        mantissa : TYPE
-            DESCRIPTION.
+        edge : topologic.Edge
+            The topologic Edge.
+        mantissa : int, optional
+            The desired mantissa. The default is 3.
 
         Returns
         -------
         list
-            DESCRIPTION.
+            The direction of the topologic Edge.
 
         """
-        # edge, mantissa = item
-        assert isinstance(edge, topologic.Edge), "Edge.Direction - Error: Input is not an Edge"
+        if not isinstance(edge, topologic.Edge):
+            return None
         ev = edge.EndVertex()
         sv = edge.StartVertex()
         x = ev.X() - sv.X()
         y = ev.Y() - sv.Y()
         z = ev.Z() - sv.Z()
-        uvec = Edge.unitizeVector([x,y,z])
+        uvec = topologic_lib.unitizeVector([x,y,z])
         x = round(uvec[0], mantissa)
         y = round(uvec[1], mantissa)
         z = round(uvec[2], mantissa)
         return [x, y, z]
     
     @staticmethod
-    def EdgeEndVertex(edge):
+    def EndVertex(edge):
         """
+        Description
+        -----------
+        Returns the end topologic Vertex of the input topologic Edge.
+
         Parameters
         ----------
-        edge : TYPE
-            DESCRIPTION.
+        edge : topologic.Edge
+            The topologic Edge.
 
         Returns
         -------
-        vert : TYPE
-            DESCRIPTION.
+        topologic.Vertex
+            The end topologic Vertex of the input topologic Edge.
 
         """
-        # edge = item[0]
+        if not isinstance(edge, topologic.Edge):
+            return None
         vert = None
         try:
             vert = edge.EndVertex()
@@ -182,48 +164,58 @@ class Edge(topologic.Edge):
         return vert
     
     @staticmethod
-    def EdgeIsCollinear(edgeA, edgeB, tolerance=0.0001):
+    def IsCollinear(edgeA, edgeB, tolerance=0.0001):
         """
+        Description
+        -----------
+        Tests if the two input topologic Edges are collinear.
+
         Parameters
         ----------
-        edgeA : TYPE
-            DESCRIPTION.
-        edgeB : TYPE
-            DESCRIPTION.
+        edgeA : topologic.Edge
+            The first topologic Edge.
+        edgeB : topologic.Edge
+            The second topologic Edge.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The tolerance used for the test. The default is 0.0001.
 
         Returns
         -------
         bool
-            DESCRIPTION.
+            True if the two edges are collinear. False otherwise.
 
         """
-        # edgeA, edgeB, tol = item
-        assert isinstance(edgeA, topologic.Edge), "Edge.Angle - Error: Edge A is not a Topologic Edge."
-        assert isinstance(edgeB, topologic.Edge), "Edge.Angle - Error: Edge B is not a Topologic Edge."
-        ang = Edge.EdgeAngle(edgeA, edgeB, 8, True)
+        if not isinstance(edgeA, topologic.Edge):
+            return None
+        if not isinstance(edgeB, topologic.Edge):
+            return None
+        ang = Edge.Angle(edgeA, edgeB, mantissa=len(str(tolerance).split(".")[1]), bracket=True)
         if abs(ang) < tolerance:
             return True
         return False
     
     @staticmethod
-    def EdgeLength(edge, mantissa):
+    def Length(edge, mantissa=3):
         """
+        Description
+        -----------
+        Returns the length of the input topologic Edge.
+
         Parameters
         ----------
-        edge : TYPE
-            DESCRIPTION.
-        mantissa : TYPE
-            DESCRIPTION.
+        edge : topologic.Edge
+            The topologic Edge.
+        mantissa : int, optional
+            The desired mantissa. The default is 3.
 
         Returns
         -------
-        length : TYPE
-            DESCRIPTION.
+        float
+            The length of the input topologic Edge.
 
         """
-        # edge, mantissa = item
+        if not isinstance(edge, topologic.Edge):
+            return None
         length = None
         try:
             length = round(topologic.EdgeUtility.Length(edge), mantissa)
@@ -232,46 +224,80 @@ class Edge(topologic.Edge):
         return length
     
     @staticmethod
-    def EdgeParameterAtVertex(edge, vertex, mantissa):
+    def ParameterAtVertex(edge, vertex, mantissa=3):
         """
+        Description
+        -----------
+        Returns the *u* parameter along the input topologic Edge based on the location of the input topologic Vertex.
+
         Parameters
         ----------
-        edge : TYPE
-            DESCRIPTION.
-        vertex : TYPE
-            DESCRIPTION.
-        mantissa : TYPE
-            DESCRIPTION.
+        edge : topologic.Edge
+            The topologic Edge.
+        vertex : topologic.Vertex
+            The topologic Vertex.
+        mantissa : int, optional
+            The desired mantissa. The default is 3.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        float
+            The *u* parameter along the input topologic Edge based on the location of the input topologic Vertex.
 
         """
-        # edge, vertex, mantissa = item
+        if not isinstance(edge, topologic.Edge):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
         parameter = None
         try:
             parameter = topologic.EdgeUtility.ParameterAtPoint(edge, vertex)
         except:
             parameter = None
         return round(parameter, mantissa)
-    
+
     @staticmethod
-    def EdgeStartVertex(edge):
+    def Reverse(edge):
         """
+        Description
+        -----------
+        Creates a topologic Edge that has the reverse direction of the input topologic Edge.
+
         Parameters
         ----------
-        edge : TYPE
-            DESCRIPTION.
+        edge : topologic.Edge
+            The topologic Edge.
 
         Returns
         -------
-        vert : TYPE
-            DESCRIPTION.
+        topologic.Edge
+            The reversed topologic Edge.
 
         """
-        # edge = item[0]
+        if not isinstance(edge, topologic.Edge):
+            return None
+        return Edge.ByVertices([edge.EndVertex(), edge.StartVertex()])
+    
+    @staticmethod
+    def StartVertex(edge):
+        """
+        Description
+        -----------
+        Returns the start topologic Vertex of the input topologic Edge.
+
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The topologic Edge.
+
+        Returns
+        -------
+        topologic.Vertex
+            The start topologic Vertex of the input topologic Edge.
+
+        """
+        if not isinstance(edge, topologic.Edge):
+            return None
         vert = None
         try:
             vert = edge.StartVertex()
@@ -280,78 +306,75 @@ class Edge(topologic.Edge):
         return vert
     
     @staticmethod
-    def EdgeVertexByDistance(edge, distance, vertex, tolerance=0.0001):
+    def VertexByDistance(edge, distance, origin, tolerance=0.0001):
         """
+        Description
+        -----------
+        creates a topologic Vertex along the input topologic Edge offset by the input distance from the input topologic Vertex.
+
         Parameters
         ----------
-        edge : TYPE
-            DESCRIPTION.
-        distance : TYPE
-            DESCRIPTION.
-        vertex : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        edge : topologic.Edge
+            The topologic Edge.
+        distance : float
+            The offset distance.
+        origin : topologic.Vertex
+            The origin of the offset distance.
+        tolerance : float, optional
+            The tolerance. The default is 0.0001.
 
         Returns
         -------
-        rv : TYPE
-            DESCRIPTION.
+        topologic.Vertex
+            The created topologic Vertex.
 
         """
-        # edge, distance, vertex, tol = item
-        
-        def multiplyVector(vector, mag, tolerance):
-            oldMag = 0
-            for value in vector:
-                oldMag += value ** 2
-            oldMag = oldMag ** 0.5
-            if oldMag < tolerance:
-                return [0,0,0]
-            newVector = []
-            for i in range(len(vector)):
-                newVector.append(vector[i] * mag / oldMag)
-            return newVector
-        
+
         if not isinstance(edge, topologic.Edge):
             return None
-        if (not vertex) or (vertex == 0):
-            vertex = edge.StartVertex()
-        rv = None
+        if not origin:
+            origin = edge.StartVertex()
+        if not isinstance(origin, topologic.Vertex):
+            return None
         sv = edge.StartVertex()
         ev = edge.EndVertex()
         vx = ev.X() - sv.X()
         vy = ev.Y() - sv.Y()
         vz = ev.Z() - sv.Z()
-        vector = Edge.unitizeVector([vx, vy, vz])
-        vector = multiplyVector(vector, distance, tolerance)
-        if vertex == None:
-            vertex = sv
-        rv = topologic.Vertex.ByCoordinates(vertex.X()+vector[0], vertex.Y()+vector[1], vertex.Z()+vector[2])
-        return rv
+        vector = topologic_lib.unitizeVector([vx, vy, vz])
+        vector = topologic_lib.multiplyVector(vector, distance, tolerance)
+        return topologic.Vertex.ByCoordinates(origin.X()+vector[0], origin.Y()+vector[1], origin.Z()+vector[2])
     
     @staticmethod
-    def EdgeVertexByParameter(edge, parameter):
+    def VertexByParameter(edge, parameter):
         """
+        Description
+        -----------
+        creates a topologic Vertex along the input topologic Edge offset by the input u parameter. A parameter of 0 returns the start Vertex, a parameter of 1 returns the end Vertex, and a parameter of 0.5 returns the midpoint of the Edge.
+
         Parameters
         ----------
-        edge : TYPE
-            DESCRIPTION.
-        parameter : TYPE
-            DESCRIPTION.
+        edge : topologic.Edge
+            The topologic Edge.
+        parameter : float
+            The u parameter along the input topologic Edge.
 
         Returns
         -------
-        vertex : TYPE
-            DESCRIPTION.
+        topologic.Vertex
+            The created topologic Vertex.
 
         """
-        # edge, parameter = item
         if not isinstance(edge, topologic.Edge):
             return None
         vertex = None
-        try:
-            vertex = topologic.EdgeUtility.PointAtParameter(edge, parameter)
-        except:
-            vertex = None
+        if parameter == 0:
+            vertex = edge.StartVertex()
+        elif parameter == 1:
+            vertex = edge.EndVertex()
+        else:
+            try:
+                vertex = topologic.EdgeUtility.PointAtParameter(edge, parameter)
+            except:
+                vertex = None
         return vertex

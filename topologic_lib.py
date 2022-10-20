@@ -1,25 +1,76 @@
-import topologic
+from topologicpy import topologic
 import numpy as np
+import numpy.linalg as la
 import math
 
+def angle_between(v1, v2):
+    """ Returns the angle in radians between vectors 'v1' and 'v2' """
+    n_v1=la.norm(v1)
+    n_v2=la.norm(v2)
+    if (abs(np.log10(n_v1/n_v2)) > 10):
+        v1 = v1/n_v1
+        v2 = v2/n_v2
+    cosang = np.dot(v1, v2)
+    sinang = la.norm(np.cross(v1, v2))
+    return np.arctan2(sinang, cosang)
+
+def multiplyVector(vector, magnitude, tolerance):
+    """ Returns a vector that multiplies the input vector by the input magnitude """
+    oldMag = 0
+    for value in vector:
+        oldMag += value ** 2
+    oldMag = oldMag ** 0.5
+    if oldMag < tolerance:
+        return [0,0,0]
+    newVector = []
+    for i in range(len(vector)):
+        newVector.append(vector[i] * magnitude / oldMag)
+    return newVector
+
+def unitizeVector(vector):
+    """
+    Description
+    -----------
+    Returns a unitized version of the input vector.
+
+    Parameters
+    ----------
+    vector : list
+        The input vector.
+
+    Returns
+    -------
+    list
+        The unitized vector.
+
+    """
+    mag = 0
+    for value in vector:
+        mag += value ** 2
+    mag = mag ** 0.5
+    unitVector = []
+    for i in range(len(vector)):
+        unitVector.append(vector[i] / mag)
+    return unitVector
+
 def getSubTopologies(topology, subTopologyClass):
-  subtopologies = []
+    subtopologies = []
 
-  if topology is None or topology.Type() < subTopologyClass.Type():
+    if topology is None or topology.Type() < subTopologyClass.Type():
+        return subtopologies
+
+    if subTopologyClass == topologic.Vertex:
+        _ = topology.Vertices(None, subtopologies)
+    if subTopologyClass == topologic.Edge:
+        _ = topology.Edges(None, subtopologies)
+    elif subTopologyClass == topologic.Face:
+        _ = topology.Faces(None, subtopologies)
+    elif subTopologyClass == topologic.Shell:
+        _ = topology.Shells(None, subtopologies)
+    elif subTopologyClass == topologic.Cell:
+        _ = topology.Cells(None, subtopologies)
+
     return subtopologies
-
-  if subTopologyClass == topologic.Vertex:
-    _ = topology.Vertices(None, subtopologies)
-  if subTopologyClass == topologic.Edge:
-    _ = topology.Edges(None, subtopologies)
-  elif subTopologyClass == topologic.Face:
-    _ = topology.Faces(None, subtopologies)
-  elif subTopologyClass == topologic.Shell:
-    _ = topology.Shells(None, subtopologies)
-  elif subTopologyClass == topologic.Cell:
-    _ = topology.Cells(None, subtopologies)
-
-  return subtopologies
 
 def boolean(topologyA, topologyB, operation):
   topologyC = None

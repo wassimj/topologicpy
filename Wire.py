@@ -1,41 +1,27 @@
-from topologicpy import topologic
+import topologic
 import math
-import Topology
-import Cell
-import Edge
 import itertools
-
-def wireByVertices(vList):
-    edges = []
-    for i in range(len(vList)-1):
-        edges.append(topologic.Edge.ByStartVertexEndVertex(vList[i], vList[i+1]))
-    edges.append(topologic.Edge.ByStartVertexEndVertex(vList[-1], vList[0]))
-    return topologic.Wire.ByEdges(edges)
 
 class Wire(topologic.Wire):
     @staticmethod
-    def WireByEdges(item):
+    def ByEdges(edges):
         """
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        edges : list
+            The input list of topologic Edges.
 
         Returns
         -------
-        wire : TYPE
-            DESCRIPTION.
+        topologic.Wire
+            The created topologic Wire.
 
         """
-        assert isinstance(item, list), "Wire.ByEdges - Error: Input is not a list"
-        edges = [x for x in item if isinstance(x, topologic.Edge)]
+        if not isinstance(edges, list):
+            return None
+        edgeList = [x for x in edges if isinstance(x, topologic.Edge)]
         wire = None
-        for anEdge in edges:
+        for anEdge in edgeList:
             if anEdge.Type() == 2:
                 if wire == None:
                     wire = anEdge
@@ -45,32 +31,26 @@ class Wire(topologic.Wire):
                     except:
                         continue
         if wire.Type() != 4:
-            raise Exception("Error: Could not create Wire. Please check input")
+            wire = None
         return wire
 
     
     @staticmethod
-    def WireByVertices(cluster, close):
+    def ByVertices(cluster, close=True):
         """
         Parameters
         ----------
-        cluster : TYPE
-            DESCRIPTION.
-        close : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        cluster : topologic.Cluster
+            the input topologic Cluster of topologic Vertices.
+        close : bool
+            Boolean flag to indicate if the topologic Wire should be closed or not.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Wire
+            The created topologic Wire.
 
         """
-        # cluster, close = item
         if isinstance(close, list):
             close = close[0]
         if isinstance(cluster, list):
@@ -80,8 +60,7 @@ class Wire(topologic.Wire):
             vertices = []
             _ = cluster.Vertices(None, vertices)
         else:
-            raise Exception("WireByVertices - Error: The input is not valid")
-        wire = None
+            return None
         edges = []
         for i in range(len(vertices)-1):
             v1 = vertices[i]
@@ -103,13 +82,13 @@ class Wire(topologic.Wire):
                 pass
         if len(edges) > 0:
             c = topologic.Cluster.ByTopologies(edges, False)
-            return Topology.TopologySelfMerge.processItem(c)
+            return Topology.SelfMerge(c)
         else:
             return None
 
     
     @staticmethod
-    def WireCircle(origin, radius, sides, fromAngle, toAngle, close, dirX,
+    def Circle(origin, radius, sides, fromAngle, toAngle, close, dirX,
                    dirY, dirZ, placement):
         """
         Parameters
@@ -156,7 +135,6 @@ class Wire(topologic.Wire):
         # dirY, \
         # dirZ, \
         # placement = item
-        print("Circle Origin", origin.X(), origin.Y(), origin.Z())
         baseV = []
         xList = []
         yList = []
@@ -178,9 +156,9 @@ class Wire(topologic.Wire):
             yList.append(y)
             baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
 
-        baseWire = Wire.WireByVertices(baseV[::-1], close) #reversing the list so that the normal points up in Blender
+        baseWire = Wire.ByVertices(Cluster.ByTopologies(baseV[::-1]), close) #reversing the list so that the normal points up in Blender
 
-        if placement == "LowerLeft":
+        if placement.lower == "lowerleft":
             baseWire = topologic.TopologyUtility.Translate(baseWire, radius, radius, 0)
         x1 = origin.X()
         y1 = origin.Y()
@@ -203,7 +181,7 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def WireCycles(wire, maxVertices, tolerance=0.0001):
+    def Cycles(wire, maxVertices, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -321,7 +299,7 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def WireEllipse(origin, w, l, sides, fromAngle, toAngle, close, dirX, dirY, dirZ, originLocation, inputMode):
+    def Ellipse(origin, w, l, sides, fromAngle, toAngle, close, dirX, dirY, dirZ, placement="center", inputMode="Width and Length"):
         """
         Parameters
         ----------
@@ -345,7 +323,7 @@ class Wire(topologic.Wire):
             DESCRIPTION.
         dirZ : TYPE
             DESCRIPTION.
-        originLocation : TYPE
+        placement : TYPE
             DESCRIPTION.
         inputMode : TYPE
             DESCRIPTION.
@@ -363,13 +341,13 @@ class Wire(topologic.Wire):
             DESCRIPTION.
 
         """
-        if inputMode == "Width and Length":
+        if inputMode.lower() == "width and length":
             # origin, w, l, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
             a = w/2
             b = l/2
             c = math.sqrt(abs(b**2 - a**2))
             e = c/a
-        elif inputMode == "Focal Length and Eccentricity":
+        elif inputMode.lower() == "focal length and eccentricity":
             # origin, c, e, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
             c = w
             e = l
@@ -377,7 +355,7 @@ class Wire(topologic.Wire):
             b = math.sqrt(abs(a**2 - c**2))
             w = a*2
             l = b*2
-        elif inputMode == "Focal Length and Minor Axis":
+        elif inputMode.lower() == "focal length and minor axis":
             # origin, c, b, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
             c = w
             b = l
@@ -385,7 +363,7 @@ class Wire(topologic.Wire):
             e = c/a
             w = a*2
             l = b*2
-        elif inputMode == "Major Axis Length and Minor Axis Length":
+        elif inputMode.lower() == "major axis length and minor axis length":
             # origin, a, b, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
             a = w
             b = l
@@ -417,9 +395,9 @@ class Wire(topologic.Wire):
             yList.append(y)
             baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
 
-        ellipse = Wire.WireByVertices(baseV[::-1], close) #reversing the list so that the normal points up in Blender
+        ellipse = Wire.ByVertices(Cluster.ByTopologies(baseV[::-1]), close) #reversing the list so that the normal points up in Blender
 
-        if originLocation == "LowerLeft":
+        if placement.lower() == "lowerleft":
             xmin = min(xList)
             ymin = min(yList)
             ellipse = topologic.TopologyUtility.Translate(ellipse, a, b, 0)
@@ -445,150 +423,14 @@ class Wire(topologic.Wire):
         v1 = topologic.Vertex.ByCoordinates(c+origin.X(), 0+origin.Y(),0)
         v2 = topologic.Vertex.ByCoordinates(-c+origin.X(), 0+origin.Y(),0)
         foci = topologic.Cluster.ByTopologies([v1, v2])
-        if originLocation == "LowerLeft":
+        if placement.lower() == "lowerleft":
             foci = topologic.TopologyUtility.Translate(foci, a, b, 0)
         foci = topologic.TopologyUtility.Rotate(foci, origin, 0, 1, 0, theta)
         foci = topologic.TopologyUtility.Rotate(foci, origin, 0, 0, 1, phi)
         return [ellipse, foci, a, b, c, e, w, l]
 
-    
     @staticmethod
-    def WireEllipse_orig(origin, w, l, sides, fromAngle, toAngle, close, dirX, dirY, dirZ, originLocation, inputMode):
-        """
-        Parameters
-        ----------
-        origin : TYPE
-            DESCRIPTION.
-        w : TYPE
-            Width, Focal Length or Major Axis Length
-        l : TYPE
-            Length, Eccentricity or Minor Axis length
-        sides : TYPE
-            DESCRIPTION.
-        fromAngle : TYPE
-            DESCRIPTION.
-        toAngle : TYPE
-            DESCRIPTION.
-        close : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        originLocation : TYPE
-            DESCRIPTION.
-        inputMode : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        NotImplementedError
-            DESCRIPTION.
-        Exception
-            DESCRIPTION.
-
-        Returns
-        -------
-        list
-            DESCRIPTION.
-
-        """
-        if inputMode == "Width and Length":
-            # origin, w, l, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
-            a = w/2
-            b = l/2
-            c = math.sqrt(abs(b**2 - a**2))
-            e = c/a
-        elif inputMode == "Focal Length and Eccentricity":
-            # origin, c, e, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
-            c = w
-            e = l
-            a = c/e
-            b = math.sqrt(abs(a**2 - c**2))
-            w = a*2
-            l = b*2
-        elif inputMode == "Focal Length and Minor Axis Length":
-            # origin, c, b, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
-            c = w
-            b = l
-            a = math.sqrt(abs(b**2 + c**2))
-            e = c/a
-            w = a*2
-            l = b*2
-        elif inputMode == "Major Axis Length and Minor Axis Length":
-            # origin, a, b, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
-            a = w
-            b = l
-            c = math.sqrt(abs(b**2 - a**2))
-            e = c/a
-            w = a*2
-            l = b*2
-        else:
-            raise NotImplementedError
-        baseV = []
-        topV = []
-        xOffset = 0
-        yOffset = 0
-        xList = []
-        yList = []
-
-        if toAngle < fromAngle:
-            toAngle += 360
-        elif toAngle == fromAngle:
-            raise Exception("Wire.Ellipse - Error: To angle cannot be equal to the From Angle")
-
-        angleRange = toAngle - fromAngle
-        fromAngle = math.radians(fromAngle)
-        toAngle = math.radians(toAngle)
-        sides = int(math.floor(sides))
-        for i in range(sides+1):
-            angle = fromAngle + math.radians(angleRange/sides)*i
-            x = math.sin(angle)*a + origin.X()
-            y = math.cos(angle)*b + origin.Y()
-            z = origin.Z()
-            xList.append(x)
-            yList.append(y)
-            baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
-
-        ellipse = Wire.WireByVertices(baseV[::-1], close) #reversing the list so that the normal points up in Blender
-
-        if originLocation == "LowerLeft":
-            xmin = min(xList)
-            ymin = min(yList)
-            ellipse = topologic.TopologyUtility.Translate(ellipse, -xmin, -ymin, 0)
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + dirX
-        y2 = origin.Y() + dirY
-        z2 = origin.Z() + dirZ
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        ellipse = topologic.TopologyUtility.Rotate(ellipse, origin, 0, 1, 0, theta)
-        ellipse = topologic.TopologyUtility.Rotate(ellipse, origin, 0, 0, 1, phi)
-
-        # Create a Cluster of the two foci
-        v1 = topologic.Vertex.ByCoordinates(c+origin.X(), 0+origin.Y(),0)
-        v2 = topologic.Vertex.ByCoordinates(-c+origin.X(), 0+origin.Y(),0)
-        foci = topologic.Cluster.ByTopologies([v1, v2])
-        if originLocation == "LowerLeft":
-            foci = topologic.TopologyUtility.Translate(foci, -xmin, -ymin, 0)
-        foci = topologic.TopologyUtility.Rotate(foci, origin, 0, 1, 0, theta)
-        foci = topologic.TopologyUtility.Rotate(foci, origin, 0, 0, 1, phi)
-        return [ellipse, foci, a, b, c, e, w, l]
-
-    
-    @staticmethod
-    def WireIsClosed(item):
+    def IsClosed(item):
         """
         Parameters
         ----------
@@ -608,7 +450,7 @@ class Wire(topologic.Wire):
         return returnItem
     
     @staticmethod
-    def WireIsovist(viewPoint, externalBoundary, obstaclesCluster):
+    def Isovist(viewPoint, externalBoundary, obstaclesCluster):
         """
         Parameters
         ----------
@@ -705,7 +547,7 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def WireIsSimilar(wireA, wireB, tolerance=0.0001, angTol=0.1):
+    def IsSimilar(wireA, wireB, tolerance=0.0001, angTol=0.1):
         """
         Parameters
         ----------
@@ -812,7 +654,7 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def WireLength(wire, mantissa):
+    def Length(wire, mantissa):
         """
         Parameters
         ----------
@@ -841,7 +683,7 @@ class Wire(topologic.Wire):
         return totalLength
     
     @staticmethod
-    def WireRectangle(origin, width, length, dirX, dirY, dirZ, placement):
+    def Rectangle(origin, width, length, dirX, dirY, dirZ, placement):
         """
         Parameters
         ----------
@@ -871,7 +713,7 @@ class Wire(topologic.Wire):
         baseV = []
         xOffset = 0
         yOffset = 0
-        if placement == "LowerLeft":
+        if placement.lower() == "lowerleft":
             xOffset = width*0.5
             yOffset = length*0.5
 
@@ -880,7 +722,7 @@ class Wire(topologic.Wire):
         vb3 = topologic.Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
         vb4 = topologic.Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
 
-        baseWire = Cell.wireByVertices([vb1, vb2, vb3, vb4])
+        baseWire = Wire.ByVertices(topologic.Cluster.ByTopologies([vb1, vb2, vb3, vb4]), True)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -902,7 +744,7 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def WireProject(wire, face, direction):
+    def Project(wire, face, direction):
         """
         Parameters
         ----------
@@ -924,7 +766,6 @@ class Wire(topologic.Wire):
             DESCRIPTION.
 
         """
-        # wire, face, direction = item
         
         def projectVertex(vertex, face, vList):
             if topologic.FaceUtility.IsInside(face, vertex, 0.001):
@@ -1005,9 +846,9 @@ class Wire(topologic.Wire):
             if len(wire_verts) > 2:
                 clus = topologic.Cluster.ByTopologies(wire_verts)
                 if wire.IsClosed():
-                    final_wire = Wire.WireByVertices(clus, True)
+                    final_wire = Wire.ByVertices(clus, True)
                 else:
-                    final_wire = Wire.WireByVertices(clus, False)
+                    final_wire = Wire.ByVertices(clus, False)
             elif len(wire_verts) == 2:
                 final_wire = topologic.Edge.ByStartVertexEndVertex(wire_verts[0], wire_verts[1])
             return final_wire
@@ -1151,7 +992,7 @@ class Wire(topologic.Wire):
             yList.append(y)
             baseV.append([x,y])
 
-        if placement == "LowerLeft":
+        if placement.lower() == "lowerleft":
             xmin = min(xList)
             ymin = min(yList)
             xOffset = origin.X() - xmin
@@ -1163,7 +1004,7 @@ class Wire(topologic.Wire):
         for coord in baseV:
             tranBase.append(topologic.Vertex.ByCoordinates(coord[0]+xOffset, coord[1]+yOffset, origin.Z()))
         
-        baseWire = wireByVertices(tranBase[::-1]) #reversing the list so that the normal points up in Blender
+        baseWire = Wire.ByVertices(topologic.Cluster.ByTopologies(tranBase[::-1]), True) #reversing the list so that the normal points up in Blender
         
         x1 = origin.X()
         y1 = origin.Y()
@@ -1227,7 +1068,7 @@ class Wire(topologic.Wire):
             xOffset = -((-widthA*0.5 + offsetA) + (-widthB*0.5 + offsetB) + (widthA*0.5 + offsetA) + (widthB*0.5 + offsetB))/4.0
             print("X OFFSET", xOffset)
             yOffset = 0
-        elif placement == "LowerLeft":
+        elif placement.lower() == "lowerleft":
             xOffset = -(min((-widthA*0.5 + offsetA), (-widthB*0.5 + offsetB)))
             yOffset = length*0.5
 
@@ -1236,7 +1077,7 @@ class Wire(topologic.Wire):
         vb3 = topologic.Vertex.ByCoordinates(origin.X()+widthB*0.5+offsetB+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
         vb4 = topologic.Vertex.ByCoordinates(origin.X()-widthB*0.5++offsetB+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
 
-        baseWire = wireByVertices([vb1, vb2, vb3, vb4])
+        baseWire = Wire.ByVertices(topologic.Cluster.ByTopologies([vb1, vb2, vb3, vb4]), True)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()

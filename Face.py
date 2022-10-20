@@ -1,14 +1,8 @@
-from topologicpy import topologic
+import topologic
 import math
 import numpy as np
 from numpy import arctan, pi, signbit
 from numpy.linalg import norm
-import topologic_lib
-import Shell
-import Wire
-import Vertex
-import Topology
-import Edge
 
 class Face(topologic.Face):
     @staticmethod

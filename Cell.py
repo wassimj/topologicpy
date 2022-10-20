@@ -1,12 +1,10 @@
-from topologicpy import topologic
+import topologic
 import math
 import time
-import Wire
-import Topology
 
 class Cell(topologic.Cell):
     @staticmethod
-    def CellByFaces(item, tolerance=0.0001):
+    def ByFaces(item, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -33,7 +31,7 @@ class Cell(topologic.Cell):
             raise Exception("CellByFaces - Could not create a valid Cell")
     
     @staticmethod
-    def CellByLoft(wires, tolerance=0.0001):
+    def ByLoft(wires, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -90,7 +88,7 @@ class Cell(topologic.Cell):
             return topologic.Cluster.ByTopologies(faces)
     
     @staticmethod
-    def CellByShell(item):
+    def ByShell(item):
         """
         Parameters
         ----------
@@ -106,7 +104,7 @@ class Cell(topologic.Cell):
         return topologic.Cell.ByShell(item)
     
     @staticmethod
-    def CellByThickenedFace(face, thickness, bothSides, reverse,
+    def ByThickenedFace(face, thickness, bothSides, reverse,
                             tolerance=0.0001):
         """
         Parameters
@@ -156,7 +154,7 @@ class Cell(topologic.Cell):
         return topologic.Cell.ByFaces(cellFaces, tolerance)
     
     @staticmethod
-    def CellCompactness(item):
+    def Compactness(item):
         """
         Parameters
         ----------
@@ -189,7 +187,7 @@ class Cell(topologic.Cell):
         return compactness
     
     @staticmethod
-    def wireByVertices(vList):
+    def WireByVertices(vList):
         """
         Parameters
         ----------

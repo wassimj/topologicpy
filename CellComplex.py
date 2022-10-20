@@ -1,8 +1,6 @@
-from topologicpy import topologic
+import topologic
 import warnings
-import Cell
 import math
-import Wire
 
 class CellComplex(topologic.CellComplex):
     @staticmethod

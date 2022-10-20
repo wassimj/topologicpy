@@ -1,4 +1,4 @@
-from topologicpy import topologic
+import topologic
 
 class Aperture(topologic.Aperture):
     @staticmethod

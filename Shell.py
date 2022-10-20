@@ -1,4 +1,4 @@
-from topologicpy import topologic
+import topologic
 import math
 import warnings
 
