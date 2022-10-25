@@ -14,16 +14,4 @@ topologicPath = os.path.join(sitePackagesFolderName, topologicFolderName)
 sys.path.append(topologicPath)
 
 import topologic
-from topologicpy.Vertex import Vertex
-from topologicpy.Edge import Edge
-from topologicpy.Wire import Wire
-from topologicpy.Face import Face
-from topologicpy.Shell import Shell
-from topologicpy.Cell import Cell
-from topologicpy.CellComplex import CellComplex
-from topologicpy.Cluster import Cluster
-from topologicpy.Dictionary import Dictionary
-from topologicpy.Aperture import Aperture
-from topologicpy import Replication
-from topologicpy import topologic_lib
 

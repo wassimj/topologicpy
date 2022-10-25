@@ -4,7 +4,7 @@ import math
 
 class CellComplex(topologic.CellComplex):
     @staticmethod
-    def CellComplexByCells(cells, tolerance=0.0001):
+    def ByCells(cells, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -41,7 +41,7 @@ class CellComplex(topologic.CellComplex):
             return cellComplex
     
     @staticmethod
-    def CellComplexByFaces(faces, tolerance=0.0001):
+    def ByFaces(faces, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -83,7 +83,7 @@ class CellComplex(topologic.CellComplex):
             return cellComplex
     
     @staticmethod
-    def CellComplexByLoft(wires, tolerance=0.0001):
+    def ByLoft(wires, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -140,10 +140,10 @@ class CellComplex(topologic.CellComplex):
                     e5 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex())
                     faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e5, e4])))
                     faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e2, e5, e3])))
-        return CellComplex.CellComplexByFaces(faces, tolerance)
+        return CellComplex.ByFaces(faces, tolerance)
     
     @staticmethod
-    def CellComplexDecompose(item):
+    def Decompose(item):
         """
         Parameters
         ----------
@@ -244,7 +244,7 @@ class CellComplex(topologic.CellComplex):
         return [return1, return2, return3, return4, return5, return6, return7, return8, return9, return10]
     
     @staticmethod
-    def CellComplexExternalBoundary(item):
+    def ExternalBoundary(item):
         """
         Parameters
         ----------
@@ -260,7 +260,7 @@ class CellComplex(topologic.CellComplex):
         return item.ExternalBoundary()
     
     @staticmethod
-    def CellComplexInternalBoundary(item):
+    def InternalBoundary(item):
         """
         Parameters
         ----------
@@ -278,7 +278,7 @@ class CellComplex(topologic.CellComplex):
         return faces
     
     @staticmethod
-    def CellComplexNonManifoldFaces(item):
+    def NonManifoldFaces(item):
         """
         Parameters
         ----------
@@ -296,7 +296,7 @@ class CellComplex(topologic.CellComplex):
         return faces
     
     @staticmethod
-    def CellComplexPrism(origin, width, length, height, uSides, vSides, wSides,
+    def Prism(origin, width, length, height, uSides, vSides, wSides,
                          dirX, dirY, dirZ, originLocation):
         """
         Parameters

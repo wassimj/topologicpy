@@ -1,8 +1,9 @@
-from topologicpy import topologic
+import topologicpy
+import topologic
 
 class Context:
     @staticmethod
-    def ContextByTopologyParameters(topology, u, v, w):
+    def ByTopologyParameters(topology, u, v, w):
         """
         Parameters
         ----------
@@ -33,7 +34,7 @@ class Context:
         return context
     
     @staticmethod
-    def ContextTopology(item):
+    def Topology(item):
         """
         Parameters
         ----------

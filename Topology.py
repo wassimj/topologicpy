@@ -1,4 +1,6 @@
+import topologicpy
 import topologic
+
 import uuid
 import json
 import os
@@ -1288,14 +1290,7 @@ class Topology(topologic.Topology):
             DESCRIPTION.
 
         """
-        
-        def wireByVertices(vList):
-            edges = []
-            for i in range(len(vList)-1):
-                edges.append(topologic.Edge.ByStartVertexEndVertex(vList[i], vList[i+1]))
-            edges.append(topologic.Edge.ByStartVertexEndVertex(vList[-1], vList[0]))
-            return topologic.Wire.ByEdges(edges)
-        
+
         vertices = []
         _ = item.Vertices(None, vertices)
         x = []
@@ -1321,10 +1316,10 @@ class Topology(topologic.Topology):
         vt2 = topologic.Vertex.ByCoordinates(maxX, minY, maxZ)
         vt3 = topologic.Vertex.ByCoordinates(maxX, maxY, maxZ)
         vt4 = topologic.Vertex.ByCoordinates(minX, maxY, maxZ)
-        baseWire = wireByVertices([vb1, vb2, vb3, vb4])
-        topWire = wireByVertices([vt1, vt2, vt3, vt4])
+        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
+        topWire = Wire.ByVertices([vt1, vt2, vt3, vt4], close=True)
         wires = [baseWire, topWire]
-        return ([topologic.CellUtility.ByLoft(wires), vb1, vt3])
+        return (Cell.ByLoft(wires))
 
     @staticmethod
     def ByImportedBRep(item):
@@ -1885,7 +1880,7 @@ class Topology(topologic.Topology):
             if len(aCategory) > 0:
                 for index in aCategory:
                     tempList.append(faces[index])
-                returnList.append(Topology.TopologySelfMerge(topologic.Cluster.ByTopologies(tempList)))
+                returnList.append(Topology.SelfMerge(topologic.Cluster.ByTopologies(tempList)))
         return returnList
     
     @staticmethod
@@ -1971,12 +1966,12 @@ class Topology(topologic.Topology):
                     edges.append(topologic.Edge.ByStartVertexEndVertex(sv, ev))
                     faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges(edges)))
             try:
-                c = Cell.CellByFaces(faces, tol)
+                c = Cell.ByFaces(faces, tol)
                 return c
             except:
-                returnTopology = Topology.TopologySelfMerge(topologic.Cluster.ByTopologies(faces))
+                returnTopology = Topology.SelfMerge(topologic.Cluster.ByTopologies(faces))
                 if returnTopology.Type() == 16:
-                    return Shell.ShellExternalBoundary(returnTopology)
+                    return Shell.ExternalBoundary(returnTopology)
         returnObject = None
         try:
             returnObject = convexHull3D(topology, tolerance, None)
@@ -2478,8 +2473,6 @@ class Topology(topologic.Topology):
             DESCRIPTION.
 
         """
-        # topology = item[0]
-        # filepath = item[1]
         # Make sure the file extension is .BREP
         ext = filepath[len(filepath)-5:len(filepath)]
         if ext.lower() != ".brep":
@@ -3855,24 +3848,19 @@ class Topology(topologic.Topology):
             DESCRIPTION.
 
         """
-        # topology, \
-        # origin, \
-        # dirX, \
-        # dirY, \
-        # dirZ, \
-        # degree, \
-        # sides, \
-        # tolerance = item
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cell import Cell
+        from topologicpy.Shell import Shell
         topologies = []
         unit_degree = degree / float(sides)
         for i in range(sides+1):
             topologies.append(topologic.TopologyUtility.Rotate(topology, origin, dirX, dirY, dirZ, unit_degree*i))
         returnTopology = None
         if topology.Type() == topologic.Vertex.Type():
-            returnTopology = Wire.WireByVertices(topologies, False)
+            returnTopology = topologicpy.Wire.Wire.ByVertices(topologies, False)
         elif topology.Type() == topologic.Edge.Type():
             try:
-                returnTopology = Shell.ShellByLoft(topologies, tolerance)
+                returnTopology = Shell.ByLoft(topologies, tolerance)
             except:
                 try:
                     returnTopology = topologic.Cluster.ByTopologies(topologies)
@@ -3880,26 +3868,28 @@ class Topology(topologic.Topology):
                     returnTopology = None
         elif topology.Type() == topologic.Wire.Type():
             if topology.IsClosed():
+                returnTopology = Cell.ByLoft(topologies, tolerance)
                 try:
-                    returnTopology = Cell.CellByLoft(topologies, tolerance)
+                    returnTopology = Cell.ByLoft(topologies, tolerance)
                 except:
                     try:
-                        returnTopology = CellComplex.CellComplexByLoft(topologies, tolerance)
+                        returnTopology = CellComplex.ByLoft(topologies, tolerance)
                         try:
                             returnTopology = returnTopology.ExternalBoundary()
                         except:
                             pass
                     except:
                         try:
-                            returnTopology = Shell.ShellByLoft(topologies, tolerance)
+                            returnTopology = Shell.ByLoft(topologies, tolerance)
                         except:
                             try:
                                 returnTopology = topologic.Cluster.ByTopologies(topologies)
                             except:
                                 returnTopology = None
             else:
+                Shell.ByLoft(topologies, tolerance)
                 try:
-                    returnTopology = Shell.ShellByLoft(topologies, tolerance)
+                    returnTopology = Shell.ByLoft(topologies, tolerance)
                 except:
                     try:
                         returnTopology = topologic.Cluster.ByTopologies(topologies)
@@ -3910,17 +3900,17 @@ class Topology(topologic.Topology):
             for t in topologies:
                 external_wires.append(topologic.Face.ExternalBoundary(t))
             try:
-                returnTopology = CellComplex.CellComplexByLoft(external_wires, tolerance)
+                returnTopology = CellComplex.ByLoft(external_wires, tolerance)
             except:
                 try:
-                    returnTopology = Shell.ShellByLoft(external_wires, tolerance)
+                    returnTopology = Shell.ByLoft(external_wires, tolerance)
                 except:
                     try:
                         returnTopology = topologic.Cluster.ByTopologies(topologies)
                     except:
                         returnTopology = None
         else:
-            returnTopology = Topology.TopologySelfMerge(topologic.Cluster.ByTopologies(topologies))
+            returnTopology = Topology.SelfMerge(topologic.Cluster.ByTopologies(topologies))
         if returnTopology.Type() == topologic.Shell.Type():
             try:
                 new_t = topologic.Cell.ByShell(returnTopology)

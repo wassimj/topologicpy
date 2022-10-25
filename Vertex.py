@@ -1,3 +1,4 @@
+import topologicpy
 import topologic
 import collections
 
@@ -7,7 +8,7 @@ class Vertex(topologic.Vertex):
         """
         Description
         -----------
-        Creates a topologic vertex at the coordinates specified by the x, y, z inputs.
+        Creates a vertex at the coordinates specified by the x, y, z inputs.
 
         Parameters
         ----------
@@ -21,7 +22,7 @@ class Vertex(topologic.Vertex):
         Returns
         -------
         topologic.Vertex
-            The created topologic vertex.
+            The created vertex.
 
         """
         vert = None
@@ -32,20 +33,20 @@ class Vertex(topologic.Vertex):
         return vert
     
     @staticmethod
-    def Coordinates(vertex, outputType="XYZ", mantissa=3):
+    def Coordinates(vertex, outputType="xyz", mantissa=3):
         """
         Description
         -----------
-        Returns the coordinates of the input topologic vertex in the format specified by the outputType input parameter. Accuracy is specified by the mantissa input parameter.
+        Returns the coordinates of the input vertex.
 
         Parameters
         ----------
         vertex : topologic.Vertex
-            The topologic vertex.
+            The input vertex.
         outputType : string, optional
-            The desired output type. Could be any permutation or substring of "XYZ" or the string "Matrix". The default is "XYZ". The input is case insensitive and the coordinates will be returned in the specified order.
+            The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". The default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
         mantissa : int, optional
-            The desired mantissa. The default is 3.
+            The desired length of the mantissa. The default is 3.
 
         Returns
         -------
@@ -74,22 +75,6 @@ class Vertex(topologic.Vertex):
                         output.append(y)
                     elif axis == "z":
                         output.append(z)
-                '''
-                if outputType == "xyz":
-                    output = [x,y,z]
-                elif outputType == "xy":
-                    output = [x,y]
-                elif outputType == "xz":
-                    output = [x,z]
-                elif outputType == "yz":
-                    output = [y,z]
-                elif outputType == "x":
-                    output = x
-                elif outputType == "y":
-                    output = y
-                elif outputType == "z":
-                    output = z
-                '''
             return output
         else:
             return None
@@ -100,7 +85,7 @@ class Vertex(topologic.Vertex):
         """
         Description
         -----------
-        Returns the distance between the input topologic vertex and the input topologic topology. Accuracy is specified by the mantissa input parameter.
+        Returns the distance between the input vertex and the input topology.
 
         Parameters
         ----------
@@ -109,7 +94,7 @@ class Vertex(topologic.Vertex):
         topology : topologic.Topology
             The topologic topology.
         mantissa: int, optional
-            The desired mantissa. The default is 3.
+            The desired length of the mantissa. The default is 3.
 
         Returns
         -------
@@ -130,7 +115,7 @@ class Vertex(topologic.Vertex):
         """
         Description
         -----------
-        Returns the list of Cells found in the input topologic topology that enclose the input topologic vertex. If exclusive is set to True, only a list of a maximum of one topologic cell is returned.
+        Returns the list of Cells found in the input topology that enclose the input topologic vertex.
 
         Parameters
         ----------
@@ -143,15 +128,10 @@ class Vertex(topologic.Vertex):
         tolerance : float, optional
             The tolerance for computing if the input vertex is enclosed in a cell. The default is 0.0001.
 
-        Raises
-        ------
-        Exception
-            Raises an exception if the input topology does not contain any cells.
-
         Returns
         -------
-        [topologic.Cell]
-            The list of enclosing topologic cells.
+        list
+            The list of enclosing cells.
 
         """
         
@@ -173,9 +153,9 @@ class Vertex(topologic.Vertex):
             cells = []
             _ = topology.Cells(None, cells)
         else:
-            raise Exception("Vertex.EnclosingCell - Error: Input topology does not contain any Cells.")
+            return None
         if len(cells) < 1:
-            raise Exception("Vertex.EnclosingCell - Error: Input topology does not contain any Cells.")
+            return None
         enclosingCells = []
         for i in range(len(cells)):
             bbox = boundingBox(cells[i])
@@ -193,21 +173,21 @@ class Vertex(topologic.Vertex):
         """
         Description
         -----------
-        Returns the topologic vertex found in the input topologic topology that is the nearest to the input topologic vertex. If useKDTree is set to True, the algorithm uses the KDTree search method.
+        Returns the vertex found in the input topology that is the nearest to the input vertex.
 
         Parameters
         ----------
         vertex : topologic.Vertex
-            The topologic vertex.
+            The input vertex.
         topology : topologic.Topology
-            The topologic topology to search within for the nearest topologic vertex.
+            The input topology to be searched for the nearest vertex.
         useKDTree : boolean, optional
-            if set to True, the algorithm will use a KDTree method to search for the nearest topologic vertex. The default is True.
+            if set to True, the algorithm will use a KDTree method to search for the nearest vertex. The default is True.
 
         Returns
         -------
         topologic.Vertex
-            The nearest topologic vertex.
+            The nearest vertex.
 
         """        
         def SED(a, b):
@@ -339,19 +319,19 @@ class Vertex(topologic.Vertex):
         """
         Description
         -----------
-        Returns a topologic vertex that is the projection of the input vertex unto the input face. The direction of the projection is the normal of the input face.
+        Returns a vertex that is the projection of the input vertex unto the input face. The direction of the projection is the normal of the input face.
 
         Parameters
         ----------
         vertex : topologic.Vertex
-            The topologic vertex.
+            The input vertex.
         face : topologic.Face
-            the topologic face.
+            the input face.
 
         Returns
         -------
         topologic.Vertex
-            The projected topologic vertex of the input topologic vertex unto the input topologic face.
+            The projected vertex.
 
         """
         projected_vertex = None

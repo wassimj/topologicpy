@@ -1,9 +1,9 @@
-from topologicpy import topologic
+import topologic
 from topologic import IntAttribute, DoubleAttribute, StringAttribute, ListAttribute
 
 class Dictionary(topologic.Dictionary):
     @staticmethod
-    def DictionaryByDGLData(item):
+    def ByDGLData(item):
         """
         Parameters
         ----------
@@ -26,7 +26,7 @@ class Dictionary(topologic.Dictionary):
             for k in range(len(keys)):
                 value = vList[k][v]
                 values.append(value)
-            dictionaries.append(Dictionary.DictionaryByKeysValues(keys, values))
+            dictionaries.append(Dictionary.ByKeysValues(keys, values))
         return dictionaries
     
     @staticmethod
@@ -92,7 +92,7 @@ class Dictionary(topologic.Dictionary):
         return myDict
     
     @staticmethod
-    def DictionaryByKeysValues(keys, values):
+    def ByKeysValues(keys, values):
         """
         Parameters
         ----------
@@ -117,7 +117,7 @@ class Dictionary(topologic.Dictionary):
         return Dictionary.processKeysValues(keys, values)
     
     @staticmethod
-    def DictionaryByMergedDictionaries(sources):
+    def ByMergedDictionaries(sources):
         """
         Parameters
         ----------
@@ -137,7 +137,7 @@ class Dictionary(topologic.Dictionary):
             stlKeys = d.Keys()
             if len(stlKeys) > 0:
                 sinkKeys = d.Keys()
-                sinkValues = Dictionary.DictionaryValues(d)
+                sinkValues = Dictionary.Values(d)
             for i in range(1,len(sources)):
                 d = sources[i]
                 if d == None:
@@ -151,7 +151,7 @@ class Dictionary(topologic.Dictionary):
                             sinkValues.append("")
                     for i in range(len(sourceKeys)):
                         index = sinkKeys.index(sourceKeys[i])
-                        sourceValue = Dictionary.DictionaryValueAtKey(d,sourceKeys[i])
+                        sourceValue = Dictionary.ValueAtKey(d,sourceKeys[i])
                         if sourceValue != None:
                             if sinkValues[index] != "":
                                 if isinstance(sinkValues[index], list):
@@ -161,12 +161,12 @@ class Dictionary(topologic.Dictionary):
                             else:
                                 sinkValues[index] = sourceValue
         if len(sinkKeys) > 0 and len(sinkValues) > 0:
-            newDict = Dictionary.DictionaryByKeysValues(sinkKeys, sinkValues)
+            newDict = Dictionary.ByKeysValues(sinkKeys, sinkValues)
             return newDict
         return None
     
     @staticmethod
-    def DictionaryByObjectProperties(bObject, keys, importAll):
+    def ByObjectProperties(bObject, keys, importAll):
         """
         Parameters
         ----------
@@ -239,10 +239,10 @@ class Dictionary(topologic.Dictionary):
                     else:
                         raise Exception("Dictionary.ByObjectProperties: Key \""+k+"\" does not exist in the properties of object \""+bObject.name+"\".")
 
-        return Dictionary.DictionaryByKeysValues(dictKeys, dictValues)
+        return Dictionary.ByKeysValues(dictKeys, dictValues)
     
     @staticmethod
-    def DictionaryKeys(item):
+    def Keys(item):
         """
         Parameters
         ----------
@@ -263,7 +263,7 @@ class Dictionary(topologic.Dictionary):
             return None
         
     @staticmethod
-    def DictionarySetValueAtKey(item, key, value):
+    def SetValueAtKey(item, key, value):
         """
         Parameters
         ----------
@@ -298,7 +298,7 @@ class Dictionary(topologic.Dictionary):
                 if k == key:
                     values.append(value)
                 else:
-                    values.append(Dictionary.DictionaryValueAtKey(item, k))
+                    values.append(Dictionary.ValueAtKey(item, k))
             return Dictionary.processKeysValues(keys, values)
 
         if isinstance(item, dict):
@@ -336,7 +336,7 @@ class Dictionary(topologic.Dictionary):
         return returnList    
     
     @staticmethod
-    def DictionaryValueAtKey(d, key):
+    def ValueAtKey(d, key):
         """
         Parameters
         ----------
@@ -383,7 +383,7 @@ class Dictionary(topologic.Dictionary):
             return None
         
     @staticmethod
-    def DictionaryValues(item):
+    def Values(item):
         """
         Parameters
         ----------

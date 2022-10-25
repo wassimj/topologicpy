@@ -1,3 +1,4 @@
+import topologicpy
 import topologic
 import math
 import warnings
@@ -26,7 +27,7 @@ class Shell(topologic.Shell):
         return f
     
     @staticmethod
-    def ShellByFaces(faces, tolerance=0.0001):
+    def ByFaces(faces, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -61,7 +62,7 @@ class Shell(topologic.Shell):
             return shell
     
     @staticmethod
-    def ShellByLoft(wires, tolerance=0.0001):
+    def ByLoft(wires, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -119,10 +120,10 @@ class Shell(topologic.Shell):
                     e5 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex())
                     faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e5, e4])))
                     faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e2, e5, e3])))
-        return Shell.ShellByFaces(faces, tolerance)
+        return Shell.ByFaces(faces, tolerance)
     
     @staticmethod
-    def ShellExternalBoundary(item):
+    def ExternalBoundary(item):
         """
         Parameters
         ----------
@@ -152,7 +153,7 @@ class Shell(topologic.Shell):
         return returnTopology
     
     @staticmethod
-    def ShellHyperbolicParaboloidRectangularDomain(origin, llVertex, lrVertex, urVertex, ulVertex, u, v, dirX, dirY, dirZ, originLocation):
+    def HyperbolicParaboloidRectangularDomain(origin, llVertex, lrVertex, urVertex, ulVertex, u, v, dirX, dirY, dirZ, originLocation):
         """
         Parameters
         ----------
@@ -251,7 +252,7 @@ class Shell(topologic.Shell):
         return returnTopology
     
     @staticmethod
-    def ShellHyperbolicParaboloidCircularDomain(origin, radius, sides, rings, A, B, dirX, dirY, dirZ, originLocation):
+    def HyperbolicParaboloidCircularDomain(origin, radius, sides, rings, A, B, dirX, dirY, dirZ, originLocation):
         """
         Parameters
         ----------
@@ -432,7 +433,7 @@ class Shell(topologic.Shell):
         return returnTopology
     
     @staticmethod
-    def ShellInternalBoundaries(item):
+    def InternalBoundaries(shell):
         """
         Parameters
         ----------
@@ -446,17 +447,17 @@ class Shell(topologic.Shell):
 
         """
         edges = []
-        _ = item.Edges(None, edges)
+        _ = shell.Edges(None, edges)
         ibEdges = []
         for anEdge in edges:
             faces = []
-            _ = anEdge.Faces(item, faces)
+            _ = anEdge.Faces(shell, faces)
             if len(faces) > 1:
                 ibEdges.append(anEdge)
         return ibEdges
     
     @staticmethod
-    def ShellIsClosed(item):
+    def IsClosed(shell):
         """
         Parameters
         ----------
@@ -469,10 +470,10 @@ class Shell(topologic.Shell):
             DESCRIPTION.
 
         """
-        return item.IsClosed()
+        return shell.IsClosed()
     
     @staticmethod
-    def ShellTessellatedCircle(origin, radius, height, sides, dirX, dirY, dirZ, originLocation):
+    def TessellatedCircle(origin, radius, height, sides, dirX, dirY, dirZ, originLocation):
         """
         Parameters
         ----------

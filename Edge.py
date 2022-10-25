@@ -1,3 +1,4 @@
+import topologicpy
 import topologic
 import numpy as np
 import numpy.linalg as la
@@ -53,7 +54,7 @@ class Edge(topologic.Edge):
         vertexB : toopologic.Vertex
             The end topologic Vertex.
         tolerance : float, optional
-            The tolerance to decide if an Edge can be created. The default is 0.0001.
+            The desired tolerance to decide if an Edge can be created. The default is 0.0001.
 
         Returns
         -------
@@ -79,7 +80,7 @@ class Edge(topologic.Edge):
         return edge
     
     @staticmethod
-    def ByVertices(vertices):
+    def ByVertices(vertices, tolerance=0.0001):
         """
         Description
         -----------
@@ -89,6 +90,8 @@ class Edge(topologic.Edge):
         ----------
         vertices : list
             The list of topologic Vertices.
+        tolerance : float, optional
+            The desired tolerance to decide if an Edge can be created. The default is 0.0001.
 
         Returns
         -------
@@ -96,12 +99,14 @@ class Edge(topologic.Edge):
             The created topologic Edge.
 
         """
+        if not vertices:
+            return None
         if not isinstance(vertices, list):
             return None
         vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
         if len(vertexList) < 2:
             return None
-        return topologic.Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1])
+        return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance)
     
     @staticmethod
     def Direction(edge, mantissa=3):
@@ -130,7 +135,7 @@ class Edge(topologic.Edge):
         x = ev.X() - sv.X()
         y = ev.Y() - sv.Y()
         z = ev.Z() - sv.Z()
-        uvec = topologic_lib.unitizeVector([x,y,z])
+        uvec = Helper.unitizeVector([x,y,z])
         x = round(uvec[0], mantissa)
         y = round(uvec[1], mantissa)
         z = round(uvec[2], mantissa)

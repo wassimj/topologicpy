@@ -1,57 +1,62 @@
+import topologicpy
 import topologic
+from topologicpy.Wire import Wire
+from topologicpy.Topology import Topology
 import math
 import time
 
 class Cell(topologic.Cell):
     @staticmethod
-    def ByFaces(item, tolerance=0.0001):
+    def ByFaces(faces, tolerance=0.0001):
         """
+        Description
+        -----------
+        Creates a cell from the input list of faces.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        faces : list
+            The input list of faces.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        cell : TYPE
-            DESCRIPTION.
+        topologic.Cell
+            The created cell.
 
         """
-        cell = topologic.Cell.ByFaces(item, tolerance)
+        cell = topologic.Cell.ByFaces(faces, tolerance)
         if cell:
             return cell
         else:
-            raise Exception("CellByFaces - Could not create a valid Cell")
+            return None
     
     @staticmethod
-    def ByLoft(wires, tolerance=0.0001):
+    def ByWires(wires, tolerance=0.0001):
         """
+        Description
+        -----------
+        Creates a cell by lofting through the input list of wires.
+
         Parameters
         ----------
-        wires : TYPE
-            DESCRIPTION.
+        wires : topologic.Wire
+            The input list of wires.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Raises
         ------
         Exception
-            DESCRIPTION.
+            Raises an exception if the two wires in the list do not have the same number of edges.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Cell
+            The created cell.
 
         """
-        # wires, tolerance = item
         faces = [topologic.Face.ByExternalBoundary(wires[0])]
         faces.append(topologic.Face.ByExternalBoundary(wires[-1]))
         for i in range(len(wires)-1):
@@ -62,7 +67,7 @@ class Cell(topologic.Cell):
             w2_edges = []
             _ = wire2.Edges(None, w2_edges)
             if len(w1_edges) != len(w2_edges):
-                raise Exception("Cell.ByLoft - Error: The two wires do not have the same number of edges.")
+                raise Exception("Cell.ByWires - Error: The two wires do not have the same number of edges.")
             for j in range (len(w1_edges)):
                 e1 = w1_edges[j]
                 e2 = w2_edges[j]
@@ -83,55 +88,66 @@ class Cell(topologic.Cell):
                     faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e5, e4])))
                     faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e2, e5, e3])))
         try:
-            return Cell.CellByFaces(faces, tolerance)
+            return Cell.ByFaces(faces, tolerance)
         except:
-            return topologic.Cluster.ByTopologies(faces)
-    
+            return None
+
     @staticmethod
-    def ByShell(item):
+    def ByShell(shell):
         """
+        Description
+        -----------
+        Creates a cell from the input shell.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        shell : topologic.Shell
+            The input shell. The shell must be closed for this method to succeed.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Cell
+            The created cell.
 
         """
-        return topologic.Cell.ByShell(item)
+
+        try:
+            return topologic.Cell.ByShell(shell)
+        except:
+            return None
     
     @staticmethod
-    def ByThickenedFace(face, thickness, bothSides, reverse,
+    def ByThickenedFace(face, thickness=1.0, bothSides=True, reverse=False,
                             tolerance=0.0001):
         """
+        Description
+        -----------
+        Creates a cell by thickening the input face.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        thickness : TYPE
-            DESCRIPTION.
-        bothSides : TYPE
-            DESCRIPTION.
-        reverse : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face to be thickened.
+        thickness : float, optional
+            The desired thickness. The default is 1.0.
+        bothSides : bool
+            If True, the cell will be lofted to each side of the face. Otherwise, it will be lofted in the direction of the normal to the input face. The default is True.
+        reverse : bool
+            If True, the cell will be lofted in the opposite direction of the normal to the face. The default is False.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Cell
+            The created cell.
 
         """
-        # face = item[0]
-        # thickness = abs(item[1])
-        # bothSides = item[2]
-        # reverse = item[3]
-        # tolerance = item[4]
 
+        if not face:
+            return None
+        if not isinstance(face, topologic.Face):
+            return None
         if reverse == True and bothSides == False:
             thickness = -thickness
         faceNormal = topologic.FaceUtility.NormalAtParameters(face, 0.5, 0.5)
@@ -154,105 +170,81 @@ class Cell(topologic.Cell):
         return topologic.Cell.ByFaces(cellFaces, tolerance)
     
     @staticmethod
-    def Compactness(item):
+    def Compactness(cell, mantissa=3):
         """
+        Description
+        -----------
+        Returns the compactness measure of the input cell. This is also known as 'sphericity'
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        cell : topologic.Cell
+            The input cell.
+        mantissa : int, optional
+            The desired length of the mantissa. The default is 3.
 
         Raises
         ------
         Exception
-            DESCRIPTION.
+            Raises an exception if the resulting surface area is negative. This can occur if the cell is degenerate or has flipped face normals.
 
         Returns
         -------
-        compactness : TYPE
-            DESCRIPTION.
+        float
+            The compactness of the input cell.
 
         """
         faces = []
-        _ = item.Faces(None, faces)
+        _ = cell.Faces(None, faces)
         area = 0.0
         for aFace in faces:
             area = area + abs(topologic.FaceUtility.Area(aFace))
-        volume = abs(topologic.CellUtility.Volume(item))
+        volume = abs(topologic.CellUtility.Volume(cell))
         compactness  = 0
         #From https://en.wikipedia.org/wiki/Sphericity
         if area > 0:
             compactness = (((math.pi)**(1/3))*((6*volume)**(2/3)))/area
         else:
             raise Exception("Error: Cell.Compactness: Cell surface area is not positive")
-        return compactness
+        return round(compactness, mantissa)
     
     @staticmethod
-    def WireByVertices(vList):
+    def Cone(origin=None, baseRadius=1, topRadius=0, height=1, sides=16, dirX=0, dirY=0,
+                 dirZ=1, placement="bottom", tolerance=0.0001):
         """
+        Description
+        -----------
+        Creates a cone.
+
         Parameters
         ----------
-        vList : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        edges = []
-        for i in range(len(vList)-1):
-            edges.append(topologic.Edge.ByStartVertexEndVertex(vList[i], vList[i+1]))
-        edges.append(topologic.Edge.ByStartVertexEndVertex(vList[-1], vList[0]))
-        return topologic.Wire.ByEdges(edges)
-    
-    @staticmethod
-    def CellCone(origin, baseRadius, topRadius, height, sides, dirX, dirY,
-                 dirZ, originLocation, tolerance=0.0001):
-        """
-        Parameters
-        ----------
-        origin : TYPE
-            DESCRIPTION.
-        baseRadius : TYPE
-            DESCRIPTION.
-        topRadius : TYPE
-            DESCRIPTION.
-        height : TYPE
-            DESCRIPTION.
-        sides : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        originLocation : TYPE
-            DESCRIPTION.
+        origin : topologic.Vertex, optional
+            The location of the origin of the cone. The default is None which results in the cone being placed at (0,0,0).
+        baseRadius : float, optional
+            The radius of the base circle of the cone. The default is 1.
+        topRadius : float, optional
+            The radius of the top circle of the cone. The default is 0.
+        height : float, optional
+            The height of the cone. The default is 1.
+        sides : int, optional
+            The number of sides of the cone. The default is 16.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the cone. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the cone. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the cone. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the cone. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        cone : TYPE
-            DESCRIPTION.
+        topologic.Cell
+            The created cone.
 
         """
-        # origin = item[0]
-        # baseRadius = item[1]
-        # topRadius = item[2]
-        # height = item[3]
-        # sides = item[4]
-        # dirX = item[5]
-        # dirY = item[6]
-        # dirZ = item[7]
-        # tol = item[8]
         def createCone(baseWire, topWire, baseVertex, topVertex, tolerance):
             if baseWire == None and topWire == None:
                 raise Exception("Cell.Cone - Error: Both radii of the cone cannot be zero at the same time")
@@ -263,16 +255,16 @@ class Cell(topologic.Cell):
                 apex = topVertex
                 wire = baseWire
             else:
-                return topologic.CellUtility.ByLoft([baseWire, topWire])
+                return Cell.ByWires([baseWire, topWire], tolerance)
 
             vertices = []
             _ = wire.Vertices(None,vertices)
             faces = [topologic.Face.ByExternalBoundary(wire)]
             for i in range(0, len(vertices)-1):
-                w = Cell.wireByVertices([apex, vertices[i], vertices[i+1]])
+                w = Wire.ByVertices(topologic.Cluster.ByTopologies([apex, vertices[i], vertices[i+1]]), True)
                 f = topologic.Face.ByExternalBoundary(w)
                 faces.append(f)
-            w = Cell.wireByVertices([apex, vertices[-1], vertices[0]])
+            w = Wire.ByVertices(topologic.Cluster.ByTopologies([apex, vertices[-1], vertices[0]]), True)
             f = topologic.Face.ByExternalBoundary(w)
             faces.append(f)
             return topologic.Cell.ByFaces(faces, tolerance)
@@ -282,9 +274,13 @@ class Cell(topologic.Cell):
         xOffset = 0
         yOffset = 0
         zOffset = 0
-        if originLocation == "Center":
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
+        if placement.lower() == "center":
             zOffset = -height*0.5
-        elif originLocation == "LowerLeft":
+        elif placement.lower() == "lowerleft":
             xOffset = max(baseRadius, topRadius)
             yOffset = max(baseRadius, topRadius)
 
@@ -303,18 +299,18 @@ class Cell(topologic.Cell):
                 topV.append(topologic.Vertex.ByCoordinates(topX,topY,topZ))
 
         if baseRadius > 0:
-            baseWire = Cell.wireByVertices(baseV)
+            baseWire = Wire.ByVertices(baseV, close=True)
         else:
             baseWire = None
         if topRadius > 0:
-            topWire = Cell.wireByVertices(topV)
+            topWire = Wire.ByVertices(topV, close=True)
         else:
             topWire = None
         baseVertex = topologic.Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset)
         topVertex = topologic.Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset+height)
         cone = createCone(baseWire, topWire, baseVertex, topVertex, tolerance)
         if cone == None:
-            raise Exception("Cell.Cone - Error: Could not create cone")
+            return None
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -335,55 +331,54 @@ class Cell(topologic.Cell):
         return cone
     
     @staticmethod
-    def CellCylinder(origin, radius, height, uSides, vSides, dirX, dirY, dirZ,
-                     originLocation, tolerance=0.0001):
+    def Cylinder(origin=None, radius=1, height=1, uSides=16, vSides=1, dirX=0, dirY=0, dirZ=1,
+                     placement="bottom", tolerance=0.0001):
         """
+        Description
+        -----------
+        Creates a cylinder.
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        radius : TYPE
-            DESCRIPTION.
-        height : TYPE
-            DESCRIPTION.
-        uSides : TYPE
-            DESCRIPTION.
-        vSides : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        originLocation : TYPE
-            DESCRIPTION.
+        origin : topologic.Vertex, optional
+            The location of the origin of the cylinder. The default is None which results in the cylinder being placed at (0,0,0).
+        radius : float, optional
+            The radius of the cylinder. The default is 1.
+        height : float, optional
+            The height of the cylinder. The default is 1.
+        uSides : int, optional
+            The number of circle segments of the cylinder. The default is 16.
+        vSides : int, optional
+            The number of vertical segments of the cylinder. The default is 1.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the cylinder. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the cylinder. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the cylinder. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the cylinder. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        cyl : TYPE
-            DESCRIPTION.
+        topologic.Cell
+            The created cell.
 
         """
-        # origin, \
-        # radius, \
-        # height, \
-        # uSides, \
-        # vSides, \
-        # dirX, \
-        # dirY, \
-        # dirZ, \
-        # tolerance = item
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
         baseV = []
         topV = []
         xOffset = 0
         yOffset = 0
         zOffset = 0
-        if originLocation == "Center":
+        if placement.lower() == "center":
             zOffset = -height*0.5
-        elif originLocation == "LowerLeft":
+        elif placement.lower() == "lowerleft":
             xOffset = radius
             yOffset = radius
 
@@ -395,11 +390,11 @@ class Cell(topologic.Cell):
             baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
             topV.append(topologic.Vertex.ByCoordinates(x,y,z+height))
 
-        baseWire = Cell.wireByVertices(baseV)
-        topologies = []
+        baseWire = Wire.ByVertices(baseV, close=True)
+        wires = []
         for i in range(vSides+1):
-            topologies.append(topologic.TopologyUtility.Translate(baseWire, 0, 0, height/float(vSides)*i))
-        cyl = Cell.CellByLoft(topologies, tolerance)
+            wires.append(topologic.TopologyUtility.Translate(baseWire, 0, 0, height/float(vSides)*i))
+        cyl = Cell.ByWires(wires, tolerance)
 
         x1 = origin.X()
         y1 = origin.Y()
@@ -421,104 +416,105 @@ class Cell(topologic.Cell):
         return cyl
     
     @staticmethod
-    def CellExternalBoundary(item):
+    def ExternalBoundary(cell):
         """
+        Description
+        -----------
+        Returns the external boundary of the input cell.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        cell : topologic.Cell
+            The input cell.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Shell
+            The external boundary of the input cell.
 
         """
-        return item.ExternalBoundary()
+        if not cell:
+            return None
+        if not isinstance(cell, topologic.Cell):
+            return None
+        try:
+            return cell.ExternalBoundary()
+        except:
+            return None
     
     @staticmethod
-    def CellHyperboloid(origin, baseRadius, topRadius, height, sides, dirX,
-                        dirY, dirZ, twist, originLocation, tolerance=0.0001):
+    def Hyperboloid(origin=None, baseRadius=1, topRadius=1, height=1, sides=16, dirX=0,
+                        dirY=0, dirZ=1, twist=360, placement="bottom", tolerance=0.0001):
         """
+        Description
+        ----------
+        Creates a hyperboloid.
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        baseRadius : TYPE
-            DESCRIPTION.
-        topRadius : TYPE
-            DESCRIPTION.
-        height : TYPE
-            DESCRIPTION.
-        sides : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        twist : TYPE
-            DESCRIPTION.
-        originLocation : TYPE
-            DESCRIPTION.
+        origin : topologic.Vertex, optional
+            The location of the origin of the hyperboloid. The default is None which results in the hyperboloid being placed at (0,0,0).
+        baseRadius : float, optional
+            The radius of the base circle of the hyperboloid. The default is 1.
+        topRadius : float, optional
+            The radius of the top circle of the hyperboloid. The default is 0.
+        height : float, optional
+            The height of the cone. The default is 1.
+        sides : int, optional
+            The number of sides of the cone. The default is 16.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the hyperboloid. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the hyperboloid. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the hyperboloid. The default is 1.
+        twist : float, optional
+            The angle to twist the base cylinder. The default is 360.
+        placement : str, optional
+            The description of the placement of the origin of the hyperboloid. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Cell
+            The created hyperboloid.
 
         """
-        # origin = item[0]
-        # baseRadius = item[1]
-        # topRadius = item[2]
-        # height = item[3]
-        # sides = item[4]
-        # dirX = item[5]
-        # dirY = item[6]
-        # dirZ = item[7]
-        # twist = item[8]
-        # tol = item[9]
         
         def createHyperboloid(baseVertices, topVertices, tolerance):
-            baseWire = Cell.wireByVertices(baseVertices)
-            topWire = Cell.wireByVertices(topVertices)
+            baseWire = Wire.ByVertices(baseVertices, close=True)
+            topWire = Wire.ByVertices(topVertices, close=True)
             baseFace = topologic.Face.ByExternalBoundary(baseWire)
             topFace = topologic.Face.ByExternalBoundary(topWire)
             faces = [baseFace, topFace]
             for i in range(0, len(baseVertices)-1):
-                w = Cell.wireByVertices([baseVertices[i], topVertices[i], topVertices[i+1]])
+                w = Wire.ByVertices([baseVertices[i], topVertices[i], topVertices[i+1]], close=True)
                 f = topologic.Face.ByExternalBoundary(w)
                 faces.append(f)
-                w = Cell.wireByVertices([baseVertices[i+1], baseVertices[i], topVertices[i+1]])
+                w = Wire.ByVertices([baseVertices[i+1], baseVertices[i], topVertices[i+1]], close=True)
                 f = topologic.Face.ByExternalBoundary(w)
                 faces.append(f)
-            w = Cell.wireByVertices([baseVertices[-1], topVertices[-1], topVertices[0]])
+            w = Wire.ByVertices([baseVertices[-1], topVertices[-1], topVertices[0]], close=True)
             f = topologic.Face.ByExternalBoundary(w)
             faces.append(f)
-            w = Cell.wireByVertices([baseVertices[0], baseVertices[-1], topVertices[0]])
+            w = Wire.ByVertices([baseVertices[0], baseVertices[-1], topVertices[0]], close=True)
             f = topologic.Face.ByExternalBoundary(w)
             faces.append(f)
             returnTopology = topologic.Cell.ByFaces(faces, tolerance)
             if returnTopology == None:
                 returnTopology = topologic.Cluster.ByTopologies(faces)
             return returnTopology
-        
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
         baseV = []
         topV = []
         xOffset = 0
         yOffset = 0
         zOffset = 0
-        if originLocation == "Center":
+        if placement.lower() == "center":
             zOffset = -height*0.5
-        elif originLocation == "LowerLeft":
+        elif placement.lower() == "lowerleft":
             xOffset = max(baseRadius, topRadius)
             yOffset = max(baseRadius, topRadius)
         baseZ = origin.Z() + zOffset
@@ -537,7 +533,7 @@ class Cell(topologic.Cell):
 
         hyperboloid = createHyperboloid(baseV, topV, tolerance)
         if hyperboloid == None:
-            raise Exception("Cell.Hyperboloid - Error: Could not create hyperboloid")
+            return None
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -558,112 +554,128 @@ class Cell(topologic.Cell):
         return hyperboloid
     
     @staticmethod
-    def CellInternalBoundaries(item):
+    def InternalBoundaries(cell):
         """
+        Description
+        ----------
+        Returns the internal boundaries of the input cell.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        cell : topologic.Cell
+            The input cell.
 
         Returns
         -------
-        shells : TYPE
-            DESCRIPTION.
+        list
+            The list of internal boundaries ([topologic.Shell]).
 
         """
         shells = []
-        _ = item.InternalBoundaries(shells)
+        _ = cell.InternalBoundaries(shells)
         return shells
     
     @staticmethod
-    def CellInternalVertex(item, tolerance=0.0001):
+    def InternalVertex(cell, tolerance=0.0001):
         """
+        Description
+        ----------
+        Creates a vertex that is guaranteed to be inside the input cell.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        cell : topologic.Cell
+            The input cell.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        vert : TYPE
-            DESCRIPTION.
+        topologic.Vertex
+            The internal vertex.
 
         """
-        vert = None
-        if item.Type() == topologic.Cell.Type():
-            vert = topologic.CellUtility.InternalVertex(item, tolerance)
-        return vert
+        if not cell:
+            return None
+        if not isinstance(cell, topologic.Cell):
+            return None
+        try:
+            return topologic.CellUtility.InternalVertex(cell, tolerance)
+        except:
+            return None
     
     @staticmethod
-    def CellIsInside(topology, vertex, tolerance=0.0001):
+    def IsInside(cell, vertex, tolerance=0.0001):
         """
+        Description
+        ----------
+        Returns True if the input vertex is inside the input cell. Returns False otherwise.
+
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        vertex : TYPE
-            DESCRIPTION.
+        cell : topologic.Cell
+            The input cell.
+        vertex : topologic.Vertex
+            The input vertex.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        status : TYPE
-            DESCRIPTION.
+        bool
+            Returns True if the input vertex is inside the input cell. Returns False otherwise.
 
         """
-        # topology = item[0]
-        # vertex = item[1]
-        # tolerance = item[2]
-        status = False
-        if topology.Type() == topologic.Cell.Type():
-            status = (topologic.CellUtility.Contains(topology, vertex, tolerance) == 0)
-        return status
+        if not cell:
+            return None
+        if not isinstance(cell, topologic.Cell):
+            return None
+        try:
+            return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 0)
+        except:
+            return None
     
     @staticmethod
-    def CellPipe(edge, radius, sides, startOffset, endOffset, endcapA,
-                 endcapB):
+    def Pipe(edge, radius=1, sides=16, startOffset=0, endOffset=0, endcapA=None,
+                 endcapB=None):
         """
+        Description
+        ----------
+        Creates a pipe along the input edge.
+
         Parameters
         ----------
-        edge : TYPE
-            DESCRIPTION.
-        radius : TYPE
-            DESCRIPTION.
-        sides : TYPE
-            DESCRIPTION.
-        startOffset : TYPE
-            DESCRIPTION.
-        endOffset : TYPE
-            DESCRIPTION.
-        endcapA : TYPE
-            DESCRIPTION.
-        endcapB : TYPE
-            DESCRIPTION.
+        edge : topologic.Edge
+            The centerline of the pipe.
+        radius : float, optional
+            The radius of the pipe. The default is 1.
+        sides : int, optional
+            The number of sides of the pipe. The default is 16.
+        startOffset : float, optional
+            The offset distance from the start vertex of the centerline edge. The default is 0.
+        endOffset : float, optional
+            The offset distance from the end vertex of the centerline edge. The default is 0.
+        endcapA : topologic.Topology, optional
+            The topology to place at the start vertex of the centerline edge. The positive Z direction of the end cap will be oriented in the direction of the centerline edge.
+        endcapB : topologic.Topology, optional
+            The topology to place at the end vertex of the centerline edge. The positive Z direction of the end cap will be oriented in the inverse direction of the centerline edge.
 
         Returns
         -------
-        returnList : TYPE
-            DESCRIPTION.
+        list
+            A list containing the pipe as the first element, the start endcap as the second element, and the end endcap as the last element if they have been specified.
 
         """
-        # edge = item[0]
-        # radius = item[1]
-        # sides = item[2]
-        # startOffset = item[3]
-        # endOffset = item[4]
-        # endcapA = item[5]
-        # endcapB = item[6]
-
+        if not edge:
+            return None
+        if not isinstance(edge, topologic.Edge):
+            return None
         length = topologic.EdgeUtility.Length(edge)
         origin = edge.StartVertex()
         startU = startOffset / length
         endU = 1.0 - (endOffset / length)
         sv = topologic.EdgeUtility.PointAtParameter(edge, startU)
         ev = topologic.EdgeUtility.PointAtParameter(edge, endU)
-        new_edge = topologic.Edge.ByStartVertexEndVertex(sv, ev)
         x1 = sv.X()
         y1 = sv.Y()
         z1 = sv.Z()
@@ -685,8 +697,8 @@ class Cell(topologic.Cell):
             baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
             topV.append(topologic.Vertex.ByCoordinates(x,y,z+dist))
 
-        baseWire = Cell.wireByVertices(baseV)
-        topWire = Cell.wireByVertices(topV)
+        baseWire = Wire.ByVertices(baseV)
+        topWire = Wire.ByVertices(topV)
         wires = [baseWire, topWire]
         cyl = topologic.CellUtility.ByLoft(wires)
         phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
@@ -745,77 +757,72 @@ class Cell(topologic.Cell):
         return returnList
     
     @staticmethod
-    def CellPrism(origin, width, length, height, uSides, vSides, wSides, dirX,
-                  dirY, dirZ, placement):
+    def Prism(origin=None, width=1, length=1, height=1, uSides=1, vSides=1, wSides=1, dirX=0,
+                  dirY=0, dirZ=1, placement="bottom"):
         """
+        Description
+        ----------
+        Creates a prism.
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        width : TYPE
-            DESCRIPTION.
-        length : TYPE
-            DESCRIPTION.
-        height : TYPE
-            DESCRIPTION.
-        uSides : TYPE
-            DESCRIPTION.
-        vSides : TYPE
-            DESCRIPTION.
-        wSides : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        placement : TYPE
-            DESCRIPTION.
+        origin : topologic.Vertex, optional
+            The origin location of the prism. The default is None which results in the prism being placed at (0,0,0).
+        width : float, optional
+            The width of the prism. The default is 1.
+        length : float, optional
+            The length of the prism. The default is 1.
+        height : float, optional
+            The height of the prism.
+        uSides : int, optional
+            The number of sides along the width. The default is 1.
+        vSides : int, optional
+            The number of sides along the length. The default is 1.
+        wSides : int, optional
+            The number of sides along the height. The default is 1.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the prism. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the prism. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the prism. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
 
         Returns
         -------
-        prism : TYPE
-            DESCRIPTION.
+        topologic.Cell
+            The created prism.
 
         """
-        # origin, \
-        # width, \
-        # length, \
-        # height, \
-        # uSides, \
-        # vSides, \
-        # wSides, \
-        # dirX, \
-        # dirY, \
-        # dirZ, \
-        # placement = item
         
         def sliceCell(cell, width, length, height, uSides, vSides, wSides):
             origin = cell.Centroid()
             shells = []
             _ = cell.Shells(None, shells)
             shell = shells[0]
-            wRect = Wire.WireRectangle(origin, width*1.2, length*1.2, 0, 0, 1, "Center")
+            wRect = Wire.Rectangle(origin, width*1.2, length*1.2, 0, 0, 1, "center")
             sliceFaces = []
             for i in range(1, wSides):
                 sliceFaces.append(topologic.TopologyUtility.Translate(topologic.Face.ByExternalBoundary(wRect), 0, 0, height/wSides*i - height*0.5))
-            uRect = Wire.WireRectangle(origin, height*1.2, length*1.2, 1, 0, 0, "Center")
+            uRect = Wire.Rectangle(origin, height*1.2, length*1.2, 1, 0, 0, "center")
             for i in range(1, uSides):
                 sliceFaces.append(topologic.TopologyUtility.Translate(topologic.Face.ByExternalBoundary(uRect), width/uSides*i - width*0.5, 0, 0))
-            vRect = Wire.WireRectangle(origin, height*1.2, width*1.2, 0, 1, 0, "Center")
+            vRect = Wire.Rectangle(origin, height*1.2, width*1.2, 0, 1, 0, "center")
             for i in range(1, vSides):
                 sliceFaces.append(topologic.TopologyUtility.Translate(topologic.Face.ByExternalBoundary(vRect), 0, length/vSides*i - length*0.5, 0))
             sliceCluster = topologic.Cluster.ByTopologies(sliceFaces)
             shell = shell.Slice(sliceCluster, False)
             return topologic.Cell.ByShell(shell)
         
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
         xOffset = 0
         yOffset = 0
         zOffset = 0
-        if placement == "Center":
+        if placement.lower() == "center":
             zOffset = -height*0.5
-        elif placement == "LowerLeft":
+        elif placement.lower() == "lowerleft":
             xOffset = width*0.5
             yOffset = length*0.5
 
@@ -828,8 +835,8 @@ class Cell(topologic.Cell):
         vt2 = topologic.Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z()+height+zOffset)
         vt3 = topologic.Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z()+height+zOffset)
         vt4 = topologic.Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z()+height+zOffset)
-        baseWire = Cell.wireByVertices([vb1, vb2, vb3, vb4])
-        topWire = Cell.wireByVertices([vt1, vt2, vt3, vt4])
+        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
+        topWire = Wire.ByVertices([vt1, vt2, vt3, vt4], close=True)
         wires = [baseWire, topWire]
         prism =  topologic.CellUtility.ByLoft(wires)
         prism = sliceCell(prism, width, length, height, uSides, vSides, wSides)
@@ -853,21 +860,25 @@ class Cell(topologic.Cell):
         return prism
     
     @staticmethod
-    def CellSets(inputCells, superCells, tolerance=0.0001):
+    def Sets(inputCells, superCells, tolerance=0.0001):
         """
+        Description
+        ----------
+        Classifies the input cells into sets based on their enclosure within the input list of super cells. The order of the sets follows the order of the input list of super cells.
+
         Parameters
         ----------
-        inputCells : TYPE
-            DESCRIPTION.
-        superCells : TYPE
-            DESCRIPTION.
+        inputCells : list
+            The list of input cells.
+        superCells : list
+            The list of super cells.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        sets : TYPE
-            DESCRIPTION.
+        list
+            The classified list of input cells based on their encolsure within the input list of super cells.
 
         """
         if len(superCells) == 0:
@@ -894,55 +905,51 @@ class Cell(topologic.Cell):
         return sets
     
     @staticmethod
-    def CellSphere(origin, radius, uSides, vSides, dirX, dirY, dirZ,
-                   originLocation, tolerance=0.0001):
+    def Sphere(origin=None, radius=1, uSides=16, vSides=8, dirX=0, dirY=0, dirZ=1,
+                   placement="bottom", tolerance=0.0001):
         """
+        Description
+        ----------
+        Creates a sphere.
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        radius : TYPE
-            DESCRIPTION.
-        uSides : TYPE
-            DESCRIPTION.
-        vSides : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        originLocation : TYPE
-            DESCRIPTION.
+        origin : topologic.Vertex, optional
+            The origin location of the sphere. The default is None which results in the sphere being placed at (0,0,0).
+        radius : float, optional
+            The radius of the sphere. The default is 1.
+        uSides : int, optional
+            The number of sides along the longitude of the sphere. The default is 16.
+        vSides : int, optional
+            The number of sides along the latitude of the sphere. The default is 8.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the sphere. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the sphere. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the sphere. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        s : TYPE
-            DESCRIPTION.
+        topologic.Cell
+            The created sphere.
 
         """
-        # origin, \
-        # radius, \
-        # uSides, \
-        # vSides, \
-        # dirX, \
-        # dirY, \
-        # dirZ, \
-        # tolerance = item
-
-        c = Wire.WireCircle(origin, radius, vSides, 90, 270, True, 0, 1, 0, "Center")
-        c = topologic.Face.ByExternalBoundary(c)
-        s = Topology.TopologySpin(c, origin, 0, 0, 1, 360, uSides, tolerance)
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
+        c = Wire.Circle(origin, radius, vSides, 90, 270, False, 0, 1, 0, "center")
+        s = Topology.Spin(c, origin, 0, 0, 1, 360, uSides, tolerance)
         if s.Type() == topologic.CellComplex.Type():
             s = s.ExternalBoundary()
         if s.Type() == topologic.Shell.Type():
             s = topologic.Cell.ByShell(s)
-        if originLocation == "Bottom":
+        if placement.lower() == "bottom":
             s = topologic.TopologyUtility.Translate(s, 0, 0, radius)
-        elif originLocation == "LowerLeft":
+        elif placement.lower() == "lowerleft":
             s = topologic.TopologyUtility.Translate(s, radius, radius, radius)
         x1 = origin.X()
         y1 = origin.Y()
@@ -1006,78 +1013,81 @@ class Cell(topologic.Cell):
         return superCells
     
     @staticmethod
-    def CellSurfaceArea(item):
+    def SurfaceArea(cell, mantissa=3):
         """
+        Description
+        __________
+        Returns the surface area of the input cell.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        cell : topologic.Cell
+            The cell.
+        mantissa : int, optional
+            The desired length of the mantissa. The default is 3.
 
         Returns
         -------
-        area : TYPE
-            DESCRIPTION.
+        area : float
+            The surface area of the input cell.
 
         """
         faces = []
-        _ = item.Faces(None, faces)
+        _ = cell.Faces(None, faces)
         area = 0.0
         for aFace in faces:
             area = area + topologic.FaceUtility.Area(aFace)
-        return area
+        return round(area, mantissa)
     
     @staticmethod
-    def CellTorus(origin, majorRadius, minorRadius, uSides, vSides, dirX, dirY,
-                  dirZ, originLocation, tolerance=0.0001):
+    def Torus(origin=None, majorRadius=1, minorRadius=0.2, uSides=16, vSides=8, dirX=0, dirY=0,
+                  dirZ=1, placement="bottom", tolerance=0.0001):
         """
+        Description
+        __________
+        Creates a torus.
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        majorRadius : TYPE
-            DESCRIPTION.
-        minorRadius : TYPE
-            DESCRIPTION.
-        uSides : TYPE
-            DESCRIPTION.
-        vSides : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        originLocation : TYPE
-            DESCRIPTION.
+        origin : topologic.Vertex, optional
+            The origin location of the torus. The default is None which results in the torus being placed at (0,0,0).
+        majorRadius : float, optional
+            The major radius of the torus. The default is 1.
+        minorRadius : float, optional
+            The minor radius of the torus. The default is 0.2.
+        uSides : int, optional
+            The number of sides along the longitude of the torus. The default is 16.
+        vSides : int, optional
+            The number of sides along the latitude of the torus. The default is 8.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the sphere. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the sphere. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the sphere. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        s : TYPE
-            DESCRIPTION.
+        topologic.Cell
+            The created torus.
 
         """
-        # origin, \
-        # majorRadius, \
-        # minorRadius, \
-        # uSides, \
-        # vSides, \
-        # dirX, \
-        # dirY, \
-        # dirZ, \
-        # tolerance = item
-
-        c = Wire.WireCircle.processItem(origin, minorRadius, vSides, 0, 360, False, 0, 1, 0, "Center")
+        
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
+        c = Wire.Circle(origin, minorRadius, vSides, 0, 360, False, 0, 1, 0, "center")
         c = topologic.TopologyUtility.Translate(c, majorRadius, 0, 0)
-        s = Topology.TopologySpin(c, origin, 0, 0, 1, 360, uSides, tolerance)
+        s = Topology.Spin(c, origin, 0, 0, 1, 360, uSides, tolerance)
         if s.Type() == topologic.Shell.Type():
             s = topologic.Cell.ByShell(s)
-        if originLocation == "Bottom":
-            s = topologic.TopologyUtility.Translate(s, 0, 0, radius)
-        elif originLocation == "LowerLeft":
-            s = topologic.TopologyUtility.Translate(s, radius, radius, radius)
+        if placement.lower() == "bottom":
+            s = topologic.TopologyUtility.Translate(s, 0, 0, majorRadius)
+        elif placement.lower() == "lowerleft":
+            s = topologic.TopologyUtility.Translate(s, majorRadius, majorRadius, minorRadius)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -1098,12 +1108,14 @@ class Cell(topologic.Cell):
         return s
     
     @staticmethod
-    def CellVolume(item):
+    def Volume(cell, mantissa=3):
         """
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        cell : topologic.Cell
+            The input cell.
+        manitssa: int, optional
+            The desired length of the mantissa. The default is 3.
 
         Returns
         -------
@@ -1111,6 +1123,8 @@ class Cell(topologic.Cell):
             DESCRIPTION.
 
         """
-        return topologic.CellUtility.Volume(item)
+        if not cell:
+            return None
+        return round(topologic.CellUtility.Volume(cell), mantissa)
 
 

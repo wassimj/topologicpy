@@ -1,7 +1,7 @@
 
 class Color:
     @staticmethod
-    def ColorByObjectColor(bObject):
+    def ByObjectColor(bObject):
         """
         Parameters
         ----------
@@ -24,7 +24,7 @@ class Color:
         return (color[0],color[1], color[2], color[3])
     
     @staticmethod
-    def ColorByValueInRange(value, minValue, maxValue, alpha, useAlpha):
+    def ByValueInRange(value, minValue, maxValue, alpha, useAlpha):
         """
         Parameters
         ----------

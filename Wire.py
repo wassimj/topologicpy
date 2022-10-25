@@ -1,4 +1,8 @@
+import topologicpy
 import topologic
+from topologicpy.Face import Face
+from topologicpy.Cluster import Cluster
+from topologicpy.Topology import Topology
 import math
 import itertools
 
@@ -6,6 +10,10 @@ class Wire(topologic.Wire):
     @staticmethod
     def ByEdges(edges):
         """
+        Description
+        ----------
+        Creates a wire from the input list of edges.
+
         Parameters
         ----------
         edges : list
@@ -17,6 +25,8 @@ class Wire(topologic.Wire):
             The created topologic Wire.
 
         """
+        if not edges:
+            return None
         if not isinstance(edges, list):
             return None
         edgeList = [x for x in edges if isinstance(x, topologic.Edge)]
@@ -36,14 +46,18 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def ByVertices(cluster, close=True):
+    def ByVertices(vertices, close=True):
         """
+        Description
+        ----------
+        Creates a wire from the input list of vertices.
+
         Parameters
         ----------
-        cluster : topologic.Cluster
-            the input topologic Cluster of topologic Vertices.
-        close : bool
-            Boolean flag to indicate if the topologic Wire should be closed or not.
+        vertices : list
+            the input list of topologic Vertices.
+        close : bool, optional
+            If True the last vertex will be connected to the first vertex to close the wire. The default is True.
 
         Returns
         -------
@@ -51,20 +65,18 @@ class Wire(topologic.Wire):
             The created topologic Wire.
 
         """
-        if isinstance(close, list):
-            close = close[0]
-        if isinstance(cluster, list):
-            if all([isinstance(item, topologic.Vertex) for item in cluster]):
-                vertices = cluster
-        elif isinstance(cluster, topologic.Cluster):
-            vertices = []
-            _ = cluster.Vertices(None, vertices)
-        else:
+
+        if not vertices:
+            return None
+        if not isinstance(vertices, list):
+            return None
+        vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        if len(vertexList) < 2:
             return None
         edges = []
-        for i in range(len(vertices)-1):
-            v1 = vertices[i]
-            v2 = vertices[i+1]
+        for i in range(len(vertexList)-1):
+            v1 = vertexList[i]
+            v2 = vertexList[i+1]
             try:
                 e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
                 if e:
@@ -72,77 +84,74 @@ class Wire(topologic.Wire):
             except:
                 continue
         if close:
-            v1 = vertices[-1]
-            v2 = vertices[0]
+            v1 = vertexList[-1]
+            v2 = vertexList[0]
             try:
                 e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
                 if e:
                     edges.append(e)
             except:
                 pass
-        if len(edges) > 0:
-            c = topologic.Cluster.ByTopologies(edges, False)
-            return Topology.SelfMerge(c)
-        else:
+        if len(edges) < 1:
             return None
+        return Wire.ByEdges(edges)
 
-    
     @staticmethod
-    def Circle(origin, radius, sides, fromAngle, toAngle, close, dirX,
-                   dirY, dirZ, placement):
+    def Circle(origin=None, radius=1, sides=16, fromAngle=0, toAngle=360, close=True, dirX=0,
+                   dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
+        Description
+        ----------
+        Creates a circle.
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        radius : TYPE
-            DESCRIPTION.
-        sides : TYPE
-            DESCRIPTION.
-        fromAngle : TYPE
-            DESCRIPTION.
-        toAngle : TYPE
-            DESCRIPTION.
-        close : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        placement : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        origin : topologic.Vertex, optional
+            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
+        radius : float, optional
+            The radius of the circle. The default is 1.
+        sides : int, optional
+            The number of sides of the circle. The default is 16.
+        fromAngle : float, optional
+            The angle in degrees from which to start creating the arc of the circle. The default is 0.
+        toAngle : float, optional
+            The angle in degrees at which to end creating the arc of the circle. The default is 360.
+        close : bool, optional
+            If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the circle. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the circle. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the circle. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the circle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        baseWire : TYPE
-            DESCRIPTION.
+        topologic.Wire
+            The created circle.
 
         """
-        # origin, \
-        # radius, \
-        # sides, \
-        # fromAngle, \
-        # toAngle, \
-        # close, \
-        # dirX, \
-        # dirY, \
-        # dirZ, \
-        # placement = item
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,)
+        if not isinstance(origin, topologic.Vertex):
+            return None
+        radius = abs(radius)
+        if radius < tolerance:
+            return None
+        if (abs(dirX) + abs(dirY) + abs(dirZ)) < tolerance:
+            return None
         baseV = []
         xList = []
         yList = []
 
         if toAngle < fromAngle:
             toAngle += 360
-        elif toAngle == fromAngle:
-            raise Exception("Wire.Circle - Error: To angle cannot be equal to the From Angle")
+        if abs(toAngle-fromAngle) < tolerance:
+            return None
         angleRange = toAngle - fromAngle
         fromAngle = math.radians(fromAngle)
         toAngle = math.radians(toAngle)
@@ -158,7 +167,7 @@ class Wire(topologic.Wire):
 
         baseWire = Wire.ByVertices(Cluster.ByTopologies(baseV[::-1]), close) #reversing the list so that the normal points up in Blender
 
-        if placement.lower == "lowerleft":
+        if placement.lower() == "lowerleft":
             baseWire = topologic.TopologyUtility.Translate(baseWire, radius, radius, 0)
         x1 = origin.X()
         y1 = origin.Y()
@@ -181,26 +190,27 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def Cycles(wire, maxVertices, tolerance=0.0001):
+    def Cycles(wire, maxVertices=4, tolerance=0.0001):
         """
+        Description
+        ----------
+        Returns the closed circuits of wires found within the input wire.
+
         Parameters
         ----------
-        wire : TYPE
-            DESCRIPTION.
-        maxVertices : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        wire : topologic.Wire
+            The input wire.
+        maxVertices : int, optional
+            The maximum number of vertices of the circuits to be searched. The default is 4.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        resultWires : TYPE
-            DESCRIPTION.
+        list
+            The list of circuits (wires) found within the input wire.
 
         """
-        # wire = item[0]
-        # maxVertices = item[1]
-        # tolerance = item[2]
         
         def vIndex(v, vList, tolerance):
             for i in range(len(vList)):
@@ -299,88 +309,127 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def Ellipse(origin, w, l, sides, fromAngle, toAngle, close, dirX, dirY, dirZ, placement="center", inputMode="Width and Length"):
+    def Ellipse(origin=None, inputMode=1, width=2.0, length=1.0, focalLength= 0.866025, eccentricity=0.866025, majorAxisLength=1.0, minorAxisLength=0.5, sides=32, fromAngle=0, toAngle=360, close=True, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
+        Description
+        ----------
+        Creates an ellipse.
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        w : TYPE
-            Width, Focal Length or Major Axis Length
-        l : TYPE
-            Length, Eccentricity or Minor Axis length
-        sides : TYPE
-            DESCRIPTION.
-        fromAngle : TYPE
-            DESCRIPTION.
-        toAngle : TYPE
-            DESCRIPTION.
-        close : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        placement : TYPE
-            DESCRIPTION.
-        inputMode : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        NotImplementedError
-            DESCRIPTION.
-        Exception
-            DESCRIPTION.
+        origin : topologic.Vertex, optional
+            The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0,0,0).
+        inputMode : int, optional
+            The method by wich the ellipse is defined. The default is 1.
+            Based on the inputMode value, only the following inputs will be considered. The options are:
+            1. Width and Length (considered inputs: width, length)
+            2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
+            3. Focal Length and Minor Axis Length (considered inputs: focalLength, minorAxisLength)
+            4. Major Axis Length and Minor Axis Length (considered input: majorAxisLength, minorAxisLength)
+        width : float, optional
+            The width of the ellipse. The default is 2.0. This is considered if the inputMode is 1.
+        length : float, optional
+            The length of the ellipse. The default is 1.0. This is considered if the inputMode is 1.
+        focalLength : float, optional
+            The focal length of the ellipse. The default is 0.866025. This is considered if the inputMode is 2 or 3.
+        eccentricity : float, optional
+            The eccentricity of the ellipse. The default is 0.866025. This is considered if the inputMode is 2.
+        majorAxisLength : float, optional
+            The length of the major axis of the ellipse. The default is 1.0. This is considered if the inputMode is 4.
+        minorAxisLength : float, optional
+            The length of the minor axis of the ellipse. The default is 0.5. This is considered if the inputMode is 3 or 4.
+        sides : int, optional
+            The number of sides of the ellipse. The default is 32.
+        fromAngle : float, optional
+            The angle in degrees from which to start creating the arc of the ellipse. The default is 0.
+        toAngle : float, optional
+            The angle in degrees at which to end creating the arc of the ellipse. The default is 360.
+        close : bool, optional
+            If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the ellipse. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the ellipse. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the ellipse. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
         list
-            DESCRIPTION.
+            A list that contains:
+            1. The ellipse (topologic.Wire)
+            2. The two focal points (topologic.Cluster containing two vertices)
+            3. The focal length
+            4. The eccentricity
+            5. The major axis length
+            6. The minor axis length
+            7. The width
+            8. The length
 
         """
-        if inputMode.lower() == "width and length":
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,)
+        if not isinstance(origin, topologic.Vertex):
+            return None
+        if inputMode not in [1,2,3,4]:
+            return None
+        if placement.lower() not in ["center", "lowerleft"]:
+            return None
+        if (abs(dirX) + abs(dirY) + abs(dirZ)) < tolerance:
+            return None
+        width = abs(width)
+        length = abs(length)
+        focalLength= abs(focalLength)
+        eccentricity=abs(eccentricity)
+        majorAxisLength=abs(majorAxisLength)
+        minorAxisLength=abs(minorAxisLength)
+        sides = abs(sides)
+        if width < tolerance or length < tolerance or focalLength < tolerance or eccentricity < tolerance or majorAxisLength < tolerance or minorAxisLength < tolerance or sides < 3:
+            return None
+        if inputMode == 1:
             # origin, w, l, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
-            a = w/2
-            b = l/2
+            a = width/2
+            b = length/2
             c = math.sqrt(abs(b**2 - a**2))
             e = c/a
-        elif inputMode.lower() == "focal length and eccentricity":
+        elif inputMode == 2:
             # origin, c, e, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
-            c = w
-            e = l
+            c = focalLength
+            e = eccentricity
             a = c/e
             b = math.sqrt(abs(a**2 - c**2))
             w = a*2
             l = b*2
-        elif inputMode.lower() == "focal length and minor axis":
+        elif inputMode == 3:
             # origin, c, b, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
-            c = w
-            b = l
+            c = focalLength
+            b = minorAxisLength
             a = math.sqrt(abs(b**2 + c**2))
             e = c/a
             w = a*2
             l = b*2
-        elif inputMode.lower() == "major axis length and minor axis length":
+        elif inputMode == 4:
             # origin, a, b, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
-            a = w
-            b = l
+            a = majorAxisLength
+            b = minorAxisLength
             c = math.sqrt(abs(b**2 - a**2))
             e = c/a
             w = a*2
             l = b*2
         else:
-            raise NotImplementedError
+            return None
         baseV = []
         xList = []
         yList = []
 
         if toAngle < fromAngle:
             toAngle += 360
-        elif toAngle == fromAngle:
-            raise Exception("Wire.Ellipse - Error: To angle cannot be equal to the From Angle")
+        if abs(toAngle - fromAngle) < tolerance:
+            return None
 
         angleRange = toAngle - fromAngle
         fromAngle = math.radians(fromAngle)
@@ -398,8 +447,6 @@ class Wire(topologic.Wire):
         ellipse = Wire.ByVertices(Cluster.ByTopologies(baseV[::-1]), close) #reversing the list so that the normal points up in Blender
 
         if placement.lower() == "lowerleft":
-            xmin = min(xList)
-            ymin = min(yList)
             ellipse = topologic.TopologyUtility.Translate(ellipse, a, b, 0)
         x1 = origin.X()
         y1 = origin.Y()
@@ -430,44 +477,51 @@ class Wire(topologic.Wire):
         return [ellipse, foci, a, b, c, e, w, l]
 
     @staticmethod
-    def IsClosed(item):
+    def IsClosed(wire):
         """
+        Description
+        ----------
+        Returns True if the input wire is closed. Returns False Otherwise.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        wire : topologic.Wire
+            The input wire.
 
         Returns
         -------
-        returnItem : TYPE
-            DESCRIPTION.
+        bool
+            True if the input wire is closed. False Otherwise.
 
         """
-        returnItem = None
-        if item:
-            if isinstance(item, topologic.Wire):
-                returnItem = item.IsClosed()
-        return returnItem
+        status = None
+        if wire:
+            if isinstance(wire, topologic.Wire):
+                status = wire.IsClosed()
+        return status
     
     @staticmethod
     def Isovist(viewPoint, externalBoundary, obstaclesCluster):
         """
+        Description
+        ----------
+        Returns a list of faces representing the isovist projection from the input viewpoint.
+
         Parameters
         ----------
-        viewPoint : TYPE
-            DESCRIPTION.
-        externalBoundary : TYPE
-            DESCRIPTION.
-        obstaclesCluster : TYPE
-            DESCRIPTION.
+        viewPoint : topologic.Vertex
+            The vertex representing the location of the viewpoint of the isovist.
+        externalBoundary : topologic.Wire
+            The wire representing the external boundary (border) of the isovist.
+        obstaclesCluster : topologic.Cluster
+            A cluster of wires representing the obstacles within the externalBoundary.
 
         Returns
         -------
-        finalFaces : TYPE
-            DESCRIPTION.
+        list
+            A list of faces representing the isovist projection from the input viewpoint.
 
         """
-        # viewPoint, externalBoundary, obstaclesCluster = item
         
         def vertexPartofFace(vertex, face, tolerance):
             vertices = []
@@ -547,32 +601,29 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def IsSimilar(wireA, wireB, tolerance=0.0001, angTol=0.1):
+    def IsSimilar(wireA, wireB, tolerance=0.0001, angTolerance=0.1):
         """
+        Description
+        ----------
+        Returns True if the input wires are similar. Returns False otherwise. The wires must be closed.
+
         Parameters
         ----------
-        wireA : TYPE
-            DESCRIPTION.
-        wireB : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
-        angTol : TYPE, optional
-            DESCRIPTION. The default is 0.1.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        wireA : topologic.Wire
+            The first input wire.
+        wireB : topologic.Wire
+            The second input wire.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+        angTolerance : float, optional
+            The desired angular tolerance. The default is 0.1.
 
         Returns
         -------
         bool
-            DESCRIPTION.
+            True if the two input wires are similar. False otherwise.
 
         """
-        # wireA = item[0]
-        # wireB = item[1]
         
         def isCyclicallyEquivalent(u, v, lengthTolerance, angleTolerance):
             n, i, j = len(u), 0, 0
@@ -633,43 +684,48 @@ class Wire(topologic.Wire):
             return [x for x in itertools.chain(*itertools.zip_longest(normalisedLengths, angles)) if x is not None]
         
         if (wireA.IsClosed() == False):
-            raise Exception("Error: Wire.IsSimilar - Wire A is not closed.")
+            return None
         if (wireB.IsClosed() == False):
-            raise Exception("Error: Wire.IsSimilar - Wire B is not closed.")
+            return None
         edgesA = []
         _ = wireA.Edges(None, edgesA)
         edgesB = []
         _ = wireB.Edges(None, edgesB)
         if len(edgesA) != len(edgesB):
             return False
-        # lengthTolerance = item[2]
-        # angleTolerance = item[3]
         repA = getRep(list(edgesA), tolerance)
         repB = getRep(list(edgesB), tolerance)
-        if isCyclicallyEquivalent(repA, repB, tolerance, angTol):
+        if isCyclicallyEquivalent(repA, repB, tolerance, angTolerance):
             return True
-        if isCyclicallyEquivalent(repA, repB[::-1], tolerance, angTol):
+        if isCyclicallyEquivalent(repA, repB[::-1], tolerance, angTolerance):
             return True
         return False
 
     
     @staticmethod
-    def Length(wire, mantissa):
+    def Length(wire, mantissa=3):
         """
+        Description
+        ----------
+        Returns the length of the input wire.
+
         Parameters
         ----------
-        wire : TYPE
-            DESCRIPTION.
-        mantissa : TYPE
-            DESCRIPTION.
+        wire : topologic.Wire
+            The input wire.
+        mantissa : int, optional
+            The desired length of the mantissa. The default is 3.
 
         Returns
         -------
-        totalLength : TYPE
-            DESCRIPTION.
+        float
+            The length of the input wire.
 
         """
-        # wire, mantissa = item
+        if not wire:
+            return None
+        if not isinstance(wire, topologic.Wire):
+            return None
         totalLength = None
         try:
             edges = []
@@ -681,36 +737,140 @@ class Wire(topologic.Wire):
         except:
             totalLength = None
         return totalLength
-    
+
     @staticmethod
-    def Rectangle(origin, width, length, dirX, dirY, dirZ, placement):
+    def Project(wire, face, direction=None, mantissa=3, tolerance=0.0001):
         """
+        Description
+        ----------
+        Creates a projection of the input wire unto the input face.
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        width : TYPE
-            DESCRIPTION.
-        length : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        placement : TYPE
-            DESCRIPTION.
+        wire : topologic.Wire
+            The input wire.
+        face : topologic.Face
+            The face unto which to project the input wire.
+        direction : list, optional
+            The vector direction of the projection. If None, the reverse vector of the face normal will be used. The default is None.
+        mantissa : int, optional
+            The desired length of the mantissa. The default is 3.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        baseWire : TYPE
-            DESCRIPTION.
+        topologic.Wire
+            The projected wire.
 
         """
-        # origin, width, length, dirX, dirY, dirZ, placement = item
+        
+        def projectVertex(vertex, face, direction, mantissa=3, tolerance=0.0001):
+            if not vertex:
+                return None
+            if not isinstance(vertex, topologic.Vertex):
+                return None
+            if not face:
+                return None
+            if not isinstance(face, topologic.Face):
+                return None
+            if not direction:
+                direction = -1*Face.NormalAtParameters(face, 0.5, 0.5, "XYZ", mantissa)
 
-        baseV = []
+            if topologic.FaceUtility.IsInside(face, vertex, tolerance):
+                return vertex
+            d = topologic.VertexUtility.Distance(vertex, face)*10
+            far_vertex = topologic.TopologyUtility.Translate(vertex, direction[0]*d, direction[1]*d, direction[2]*d)
+            if topologic.VertexUtility.Distance(vertex, far_vertex) > tolerance:
+                e = topologic.Edge.ByStartVertexEndVertex(vertex, far_vertex)
+                pv = face.Intersect(e, False)
+                if not pv:
+                    far_vertex = topologic.TopologyUtility.Translate(vertex, -direction[0]*d, -direction[1]*d, -direction[2]*d)
+                    if topologic.VertexUtility.Distance(vertex, far_vertex) > tolerance:
+                        e = topologic.Edge.ByStartVertexEndVertex(vertex, far_vertex)
+                        pv = face.Intersect(e, False)
+                return pv
+            else:
+                return None
+
+        if not wire:
+            return None
+        if not isinstance(wire, topologic.Wire):
+            return None
+        if not face:
+            return None
+        if not isinstance(face, topologic.Face):
+            return None
+        if not direction:
+            direction = -1*Face.NormalAtParameters(face, 0.5, 0.5, "XYZ", mantissa)
+        large_face = topologic.TopologyUtility.Scale(face, face.CenterOfMass(), 500, 500, 500)
+        edges = []
+        _ = wire.Edges(None, edges)
+        projected_edges = []
+
+        if large_face:
+            if (large_face.Type() == topologic.Face.Type()):
+                for edge in edges:
+                    if edge:
+                        if (edge.Type() == topologic.Edge.Type()):
+                            sv = edge.StartVertex()
+                            ev = edge.EndVertex()
+
+                            psv = projectVertex(sv, large_face, direction)
+                            pev = projectVertex(ev, large_face, direction)
+                            if psv and pev:
+                                try:
+                                    pe = topologic.Edge.ByStartVertexEndVertex(psv, pev)
+                                    projected_edges.append(pe)
+                                except:
+                                    continue
+        w = topologic.Wire.ByEdges(projected_edges)
+        return w
+
+    @staticmethod
+    def Rectangle(origin=None, width=1.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+        """
+        Description
+        ----------
+        Creates a rectangle.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex, optional
+            The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0,0,0).
+        width : float, optional
+            The width of the rectangle. The default is 1.0.
+        length : float, optional
+            The length of the rectangle. The default is 1.0.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the rectangle. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the rectangle. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the rectangle. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Wire
+            The created rectangle.
+
+        """
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,)
+        if not isinstance(origin, topologic.Vertex):
+            return None
+        if not placement.lower() in ["center", "lowerleft"]:
+            return None
+        width = abs(width)
+        length = abs(length)
+        if width < tolerance or length < tolerance:
+            return None
+        if (abs(dirX) + abs(dirY) + abs(dirZ)) < tolerance:
+            return None
         xOffset = 0
         yOffset = 0
         if placement.lower() == "lowerleft":
@@ -741,97 +901,30 @@ class Wire(topologic.Wire):
         baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 1, 0, theta)
         baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 0, 1, phi)
         return baseWire
-
     
     @staticmethod
-    def Project(wire, face, direction):
+    def RemoveCollinearEdges(wire, angTolerance=0.1):
         """
+        Description
+        ----------
+        Removes any collinear edges in the input wire.
+
         Parameters
         ----------
-        wire : TYPE
-            DESCRIPTION.
-        face : TYPE
-            DESCRIPTION.
-        direction : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        wire : topologic.Wire
+            The input wire.
+        angTolerance : float, optional
+            The desired angular tolerance. The default is 0.1.
 
         Returns
         -------
-        w : TYPE
-            DESCRIPTION.
+        topologic.Wire
+            The created wire without any collinear edges.
 
         """
         
-        def projectVertex(vertex, face, vList):
-            if topologic.FaceUtility.IsInside(face, vertex, 0.001):
-                return vertex
-            d = topologic.VertexUtility.Distance(vertex, face)*10
-            far_vertex = topologic.TopologyUtility.Translate(vertex, vList[0]*d, vList[1]*d, vList[2]*d)
-            if topologic.VertexUtility.Distance(vertex, far_vertex) > 0.001:
-                e = topologic.Edge.ByStartVertexEndVertex(vertex, far_vertex)
-                pv = face.Intersect(e, False)
-                return pv
-            else:
-                return None
-        
-        large_face = topologic.TopologyUtility.Scale(face, face.CenterOfMass(), 500, 500, 500)
-        try:
-            vList = [direction.X(), direction.Y(), direction.Z()]
-        except:
-            try:
-                vList = [direction[0], direction[1], direction[2]]
-            except:
-                raise Exception("Wire.Project - Error: Could not get the vector from the input direction")
-        projected_wire = None
-        edges = []
-        _ = wire.Edges(None, edges)
-        projected_edges = []
-
-        if large_face:
-            if (large_face.Type() == topologic.Face.Type()):
-                for edge in edges:
-                    if edge:
-                        if (edge.Type() == topologic.Edge.Type()):
-                            sv = edge.StartVertex()
-                            ev = edge.EndVertex()
-
-                            psv = projectVertex(sv, large_face, direction)
-                            pev = projectVertex(ev, large_face, direction)
-                            if psv and pev:
-                                try:
-                                    pe = topologic.Edge.ByStartVertexEndVertex(psv, pev)
-                                    projected_edges.append(pe)
-                                except:
-                                    continue
-        w = topologic.Wire.ByEdges(projected_edges)
-        return w
-
-    
-    @staticmethod
-    def WireRemoveCollinearEdges(wire, angTol=0.1):
-        """
-        Parameters
-        ----------
-        wire : TYPE
-            DESCRIPTION.
-        angTol : float, optional
-            DESCRIPTION. The default is 0.1.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        # wire, angTol = item
-        
-        def removeCollinearEdges(wire, angTol):
-            final_Wire = None
+        def rce(wire, angTolerance):
+            final_wire = None
             vertices = []
             wire_verts = []
             _ = wire.Vertices(None, vertices)
@@ -839,7 +932,7 @@ class Wire(topologic.Wire):
                 edges = []
                 _ = aVertex.Edges(wire, edges)
                 if len(edges) > 1:
-                    if not Edge.EdgeIsCollinear(edges[0], edges[1], angTol):
+                    if not Edge.IsCollinear(edges[0], edges[1], angTolerance):
                         wire_verts.append(aVertex)
                 else:
                     wire_verts.append(aVertex)
@@ -859,7 +952,7 @@ class Wire(topologic.Wire):
             wires = [wire]
         returnWires = []
         for aWire in wires:
-            returnWires.append(removeCollinearEdges(aWire, angTol))
+            returnWires.append(rce(aWire, angTolerance))
         if len(returnWires) == 1:
             return returnWires[0]
         elif len(returnWires) > 1:
@@ -869,17 +962,21 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def WireSplit(wire):
+    def Split(wire):
         """
+        Description
+        ----------
+        Splits the input wire into segments at its intersections (i.e. at any vertex where more than two edges meet).
+
         Parameters
         ----------
-        wire : TYPE
-            DESCRIPTION.
+        wire : topologic.Wire
+            The input wire.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        list
+            The list of split wire segments.
 
         """
         
@@ -941,39 +1038,58 @@ class Wire(topologic.Wire):
                         wires.append(wire_edges[0])
                     wire_edges = []
         if len(wires) < 1:
-            return wire
+            return [wire]
         return wires
 
     
     @staticmethod
-    def WireStar(origin, radiusA, radiusB, rays, dirX, dirY, dirZ, placement):
+    def Star(origin=None, radiusA=1.0, radiusB=0.4, rays=5, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
+        Description
+        ----------
+        Creates a star.
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        radiusA : TYPE
-            DESCRIPTION.
-        radiusB : TYPE
-            DESCRIPTION.
-        rays : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        placement : TYPE
-            DESCRIPTION.
+        origin : topologic.Vertex, optional
+            The location of the origin of the star. The default is None which results in the star being placed at (0,0,0).
+        radiusA : float, optional
+            The outer radius of the star. The default is 1.0.
+        radiusB : float, optional
+            The outer radius of the star. The default is 0.4.
+        rays : int, optional
+            The number of star rays. The default is 5.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the star. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the star. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the star. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the star. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        baseWire : TYPE
-            DESCRIPTION.
+        topologic.Wire
+            The created star.
 
         """
-        # origin, radiusA, radiusB, rays, dirX, dirY, dirZ, placement = item
+
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
+        radiusA = abs(radiusA)
+        radiusB = abs(radiusB)
+        if radiusA < tolerance or radiusB < tolerance:
+            return None
+        rays = abs(rays)
+        if rays < 3:
+            return None
+        if not placement.lower() in ["center", "lowerleft"]:
+            return None
         sides = rays*2 # Sides is double the number of rays
         baseV = []
 
@@ -1023,50 +1139,62 @@ class Wire(topologic.Wire):
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Y-Axis
         baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 1, 0, theta)
         baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 0, 1, phi)
-        centroid = baseWire.Centroid()
         return baseWire
 
     
     @staticmethod
-    def WireTrapezoid(origin, widthA, widthB, offsetA, offsetB, length, dirX, dirY, dirZ, placement):
+    def Trapezoid(origin=None, widthA=1.0, widthB=0.75, offsetA=0.0, offsetB=0.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
+        Description
+        ----------
+        Creates a trapezoid.
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        widthA : TYPE
-            DESCRIPTION.
-        widthB : TYPE
-            DESCRIPTION.
-        offsetA : TYPE
-            DESCRIPTION.
-        offsetB : TYPE
-            DESCRIPTION.
-        length : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        placement : TYPE
-            DESCRIPTION.
+        origin : topologic.Vertex, optional
+            The location of the origin of the trapezoid. The default is None which results in the trapezoid being placed at (0,0,0).
+        widthA : float, optional
+            The width of the bottom edge of the trapezoid. The default is 1.0.
+        widthB : float, optional
+            The width of the top edge of the trapezoid. The default is 0.75.
+        offsetA : float, optional
+            The offset of the bottom edge of the trapezoid. The default is 0.0.
+        offsetB : float, optional
+            The offset of the top edge of the trapezoid. The default is 0.0.
+        length : float, optional
+            The length of the trapezoid. The default is 1.0.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the trapezoid. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the trapezoid. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the trapezoid. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        baseWire : TYPE
-            DESCRIPTION.
+        topologic.Wire
+            The created trapezoid.
 
         """
-        # origin, widthA, widthB, offsetA, offsetB, length, dirX, dirY, dirZ, placement = item
-
-        baseV = []
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
+        widthA = abs(widthA)
+        widthB = abs(widthB)
+        length = abs(length)
+        if widthA < tolerance or widthB < tolerance or length < tolerance:
+            return None
+        if not placement.lower() in ["center", "lowerleft"]:
+            return None
         xOffset = 0
         yOffset = 0
-        if placement == "Center":
+        if placement.lower() == "center":
             xOffset = -((-widthA*0.5 + offsetA) + (-widthB*0.5 + offsetB) + (widthA*0.5 + offsetA) + (widthB*0.5 + offsetB))/4.0
-            print("X OFFSET", xOffset)
             yOffset = 0
         elif placement.lower() == "lowerleft":
             xOffset = -(min((-widthA*0.5 + offsetA), (-widthB*0.5 + offsetB)))

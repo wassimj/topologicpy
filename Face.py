@@ -907,7 +907,7 @@ class Face(topologic.Face):
         return status
 
     @staticmethod
-    def FaceNormalAtParameters(face, u, v, outputType, decimals):
+    def FaceNormalAtParameters(face, u=0.5, v=0.5, outputType="XYZ", mantissa=3):
         """
         Parameters
         ----------
@@ -919,7 +919,7 @@ class Face(topologic.Face):
             DESCRIPTION.
         outputType : TYPE
             DESCRIPTION.
-        decimals : TYPE
+        mantissa : TYPE
             DESCRIPTION.
 
         Returns
@@ -931,9 +931,9 @@ class Face(topologic.Face):
         # face, u, v = item
         try:
             coords = topologic.FaceUtility.NormalAtParameters(face, u, v)
-            x = round(coords[0], decimals)
-            y = round(coords[1], decimals)
-            z = round(coords[2], decimals)
+            x = round(coords[0], mantissa)
+            y = round(coords[1], mantissa)
+            z = round(coords[2], mantissa)
             returnResult = []
             if outputType == "XYZ":
                 returnResult = [x,y,z]

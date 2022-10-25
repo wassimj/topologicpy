@@ -1,8 +1,8 @@
+import topologicpy
 import topologic
-
 class Cluster(topologic.Cluster):
     @staticmethod
-    def ClusterByTopologies(topologies):
+    def ByTopologies(topologies):
         """
         Description
         -----------

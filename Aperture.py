@@ -1,24 +1,27 @@
+import topologicpy
 import topologic
 
 class Aperture(topologic.Aperture):
     @staticmethod
-    def ApertureByTopologyContext(topology, context):
+    def ByTopologyContext(topology, context):
         """
+        Description
+        -----------
+        Creates an aperture.
+
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        context : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology to which the aperture will belong
+        context : topologic.Context
+            The context of the aperture.
 
         Returns
         -------
-        aperture : TYPE
-            DESCRIPTION.
+        topologic.Aperture
+            The created aperture.
 
         """
-        # topology = item[0]
-        # context = item[1]
         aperture = None
         try:
             aperture = topologic.Aperture.ByTopologyContext(topology, context)
@@ -27,17 +30,21 @@ class Aperture(topologic.Aperture):
         return aperture
     
     @staticmethod
-    def ApertureTopology(item):
+    def ApertureTopology(aperture):
         """
+        Description
+        -----------
+        Returns the topology of the input aperture.
+        
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        aperture : topologic.Aperture
+            The input aperture.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The topology of the input aperture.
 
         """
-        return topologic.Aperture.Topology(item)
+        return topologic.Aperture.Topology(aperture)
