@@ -4,7 +4,7 @@ import topologic
 
 class Grid(topologic.Cluster):
     @staticmethod
-    def GridByDistances(face=None, uOrigin=None, vOrigin=None, uRange=[0,0.25,0.5,0.75,1.0], vRange=[0,0.25,0.5,0.75,1.0], clip=False, tolernace=0.0001):
+    def ByDistances(face=None, uOrigin=None, vOrigin=None, uRange=[0,0.25,0.5,0.75,1.0], vRange=[0,0.25,0.5,0.75,1.0], clip=False, tolerance=0.0001):
         """
         Description
         ----------
@@ -60,7 +60,7 @@ class Grid(topologic.Cluster):
         else:
             v1 = Vertex.ByCoordinates(0,0,0)
             v2 = Vertex.ByCoordinates(max(uRange),0,0)
-            v3 = Vertex.ByCoorindates(0,0,0)
+            v3 = Vertex.ByCoordinates(0,0,0)
             v4 = Vertex.ByCoordinates(0,max(vRange),0)
 
         uVector = [v2.X()-v1.X(), v2.Y()-v1.Y(),v2.Z()-v1.Z()]
@@ -70,37 +70,53 @@ class Grid(topologic.Cluster):
             uRange.sort()
             uuVector = Vector.Normalize(uVector)
             for u in uRange:
-                tempVec = Vector.multiply(uuVector, u, tolerance)
+                tempVec = Vector.Multiply(uuVector, u, tolerance)
                 v1 = Vertex.ByCoordinates(uOrigin.X()+tempVec[0], uOrigin.Y()+tempVec[1], uOrigin.Z()+tempVec[2])
                 v2 = Vertex.ByCoordinates(v1.X()+vVector[0], v1.Y()+vVector[1], v1.Z()+vVector[2])
                 e = Edge.ByVertices([v1, v2])
                 if clip and isinstance(face, topologic.Face):
                     e = e.Intersect(face, False)
-                if isinstance(e, topologic.Edge):
-                    d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
-                    e.SetDictionary(d)
-                    gridEdges.append(e)
+                if e:
+                    if isinstance(e, topologic.Edge):
+                        d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
+                        e.SetDictionary(d)
+                        gridEdges.append(e)
+                    elif e.Type() > topologic.Edge.Type():
+                        tempEdges = []
+                        _ = e.Edges(None, tempEdges)
+                        for tempEdge in tempEdges:
+                            d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
+                            tempEdge.SetDictionary(d)
+                            gridEdges.append(tempEdge)
         if len(vRange) > 0:
             vRange.sort()
             uvVector = Vector.Normalize(vVector)
             for v in vRange:
-                tempVec = Vector.multiplyVector(uvVector, v, tolerance)
+                tempVec = Vector.Multiply(uvVector, v, tolerance)
                 v1 = Vertex.ByCoordinates(vOrigin.X()+tempVec[0], vOrigin.Y()+tempVec[1], vOrigin.Z()+tempVec[2])
                 v2 = Vertex.ByCoordinates(v1.X()+uVector[0], v1.Y()+uVector[1], v1.Z()+uVector[2])
                 e = Edge.ByVertices([v1, v2])
                 if clip and isinstance(face, topologic.Face):
                     e = e.Intersect(face, False)
-                if isinstance(e, topologic.Edge):
-                    d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
-                    e.SetDictionary(d)
-                    gridEdges.append(e)
+                if e:
+                    if isinstance(e, topologic.Edge):
+                        d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
+                        e.SetDictionary(d)
+                        gridEdges.append(e)
+                    elif e.Type() > topologic.Edge.Type():
+                        tempEdges = []
+                        _ = e.Edges(None, tempEdges)
+                        for tempEdge in tempEdges:
+                            d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
+                            tempEdge.SetDictionary(d)
+                            gridEdges.append(tempEdge)
         grid = None
         if len(gridEdges) > 0:
             grid = Cluster.ByTopologies(gridEdges)
         return grid
     
     @staticmethod
-    def GridByParameters(face, uRange, vRange, clip):
+    def ByParameters(face, uRange, vRange, clip):
         """
         Parameters
         ----------
