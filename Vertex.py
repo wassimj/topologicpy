@@ -1,8 +1,9 @@
 import topologicpy
 import topologic
+from topologicpy.Face import Face
 import collections
 
-class Vertex(topologic.Vertex):
+class Vertex():
     @staticmethod
     def ByCoordinates(x, y, z):
         """
@@ -25,15 +26,15 @@ class Vertex(topologic.Vertex):
             The created vertex.
 
         """
-        vert = None
+        vertex = None
         try:
-            vert = topologic.Vertex.ByCoordinates(x, y, z)
+            vertex = topologic.Vertex.ByCoordinates(x, y, z)
         except:
-            vert = None
-        return vert
+            vertex = None
+        return vertex
     
     @staticmethod
-    def Coordinates(vertex, outputType="xyz", mantissa=3):
+    def Coordinates(vertex, outputType="xyz", mantissa=4):
         """
         Description
         -----------
@@ -46,42 +47,41 @@ class Vertex(topologic.Vertex):
         outputType : string, optional
             The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". The default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
         mantissa : int, optional
-            The desired length of the mantissa. The default is 3.
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
         list
-            The coordinates of the input topologic vertex.
+            The coordinates of the input  vertex.
 
         """
-        if vertex:
-            x = round(vertex.X(), mantissa)
-            y = round(vertex.Y(), mantissa)
-            z = round(vertex.Z(), mantissa)
-            matrix = [[1,0,0,x],
-                    [0,1,0,y],
-                    [0,0,1,z],
-                    [0,0,0,1]]
-            output = []
-            outputType = outputType.lower()
-            if outputType == "matrix":
-                return matrix
-            else:
-                outputType = list(outputType)
-                for axis in outputType:
-                    if axis == "x":
-                        output.append(x)
-                    elif axis == "y":
-                        output.append(y)
-                    elif axis == "z":
-                        output.append(z)
-            return output
-        else:
+        if not isinstance(vertex, topologic.Vertex):
             return None
+        x = round(vertex.X(), mantissa)
+        y = round(vertex.Y(), mantissa)
+        z = round(vertex.Z(), mantissa)
+        matrix = [[1,0,0,x],
+                [0,1,0,y],
+                [0,0,1,z],
+                [0,0,0,1]]
+        output = []
+        outputType = outputType.lower()
+        if outputType == "matrix":
+            return matrix
+        else:
+            outputType = list(outputType)
+            for axis in outputType:
+                if axis == "x":
+                    output.append(x)
+                elif axis == "y":
+                    output.append(y)
+                elif axis == "z":
+                    output.append(z)
+        return output
 
     
     @staticmethod
-    def Distance(vertex, topology, mantissa=3):
+    def Distance(vertex, topology, mantissa=4):
         """
         Description
         -----------
@@ -90,11 +90,11 @@ class Vertex(topologic.Vertex):
         Parameters
         ----------
         vertex : topologic.Vertex
-            The topologic vertex.
+            The input vertex.
         topology : topologic.Topology
-            The topologic topology.
+            The input topology.
         mantissa: int, optional
-            The desired length of the mantissa. The default is 3.
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
@@ -102,29 +102,25 @@ class Vertex(topologic.Vertex):
             The distance between the input vertex and the input topology.
 
         """
-        assert isinstance(vertex, topologic.Vertex), "Vertex.Distance: input is not a Topologic Vertex"
-        assert isinstance(topology, topologic.Topology), "Vertex.Distance: input is not a Topologic Topology"
-        if vertex and topology:
-            dist = round(topologic.VertexUtility.Distance(vertex, topology), mantissa)
-        else:
-            dist = None
-        return dist
+        if not isinstance(vertex, topologic.Vertex) or not isinstance(topology, topologic.Topology):
+            return None
+        return round(topologic.VertexUtility.Distance(vertex, topology), mantissa)
     
     @staticmethod
     def EnclosingCell(vertex, topology, exclusive=True, tolerance=0.0001):
         """
         Description
         -----------
-        Returns the list of Cells found in the input topology that enclose the input topologic vertex.
+        Returns the list of Cells found in the input topology that enclose the input vertex.
 
         Parameters
         ----------
         vertex : topologic.Vertex
-            The topologic vertex.
+            The input vertex.
         topology : topologic.Topology
-            The topologic topology.
+            The input topology.
         exclusive : boolean, optional
-            If set to True, return only the first found enclosing topologic cell. The default is True.
+            If set to True, return only the first found enclosing cell. The default is True.
         tolerance : float, optional
             The tolerance for computing if the input vertex is enclosed in a cell. The default is 0.0001.
 
@@ -315,18 +311,24 @@ class Vertex(topologic.Vertex):
 
     
     @staticmethod
-    def Project(vertex, face):
+    def Project(vertex, face, direction=None, mantissa=4, tolerance=0.0001):
         """
         Description
         -----------
-        Returns a vertex that is the projection of the input vertex unto the input face. The direction of the projection is the normal of the input face.
+        Returns a vertex that is the projection of the input vertex unto the input face.
 
         Parameters
         ----------
         vertex : topologic.Vertex
-            The input vertex.
+            The input vertex to project unto the input face.
         face : topologic.Face
-            the input face.
+            The input face that receives the projection of the input vertex.
+        direction : vector, optional
+            The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. The default is None.
+        mantissa : int, optional
+            The length of the desired mantissa. The default is 4.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -334,8 +336,98 @@ class Vertex(topologic.Vertex):
             The projected vertex.
 
         """
-        projected_vertex = None
-        if vertex and face:
-            if (face.Type() == topologic.Face.Type()) and (vertex.Type() == topologic.Vertex.Type()):
-                projected_vertex = (topologic.FaceUtility.ProjectToSurface(face, vertex))
-        return projected_vertex
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        if not isinstance(face, topologic.Face):
+            return None
+        if not direction:
+            direction = -1*Face.NormalAtParameters(face, 0.5, 0.5, "XYZ", mantissa)
+
+        if topologic.FaceUtility.IsInside(face, vertex, tolerance):
+            return vertex
+        d = topologic.VertexUtility.Distance(vertex, face)*10
+        far_vertex = topologic.TopologyUtility.Translate(vertex, direction[0]*d, direction[1]*d, direction[2]*d)
+        if topologic.VertexUtility.Distance(vertex, far_vertex) > tolerance:
+            e = topologic.Edge.ByStartVertexEndVertex(vertex, far_vertex)
+            pv = face.Intersect(e, False)
+            if not pv:
+                far_vertex = topologic.TopologyUtility.Translate(vertex, -direction[0]*d, -direction[1]*d, -direction[2]*d)
+                if topologic.VertexUtility.Distance(vertex, far_vertex) > tolerance:
+                    e = topologic.Edge.ByStartVertexEndVertex(vertex, far_vertex)
+                    pv = face.Intersect(e, False)
+            return pv
+        else:
+            return None
+
+    @staticmethod
+    def X(vertex, mantissa=4):
+        """
+        Description
+        -----------
+        Returns the X coordinate of the input vertex.
+
+        Parameters
+        ----------
+        vertex : topologic.Vertex
+            The input vertex.
+        mantissa : int, optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        float
+            The X coordinate of the input vertex.
+
+        """
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        return round(vertex.X(), mantissa)
+
+    @staticmethod
+    def Y(vertex, mantissa=4):
+        """
+        Description
+        -----------
+        Returns the Y coordinate of the input vertex.
+
+        Parameters
+        ----------
+        vertex : topologic.Vertex
+            The input vertex.
+        mantissa : int, optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        float
+            The Y coordinate of the input vertex.
+
+        """
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        return round(vertex.Y(), mantissa)
+
+    @staticmethod
+    def Z(vertex, mantissa=4):
+        """
+        Description
+        -----------
+        Returns the Z coordinate of the input vertex.
+
+        Parameters
+        ----------
+        vertex : topologic.Vertex
+            The input vertex.
+        mantissa : int, optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        float
+            The Z coordinate of the input vertex.
+
+        """
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        return round(vertex.Z(), mantissa)
+           

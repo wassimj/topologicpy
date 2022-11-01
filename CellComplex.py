@@ -6,22 +6,30 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def ByCells(cells, tolerance=0.0001):
         """
+        Description
+        -----------
+        Creates a cellcomplex by merging the input cells.
+
         Parameters
         ----------
-        icells : TYPE
-            DESCRIPTION.
+        cells : topologic.Cell
+            The input cells.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.CellComplex
+            The created cellcomplex.
 
         """
-        # cells, tol = item
-        assert isinstance(cells, list), "CellComplex.ByCells - Error: Input is not a list"
+        if not cells:
+            return None
+        if not isinstance(cells, list):
+            return None
         cells = [x for x in cells if isinstance(x, topologic.Cell)]
+        if len(cells) < 1:
+            return None
         cellComplex = topologic.CellComplex.ByCells(cells, tolerance)
         if not cellComplex:
             warnings.warn("Warning: Default CellComplex.ByCells method failed. Attempting to Merge the Cells.", UserWarning)
@@ -34,31 +42,66 @@ class CellComplex(topologic.CellComplex):
                 if result.Type() > 64:
                     returnCellComplexes = []
                     _ = result.CellComplexes(None, returnCellComplexes)
-                    return returnCellComplexes
+                    return returnCellComplexes[0]
                 else:
                     return None
         else:
             return cellComplex
-    
     @staticmethod
-    def ByFaces(faces, tolerance=0.0001):
+    def ByCellsCluster(cluster, tolerance=0.0001):
         """
+        Description
+        -----------
+        Creates a cellcomplex by merging the cells within the input cluster.
+
         Parameters
         ----------
-        faces : TYPE
-            DESCRIPTION.
+        cluster : topologic.Cluster
+            The input cluster of cells.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.CellComplex
+            The created cellcomplex.
 
         """
-        # faces, tol = item
-        assert isinstance(faces, list), "CellComplex.ByFaces - Error: Input is not a list"
+        if not cluster:
+            return None
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        cells = []
+        _ = cluster.Cells(None, cells)
+        return CellComplex.ByCells(cells, tolerance)
+
+    @staticmethod
+    def ByFaces(faces, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Creates a cellcomplex by merging the input faces.
+
+        Parameters
+        ----------
+        faces : topologic.Face
+            The input faces.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.CellComplex
+            The created cellcomplex.
+
+        """
+        if not faces:
+            return None
+        if not isinstance(faces, list):
+            return None
         faces = [x for x in faces if isinstance(x, topologic.Face)]
+        if len(faces) < 1:
+            return None
         cellComplex = topologic.CellComplex.ByFaces(faces, tolerance, False)
         if not cellComplex:
             warnings.warn("Warning: Default CellComplex.ByFaces method failed. Attempting to Merge the Faces.", UserWarning)
@@ -76,34 +119,60 @@ class CellComplex(topologic.CellComplex):
                 if cellComplex.Type() > 64:
                     returnCellComplexes = []
                     _ = cellComplex.CellComplexes(None, returnCellComplexes)
-                    return returnCellComplexes
+                    return returnCellComplexes[0]
                 else:
                     return None
         else:
             return cellComplex
     
     @staticmethod
-    def ByLoft(wires, tolerance=0.0001):
+    def ByFacesCluster(cluster, tolerance=0.0001):
         """
+        Description
+        -----------
+        Creates a cellcomplex by merging the faces within the input cluster.
+
         Parameters
         ----------
-        wires : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        cluster : topologic.Cluster
+            The input cluster of faces.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.CellComplex
+            The created cellcomplex.
 
         """
-        # wires, tolerance = item 
+        if not cluster:
+            return None
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        faces = []
+        _ = cluster.Faces(None, faces)
+        return CellComplex.ByFaces(faces, tolerance)
+
+    @staticmethod
+    def ByLoft(wires, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Creates a cellcomplex by lofting through the input wires.
+
+        Parameters
+        ----------
+        wires : topologic.Wire
+            The input wires.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.CellComplex
+            The created cellcomplex.
+
+        """
         faces = [topologic.Face.ByExternalBoundary(wires[0])]
         for i in range(len(wires)-1):
             wire1 = wires[i]
@@ -114,7 +183,7 @@ class CellComplex(topologic.CellComplex):
             w2_edges = []
             _ = wire2.Edges(None, w2_edges)
             if len(w1_edges) != len(w2_edges):
-                raise Exception("Shell.ByLoft - Error: The two wires do not have the same number of edges.")
+                return None
             for j in range (len(w1_edges)):
                 e1 = w1_edges[j]
                 e2 = w2_edges[j]
@@ -141,7 +210,35 @@ class CellComplex(topologic.CellComplex):
                     faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e5, e4])))
                     faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e2, e5, e3])))
         return CellComplex.ByFaces(faces, tolerance)
-    
+
+    @staticmethod
+    def ByLoftCluster(cluster, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Creates a cellcomplex by lofting through the wires in the input cluster.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input cluster of wires.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.CellComplex
+            The created cellcomplex.
+
+        """
+        if not cluster:
+            return None
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        wires = []
+        _ = cluster.Wires(None, wires)
+        return CellComplex.ByLoft(wires, tolerance)
+
     @staticmethod
     def Decompose(item):
         """

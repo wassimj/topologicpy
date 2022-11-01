@@ -1,23 +1,61 @@
-from topologicpy import topologic
 import numpy as np
 import numpy.linalg as la
 import math
 
-class Vector():
+class Vector(list):
     @staticmethod
-    def angle_between(v1, v2):
-        """ Returns the angle in radians between vectors 'v1' and 'v2' """
-        n_v1=la.norm(v1)
-        n_v2=la.norm(v2)
-        if (abs(np.log10(n_v1/n_v2)) > 10):
-            v1 = v1/n_v1
-            v2 = v2/n_v2
-        cosang = np.dot(v1, v2)
-        sinang = la.norm(np.cross(v1, v2))
-        return np.arctan2(sinang, cosang)
+    def Angle(vectorA, vectorB, mantissa=3):
+        """
+        Description
+        ----------
+        Returns the angle in degrees between the two input vectors
 
-    def multiplyVector(vector, magnitude, tolerance):
-        """ Returns a vector that multiplies the input vector by the input magnitude """
+        Parameters
+        ----------
+        vectorA : list
+            The first vector.
+        vectorB : list
+            The second vector.
+        mantissa : int, optional
+            The length of the desired mantissa. The default is 3.
+
+        Returns
+        -------
+        float
+            The angle in degrees between the two input vectors.
+
+        """
+        n_v1=la.norm(vectorA)
+        n_v2=la.norm(vectorB)
+        if (abs(np.log10(n_v1/n_v2)) > 10):
+            vectorA = vectorA/n_v1
+            vectorB = vectorB/n_v2
+        cosang = np.dot(vectorA, vectorB)
+        sinang = la.norm(np.cross(vectorA, vectorB))
+        return round(math.degrees(np.arctan2(sinang, cosang)), mantissa)
+
+    @staticmethod
+    def Multiply(vector, magnitude, tolerance=0.0001):
+        """
+        Description
+        ----------
+        Multiplies the input vector by the input magnitude.
+
+        Parameters
+        ----------
+        vector : list
+            The input vector.
+        magnitude : float
+            The input magnitude.
+        tolerance : float, optional
+            the desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The created vector that multiplies the input vector by the input magnitude.
+
+        """
         oldMag = 0
         for value in vector:
             oldMag += value ** 2
@@ -29,11 +67,34 @@ class Vector():
             newVector.append(vector[i] * magnitude / oldMag)
         return newVector
 
-    def unitizeVector(vector):
+    @staticmethod
+    def Magnitude(vector, mantissa=3):
         """
         Description
         -----------
-        Returns a unitized version of the input vector.
+        Returns the magnitude of the input vector.
+
+        Parameters
+        ----------
+        vector : list
+            The input vector.
+        mantissa : int
+            The length of the desired mantissa. The default is 3.
+
+        Returns
+        -------
+        float
+            The magnitude of the input vector.
+        """
+
+        return math.round(np.linalg.norm(np.array(vector)), mantissa)
+
+    @staticmethod
+    def Normalize(vector):
+        """
+        Description
+        -----------
+        Returns a normalized vector of the input vector. A normalized vector has the same direction as the input vector, but its magnitude is 1.
 
         Parameters
         ----------
@@ -43,70 +104,52 @@ class Vector():
         Returns
         -------
         list
-            The unitized vector.
-
+            The normalized vector.
         """
-        mag = 0
-        for value in vector:
-            mag += value ** 2
-        mag = mag ** 0.5
-        unitVector = []
-        for i in range(len(vector)):
-            unitVector.append(vector[i] / mag)
-        return unitVector
 
-    def normalize(u):
-      return u / np.linalg.norm(u)
+        return vector / np.linalg.norm(vector)
 
-    def get_normal(vertices):
-      return normalize(np.cross(vertices[1] - vertices[0], vertices[-1] - vertices[0]))
+    @staticmethod
+    def Cross(vectorA, vectorB):
+        """
+        Description
+        -----------
+        Returns the cross product of the two input vectors.
+        The cross product of two input vectors is a vector perpendicular to both input vectors.
 
-# From https://gis.stackexchange.com/questions/387237/deleting-collinear-vertices-from-polygon-feature-class-using-arcpy
-def are_collinear(v1, v2, v3, tolerance=0.5):
-  e1 = topologic.EdgeUtility.ByVertices([v2, v1])
-  e2 = topologic.EdgeUtility.ByVertices([v2, v3])
-  rad = topologic.EdgeUtility.AngleBetween(e1, e2)
+        Parameters
+        ----------
+        vectorA : list
+            The first input vector.
+        vectorB : list
+            The second input vector.
 
-  return abs(math.sin(rad)) < math.sin(math.radians(tolerance))
+        Returns
+        -------
+        list
+            The cross product of the two input vectors.
+        """
 
-def removeCollinearEdges(wire, angTol):
-  vertices = getSubTopologies(wire, topologic.Vertex)
+        return list(np.cross(vectorA, vectorB))
 
-  indexes_of_vertices_to_remove = [
-    idx for idx, vertex in enumerate(vertices)
-    if are_collinear(vertices[idx-1], vertex, vertices[idx+1 if idx+1 < len(vertices) else 0], angTol)
-  ]
+    @staticmethod
+    def IsCollinear(vectorA, vectorB, tolerance=0.1):
+        """
+        Description
+        -----------
+        Returns True if the input vectors are collinear. Returns False otherwise.
 
-  vertices_to_keep = [
-    val for idx, val in enumerate(vertices)
-    if idx not in indexes_of_vertices_to_remove
-  ]
+        Parameters
+        ----------
+        vectorA : list
+            The first input vector.
+        vectorB : list
+            The second input vector.
 
-  return vertices_to_keep
+        Returns
+        -------
+        bool
+            Returns True if the input vectors are collinear. Returns False otherwise.
+        """
 
-
-
-def projectFace(face, other_face):
-  normal = topologic.FaceUtility.NormalAtParameters(face, 0.5, 0.5)
-  n = [normal[0], normal[1], normal[2]]
-  point = topologic.FaceUtility.VertexAtParameters(face, 0.5, 0.5)
-  d = np.dot(n, [point.X(), point.Y(), point.Z()])
-
-  other_normal = topologic.FaceUtility.NormalAtParameters(other_face, 0.5, 0.5)
-  if np.dot(n, [other_normal[0], other_normal[1], other_normal[2]]) + 1 > 1e-6:
-    return [None, None]
-
-  other_point = topologic.FaceUtility.VertexAtParameters(other_face, 0.5, 0.5)
-  dist = -np.dot(n, [other_point.X(), other_point.Y(), other_point.Z()]) + d
-  if dist < 1e-6:
-    return [None, None]
-
-  top_space_boundary = boolean(face, topologic.TopologyUtility.Translate(other_face, dist*normal[0], dist*normal[1], dist*normal[2]), "Intersect")
-  if top_space_boundary is None:
-    return [None, None]
-
-  top_space_boundary = getSubTopologies(top_space_boundary, topologic.Face)
-  if not top_space_boundary:
-    return [None, None]
-
-  return [dist, top_space_boundary[0]]
+        return Vector.Angle(vectorA, vectorB) < tolerance

@@ -1,32 +1,30 @@
 import topologicpy
 import topologic
-import numpy as np
-import numpy.linalg as la
-from numpy import pi
+from topologicpy.Vector import Vector
 
-class Edge(topologic.Edge):
+class Edge():
     @staticmethod
-    def Angle(edgeA, edgeB, mantissa=3, bracket=False):
+    def Angle(edgeA, edgeB, mantissa=4, bracket=False):
         """
         Description
         -----------
-        Returns the angle in degrees between the two input topologic Edges.
+        Returns the angle in degrees between the two input edges.
 
         Parameters
         ----------
         edgeA : topologic.Edge
-            The first topologic Edge.
+            The first input edge.
         edgeB : topologic Edge
-            The second topologic Edge.
+            The second input edge.
         mantissa : int, optional
-            The desired mantissa. The default is 3.
+            The desired length of the mantissa. The default is 4.
         bracket : bool
             If set to True, the returned angle is bracketed between 0 and 180. The default is False.
 
         Returns
         -------
         float
-            The angle in degrees between the two input topologic Edges.
+            The angle in degrees between the two input edges.
 
         """
 
@@ -34,37 +32,90 @@ class Edge(topologic.Edge):
             return None
         dirA = Edge.Direction(edgeA, mantissa)
         dirB = Edge.Direction(edgeB, mantissa)
-        ang = topologic_lib.angle_between(dirA, dirB) * 180 / pi # convert to degrees
+        ang = Vector.Angle(dirA, dirB)
         if bracket:
             if ang > 90:
                 ang = 180 - ang
         return round(ang, mantissa)
 
     @staticmethod
+    def Bisect(edgeA, edgeB, length=1.0, placement=0, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Creates a bisecting edge between edgeA and edgeB.
+
+        Parameters
+        ----------
+        edgeA : topologic.Edge
+            The first topologic Edge.
+        edgeB : topologic Edge
+            The second topologic Edge.
+        length : float, optional
+            The desired length of the bisecting edge. The default is 1.0.
+        placement : int, optional
+            The desired placement of the bisecting edge.
+            If set to 0, the bisecting edge centroid will be placed at the end vertex of the first edge.
+            If set to 1, the bisecting edge start vertex will be placed at the end vertex of the first edge.
+            If set to 2, the bisecting edge end vertex will be placed at the end vertex of the first edge.
+            If set to any number other than 0, 1, or 2, the bisecting edge centroid will be placed at the end vertex of the first edge.
+        tolerance : float, optional
+            The desired tolerance to decide if an Edge can be created. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Edge
+            The created bisecting edge.
+
+        """
+        if not isinstance(edgeA, topologic.Edge) or not isinstance(edgeB, topologic.Edge):
+            return None
+        if Edge.Length(edgeA) < tolerance or Edge.Length(edgeB) < tolerance:
+            return None
+        from topologicpy.Topology import Topology
+        v1 = Edge.VertexByDistance(edgeA, -1, edgeA.EndVertex(), tolerance=0.0001)
+        newEdgeA = Edge.ByVertices([v1, edgeA.EndVertex()])
+        v1 = Edge.VertexByDistance(edgeB, 1, edgeB.StartVertex(), tolerance=0.0001)
+        newEdgeB = Edge.ByVertices([edgeB.StartVertex(), v1])
+        newEdgeB = Topology.Place(newEdgeB, newEdgeB.StartVertex(), newEdgeA.StartVertex())
+        bisectingEdge = Edge.ByVertices([newEdgeA.EndVertex(), newEdgeB.EndVertex()])
+        bEdgeLength = Edge.Length(bisectingEdge)
+        bisectingEdge = Topology.Scale(bisectingEdge, bisectingEdge.StartVertex(), 1/bEdgeLength, 1/bEdgeLength, 1/bEdgeLength)
+        if length != 1.0 and length > tolerance:
+            bisectingEdge = Topology.Scale(bisectingEdge, bisectingEdge.StartVertex(), length, length, length)
+        newLocation = edgeA.EndVertex()
+        if placement == 2:
+            oldLocation = bisectingEdge.EndVertex()
+        elif placement == 1:
+            oldLocation = bisectingEdge.StartVertex()
+        else:
+            oldLocation = bisectingEdge.Centroid()
+        bisectingEdge = Topology.Place(bisectingEdge, oldLocation, newLocation)
+        return bisectingEdge
+
+    @staticmethod
     def ByStartVertexEndVertex(vertexA, vertexB, tolerance=0.0001):
         """
         Description
         -----------
-        Creates a straight topologic Edge that connects the input vertices.
+        Creates a straight edge that connects the input vertices.
 
         Parameters
         ----------
         vertexA : topologic.Vertex
-            The start topologic Vertex.
+            The first input vertex. This is considered the start vertex.
         vertexB : toopologic.Vertex
-            The end topologic Vertex.
+            The second input vertex. This is considered the end vertex.
         tolerance : float, optional
             The desired tolerance to decide if an Edge can be created. The default is 0.0001.
 
         Returns
         -------
         edge : topologic.Edge
-            The created topologic Edge.
+            The created edge.
 
         """
         edge = None
-        if not vertexA or not vertexB:
-            return None
         if not isinstance(vertexA, topologic.Vertex):
             return None
         if not isinstance(vertexB, topologic.Vertex):
@@ -84,23 +135,21 @@ class Edge(topologic.Edge):
         """
         Description
         -----------
-        Creates a straight topologic Edge that connects the input topologic Vertices.
+        Creates a straight edge that connects the input list of vertices.
 
         Parameters
         ----------
         vertices : list
-            The list of topologic Vertices.
+            The input list of vertices. The first item is considered the start vertex and the last item is considered the end vertex.
         tolerance : float, optional
-            The desired tolerance to decide if an Edge can be created. The default is 0.0001.
+            The desired tolerance to decide if an edge can be created. The default is 0.0001.
 
         Returns
         -------
         topologic.Edge
-            The created topologic Edge.
+            The created edge.
 
         """
-        if not vertices:
-            return None
         if not isinstance(vertices, list):
             return None
         vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
@@ -109,23 +158,23 @@ class Edge(topologic.Edge):
         return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance)
     
     @staticmethod
-    def Direction(edge, mantissa=3):
+    def Direction(edge, mantissa=4):
         """
         Description
         -----------
-        Returns the direction of the input topologic Edge.
+        Returns the direction of the input edge.
 
         Parameters
         ----------
         edge : topologic.Edge
-            The topologic Edge.
+            The input edge.
         mantissa : int, optional
-            The desired mantissa. The default is 3.
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
         list
-            The direction of the topologic Edge.
+            The direction of the input edge.
 
         """
         if not isinstance(edge, topologic.Edge):
@@ -135,7 +184,7 @@ class Edge(topologic.Edge):
         x = ev.X() - sv.X()
         y = ev.Y() - sv.Y()
         z = ev.Z() - sv.Z()
-        uvec = Helper.unitizeVector([x,y,z])
+        uvec = Vector.Normalize([x,y,z])
         x = round(uvec[0], mantissa)
         y = round(uvec[1], mantissa)
         z = round(uvec[2], mantissa)
@@ -146,17 +195,17 @@ class Edge(topologic.Edge):
         """
         Description
         -----------
-        Returns the end topologic Vertex of the input topologic Edge.
+        Returns the end vertex of the input edge.
 
         Parameters
         ----------
         edge : topologic.Edge
-            The topologic Edge.
+            The input edge.
 
         Returns
         -------
         topologic.Vertex
-            The end topologic Vertex of the input topologic Edge.
+            The end vertex of the input edge.
 
         """
         if not isinstance(edge, topologic.Edge):
@@ -169,20 +218,20 @@ class Edge(topologic.Edge):
         return vert
     
     @staticmethod
-    def IsCollinear(edgeA, edgeB, tolerance=0.0001):
+    def IsCollinear(edgeA, edgeB, angTolerance=0.1):
         """
         Description
         -----------
-        Tests if the two input topologic Edges are collinear.
+        Tests if the two input edges are collinear.
 
         Parameters
         ----------
         edgeA : topologic.Edge
-            The first topologic Edge.
+            The first input edge.
         edgeB : topologic.Edge
-            The second topologic Edge.
-        tolerance : float, optional
-            The tolerance used for the test. The default is 0.0001.
+            The second input edge.
+        angTolerance : float, optional
+            The angular tolerance used for the test. The default is 0.1.
 
         Returns
         -------
@@ -190,33 +239,31 @@ class Edge(topologic.Edge):
             True if the two edges are collinear. False otherwise.
 
         """
-        if not isinstance(edgeA, topologic.Edge):
+        if not isinstance(edgeA, topologic.Edge) or not isinstance(edgeB, topologic.Edge):
             return None
-        if not isinstance(edgeB, topologic.Edge):
-            return None
-        ang = Edge.Angle(edgeA, edgeB, mantissa=len(str(tolerance).split(".")[1]), bracket=True)
-        if abs(ang) < tolerance:
+        ang = Edge.Angle(edgeA, edgeB, mantissa=len(str(angTolerance).split(".")[1]), bracket=True)
+        if abs(ang) < angTolerance:
             return True
         return False
     
     @staticmethod
-    def Length(edge, mantissa=3):
+    def Length(edge, mantissa=4):
         """
         Description
         -----------
-        Returns the length of the input topologic Edge.
+        Returns the length of the input edge.
 
         Parameters
         ----------
         edge : topologic.Edge
-            The topologic Edge.
+            The input edge.
         mantissa : int, optional
-            The desired mantissa. The default is 3.
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
         float
-            The length of the input topologic Edge.
+            The length of the input edge.
 
         """
         if not isinstance(edge, topologic.Edge):
@@ -227,32 +274,60 @@ class Edge(topologic.Edge):
         except:
             length = None
         return length
-    
+
     @staticmethod
-    def ParameterAtVertex(edge, vertex, mantissa=3):
+    def Normalize(edge, useEndVertex=False):
         """
         Description
         -----------
-        Returns the *u* parameter along the input topologic Edge based on the location of the input topologic Vertex.
+        Creates a normalized edge that has the same direction as the input edge, but a length of 1.
 
         Parameters
         ----------
         edge : topologic.Edge
-            The topologic Edge.
-        vertex : topologic.Vertex
-            The topologic Vertex.
-        mantissa : int, optional
-            The desired mantissa. The default is 3.
+            The input edge.
+        useEndVertex : bool, optional
+            If True the normalized edge end vertex will be placed at the end vertex of the input edge. Otherwise, the normalized edge start vertex will be placed at the start vertex of the input edge. The default is False.
 
         Returns
         -------
-        float
-            The *u* parameter along the input topologic Edge based on the location of the input topologic Vertex.
+        topologic.Edge
+            The normalized edge.
 
         """
         if not isinstance(edge, topologic.Edge):
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not useEndVertex:
+            sv = edge.StartVertex()
+            ev = Edge.VertexByDistance(edge, 1.0, edge.StartVertex())
+        else:
+            sv = Edge.VertexByDistance(edge, 1.0, edge.StartVertex())
+            ev = edge.EndVertex()
+        return Edge.ByVertices([sv, ev])
+
+    @staticmethod
+    def ParameterAtVertex(edge, vertex, mantissa=4):
+        """
+        Description
+        -----------
+        Returns the *u* parameter along the input edge based on the location of the input vertex.
+
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The input edge.
+        vertex : topologic.Vertex
+            The input vertex.
+        mantissa : int, optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        float
+            The *u* parameter along the input edge based on the location of the input vertex.
+
+        """
+        if not isinstance(edge, topologic.Edge) or not isinstance(vertex, topologic.Vertex):
             return None
         parameter = None
         try:
@@ -266,17 +341,17 @@ class Edge(topologic.Edge):
         """
         Description
         -----------
-        Creates a topologic Edge that has the reverse direction of the input topologic Edge.
+        Creates an edge that has the reverse direction of the input edge.
 
         Parameters
         ----------
         edge : topologic.Edge
-            The topologic Edge.
+            The input edge.
 
         Returns
         -------
         topologic.Edge
-            The reversed topologic Edge.
+            The reversed edge.
 
         """
         if not isinstance(edge, topologic.Edge):
@@ -288,17 +363,17 @@ class Edge(topologic.Edge):
         """
         Description
         -----------
-        Returns the start topologic Vertex of the input topologic Edge.
+        Returns the start vertex of the input edge.
 
         Parameters
         ----------
         edge : topologic.Edge
-            The topologic Edge.
+            The input edge.
 
         Returns
         -------
         topologic.Vertex
-            The start topologic Vertex of the input topologic Edge.
+            The start vertex of the input edge.
 
         """
         if not isinstance(edge, topologic.Edge):
@@ -315,23 +390,23 @@ class Edge(topologic.Edge):
         """
         Description
         -----------
-        creates a topologic Vertex along the input topologic Edge offset by the input distance from the input topologic Vertex.
+        Creates a vertex along the input edge offset by the input distance from the input origin.
 
         Parameters
         ----------
         edge : topologic.Edge
-            The topologic Edge.
+            The input edge.
         distance : float
             The offset distance.
         origin : topologic.Vertex
             The origin of the offset distance.
         tolerance : float, optional
-            The tolerance. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
         topologic.Vertex
-            The created topologic Vertex.
+            The created vertex.
 
         """
 
@@ -346,28 +421,28 @@ class Edge(topologic.Edge):
         vx = ev.X() - sv.X()
         vy = ev.Y() - sv.Y()
         vz = ev.Z() - sv.Z()
-        vector = topologic_lib.unitizeVector([vx, vy, vz])
-        vector = topologic_lib.multiplyVector(vector, distance, tolerance)
+        vector = Vector.Normalize([vx, vy, vz])
+        vector = Vector.Multiply(vector, distance, tolerance)
         return topologic.Vertex.ByCoordinates(origin.X()+vector[0], origin.Y()+vector[1], origin.Z()+vector[2])
     
     @staticmethod
-    def VertexByParameter(edge, parameter):
+    def VertexByParameter(edge, parameter=0):
         """
         Description
         -----------
-        creates a topologic Vertex along the input topologic Edge offset by the input u parameter. A parameter of 0 returns the start Vertex, a parameter of 1 returns the end Vertex, and a parameter of 0.5 returns the midpoint of the Edge.
+        Creates a vertex along the input edge offset by the input *u* parameter.
 
         Parameters
         ----------
         edge : topologic.Edge
-            The topologic Edge.
-        parameter : float
-            The u parameter along the input topologic Edge.
+            The input edge.
+        parameter : float , optional
+            The *u* parameter along the input topologic Edge. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. The default is 0.
 
         Returns
         -------
         topologic.Vertex
-            The created topologic Vertex.
+            The created vertex.
 
         """
         if not isinstance(edge, topologic.Edge):

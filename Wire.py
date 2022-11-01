@@ -1,10 +1,10 @@
 import topologicpy
 import topologic
-from topologicpy.Face import Face
 from topologicpy.Cluster import Cluster
 from topologicpy.Topology import Topology
 import math
 import itertools
+import numpy as np
 
 class Wire(topologic.Wire):
     @staticmethod
@@ -17,19 +17,19 @@ class Wire(topologic.Wire):
         Parameters
         ----------
         edges : list
-            The input list of topologic Edges.
+            The input list of edges.
 
         Returns
         -------
         topologic.Wire
-            The created topologic Wire.
+            The created wire.
 
         """
-        if not edges:
-            return None
         if not isinstance(edges, list):
             return None
         edgeList = [x for x in edges if isinstance(x, topologic.Edge)]
+        if len(edgeList) < 1:
+            return None
         wire = None
         for anEdge in edgeList:
             if anEdge.Type() == 2:
@@ -44,7 +44,109 @@ class Wire(topologic.Wire):
             wire = None
         return wire
 
-    
+    @staticmethod
+    def ByEdgesCluster(cluster):
+        """
+        Description
+        ----------
+        Creates a wire from the input cluster of edges.
+
+        Parameters
+        ----------
+        cluster : topologic.cluster
+            the input cluster of edges.
+
+        Returns
+        -------
+        topologic.Wire
+            The created wire.
+
+        """
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        edges = []
+        _ = cluster.Edges(None, edges)
+        return Wire.ByEdges(edges)
+
+    @staticmethod
+    def ByOffset(wire, offset=0, reverse=False, tolerance=0.0001):
+        """
+        Description
+        ----------
+        Creates a wire by offsetting the edges of the input wire.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+        offset : float , optional
+            The desired offset value. The default is 0.
+        reverse : bool , optional
+            If set to True the offset will be computed to the inside of the input wire. Otherwise, it will be computed to the outside of the wire. The default is False.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Wire
+            The offsetted wire.
+
+        """
+        from topologicpy.Edge import Edge
+        face = topologic.Face.ByExternalBoundary(wire)
+        if reverse:
+            offset = -offset
+        external_vertices = []
+        _ = wire.Vertices(None, external_vertices)
+        offset_vertices = []
+        for idx in range(len(external_vertices)-1):
+            vrtx = [external_vertices[idx].X(), external_vertices[idx].Y(), external_vertices[idx].Z()]
+            vrtx1 = [external_vertices[idx+1].X(), external_vertices[idx+1].Y(), external_vertices[idx+1].Z()]
+            vrtx2 = [external_vertices[idx-1].X(), external_vertices[idx-1].Y(), external_vertices[idx-1].Z()]
+            u = Vector.Normalize([(vrtx1[0] - vrtx[0]), (vrtx1[1] - vrtx[1]),(vrtx1[2] - vrtx[2])])
+            v = Vector.Normalize([(vrtx2[0] - vrtx[0]), (vrtx2[1] - vrtx[1]),(vrtx2[2] - vrtx[2])])
+            ev = external_vertices[idx]
+            v3 = vrtx + u
+            v4 = vrtx + v
+            offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
+            topologic_offset_vertex = topologic.Vertex.ByCoordinates(offset_vertex[0], offset_vertex[1], offset_vertex[2])
+            status = (topologic.FaceUtility.IsInside(face, topologic_offset_vertex, 0.001))
+            if reverse:
+                status = not status
+            if status:
+                offset = -offset
+                offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
+            offset_vertices.append([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
+
+        idx = len(external_vertices)-1
+        v = [external_vertices[idx].X(), external_vertices[idx].Y(), external_vertices[idx].Z()]
+        v1 = [external_vertices[0].X(), external_vertices[0].Y(), external_vertices[0].Z()]
+        v2 = [external_vertices[idx-1].X(), external_vertices[idx-1].Y(), external_vertices[idx-1].Z()]
+        u = Vector.Normalize([(v1[0]-v[0]), (v1[1]-v[1]), (v1[2]-v[2])])
+        v = Vector.Normalize([(v2[0]-v[0]), (v2[1]-v[1]),(v2[2]-v[2])])
+        ev = external_vertices[idx]
+        offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
+        topologic_offset_vertex = topologic.Vertex.ByCoordinates(offset_vertex[0], offset_vertex[1], offset_vertex[2])
+        status = (topologic.FaceUtility.IsInside(face, topologic_offset_vertex, 0.001))
+        if reverse:
+            status = not status
+        if status:
+            offset = -offset
+            offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
+        offset_vertices.append([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
+        edges = []
+        for iv, v in enumerate(offset_vertices[:-1]):
+            e = topologic.Edge.ByStartVertexEndVertex(topologic.Vertex.ByCoordinates(offset_vertices[iv][0], offset_vertices[iv][1], offset_vertices[iv][2]), topologic.Vertex.ByCoordinates(offset_vertices[iv+1][0], offset_vertices[iv+1][1], offset_vertices[iv+1][2]))
+            if Edge.Length(e) < tolerance:
+                return None
+            edges.append(e)
+        iv = len(offset_vertices)-1
+        e = topologic.Edge.ByStartVertexEndVertex(topologic.Vertex.ByCoordinates(offset_vertices[iv][0], offset_vertices[iv][1], offset_vertices[iv][2]), topologic.Vertex.ByCoordinates(offset_vertices[0][0], offset_vertices[0][1], offset_vertices[0][2]))
+        if Edge.Length(e) < tolerance:
+            return None
+        edges.append(e)
+        return topologic.Wire.ByEdges(edges)
+
     @staticmethod
     def ByVertices(vertices, close=True):
         """
@@ -55,19 +157,16 @@ class Wire(topologic.Wire):
         Parameters
         ----------
         vertices : list
-            the input list of topologic Vertices.
+            the input list of vertices.
         close : bool, optional
             If True the last vertex will be connected to the first vertex to close the wire. The default is True.
 
         Returns
         -------
         topologic.Wire
-            The created topologic Wire.
+            The created wire.
 
         """
-
-        if not vertices:
-            return None
         if not isinstance(vertices, list):
             return None
         vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
@@ -95,6 +194,32 @@ class Wire(topologic.Wire):
         if len(edges) < 1:
             return None
         return Wire.ByEdges(edges)
+
+    @staticmethod
+    def ByVerticesCluster(cluster, close=True):
+        """
+        Description
+        ----------
+        Creates a wire from the input cluster of vertices.
+
+        Parameters
+        ----------
+        cluster : topologic.cluster
+            the input cluster of vertices.
+        close : bool, optional
+            If True the last vertex will be connected to the first vertex to close the wire. The default is True.
+
+        Returns
+        -------
+        topologic.Wire
+            The created wire.
+
+        """
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        vertices = []
+        _ = cluster.Vertices(None, vertices)
+        return Wire.ByVertices(vertices, close)
 
     @staticmethod
     def Circle(origin=None, radius=1, sides=16, fromAngle=0, toAngle=360, close=True, dirX=0,
@@ -165,7 +290,7 @@ class Wire(topologic.Wire):
             yList.append(y)
             baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
 
-        baseWire = Wire.ByVertices(Cluster.ByTopologies(baseV[::-1]), close) #reversing the list so that the normal points up in Blender
+        baseWire = Wire.ByVertices(baseV[::-1], close) #reversing the list so that the normal points up in Blender
 
         if placement.lower() == "lowerleft":
             baseWire = topologic.TopologyUtility.Translate(baseWire, radius, radius, 0)
@@ -208,7 +333,7 @@ class Wire(topologic.Wire):
         Returns
         -------
         list
-            The list of circuits (wires) found within the input wire.
+            The list of circuits (closed wires) found within the input wire.
 
         """
         
@@ -444,7 +569,7 @@ class Wire(topologic.Wire):
             yList.append(y)
             baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
 
-        ellipse = Wire.ByVertices(Cluster.ByTopologies(baseV[::-1]), close) #reversing the list so that the normal points up in Blender
+        ellipse = Wire.ByVertices(baseV[::-1], close) #reversing the list so that the normal points up in Blender
 
         if placement.lower() == "lowerleft":
             ellipse = topologic.TopologyUtility.Translate(ellipse, a, b, 0)
@@ -481,7 +606,7 @@ class Wire(topologic.Wire):
         """
         Description
         ----------
-        Returns True if the input wire is closed. Returns False Otherwise.
+        Returns True if the input wire is closed. Returns False otherwise.
 
         Parameters
         ----------
@@ -491,7 +616,7 @@ class Wire(topologic.Wire):
         Returns
         -------
         bool
-            True if the input wire is closed. False Otherwise.
+            True if the input wire is closed. False otherwise.
 
         """
         status = None
@@ -703,7 +828,7 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def Length(wire, mantissa=3):
+    def Length(wire, mantissa=4):
         """
         Description
         ----------
@@ -714,7 +839,7 @@ class Wire(topologic.Wire):
         wire : topologic.Wire
             The input wire.
         mantissa : int, optional
-            The desired length of the mantissa. The default is 3.
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
@@ -739,7 +864,37 @@ class Wire(topologic.Wire):
         return totalLength
 
     @staticmethod
-    def Project(wire, face, direction=None, mantissa=3, tolerance=0.0001):
+    def Planarize(wire):
+        """
+        Description
+        ----------
+        Returns a planarized version of the input wire.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+
+        Returns
+        -------
+        topologic.Wire
+            The planarized wire.
+
+        """
+        from topologicpy.Vertex import Vertex
+        if not isinstance(wire, topologic.Wire):
+            return None
+        verts = []
+        _ = wire.Vertices(None, verts)
+        w = Wire.ByVertices([verts[0], verts[1], verts[2]], close=True)
+        f = topologic.Face.ByExternalBoundary(w)
+        proj_verts = []
+        for v in verts:
+            proj_verts.append(Vertex.Project(v, f))
+        return Wire.ByVertices(proj_verts, close=True)
+
+    @staticmethod
+    def Project(wire, face, direction=None, mantissa=4, tolerance=0.0001):
         """
         Description
         ----------
@@ -752,9 +907,9 @@ class Wire(topologic.Wire):
         face : topologic.Face
             The face unto which to project the input wire.
         direction : list, optional
-            The vector direction of the projection. If None, the reverse vector of the face normal will be used. The default is None.
+            The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. The default is None.
         mantissa : int, optional
-            The desired length of the mantissa. The default is 3.
+            The desired length of the mantissa. The default is 4.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 
@@ -765,7 +920,8 @@ class Wire(topologic.Wire):
 
         """
         
-        def projectVertex(vertex, face, direction, mantissa=3, tolerance=0.0001):
+        def projectVertex(vertex, face, direction=None, mantissa=4, tolerance=0.0001):
+            from topologicpy.Face import Face
             if not vertex:
                 return None
             if not isinstance(vertex, topologic.Vertex):
@@ -860,7 +1016,7 @@ class Wire(topologic.Wire):
 
         """
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,)
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
             return None
         if not placement.lower() in ["center", "lowerleft"]:
@@ -882,7 +1038,7 @@ class Wire(topologic.Wire):
         vb3 = topologic.Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
         vb4 = topologic.Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
 
-        baseWire = Wire.ByVertices(topologic.Cluster.ByTopologies([vb1, vb2, vb3, vb4]), True)
+        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], True)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -937,17 +1093,16 @@ class Wire(topologic.Wire):
                 else:
                     wire_verts.append(aVertex)
             if len(wire_verts) > 2:
-                clus = topologic.Cluster.ByTopologies(wire_verts)
                 if wire.IsClosed():
-                    final_wire = Wire.ByVertices(clus, True)
+                    final_wire = Wire.ByVertices(wire_verts, True)
                 else:
-                    final_wire = Wire.ByVertices(clus, False)
+                    final_wire = Wire.ByVertices(wire_verts, False)
             elif len(wire_verts) == 2:
                 final_wire = topologic.Edge.ByStartVertexEndVertex(wire_verts[0], wire_verts[1])
             return final_wire
         
         if not topologic.Topology.IsManifold(wire, wire):
-            wires = Wire.WireSplit(wire)
+            wires = Wire.Split(wire)
         else:
             wires = [wire]
         returnWires = []
@@ -1120,7 +1275,7 @@ class Wire(topologic.Wire):
         for coord in baseV:
             tranBase.append(topologic.Vertex.ByCoordinates(coord[0]+xOffset, coord[1]+yOffset, origin.Z()))
         
-        baseWire = Wire.ByVertices(topologic.Cluster.ByTopologies(tranBase[::-1]), True) #reversing the list so that the normal points up in Blender
+        baseWire = Wire.ByVertices(tranBase[::-1], True) #reversing the list so that the normal points up in Blender
         
         x1 = origin.X()
         y1 = origin.Y()
@@ -1205,7 +1360,7 @@ class Wire(topologic.Wire):
         vb3 = topologic.Vertex.ByCoordinates(origin.X()+widthB*0.5+offsetB+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
         vb4 = topologic.Vertex.ByCoordinates(origin.X()-widthB*0.5++offsetB+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
 
-        baseWire = Wire.ByVertices(topologic.Cluster.ByTopologies([vb1, vb2, vb3, vb4]), True)
+        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], True)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()

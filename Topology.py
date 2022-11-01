@@ -15,10 +15,6 @@ try:
 except:
     raise Exception("Error: TopologyByImportedIFC: ifcopenshell is not present on your system. Install BlenderBIM or ifcopenshell to resolve.")
 
-try:
-    import ipfshttpclient
-except:
-    raise Exception("Error: Could not import ipfshttpclient.")
 
 
 def listAttributeValues(listAttribute):
@@ -321,7 +317,7 @@ def processSelectors(sources, sink, tranVertices, tranEdges, tranFaces, tranCell
         _ = transferDictionaries(sources, sinkCells, tolerance)
     return sink
 
-class Topology(topologic.Topology):
+class Topology():
     @staticmethod
     def AddApertures(topology, apertureCluster, exclusive, subTopologyType, tolerance=0.0001):
         """
@@ -1473,7 +1469,7 @@ class Topology(topologic.Topology):
                     continue
                 returnList.append(topology)
         return returnList
-
+    '''
     @staticmethod
     def ByImportedIPFS(hash_, url, port):
         """
@@ -1499,7 +1495,7 @@ class Topology(topologic.Topology):
         brepString = client.cat(hash_).decode("utf-8")
         topology = topologic.Topology.DeepCopy(topologic.Topology.ByString(brepString))
         return topology
-    
+    '''
     @staticmethod
     def ByImportedJSONMK1(item):
         """
@@ -2490,7 +2486,7 @@ class Topology(topologic.Topology):
             f.close()    
             return True
         return False
-    
+    '''
     @staticmethod
     def ExportToIPFS(topology, url, port, user, password):
         """
@@ -2544,7 +2540,7 @@ class Topology(topologic.Topology):
             os.remove(filepath)
             return newfile['Hash']
         return ''
-    
+    '''
     @staticmethod
     def ExportToJSONMK1(topologyList, filepath, overwrite, tolerance=0.0001):
         """

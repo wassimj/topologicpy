@@ -1,36 +1,42 @@
+import topologicpy
 import topologic
+from topologicpy.Vector import Vector
+from topologicpy.Wire import Wire
 import math
 import numpy as np
-from numpy import arctan, pi, signbit
 from numpy.linalg import norm
 
 class Face(topologic.Face):
     @staticmethod
-    def FaceAddInternalBoundaries(face, cluster):
+    def AddInternalBoundaries(face, wires):
         """
+        Description
+        ----------
+        Adds internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        cluster : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
+        wires : list
+            The input list of internal boundaries (closed wires).
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Face
+            The created face with internal boundaries added to it.
 
         """
-        # face, cluster = item
-        assert isinstance(face, topologic.Face), "FaceAddInternalBoundaries - Error: The host face input is not a Face"
-        if isinstance(cluster, topologic.Cluster):
-            wires = []
-            _ = cluster.Wires(None, wires)
-        elif isinstance(cluster, topologic.Wire):
-            wires = [cluster]
-        elif isinstance(cluster, list):
-            wires = [w for w in cluster if isinstance(w, topologic.Wire)]
-        else:
+        if not face:
+            return None
+        if not isinstance(face, topologic.Face):
+            return None
+        if not wires:
+            return face
+        if not isinstance(wires, list):
+            return face
+        wireList = [w for w in wires if isinstance(w, topologic.Wire)]
+        if len(wireList) < 1:
             return face
         faceeb = face.ExternalBoundary()
         faceibList = []
@@ -38,74 +44,54 @@ class Face(topologic.Face):
         for wire in wires:
             faceibList.append(wire)
         return topologic.Face.ByExternalInternalBoundaries(faceeb, faceibList)
-    
+
     @staticmethod
-    def FaceAddInternalBoundary(face, cluster):
+    def AddInternalBoundariesCluster(face, cluster):
         """
+        Description
+        ----------
+        Adds internal the input cluster of internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        cluster : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
+        cluster : topollogic.Cluster
+            The input cluster of internal boundaries (topologic wires).
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Face
+            The created face with internal boundaries added to it.
 
         """
-        # face, cluster = item
-        assert isinstance(face, topologic.Face), "FaceAddInternalBoundaries - Error: The host face input is not a Face"
-        assert isinstance(face, topologic.Cluster), "FaceAddInternalBoundaries - Error: The internal boundaries input is not a Cluster"
+        if not face:
+            return None
+        if not isinstance(face, topologic.Face):
+            return None
+        if not cluster:
+            return face
+        if not isinstance(cluster, topologic.Cluster):
+            return face
         wires = []
         _ = cluster.Wires(None, wires)
-        faceeb = face.ExternalBoundary()
-        faceibList = []
-        _ = face.InternalBoundaries(faceibList)
-        for wire in wires:
-            faceibList.append(wire)
-        return topologic.Face.ByExternalInternalBoundaries(faceeb, faceibList)
+        return Face.AddInternalBoundaries(face, wires)
     
     @staticmethod
-    def angle_between(v1, v2):
+    def Angle(faceA, faceB, mantissa=4):
         """
+        Description
+        ----------
+        Returns the angle in degrees between the two input faces.
+
         Parameters
         ----------
-        v1 : TYPE
-            DESCRIPTION.
-        v2 : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        u1 = v1 / norm(v1)
-        u2 = v2 / norm(v2)
-        y = u1 - u2
-        x = u1 + u2
-        a0 = 2 * arctan(norm(y) / norm(x))
-        if (not signbit(a0)) or signbit(pi - a0):
-            return a0
-        elif signbit(a0):
-            return 0
-        else:
-            return pi
-    
-    @staticmethod
-    def FaceAngle(faceA, faceB, mantissa):
-        """
-        Parameters
-        ----------
-        faceA : TYPE
-            DESCRIPTION.
-        faceB : TYPE
-            DESCRIPTION.
-        mantissa : TYPE
-            DESCRIPTION.
+        faceA : topologic.Face
+            The first input face.
+        faceB : topologic.Face
+            The second input face.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
 
         Raises
         ------
@@ -114,37 +100,41 @@ class Face(topologic.Face):
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        float
+            The angle in degrees between the two input faces.
 
         """
-        # faceA, faceB, mantissa = item
         
         if not faceA or not isinstance(faceA, topologic.Face):
-            raise Exception("Face.Angle - Error: Face A is not valid")
+            return None
         if not faceB or not isinstance(faceB, topologic.Face):
-            raise Exception("Face.Angle - Error: Face B is not valid")
-        dirA = Face.FaceNormalAtParameters(faceA, 0.5, 0.5, "XYZ", 3)
-        dirB = Face.FaceNormalAtParameters(faceB, 0.5, 0.5, "XYZ", 3)
-        return round((Face.angle_between(dirA, dirB) * 180 / pi), mantissa) # convert to degrees
+            return None
+        dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "XYZ", 3)
+        dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "XYZ", 3)
+        return round((Vector.Angle(dirA, dirB)), mantissa)
     
     @staticmethod
-    def FaceArea(face, mantissa):
+    def Area(face, mantissa):
         """
+        Description
+        ----------
+        Returns the area of the input face.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        mantissa : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
-        area : TYPE
-            DESCRIPTION.
+        float
+            The area of the input face.
 
         """
-        # face, mantissa = item
+        if not isinstance(face, topologic.Face):
+            return None
         area = None
         try:
             area = round(topologic.FaceUtility.Area(face), mantissa)
@@ -153,20 +143,25 @@ class Face(topologic.Face):
         return area
 
     @staticmethod
-    def FaceBoundingFace(face):
+    def BoundingFace(face):
         """
+        Description
+        ----------
+        Returns the bounding face of the input face.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Face
+            The bounding face of the input face.
 
         """
-        # face = item[0]
+        if not isinstance(face, topologic.Face):
+            return None
         bfv1 = topologic.FaceUtility.VertexAtParameters(face,0,0)
         bfv2 = topologic.FaceUtility.VertexAtParameters(face,1,0)
         bfv3 = topologic.FaceUtility.VertexAtParameters(face,1,1)
@@ -179,24 +174,31 @@ class Face(topologic.Face):
         return topologic.Face.ByExternalBoundary(bfw1)
     
     @staticmethod
-    def FaceByEdges(item):
+    def ByEdges(edges):
         """
+        Description
+        ----------
+        Creates a face from the input list of edges.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        edges : list
+            The input list of edges.
 
         Returns
         -------
-        face : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The created face.
 
         """
-        assert isinstance(item, list), "face.ByEdges - Error: Input is not a list"
-        edges = [x for x in item if isinstance(x, topologic.Edge)]
+        if not isinstance(edges, list):
+            return None
+        edgeList = [x for x in edges if isinstance(x, topologic.Edge)]
+        if len(edgeList) < 1:
+            return None
         wire = None
         face = None
-        for anEdge in edges:
+        for anEdge in edgeList:
             if anEdge.Type() == 2:
                 if wire == None:
                     wire = anEdge
@@ -213,105 +215,59 @@ class Face(topologic.Face):
             except:
                 return None
         return face
-    
+
     @staticmethod
-    def processWire(wire, offset, reverse):
+    def ByEdgesCluster(cluster):
         """
+        Description
+        ----------
+        Creates a face from the input cluster of edges.
+
         Parameters
         ----------
-        wire : TYPE
-            DESCRIPTION.
-        offset : TYPE
-            DESCRIPTION.
-        reverse : TYPE
-            DESCRIPTION.
+        cluster : topologic.Cluster
+            The input cluster of edges.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The created face.
 
         """
-        face = topologic.Face.ByExternalBoundary(wire)
-        if reverse:
-            offset = -offset
-        external_vertices = []
-        _ = wire.Vertices(None, external_vertices)
-        offset_vertices = []
-        for idx in range(len(external_vertices)-1):
-            vrtx = [external_vertices[idx].X(), external_vertices[idx].Y(), external_vertices[idx].Z()]
-            vrtx1 = [external_vertices[idx+1].X(), external_vertices[idx+1].Y(), external_vertices[idx+1].Z()]
-            vrtx2 = [external_vertices[idx-1].X(), external_vertices[idx-1].Y(), external_vertices[idx-1].Z()]
-            u = topologic_lib.normalize([(vrtx1[0] - vrtx[0]), (vrtx1[1] - vrtx[1]),(vrtx1[2] - vrtx[2])])
-            v = topologic_lib.normalize([(vrtx2[0] - vrtx[0]), (vrtx2[1] - vrtx[1]),(vrtx2[2] - vrtx[2])])
-            ev = external_vertices[idx]
-            v3 = vrtx + u
-            v4 = vrtx + v
-            offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * topologic_lib.normalize(u + v))
-            topologic_offset_vertex = topologic.Vertex.ByCoordinates(offset_vertex[0], offset_vertex[1], offset_vertex[2])
-            status = (topologic.FaceUtility.IsInside(face, topologic_offset_vertex, 0.001))
-            if reverse:
-                status = not status
-            if status:
-                offset = -offset
-                offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * topologic_lib.normalize(u + v))
-            offset_vertices.append([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * topologic_lib.normalize(u + v))
-
-        idx = len(external_vertices)-1
-        v = [external_vertices[idx].X(), external_vertices[idx].Y(), external_vertices[idx].Z()]
-        v1 = [external_vertices[0].X(), external_vertices[0].Y(), external_vertices[0].Z()]
-        v2 = [external_vertices[idx-1].X(), external_vertices[idx-1].Y(), external_vertices[idx-1].Z()]
-        u = topologic_lib.normalize([(v1[0]-v[0]), (v1[1]-v[1]), (v1[2]-v[2])])
-        v = topologic_lib.normalize([(v2[0]-v[0]), (v2[1]-v[1]),(v2[2]-v[2])])
-        ev = external_vertices[idx]
-        offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * topologic_lib.normalize(u + v))
-        topologic_offset_vertex = topologic.Vertex.ByCoordinates(offset_vertex[0], offset_vertex[1], offset_vertex[2])
-        status = (topologic.FaceUtility.IsInside(face, topologic_offset_vertex, 0.001))
-        if reverse:
-            status = not status
-        if status:
-            offset = -offset
-            offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * topologic_lib.normalize(u + v))
-        offset_vertices.append([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * topologic_lib.normalize(u + v))
+        if not isinstance(edges, topologic.Cluster):
+            return None
         edges = []
-        for iv, v in enumerate(offset_vertices[:-1]):
-            e = topologic.Edge.ByStartVertexEndVertex(topologic.Vertex.ByCoordinates(offset_vertices[iv][0], offset_vertices[iv][1], offset_vertices[iv][2]), topologic.Vertex.ByCoordinates(offset_vertices[iv+1][0], offset_vertices[iv+1][1], offset_vertices[iv+1][2]))
-            edges.append(e)
-        iv = len(offset_vertices)-1
-        e = topologic.Edge.ByStartVertexEndVertex(topologic.Vertex.ByCoordinates(offset_vertices[iv][0], offset_vertices[iv][1], offset_vertices[iv][2]), topologic.Vertex.ByCoordinates(offset_vertices[0][0], offset_vertices[0][1], offset_vertices[0][2]))
-        edges.append(e)
-        return topologic.Wire.ByEdges(edges)
+        _ = cluster.Edges(None, edges)
+        return Face.ByEdges(edges)
 
     @staticmethod
-    def FaceByOffset(face, offset, reverse, tolerance=0.0001):
+    def ByOffset(face, offset, reverse, tolerance=0.0001):
         """
+        Description
+        ----------
+        Creates a face by offsetting the edges of the input face.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        offset : TYPE
-            DESCRIPTION.
-        reverse : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
+        offset : float , optional
+            The desired offset value. The default is 0.
+        reverse : bool , optional
+            If set to True the offset will be computed to the inside of the input face. Otherwise, it will be computed to the outside of the face. The default is False.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        returnFace : TYPE
-            DESCRIPTION.
+        topologic.Face
+            The offsetted face.
 
         """
-        # face, offset, reverse, tolerance = item
         external_boundary = face.ExternalBoundary()
         internal_boundaries = []
         _ = face.InternalBoundaries(internal_boundaries)
-        offset_external_boundary = Face.processWire(external_boundary, offset, reverse)
+        offset_external_boundary = Wire.ByOffset(external_boundary, offset, reverse, tolerance)
         offset_external_face = topologic.Face.ByExternalBoundary(offset_external_boundary)
         if topologic.FaceUtility.Area(offset_external_face) < tolerance:
             raise Exception("ERROR: (Topologic>Face.ByOffset) external boundary area is less than tolerance.")
@@ -319,14 +275,14 @@ class Face(topologic.Face):
         reverse = not reverse
         area_sum = 0
         for internal_boundary in internal_boundaries:
-            internal_wire = Face.processWire(internal_boundary, offset, reverse)
+            internal_wire = Wire.ByOffset(internal_boundary, offset, reverse, tolerance)
             internal_face = topologic.Face.ByExternalBoundary(internal_wire)
             # Check if internal boundary has a trivial area
             if topologic.FaceUtility.Area(internal_face) < tolerance:
-                raise Exception("ERROR: (Topologic>Face.ByOffset) internal boundary area is less than tolerance.")
+                return None
             # Check if area of internal boundary is larger than area of external boundary
             if topologic.FaceUtility.Area(internal_face) > topologic.FaceUtility.Area(offset_external_face):
-                raise Exception("ERROR: (Topologic>Face.ByOffset) internal boundary area is larger than the area of the external boundary.")
+                return None
             dif_wire = internal_wire.Difference(offset_external_boundary)
             internal_vertices = []
             _ = internal_wire.Vertices(None, internal_vertices)
@@ -334,64 +290,59 @@ class Face(topologic.Face):
             _ = dif_wire.Vertices(None, dif_vertices)
             # Check if internal boundary intersect the outer boundary
             if len(internal_vertices) != len(dif_vertices):
-                raise Exception("ERROR: (Topologic>Face.ByOffset) internal boundaries intersect outer boundary.")
+                return None
             offset_internal_boundaries.append(internal_wire)
             area_sum = area_sum + topologic.FaceUtility.Area(internal_face)
         if area_sum > topologic.FaceUtility.Area(offset_external_face):
-            raise Exception("ERROR: (Topologic>Face.ByOffset) total area of internal boundaries is larger than the area of the external boundary.")
+            return None
         # NOT IMPLEMENTED: Check if internal boundaries intersect each other!
         returnFace = topologic.Face.ByExternalInternalBoundaries(offset_external_boundary, offset_internal_boundaries)
         if returnFace.Type() != 8:
-            raise Exception("ERROR: (Topologic>Face.ByOffset) invalid resulting face.")
+            return None
         if topologic.FaceUtility.Area(returnFace) < tolerance:
-            raise Exception("ERROR: (Topologic>Face.ByOffset) area of resulting face is smaller than the tolerance.")
+            return None
         return returnFace
     
     @staticmethod
-    def FaceByShell(shell, angTol=0.1):
+    def ByShell(shell, angTolerance=0.1):
         """
+        Description
+        ----------
+        Creates a face by merging the faces of the input shell.
+
         Parameters
         ----------
-        shell : TYPE
-            DESCRIPTION.
-        angTol : float, optional
-            DESCRIPTION. The default is 0.1.
+        shell : topologic.Shell
+            The input shell.
+        angTolerance : float, optional
+            The desired angular tolerance. The default is 0.1.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Face
+            The created face.
 
         """
-        # shell, angTol = item
-        
-        def planarize(wire):
-            verts = []
-            _ = wire.Vertices(None, verts)
-            w = Wire.WireByVertices([verts[0], verts[1], verts[2]], True)
-            f = topologic.Face.ByExternalBoundary(w)
-            proj_verts = []
-            for v in verts:
-                proj_verts.append(Vertex.VertexProject(v, f))
-            new_w = Wire.WireByVertices(proj_verts, True)
-            return new_w
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Shell import Shell
         
         def planarizeList(wireList):
             returnList = []
             for aWire in wireList:
-                returnList.append(planarize(aWire))
+                returnList.append(Wire.Planarize(aWire))
             return returnList
         
         ext_boundary = Shell.ShellExternalBoundary(shell)
         if isinstance(ext_boundary, topologic.Wire):
             try:
-                return topologic.Face.ByExternalBoundary(Wire.WireRemoveCollinearEdges(ext_boundary, angTol))
+                return topologic.Face.ByExternalBoundary(Wire.RemoveCollinearEdges(ext_boundary, angTolerance))
             except:
                 try:
-                    return topologic.Face.ByExternalBoundary(planarize(Wire.WireRemoveCollinearEdges(ext_boundary, angTol)))
+                    return topologic.Face.ByExternalBoundary(Wire.Planarize(Wire.RemoveCollinearEdges(ext_boundary, angTolerance)))
                 except:
-                    print("FaceByPlanarShell - Error: The input Wire is not planar and could not be fixed. Returning the planarized Wire.")
-                    return planarize(ext_boundary)
+                    print("FaceByPlanarShell - Error: The input Wire is not planar and could not be fixed. Returning None.")
+                    return None
         elif isinstance(ext_boundary, topologic.Cluster):
             wires = []
             _ = ext_boundary.Wires(None, wires)
@@ -399,9 +350,9 @@ class Face(topologic.Face):
             areas = []
             for aWire in wires:
                 try:
-                    aFace = topologic.Face.ByExternalBoundary(Wire.WireRemoveCollinearEdges(aWire, angTol))
+                    aFace = topologic.Face.ByExternalBoundary(Wire.RemoveCollinearEdges(aWire, angTolerance))
                 except:
-                    aFace = topologic.Face.ByExternalBoundary(planarize(Wire.WireRemoveCollinearEdges(aWire, angTol)))
+                    aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Wire.RemoveCollinearEdges(aWire, angTolerance)))
                 anArea = topologic.FaceUtility.Area(aFace)
                 faces.append(aFace)
                 areas.append(anArea)
@@ -412,37 +363,44 @@ class Face(topologic.Face):
             for int_boundary in int_boundaries:
                 temp_wires = []
                 _ = int_boundary.Wires(None, temp_wires)
-                int_wires.append(Wire.WireRemoveCollinearEdges(temp_wires[0], angTol))
+                int_wires.append(Wire.RemoveCollinearEdges(temp_wires[0], angTolerance))
             temp_wires = []
             _ = ext_boundary.Wires(None, temp_wires)
-            ext_wire = Wire.WireRemoveCollinearEdges(temp_wires[0], angTol)
+            ext_wire = Wire.RemoveCollinearEdges(temp_wires[0], angTolerance)
             try:
                 return topologic.Face.ByExternalInternalBoundaries(ext_wire, int_wires)
             except:
-                return topologic.Face.ByExternalInternalBoundaries(planarize(ext_wire), planarizeList(int_wires))
+                return topologic.Face.ByExternalInternalBoundaries(Wire.Planarize(ext_wire), planarizeList(int_wires))
         else:
             return None
     
     @staticmethod
-    def FaceByVertices(item):
+    def ByVertices(vertices):
         """
+        Description
+        ----------
+        Creates a face from the input list of vertices.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        vertices : list
+            The input list of vertices.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Face
+            The crearted face.
 
         """
-        assert isinstance(item, list), "Face.ByVertices - Error: Input is not a list"
-        vertices = [x for x in item if isinstance(x, topologic.Vertex)]
+        from topologicpy.Topology import Topology
+
+        if not isinstance(vertices, list):
+            return None
+        vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
         edges = []
-        for i in range(len(vertices)-1):
-            v1 = vertices[i]
-            v2 = vertices[i+1]
+        for i in range(len(vertexList)-1):
+            v1 = vertexList[i]
+            v2 = vertexList[i+1]
             try:
                 e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
                 if e:
@@ -458,73 +416,132 @@ class Face(topologic.Face):
         except:
             pass
         if len(edges) > 0:
-            return topologic.Face.ByExternalBoundary(Topology.TopologySelfMerge(topologic.Cluster.ByTopologies(edges, False)))
+            return topologic.Face.ByExternalBoundary(Topology.SelfMerge(topologic.Cluster.ByTopologies(edges, False)))
         else:
             return None
-    
-    @staticmethod
-    def FaceByWire(item):
+
+    def ByVerticesCluster(cluster):
         """
+        Description
+        ----------
+        Creates a face from the input cluster of vertices.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        vertices : topologic.Cluster
+            The input cluster of vertices.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Face
+            The crearted face.
 
         """
-        if isinstance(item, topologic.Wire):
-            return topologic.Face.ByExternalBoundary(item)
-        return None
-    
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        vertices = []
+        _ = cluster.Vertices(None, vertices)
+        return Face.ByVertices(vertices)
+
     @staticmethod
-    def FaceByWires(externalBoundary, internalBoundariesCluster):
+    def ByWire(wire):
         """
+        Description
+        ----------
+        Creates a face from the input closed wire.
+
         Parameters
         ----------
-        externalBoundary : TYPE
-            DESCRIPTION.
-        internalBoundariesCluster : TYPE
-            DESCRIPTION.
+        wire : topologic.Wire
+            The input wire.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Face
+            The created face.
 
         """
-        # externalBoundary, internalBoundariesCluster = item
-        assert isinstance(externalBoundary, topologic.Wire), "Face.ByWires - Error: External Boundary Input is not a Wire"
-        assert isinstance(internalBoundariesCluster, topologic.Cluster), "Face.ByWires - Error: Internal Boundaries Input is not a Cluster"
+        if not isinstance(wire, topologic.Wire):
+            return None
+        if not Wire.IsClosed(wire):
+            return None
+        return topologic.Face.ByExternalBoundary(wire)
+
+    @staticmethod
+    def ByWires(externalBoundary, internalBoundaries=[]):
+        """
+        Description
+        ----------
+        Creates a face from the input external boundary (closed wire) and the input list of internal boundaries (closed wires).
+
+        Parameters
+        ----------
+        externalBoundary : topologic.Wire
+            The input external boundary.
+        internalBoundaries : list , optional
+            The input list of internal boundaries (closed wires). The default is an empty list.
+
+        Returns
+        -------
+        topologic.Face
+            The created face.
+
+        """
+        if not isinstance(externalBoundary, topologic.Wire):
+            return None
+        if not Wire.IsClosed(externalBoundary):
+            return None
+        ibList = [x for x in internalBoundaries if isinstance(x, topologic.Wire) and Wire.IsClosed(x)]
+        return topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList)
+
+    @staticmethod
+    def ByWiresCluster(externalBoundary, internalBoundariesCluster=[]):
+        """
+        Description
+        ----------
+        Creates a face from the input external boundary (closed wire) and the input cluster of internal boundaries (closed wires).
+
+        Parameters
+        ----------
+        externalBoundary : topologic.Wire
+            The input external boundary (closed wire).
+        internalBoundariesCluster : topologic.Cluster
+            The input cluster of internal boundaries (closed wires). The default is None.
+
+        Returns
+        -------
+        topologic.Face
+            The created face.
+
+        """
+        if not isinstance(externalBoundary, topologic.Wire):
+            return None
+        if not Wire.IsClosed(externalBoundary):
+            return None
         internalBoundaries = []
         _ = internalBoundariesCluster.Wires(None, internalBoundaries)
-        return topologic.Face.ByExternalInternalBoundaries(externalBoundary, internalBoundaries)
+        return Face.ByWires(externalBoundary, internalBoundaries)
 
     @staticmethod
-    def FaceCompactness(face, mantissa):
+    def Compactness(face, mantissa=4):
         """
+        Description
+        ----------
+        Returns the compactness value of the input face. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        mantissa : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        float
+            The compactness value of the input face.
 
         """
-        # face, mantissa = item
         exb = face.ExternalBoundary()
         edges = []
         _ = exb.Edges(None, edges)
@@ -536,55 +553,56 @@ class Face(topologic.Face):
         #From https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
         if area <= 0:
-            raise Exception("Error: Face.Compactness: Face area is less than or equal to zero")
+            return None
         if perimeter <= 0:
-            raise Exception("Error: Face.Compactness: Face perimeter is less than or equal to zero")
+            return None
         compactness = (math.pi*(2*math.sqrt(area/math.pi)))/perimeter
         return round(compactness, mantissa)
     
     @staticmethod
-    def FaceExternalBoundary(item):
+    def ExternalBoundary(face):
         """
+        Description
+        ----------
+        Returns the external boundary (closed wire) of the input face.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Wire
+            The external boundary of the input face.
 
         """
-        return item.ExternalBoundary()
+        return face.ExternalBoundary()
     
     @staticmethod
-    def FaceFacingToward(face, direction, asVertex, tolerance=0.0001):
+    def FacingToward(face, direction=[0,0,-1], asVertex=False, tolerance=0.0001):
         """
+        Description
+        ----------
+        Returns True if the input face is facing toward the input direction.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        direction : TYPE
-            DESCRIPTION.
-        asVertex : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
+        direction : list , optional
+            The input direction. The default is [0,0,-1].
+        asVertex : bool , optional
+            If set to True, the direction is treated as an actual vertex in 3D space. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        bool
+            True if the face is facing toward the direction. False otherwise.
 
         """
-        # face, direction, asVertex, tol = item
-
         faceNormal = topologic.FaceUtility.NormalAtParameters(face,0.5, 0.5)
         faceCenter = topologic.FaceUtility.VertexAtParameters(face,0.5,0.5)
         cList = [faceCenter.X(), faceCenter.Y(), faceCenter.Z()]
@@ -599,30 +617,35 @@ class Face(topologic.Face):
             dV = [vList[0]-cList[0], vList[1]-cList[1], vList[2]-cList[2]]
         else:
             dV = vList
-        uV = Edge.unitizeVector(dV)
+        uV = Vector.Normalize(dV)
         dot = sum([i*j for (i, j) in zip(uV, faceNormal)])
-        ang = math.degrees(math.acos(dot))
         if dot < tolerance:
-            return [False, ang]
-        return [True, ang]
+            return False
+        return True
     
     @staticmethod
-    def FaceFlatten(item):
+    def Flatten(face):
         """
+        Description
+        ----------
+        Flattens the input face such that its center of mass is located at the origin and its normal is pointed in the positvie Z axis.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
 
         Returns
         -------
-        flat_item : TYPE
-            DESCRIPTION.
+        topologic.Face
+            The flattened face.
 
         """
+        if not isinstance(face, topologic.Face):
+            return None
         origin = topologic.Vertex.ByCoordinates(0,0,0)
-        cm = item.CenterOfMass()
-        coords = topologic.FaceUtility.NormalAtParameters(item, 0.5, 0.5)
+        cm = face.CenterOfMass()
+        coords = topologic.FaceUtility.NormalAtParameters(face, 0.5, 0.5)
         x1 = cm.X()
         y1 = cm.Y()
         z1 = cm.Z()
@@ -644,13 +667,17 @@ class Face(topologic.Face):
         return flat_item
     
     @staticmethod
-    def FaceGridByDistances(face, uRange, vRange, uOrigin, vOrigin, clip):
+    def GridByDistances(face, uRange=[0,0.25,0.5,0.75,1.0], vRange=[0,0.25,0.5,0.75,1.0], uOrigin=None, vOrigin=None, clip=False):
         """
+        Description
+        ----------
+        Creates a grid (cluster of edges) on the input face.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        uRange : TYPE
+        face : topologic.Face
+            The input face.
+        uRange : list
             DESCRIPTION.
         vRange : TYPE
             DESCRIPTION.
@@ -658,40 +685,21 @@ class Face(topologic.Face):
             DESCRIPTION.
         vOrigin : TYPE
             DESCRIPTION.
-        clip : TYPE
-            DESCRIPTION.
+        clip : bool , optional
+            If True the grid will be clipped by the shape of the input face. The default is False.
 
         Returns
         -------
         list
-            DESCRIPTION.
+            The list of grid components.:
+            1. The *u* cluster of edges
+            2. The *v* cluster of edges
 
         """
-        # face = item[0]
-        # uRange = item[1]
-        # vRange = item[2]
-        # uOrigin = item[3]
-        # vOrigin = item[4]
-        # clip = item[5]
-        
-        def multiplyVector(vector, mag, tol):
-            oldMag = 0
-            for value in vector:
-                oldMag += value ** 2
-            oldMag = oldMag ** 0.5
-            if oldMag < tol:
-                return [0,0,0]
-            newVector = []
-            for i in range(len(vector)):
-                newVector.append(vector[i] * mag / oldMag)
-            return newVector
-        
         if isinstance(clip, list):
             clip = clip[0]
-        uvWireEdges = []
         uCluster = None
         vCluster = None
-        uvWire = None
         v1 = topologic.FaceUtility.VertexAtParameters(face, 0, 0)
         v2 = topologic.FaceUtility.VertexAtParameters(face, 1, 0)
         uVector = [v2.X()-v1.X(), v2.Y()-v1.Y(),v2.Z()-v1.Z()]
@@ -701,14 +709,13 @@ class Face(topologic.Face):
         if len(uRange) > 0:
             uRange.sort()
             uRangeEdges = []
-            uuVector = Edge.unitizeVector(uVector)
+            uuVector = Vector.Normalize(uVector)
             for u in uRange:
-                tempVec = multiplyVector(uuVector, u, 0.0001)
+                tempVec = Vector.multiply(uuVector, u, 0.0001)
                 v1 = topologic.Vertex.ByCoordinates(uOrigin.X()+tempVec[0], uOrigin.Y()+tempVec[1], uOrigin.Z()+tempVec[2])
                 v2 = topologic.Vertex.ByCoordinates(v1.X()+vVector[0], v1.Y()+vVector[1], v1.Z()+vVector[2])
                 e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
                 uRangeEdges.append(e)
-                uvWireEdges.append(e)
             if len(uRangeEdges) > 0:
                 uCluster = topologic.Cluster.ByTopologies(uRangeEdges)
                 if clip:
@@ -716,24 +723,21 @@ class Face(topologic.Face):
         if len(vRange) > 0:
             vRange.sort()
             vRangeEdges = []
-            uvVector = Edge.unitizeVector(vVector)
+            uvVector = Vector.Normalize(vVector)
             for v in vRange:
-                tempVec = multiplyVector(uvVector, v, 0.0001)
+                tempVec = Vector.multiplyVector(uvVector, v, 0.0001)
                 v1 = topologic.Vertex.ByCoordinates(vOrigin.X()+tempVec[0], vOrigin.Y()+tempVec[1], vOrigin.Z()+tempVec[2])
                 v2 = topologic.Vertex.ByCoordinates(v1.X()+uVector[0], v1.Y()+uVector[1], v1.Z()+uVector[2])
                 e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
                 vRangeEdges.append(e)
-                uvWireEdges.append(e)
             if len(vRangeEdges) > 0:
                 vCluster = topologic.Cluster.ByTopologies(vRangeEdges)
                 if clip:
                     vCluster = vCluster.Intersect(face, False)
-        if len(uvWireEdges) > 0 and uCluster and vCluster:
-            uvWire = uCluster.Merge(vCluster)
-        return [uCluster, vCluster, uvWire]
+        return [uCluster, vCluster]
     
     @staticmethod
-    def FaceGridByParameters(face, uRange, vRange, clip):
+    def GridByParameters(face, uRange, vRange, clip):
         """
         Parameters
         ----------
@@ -802,7 +806,7 @@ class Face(topologic.Face):
         return [uCluster, vCluster, uvWire]
     
     @staticmethod
-    def FaceInternalBoundaries(item):
+    def InternalBoundaries(item):
         """
         Parameters
         ----------
@@ -820,7 +824,7 @@ class Face(topologic.Face):
         return list(wires)
 
     @staticmethod
-    def FaceInternalVertex(face, tolerance=0.0001):
+    def InternalVertex(face, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -840,7 +844,7 @@ class Face(topologic.Face):
         return topologic.FaceUtility.InternalVertex(face, tolerance)
     
     @staticmethod
-    def FaceIsCoplanar(faceA, faceB, tolerance=0.0001):
+    def IsCoplanar(faceA, faceB, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -876,12 +880,12 @@ class Face(topologic.Face):
             raise Exception("Face.IsCoplanar - Error: Face A is not valid")
         if not faceB or not isinstance(faceB, topologic.Face):
             raise Exception("Face.IsCoplanar - Error: Face B is not valid")
-        dirA = Face.FaceNormalAtParameters(faceA, 0.5, 0.5, "XYZ", 3)
-        dirB = Face.FaceNormalAtParameters(faceB, 0.5, 0.5, "XYZ", 3)
+        dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "XYZ", 3)
+        dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "XYZ", 3)
         return collinear(dirA, dirB, tolerance)
     
     @staticmethod
-    def FaceIsInside(topology, vertex, tolerance=0.0001):
+    def IsInside(topology, vertex, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -907,7 +911,7 @@ class Face(topologic.Face):
         return status
 
     @staticmethod
-    def FaceNormalAtParameters(face, u=0.5, v=0.5, outputType="XYZ", mantissa=3):
+    def NormalAtParameters(face, u=0.5, v=0.5, outputType="XYZ", mantissa=3):
         """
         Parameters
         ----------
@@ -954,7 +958,50 @@ class Face(topologic.Face):
         return returnResult
     
     @staticmethod
-    def FaceTrimByWire(face, wire, reverseWire):
+    def Project(faceA, faceB, direction=None, mantissa=3, tolerance=0.0001):
+        """
+        Description
+        ----------
+        Creates a projection of the input face unto the input face.
+
+        Parameters
+        ----------
+        faceA : topologic.Face
+            The face to be projected.
+        faceB : topologic.Face
+            The face unto which the first input face will be projected.
+        direction : list, optional
+            The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. The default is None.
+
+        Returns
+        -------
+        topologic.Face
+            The projected Face.
+
+        """
+
+        if not faceA:
+            return None
+        if not isinstance(faceA, topologic.Face):
+            return None
+        if not faceB:
+            return None
+        if not isinstance(faceB, topologic.Face):
+            return None
+
+        eb = faceA.ExternalBoundary()
+        ib_list = []
+        _ = faceA.InternalBoundaries(ib_list)
+        p_eb = Wire.Project(eb, faceB, direction, mantissa, tolerance)
+        p_ib_list
+        for ib in ib_list:
+            temp_ib = Wire.Project(ib, faceB, direction, mantissa, tolerance)
+            if temp_ib:
+                p_ib_list.append(temp_ib)
+        return Face.ByWires(p_eb, p_ib_list)
+
+    @staticmethod
+    def TrimByWire(face, wire, reverseWire):
         """
         Parameters
         ----------
@@ -977,7 +1024,7 @@ class Face(topologic.Face):
         return topologic.FaceUtility.TrimByWire(face, wire, reverseWire)
     
     @staticmethod
-    def FaceVertexByParameters(face, u, v):
+    def VertexByParameters(face, u, v):
         """
         Parameters
         ----------
@@ -1001,7 +1048,7 @@ class Face(topologic.Face):
         return vertex
     
     @staticmethod
-    def FaceVertexParameters(face, vertex):
+    def VertexParameters(face, vertex):
         """
         Parameters
         ----------
