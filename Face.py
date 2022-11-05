@@ -109,8 +109,8 @@ class Face(topologic.Face):
             return None
         if not faceB or not isinstance(faceB, topologic.Face):
             return None
-        dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "XYZ", 3)
-        dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "XYZ", 3)
+        dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
+        dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
         return round((Vector.Angle(dirA, dirB)), mantissa)
     
     @staticmethod
@@ -667,302 +667,165 @@ class Face(topologic.Face):
         return flat_item
     
     @staticmethod
-    def GridByDistances(face, uRange=[0,0.25,0.5,0.75,1.0], vRange=[0,0.25,0.5,0.75,1.0], uOrigin=None, vOrigin=None, clip=False):
+    def InternalBoundaries(face):
         """
         Description
         ----------
-        Creates a grid (cluster of edges) on the input face.
+        Returns the internal boundaries (closed wires) of the input face.
 
         Parameters
         ----------
         face : topologic.Face
             The input face.
-        uRange : list
-            DESCRIPTION.
-        vRange : TYPE
-            DESCRIPTION.
-        uOrigin : TYPE
-            DESCRIPTION.
-        vOrigin : TYPE
-            DESCRIPTION.
-        clip : bool , optional
-            If True the grid will be clipped by the shape of the input face. The default is False.
 
         Returns
         -------
         list
-            The list of grid components.:
-            1. The *u* cluster of edges
-            2. The *v* cluster of edges
+            The list of internal boundaries (closed wires).
 
         """
-        if isinstance(clip, list):
-            clip = clip[0]
-        uCluster = None
-        vCluster = None
-        v1 = topologic.FaceUtility.VertexAtParameters(face, 0, 0)
-        v2 = topologic.FaceUtility.VertexAtParameters(face, 1, 0)
-        uVector = [v2.X()-v1.X(), v2.Y()-v1.Y(),v2.Z()-v1.Z()]
-        v1 = topologic.FaceUtility.VertexAtParameters(face, 0, 0)
-        v2 = topologic.FaceUtility.VertexAtParameters(face, 0, 1)
-        vVector = [v2.X()-v1.X(), v2.Y()-v1.Y(),v2.Z()-v1.Z()]
-        if len(uRange) > 0:
-            uRange.sort()
-            uRangeEdges = []
-            uuVector = Vector.Normalize(uVector)
-            for u in uRange:
-                tempVec = Vector.multiply(uuVector, u, 0.0001)
-                v1 = topologic.Vertex.ByCoordinates(uOrigin.X()+tempVec[0], uOrigin.Y()+tempVec[1], uOrigin.Z()+tempVec[2])
-                v2 = topologic.Vertex.ByCoordinates(v1.X()+vVector[0], v1.Y()+vVector[1], v1.Z()+vVector[2])
-                e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
-                uRangeEdges.append(e)
-            if len(uRangeEdges) > 0:
-                uCluster = topologic.Cluster.ByTopologies(uRangeEdges)
-                if clip:
-                    uCluster = uCluster.Intersect(face, False)
-        if len(vRange) > 0:
-            vRange.sort()
-            vRangeEdges = []
-            uvVector = Vector.Normalize(vVector)
-            for v in vRange:
-                tempVec = Vector.multiplyVector(uvVector, v, 0.0001)
-                v1 = topologic.Vertex.ByCoordinates(vOrigin.X()+tempVec[0], vOrigin.Y()+tempVec[1], vOrigin.Z()+tempVec[2])
-                v2 = topologic.Vertex.ByCoordinates(v1.X()+uVector[0], v1.Y()+uVector[1], v1.Z()+uVector[2])
-                e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
-                vRangeEdges.append(e)
-            if len(vRangeEdges) > 0:
-                vCluster = topologic.Cluster.ByTopologies(vRangeEdges)
-                if clip:
-                    vCluster = vCluster.Intersect(face, False)
-        return [uCluster, vCluster]
-    
-    @staticmethod
-    def GridByParameters(face, uRange, vRange, clip):
-        """
-        Parameters
-        ----------
-        face : TYPE
-            DESCRIPTION.
-        uRange : TYPE
-            DESCRIPTION.
-        vRange : TYPE
-            DESCRIPTION.
-        clip : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
-
-        Returns
-        -------
-        list
-            DESCRIPTION.
-
-        """
-        # face = item[0]
-        # uRange = item[1]
-        # vRange = item[2]
-        # clip = item[3]
-        if isinstance(clip, list):
-            clip = clip[0]
-        uvWireEdges = []
-        uCluster = None
-        vCluster = None
-        uvWire = None
-        if len(uRange) > 0:
-            if (min(uRange) < 0) or (max(uRange) > 1):
-                raise Exception("Face.GridByParameters - Error: uRange input values are outside acceptable range (0,1)")
-            uRange.sort()
-            uRangeEdges = []
-            for u in uRange:
-                v1 = topologic.FaceUtility.VertexAtParameters(face, u, 0)
-                v2 = topologic.FaceUtility.VertexAtParameters(face, u, 1)
-                e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
-                uRangeEdges.append(e)
-                uvWireEdges.append(e)
-            if len(uRangeEdges) > 0:
-                uCluster = topologic.Cluster.ByTopologies(uRangeEdges)
-                if clip:
-                    uCluster = uCluster.Intersect(face, False)
-        if len(vRange) > 0:
-            if (min(vRange) < 0) or (max(vRange) > 1):
-                raise Exception("Face.GridByParameters - Error: vRange input values are outside acceptable range (0,1)")
-            vRange.sort()
-            vRangeEdges = []
-            for v in vRange:
-                v1 = topologic.FaceUtility.VertexAtParameters(face, 0, v)
-                v2 = topologic.FaceUtility.VertexAtParameters(face, 1, v)
-                e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
-                vRangeEdges.append(e)
-                uvWireEdges.append(e)
-            if len(vRangeEdges) > 0:
-                vCluster = topologic.Cluster.ByTopologies(vRangeEdges)
-                if clip:
-                    vCluster = vCluster.Intersect(face, False)
-        if len(uvWireEdges) > 0 and uCluster and vCluster:
-            uvWire = uCluster.Merge(vCluster)
-        return [uCluster, vCluster, uvWire]
-    
-    @staticmethod
-    def InternalBoundaries(item):
-        """
-        Parameters
-        ----------
-        item : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
+        if not isinstance(face, topologic.Face):
+            return None
         wires = []
-        _ = item.InternalBoundaries(wires)
+        _ = face.InternalBoundaries(wires)
         return list(wires)
 
     @staticmethod
     def InternalVertex(face, tolerance=0.0001):
         """
+        Description
+        ----------
+        Creates a vertex guaranteed to be inside the input face.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Vertex
+            The created vertex.
 
         """
-        # face = item[0]
-        # tol = item[1]
+        if not isinstance(face, topologic.Face):
+            return None
         return topologic.FaceUtility.InternalVertex(face, tolerance)
     
     @staticmethod
     def IsCoplanar(faceA, faceB, tolerance=0.0001):
         """
+        Description
+        ----------
+        Returns True if the two input faces are coplanar. Returns False otherwise.
+
         Parameters
         ----------
-        faceA : TYPE
-            DESCRIPTION.
-        faceB : TYPE
-            DESCRIPTION.
+        faceA : topologic.Face
+            The first input face.
+        faceB : topologic.Face
+            The second input face
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The deafault is 0.0001.
 
         Raises
         ------
         Exception
-            DESCRIPTION.
+            Raises an exception if the angle between the two input faces cannot be determined.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        bool
+            True if the two input faces are coplanar. False otherwise.
 
         """
-        # faceA, faceB, tol = item
-        
-        def collinear(v1, v2, tolerance):
-            ang = Face.angle_between(v1, v2)
-            if math.isnan(ang) or math.isinf(ang):
-                raise Exception("Face.IsCollinear - Error: Could not determine the angle between the input faces")
-            elif abs(ang) < tolerance or abs(pi - ang) < tolerance:
-                return True
-            return False
-        
-        if not faceA or not isinstance(faceA, topologic.Face):
-            raise Exception("Face.IsCoplanar - Error: Face A is not valid")
-        if not faceB or not isinstance(faceB, topologic.Face):
-            raise Exception("Face.IsCoplanar - Error: Face B is not valid")
-        dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "XYZ", 3)
-        dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "XYZ", 3)
-        return collinear(dirA, dirB, tolerance)
+        if not isinstance(faceA, topologic.Face) or not isinstance(faceB, topologic.Face):
+            return None
+        dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
+        dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
+        return Vector.IsCollinear(dirA, dirB, tolerance)
     
     @staticmethod
-    def IsInside(topology, vertex, tolerance=0.0001):
+    def IsInside(face, vertex, tolerance=0.0001):
         """
+        Description
+        ----------
+        Returns True if the input vertex is inside the input face. Returns False otherwise.
+
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        vertex : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
+        vertex : topologic.Vertex
+            The input vertex.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        status : TYPE
-            DESCRIPTION.
+        bool
+            True if the input vertex is inside the input face. False otherwise.
 
         """
-        # topology = item[0]
-        # vertex = item[1]
-        # tolerance = item[2]
-        status = False
-        if topology.Type() == topologic.Face.Type():
-            status = (topologic.FaceUtility.IsInside(topology, vertex, tolerance))
-        return status
+        if not isinstance(face, topologic.Face):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        return (topologic.FaceUtility.IsInside(face, vertex, tolerance))
+
 
     @staticmethod
-    def NormalAtParameters(face, u=0.5, v=0.5, outputType="XYZ", mantissa=3):
+    def NormalAtParameters(face, u=0.5, v=0.5, outputType="xyz", mantissa=4):
         """
+        Description
+        ----------
+        Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        u : TYPE
-            DESCRIPTION.
-        v : TYPE
-            DESCRIPTION.
-        outputType : TYPE
-            DESCRIPTION.
-        mantissa : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
+        u : float , optional
+            THe *u* parameter at which to compute the normal to the input face. The default is 0.5.
+        v : float , optional
+            The *v* parameter at which to compute the normal to the input face. The default is 0.5.
+        outputType : string , optional
+            The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. The default is "xyz".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
-        returnResult : TYPE
-            DESCRIPTION.
+        list
+            The normal vector to the input face.
 
         """
-        # face, u, v = item
+        returnResult = []
         try:
             coords = topologic.FaceUtility.NormalAtParameters(face, u, v)
             x = round(coords[0], mantissa)
             y = round(coords[1], mantissa)
             z = round(coords[2], mantissa)
-            returnResult = []
-            if outputType == "XYZ":
-                returnResult = [x,y,z]
-            elif outputType == "XY":
-                returnResult = [x,y]
-            elif outputType == "XZ":
-                returnResult = [x,z]
-            elif outputType == "YZ":
-                returnResult = [y,z]
-            elif outputType == "X":
-                returnResult = x
-            elif outputType == "Y":
-                returnResult = y
-            elif outputType == "Z":
-                returnResult = z
+            outputType = list(outputType.lower())
+            for axis in outputType:
+                if axis == "x":
+                    returnResult.append(x)
+                elif axis == "y":
+                    returnResult.append(y)
+                elif axis == "z":
+                    returnResult.append(z)
         except:
             returnResult = None
         return returnResult
     
     @staticmethod
-    def Project(faceA, faceB, direction=None, mantissa=3, tolerance=0.0001):
+    def Project(faceA, faceB, direction=None, mantissa=4, tolerance=0.0001):
         """
         Description
         ----------
-        Creates a projection of the input face unto the input face.
+        Creates a projection of the first input face unto the second input face.
 
         Parameters
         ----------
@@ -972,6 +835,8 @@ class Face(topologic.Face):
             The face unto which the first input face will be projected.
         direction : list, optional
             The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. The default is None.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
@@ -993,7 +858,7 @@ class Face(topologic.Face):
         ib_list = []
         _ = faceA.InternalBoundaries(ib_list)
         p_eb = Wire.Project(eb, faceB, direction, mantissa, tolerance)
-        p_ib_list
+        p_ib_list = []
         for ib in ib_list:
             temp_ib = Wire.Project(ib, faceB, direction, mantissa, tolerance)
             if temp_ib:
@@ -1001,69 +866,98 @@ class Face(topologic.Face):
         return Face.ByWires(p_eb, p_ib_list)
 
     @staticmethod
-    def TrimByWire(face, wire, reverseWire):
+    def TrimByWire(face, wire, reverse = False):
         """
+        Description
+        ----------
+        Trims the input face by the input wire.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        wire : TYPE
-            DESCRIPTION.
-        reverseWire : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
+        wire : topologic.Wire
+            The input wire.
+        reverse : bool , optional
+            If set to True, the effect of the trim will be reversed. The default is False.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Face
+            The resulting trimmed face.
 
         """
-        # face = item[0]
-        # wire = item[1]
-        # reverseWire = item[2]
-        return topologic.FaceUtility.TrimByWire(face, wire, reverseWire)
+        if not isinstance(face, topologic.Face):
+            return None
+        if not isinstance(wire, topologic.Wire):
+            return face
+        trimmed_face = topologic.FaceUtility.TrimByWire(face, wire, False)
+        if reverse:
+	        trimmed_face = face.Difference(trimmed_face)
+        return trimmed_face
     
     @staticmethod
-    def VertexByParameters(face, u, v):
+    def VertexByParameters(face, u=0.5, v=0.5):
         """
+        Description
+        ----------
+        Creates a vertex at the *u* and *v* parameters of the input face.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        u : TYPE
-            DESCRIPTION.
-        v : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
+        u : float , optional
+            The *u* parameter of the input face. The default is 0.5.
+        v : float , optional
+            The *v* parameter of the input face. The default is 0.5.
 
         Returns
         -------
-        vertex : TYPE
-            DESCRIPTION.
+        vertex : topologic vertex
+            The created vertex.
 
         """
-        # face = item[0]
-        # u = item[1]
-        # v = item[2]
-        vertex = topologic.FaceUtility.VertexAtParameters(face, u, v)
-        return vertex
+        if not isinstance(face, topologic.Face):
+            return None
+        return topologic.FaceUtility.VertexAtParameters(face, u, v)
     
     @staticmethod
-    def VertexParameters(face, vertex):
+    def VertexParameters(face, vertex, outputType="uv", mantissa=4):
         """
+        Description
+        ----------
+        Returns the *u* and *v* parameters of the input face at the location of the input vertex.
+
         Parameters
         ----------
-        face : TYPE
-            DESCRIPTION.
-        vertex : TYPE
-            DESCRIPTION.
+        face : topologic.Face
+            The input face.
+        vertex : topologic.Vertex
+            The input vertex.
+        outputType : string , optional
+            The string defining the desired output. This can be any subset or permutation of "uv". It is case insensitive. The default is "uv".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
         list
-            DESCRIPTION.
+            The list of *u* and/or *v* as specified by the outputType input.
 
         """
-        # face = item[0]
-        # vertex = item[1]
+        if not isinstance(face, topologic.Face):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
         params = topologic.FaceUtility.ParametersAtVertex(face, vertex)
-        return [params[0], params[1]]
+        u = round(params[0], mantissa)
+        v = round(params[1], mantissa)
+        outputType = list(outputType.lower())
+        returnResult = []
+        for param in outputType:
+            if param == "u":
+                returnResult.append(u)
+            elif param == "v":
+                returnResult.append(v)
+        return returnResult

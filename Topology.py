@@ -321,6 +321,10 @@ class Topology():
     @staticmethod
     def AddApertures(topology, apertureCluster, exclusive, subTopologyType, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -397,6 +401,10 @@ class Topology():
     @staticmethod
     def AddContent(topology, contents, targetType):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -437,6 +445,10 @@ class Topology():
     @staticmethod
     def AddDictionary(topology, dictionary):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -591,6 +603,10 @@ class Topology():
     @staticmethod
     def AdjacentTopologies(item, hostTopology, topologyType):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -987,6 +1003,10 @@ class Topology():
     @staticmethod
     def Analyze(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1003,6 +1023,10 @@ class Topology():
     @staticmethod
     def Apertures(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1275,6 +1299,10 @@ class Topology():
     @staticmethod
     def BoundingBox(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1320,6 +1348,10 @@ class Topology():
     @staticmethod
     def ByImportedBRep(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1343,6 +1375,10 @@ class Topology():
     @staticmethod
     def ByImportedIFC(filePath, typeList):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         filePath : TYPE
@@ -1473,6 +1509,10 @@ class Topology():
     @staticmethod
     def ByImportedIPFS(hash_, url, port):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         hash : TYPE
@@ -1499,6 +1539,10 @@ class Topology():
     @staticmethod
     def ByImportedJSONMK1(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1592,6 +1636,10 @@ class Topology():
     @staticmethod
     def ByImportedJSONMK2(jsonFilePath):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         jsonFilePath : TYPE
@@ -1699,6 +1747,10 @@ class Topology():
     @staticmethod
     def ByOCCTShape(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1715,6 +1767,10 @@ class Topology():
     @staticmethod
     def ByString(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1731,6 +1787,10 @@ class Topology():
     @staticmethod
     def CenterOfMass(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1750,6 +1810,10 @@ class Topology():
     @staticmethod
     def Centroid(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1769,6 +1833,10 @@ class Topology():
     @staticmethod
     def ClusterFaces(topology, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -1882,6 +1950,10 @@ class Topology():
     @staticmethod
     def Content(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1900,6 +1972,10 @@ class Topology():
     @staticmethod
     def Context(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1918,6 +1994,10 @@ class Topology():
     @staticmethod
     def ConvexHull(topology, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -1978,6 +2058,10 @@ class Topology():
     @staticmethod
     def Copy(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -1994,6 +2078,10 @@ class Topology():
     @staticmethod
     def DecodeInformation(topology):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -2103,6 +2191,10 @@ class Topology():
     @staticmethod
     def Dictionary(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -2119,6 +2211,10 @@ class Topology():
     @staticmethod
     def Dimensionality(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -2135,6 +2231,10 @@ class Topology():
     @staticmethod
     def Divide(topology, tool, transferDictionary, addNestingDepth):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -2231,6 +2331,10 @@ class Topology():
     @staticmethod
     def EncodeInformation(topology, csv_string, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -2349,6 +2453,10 @@ class Topology():
     @staticmethod
     def Explode(topology, origin, scale, typeFilter):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -2449,6 +2557,10 @@ class Topology():
     @staticmethod
     def ExportToBRep(topology, filepath, overwrite):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -2490,6 +2602,10 @@ class Topology():
     @staticmethod
     def ExportToIPFS(topology, url, port, user, password):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -2544,6 +2660,10 @@ class Topology():
     @staticmethod
     def ExportToJSONMK1(topologyList, filepath, overwrite, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topologyList : TYPE
@@ -2738,6 +2858,10 @@ class Topology():
     @staticmethod
     def ExportToJSONMK2(topologyList, folderPath, fileName, overwrite, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topologyList : TYPE
@@ -2955,6 +3079,10 @@ class Topology():
     @staticmethod
     def Filter(topologies, topologyType, searchType, key, value):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topologies : TYPE
@@ -3050,6 +3178,10 @@ class Topology():
     @staticmethod
     def Geometry(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -3176,6 +3308,10 @@ class Topology():
     @staticmethod
     def IsPlanar(topology, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -3228,6 +3364,10 @@ class Topology():
     @staticmethod
     def IsSame(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -3244,6 +3384,10 @@ class Topology():
     @staticmethod
     def MergeAll(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -3279,6 +3423,10 @@ class Topology():
     @staticmethod
     def OCCTShape(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -3295,6 +3443,10 @@ class Topology():
     @staticmethod
     def Place(topology, oldLoc, newLoc):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -3327,6 +3479,10 @@ class Topology():
     @staticmethod
     def RemoveCollinearEdges(topology, angTol=0.1, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -3449,6 +3605,10 @@ class Topology():
     @staticmethod
     def RemoveContent(topology, contentList):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -3471,6 +3631,10 @@ class Topology():
     @staticmethod
     def RemoveCoplanarFaces(topology, angTol=0.1, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -3526,6 +3690,10 @@ class Topology():
     @staticmethod
     def Rotate(topology, origin, x, y, z, degree):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -3558,6 +3726,10 @@ class Topology():
     @staticmethod
     def Scale(topology, origin, x, y, z):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -3594,6 +3766,10 @@ class Topology():
     @staticmethod
     def SelectSubTopology(topology, selector, topologyType):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -3632,6 +3808,10 @@ class Topology():
     @staticmethod
     def SelfMerge(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -3707,6 +3887,10 @@ class Topology():
     @staticmethod
     def SetDictionary(topology, dictionary):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -3729,6 +3913,10 @@ class Topology():
     @staticmethod
     def SharedTopologies(topoA, topoB, vertices, edges, wires, faces):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topoA : TYPE
@@ -3774,6 +3962,10 @@ class Topology():
     @staticmethod
     def SortBySelectors(selectors, topologies, exclusive, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         selectors : TYPE
@@ -3819,6 +4011,10 @@ class Topology():
     def Spin(topology, origin, dirX, dirY, dirZ, degree, sides,
                      tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -3920,6 +4116,10 @@ class Topology():
     @staticmethod
     def String(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -3936,6 +4136,10 @@ class Topology():
     @staticmethod
     def SubTopologies(topology, subTopologyType):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -3953,23 +4157,23 @@ class Topology():
         if topology.GetTypeAsString() == subTopologyType:
             return [topology]
         subTopologies = []
-        if subTopologyType == "Vertex":
+        if subTopologyType.lower() == "vertex":
             _ = topology.Vertices(None, subTopologies)
-        elif subTopologyType == "Edge":
+        elif subTopologyType.lower() == "edge":
             _ = topology.Edges(None, subTopologies)
-        elif subTopologyType == "Wire":
+        elif subTopologyType.lower() == "wire":
             _ = topology.Wires(None, subTopologies)
-        elif subTopologyType == "Face":
+        elif subTopologyType.lower() == "face":
             _ = topology.Faces(None, subTopologies)
-        elif subTopologyType == "Shell":
+        elif subTopologyType.lower() == "shell":
             _ = topology.Shells(None, subTopologies)
-        elif subTopologyType == "Cell":
+        elif subTopologyType.lower() == "cell":
             _ = topology.Cells(None, subTopologies)
-        elif subTopologyType == "CellComplex":
+        elif subTopologyType.lower() == "cellcomplex":
             _ = topology.CellComplexes(None, subTopologies)
-        elif subTopologyType == "Cluster":
+        elif subTopologyType.lower() == "cluster":
             _ = topology.Clusters(None, subTopologies)
-        elif subTopologyType == "Aperture":
+        elif subTopologyType.lower() == "aperture":
             _ = topology.Apertures(subTopologies)
         return subTopologies
 
@@ -3977,6 +4181,10 @@ class Topology():
     @staticmethod
     def SuperTopologies(item, hostTopology, topologyType):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -4048,6 +4256,10 @@ class Topology():
     @staticmethod
     def SymmetricDifference(topologyA, topologyB, tranDict):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topologyA : TYPE
@@ -4077,6 +4289,10 @@ class Topology():
     @staticmethod
     def TransferDictionaries(sources, sink, tranVertices, tranEdges, tranFaces, tranCells, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         sources : TYPE
@@ -4170,6 +4386,10 @@ class Topology():
     @staticmethod
     def TransferDictionariesBySelectors(sources, sink, tranVertices, tranEdges, tranFaces, tranCells, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         sources : TYPE
@@ -4236,6 +4456,10 @@ class Topology():
     @staticmethod
     def Transform(topology, matrix):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -4281,6 +4505,10 @@ class Topology():
     @staticmethod
     def Translate(topology, x, y, z):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -4308,6 +4536,10 @@ class Topology():
     @staticmethod
     def Triangulate(topology, tolerance=0.0001):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topology : TYPE
@@ -4354,6 +4586,10 @@ class Topology():
     @staticmethod
     def Type(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -4370,6 +4606,10 @@ class Topology():
     @staticmethod
     def TypeAsString(item):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         item : TYPE
@@ -4386,6 +4626,10 @@ class Topology():
     @staticmethod
     def TypeID(topologyType):
         """
+        Description
+        __________
+            DESCRIPTION
+
         Parameters
         ----------
         topologyType : TYPE
@@ -4398,22 +4642,23 @@ class Topology():
 
         """
         typeID = None
+        topologyType = topologyType.lower()
         try:
-            if topologyType == "Vertex":
+            if topologyType == "vertex":
                 typeID = topologic.Vertex.Type()
-            elif topologyType == "Edge":
+            elif topologyType == "edge":
                 typeID = topologic.Edge.Type()
-            elif topologyType == "Wire":
+            elif topologyType == "wire":
                 typeID = topologic.Wire.Type()
-            elif topologyType == "Face":
+            elif topologyType == "face":
                 typeID = topologic.Face.Type()
-            elif topologyType == "Shell":
+            elif topologyType == "shell":
                 typeID = topologic.Shell.Type()
-            elif topologyType == "Cell":
+            elif topologyType == "cell":
                 typeID = topologic.Cell.Type()
-            elif topologyType == "CellComplex":
+            elif topologyType == "cellComplex":
                 typeID = topologic.CellComplex.Type()
-            elif topologyType == "Cluster":
+            elif topologyType == "cluster":
                 typeID = topologic.Cluster.Type()
         except:
             typeID = None

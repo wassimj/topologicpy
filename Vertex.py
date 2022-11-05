@@ -52,7 +52,7 @@ class Vertex():
         Returns
         -------
         list
-            The coordinates of the input  vertex.
+            The coordinates of the input vertex.
 
         """
         if not isinstance(vertex, topologic.Vertex):
