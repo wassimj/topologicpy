@@ -1,3 +1,5 @@
+from binascii import a2b_base64
+from re import A
 import topologicpy
 import topologic
 from topologicpy.Cluster import Cluster
@@ -261,7 +263,7 @@ class Wire(topologic.Wire):
 
         """
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,)
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
             return None
         radius = abs(radius)
@@ -432,13 +434,36 @@ class Wire(topologic.Wire):
             resultWires.append(resultWire)
         return resultWires
 
-    
     @staticmethod
-    def Ellipse(origin=None, inputMode=1, width=2.0, length=1.0, focalLength= 0.866025, eccentricity=0.866025, majorAxisLength=1.0, minorAxisLength=0.5, sides=32, fromAngle=0, toAngle=360, close=True, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Edges(wire):
+        """
+        Description
+        __________
+        Returns the edges of the input wire.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+
+        Returns
+        -------
+        list
+            The list of edges.
+
+        """
+        if not isinstance(wire, topologic.Wire):
+            return None
+        edges = []
+        _ = wire.Edges(None, edges)
+        return edges
+
+    @staticmethod
+    def Ellipse(origin=None, inputMode=1, width=2.0, length=1.0, focalLength=0.866025, eccentricity=0.866025, majorAxisLength=1.0, minorAxisLength=0.5, sides=32, fromAngle=0, toAngle=360, close=True, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
         Description
         ----------
-        Creates an ellipse.
+        Creates an ellipse and returns all its geometry and parameters.
 
         Parameters
         ----------
@@ -484,20 +509,78 @@ class Wire(topologic.Wire):
 
         Returns
         -------
-        list
-            A list that contains:
-            1. The ellipse (topologic.Wire)
-            2. The two focal points (topologic.Cluster containing two vertices)
-            3. The focal length
-            4. The eccentricity
-            5. The major axis length
-            6. The minor axis length
-            7. The width
-            8. The length
+        topologic.Wire
+            The created ellipse
+
+        """
+        ellipseAll = Wire.EllipseAll(origin=origin, inputMode=inputMode, width=width, length=length, focalLength=focalLength, eccentricity=eccentricity, majorAxisLength=majorAxisLength, minorAxisLength=minorAxisLength, sides=sides, fromAngle=fromAngle, toAngle=toAngle, close=close, dirX=dirX, dirY=dirY, dirZ=dirZ, placement=placement, tolerance=tolerance)
+        return ellipseAll["ellipse"]
+
+    @staticmethod
+    def EllipseAll(origin=None, inputMode=1, width=2.0, length=1.0, focalLength= 0.866025, eccentricity=0.866025, majorAxisLength=1.0, minorAxisLength=0.5, sides=32, fromAngle=0, toAngle=360, close=True, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+        """
+        Description
+        ----------
+        Creates an ellipse and returns all its geometry and parameters.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex, optional
+            The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0,0,0).
+        inputMode : int, optional
+            The method by wich the ellipse is defined. The default is 1.
+            Based on the inputMode value, only the following inputs will be considered. The options are:
+            1. Width and Length (considered inputs: width, length)
+            2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
+            3. Focal Length and Minor Axis Length (considered inputs: focalLength, minorAxisLength)
+            4. Major Axis Length and Minor Axis Length (considered input: majorAxisLength, minorAxisLength)
+        width : float, optional
+            The width of the ellipse. The default is 2.0. This is considered if the inputMode is 1.
+        length : float, optional
+            The length of the ellipse. The default is 1.0. This is considered if the inputMode is 1.
+        focalLength : float, optional
+            The focal length of the ellipse. The default is 0.866025. This is considered if the inputMode is 2 or 3.
+        eccentricity : float, optional
+            The eccentricity of the ellipse. The default is 0.866025. This is considered if the inputMode is 2.
+        majorAxisLength : float, optional
+            The length of the major axis of the ellipse. The default is 1.0. This is considered if the inputMode is 4.
+        minorAxisLength : float, optional
+            The length of the minor axis of the ellipse. The default is 0.5. This is considered if the inputMode is 3 or 4.
+        sides : int, optional
+            The number of sides of the ellipse. The default is 32.
+        fromAngle : float, optional
+            The angle in degrees from which to start creating the arc of the ellipse. The default is 0.
+        toAngle : float, optional
+            The angle in degrees at which to end creating the arc of the ellipse. The default is 360.
+        close : bool, optional
+            If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the ellipse. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the ellipse. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the ellipse. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        dictionary
+            A dictionary with the following keys and values:
+            1. "ellipse" : The ellipse (topologic.Wire)
+            2. "foci" : The two focal points (topologic.Cluster containing two vertices)
+            3. "a" : The major axis length
+            4. "b" : The minor axis length
+            5. "c" : The focal length
+            6. "e" : The eccentricity
+            7. "width" : The width
+            8. "length" : The length
 
         """
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,)
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
             return None
         if inputMode not in [1,2,3,4]:
@@ -517,6 +600,8 @@ class Wire(topologic.Wire):
             return None
         if inputMode == 1:
             # origin, w, l, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
+            w = width
+            l = length
             a = width/2
             b = length/2
             c = math.sqrt(abs(b**2 - a**2))
@@ -599,7 +684,15 @@ class Wire(topologic.Wire):
             foci = topologic.TopologyUtility.Translate(foci, a, b, 0)
         foci = topologic.TopologyUtility.Rotate(foci, origin, 0, 1, 0, theta)
         foci = topologic.TopologyUtility.Rotate(foci, origin, 0, 0, 1, phi)
-        return [ellipse, foci, a, b, c, e, w, l]
+        d = {}
+        d['ellipse'] = ellipse
+        d['foci'] = foci
+        d['a'] = a
+        d['b'] = b
+        d['c'] = c
+        d['w'] = w
+        d['l'] = l
+        return d
 
     @staticmethod
     def IsClosed(wire):
@@ -1379,3 +1472,28 @@ class Wire(topologic.Wire):
         baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 1, 0, theta)
         baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 0, 1, phi)
         return baseWire
+
+    @staticmethod
+    def Vertices(wire):
+        """
+        Description
+        __________
+        Returns the vertices of the input wire.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+
+        Returns
+        -------
+        list
+            The list of vertices.
+
+        """
+        if not isinstance(wire, topologic.Wire):
+            return None
+        vertices = []
+        _ = wire.Vertices(None, vertices)
+        return vertices
+

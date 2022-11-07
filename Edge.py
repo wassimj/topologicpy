@@ -458,3 +458,27 @@ class Edge():
             except:
                 vertex = None
         return vertex
+
+    @staticmethod
+    def Vertices(edge):
+        """
+        Description
+        __________
+        Returns the vertices of the input edge.
+
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The input edge.
+
+        Returns
+        -------
+        list
+            The list of vertices.
+
+        """
+        if not isinstance(edge, topologic.Edge):
+            return None
+        vertices = []
+        _ = edge.Vertices(None, vertices)
+        return vertices

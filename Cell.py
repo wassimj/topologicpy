@@ -416,6 +416,30 @@ class Cell(topologic.Cell):
         return cyl
     
     @staticmethod
+    def Edges(cell):
+        """
+        Description
+        __________
+        Returns the edges of the input cell.
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The input cell.
+
+        Returns
+        -------
+        list
+            The list of edges.
+
+        """ 
+        if not isinstance(cell, topologic.Cell):
+            return None
+        edges = []
+        _ = cell.Edges(None, edges)
+        return edges
+
+    @staticmethod
     def ExternalBoundary(cell):
         """
         Description
@@ -442,6 +466,30 @@ class Cell(topologic.Cell):
         except:
             return None
     
+    @staticmethod
+    def Faces(cell):
+        """
+        Description
+        __________
+        Returns the faces of the input cell.
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The input cell.
+
+        Returns
+        -------
+        list
+            The list of faces.
+
+        """
+        if not isinstance(cell, topologic.Cell):
+            return None
+        faces = []
+        _ = cell.Faces(None, faces)
+        return faces
+
     @staticmethod
     def Hyperboloid(origin=None, baseRadius=1, topRadius=1, height=1, sides=16, dirX=0,
                         dirY=0, dirZ=1, twist=360, placement="bottom", tolerance=0.0001):
@@ -905,6 +953,30 @@ class Cell(topologic.Cell):
         return sets
     
     @staticmethod
+    def Shells(cell):
+        """
+        Description
+        __________
+        Returns the shells of the input cell.
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The input cell.
+
+        Returns
+        -------
+        list
+            The list of shells.
+
+        """
+        if not isinstance(cell, topologic.Cell):
+            return None
+        shells = []
+        _ = cell.Shells(None, shells)
+        return shells
+
+    @staticmethod
     def Sphere(origin=None, radius=1, uSides=16, vSides=8, dirX=0, dirY=0, dirZ=1,
                    placement="bottom", tolerance=0.0001):
         """
@@ -971,7 +1043,7 @@ class Cell(topologic.Cell):
         return s
     
     @staticmethod
-    def CellSuperCells(inputCells, tolerance=0.0001):
+    def SuperCells(inputCells, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -1108,6 +1180,30 @@ class Cell(topologic.Cell):
         return s
     
     @staticmethod
+    def Vertices(cell):
+        """
+        Description
+        __________
+        Returns the vertices of the input cell.
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The input cell.
+
+        Returns
+        -------
+        list
+            The list of vertices.
+
+        """
+        if not isinstance(cell, topologic.Cell):
+            return None
+        vertices = []
+        _ = cell.Vertices(None, vertices)
+        return vertices
+
+    @staticmethod
     def Volume(cell, mantissa=3):
         """
         Parameters
@@ -1127,4 +1223,27 @@ class Cell(topologic.Cell):
             return None
         return round(topologic.CellUtility.Volume(cell), mantissa)
 
+    @staticmethod
+    def Wires(cell):
+        """
+        Description
+        __________
+        Returns the wires of the input cell.
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The input cell.
+
+        Returns
+        -------
+        list
+            The list of wires.
+
+        """
+        if not isinstance(cell, topologic.Cell):
+            return None
+        wires = []
+        _ = cell.Wires(None, wires)
+        return wires
 

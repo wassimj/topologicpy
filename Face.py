@@ -50,7 +50,7 @@ class Face(topologic.Face):
         """
         Description
         ----------
-        Adds internal the input cluster of internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
+        Adds the input cluster of internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
 
         Parameters
         ----------
@@ -92,11 +92,6 @@ class Face(topologic.Face):
             The second input face.
         mantissa : int , optional
             The desired length of the mantissa. The default is 4.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
 
         Returns
         -------
@@ -245,7 +240,7 @@ class Face(topologic.Face):
         """
         Description
         ----------
-        Creates a face by offsetting the edges of the input face.
+        Creates a face by offsetting the input face along its own face normal vector.
 
         Parameters
         ----------
@@ -389,7 +384,7 @@ class Face(topologic.Face):
         Returns
         -------
         topologic.Face
-            The crearted face.
+            The created face.
 
         """
         from topologicpy.Topology import Topology
@@ -428,7 +423,7 @@ class Face(topologic.Face):
 
         Parameters
         ----------
-        vertices : topologic.Cluster
+        cluster : topologic.Cluster
             The input cluster of vertices.
 
         Returns
@@ -521,6 +516,48 @@ class Face(topologic.Face):
         internalBoundaries = []
         _ = internalBoundariesCluster.Wires(None, internalBoundaries)
         return Face.ByWires(externalBoundary, internalBoundaries)
+    
+    @staticmethod
+    def Circle(origin=None, radius=1, sides=16, fromAngle=0, toAngle=360, dirX=0,
+                   dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+        """
+        Description
+        ----------
+        Creates a circle.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex, optional
+            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
+        radius : float, optional
+            The radius of the circle. The default is 1.
+        sides : int, optional
+            The number of sides of the circle. The default is 16.
+        fromAngle : float, optional
+            The angle in degrees from which to start creating the arc of the circle. The default is 0.
+        toAngle : float, optional
+            The angle in degrees at which to end creating the arc of the circle. The default is 360.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the circle. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the circle. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the circle. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the circle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Face
+            The created circle.
+
+        """
+        wire = Wire.Circle(origin, radius, sides, fromAngle, toAngle, True, dirX, dirY, dirZ, placement, tolerance)
+        if not isinstance(wire, topologic.Wire):
+            return None
+        return Face.ByWire(wire)
 
     @staticmethod
     def Compactness(face, mantissa=4):
@@ -558,8 +595,31 @@ class Face(topologic.Face):
             return None
         compactness = (math.pi*(2*math.sqrt(area/math.pi)))/perimeter
         return round(compactness, mantissa)
-    
+
     @staticmethod
+    def Edges(face):
+        """
+        Description
+        __________
+        Returns the edges of the input face.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+
+        Returns
+        -------
+        list
+            The list of edges.
+
+        """
+        if not isinstance(face, topologic.Face):
+            return None
+        edges = []
+        _ = face.Edges(None, edges)
+        return edges
+
     def ExternalBoundary(face):
         """
         Description
@@ -866,6 +926,125 @@ class Face(topologic.Face):
         return Face.ByWires(p_eb, p_ib_list)
 
     @staticmethod
+    def Rectangle(origin=None, width=1.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+        """
+        Description
+        ----------
+        Creates a rectangle.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex, optional
+            The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0,0,0).
+        width : float, optional
+            The width of the rectangle. The default is 1.0.
+        length : float, optional
+            The length of the rectangle. The default is 1.0.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the rectangle. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the rectangle. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the rectangle. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Face
+            The created face.
+
+        """
+        wire = Wire.Rectangle(origin, width, length, dirX, dirY, dirZ, placement, tolerance)
+        if not isinstance(wire, topologic.Wire):
+            return None
+        return Face.ByWire(wire)
+
+    @staticmethod
+    def Star(origin=None, radiusA=1.0, radiusB=0.4, rays=5, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+        """
+        Description
+        ----------
+        Creates a star.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex, optional
+            The location of the origin of the star. The default is None which results in the star being placed at (0,0,0).
+        radiusA : float, optional
+            The outer radius of the star. The default is 1.0.
+        radiusB : float, optional
+            The outer radius of the star. The default is 0.4.
+        rays : int, optional
+            The number of star rays. The default is 5.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the star. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the star. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the star. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the star. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Face
+            The created face.
+
+        """
+        wire = Wire.Star(origin, radiusA, radiusB, rays, dirX, dirY, dirZ, placement, tolerance)
+        if not isinstance(wire, topologic.Wire):
+            return None
+        return Face.ByWire(wire)
+
+    @staticmethod
+    def Trapezoid(origin=None, widthA=1.0, widthB=0.75, offsetA=0.0, offsetB=0.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+        """
+        Description
+        ----------
+        Creates a trapezoid.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex, optional
+            The location of the origin of the trapezoid. The default is None which results in the trapezoid being placed at (0,0,0).
+        widthA : float, optional
+            The width of the bottom edge of the trapezoid. The default is 1.0.
+        widthB : float, optional
+            The width of the top edge of the trapezoid. The default is 0.75.
+        offsetA : float, optional
+            The offset of the bottom edge of the trapezoid. The default is 0.0.
+        offsetB : float, optional
+            The offset of the top edge of the trapezoid. The default is 0.0.
+        length : float, optional
+            The length of the trapezoid. The default is 1.0.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the trapezoid. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the trapezoid. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the trapezoid. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Face
+            The created trapezoid.
+
+        """
+        wire = Wire.Trapezoid(origin, widthA, widthB, offsetA, offsetB, length, dirX, dirY, dirZ, placement, tolerance)
+        if not isinstance(wire, topologic.Wire):
+            return None
+        return Face.ByWire(wire)
+
+    @staticmethod
     def TrimByWire(face, wire, reverse = False):
         """
         Description
@@ -961,3 +1140,51 @@ class Face(topologic.Face):
             elif param == "v":
                 returnResult.append(v)
         return returnResult
+
+    @staticmethod
+    def Vertices(face):
+        """
+        Description
+        __________
+        Returns the vertices of the input face.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+
+        Returns
+        -------
+        list
+            The list of vertices.
+
+        """
+        if not isinstance(face, topologic.Face):
+            return None
+        vertices = []
+        _ = face.Vertices(None, vertices)
+        return vertices
+
+    @staticmethod
+    def Wires(face):
+        """
+        Description
+        __________
+        Returns the wires of the input face.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+
+        Returns
+        -------
+        list
+            The list of wires.
+
+        """
+        if not isinstance(face, topologic.Face):
+            return None
+        wires = []
+        _ = face.Wires(None, wires)
+        return wires

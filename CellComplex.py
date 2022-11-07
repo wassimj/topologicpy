@@ -240,6 +240,30 @@ class CellComplex(topologic.CellComplex):
         return CellComplex.ByLoft(wires, tolerance)
 
     @staticmethod
+    def Cells(cellComplex):
+        """
+        Description
+        __________
+        Returns the cells of the input cellComplex.
+
+        Parameters
+        ----------
+        cellComplex : topologic.CellComplex
+            The input cellComplex.
+
+        Returns
+        -------
+        list
+            The list of cells.
+
+        """
+        if not isinstance(cellComplex, topologic.CellComplex):
+            return None
+        cells = []
+        _ = cellComplex.Cells(None, cells)
+        return cells
+
+    @staticmethod
     def Decompose(item):
         """
         Parameters
@@ -341,6 +365,30 @@ class CellComplex(topologic.CellComplex):
         return [return1, return2, return3, return4, return5, return6, return7, return8, return9, return10]
     
     @staticmethod
+    def Edges(cellComplex):
+        """
+        Description
+        __________
+        Returns the edges of the input cellComplex.
+
+        Parameters
+        ----------
+        cellComplex : topologic.CellComplex
+            The input cellComplex.
+
+        Returns
+        -------
+        list
+            The list of edges.
+
+        """ 
+        if not isinstance(cellComplex, topologic.CellComplex):
+            return None
+        edges = []
+        _ = cellComplex.Edges(None, edges)
+        return edges
+
+    @staticmethod
     def ExternalBoundary(item):
         """
         Parameters
@@ -355,7 +403,31 @@ class CellComplex(topologic.CellComplex):
 
         """
         return item.ExternalBoundary()
-    
+
+    @staticmethod
+    def Faces(cellComplex):
+        """
+        Description
+        __________
+        Returns the faces of the input cellComplex.
+
+        Parameters
+        ----------
+        cellComplex : topologic.CellComplex
+            The input cellComplex.
+
+        Returns
+        -------
+        list
+            The list of faces.
+
+        """
+        if not isinstance(cellComplex, topologic.CellComplex):
+            return None
+        faces = []
+        _ = cellComplex.Faces(None, faces)
+        return faces
+
     @staticmethod
     def InternalBoundary(item):
         """
@@ -501,5 +573,76 @@ class CellComplex(topologic.CellComplex):
         prism = topologic.TopologyUtility.Rotate(prism, origin, 0, 1, 0, theta)
         prism = topologic.TopologyUtility.Rotate(prism, origin, 0, 0, 1, phi)
         return prism
-    
-    
+
+    @staticmethod
+    def Shells(cellComplex):
+        """
+        Description
+        __________
+        Returns the shells of the input cellComplex.
+
+        Parameters
+        ----------
+        cellComplex : topologic.CellComplex
+            The input cellComplex.
+
+        Returns
+        -------
+        list
+            The list of shells.
+
+        """
+        if not isinstance(cellComplex, topologic.CellComplex):
+            return None
+        shells = []
+        _ = cellComplex.Shells(None, shells)
+        return shells
+
+    @staticmethod
+    def Vertices(cellComplex):
+        """
+        Description
+        __________
+        Returns the vertices of the input cellComplex.
+
+        Parameters
+        ----------
+        cellComplex : topologic.CellComplex
+            The input cellComplex.
+
+        Returns
+        -------
+        list
+            The list of vertices.
+
+        """
+        if not isinstance(cellComplex, topologic.CellComplex):
+            return None
+        vertices = []
+        _ = cellComplex.Vertices(None, vertices)
+        return vertices
+
+    @staticmethod
+    def Wires(cellComplex):
+        """
+        Description
+        __________
+        Returns the wires of the input cellComplex.
+
+        Parameters
+        ----------
+        cellComplex : topologic.CellComplex
+            The input cellComplex.
+
+        Returns
+        -------
+        list
+            The list of wires.
+
+        """
+        if not isinstance(cellComplex, topologic.CellComplex):
+            return None
+        wires = []
+        _ = cellComplex.Wires(None, wires)
+        return wires
+
