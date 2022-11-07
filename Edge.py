@@ -218,6 +218,50 @@ class Edge():
         return vert
     
     @staticmethod
+    def Extend(edge, distance=0, bothSides=True, reverse=False, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Extends the input edge by the input distance.
+
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The input edge.
+        distance : float , optional
+            The offset distance. The default is 0.
+        bothSides : bool , optional
+            If set to True, the edge will be extended by half the distance at each end. The default is False.
+        reverse : bool , optional
+            If set to True, the edge will be extended from its start vertex. Otherwise, it will be extended from its end vertex. The default is False.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Edge
+            The extended edge.
+
+        """
+        if not isinstance(edge, topologic.Edge):
+            return None
+        distance = abs(distance)
+        if distance < tolerance:
+            return edge
+        sv = Edge.StartVertex(edge)
+        ev = Edge.EndVertex(edge)
+        if bothSides:
+            sve = Edge.VertexByDistance(edge, distance=-distance*0.5, origin=sv, tolerance=tolerance)
+            eve = Edge.VertexByDistance(edge, distance=distance*0.5, origin=ev, tolerance=tolerance)
+        elif reverse:
+            sve = Edge.VertexByDistance(edge, distance=-distance, origin=sv, tolerance=tolerance)
+            eve = Edge.EndVertex(edge)
+        else:
+            sve = Edge.StartVertex(edge)
+            eve = Edge.VertexByDistance(edge, distance=distance, origin=ev, tolerance=tolerance)
+        return Edge.ByVertices([sve, eve])
+
+    @staticmethod
     def IsCollinear(edgeA, edgeB, angTolerance=0.1):
         """
         Description
@@ -359,6 +403,39 @@ class Edge():
         return Edge.ByVertices([edge.EndVertex(), edge.StartVertex()])
     
     @staticmethod
+    def SetLength(edge, length=1, bothSides=True, reverse=False, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Returns an edge with the new length in the same direction as the input edge.
+
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The input edge.
+        length : float , optional
+            The desired length of the edge. The default is 1.
+        bothSides : bool , optional
+            If set to True, the edge will be offset symmetrically from each end. The default is False.
+        reverse : bool , optional
+            If set to True, the edge will be offset from its start vertex. Otherwise, it will be offset from its end vertex. The default is False.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Edge
+            The extended edge.
+
+        """
+        if not isinstance(edge, topologic.Edge):
+            return None
+        distance = (length - Edge.Length(edge))
+        if distance > 0:
+            return Edge.Extend(edge=edge, distance=distance, bothSides=bothSides, reverse=reverse, tolerance=tolerance)
+        return Edge.Trim(edge=edge, distance=distance, bothSides=bothSides, reverse=reverse, tolerance=tolerance)
+
+    @staticmethod
     def StartVertex(edge):
         """
         Description
@@ -384,9 +461,53 @@ class Edge():
         except:
             vert = None
         return vert
-    
+
     @staticmethod
-    def VertexByDistance(edge, distance, origin, tolerance=0.0001):
+    def Trim(edge, distance=0, bothSides=True, reverse=False, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Trims the input edge by the input distance.
+
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The input edge.
+        distance : float , optional
+            The offset distance. The default is 0.
+        bothSides : bool , optional
+            If set to True, the edge will be trimmed by half the distance at each end. The default is False.
+        reverse : bool , optional
+            If set to True, the edge will be trimmed from its start vertex. Otherwise, it will be trimmed from its end vertex. The default is False.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Edge
+            The trimmed edge.
+
+        """
+        if not isinstance(edge, topologic.Edge):
+            return None
+        distance = abs(distance)*-1
+        if distance < tolerance:
+            return edge
+        sv = Edge.StartVertex(edge)
+        ev = Edge.EndVertex(edge)
+        if bothSides:
+            sve = Edge.VertexByDistance(edge, distance=-distance*0.5, origin=sv, tolerance=tolerance)
+            eve = Edge.VertexByDistance(edge, distance=distance*0.5, origin=ev, tolerance=tolerance)
+        elif reverse:
+            sve = Edge.VertexByDistance(edge, distance=-distance, origin=sv, tolerance=tolerance)
+            eve = Edge.EndVertex(edge)
+        else:
+            sve = Edge.StartVertex(edge)
+            eve = Edge.VertexByDistance(edge, distance=distance, origin=ev, tolerance=tolerance)
+        return Edge.ByVertices([sve, eve])
+
+    @staticmethod
+    def VertexByDistance(edge, distance=0, origin=None, tolerance=0.0001):
         """
         Description
         -----------
@@ -396,10 +517,10 @@ class Edge():
         ----------
         edge : topologic.Edge
             The input edge.
-        distance : float
-            The offset distance.
-        origin : topologic.Vertex
-            The origin of the offset distance.
+        distance : float , optional
+            The offset distance. The default is 0.
+        origin : topologic.Vertex , optional
+            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. The default is None.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 

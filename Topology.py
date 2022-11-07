@@ -1080,7 +1080,8 @@ class Topology():
         # tranDict = item[3]
         # tolerance = item[4]
         # topologyC = None
-        
+        from topologicpy.Dictionary import Dictionary
+
         def topologyContains(topology, vertex, tol):
             contains = False
             if topology.Type() == topologic.Vertex.Type():
@@ -3758,7 +3759,7 @@ class Topology():
         try:
             newTopology = topologic.TopologyUtility.Scale(topology, origin, x, y, z)
         except:
-            print("ERROR: (Topologic>TopologyUtility.Rotate) operation failed.")
+            print("ERROR: (Topologic>TopologyUtility.Scale) operation failed.")
             newTopology = None
         return newTopology
 

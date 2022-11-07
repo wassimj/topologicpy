@@ -71,7 +71,7 @@ class Cluster(topologic.Cluster):
         _ = cluster.Cells(None, cells)
         return cells
 
-     @staticmethod
+    @staticmethod
     def Edges(cluster):
         """
         Description
