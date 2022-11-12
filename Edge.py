@@ -58,7 +58,7 @@ class Edge():
             If set to 0, the bisecting edge centroid will be placed at the end vertex of the first edge.
             If set to 1, the bisecting edge start vertex will be placed at the end vertex of the first edge.
             If set to 2, the bisecting edge end vertex will be placed at the end vertex of the first edge.
-            If set to any number other than 0, 1, or 2, the bisecting edge centroid will be placed at the end vertex of the first edge.
+            If set to any number other than 0, 1, or 2, the bisecting edge centroid will be placed at the end vertex of the first edge. The default is 0.
         tolerance : float, optional
             The desired tolerance to decide if an Edge can be created. The default is 0.0001.
 
@@ -158,6 +158,35 @@ class Edge():
         return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance)
     
     @staticmethod
+    def ByVerticesCluster(cluster, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Creates a straight edge that connects the input cluster of vertices.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input cluster of vertices. The first item is considered the start vertex and the last item is considered the end vertex.
+        tolerance : float, optional
+            The desired tolerance to decide if an edge can be created. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Edge
+            The created edge.
+
+        """
+        from topologicpy.Cluster import Cluster
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        vertices = Cluster.Vertices(cluster)
+        vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        if len(vertexList) < 2:
+            return None
+        return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance)
+
+    @staticmethod
     def Direction(edge, mantissa=4):
         """
         Description
@@ -218,7 +247,7 @@ class Edge():
         return vert
     
     @staticmethod
-    def Extend(edge, distance=0, bothSides=True, reverse=False, tolerance=0.0001):
+    def Extend(edge, distance=1, bothSides=True, reverse=False, tolerance=0.0001):
         """
         Description
         -----------
@@ -229,7 +258,7 @@ class Edge():
         edge : topologic.Edge
             The input edge.
         distance : float , optional
-            The offset distance. The default is 0.
+            The offset distance. The default is 1.
         bothSides : bool , optional
             If set to True, the edge will be extended by half the distance at each end. The default is False.
         reverse : bool , optional

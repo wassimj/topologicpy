@@ -1,9 +1,10 @@
 import topologicpy
 import topologic
 from topologicpy.Face import Face
+from topologicpy.Topology import Topology
 import collections
 
-class Vertex():
+class Vertex(Topology):
     @staticmethod
     def ByCoordinates(x, y, z):
         """

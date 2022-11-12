@@ -1,8 +1,9 @@
 import topologicpy
 import topologic
+from topologicpy.Topology import Topology
 import math
 
-class Shell(topologic.Shell):
+class Shell(Topology):
     @staticmethod
     def ByFaces(faces, tolerance=0.0001):
         """
@@ -33,15 +34,11 @@ class Shell(topologic.Shell):
             cluster = topologic.Cluster.ByTopologies(remainder, False)
             result = result.Merge(cluster, False)
             if result.Type() != 16: #16 is the type of a Shell
-                if result.Type() > 16:
-                    returnShells = []
-                    _ = result.Shells(None, returnShells)
-                    return returnShells
-                else:
-                    return None
+                return None
         else:
             return shell
 
+    @staticmethod
     def ByFacesCluster(cluster):
         """
         Description
@@ -79,11 +76,6 @@ class Shell(topologic.Shell):
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
-
         Returns
         -------
         topologic.Shell
@@ -101,7 +93,7 @@ class Shell(topologic.Shell):
             wire1 = wireList[i]
             wire2 = wireList[i+1]
             if wire1.Type() < topologic.Edge.Type() or wire2.Type() < topologic.Edge.Type():
-                raise Exception("Shell.ByLoft - Error: the input topology is not the correct type.")
+                return None
             if wire1.Type() == topologic.Edge.Type():
                 w1_edges = [wire1]
             else:
@@ -113,7 +105,7 @@ class Shell(topologic.Shell):
                 w2_edges = []
                 _ = wire2.Edges(None, w2_edges)
             if len(w1_edges) != len(w2_edges):
-                raise Exception("Shell.ByLoft - Error: The two wires do not have the same number of edges.")
+                return None
             for j in range (len(w1_edges)):
                 e1 = w1_edges[j]
                 e2 = w2_edges[j]
@@ -134,7 +126,44 @@ class Shell(topologic.Shell):
                     faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4])))
                     faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3])))
         return Shell.ByFaces(faces, tolerance)
-    
+
+    @staticmethod
+    def Circle(origin=None, radius=0.5, sides=32, fromAngle=0, toAngle=360, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+        """
+        Description
+        ----------
+        Creates a circle.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex, optional
+            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
+        radius : float, optional
+            The  radius of the circle. The default is 0.5.
+        sides : int, optional
+            The number of sides of the circle. The default is 32.
+        fromAngle : float, optional
+            The angle in degrees from which to start creating the arc of the circle. The default is 0.
+        toAngle : float, optional
+            The angle in degrees at which to end creating the arc of the circle. The default is 360.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the circle. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the circle. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the circle. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Shell
+            The created circle.
+        """
+        return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=0, fromAngle=fromAngle, toAngle=toAngle, dirX=dirX, dirY=dirY, dirZ=dirZ, placement=placement, tolerance=tolerance)
+
     @staticmethod
     def Edges(shell):
         """
@@ -220,51 +249,64 @@ class Shell(topologic.Shell):
         return faces
 
     @staticmethod
-    def HyperbolicParaboloidRectangularDomain(origin, llVertex, lrVertex, urVertex, ulVertex, u, v, dirX, dirY, dirZ, originLocation):
+    def HyperbolicParaboloidRectangularDomain(origin=None, llVertex=None, lrVertex=None, ulVertex=None, urVertex=None, u=10, v=10, dirX=0, dirY=0, dirZ=1, placement="bottom"):
         """
+        Description
+        __________
+        Creates a hyperbolic paraboloid with a rectangular domain.
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        llVertex : TYPE
-            DESCRIPTION.
-        lrVertex : TYPE
-            DESCRIPTION.
-        urVertex : TYPE
-            DESCRIPTION.
-        ulVertex : TYPE
-            DESCRIPTION.
-        u : TYPE
-            DESCRIPTION.
-        v : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        originLocation : TYPE
-            DESCRIPTION.
+        origin : topologic.Vertex , optional
+            The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0,0,0) origin. The default is None.
+        llVertex : topologic.Vertex , optional
+            The lower left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5,-0.5,-0.5).
+        lrVertex : topologic.Vertex , optional
+            The lower right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5,-0.5,0.5).
+        ulVertex : topologic.Vertex , optional
+            The upper left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5,0.5,0.5).
+        urVertex : topologic.Vertex , optional
+            The upper right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5,0.5,-0.5).
+        u : int , optional
+            The number of segments along the X axis. The default is 10.
+        v : int , optional
+            The number of segments along the Y axis. The default is 10.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the circle. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the circle. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the circle. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
 
         Returns
         -------
-        returnTopology : TYPE
-            DESCRIPTION.
+        topologic.Shell
+            The created hyperbolic paraboloid.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        if not isinstance(origin, topologic.Vertex):
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(llVertex, topologic.Vertex):
+            llVertex = Vertex.ByCoordinates(-0.5,-0.5,-0.5)
+        if not isinstance(lrVertex, topologic.Vertex):
+            lrVertex = Vertex.ByCoordinates(0.5,-0.5,0.5)
+        if not isinstance(ulVertex, topologic.Vertex):
+            ulVertex = Vertex.ByCoordinates(-0.5,0.5,0.5)
+        if not isinstance(urVertex, topologic.Vertex):
+            urVertex = Vertex.ByCoordinates(0.5,0.5,-0.5)
         e1 = Edge.ByVertices([llVertex, lrVertex])
-        e2 = Edge.ByVertices([lrVertex, urVertex])
         e3 = Edge.ByVertices([urVertex, ulVertex])
-        e4 = Edge.ByVertices([ulVertex, llVertex])
         edges = []
         for i in range(u+1):
             v1 = Edge.VertexByParameter(e1, float(i)/float(u))
-            v2 = Edge.Vertex.ByParameter(e3, 1.0 - float(i)/float(u))
+            v2 = Edge.VertexByParameter(e3, 1.0 - float(i)/float(u))
             edges.append(Edge.ByVertices([v1, v2]))
         faces = []
         for i in range(u):
@@ -277,7 +319,7 @@ class Shell(topologic.Shell):
                 faces.append(Face.ByVertices([v4, v2, v3]))
         returnTopology = Shell.ByFaces(faces)
         if not returnTopology:
-            returnTopology = Cluster.ByTopologies(faces)
+            returnTopology = None
         zeroOrigin = returnTopology.CenterOfMass()
         xOffset = 0
         yOffset = 0
@@ -288,15 +330,15 @@ class Shell(topologic.Shell):
         maxY = max([llVertex.Y(), lrVertex.Y(), ulVertex.Y(), urVertex.Y()])
         minZ = min([llVertex.Z(), lrVertex.Z(), ulVertex.Z(), urVertex.Z()])
         maxZ = max([llVertex.Z(), lrVertex.Z(), ulVertex.Z(), urVertex.Z()])
-        if originLocation == "LowerLeft":
+        if placement.lower() == "lowerleft":
             xOffset = -minX
             yOffset = -minY
             zOffset = -minZ
-        elif originLocation == "Bottom":
+        elif placement.lower() == "bottom":
             xOffset = -(minX + (maxX - minX)*0.5)
             yOffset = -(minY + (maxY - minY)*0.5)
             zOffset = -minZ
-        elif originLocation == "Center":
+        elif placement.lower() == "center":
             xOffset = -(minX + (maxX - minX)*0.5)
             yOffset = -(minY + (maxY - minY)*0.5)
             zOffset = -(minZ + (maxZ - minZ)*0.5)
@@ -321,30 +363,34 @@ class Shell(topologic.Shell):
         return returnTopology
     
     @staticmethod
-    def HyperbolicParaboloidCircularDomain(origin, radius, sides, rings, A, B, dirX, dirY, dirZ, originLocation):
+    def HyperbolicParaboloidCircularDomain(origin=None, radius=0.5, sides=36, rings=10, A=1.0, B=-1.0, dirX=0, dirY=0, dirZ=1, placement="bottom"):
         """
+        Description
+        __________
+        Creates a hyperbolic paraboloid with a circular domain. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
+
         Parameters
         ----------
-        origin : TYPE
-            DESCRIPTION.
-        radius : TYPE
-            DESCRIPTION.
-        sides : TYPE
-            DESCRIPTION.
-        rings : TYPE
-            DESCRIPTION.
-        A : TYPE
-            DESCRIPTION.
-        B : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        originLocation : TYPE
-            DESCRIPTION.
+        origin : topologic.Vertex , optional
+            The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0,0,0) origin. The default is None.
+        radius : float , optional
+            The desired radius of the hyperbolic paraboloid. The default is 0.5.
+        sides : int , optional
+            The desired number of sides of the hyperbolic parabolid. The default is 36.
+        rings : int , optional
+            The desired number of concentric rings of the hyperbolic parabolid. The default is 10.
+        A : float , optional
+            The *A* constant in the equation z = A*x^2^ + B*y^2^. The default is 1.0.
+        B : float , optional
+            The *B* constant in the equation z = A*x^2^ + B*y^2^. The default is -1.0.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the circle. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the circle. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the circle. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
 
         Returns
         -------
@@ -352,15 +398,6 @@ class Shell(topologic.Shell):
             DESCRIPTION.
 
         """
-        # origin = item[0]
-        # radius = item[1]
-        # sides = item[2]
-        # rings = item[3]
-        # A = item[4]
-        # B = item[5]
-        # dirX = item[6]
-        # dirY = item[7]
-        # dirZ = item[8]
         from topologicpy.Face import Face
         uOffset = float(360)/float(sides)
         vOffset = float(radius)/float(rings)
@@ -468,15 +505,15 @@ class Shell(topologic.Shell):
         xOffset = 0
         yOffset = 0
         zOffset = 0
-        if originLocation == "LowerLeft":
+        if placement.lower() == "lowerleft":
             xOffset = -minX
             yOffset = -minY
             zOffset = -minZ
-        elif originLocation == "Bottom":
+        elif placement.lower() == "bottom":
             xOffset = -(minX + (maxX - minX)*0.5)
             yOffset = -(minY + (maxY - minY)*0.5)
             zOffset = -minZ
-        elif originLocation == "Center":
+        elif placement.lower() == "center":
             xOffset = -(minX + (maxX - minX)*0.5)
             yOffset = -(minY + (maxY - minY)*0.5)
             zOffset = -(minZ + (maxZ - minZ)*0.5)
@@ -504,17 +541,22 @@ class Shell(topologic.Shell):
     @staticmethod
     def InternalBoundaries(shell):
         """
+        Description
+        __________
+        Returns the internal boundaries (closed wires) of the input shell. Internal boundaries are considered holes.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        shell : topologic.Shell
+            The input shell.
 
         Returns
         -------
-        ibEdges : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The wire if a single hole or a cluster of wires if more than one hole.
 
         """
+        from topologicpy.Cluster import Cluster
         edges = []
         _ = shell.Edges(None, edges)
         ibEdges = []
@@ -523,23 +565,174 @@ class Shell(topologic.Shell):
             _ = anEdge.Faces(shell, faces)
             if len(faces) > 1:
                 ibEdges.append(anEdge)
-        return ibEdges
+        return Cluster.SelfMerge(Cluster.ByTopologies(ibEdges))
     
     @staticmethod
     def IsClosed(shell):
         """
+        Description
+        __________
+        Returns True if the input shell is closed. Returns False otherwise.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        shell : topologic.Shell
+            The input shell.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        bool
+            True if the input shell is closed. False otherwise.
 
         """
         return shell.IsClosed()
+
+    @staticmethod
+    def Pie(origin=None, radiusA=0.5, radiusB=0, sides=32, rings=0, fromAngle=0, toAngle=360, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+        """
+        Description
+        ----------
+        Creates a pie shape.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex, optional
+            The location of the origin of the pie. The default is None which results in the pie being placed at (0,0,0).
+        radiusA : float, optional
+            The outer radius of the pie. The default is 0.5.
+        radiusB : float, optional
+            The inner radius of the pie. The default is 0.25.
+        sides : int, optional
+            The number of sides of the pie. The default is 32.
+        rings : int, optional
+            The number of rings of the pie. The default is 0.
+        fromAngle : float, optional
+            The angle in degrees from which to start creating the arc of the pie. The default is 0.
+        toAngle : float, optional
+            The angle in degrees at which to end creating the arc of the pie. The default is 360.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the pie. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the pie. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the pie. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Shell
+            The created pie.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
+        if toAngle < fromAngle:
+            toAngle += 360
+        if abs(toAngle-fromAngle) < tolerance:
+            return None
+        fromAngle = math.radians(fromAngle)
+        toAngle = math.radians(toAngle)
+        angleRange = toAngle - fromAngle
+        radiusA = abs(radiusA)
+        radiusB = abs(radiusB)
+        if radiusB > radiusA:
+            temp = radiusA
+            radiusA = radiusB
+            radiusB = temp
+        if abs(radiusA - radiusB) < tolerance or radiusA < tolerance:
+            return None
+        radiusRange = radiusA - radiusB
+        print("Radius Range", radiusRange)
+        sides = int(abs(math.floor(sides)))
+        if sides < 3:
+            return None
+        rings = int(abs(rings))
+        if radiusB < tolerance:
+            radiusB = 0
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "lowerleft":
+            xOffset = radiusA
+            yOffset = radiusA
+        uOffset = float(angleRange)/float(sides)
+        vOffset = float(radiusRange)/float(rings)
+        faces = []
+        if radiusB > tolerance:
+            for i in range(rings):
+                r1 = radiusA - vOffset*i
+                r2 = radiusA - vOffset*(i+1)
+                for j in range(sides):
+                    a1 = fromAngle + uOffset*j
+                    a2 = fromAngle + uOffset*(j+1)
+                    x1 = math.sin(a1)*r1
+                    y1 = math.cos(a1)*r1
+                    z1 = 0
+                    x2 = math.sin(a1)*r2
+                    y2 = math.cos(a1)*r2
+                    z2 = 0
+                    x3 = math.sin(a2)*r2
+                    y3 = math.cos(a2)*r2
+                    z3 = 0
+                    x4 = math.sin(a2)*r1
+                    y4 = math.cos(a2)*r1
+                    z4 = 0
+                    v1 = Vertex.ByCoordinates(x1,y1,z1)
+                    v2 = Vertex.ByCoordinates(x2,y2,z2)
+                    v3 = Vertex.ByCoordinates(x3,y3,z3)
+                    v4 = Vertex.ByCoordinates(x4,y4,z4)
+                    f1 = Face.ByVertices([v1,v2,v3,v4])
+                    faces.append(f1)
+        else:
+            x1 = 0
+            y1 = 0
+            z1 = 0
+            v1 = Vertex.ByCoordinates(x1,y1,z1)
+            for j in range(sides):
+                a1 = fromAngle + uOffset*j
+                a2 = fromAngle + uOffset*(j+1)
+                x2 = math.sin(a1)*radiusA
+                y2 = math.cos(a1)*radiusA
+                z2 = 0
+                x3 = math.sin(a2)*radiusA
+                y3 = math.cos(a2)*radiusA
+                z3 = 0
+                v2 = Vertex.ByCoordinates(x2,y2,z2)
+                v3 = Vertex.ByCoordinates(x3,y3,z3)
+                f1 = Face.ByVertices([v2,v1,v3])
+                faces.append(f1)
+
+        shell = Shell.ByFaces(faces, tolerance)
+        if not shell:
+            return None
+        x1 = 0
+        y1 = 0
+        z1 = 0
+        x2 = 0 + dirX
+        y2 = 0 + dirY
+        z2 = 0 + dirZ
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1    
+        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
+        if dist < tolerance:
+            theta = 0
+        else:
+            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
+        shell = Topology.Rotate(shell, origin, 0, 1, 0, theta)
+        shell = Topology.Rotate(shell, origin, 0, 0, 1, phi)
+        shell = Topology.Translate(shell, origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset)
+        return shell
+
     @staticmethod
     def Rectangle(origin=None, width=1.0, length=1.0, uSides=2, vSides=2, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
@@ -572,16 +765,18 @@ class Shell(topologic.Shell):
 
         Returns
         -------
-        topologic.Face
-            The created face.
+        topologic.Shell
+            The created shell.
 
         """
+
+        
     @staticmethod
     def SelfMerge(shell, angTolerance=0.1):
         """
         Description
         ----------
-        Creates a face by merging the faces of the input shell.
+        Creates a face by merging the faces of the input shell. The shell must be planar within the input angular tolerance.
 
         Parameters
         ----------
@@ -596,8 +791,8 @@ class Shell(topologic.Shell):
             The created face.
 
         """
-        from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         
         def planarizeList(wireList):
@@ -642,246 +837,11 @@ class Shell(topologic.Shell):
             _ = ext_boundary.Wires(None, temp_wires)
             ext_wire = Wire.RemoveCollinearEdges(temp_wires[0], angTolerance)
             try:
-                return topologic.Face.ByExternalInternalBoundaries(ext_wire, int_wires)
+                return Face.ByWires(ext_wire, int_wires)
             except:
-                return topologic.Face.ByExternalInternalBoundaries(Wire.Planarize(ext_wire), planarizeList(int_wires))
+                return Face.ByWires(Wire.Planarize(ext_wire), planarizeList(int_wires))
         else:
             return None
-
-    @staticmethod
-    def TessellatedCircle(origin, radius, height, sides, dirX, dirY, dirZ, originLocation):
-        """
-        Parameters
-        ----------
-        origin : TYPE
-            DESCRIPTION.
-        radius : TYPE
-            DESCRIPTION.
-        height : TYPE
-            DESCRIPTION.
-        sides : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        originLocation : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        # origin = item[0]
-        # radius = item[1]
-        # height = item[2]
-        # sides = item[3]
-        # dirX = item[4]
-        # dirY = item[5]
-        # dirZ = item[6]
-        
-        def wireByVertices(vList):
-            edges = []
-            for i in range(len(vList)-1):
-                edges.append(topologic.Edge.ByStartVertexEndVertex(vList[i], vList[i+1]))
-            edges.append(topologic.Edge.ByStartVertexEndVertex(vList[-1], vList[0]))
-            return topologic.Wire.ByEdges(edges)
-        
-        baseV = []
-        topV = []
-        xOffset = 0
-        yOffset = 0
-        zOffset = 0
-        if originLocation == "Center":
-            zOffset = -height*0.5
-        elif originLocation == "LowerLeft":
-            xOffset = radius
-            yOffset = radius
-
-        for i in range(sides):
-            angle = math.radians(360/sides)*i
-            x = math.sin(angle)*radius + origin.X() + xOffset
-            y = math.cos(angle)*radius + origin.Y() + yOffset
-            z = origin.Z() + zOffset
-            baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
-            topV.append(topologic.Vertex.ByCoordinates(x,y,z+height))
-
-        baseWire = wireByVertices(baseV)
-        topWire = wireByVertices(topV)
-        wires = [baseWire, topWire]
-        cyl = topologic.CellUtility.ByLoft(wires)
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + dirX
-        y2 = origin.Y() + dirY
-        z2 = origin.Z() + dirZ
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        cyl = topologic.TopologyUtility.Rotate(cyl, origin, 0, 1, 0, theta)
-        cyl = topologic.TopologyUtility.Rotate(cyl, origin, 0, 0, 1, phi)
-        return topologic.CellUtility.ByLoft(wires)
-    
-    @staticmethod
-    def ShellTessellatedDisk(origin, radius, sides, rings, dirX, dirY, dirZ, originLocation):
-        """
-        Parameters
-        ----------
-        origin : TYPE
-            DESCRIPTION.
-        radius : TYPE
-            DESCRIPTION.
-        sides : TYPE
-            DESCRIPTION.
-        rings : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        originLocation : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        shell : TYPE
-            DESCRIPTION.
-
-        """
-        # origin = item[0]
-        # radius = item[1]
-        # sides = item[2]
-        # rings = item[3]
-        # dirX = item[4]
-        # dirY = item[5]
-        # dirZ = item[6]
-        from topologicpy.Face import Face
-        xOffset = 0
-        yOffset = 0
-        zOffset = 0
-        if originLocation == "LowerLeft":
-            xOffset = radius
-            yOffset = radius
-        
-        uOffset = float(360)/float(sides)
-        vOffset = float(radius)/float(rings)
-        faces = []
-        for i in range(rings-1):
-            r1 = radius - vOffset*i
-            r2 = radius - vOffset*(i+1)
-            for j in range(sides-1):
-                a1 = math.radians(uOffset)*j
-                a2 = math.radians(uOffset)*(j+1)
-                x1 = math.sin(a1)*r1
-                y1 = math.cos(a1)*r1
-                z1 = 0
-                x2 = math.sin(a1)*r2
-                y2 = math.cos(a1)*r2
-                z2 = 0
-                x3 = math.sin(a2)*r2
-                y3 = math.cos(a2)*r2
-                z3 = 0
-                x4 = math.sin(a2)*r1
-                y4 = math.cos(a2)*r1
-                z4 = 0
-                v1 = topologic.Vertex.ByCoordinates(x1,y1,z1)
-                v2 = topologic.Vertex.ByCoordinates(x2,y2,z2)
-                v3 = topologic.Vertex.ByCoordinates(x3,y3,z3)
-                v4 = topologic.Vertex.ByCoordinates(x4,y4,z4)
-                f1 = Face.ByVertices([v1,v2,v4])
-                f2 = Face.ByVertices([v4,v2,v3])
-                faces.append(f1)
-                faces.append(f2)
-            a1 = math.radians(uOffset)*(sides-1)
-            a2 = math.radians(360)
-            x1 = math.sin(a1)*r1
-            y1 = math.cos(a1)*r1
-            z1 = 0
-            x2 = math.sin(a1)*r2
-            y2 = math.cos(a1)*r2
-            z2 = 0
-            x3 = math.sin(a2)*r2
-            y3 = math.cos(a2)*r2
-            z3 = 0
-            x4 = math.sin(a2)*r1
-            y4 = math.cos(a2)*r1
-            z4 = 0
-            v1 = topologic.Vertex.ByCoordinates(x1,y1,z1)
-            v2 = topologic.Vertex.ByCoordinates(x2,y2,z2)
-            v3 = topologic.Vertex.ByCoordinates(x3,y3,z3)
-            v4 = topologic.Vertex.ByCoordinates(x4,y4,z4)
-            f1 = Face.ByVertices([v1,v2,v4])
-            f2 = Face.ByVertices([v4,v2,v3])
-            faces.append(f1)
-            faces.append(f2)
-
-        # Special Case: Center triangles
-        r = vOffset
-        x1 = 0
-        y1 = 0
-        z1 = 0
-        v1 = topologic.Vertex.ByCoordinates(x1,y1,z1)
-        for j in range(sides-1):
-                a1 = math.radians(uOffset)*j
-                a2 = math.radians(uOffset)*(j+1)
-                x2 = math.sin(a1)*r
-                y2 = math.cos(a1)*r
-                z2 = 0
-                x3 = math.sin(a2)*r
-                y3 = math.cos(a2)*r
-                z3 = 0
-                v2 = topologic.Vertex.ByCoordinates(x2,y2,z2)
-                v3 = topologic.Vertex.ByCoordinates(x3,y3,z3)
-                f1 = Face.ByVertices([v2,v1,v3])
-                faces.append(f1)
-        a1 = math.radians(uOffset)*(sides-1)
-        a2 = math.radians(360)
-        x2 = math.sin(a1)*r
-        y2 = math.cos(a1)*r
-        z2 = 0
-        x3 = math.sin(a2)*r
-        y3 = math.cos(a2)*r
-        z3 = 0
-        v2 = topologic.Vertex.ByCoordinates(x2,y2,z2)
-        v3 = topologic.Vertex.ByCoordinates(x3,y3,z3)
-        f1 = Face.ByVertices([v2,v1,v3])
-        faces.append(f1)
-
-        shell = topologic.Shell.ByFaces(faces)
-
-        x1 = 0
-        y1 = 0
-        z1 = 0
-        x2 = 0 + dirX
-        y2 = 0 + dirY
-        z2 = 0 + dirZ
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        zeroOrigin = topologic.Vertex.ByCoordinates(0,0,0)
-        shell = topologic.TopologyUtility.Rotate(shell, zeroOrigin, 0, 1, 0, theta)
-        shell = topologic.TopologyUtility.Rotate(shell, zeroOrigin, 0, 0, 1, phi)
-        shell = topologic.TopologyUtility.Translate(shell, origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset)
-        return shell
 
     @staticmethod
     def Vertices(shell):

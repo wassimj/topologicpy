@@ -224,7 +224,7 @@ class Wire(topologic.Wire):
         return Wire.ByVertices(vertices, close)
 
     @staticmethod
-    def Circle(origin=None, radius=1, sides=16, fromAngle=0, toAngle=360, close=True, dirX=0,
+    def Circle(origin=None, radius=0.5, sides=16, fromAngle=0, toAngle=360, close=True, dirX=0,
                    dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
         Description
@@ -236,7 +236,7 @@ class Wire(topologic.Wire):
         origin : topologic.Vertex, optional
             The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
         radius : float, optional
-            The radius of the circle. The default is 1.
+            The radius of the circle. The default is 0.5.
         sides : int, optional
             The number of sides of the circle. The default is 16.
         fromAngle : float, optional

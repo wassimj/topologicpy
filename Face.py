@@ -56,7 +56,7 @@ class Face(topologic.Face):
         ----------
         face : topologic.Face
             The input face.
-        cluster : topollogic.Cluster
+        cluster : topologic.Cluster
             The input cluster of internal boundaries (topologic wires).
 
         Returns
@@ -109,7 +109,7 @@ class Face(topologic.Face):
         return round((Vector.Angle(dirA, dirB)), mantissa)
     
     @staticmethod
-    def Area(face, mantissa):
+    def Area(face, mantissa=4):
         """
         Description
         ----------
@@ -229,10 +229,10 @@ class Face(topologic.Face):
             The created face.
 
         """
+        from topologicpy.Cluster import Cluster
         if not isinstance(edges, topologic.Cluster):
             return None
-        edges = []
-        _ = cluster.Edges(None, edges)
+        edges = Cluster.Edges(cluster)
         return Face.ByEdges(edges)
 
     @staticmethod
@@ -432,10 +432,10 @@ class Face(topologic.Face):
             The crearted face.
 
         """
+        from topologicpy.Cluster import Cluster
         if not isinstance(cluster, topologic.Cluster):
             return None
-        vertices = []
-        _ = cluster.Vertices(None, vertices)
+        vertices = Cluster.Vertices(cluster)
         return Face.ByVertices(vertices)
 
     @staticmethod
@@ -490,7 +490,7 @@ class Face(topologic.Face):
         return topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList)
 
     @staticmethod
-    def ByWiresCluster(externalBoundary, internalBoundariesCluster=[]):
+    def ByWiresCluster(externalBoundary, internalBoundariesCluster=None):
         """
         Description
         ----------
@@ -509,12 +509,18 @@ class Face(topologic.Face):
             The created face.
 
         """
+        from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
         if not isinstance(externalBoundary, topologic.Wire):
             return None
         if not Wire.IsClosed(externalBoundary):
             return None
-        internalBoundaries = []
-        _ = internalBoundariesCluster.Wires(None, internalBoundaries)
+        if not internalBoundariesCluster:
+            internalBoundaries = []
+        elif not isinstance(internalBoundariesCluster, topologic.Cluster):
+            return None
+        else:
+            internalBoundaries = Cluster.Wires(internalBoundariesCluster)
         return Face.ByWires(externalBoundary, internalBoundaries)
     
     @staticmethod
@@ -554,6 +560,7 @@ class Face(topologic.Face):
             The created circle.
 
         """
+        from topologicpy.Wire import Wire
         wire = Wire.Circle(origin, radius, sides, fromAngle, toAngle, True, dirX, dirY, dirZ, placement, tolerance)
         if not isinstance(wire, topologic.Wire):
             return None
@@ -564,7 +571,7 @@ class Face(topologic.Face):
         """
         Description
         ----------
-        Returns the compactness value of the input face. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
+        Returns the compactness measure of the input face. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
         Parameters
         ----------
@@ -576,7 +583,7 @@ class Face(topologic.Face):
         Returns
         -------
         float
-            The compactness value of the input face.
+            The compactness measure of the input face.
 
         """
         exb = face.ExternalBoundary()

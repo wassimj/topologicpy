@@ -5,7 +5,34 @@ from topologicpy.Topology import Topology
 import math
 import time
 
-class Cell(topologic.Cell):
+class Cell(Topology):
+    @staticmethod
+    def Area(cell, mantissa=4):
+        """
+        Description
+        __________
+        Returns the surface area of the input cell.
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The cell.
+        mantissa : int, optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        area : float
+            The surface area of the input cell.
+
+        """
+        faces = []
+        _ = cell.Faces(None, faces)
+        area = 0.0
+        for aFace in faces:
+            area = area + topologic.FaceUtility.Area(aFace)
+        return round(area, mantissa)
+
     @staticmethod
     def ByFaces(faces, tolerance=0.0001):
         """
@@ -30,66 +57,6 @@ class Cell(topologic.Cell):
         if cell:
             return cell
         else:
-            return None
-    
-    @staticmethod
-    def ByWires(wires, tolerance=0.0001):
-        """
-        Description
-        -----------
-        Creates a cell by lofting through the input list of wires.
-
-        Parameters
-        ----------
-        wires : topologic.Wire
-            The input list of wires.
-        tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
-
-        Raises
-        ------
-        Exception
-            Raises an exception if the two wires in the list do not have the same number of edges.
-
-        Returns
-        -------
-        topologic.Cell
-            The created cell.
-
-        """
-        faces = [topologic.Face.ByExternalBoundary(wires[0])]
-        faces.append(topologic.Face.ByExternalBoundary(wires[-1]))
-        for i in range(len(wires)-1):
-            wire1 = wires[i]
-            wire2 = wires[i+1]
-            w1_edges = []
-            _ = wire1.Edges(None, w1_edges)
-            w2_edges = []
-            _ = wire2.Edges(None, w2_edges)
-            if len(w1_edges) != len(w2_edges):
-                raise Exception("Cell.ByWires - Error: The two wires do not have the same number of edges.")
-            for j in range (len(w1_edges)):
-                e1 = w1_edges[j]
-                e2 = w2_edges[j]
-                e3 = None
-                e4 = None
-                try:
-                    e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
-                except:
-                    e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
-                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e4])))
-                try:
-                    e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
-                except:
-                    e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
-                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e3])))
-                if e3 and e4:
-                    e5 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex())
-                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e5, e4])))
-                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e2, e5, e3])))
-        try:
-            return Cell.ByFaces(faces, tolerance)
-        except:
             return None
 
     @staticmethod
@@ -165,12 +132,127 @@ class Cell(topologic.Cell):
             topEdge = topologic.TopologyUtility.Translate(bottomEdge, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
             sideEdge1 = topologic.Edge.ByStartVertexEndVertex(bottomEdge.StartVertex(), topEdge.StartVertex())
             sideEdge2 = topologic.Edge.ByStartVertexEndVertex(bottomEdge.EndVertex(), topEdge.EndVertex())
-            cellWire = topologic.Wire.ByEdges([bottomEdge, sideEdge1, topEdge, sideEdge2])
+            cellWire = Cluster.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
             cellFaces.append(topologic.Face.ByExternalBoundary(cellWire))
         return topologic.Cell.ByFaces(cellFaces, tolerance)
+
+    @staticmethod
+    def ByThickenedShell(shell, direction=[0,0,1], thickness=1.0, bothSides=True, reverse=False,
+                            tolerance=0.0001):
+        """
+        Description
+        -----------
+        Creates a cell by thickening the input shell. The shell must be open
+
+        Parameters
+        ----------
+        shell : topologic.Shell
+            The input shell to be thickened.
+        thickness : float, optional
+            The desired thickness. The default is 1.0.
+        bothSides : bool
+            If True, the cell will be lofted to each side of the shell. Otherwise, it will be lofted along the input direction. The default is True.
+        reverse : bool
+            If True, the cell will be lofted along the opposite of the input direction. The default is False.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Cell
+            The created cell.
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        if not isinstance(shell, topologic.Shell):
+            return None
+        if reverse == True and bothSides == False:
+            thickness = -thickness
+        if bothSides:
+            bottomShell = Topology.Translate(shell, -direction[0]*0.5*thickness, -direction[1]*0.5*thickness, -direction[2]*0.5*thickness)
+            topShell = topologic.TopologyUtility.Translate(shell, direction[0]*0.5*thickness, direction[1]*0.5*thickness, direction[2]*0.5*thickness)
+        else:
+            bottomShell = shell
+            topShell = Topology.Translate(shell, direction[0]*thickness, direction[1]*thickness, direction[2]*thickness)
+        cellFaces = Shell.Faces(bottomShell) + Shell.Faces(topShell)
+        bottomWire = Shell.ExternalBoundary(bottomShell)
+        bottomEdges = Wire.Edges(bottomWire)
+        for bottomEdge in bottomEdges:
+            topEdge = Topology.Translate(bottomEdge, direction[0]*thickness, direction[1]*thickness, direction[2]*thickness)
+            sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)])
+            sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)])
+            cellWire = Cluster.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
+            cellFace = Face.ByWire(cellWire)
+            cellFaces.append(cellFace)
+        return Cell.ByFaces(cellFaces, tolerance=tolerance)
     
     @staticmethod
-    def Compactness(cell, mantissa=3):
+    def ByWires(wires, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Creates a cell by lofting through the input list of wires.
+
+        Parameters
+        ----------
+        wires : topologic.Wire
+            The input list of wires.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Raises
+        ------
+        Exception
+            Raises an exception if the two wires in the list do not have the same number of edges.
+
+        Returns
+        -------
+        topologic.Cell
+            The created cell.
+
+        """
+        faces = [topologic.Face.ByExternalBoundary(wires[0])]
+        faces.append(topologic.Face.ByExternalBoundary(wires[-1]))
+        for i in range(len(wires)-1):
+            wire1 = wires[i]
+            wire2 = wires[i+1]
+            w1_edges = []
+            _ = wire1.Edges(None, w1_edges)
+            w2_edges = []
+            _ = wire2.Edges(None, w2_edges)
+            if len(w1_edges) != len(w2_edges):
+                raise Exception("Cell.ByWires - Error: The two wires do not have the same number of edges.")
+            for j in range (len(w1_edges)):
+                e1 = w1_edges[j]
+                e2 = w2_edges[j]
+                e3 = None
+                e4 = None
+                try:
+                    e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
+                except:
+                    e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
+                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e4])))
+                try:
+                    e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
+                except:
+                    e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
+                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e3])))
+                if e3 and e4:
+                    e5 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex())
+                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e5, e4])))
+                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e2, e5, e3])))
+        try:
+            return Cell.ByFaces(faces, tolerance)
+        except:
+            return None
+
+    @staticmethod
+    def Compactness(cell, mantissa=4):
         """
         Description
         -----------
@@ -181,7 +263,7 @@ class Cell(topologic.Cell):
         cell : topologic.Cell
             The input cell.
         mantissa : int, optional
-            The desired length of the mantissa. The default is 3.
+            The desired length of the mantissa. The default is 4.
 
         Raises
         ------
@@ -1085,7 +1167,7 @@ class Cell(topologic.Cell):
         return superCells
     
     @staticmethod
-    def SurfaceArea(cell, mantissa=3):
+    def SurfaceArea(cell, mantissa=4):
         """
         Description
         __________
@@ -1096,7 +1178,7 @@ class Cell(topologic.Cell):
         cell : topologic.Cell
             The cell.
         mantissa : int, optional
-            The desired length of the mantissa. The default is 3.
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
@@ -1104,13 +1186,8 @@ class Cell(topologic.Cell):
             The surface area of the input cell.
 
         """
-        faces = []
-        _ = cell.Faces(None, faces)
-        area = 0.0
-        for aFace in faces:
-            area = area + topologic.FaceUtility.Area(aFace)
-        return round(area, mantissa)
-    
+        return Cell.Area(cell, mantissa)
+
     @staticmethod
     def Torus(origin=None, majorRadius=1, minorRadius=0.2, uSides=16, vSides=8, dirX=0, dirY=0,
                   dirZ=1, placement="bottom", tolerance=0.0001):
