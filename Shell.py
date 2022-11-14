@@ -162,7 +162,7 @@ class Shell(Topology):
         topologic.Shell
             The created circle.
         """
-        return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=0, fromAngle=fromAngle, toAngle=toAngle, dirX=dirX, dirY=dirY, dirZ=dirZ, placement=placement, tolerance=tolerance)
+        return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=1, fromAngle=fromAngle, toAngle=toAngle, dirX=dirX, dirY=dirY, dirZ=dirZ, placement=placement, tolerance=tolerance)
 
     @staticmethod
     def Edges(shell):
@@ -394,8 +394,8 @@ class Shell(Topology):
 
         Returns
         -------
-        returnTopology : TYPE
-            DESCRIPTION.
+        topologic.Shell
+            The created hyperboloic paraboloid.
 
         """
         from topologicpy.Face import Face
@@ -588,7 +588,7 @@ class Shell(Topology):
         return shell.IsClosed()
 
     @staticmethod
-    def Pie(origin=None, radiusA=0.5, radiusB=0, sides=32, rings=0, fromAngle=0, toAngle=360, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Pie(origin=None, radiusA=0.5, radiusB=0, sides=32, rings=1, fromAngle=0, toAngle=360, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
         Description
         ----------
@@ -605,7 +605,7 @@ class Shell(Topology):
         sides : int, optional
             The number of sides of the pie. The default is 32.
         rings : int, optional
-            The number of rings of the pie. The default is 0.
+            The number of rings of the pie. The default is 1.
         fromAngle : float, optional
             The angle in degrees from which to start creating the arc of the pie. The default is 0.
         toAngle : float, optional
@@ -650,7 +650,6 @@ class Shell(Topology):
         if abs(radiusA - radiusB) < tolerance or radiusA < tolerance:
             return None
         radiusRange = radiusA - radiusB
-        print("Radius Range", radiusRange)
         sides = int(abs(math.floor(sides)))
         if sides < 3:
             return None
@@ -769,6 +768,48 @@ class Shell(Topology):
             The created shell.
 
         """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
+        uOffset = float(width)/float(uSides)
+        vOffset = float(length)/float(vSides)
+        faces = []
+        if placement.lower() == "center":
+            wOffset = width*0.5
+            lOffset = length*0.5
+        else:
+            wOffset = 0
+            lOffset = 0
+        for i in range(uSides):
+            for j in range(vSides):
+                rOrigin = Vertex.ByCoordinates(i*uOffset - wOffset, j*vOffset - lOffset, 0)
+                w = Wire.Rectangle(origin=rOrigin, width=uOffset, length=vOffset, dirX=0, dirY=0, dirZ=1, placement="lowerleft", tolerance=tolerance)
+                f = Face.ByWire(w)
+                faces.append(f)
+        shell = Shell.ByFaces(faces)
+        x1 = origin.X()
+        y1 = origin.Y()
+        z1 = origin.Z()
+        x2 = origin.X() + dirX
+        y2 = origin.Y() + dirY
+        z2 = origin.Z() + dirZ
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1    
+        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
+        if dist < 0.0001:
+            theta = 0
+        else:
+            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
+        shell = Topology.Rotate(shell, origin, 0, 1, 0, theta)
+        shell = Topology.Rotate(shell, origin, 0, 0, 1, phi)
+        return shell
+
 
         
     @staticmethod

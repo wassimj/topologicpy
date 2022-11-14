@@ -22,7 +22,7 @@ class Cell(Topology):
 
         Returns
         -------
-        area : float
+        float
             The surface area of the input cell.
 
         """
@@ -256,7 +256,7 @@ class Cell(Topology):
         """
         Description
         -----------
-        Returns the compactness measure of the input cell. This is also known as 'sphericity'
+        Returns the compactness measure of the input cell. This is also known as 'sphericity' (https://en.wikipedia.org/wiki/Sphericity).
 
         Parameters
         ----------
@@ -497,6 +497,115 @@ class Cell(Topology):
         cyl = topologic.TopologyUtility.Rotate(cyl, origin, 0, 0, 1, phi)
         return cyl
     
+    @staticmethod
+    def Decompose(cell, tiltAngle=10, tolerance=0.0001):
+        """
+        Description
+        __________
+        Decomposes the input cell into its logical components. This method assumes that the positive Z direction is UP.
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            the input cell.
+        tiltAngle : float , optional
+            The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. The default is 10.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        dictionary
+            A dictionary with the following keys and values:
+            1. "verticalFaces": list of vertical faces
+            2. "topHorizontalFaces": list of top horizontal faces
+            3. "bottomHorizontalFaces": list of bottom horizontal faces
+            4. "inclinedFaces": list of inclined faces
+            5. "verticalApertures": list of vertical apertures
+            6. "topHorizontalApertures": list of top horizontal apertures
+            7. "bottomHorizontalApertures": list of bottom horizontal apertures
+            8. "inclinedApertures": list of inclined apertures
+
+        """
+        from topologicpy.Face import Face
+        from topologicpy.Vector import Vector
+        from topologicpy.Aperture import Aperture
+        from numpy import arctan, pi, signbit, arctan2, rad2deg
+
+        def angleCode(f, up, tiltAngle):
+            dirA = Face.NormalAtParameters(f)
+            ang = round(Vector.Angle(dirA, up), 2)
+            if abs(ang - 90) < tiltAngle:
+                code = 0
+            elif abs(ang) < tiltAngle:
+                code = 1
+            elif abs(ang - 180) < tiltAngle:
+                code = 2
+            else:
+                code = 3
+            return code
+
+        def getApertures(topology):
+            apertures = []
+            apTopologies = []
+            apertures = topology.Apertures(apertures)
+            for aperture in apertures:
+                apTopologies.append(Aperture.Topology(aperture))
+            return apTopologies
+
+        if not isinstance(cell, topologic.Cell):
+            return None
+        verticalFaces = []
+        topHorizontalFaces = []
+        bottomHorizontalFaces = []
+        inclinedFaces = []
+        verticalApertures = []
+        topHorizontalApertures = []
+        bottomHorizontalApertures = []
+        inclinedApertures = []
+        tiltAngle = abs(tiltAngle)
+        faces = Cell.Faces(cell)
+        zList = []
+        for f in faces:
+            zList.append(f.Centroid().Z())
+        zMin = min(zList)
+        zMax = max(zList)
+        up = [0,0,1]
+        for aFace in faces:
+            aCode = angleCode(aFace, up, tiltAngle)
+
+            if aCode == 0:
+                verticalFaces.append(aFace)
+                verticalApertures += getApertures(aFace)
+            elif aCode == 1:
+                if abs(aFace.Centroid().Z() - zMin) < tolerance:
+                    bottomHorizontalFaces.append(aFace)
+                    bottomHorizontalApertures += getApertures(aFace)
+                else:
+                    topHorizontalFaces.append(aFace)
+                    topHorizontalApertures += getApertures(aFace)
+            elif aCode == 2:
+                if abs(aFace.Centroid().Z() - zMax) < tolerance:
+                    topHorizontalFaces.append(aFace)
+                    topHorizontalApertures += getApertures(aFace)
+                else:
+                    bottomHorizontalFaces.append(aFace)
+                    bottomHorizontalApertures += getApertures(aFace)
+            elif aCode == 3:
+                inclinedFaces.append(aFace)
+                inclinedApertures += getApertures(aFace)
+        d = {
+            "verticalFaces" : verticalFaces,
+            "topHorizontalFaces" : topHorizontalFaces,
+            "bottomHorizontalFaces" : bottomHorizontalFaces,
+            "inclinedFaces" : inclinedFaces,
+            "verticalApertures" : verticalApertures,
+            "topHorizontalApertures" : topHorizontalApertures,
+            "bottomHorizontalApertures" : bottomHorizontalApertures,
+            "inclinedApertures" : inclinedApertures
+            }
+        return d
+
     @staticmethod
     def Edges(cell):
         """
@@ -766,8 +875,7 @@ class Cell(Topology):
             return None
     
     @staticmethod
-    def Pipe(edge, radius=1, sides=16, startOffset=0, endOffset=0, endcapA=None,
-                 endcapB=None):
+    def Pipe(edge, radius=1, sides=16, startOffset=0, endOffset=0, endcapA=None, endcapB=None):
         """
         Description
         ----------
@@ -1125,48 +1233,6 @@ class Cell(Topology):
         return s
     
     @staticmethod
-    def SuperCells(inputCells, tolerance=0.0001):
-        """
-        Parameters
-        ----------
-        inputCells : TYPE
-            DESCRIPTION.
-        tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
-
-        Returns
-        -------
-        superCells : TYPE
-            DESCRIPTION.
-
-        """
-        
-        def gcClear(item):
-            gc = topologic.GlobalCluster.GetInstance()
-            subTopologies = []
-            _ = gc.SubTopologies(subTopologies)
-            for aSubTopology in subTopologies:
-                if not (topologic.Topology.IsSame(item, aSubTopology)):
-                    gc.RemoveTopology(aSubTopology)
-            return
-        
-        cluster = inputCells[0]
-        start = time.time()
-        for i in range(1, len(inputCells)):
-            oldCluster = cluster
-            cluster = cluster.Union(inputCells[i])
-            del oldCluster
-            if i % 50 == 0:
-                end = time.time()
-                print("Operation consumed "+str(round(end - start,2))+" seconds")
-                start = time.time()
-                print(i,"Clearing GlobalCluster")
-                gcClear(cluster)
-        superCells = []
-        _ = cluster.Cells(superCells)
-        return superCells
-    
-    @staticmethod
     def SurfaceArea(cell, mantissa=4):
         """
         Description
@@ -1281,19 +1347,23 @@ class Cell(Topology):
         return vertices
 
     @staticmethod
-    def Volume(cell, mantissa=3):
+    def Volume(cell, mantissa=4):
         """
+        Description
+        __________
+        Returns the volume of the input cell.
+
         Parameters
         ----------
         cell : topologic.Cell
             The input cell.
         manitssa: int, optional
-            The desired length of the mantissa. The default is 3.
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        float
+            The volume of the input cell.
 
         """
         if not cell:

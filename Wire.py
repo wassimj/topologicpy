@@ -1108,8 +1108,10 @@ class Wire(topologic.Wire):
             The created rectangle.
 
         """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
             return None
         if not placement.lower() in ["center", "lowerleft"]:
@@ -1126,10 +1128,10 @@ class Wire(topologic.Wire):
             xOffset = width*0.5
             yOffset = length*0.5
 
-        vb1 = topologic.Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())
-        vb2 = topologic.Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())
-        vb3 = topologic.Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
-        vb4 = topologic.Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
+        vb1 = Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())
+        vb2 = Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())
+        vb3 = Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
+        vb4 = Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], True)
         x1 = origin.X()
@@ -1147,8 +1149,8 @@ class Wire(topologic.Wire):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 1, 0, theta)
-        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 0, 1, phi)
+        baseWire = Topology.Rotate(baseWire, origin, 0, 1, 0, theta)
+        baseWire = Topology.Rotate(baseWire, origin, 0, 0, 1, phi)
         return baseWire
     
     @staticmethod

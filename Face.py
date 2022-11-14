@@ -107,7 +107,15 @@ class Face(topologic.Face):
         dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
         dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
         return round((Vector.Angle(dirA, dirB)), mantissa)
-    
+
+    @staticmethod
+    def CompassAngle(face, north, mantissa=4):
+        from topologicpy.Vector import Vector
+        if not isinstance(face, topologic.Face):
+            return None
+        dirA = Face.NormalAtParameters(face,mantissa=mantissa)
+        return Vector.CompassAngle(vectorA=dirA, vectorB=north, mantissa=mantissa)
+
     @staticmethod
     def Area(face, mantissa=4):
         """

@@ -28,7 +28,7 @@ class Aperture(topologic.Aperture):
         except:
             aperture = None
         return aperture
-    
+
     @staticmethod
     def ApertureTopology(aperture):
         """

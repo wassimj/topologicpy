@@ -1,10 +1,11 @@
 import numpy as np
 import numpy.linalg as la
+from numpy import pi, arctan2, rad2deg
 import math
 
 class Vector(list):
     @staticmethod
-    def Angle(vectorA, vectorB, mantissa=3):
+    def Angle(vectorA, vectorB, mantissa=4):
         """
         Description
         ----------
@@ -17,7 +18,7 @@ class Vector(list):
         vectorB : list
             The second vector.
         mantissa : int, optional
-            The length of the desired mantissa. The default is 3.
+            The length of the desired mantissa. The default is 4.
 
         Returns
         -------
@@ -33,6 +34,40 @@ class Vector(list):
         cosang = np.dot(vectorA, vectorB)
         sinang = la.norm(np.cross(vectorA, vectorB))
         return round(math.degrees(np.arctan2(sinang, cosang)), mantissa)
+
+    @staticmethod
+    def CompassAngle(vectorA, vectorB, mantissa=4, tolerance=0.0001):
+        """
+        Description
+        ----------
+        Returns the horizontal compass angle in degrees between the two input vectors. The angle is measured in counter-clockwise fashion. Only the first two elements in the input vectors are considered.
+
+        Parameters
+        ----------
+        vectorA : list
+            The first vector.
+        vectorB : list
+            The second vector.
+        mantissa : int, optional
+            The length of the desired mantissa. The default is 4.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        float
+            The horizontal compass angle in degrees between the two input vectors.
+
+        """
+        if abs(vectorA[0]) < tolerance and abs(vectorA[1]) < tolerance:
+            return None
+        if abs(vectorB[0]) < tolerance and abs(vectorB[1]) < tolerance:
+            return None
+        p1 = (vectorA[0], vectorA[1])
+        p2 = (vectorB[0], vectorB[1])
+        ang1 = arctan2(*p1[::-1])
+        ang2 = arctan2(*p2[::-1])
+        return round(rad2deg((ang1 - ang2) % (2 * pi)), mantissa)
 
     @staticmethod
     def Multiply(vector, magnitude, tolerance=0.0001):
@@ -68,7 +103,7 @@ class Vector(list):
         return newVector
 
     @staticmethod
-    def Magnitude(vector, mantissa=3):
+    def Magnitude(vector, mantissa=4):
         """
         Description
         -----------
@@ -79,7 +114,7 @@ class Vector(list):
         vector : list
             The input vector.
         mantissa : int
-            The length of the desired mantissa. The default is 3.
+            The length of the desired mantissa. The default is 4.
 
         Returns
         -------

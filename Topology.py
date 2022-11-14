@@ -1021,7 +1021,31 @@ class Topology():
         return topologic.Topology.Analyze(item)
     
     @staticmethod
-    def Apertures(item):
+    def Apertures(topology):
+        """
+        Description
+        -----------
+        Returns the apertures of the input topology.
+        
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+
+        Returns
+        -------
+        list
+            The list of apertures beloning to the input topology.
+
+        """
+        if not isinstance(topology, topologic.Topology):
+            return None
+        apertures = []
+        _ = topology.Apertures(apertures)
+        return apertures
+
+    @staticmethod
+    def ApertureTopologies(topology):
         """
         Description
         __________
@@ -1038,12 +1062,14 @@ class Topology():
             DESCRIPTION.
 
         """
-        apertures = []
+        from topologicpy.Aperture import Aperture
+        if not isinstance(topology, topologic.Topology):
+            return None
+        apertures = Topology.Apertures(topology)
         apTopologies = []
-        _ = item.Apertures(apertures)
         for aperture in apertures:
-            apTopologies.append(topologic.Aperture.Topology(aperture))
-        return [apertures, apTopologies]
+            apTopologies.append(Aperture.ApertureTopology(aperture))
+        return apTopologies
     
     @staticmethod
     def Boolean(topologyA, topologyB, operation, tranDict, tolerance=0.0001, topologyC=None):
