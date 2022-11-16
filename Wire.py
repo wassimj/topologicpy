@@ -1012,36 +1012,9 @@ class Wire(topologic.Wire):
             The projected wire.
 
         """
-        
-        def projectVertex(vertex, face, direction=None, mantissa=4, tolerance=0.0001):
-            from topologicpy.Face import Face
-            if not vertex:
-                return None
-            if not isinstance(vertex, topologic.Vertex):
-                return None
-            if not face:
-                return None
-            if not isinstance(face, topologic.Face):
-                return None
-            if not direction:
-                direction = -1*Face.NormalAtParameters(face, 0.5, 0.5, "XYZ", mantissa)
-
-            if topologic.FaceUtility.IsInside(face, vertex, tolerance):
-                return vertex
-            d = topologic.VertexUtility.Distance(vertex, face)*10
-            far_vertex = topologic.TopologyUtility.Translate(vertex, direction[0]*d, direction[1]*d, direction[2]*d)
-            if topologic.VertexUtility.Distance(vertex, far_vertex) > tolerance:
-                e = topologic.Edge.ByStartVertexEndVertex(vertex, far_vertex)
-                pv = face.Intersect(e, False)
-                if not pv:
-                    far_vertex = topologic.TopologyUtility.Translate(vertex, -direction[0]*d, -direction[1]*d, -direction[2]*d)
-                    if topologic.VertexUtility.Distance(vertex, far_vertex) > tolerance:
-                        e = topologic.Edge.ByStartVertexEndVertex(vertex, far_vertex)
-                        pv = face.Intersect(e, False)
-                return pv
-            else:
-                return None
-
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
         if not wire:
             return None
         if not isinstance(wire, topologic.Wire):
@@ -1052,28 +1025,28 @@ class Wire(topologic.Wire):
             return None
         if not direction:
             direction = -1*Face.NormalAtParameters(face, 0.5, 0.5, "XYZ", mantissa)
-        large_face = topologic.TopologyUtility.Scale(face, face.CenterOfMass(), 500, 500, 500)
+        large_face = Topology.Scale(face, face.CenterOfMass(), 500, 500, 500)
         edges = []
         _ = wire.Edges(None, edges)
         projected_edges = []
 
         if large_face:
-            if (large_face.Type() == topologic.Face.Type()):
+            if (large_face.Type() == Face.Type()):
                 for edge in edges:
                     if edge:
-                        if (edge.Type() == topologic.Edge.Type()):
+                        if (edge.Type() == Edge.Type()):
                             sv = edge.StartVertex()
                             ev = edge.EndVertex()
 
-                            psv = projectVertex(sv, large_face, direction)
-                            pev = projectVertex(ev, large_face, direction)
+                            psv = Vertex.Project(vertex=sv, face=large_face, direction=direction)
+                            pev = Vertex.Project(vertex=ev, face=large_face, direction=direction)
                             if psv and pev:
                                 try:
-                                    pe = topologic.Edge.ByStartVertexEndVertex(psv, pev)
+                                    pe = Edge.ByVertices([psv, pev])
                                     projected_edges.append(pe)
                                 except:
                                     continue
-        w = topologic.Wire.ByEdges(projected_edges)
+        w = Wire.ByEdges(projected_edges)
         return w
 
     @staticmethod

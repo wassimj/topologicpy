@@ -70,6 +70,62 @@ class Vector(list):
         return round(rad2deg((ang1 - ang2) % (2 * pi)), mantissa)
 
     @staticmethod
+    def Cross(vectorA, vectorB, mantissa=4, tolerance=0.0001):
+        """
+        Description
+        ----------
+        Returns the cross product of the two input vectors. The resulting vector is perpendicular to the plane defined by the two input vectors.
+
+        Parameters
+        ----------
+        vectorA : list
+            The first vector.
+        vectorB : list
+            The second vector.
+        mantissa : int, optional
+            The length of the desired mantissa. The default is 4.
+        tolerance : float, optional
+            the desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The vector representing the cross product of the two input vectors.
+
+        """
+        if not isinstance(vectorA, list) or not isinstance(vectorB, list):
+            return None
+        if Vector.Magnitude(vector=vectorA, mantissa=mantissa) < tolerance or Vector.Magnitude(vector=vectorB, mantissa=mantissa) < tolerance:
+            return None
+        vecA = np.array(vectorA)
+        vecB = np.array(vectorB)
+        vecC = list(np.cross(vecA, vecB))
+        if Vector.Magnitude(vecC) < tolerance:
+            return None
+        return [round(vecC[0], mantissa), round(vecC[1], mantissa), round(vecC[2], mantissa)]
+
+    @staticmethod
+    def Magnitude(vector, mantissa=4):
+        """
+        Description
+        -----------
+        Returns the magnitude of the input vector.
+
+        Parameters
+        ----------
+        vector : list
+            The input vector.
+        mantissa : int
+            The length of the desired mantissa. The default is 4.
+
+        Returns
+        -------
+        float
+            The magnitude of the input vector.
+        """
+
+        return math.round(np.linalg.norm(np.array(vector)), mantissa)
+    @staticmethod
     def Multiply(vector, magnitude, tolerance=0.0001):
         """
         Description
@@ -101,28 +157,6 @@ class Vector(list):
         for i in range(len(vector)):
             newVector.append(vector[i] * magnitude / oldMag)
         return newVector
-
-    @staticmethod
-    def Magnitude(vector, mantissa=4):
-        """
-        Description
-        -----------
-        Returns the magnitude of the input vector.
-
-        Parameters
-        ----------
-        vector : list
-            The input vector.
-        mantissa : int
-            The length of the desired mantissa. The default is 4.
-
-        Returns
-        -------
-        float
-            The magnitude of the input vector.
-        """
-
-        return math.round(np.linalg.norm(np.array(vector)), mantissa)
 
     @staticmethod
     def Normalize(vector):

@@ -875,7 +875,7 @@ class Cell(Topology):
             return None
     
     @staticmethod
-    def Pipe(edge, radius=1, sides=16, startOffset=0, endOffset=0, endcapA=None, endcapB=None):
+    def Pipe(edge, profile=None, radius=0.5, sides=16, startOffset=0, endOffset=0, endcapA=None, endcapB=None):
         """
         Description
         ----------
@@ -885,8 +885,10 @@ class Cell(Topology):
         ----------
         edge : topologic.Edge
             The centerline of the pipe.
+        profile : topologic.Wire , optional
+            The profile of the pipe. It is assumed that the profile is in the XY plane. If set to None, a circle of radius 0.5 will be used. The default is None.
         radius : float, optional
-            The radius of the pipe. The default is 1.
+            The radius of the pipe. The default is 0.5.
         sides : int, optional
             The number of sides of the pipe. The default is 16.
         startOffset : float, optional
@@ -927,27 +929,31 @@ class Cell(Topology):
         baseV = []
         topV = []
 
-        for i in range(sides):
-            angle = math.radians(360/sides)*i
-            x = math.sin(angle)*radius + sv.X()
-            y = math.cos(angle)*radius + sv.Y()
-            z = sv.Z()
-            baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
-            topV.append(topologic.Vertex.ByCoordinates(x,y,z+dist))
+        if isinstance(profile, topologic.Wire):
+            baseWire = Topology.Translate(profile, 0 , 0, sv.Z())
+            topWire = Topology.Translate(profile, 0 , 0, sv.Z()+dist)
+        else:
+            for i in range(sides):
+                angle = math.radians(360/sides)*i
+                x = math.sin(angle)*radius + sv.X()
+                y = math.cos(angle)*radius + sv.Y()
+                z = sv.Z()
+                baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
+                topV.append(topologic.Vertex.ByCoordinates(x,y,z+dist))
 
-        baseWire = Wire.ByVertices(baseV)
-        topWire = Wire.ByVertices(topV)
+            baseWire = Wire.ByVertices(baseV)
+            topWire = Wire.ByVertices(topV)
         wires = [baseWire, topWire]
-        cyl = topologic.CellUtility.ByLoft(wires)
+        pipe = Cell.ByWires(wires)
         phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
         if dist < 0.0001:
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        cyl = topologic.TopologyUtility.Rotate(cyl, sv, 0, 1, 0, theta)
-        cyl = topologic.TopologyUtility.Rotate(cyl, sv, 0, 0, 1, phi)
+        pipe = topologic.TopologyUtility.Rotate(pipe, sv, 0, 1, 0, theta)
+        pipe = topologic.TopologyUtility.Rotate(pipe, sv, 0, 0, 1, phi)
         zzz = topologic.Vertex.ByCoordinates(0,0,0)
-        returnList = [cyl]
+        returnList = [pipe]
         if endcapA:
             origin = edge.StartVertex()
             x1 = origin.X()
