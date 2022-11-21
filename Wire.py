@@ -1034,7 +1034,7 @@ class Wire(topologic.Wire):
             if (large_face.Type() == Face.Type()):
                 for edge in edges:
                     if edge:
-                        if (edge.Type() == Edge.Type()):
+                        if (edge.Type() == topologic.Edge.Type()):
                             sv = edge.StartVertex()
                             ev = edge.EndVertex()
 

@@ -1,5 +1,6 @@
 import topologicpy
 import topologic
+from topologicpy.Vertex import Vertex
 from topologicpy.Vector import Vector
 
 class Edge():
@@ -291,7 +292,7 @@ class Edge():
         return Edge.ByVertices([sve, eve])
 
     @staticmethod
-    def IsCollinear(edgeA, edgeB, angTolerance=0.1):
+    def IsCollinear(edgeA, edgeB, mantissa=4, angTolerance=0.1, tolerance=0.0001):
         """
         Description
         -----------
@@ -303,6 +304,49 @@ class Edge():
             The first input edge.
         edgeB : topologic.Edge
             The second input edge.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
+        angTolerance : float, optional
+            The angular tolerance used for the test. The default is 0.1.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the two edges are collinear. False otherwise.
+
+        """
+        if not isinstance(edgeA, topologic.Edge) or not isinstance(edgeB, topologic.Edge):
+            return None
+        ang = Edge.Angle(edgeA, edgeB, mantissa=mantissa, bracket=True)
+        svA = Edge.StartVertex(edgeA)
+        evA = Edge.EndVertex(edgeA)
+        svB = Edge.StartVertex(edgeB)
+        evB = Edge.EndVertex(edgeB)
+        d1 = Vertex.Distance(svA, svB)
+        d2 = Vertex.Distance(svA, evB)
+        d3 = Vertex.Distance(evA, svB)
+        d4 = Vertex.Distance(evA, evB)
+        if (d1 < tolerance or d2 < tolerance or d3 < tolerance or d4 < tolerance) and (abs(ang) < angTolerance or (abs(180 - ang) < angTolerance)):
+            return True
+        return False
+    
+    @staticmethod
+    def IsParallel(edgeA, edgeB, mantissa=4, angTolerance=0.1):
+        """
+        Description
+        -----------
+        Tests if the two input edges are collinear.
+
+        Parameters
+        ----------
+        edgeA : topologic.Edge
+            The first input edge.
+        edgeB : topologic.Edge
+            The second input edge.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
         angTolerance : float, optional
             The angular tolerance used for the test. The default is 0.1.
 
@@ -314,11 +358,11 @@ class Edge():
         """
         if not isinstance(edgeA, topologic.Edge) or not isinstance(edgeB, topologic.Edge):
             return None
-        ang = Edge.Angle(edgeA, edgeB, mantissa=len(str(angTolerance).split(".")[1]), bracket=True)
-        if abs(ang) < angTolerance:
+        ang = Edge.Angle(edgeA, edgeB, mantissa=mantissa, bracket=True)
+        if abs(ang) < angTolerance or abs(180 - ang) < angTolerance:
             return True
         return False
-    
+
     @staticmethod
     def Length(edge, mantissa=4):
         """

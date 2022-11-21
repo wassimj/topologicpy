@@ -703,7 +703,7 @@ class Face(topologic.Face):
         """
         Description
         ----------
-        Flattens the input face such that its center of mass is located at the origin and its normal is pointed in the positvie Z axis.
+        Flattens the input face such that its center of mass is located at the origin and its normal is pointed in the positive Z axis.
 
         Parameters
         ----------
@@ -716,11 +716,13 @@ class Face(topologic.Face):
             The flattened face.
 
         """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
         if not isinstance(face, topologic.Face):
             return None
-        origin = topologic.Vertex.ByCoordinates(0,0,0)
+        origin = Vertex.ByCoordinates(0,0,0)
         cm = face.CenterOfMass()
-        coords = topologic.FaceUtility.NormalAtParameters(face, 0.5, 0.5)
+        coords = Face.NormalAtParameters(face, 0.5, 0.5)
         x1 = cm.X()
         y1 = cm.Y()
         z1 = cm.Z()
@@ -736,10 +738,10 @@ class Face(topologic.Face):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        flat_item = topologic.TopologyUtility.Translate(item, -cm.X(), -cm.Y(), -cm.Z())
-        flat_item = topologic.TopologyUtility.Rotate(flat_item, origin, 0, 0, 1, -phi)
-        flat_item = topologic.TopologyUtility.Rotate(flat_item, origin, 0, 1, 0, -theta)
-        return flat_item
+        flat_face = Topology.Translate(face, -cm.X(), -cm.Y(), -cm.Z())
+        flat_face = Topology.Rotate(flat_face, origin, 0, 0, 1, -phi)
+        flat_face = Topology.Rotate(flat_face, origin, 0, 1, 0, -theta)
+        return flat_face
     
     @staticmethod
     def InternalBoundaries(face):

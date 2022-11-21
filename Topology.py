@@ -327,12 +327,12 @@ class Topology():
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        apertureCluster : TYPE
-            DESCRIPTION.
-        exclusive : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        apertureCluster : topologic.Cluster
+            The input cluster of apertures.
+        exclusive : bool
+            If set to True, one aperture will be assigned exclusively to one topology.
         subTopologyType : TYPE
             DESCRIPTION.
         tolerance : TYPE, optional
@@ -340,16 +340,10 @@ class Topology():
 
         Returns
         -------
-        topology : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The returned topology with the apertures added to it.
 
         """
-        # topology = item[0].DeepCopy()
-        # apertureCluster = item[1]
-        # exclusive = item[2]
-        # tolerance = item[3]
-        # subTopologyType = item[4]
-        
         def processApertures(subTopologies, apertureCluster, exclusive, tolerance):
             apertures = []
             cells = []
@@ -3201,6 +3195,53 @@ class Topology():
                 otherTopologies.append(aTopology)
         return [filteredTopologies, otherTopologies]
 
+    def Flatten(topology, origin=None, vector=[0,0,1]):
+        """
+        Description
+        ----------
+        Flattens the input topology such that the input origin is located at the world origin and the input topology is rotated such that the input vector is pointed in the positive Z axis.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        origin : topologic.Vertex , optional
+            The input origin. If set to None, the center of mass of the input topology will be place the world origin. The default is None.
+        vector : list , optional
+            The input direction vector. The input topology will be rotated such that this vector is pointed in the positive Z axis.
+
+        Returns
+        -------
+        topologic.Topology
+            The flattened topology.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        if not isinstance(topology, topologic.Topology):
+            return None
+        world_origin = Vertex.ByCoordinates(0,0,0)
+        if origin == None:
+            origin = topology.CenterOfMass()
+        x1 = origin.X()
+        y1 = origin.Y()
+        z1 = origin.Z()
+        x2 = origin.X() + vector[0]
+        y2 = origin.Y() + vector[1]
+        z2 = origin.Z() + vector[2]
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1    
+        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
+        if dist < 0.0001:
+            theta = 0
+        else:
+            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
+        flat_topology = Topology.Translate(topology, -origin.X(), -origin.Y(), -origin.Z())
+        flat_topology = Topology.Rotate(flat_topology, world_origin, 0, 0, 1, -phi)
+        flat_topology = Topology.Rotate(flat_topology, world_origin, 0, 1, 0, -theta)
+        return flat_topology
     
     @staticmethod
     def Geometry(item):
@@ -3467,6 +3508,58 @@ class Topology():
         """
         return item.GetOcctShape()
     
+    def Orient(topology, origin=None, dirA=[0,0,1], dirB=[0,0,1], tolerance=0.0001):
+        """
+        Description
+        ----------
+        Orients the input topology such that the input such that the input dirA vector is parallel to the input dirB vector.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        origin : topologic.Vertex , optional
+            The input origin. If set to None, the center of mass of the input topology will be used to locate the input topology. The default is None.
+        dirA : list , optional
+            The first input direction vector. The input topology will be rotated such that this vector is parallel to the input dirB vector. The default is [0,0,1].
+        dirB : list , optional
+            The target direction vector. The input topology will be rotated such that the input dirA vector is parallel to this vector. The default is [0,0,1].
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001
+
+        Returns
+        -------
+        topologic.Topology
+            The flattened topology.
+
+        """
+        from topologicpy.Vertex import Vertex
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(origin, topologic.Vertex):
+            origin = topology.CenterOfMass()
+        topology = Topology.Flatten(topology, origin=origin, vector=dirA)
+        x1 = origin.X()
+        y1 = origin.Y()
+        z1 = origin.Z()
+        x2 = origin.X() + dirB[0]
+        y2 = origin.Y() + dirB[1]
+        z2 = origin.Z() + dirB[2]
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1    
+        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
+        if dist < tolerance:
+            theta = 0
+        else:
+            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
+        world_origin = Vertex.ByCoordinates(0,0,0)
+        returnTopology = Topology.Rotate(topology, world_origin, 0, 0, 1, -phi)
+        returnTopology = Topology.Rotate(returnTopology, world_origin, 0, 1, 0, -theta)
+        returnTopology = Topology.Place(returnTopology, world_origin, origin)
+        return returnTopology
+
     @staticmethod
     def Place(topology, oldLoc, newLoc):
         """

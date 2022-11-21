@@ -3,7 +3,6 @@ import topologic
 from topologicpy.Wire import Wire
 from topologicpy.Topology import Topology
 import math
-import time
 
 class Cell(Topology):
     @staticmethod
@@ -53,7 +52,10 @@ class Cell(Topology):
             The created cell.
 
         """
-        cell = topologic.Cell.ByFaces(faces, tolerance)
+        if not isinstance(faces, list):
+            return None
+        faceList = [x for x in faces if isinstance(x, topologic.Face)]
+        cell = topologic.Cell.ByFaces(faceList, tolerance)
         if cell:
             return cell
         else:
@@ -110,9 +112,8 @@ class Cell(Topology):
             The created cell.
 
         """
+        from topologicpy.Cluster import Cluster
 
-        if not face:
-            return None
         if not isinstance(face, topologic.Face):
             return None
         if reverse == True and bothSides == False:
@@ -192,7 +193,7 @@ class Cell(Topology):
         return Cell.ByFaces(cellFaces, tolerance=tolerance)
     
     @staticmethod
-    def ByWires(wires, tolerance=0.0001):
+    def ByWires(wires, close=False, tolerance=0.0001):
         """
         Description
         -----------
@@ -202,6 +203,8 @@ class Cell(Topology):
         ----------
         wires : topologic.Wire
             The input list of wires.
+        close : bool , optional
+            If set to True, the last wire in the list of input wires will be connected to the first wire in the list of input wires.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 
@@ -216,11 +219,17 @@ class Cell(Topology):
             The created cell.
 
         """
-        faces = [topologic.Face.ByExternalBoundary(wires[0])]
-        faces.append(topologic.Face.ByExternalBoundary(wires[-1]))
-        for i in range(len(wires)-1):
-            wire1 = wires[i]
-            wire2 = wires[i+1]
+        from topologicpy.Cluster import Cluster
+        if not isinstance(wires, list):
+            return None
+        wireList = [x for x in wires if isinstance(x, topologic.Wire)]
+        if close:
+            wireList.append(wireList[0])
+        faces = [topologic.Face.ByExternalBoundary(wireList[0])]
+        faces.append(topologic.Face.ByExternalBoundary(wireList[-1]))
+        for i in range(len(wireList)-1):
+            wire1 = wireList[i]
+            wire2 = wireList[i+1]
             w1_edges = []
             _ = wire1.Edges(None, w1_edges)
             w2_edges = []
@@ -246,10 +255,41 @@ class Cell(Topology):
                     e5 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex())
                     faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e5, e4])))
                     faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e2, e5, e3])))
-        try:
-            return Cell.ByFaces(faces, tolerance)
-        except:
+
+        return Cell.ByFaces(faces, tolerance)
+
+    @staticmethod
+    def ByWiresCluster(cluster, close=False, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Creates a cell by lofting through the input cluster of wires.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input Cluster of wires.
+        close : bool , optional
+            If set to True, the last wire in the cluster of input wires will be connected to the first wire in the cluster of input wires.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Raises
+        ------
+        Exception
+            Raises an exception if the two wires in the list do not have the same number of edges.
+
+        Returns
+        -------
+        topologic.Cell
+            The created cell.
+
+        """
+        if not isinstance(cluster, topologic.Cluster):
             return None
+        wires = []
+        _ = cluster.Wires(None, wires)
+        return Cell.ByWires(wires, close=close, tolerance=tolerance)
 
     @staticmethod
     def Compactness(cell, mantissa=4):
