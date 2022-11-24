@@ -363,7 +363,6 @@ class Graph:
         # neo4jGraph = item
         
         def randomVertex(vertices, minDistance):
-            print("Creating a Random Vertex!")
             flag = True
             while flag:
                 x = random.uniform(0, 1000)
@@ -447,7 +446,6 @@ class Graph:
         nodes = []
         for node_label in node_labels:
             nodes = nodes + (list(node_matcher.match(node_label)))
-        print(nodes)
         for node in nodes:
             #Check if they have X, Y, Z coordinates
             if ('x' in node.keys()) and ('y' in node.keys()) and ('z' in node.keys()) or ('X' in node.keys()) and ('Y' in node.keys()) and ('Z' in node.keys()):
@@ -468,8 +466,6 @@ class Graph:
             for relationship_type in relationship_types:
                 relationships = list(relationship_matcher.match([node], r_type=relationship_type))
                 for relationship in relationships:
-                    print("    ",relationship.start_node['name'], relationship_type, relationship.end_node['name'])
-                    print("Nodes Index:",nodes.index(relationship.start_node))
                     sv = vertices[nodes.index(relationship.start_node)]
                     ev = vertices[nodes.index(relationship.end_node)]
                     edge = topologic.Edge.ByStartVertexEndVertex(sv, ev)
@@ -693,10 +689,6 @@ class Graph:
             DESCRIPTION.
 
         """
-        # print(item)
-        # graph = item[0]
-        # vertexList = item[1]
-        # tolerance = item[2]
         graphVertices = []
         _ = graph.Vertices(graphVertices)
         if len(vertexList) == 0:
@@ -784,7 +776,7 @@ class Graph:
             try:
                 _ = graph.Vertices(vertices)
             except:
-                print("ERROR: (Topologic>Graph.Vertices) operation failed.")
+                print("ERROR: (Topologic>Graph.Vertices) operation failed. Returning None.")
                 vertices = None
         if vertices:
             return vertices
@@ -1014,7 +1006,7 @@ class Graph:
                 try:
                     _ = graph.Vertices(vertices)
                 except:
-                    print("ERROR: (Topologic>Graph.Vertices) operation failed.")
+                    print("ERROR: (Topologic>Graph.Vertices) operation failed. Returning None.")
                     vertices = None
             if vertices:
                 return random.sample(vertices, len(vertices))
@@ -1025,9 +1017,7 @@ class Graph:
 
         if not isinstance(graph_list, list):
             graph_list = [graph_list]
-        print("GRAPH LIST", graph_list)
         for graph_index, graph in enumerate(graph_list):
-            print("GRAPH INDEX", graph_index)
             graph_label = graph_label_list[graph_index]
             # Export Graph Properties
             vertices = graphVertices(graph)
@@ -1079,7 +1069,6 @@ class Graph:
             validate = 0
             
             for i, v in enumerate(vertices):
-                print("VERTEX I", i)
                 if train < train_max:
                     train_mask = True
                     test_mask = False
@@ -1144,7 +1133,6 @@ class Graph:
                         else:
                             edge_features = str(round(float(Dictionary.DictionaryValueAtKey(ed, edge_feature_key)),5))
                     edge_feat.append(edge_features)
-            print("EDGE_GRAPH_ID",edge_graph_id)
             data = [edge_graph_id, edge_src, edge_dst, edge_lab, edge_feat]
             data = Replication.iterate(data)
             data = Replication.transposeList(data)
@@ -1910,12 +1898,8 @@ class Graph:
         
         def isUnique(paths, wire):
             if len(paths) < 1:
-                print("Length of Paths less than 1 so returning True")
                 return True
             for aPath in paths:
-                print("Checking Path Uniqueness")
-                print("aPath: " + str(aPath))
-                print(wire)
                 copyPath = topologic.Topology.DeepCopy(aPath)
                 dif = copyPath.Difference(wire, False)
                 if dif == None:
@@ -1938,7 +1922,6 @@ class Graph:
                 except:
                     flag = False
                 if (flag):
-                    print("Checking if wire is unique")
                     if isUnique(shortestPaths, wire):
                         shortestPaths.append(wire)
                 vertices = []
@@ -2133,7 +2116,7 @@ class Graph:
             try:
                 _ = graph.Vertices(vertices)
             except:
-                print("ERROR: (Topologic>Graph.Vertices) operation failed.")
+                print("ERROR: (Topologic>Graph.Vertices) operation failed. Returning None.")
                 vertices = None
         if vertices:
             return vertices

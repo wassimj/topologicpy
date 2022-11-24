@@ -63,7 +63,7 @@ class Shell(Topology):
         return Shell.ByFaces(faces)
 
     @staticmethod
-    def ByLoft(wires, tolerance=0.0001):
+    def ByWires(wires, tolerance=0.0001):
         """
         Description
         ----------

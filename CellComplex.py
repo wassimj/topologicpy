@@ -154,7 +154,7 @@ class CellComplex(topologic.CellComplex):
         return CellComplex.ByFaces(faces, tolerance)
 
     @staticmethod
-    def ByLoft(wires, tolerance=0.0001):
+    def ByWires(wires, tolerance=0.0001):
         """
         Description
         -----------
@@ -212,7 +212,7 @@ class CellComplex(topologic.CellComplex):
         return CellComplex.ByFaces(faces, tolerance)
 
     @staticmethod
-    def ByLoftCluster(cluster, tolerance=0.0001):
+    def ByWiresCluster(cluster, tolerance=0.0001):
         """
         Description
         -----------
@@ -237,7 +237,7 @@ class CellComplex(topologic.CellComplex):
             return None
         wires = []
         _ = cluster.Wires(None, wires)
-        return CellComplex.ByLoft(wires, tolerance)
+        return CellComplex.ByWires(wires, tolerance)
 
     @staticmethod
     def Cells(cellComplex):
@@ -523,7 +523,7 @@ class CellComplex(topologic.CellComplex):
     
     @staticmethod
     def Prism(origin=None, width=1, length=1, height=1, uSides=2, vSides=2, wSides=2,
-                         dirX=0, dirY=0, dirZ=1, placement="bottom"):
+                         dirX=0, dirY=0, dirZ=1, placement="center"):
         """
         Description
         ----------
@@ -552,7 +552,7 @@ class CellComplex(topologic.CellComplex):
         dirZ : float, optional
             The Z component of the vector representing the up direction of the prism. The default is 1.
         placement : str, optional
-            The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
+            The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
 
         Returns
         -------

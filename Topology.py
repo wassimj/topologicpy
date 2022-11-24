@@ -9,12 +9,13 @@ from numpy import arctan, pi, signbit
 from numpy.linalg import norm
 import math
 from scipy.spatial import ConvexHull
+'''
 try:
     import ifcopenshell
     import ifcopenshell.geom
 except:
     raise Exception("Error: TopologyByImportedIFC: ifcopenshell is not present on your system. Install BlenderBIM or ifcopenshell to resolve.")
-
+'''
 
 
 def listAttributeValues(listAttribute):
@@ -816,7 +817,6 @@ class Topology():
                         error = True
             elif topologyType == "Face":
                 _ = item.AdjacentFaces(hostTopology, adjacentTopologies)
-                print("Success!!")
             elif topologyType == "Shell":
                 try:
                     _ = topologic.FaceUtility.AdjacentShells(adjacentTopologies)
@@ -1364,7 +1364,7 @@ class Topology():
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
         topWire = Wire.ByVertices([vt1, vt2, vt3, vt4], close=True)
         wires = [baseWire, topWire]
-        return (Cell.ByLoft(wires))
+        return (Cell.ByWires(wires))
 
     @staticmethod
     def ByImportedBRep(item):
@@ -1392,7 +1392,7 @@ class Topology():
             file.close()
             return topology
         return None
-
+    '''
     @staticmethod
     def ByImportedIFC(filePath, typeList):
         """
@@ -1556,7 +1556,7 @@ class Topology():
         brepString = client.cat(hash_).decode("utf-8")
         topology = topologic.Topology.DeepCopy(topologic.Topology.ByString(brepString))
         return topology
-    '''
+
     @staticmethod
     def ByImportedJSONMK1(item):
         """
@@ -1678,7 +1678,6 @@ class Topology():
             for item in apertureList:
                 brepFileName = item['brep']
                 brepFilePath = os.path.join(folderPath, brepFileName+".brep")
-                print(brepFilePath)
                 brepFile = open(brepFilePath)
                 if brepFile:
                     brepString = brepFile.read()
@@ -2619,7 +2618,7 @@ class Topology():
             f.close()    
             return True
         return False
-    '''
+
     @staticmethod
     def ExportToIPFS(topology, url, port, user, password):
         """
@@ -2677,7 +2676,7 @@ class Topology():
             os.remove(filepath)
             return newfile['Hash']
         return ''
-    '''
+
     @staticmethod
     def ExportToJSONMK1(topologyList, filepath, overwrite, tolerance=0.0001):
         """
@@ -3592,7 +3591,7 @@ class Topology():
         try:
             newTopology = topologic.TopologyUtility.Translate(topology, x, y, z)
         except:
-            print("ERROR: (Topologic>TopologyUtility.Place) operation failed.")
+            print("ERROR: (Topologic>TopologyUtility.Place) operation failed. Returning None.")
             newTopology = None
         return newTopology
     
@@ -3878,7 +3877,7 @@ class Topology():
         try:
             newTopology = topologic.TopologyUtility.Scale(topology, origin, x, y, z)
         except:
-            print("ERROR: (Topologic>TopologyUtility.Scale) operation failed.")
+            print("ERROR: (Topologic>TopologyUtility.Scale) operation failed. Returning None.")
             newTopology = None
         return newTopology
 
@@ -4172,7 +4171,7 @@ class Topology():
             returnTopology = topologicpy.Wire.Wire.ByVertices(topologies, False)
         elif topology.Type() == topologic.Edge.Type():
             try:
-                returnTopology = Shell.ByLoft(topologies, tolerance)
+                returnTopology = Shell.ByWires(topologies, tolerance)
             except:
                 try:
                     returnTopology = topologic.Cluster.ByTopologies(topologies)
@@ -4180,28 +4179,28 @@ class Topology():
                     returnTopology = None
         elif topology.Type() == topologic.Wire.Type():
             if topology.IsClosed():
-                returnTopology = Cell.ByLoft(topologies, tolerance)
+                returnTopology = Cell.ByWires(topologies, tolerance)
                 try:
-                    returnTopology = Cell.ByLoft(topologies, tolerance)
+                    returnTopology = Cell.ByWires(topologies, tolerance)
                 except:
                     try:
-                        returnTopology = CellComplex.ByLoft(topologies, tolerance)
+                        returnTopology = CellComplex.ByWires(topologies, tolerance)
                         try:
                             returnTopology = returnTopology.ExternalBoundary()
                         except:
                             pass
                     except:
                         try:
-                            returnTopology = Shell.ByLoft(topologies, tolerance)
+                            returnTopology = Shell.ByWires(topologies, tolerance)
                         except:
                             try:
                                 returnTopology = topologic.Cluster.ByTopologies(topologies)
                             except:
                                 returnTopology = None
             else:
-                Shell.ByLoft(topologies, tolerance)
+                Shell.ByWires(topologies, tolerance)
                 try:
-                    returnTopology = Shell.ByLoft(topologies, tolerance)
+                    returnTopology = Shell.ByWires(topologies, tolerance)
                 except:
                     try:
                         returnTopology = topologic.Cluster.ByTopologies(topologies)
@@ -4212,10 +4211,10 @@ class Topology():
             for t in topologies:
                 external_wires.append(topologic.Face.ExternalBoundary(t))
             try:
-                returnTopology = CellComplex.ByLoft(external_wires, tolerance)
+                returnTopology = CellComplex.ByWires(external_wires, tolerance)
             except:
                 try:
-                    returnTopology = Shell.ByLoft(external_wires, tolerance)
+                    returnTopology = Shell.ByWires(external_wires, tolerance)
                 except:
                     try:
                         returnTopology = topologic.Cluster.ByTopologies(topologies)
@@ -4402,7 +4401,7 @@ class Topology():
         try:
             topologyC = topologyA.XOR(topologyB, tranDict)
         except:
-            print("ERROR: (Topologic>Topology.SymmetricDifference) operation failed.")
+            print("ERROR: (Topologic>Topology.SymmetricDifference) operation failed. Returning None.")
             topologyC = None
         return topologyC
     

@@ -194,30 +194,13 @@ class Face(topologic.Face):
             The created face.
 
         """
-        if not isinstance(edges, list):
+        from topologicpy.Wire import Wire
+        wire = Wire.ByEdges(edges)
+        if not wire:
             return None
-        edgeList = [x for x in edges if isinstance(x, topologic.Edge)]
-        if len(edgeList) < 1:
+        if not isinstance(wire, topologic.Wire):
             return None
-        wire = None
-        face = None
-        for anEdge in edgeList:
-            if anEdge.Type() == 2:
-                if wire == None:
-                    wire = anEdge
-                else:
-                    try:
-                        wire = wire.Merge(anEdge)
-                    except:
-                        continue
-        if wire.Type() != 4:
-            return None
-        else:
-            try:
-                face = topologic.Face.ByExternalBoundary(wire)
-            except:
-                return None
-        return face
+        return Face.ByWire(wire)
 
     @staticmethod
     def ByEdgesCluster(cluster):
@@ -464,11 +447,18 @@ class Face(topologic.Face):
             The created face.
 
         """
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+        import random
         if not isinstance(wire, topologic.Wire):
             return None
         if not Wire.IsClosed(wire):
             return None
-        return topologic.Face.ByExternalBoundary(wire)
+        edges = Wire.Edges(wire)
+        random.shuffle(edges)
+        wire = Wire.ByEdges(edges)
+        f = topologic.Face.ByExternalBoundary(wire)
+        return f
 
     @staticmethod
     def ByWires(externalBoundary, internalBoundaries=[]):
