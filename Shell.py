@@ -63,7 +63,7 @@ class Shell(Topology):
         return Shell.ByFaces(faces)
 
     @staticmethod
-    def ByWires(wires, tolerance=0.0001):
+    def ByWires(wires, triangulate=True, tolerance=0.0001):
         """
         Description
         ----------
@@ -73,6 +73,8 @@ class Shell(Topology):
         ----------
         wires : list
             The input list of wires.
+        triangulate : bool , optional
+            If set to True, the faces will be triangulated. The default is True.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 
@@ -106,26 +108,86 @@ class Shell(Topology):
                 _ = wire2.Edges(None, w2_edges)
             if len(w1_edges) != len(w2_edges):
                 return None
-            for j in range (len(w1_edges)):
-                e1 = w1_edges[j]
-                e2 = w2_edges[j]
-                e3 = None
-                e4 = None
-                try:
-                    e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
-                except:
-                    e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
-                    faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4])))
-                try:
-                    e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
-                except:
-                    e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
-                    faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3])))
-                if e3 and e4:
-                    e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()])
-                    faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4])))
-                    faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3])))
+            if triangulate == True:
+                for j in range (len(w1_edges)):
+                    e1 = w1_edges[j]
+                    e2 = w2_edges[j]
+                    e3 = None
+                    e4 = None
+                    try:
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
+                    except:
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
+                        faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4])))
+                    try:
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
+                    except:
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
+                        faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3])))
+                    if e3 and e4:
+                        e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()])
+                        faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4])))
+                        faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3])))
+            else:
+                for j in range (len(w1_edges)):
+                    e1 = w1_edges[j]
+                    e2 = w2_edges[j]
+                    e3 = None
+                    e4 = None
+                    try:
+                        e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
+                    except:
+                        try:
+                            e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
+                        except:
+                            pass
+                    try:
+                        e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
+                    except:
+                        try:
+                            e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
+                        except:
+                            pass
+                    if e3 and e4:
+                        try:
+                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e4, e2, e3])))
+                        except:
+                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e3, e2, e4])))
+                    elif e3:
+                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e3, e2])))
+                    elif e4:
+                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e4, e2])))
         return Shell.ByFaces(faces, tolerance)
+
+    @staticmethod
+    def ByWiresCluster(cluster, triangulate=True, tolerance=0.0001):
+        """
+        Description
+        ----------
+        Creates a shell by lofting through the input cluster of wires
+
+        Parameters
+        ----------
+        wires : topologic.Cluster
+            The input cluster of wires.
+        triangulate : bool , optional
+            If set to True, the faces will be triangulated. The default is True.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Shell
+            The creates shell.
+
+        """
+        if not cluster:
+            return None
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        wires = []
+        _ = cluster.Wires(None, wires)
+        return Shell.ByWires(wires, triangulate=triangulate, tolerance=tolerance)
 
     @staticmethod
     def Circle(origin=None, radius=0.5, sides=32, fromAngle=0, toAngle=360, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):

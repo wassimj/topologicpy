@@ -975,14 +975,19 @@ class Wire(topologic.Wire):
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
         if not isinstance(wire, topologic.Wire):
             return None
         verts = []
         _ = wire.Vertices(None, verts)
         w = Wire.ByVertices([verts[0], verts[1], verts[2]], close=True)
         f = topologic.Face.ByExternalBoundary(w)
+        f = Topology.Scale(f, f.Centroid(), 500,500,500)
         proj_verts = []
+        direction = Face.NormalAtParameters(f)
         for v in verts:
+            v = Vertex.ByCoordinates(v.X()+direction[0]*5, v.Y()+direction[1]*5, v.Z()+direction[2]*5)
             proj_verts.append(Vertex.Project(v, f))
         return Wire.ByVertices(proj_verts, close=True)
 
@@ -1146,8 +1151,8 @@ class Wire(topologic.Wire):
             The created wire without any collinear edges.
 
         """
-        
-        def rce(wire, angTolerance):
+        from topologicpy.Edge import Edge
+        def rce(wire, angTolerance=0.1):
             final_wire = None
             vertices = []
             wire_verts = []
@@ -1156,7 +1161,7 @@ class Wire(topologic.Wire):
                 edges = []
                 _ = aVertex.Edges(wire, edges)
                 if len(edges) > 1:
-                    if not Edge.IsCollinear(edges[0], edges[1], angTolerance):
+                    if not Edge.IsCollinear(edges[0], edges[1], angTolerance=angTolerance):
                         wire_verts.append(aVertex)
                 else:
                     wire_verts.append(aVertex)
@@ -1175,7 +1180,7 @@ class Wire(topologic.Wire):
             wires = [wire]
         returnWires = []
         for aWire in wires:
-            returnWires.append(rce(aWire, angTolerance))
+            returnWires.append(rce(aWire, angTolerance=angTolerance))
         if len(returnWires) == 1:
             return returnWires[0]
         elif len(returnWires) > 1:

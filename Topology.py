@@ -1318,23 +1318,25 @@ class Topology():
 
     
     @staticmethod
-    def BoundingBox(item):
+    def BoundingBox(topology):
         """
         Description
         __________
-            DESCRIPTION
+            Returns a cell representing the axis-aligned bounding box of the input topology
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        topologic.Cell
+            The bounding box of the input topology.
 
         """
+        from topologicpy.Wire import Wire
+        from topologicpy.Cell import Cell
 
         vertices = []
         _ = item.Vertices(None, vertices)
@@ -1870,8 +1872,7 @@ class Topology():
             DESCRIPTION.
 
         """
-        # topology, tol = item
-        
+        from topologicpy.Face import Face
         def angle_between(v1, v2):
             u1 = v1 / norm(v1)
             u2 = v2 / norm(v2)
@@ -1954,7 +1955,7 @@ class Topology():
         _ = topology.Faces(None, faces)
         normals = []
         for aFace in faces:
-            normals.append(Face.FaceNormalAtParameters(aFace, 0.5, 0.5, "XYZ", 3))
+            normals.append(Face.NormalAtParameters(aFace, 0.5, 0.5, "XYZ", 3))
         # build a matrix of similarity
         mat = buildSimilarityMatrix(normals, tolerance)
         categories = categorizeIntoClusters(mat)
@@ -3770,19 +3771,25 @@ class Topology():
 
         """
         # topology, angTol, tolerance = item
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
         t = topology.Type()
         if (t == 1) or (t == 2) or (t == 4) or (t == 8) or (t == 128):
             return topology
-        clusters = Topology.TopologyClusterFaces(topology, tolerance)
+        clusters = Topology.ClusterFaces(topology, tolerance)
         faces = []
         for aCluster in clusters:
-            shells = []
-            _ = aCluster.Shells(None, shells)
-            shells = Replication.flatten(shells)
-            for aShell in shells:
-                aFace = Face.FaceByShell(aShell, angTol)
-                if aFace:
-                    if isinstance(aFace, topologic.Face):
+            shells = Cluster.Shells(aCluster)
+            if shells:
+                for aShell in shells:
+                    aFace = Face.ByShell(aShell, angTol)
+                    if aFace:
+                        if isinstance(aFace, topologic.Face):
+                            faces.append(aFace)
+            else:
+                cFaces = Cluster.Faces(aCluster)
+                if cFaces:
+                    for aFace in cFaces:
                         faces.append(aFace)
         returnTopology = None
         if t == 16:
@@ -4127,7 +4134,7 @@ class Topology():
         return [sortedTopologies, unsortedTopologies]
     
     @staticmethod
-    def Spin(topology, origin, dirX, dirY, dirZ, degree, sides,
+    def Spin(topology, origin=None, triangulate=True, dirX=0, dirY=0, dirZ=1, degree=360, sides=16,
                      tolerance=0.0001):
         """
         Description
@@ -4139,6 +4146,8 @@ class Topology():
         topology : TYPE
             DESCRIPTION.
         origin : TYPE
+            DESCRIPTION.
+        triangulate : TYPE
             DESCRIPTION.
         dirX : TYPE
             DESCRIPTION.
@@ -4159,19 +4168,29 @@ class Topology():
             DESCRIPTION.
 
         """
-        from topologicpy.CellComplex import CellComplex
-        from topologicpy.Cell import Cell
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
         from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(origin, topologic.Vertex):
+            return None
         topologies = []
         unit_degree = degree / float(sides)
         for i in range(sides+1):
             topologies.append(topologic.TopologyUtility.Rotate(topology, origin, dirX, dirY, dirZ, unit_degree*i))
         returnTopology = None
         if topology.Type() == topologic.Vertex.Type():
-            returnTopology = topologicpy.Wire.Wire.ByVertices(topologies, False)
+            returnTopology = Wire.ByVertices(topologies, False)
         elif topology.Type() == topologic.Edge.Type():
             try:
-                returnTopology = Shell.ByWires(topologies, tolerance)
+                print("Topology Spin - Calling Shell.ByWires")
+                returnTopology = Shell.ByWires(topologies,triangulate=triangulate, tolerance=tolerance)
             except:
                 try:
                     returnTopology = topologic.Cluster.ByTopologies(topologies)
@@ -4179,9 +4198,9 @@ class Topology():
                     returnTopology = None
         elif topology.Type() == topologic.Wire.Type():
             if topology.IsClosed():
-                returnTopology = Cell.ByWires(topologies, tolerance)
+                returnTopology = Cell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
                 try:
-                    returnTopology = Cell.ByWires(topologies, tolerance)
+                    returnTopology = Cell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
                 except:
                     try:
                         returnTopology = CellComplex.ByWires(topologies, tolerance)
@@ -4191,16 +4210,16 @@ class Topology():
                             pass
                     except:
                         try:
-                            returnTopology = Shell.ByWires(topologies, tolerance)
+                            returnTopology = Shell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
                         except:
                             try:
                                 returnTopology = topologic.Cluster.ByTopologies(topologies)
                             except:
                                 returnTopology = None
             else:
-                Shell.ByWires(topologies, tolerance)
+                Shell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
                 try:
-                    returnTopology = Shell.ByWires(topologies, tolerance)
+                    returnTopology = Shell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
                 except:
                     try:
                         returnTopology = topologic.Cluster.ByTopologies(topologies)
@@ -4214,7 +4233,7 @@ class Topology():
                 returnTopology = CellComplex.ByWires(external_wires, tolerance)
             except:
                 try:
-                    returnTopology = Shell.ByWires(external_wires, tolerance)
+                    returnTopology = Shell.ByWires(external_wires, triangulate=triangulate, tolerance=tolerance)
                 except:
                     try:
                         returnTopology = topologic.Cluster.ByTopologies(topologies)

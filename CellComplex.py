@@ -4,6 +4,47 @@ import math
 
 class CellComplex(topologic.CellComplex):
     @staticmethod
+    def Box(origin=None, width=1, length=1, height=1, uSides=2, vSides=2, wSides=2,
+                         dirX=0, dirY=0, dirZ=1, placement="center"):
+        """
+        Description
+        ----------
+        Creates a box with internal cells.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex, optional
+            The origin location of the box. The default is None which results in the box being placed at (0,0,0).
+        width : float, optional
+            The width of the box. The default is 1.
+        length : float, optional
+            The length of the box. The default is 1.
+        height : float, optional
+            The height of the box.
+        uSides : int, optional
+            The number of sides along the width. The default is 1.
+        vSides : int, optional
+            The number of sides along the length. The default is 1.
+        wSides : int, optional
+            The number of sides along the height. The default is 1.
+        dirX : float, optional
+            The X component of the vector representing the up direction of the box. The default is 0.
+        dirY : float, optional
+            The Y component of the vector representing the up direction of the box. The default is 0.
+        dirZ : float, optional
+            The Z component of the vector representing the up direction of the box. The default is 1.
+        placement : str, optional
+            The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+
+        Returns
+        -------
+        topologic.CellComplex
+            The created box.
+
+        """
+        return CellComplex.Prism(origin=origin, width=width, length=length, height=height, uSides=uSides, vSides=vSides, wSides=wSides,
+                         dirX=dirX, dirY=dirY, dirZ=dirZ, placement=placement)
+    @staticmethod
     def ByCells(cells, tolerance=0.0001):
         """
         Description
@@ -154,7 +195,7 @@ class CellComplex(topologic.CellComplex):
         return CellComplex.ByFaces(faces, tolerance)
 
     @staticmethod
-    def ByWires(wires, tolerance=0.0001):
+    def ByWires(wires, triangulate=True, tolerance=0.0001):
         """
         Description
         -----------
@@ -164,6 +205,8 @@ class CellComplex(topologic.CellComplex):
         ----------
         wires : topologic.Wire
             The input wires.
+        triangulate : bool , optional
+            If set to True, the faces will be triangulated. The default is True.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 
@@ -173,11 +216,23 @@ class CellComplex(topologic.CellComplex):
             The created cellcomplex.
 
         """
-        faces = [topologic.Face.ByExternalBoundary(wires[0])]
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        faces = [topologic.Face.ByExternalBoundary(wires[0]), topologic.Face.ByExternalBoundary(wires[-1])]
+        if triangulate == True:
+            triangles = []
+            for face in faces:
+                triangles += Face.Triangulate(face)
+            faces = triangles
         for i in range(len(wires)-1):
             wire1 = wires[i]
             wire2 = wires[i+1]
-            faces.append(topologic.Face.ByExternalBoundary(wire2))
+            f = topologic.Face.ByExternalBoundary(wire2)
+            if triangulate == True:
+                triangles = Face.Triangulate(face)
+                faces += triangles
+            else:
+                faces.append(f)
             w1_edges = []
             _ = wire1.Edges(None, w1_edges)
             w2_edges = []
@@ -194,7 +249,12 @@ class CellComplex(topologic.CellComplex):
                 except:
                     try:
                         e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
-                        faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e4])))
+                        f = topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e4]))
+                        if triangulate == True:
+                            triangles = Face.Triangulate(face)
+                            faces += triangles
+                        else:
+                            faces.append(f)
                     except:
                         pass
                 try:
@@ -202,17 +262,32 @@ class CellComplex(topologic.CellComplex):
                 except:
                     try:
                         e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
-                        faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e3])))
+                        f = topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e3]))
+                        if triangulate == True:
+                            triangles = Face.Triangulate(face)
+                            faces += triangles
+                        else:
+                            faces.append(f)
                     except:
                         pass
                 if e3 and e4:
-                    e5 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex())
-                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e5, e4])))
-                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e2, e5, e3])))
+                    if triangulate == True:
+                        e5 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex())
+                        faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e5, e4])))
+                        faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e2, e5, e3])))
+                    else:
+                        try:
+                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e4, e2, e3])))
+                        except:
+                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e3, e2, e4])))
+                elif e3:
+                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e3, e2])))
+                elif e4:
+                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e4, e2])))
         return CellComplex.ByFaces(faces, tolerance)
 
     @staticmethod
-    def ByWiresCluster(cluster, tolerance=0.0001):
+    def ByWiresCluster(cluster, triangulate=True, tolerance=0.0001):
         """
         Description
         -----------
@@ -222,6 +297,8 @@ class CellComplex(topologic.CellComplex):
         ----------
         cluster : topologic.Cluster
             The input cluster of wires.
+        triangulate : bool , optional
+            If set to True, the faces will be triangulated. The default is True.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 
@@ -237,7 +314,7 @@ class CellComplex(topologic.CellComplex):
             return None
         wires = []
         _ = cluster.Wires(None, wires)
-        return CellComplex.ByWires(wires, tolerance)
+        return CellComplex.ByWires(wires, triangulate=triangulate, tolerance=tolerance)
 
     @staticmethod
     def Cells(cellComplex):

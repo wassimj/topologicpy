@@ -337,13 +337,17 @@ class Vertex(Topology):
             The projected vertex.
 
         """
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from topologicpy.Vector import Vector
+
         if not isinstance(vertex, topologic.Vertex):
             return None
         if not isinstance(face, topologic.Face):
             return None
         if not direction:
-            direction = -1*Face.NormalAtParameters(face, 0.5, 0.5, "XYZ", mantissa)
-
+            direction = Vector.Reverse(Face.NormalAtParameters(face, 0.5, 0.5, "XYZ", mantissa))
         if topologic.FaceUtility.IsInside(face, vertex, tolerance):
             return vertex
         d = topologic.VertexUtility.Distance(vertex, face)*10

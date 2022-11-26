@@ -105,6 +105,28 @@ class Vector(list):
         return [round(vecC[0], mantissa), round(vecC[1], mantissa), round(vecC[2], mantissa)]
 
     @staticmethod
+    def IsCollinear(vectorA, vectorB, tolerance=0.1):
+        """
+        Description
+        -----------
+        Returns True if the input vectors are collinear. Returns False otherwise.
+
+        Parameters
+        ----------
+        vectorA : list
+            The first input vector.
+        vectorB : list
+            The second input vector.
+
+        Returns
+        -------
+        bool
+            Returns True if the input vectors are collinear. Returns False otherwise.
+        """
+
+        return Vector.Angle(vectorA, vectorB) < tolerance
+
+    @staticmethod
     def Magnitude(vector, mantissa=4):
         """
         Description
@@ -125,6 +147,7 @@ class Vector(list):
         """
 
         return math.round(np.linalg.norm(np.array(vector)), mantissa)
+
     @staticmethod
     def Multiply(vector, magnitude, tolerance=0.0001):
         """
@@ -176,49 +199,25 @@ class Vector(list):
             The normalized vector.
         """
 
-        return vector / np.linalg.norm(vector)
+        return list(vector / np.linalg.norm(vector))
 
     @staticmethod
-    def Cross(vectorA, vectorB):
+    def Reverse(vector):
         """
         Description
         -----------
-        Returns the cross product of the two input vectors.
-        The cross product of two input vectors is a vector perpendicular to both input vectors.
+        Returns a reverse vector of the input vector. A reverse vector multiplies all components by -1.
 
         Parameters
         ----------
-        vectorA : list
-            The first input vector.
-        vectorB : list
-            The second input vector.
+        vector : list
+            The input vector.
 
         Returns
         -------
         list
-            The cross product of the two input vectors.
+            The normalized vector.
         """
-
-        return list(np.cross(vectorA, vectorB))
-
-    @staticmethod
-    def IsCollinear(vectorA, vectorB, tolerance=0.1):
-        """
-        Description
-        -----------
-        Returns True if the input vectors are collinear. Returns False otherwise.
-
-        Parameters
-        ----------
-        vectorA : list
-            The first input vector.
-        vectorB : list
-            The second input vector.
-
-        Returns
-        -------
-        bool
-            Returns True if the input vectors are collinear. Returns False otherwise.
-        """
-
-        return Vector.Angle(vectorA, vectorB) < tolerance
+        if not isinstance(vector, list):
+            return None
+        return [x*-1 for x in vector]

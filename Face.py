@@ -319,13 +319,20 @@ class Face(topologic.Face):
                 returnList.append(Wire.Planarize(aWire))
             return returnList
         
-        ext_boundary = Shell.ShellExternalBoundary(shell)
+        ext_boundary = Shell.ExternalBoundary(shell)
+        ext_boundary = Wire.RemoveCollinearEdges(ext_boundary, angTolerance)
+        ext_boundary = Wire.Planarize(ext_boundary)
+
         if isinstance(ext_boundary, topologic.Wire):
             try:
                 return topologic.Face.ByExternalBoundary(Wire.RemoveCollinearEdges(ext_boundary, angTolerance))
             except:
                 try:
-                    return topologic.Face.ByExternalBoundary(Wire.Planarize(Wire.RemoveCollinearEdges(ext_boundary, angTolerance)))
+                    #w = Wire.RemoveCollinearEdges(ext_boundary, angTolerance)
+                    #print("Step 1 wire", w)
+                    w = Wire.Planarize(ext_boundary)
+                    f = Face.ByWire(w)
+                    return f
                 except:
                     print("FaceByPlanarShell - Error: The input Wire is not planar and could not be fixed. Returning None.")
                     return None
@@ -1050,6 +1057,34 @@ class Face(topologic.Face):
         if not isinstance(wire, topologic.Wire):
             return None
         return Face.ByWire(wire)
+
+    @staticmethod
+    def Triangulate(face):
+        """
+        Description
+        ----------
+        Triangulates the input face and returns a list of faces.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+
+        Returns
+        -------
+        list
+            The list of triangles of the input face.
+
+        """
+        faceTriangles = []
+        for i in range(0,5,1):
+            try:
+                _ = topologic.FaceUtility.Triangulate(face, float(i)*0.1, faceTriangles)
+                return faceTriangles
+            except:
+                continue
+        faceTriangles.append(face)
+        return faceTriangles
 
     @staticmethod
     def TrimByWire(face, wire, reverse = False):
