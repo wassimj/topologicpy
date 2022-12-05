@@ -394,46 +394,43 @@ class Topology():
         return topology
     
     @staticmethod
-    def AddContent(topology, contents, targetType):
+    def AddContent(topology, contents, targetType="host"):
         """
         Description
         __________
-            DESCRIPTION
+            Adds the list of contents to the input topology or one of its sub-tpologies based on the input targetType
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        contents : TYPE
-            DESCRIPTION.
-        targetType : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        contents : list
+            The list of contents.
+        targetType : string , optional
+            Specifies to what topology the contents should be added. It is case in-sensitive. Possible values are "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "host".
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The input topology with the content list added to it.
 
         """
-        # topology = item[0]
-        # contents = Replication.flatten(item[1])
-        contents = Replication.flatten(contents)
         t = 0
-        if targetType == "Vertex":
+        if targetType.lower() == "vertex":
             t = topologic.Vertex.Type()
-        elif targetType == "Edge":
+        elif targetType.lower() == "edge":
             t = topologic.Edge.Type()
-        elif targetType == "Wire":
+        elif targetType.lower() == "wire":
             t = topologic.Wire.Type()
-        elif targetType == "Face":
+        elif targetType.lower() == "face":
             t = topologic.Face.Type()
-        elif targetType == "Shell":
+        elif targetType.lower() == "shell":
             t = topologic.Shell.Type()
-        elif targetType == "Cell":
+        elif targetType.lower() == "cell":
             t = topologic.Cell.Type()
-        elif targetType == "CellComplex":
+        elif targetType.lower() == "cellcomplex":
             t = topologic.CellComplex.Type()
-        elif targetType == "Host Topology":
+        elif targetType.lower() == "host":
             t = 0
         return topology.AddContents(contents, t)
     
@@ -442,23 +439,21 @@ class Topology():
         """
         Description
         __________
-            DESCRIPTION
+            Adds the input dictionary to the input topology
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        dictionary : TYPE
-            DESCRIPTION.
+        topology : topologic.topology
+            The input topology.
+        dictionary : topologic.Dictionary
+            The input dictionary.
 
         Returns
         -------
-        topology : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The input topology with the input dictionary added to it.
 
         """
-        # topology = item[0]
-        # dictionary = item[1]
         
         def listAttributeValues(listAttribute):
             listAttributes = listAttribute.ListValue()
@@ -2210,24 +2205,26 @@ class Topology():
         return finalString
 
     @staticmethod
-    def Dictionary(item):
+    def Dictionary(topology):
         """
         Description
         __________
-            DESCRIPTION
+            Returns the dictionary of the input topology
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Dictionary
+            The dictionary of the input topology.
 
         """
-        return item.GetDictionary()
+        if not isinstance(topology, topologic.Topology):
+            return None
+        return topology.GetDictionary()
     
     @staticmethod
     def Dimensionality(item):
@@ -3372,7 +3369,61 @@ class Topology():
             faces = [[]]
         return [vertices, edges, faces]
 
-    
+    @staticmethod
+    def InternalVertex(topology, tolerance=0.0001):
+        """
+        Description
+        __________
+            Returns an vertex guaranteed to be inside the input topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        tolerance : float , ptional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Vertex
+            A vertex guaranteed to be inside the input topology.
+
+        """
+        if not isinstance(topology, topologic.Topology):
+            return None
+        vst = None
+        classType = topology.Type()
+        if classType == 64: #CellComplex
+            tempCells = []
+            _ = topology.Cells(tempCells)
+            tempCell = tempCells[0]
+            vst = topologic.CellUtility.InternalVertex(tempCell, tolerance)
+        elif classType == 32: #Cell
+            vst = topologic.CellUtility.InternalVertex(topology, tolerance)
+        elif classType == 16: #Shell
+            tempFaces = []
+            _ = topology.Faces(None, tempFaces)
+            tempFace = tempFaces[0]
+            vst = topologic.FaceUtility.InternalVertex(tempFace, tolerance)
+        elif classType == 8: #Face
+            vst = topologic.FaceUtility.InternalVertex(topology, tolerance)
+        elif classType == 4: #Wire
+            if topology.IsClosed():
+                internalBoundaries = []
+                tempFace = topologic.Face.ByExternalInternalBoundaries(topology, internalBoundaries)
+                vst = topologic.FaceUtility.InternalVertex(tempFace, tolerance)
+            else:
+                tempEdges = []
+                _ = topology.Edges(None, tempEdges)
+                vst = topologic.EdgeUtility.PointAtParameter(tempVertex[0], 0.5)
+        elif classType == 2: #Edge
+            vst = topologic.EdgeUtility.PointAtParameter(topology, 0.5)
+        elif classType == 1: #Vertex
+            vst = topology
+        else:
+            vst = topology.Centroid()
+        return vst
+
     @staticmethod
     def IsPlanar(topology, tolerance=0.0001):
         """
@@ -4015,25 +4066,28 @@ class Topology():
         """
         Description
         __________
-            DESCRIPTION
+            Sets the input topology's dictionary to the input dictionary
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        dictionary : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        dictionary : topologic.Dictionary
+            The input dictionary.
 
         Returns
         -------
-        topology : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The input topology with the input dictionary set in it.
 
         """
-        # topology = item[0]
-        # dictionary = item[1]
-        if len(dictionary.Keys()) > 0:
-            _ = topology.SetDictionary(dictionary)
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(dictionary, topologic.Dictionary):
+            return None
+        if len(dictionary.Keys()) < 1:
+            return None
+        _ = topology.SetDictionary(dictionary)
         return topology
     
     @staticmethod

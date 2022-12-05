@@ -2,6 +2,7 @@ import topologic
 from topologic import IntAttribute, DoubleAttribute, StringAttribute, ListAttribute
 
 class Dictionary(topologic.Dictionary):
+    '''
     @staticmethod
     def ByDGLData(item):
         """
@@ -28,30 +29,31 @@ class Dictionary(topologic.Dictionary):
                 values.append(value)
             dictionaries.append(Dictionary.ByKeysValues(keys, values))
         return dictionaries
-    
+    '''
     @staticmethod
-    def processKeysValues(keys, values):
+    def ByKeysValues(keys, values):
         """
+        Description
+        __________
+            Creates a Dictionary from the input list of keys and the input list of values.
+
         Parameters
         ----------
-        keys : TYPE
-            DESCRIPTION.
-        values : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        keys : list
+            A list of strings representing the keys of the dictionary.
+        values : list
+            A list of values corresponding to the list of keys. Values can be integers, floats, strings, or lists
 
         Returns
         -------
-        myDict : TYPE
-            DESCRIPTION.
+        topologic.Dictionary
+            The created dictionary.
 
         """
+        if not isinstance(keys, list) or not isinstance(values, list):
+            return None
         if len(keys) != len(values):
-            raise Exception("DictionaryByKeysValues - Keys and Values do not have the same length")
+            return None
         stl_keys = []
         stl_values = []
         for i in range(len(keys)):
@@ -87,59 +89,37 @@ class Dictionary(topologic.Dictionary):
                         l.append(topologic.StringAttribute(v))
                 stl_values.append(topologic.ListAttribute(l))
             else:
-                raise Exception("Error: Value type is not supported. Supported types are: Boolean, Integer, Double, String, or List.")
-        myDict = topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
-        return myDict
+                return None
+        return topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
     
     @staticmethod
-    def ByKeysValues(keys, values):
+    def ByMergedDictionaries(dictionaries):
         """
+        Description
+        __________
+            Creates a dictionary by merging the list of input dictionaries.
+
         Parameters
         ----------
-        keys : TYPE
-            DESCRIPTION.
-        values : TYPE
-            DESCRIPTION.
+        dictionaries : list
+            The input list of dictionaries to be merges.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        # keys = item[0]
-        # values = item[1]
-        
-        if isinstance(keys, list) == False:
-            keys = [keys]
-        if isinstance(values, list) == False:
-            values = [values]
-        return Dictionary.processKeysValues(keys, values)
-    
-    @staticmethod
-    def ByMergedDictionaries(sources):
-        """
-        Parameters
-        ----------
-        sources : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        newDict : TYPE
-            DESCRIPTION.
+        topologic.DIctionary
+            The created dictionary.
 
         """
         sinkKeys = []
         sinkValues = []
-        d = sources[0]
+        d = dictionaries[0]
         if d != None:
             stlKeys = d.Keys()
             if len(stlKeys) > 0:
                 sinkKeys = d.Keys()
                 sinkValues = Dictionary.Values(d)
-            for i in range(1,len(sources)):
-                d = sources[i]
+            for i in range(1,len(dictionaries)):
+                d = dictionaries[i]
                 if d == None:
                     continue
                 stlKeys = d.Keys()
@@ -164,7 +144,7 @@ class Dictionary(topologic.Dictionary):
             newDict = Dictionary.ByKeysValues(sinkKeys, sinkValues)
             return newDict
         return None
-    
+    '''
     @staticmethod
     def ByObjectProperties(bObject, keys, importAll):
         """
@@ -240,57 +220,60 @@ class Dictionary(topologic.Dictionary):
                         raise Exception("Dictionary.ByObjectProperties: Key \""+k+"\" does not exist in the properties of object \""+bObject.name+"\".")
 
         return Dictionary.ByKeysValues(dictKeys, dictValues)
-    
+    '''
     @staticmethod
-    def Keys(item):
+    def Keys(dictionary):
         """
+        Description
+        __________
+            Returns the keys of the input dictionary.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        dictionary : topologic.Dictionary or dict
+            The input dictionary.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        list
+            The list of keys of the input dictionary.
 
         """
-        if isinstance(item, dict):
-            return list(item.keys())
-        elif isinstance(item, Dictionary):
-            return item.Keys()
+        if isinstance(dictionary, dict):
+            return list(dictionary.keys())
+        elif isinstance(dictionary, Dictionary):
+            return dictionary.Keys()
         else:
             return None
         
     @staticmethod
-    def SetValueAtKey(item, key, value):
+    def SetValueAtKey(dictionary, key, value):
         """
+        Description
+        __________
+            Creates a key/value pair in the input dictionary.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
-        key : TYPE
-            DESCRIPTION.
-        value : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        dicitonary : topologic.DIctionary or dict
+            The input dictionary.
+        key : string
+            The input key.
+        value : int , float , string, or list
+            The value associated with the key.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Dictionary or dict
+            The input dictionary with the key/value pair added to it.
 
         """
-        def processPythonDictionary (item, key, value):
-            item[key] = value
-            return item
+        def processPythonDictionary (dictionary, key, value):
+            dictionary[key] = value
+            return dictionary
 
-        def processTopologicDictionary(item, key, value):
-            keys = item.Keys()
+        def processTopologicDictionary(dictionary, key, value):
+            keys = dictionary.Keys()
             if not key in keys:
                 keys.append(key)
             values = []
@@ -298,28 +281,20 @@ class Dictionary(topologic.Dictionary):
                 if k == key:
                     values.append(value)
                 else:
-                    values.append(Dictionary.ValueAtKey(item, k))
-            return Dictionary.processKeysValues(keys, values)
+                    values.append(Dictionary.ValueAtKey(dictionary, k))
+            return Dictionary.ByKeysValues(keys, values)
 
-        if isinstance(item, dict):
-            return processPythonDictionary(item, key, value)
-        elif isinstance(item, Dictionary):
-            return processTopologicDictionary(item, key, value)
+        if isinstance(dictionary, dict):
+            return processPythonDictionary(dictionary, key, value)
+        elif isinstance(dictionary, topologic.Dictionary):
+            return processTopologicDictionary(dictionary, key, value)
         else:
-            raise Exception("Dictionary.SetValueAtKey - Error: Input is not a dictionary")
+            return None
     
     @staticmethod
-    def listAttributeValues(listAttribute):
+    def _listAttributeValues(listAttribute):
         """
-        Parameters
-        ----------
-        listAttribute : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        returnList : TYPE
-            DESCRIPTION.
+        Returns the list of values embedded in the input listAttribute
 
         """
         listAttributes = listAttribute.ListValue()
@@ -336,35 +311,32 @@ class Dictionary(topologic.Dictionary):
         return returnList    
     
     @staticmethod
-    def ValueAtKey(d, key):
+    def ValueAtKey(dictionary, key):
         """
+        Description
+        __________
+            Returns the value of the input key in the input dictionary.
+
         Parameters
         ----------
-        d : TYPE
-            DESCRIPTION.
-        key : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        dictionary : topologic.Dictionary or dict
+            The input dictionary.
+        key : string
+            The input key.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        int , float, string, list , or dict
+            The value found at the input key in the input dictionary.
 
         """
-        # d, key = item
+        if isinstance(dictionary, dict):
+            attr = dictionary[key]
+        elif isinstance(dictionary, topologic.Dictionary):
+            attr = dictionary.ValueAtKey(key)
+        else:
+            return None
         
-        try:
-            if isinstance(d, dict):
-                attr = d[key]
-            elif isinstance(d, Dictionary):
-                attr = d.ValueAtKey(key)
-        except:
-            raise Exception("Dictionary.ValueAtKey - Error: Could not retrieve a Value at the specified key ("+key+")")
         if isinstance(attr, IntAttribute):
             return (attr.IntValue())
         elif isinstance(attr, DoubleAttribute):
@@ -383,39 +355,38 @@ class Dictionary(topologic.Dictionary):
             return None
         
     @staticmethod
-    def Values(item):
+    def Values(dictionary):
         """
+        Description
+        __________
+            Returns the list of values in the input dictionary.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        dictionary : topologic.Dictionary or dict
+            The input dictionary.
 
         Returns
         -------
-        returnList : TYPE
-            DESCRIPTION.
+        list
+            The list of values found in the input dictionary.
 
         """
-        if isinstance(item, dict):
-            keys = item.keys()
-        elif isinstance(item, Dictionary):
-            keys = item.Keys()
+        if isinstance(dictionary, dict):
+            keys = dictionary.keys()
+        elif isinstance(dictionary, Dictionary):
+            keys = dictionary.Keys()
         returnList = []
         for key in keys:
             try:
-                if isinstance(item, dict):
-                    attr = item[key]
-                elif isinstance(item, Dictionary):
-                    attr = item.ValueAtKey(key)
+                if isinstance(dictionary, dict):
+                    attr = dictionary[key]
+                elif isinstance(dictionary, Dictionary):
+                    attr = dictionary.ValueAtKey(key)
                 else:
                     attr = None
             except:
-                raise Exception("Dictionary.Values - Error: Could not retrieve a Value at the specified key ("+key+")")
+                return None
             if isinstance(attr, IntAttribute):
                 returnList.append(attr.IntValue())
             elif isinstance(attr, DoubleAttribute):

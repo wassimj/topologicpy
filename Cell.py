@@ -1455,7 +1455,7 @@ class Cell(Topology):
         if not origin:
             origin = topologic.Vertex.ByCoordinates(0,0,0)
         c = Wire.Circle(origin, minorRadius, vSides, 0, 360, False, 0, 1, 0, "center")
-        c = topologic.TopologyUtility.Translate(c, abs(majorRadius-minusRadius), 0, 0)
+        c = topologic.TopologyUtility.Translate(c, abs(majorRadius-minorRadius), 0, 0)
         s = Topology.Spin(c, origin=origin, triangulate=False, dirX=0, dirY=0, dirZ=1, degree=360, sides=uSides, tolerance=tolerance)
         if s.Type() == topologic.Shell.Type():
             s = topologic.Cell.ByShell(s)

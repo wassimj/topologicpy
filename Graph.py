@@ -1,187 +1,80 @@
-from topologicpy import topologic
+﻿import topologicpy
+import topologic
+from topologicpy.Dictionary import Dictionary
+from topologicpy.Topology import Topology
 import random
-import Dictionary
-import Topology
-import Process
-import pandas as pd
-import Replication
+
+#import Process
+#import pandas as pd
+#import Replication
 import math
 import os
 import time
 from topologic import IntAttribute, DoubleAttribute, StringAttribute, ListAttribute
-import pyvisgraph as vg
-try:
-    from py2neo import NodeMatcher,RelationshipMatcher
-    from py2neo.data import spatial as sp
-except:
-    raise Exception("Error: Could not import py2neo.")
+#import pyvisgraph as vg
+#try:
+    #from py2neo import NodeMatcher,RelationshipMatcher
+    #from py2neo.data import spatial as sp
+#except:
+    #raise Exception("Error: Could not import py2neo.")
+
+
+
+
+
+
+
+
+
+
+
 
 class Graph:
     @staticmethod
-    def GraphAddEdge(graph, edges, tolerance=0.0001):
+    def AddEdge(graph, edge, tolerance=0.0001):
         """
+        Description
+        -----------
+        Adds the input edge to the input Graph.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        edges : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        graph : topologic.Graph
+            The input graph.
+        edges : topologic.Edge
+            The input edge.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        new_graph : TYPE
-            DESCRIPTION.
+        topologic.Graph
+            The input graph with the input edge added to it.
 
         """
-        # graph = item[0]
-        # edges = item[1]
-        # tolerance = item[2]
-        def processKeysValues(keys, values):
-            if len(keys) != len(values):
-                raise Exception("DictionaryByKeysValues - Keys and Values do not have the same length")
-            stl_keys = []
-            stl_values = []
-            for i in range(len(keys)):
-                if isinstance(keys[i], str):
-                    stl_keys.append(keys[i])
-                else:
-                    stl_keys.append(str(keys[i]))
-                if isinstance(values[i], list) and len(values[i]) == 1:
-                    value = values[i][0]
-                else:
-                    value = values[i]
-                if isinstance(value, bool):
-                    if value == False:
-                        stl_values.append(topologic.IntAttribute(0))
-                    else:
-                        stl_values.append(topologic.IntAttribute(1))
-                elif isinstance(value, int):
-                    stl_values.append(topologic.IntAttribute(value))
-                elif isinstance(value, float):
-                    stl_values.append(topologic.DoubleAttribute(value))
-                elif isinstance(value, str):
-                    stl_values.append(topologic.StringAttribute(value))
-                elif isinstance(value, list):
-                    l = []
-                    for v in value:
-                        if isinstance(v, bool):
-                            l.append(topologic.IntAttribute(v))
-                        elif isinstance(v, int):
-                            l.append(topologic.IntAttribute(v))
-                        elif isinstance(v, float):
-                            l.append(topologic.DoubleAttribute(v))
-                        elif isinstance(v, str):
-                            l.append(topologic.StringAttribute(v))
-                    stl_values.append(topologic.ListAttribute(l))
-                else:
-                    raise Exception("Error: Value type is not supported. Supported types are: Boolean, Integer, Double, String, or List.")
-            myDict = topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
-            return myDict
-        
-        def listAttributeValues(listAttribute):
-            listAttributes = listAttribute.ListValue()
-            returnList = []
-            for attr in listAttributes:
-                if isinstance(attr, topologic.IntAttribute):
-                    returnList.append(attr.IntValue())
-                elif isinstance(attr, topologic.DoubleAttribute):
-                    returnList.append(attr.DoubleValue())
-                elif isinstance(attr, topologic.StringAttribute):
-                    returnList.append(attr.StringValue())
-            return returnList
-        
-        def getValueAtKey(item, key):
-            try:
-                attr = item.ValueAtKey(key)
-            except:
-                raise Exception("Dictionary.ValueAtKey - Error: Could not retrieve a Value at the specified key ("+key+")")
-            if isinstance(attr, topologic.IntAttribute):
-                return (attr.IntValue())
-            elif isinstance(attr, topologic.DoubleAttribute):
-                return (attr.DoubleValue())
-            elif isinstance(attr, topologic.StringAttribute):
-                return (attr.StringValue())
-            elif isinstance(attr, topologic.ListAttribute):
-                return (listAttributeValues(attr))
-            else:
-                return None
-        
-        def getValues(item):
-            keys = item.Keys()
-            returnList = []
-            for key in keys:
-                try:
-                    attr = item.ValueAtKey(key)
-                except:
-                    raise Exception("Dictionary.Values - Error: Could not retrieve a Value at the specified key ("+key+")")
-                if isinstance(attr, topologic.IntAttribute):
-                    returnList.append(attr.IntValue())
-                elif isinstance(attr, topologic.DoubleAttribute):
-                    returnList.append(attr.DoubleValue())
-                elif isinstance(attr, topologic.StringAttribute):
-                    returnList.append(attr.StringValue())
-                elif isinstance(attr, topologic.ListAttribute):
-                    returnList.append(listAttributeValues(attr))
-                else:
-                    returnList.append("")
-            return returnList
-        
-        def mergeDictionaries(sources):
-            sinkKeys = []
-            sinkValues = []
-            d = sources[0]
-            if d != None:
-                stlKeys = d.Keys()
-                if len(stlKeys) > 0:
-                    sinkKeys = d.Keys()
-                    sinkValues = getValues(d)
-                for i in range(1,len(sources)):
-                    d = sources[i]
-                    if d == None:
-                        continue
-                    stlKeys = d.Keys()
-                    if len(stlKeys) > 0:
-                        sourceKeys = d.Keys()
-                        for aSourceKey in sourceKeys:
-                            if aSourceKey not in sinkKeys:
-                                sinkKeys.append(aSourceKey)
-                                sinkValues.append("")
-                        for i in range(len(sourceKeys)):
-                            index = sinkKeys.index(sourceKeys[i])
-                            sourceValue = getValueAtKey(d,sourceKeys[i])
-                            if sourceValue != None:
-                                if sinkValues[index] != "":
-                                    if isinstance(sinkValues[index], list):
-                                        sinkValues[index].append(sourceValue)
-                                    else:
-                                        sinkValues[index] = [sinkValues[index], sourceValue]
-                                else:
-                                    sinkValues[index] = sourceValue
-            if len(sinkKeys) > 0 and len(sinkValues) > 0:
-                newDict = processKeysValues(sinkKeys, sinkValues)
-                return newDict
-            return None
-        
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
         def addIfUnique(graph_vertices, vertex, tolerance):
             unique = True
             returnVertex = vertex
             for gv in graph_vertices:
-                if (topologic.VertexUtility.Distance(vertex, gv) < tolerance):
-                    gd = gv.GetDictionary()
-                    vd = vertex.GetDictionary()
+                if (Vertex.Distance(vertex, gv) < tolerance):
+                    gd = Topology.Dictionary(gv)
+                    vd = Topology.Dictionary(vertex)
                     gk = gd.Keys()
                     vk = vd.Keys()
                     d = None
                     if (len(gk) > 0) and (len(vk) > 0):
-                        d = mergeDictionaries([gd, vd])
+                        d = Dictionary.ByMergedDictionaries([gd, vd])
                     elif (len(gk) > 0) and (len(vk) < 1):
                         d = gd
                     elif (len(gk) < 1) and (len(vk) > 0):
                         d = vd
                     if d:
-                        _ = gv.SetDictionary(d)
+                        _ = Topology.SetDictionary(gv,d)
                     unique = False
                     returnVertex = gv
                     break
@@ -189,107 +82,144 @@ class Graph:
                 graph_vertices.append(vertex)
             return [graph_vertices, returnVertex]
 
-
-        graph_edges = []
-        graph_vertices = []
-        if graph:
-            _ = graph.Vertices(graph_vertices)
-            _ = graph.Edges(graph_vertices, tolerance, graph_edges)
-        if edges:
-            if isinstance(edges, list) == False:
-                edges = [edges]
-            for edge in edges:
-                vertices = []
-                _ = edge.Vertices(None, vertices)
-                new_vertices = []
-                for vertex in vertices:
-                    graph_vertices, nv = addIfUnique(graph_vertices, vertex, tolerance)
-                    new_vertices.append(nv)
-                new_edge = topologic.Edge.ByStartVertexEndVertex(new_vertices[0], new_vertices[1])
-                _ = new_edge.SetDictionary(edge.GetDictionary())
-                graph_edges.append(new_edge)
-        new_graph = topologic.Graph.ByVerticesEdges(graph_vertices, graph_edges)
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(edge, topologic.Edge):
+            return None
+        graph_vertices = Graph.Vertices(graph)
+        graph_edges = Graph.Edges(graph, graph_vertices, tolerance)
+        vertices = Edge.Vertices(edge)
+        new_vertices = []
+        for vertex in vertices:
+            graph_vertices, nv = addIfUnique(graph_vertices, vertex, tolerance)
+            new_vertices.append(nv)
+        new_edge = Edge.ByVertices([new_vertices[0], new_vertices[1]])
+        _ = Topology.SetDictionary(new_edge, Topology.Dictionary(edge))
+        graph_edges.append(new_edge)
+        new_graph = Graph.ByVerticesEdges(graph_vertices, graph_edges)
         return new_graph
     
     @staticmethod
-    def GraphAddVertex(graph, vertices, tolerance=0.0001):
+    def AddVertex(graph, vertex, tolerance=0.0001):
         """
+        Description
+        -----------
+        Adds the input vertex to the input graph.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertices : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        graph : topologic.Graph
+            The input graph.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        graph : TYPE
-            DESCRIPTION.
+        topologic.Graph
+            The input graph with the input vertex added to it.
 
         """
-        # graph = item[0]
-        # vertices = item[1]
-        # tolerance = item[2]
-        if isinstance(vertices, list) == False:
-            vertices = [vertices]
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        _ = graph.AddVertices([vertex], tolerance)
+        return graph
+
+    @staticmethod
+    def AddVertices(graph, vertices, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Adds the input vertex to the input graph.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertices : list
+            The input list of vertices.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Graph
+            The input graph with the input vertex added to it.
+
+        """
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(vertices, list):
+            return None
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) < 1:
+            return None
         _ = graph.AddVertices(vertices, tolerance)
         return graph
     
     @staticmethod
-    def GraphAdjacentVertices(graph, vertex):
+    def AdjacentVertices(graph, vertex):
         """
+        Description
+        -----------
+        Returns the list of vertices connected to the input vertex.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertex : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
+        vertex : topologic.Vertex
+            the input vertex.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        list
+            The list of adjacent vertices.
 
         """
-        # graph = item[0]
-        # vertex = item[1]
         vertices = []
         _ = graph.AdjacentVertices(vertex, vertices)
         return list(vertices)
     
     @staticmethod
-    def GraphAllPaths(graph, vertexA, vertexB, timeLimit):
+    def AllPaths(graph, vertexA, vertexB, timeLimit=10):
         """
+        Description
+        -----------
+        Returns all the paths that connect the input vertices within the allowed time limit in seconds.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertexA : TYPE
-            DESCRIPTION.
-        vertexB : TYPE
-            DESCRIPTION.
-        timeLimit : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
+        vertexA : topologic.Vertex
+            The first input vertex.
+        vertexB : topologic.Vertex
+            The second input vertex.
+        timeLimit : int , optional
+            The time limit in second. The default is 10 seconds.
 
         Returns
         -------
-        paths : TYPE
-            DESCRIPTION.
+        list
+            The list of all paths (wires) found within the time limit.
 
         """
-        # graph = item[0]
-        # vertexA = item[1]
-        # vertexB = item[2]
-        # timeLimit = item[3]
         paths = []
         _ = graph.AllPaths(vertexA, vertexB, True, timeLimit, paths)
         return paths
-    
+
+    '''
     @staticmethod
-    def GraphByImportedDGCNN(file_path, key):
+    def ByImportedDGCNN(file_path, key):
         """
+        Description
+        -----------
+        Creates a vertex at the coordinates specified by the x, y, z inputs.
+
         Parameters
         ----------
         file_path : TYPE
@@ -349,6 +279,10 @@ class Graph:
     @staticmethod
     def GraphByNeo4jGraph(neo4jGraph):
         """
+        Description
+        -----------
+        Creates a vertex at the coordinates specified by the x, y, z inputs.
+
         Parameters
         ----------
         neo4jGraph : TYPE
@@ -459,7 +393,7 @@ class Graph:
             values = []
             for key in keys:
                 values.append(node[key])
-            d = processKeysValues(keys, values)
+            d = Dictionary.ByKeysValues(keys, values)
             _ = vertex.SetDictionary(d)
             vertices.append(vertex)
         for node in nodes:
@@ -477,1250 +411,1809 @@ class Graph:
                         ev_name = relationship.end_node['name']
                     else:
                         ev_name = 'None'
-                    d = processKeysValues(["relationship_type", "from", "to"], [relationship_type, sv_name, ev_name])
+                    d = Dictionary.ByKeysValues(["relationship_type", "from", "to"], [relationship_type, sv_name, ev_name])
                     if d:
                         _ = edge.SetDictionary(d)
                     edges.append(edge)
 
         return topologic.Graph.ByVerticesEdges(vertices,edges)
-    
+    '''
     @staticmethod
-    def GraphByTopology(item):
+    def ByTopology(topology, direct=True, directApertures=False, viaSharedTopologies=False, viaSharedApertures=False, toExteriorTopologies=False, toExteriorApertures=False, toContents=False, useInternalVertex=True, storeBRep=False, tolerance=0.0001):
         """
+        Description
+        -----------
+        Creates a graph.See https://en.wikipedia.org/wiki/Graph_(discrete_mathematics).
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        direct : bool , optional
+            If set to True, connect the subtopologies directly with a single edge. The default is True.
+        directApertures : bool , optional
+            If set to True, connect the subtopologies directly with a single edge if they share one or more apertures. The default is False.
+        viaSharedTopologies : bool , optional
+            If set to True, connect the subtopologies via their shared topologies. The default is False.
+        viaSharedApertures : bool , optional
+            If set to True, connect the subtopologies via their shared apertures. The default is False.
+        toExteriorTopologies : bool , optional
+            If set to True, connect the subtopologies to their exterior topologies. The default is False.
+        toExteriorApertures : bool , optional
+            If set to True, connect the subtopologies to their exterior apertures. The default is False.
+        toContents : bool , optional
+            If set to True, connect the subtopologies to their contents. The default is False.
+        useInternalVertex : bool , optional
+            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. The default is False.
+        storeBRep : bool , optional
+            If set to True, store the BRep of the subtopology in its representative vertex. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        graph : TYPE
-            DESCRIPTION.
+        topologic.Graph
+            The created graph.
 
         """
-        topology = item[0]
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
+        def mergeDictionaries(sources):
+            if isinstance(sources, list) == False:
+                sources = [sources]
+            sinkKeys = []
+            sinkValues = []
+            d = sources[0].GetDictionary()
+            if d != None:
+                stlKeys = d.Keys()
+                if len(stlKeys) > 0:
+                    sinkKeys = d.Keys()
+                    sinkValues = Dictionary.Values(d)
+            for i in range(1,len(sources)):
+                d = sources[i].GetDictionary()
+                if d == None:
+                    continue
+                stlKeys = d.Keys()
+                if len(stlKeys) > 0:
+                    sourceKeys = d.Keys()
+                    for aSourceKey in sourceKeys:
+                        if aSourceKey not in sinkKeys:
+                            sinkKeys.append(aSourceKey)
+                            sinkValues.append("")
+                    for i in range(len(sourceKeys)):
+                        index = sinkKeys.index(sourceKeys[i])
+                        sourceValue = Dictionary.ValueAtKey(d, sourceKeys[i])
+                        if sourceValue != None:
+                            if sinkValues[index] != "":
+                                if isinstance(sinkValues[index], list):
+                                    sinkValues[index].append(sourceValue)
+                                else:
+                                    sinkValues[index] = [sinkValues[index], sourceValue]
+                            else:
+                                sinkValues[index] = sourceValue
+            if len(sinkKeys) > 0 and len(sinkValues) > 0:
+                return Dictionary.ByKeysValues(sinkKeys, sinkValues)
+            return None
+
+        def mergeDictionaries2(sources):
+            if isinstance(sources, list) == False:
+                sources = [sources]
+            sinkKeys = []
+            sinkValues = []
+            d = sources[0]
+            if d != None:
+                stlKeys = d.Keys()
+                if len(stlKeys) > 0:
+                    sinkKeys = d.Keys()
+                    sinkValues = Dictionary.Values(d)
+            for i in range(1,len(sources)):
+                d = sources[i]
+                if d == None:
+                    continue
+                stlKeys = d.Keys()
+                if len(stlKeys) > 0:
+                    sourceKeys = d.Keys()
+                    for aSourceKey in sourceKeys:
+                        if aSourceKey not in sinkKeys:
+                            sinkKeys.append(aSourceKey)
+                            sinkValues.append("")
+                    for i in range(len(sourceKeys)):
+                        index = sinkKeys.index(sourceKeys[i])
+                        sourceValue = Dictionary.ValueAtKey(d, sourceKeys[i])
+                        if sourceValue != None:
+                            if sinkValues[index] != "":
+                                if isinstance(sinkValues[index], list):
+                                    sinkValues[index].append(sourceValue)
+                                else:
+                                    sinkValues[index] = [sinkValues[index], sourceValue]
+                            else:
+                                sinkValues[index] = sourceValue
+            if len(sinkKeys) > 0 and len(sinkValues) > 0:
+                return Dictionary.ByKeysValues(sinkKeys, sinkValues)
+            return None
+
+        def processCellComplex(item):
+            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            edges = []
+            vertices = []
+            cellmat = []
+            if direct == True:
+                cells = []
+                _ = topology.Cells(None, cells)
+                # Create a matrix of zeroes
+                for i in range(len(cells)):
+                    cellRow = []
+                    for j in range(len(cells)):
+                        cellRow.append(0)
+                    cellmat.append(cellRow)
+                for i in range(len(cells)):
+                    for j in range(len(cells)):
+                        if (i != j) and cellmat[i][j] == 0:
+                            cellmat[i][j] = 1
+                            cellmat[j][i] = 1
+                            sharedt = []
+                            cells[i].SharedTopologies(cells[j], 8, sharedt)
+                            if len(sharedt) > 0:
+                                if useInternalVertex == True:
+                                    v1 = topologic.CellUtility.InternalVertex(cells[i], tolerance)
+                                    v2 = topologic.CellUtility.InternalVertex(cells[j], tolerance)
+                                else:
+                                    v1 = cells[i].CenterOfMass()
+                                    v2 = cells[j].CenterOfMass()
+                                e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                mDict = mergeDictionaries(sharedt)
+                                if mDict:
+                                    e.SetDictionary(mDict)
+                                edges.append(e)
+            if directApertures == True:
+                cellmat = []
+                cells = []
+                _ = topology.Cells(None, cells)
+                # Create a matrix of zeroes
+                for i in range(len(cells)):
+                    cellRow = []
+                    for j in range(len(cells)):
+                        cellRow.append(0)
+                    cellmat.append(cellRow)
+                for i in range(len(cells)):
+                    for j in range(len(cells)):
+                        if (i != j) and cellmat[i][j] == 0:
+                            cellmat[i][j] = 1
+                            cellmat[j][i] = 1
+                            sharedt = []
+                            cells[i].SharedTopologies(cells[j], 8, sharedt)
+                            if len(sharedt) > 0:
+                                apertureExists = False
+                                for x in sharedt:
+                                    apList = []
+                                    _ = x.Apertures(apList)
+                                    if len(apList) > 0:
+                                        apTopList = []
+                                        for ap in apList:
+                                            apTopList.append(ap.Topology())
+                                        apertureExists = True
+                                        break
+                                if apertureExists:
+                                    if useInternalVertex == True:
+                                        v1 = topologic.CellUtility.InternalVertex(cells[i], tolerance)
+                                        v2 = topologic.CellUtility.InternalVertex(cells[j], tolerance)
+                                    else:
+                                        v1 = cells[i].CenterOfMass()
+                                        v2 = cells[j].CenterOfMass()
+                                    e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                    mDict = mergeDictionaries(apTopList)
+                                    if mDict:
+                                        e.SetDictionary(mDict)
+                                    edges.append(e)
+            cells = []
+            _ = topology.Cells(None, cells)
+            if (viaSharedTopologies == True) or (viaSharedApertures == True) or (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
+                for aCell in cells:
+                    if useInternalVertex == True:
+                        vCell = topologic.CellUtility.InternalVertex(aCell, tolerance)
+                    else:
+                        vCell = aCell.CenterOfMass()
+                    d1 = aCell.GetDictionary()
+                    if storeBRep:
+                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [aCell.String(), aCell.Type(), aCell.GetTypeAsString()])
+                        d3 = mergeDictionaries2([d1, d2])
+                        _ = vCell.SetDictionary(d3)
+                    else:
+                        _ = vCell.SetDictionary(d1)
+                    vertices.append(vCell)
+                    faces = []
+                    _ = aCell.Faces(None, faces)
+                    sharedTopologies = []
+                    exteriorTopologies = []
+                    sharedApertures = []
+                    exteriorApertures = []
+                    contents = []
+                    _ = aCell.Contents(contents)
+                    for aFace in faces:
+                        cells = []
+                        _ = aFace.Cells(topology, cells)
+                        if len(cells) > 1:
+                            sharedTopologies.append(aFace)
+                            apertures = []
+                            _ = aFace.Apertures(apertures)
+                            for anAperture in apertures:
+                                sharedApertures.append(anAperture)
+                        else:
+                            exteriorTopologies.append(aFace)
+                            apertures = []
+                            _ = aFace.Apertures(apertures)
+                            for anAperture in apertures:
+                                exteriorApertures.append(anAperture)
+                    if viaSharedTopologies:
+                        for sharedTopology in sharedTopologies:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(sharedTopology, tolerance)
+                            else:
+                                vst = sharedTopology.CenterOfMass()
+                            d1 = sharedTopology.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [sharedTopology.String(), sharedTopology.Type(), sharedTopology.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Topologies"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                            if toContents:
+                                contents = []
+                                _ = sharedTopology.Contents(contents)
+                                for content in contents:
+                                    if useInternalVertex == True:
+                                        vst2 = Topology.InternalVertex(content, tolerance)
+                                    else:
+                                        vst2 = content.CenterOfMass()
+                                    d1 = content.GetDictionary()
+                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X(), vst2.Y(), vst2.Z())
+                                    if storeBRep:
+                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                        d3 = mergeDictionaries2([d1, d2])
+                                        _ = vst2.SetDictionary(d3)
+                                    else:
+                                        _ = vst2.SetDictionary(d1)
+                                    vertices.append(vst2)
+                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                                    _ = tempe.SetDictionary(tempd)
+                                    edges.append(tempe)
+                    if viaSharedApertures:
+                        for sharedAperture in sharedApertures:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(sharedAperture.Topology(), tolerance)
+                            else:
+                                vst = sharedAperture.Topology().CenterOfMass()
+                            d1 = sharedAperture.Topology().GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [sharedAperture.Topology().String(), sharedAperture.Topology().Type(), sharedAperture.Topology().GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Apertures"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                    if toExteriorTopologies:
+                        for exteriorTopology in exteriorTopologies:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(exteriorTopology, tolerance)
+                            else:
+                                vst = exteriorTopology.CenterOfMass()
+                            _ = vst.SetDictionary(exteriorTopology.GetDictionary())
+                            d1 = exteriorTopology.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [exteriorTopology.String(), exteriorTopology.Type(), exteriorTopology.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Topologies"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                            if toContents:
+                                contents = []
+                                _ = exteriorTopology.Contents(contents)
+                                for content in contents:
+                                    if useInternalVertex == True:
+                                        vst2 = Topology.InternalVertex(content, tolerance)
+                                    else:
+                                        vst2 = content.CenterOfMass()
+                                    d1 = content.GetDictionary()
+                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    if storeBRep:
+                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                        d3 = mergeDictionaries2([d1, d2])
+                                        _ = vst2.SetDictionary(d3)
+                                    else:
+                                        _ = vst2.SetDictionary(d1)
+                                    vertices.append(vst2)
+                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                                    _ = tempe.SetDictionary(tempd)
+                                    edges.append(tempe)
+                    if toExteriorApertures:
+                        for exteriorAperture in exteriorApertures:
+                            extTop = exteriorAperture.Topology()
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(extTop, tolerance)
+                            else:
+                                vst = exteriorAperture.Topology().CenterOfMass()
+                            d1 = exteriorAperture.Topology().GetDictionary()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [exteriorAperture.String(), exteriorAperture.Type(), exteriorAperture.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                    if toContents:
+                        contents = []
+                        _ = aCell.Contents(contents)
+                        for content in contents:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(content, tolerance)
+                            else:
+                                vst = content.CenterOfMass()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            d1 = content.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+
+            for aCell in cells:
+                if useInternalVertex == True:
+                    vCell = topologic.CellUtility.InternalVertex(aCell, tolerance)
+                else:
+                    vCell = aCell.CenterOfMass()
+                d1 = aCell.GetDictionary()
+                if storeBRep:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [aCell.String(), aCell.Type(), aCell.GetTypeAsString()])
+                    d3 = mergeDictionaries2([d1, d2])
+                    _ = vCell.SetDictionary(d3)
+                else:
+                    _ = vCell.SetDictionary(d1)
+                vertices.append(vCell)
+            return topologic.Graph.ByVerticesEdges(vertices,edges)
+
+        def processCell(item):
+            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            vertices = []
+            edges = []
+
+            if useInternalVertex == True:
+                vCell = topologic.CellUtility.InternalVertex(topology, tolerance)
+            else:
+                vCell = topology.CenterOfMass()
+            d1 = topology.GetDictionary()
+            if storeBRep:
+                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [topology.String(), topology.Type(), topology.GetTypeAsString()])
+                d3 = mergeDictionaries2([d1, d2])
+                _ = vCell.SetDictionary(d3)
+            else:
+                _ = vCell.SetDictionary(d1)
+            vertices.append(vCell)
+
+            if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
+                faces = []
+                _ = topology.Faces(None, faces)
+                exteriorTopologies = []
+                exteriorApertures = []
+                for aFace in faces:
+                    exteriorTopologies.append(aFace)
+                    apertures = []
+                    _ = aFace.Apertures(apertures)
+                    for anAperture in apertures:
+                        exteriorApertures.append(anAperture)
+                    if toExteriorTopologies:
+                        for exteriorTopology in exteriorTopologies:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(exteriorTopology, tolerance)
+                            else:
+                                vst = exteriorTopology.CenterOfMass()
+                            d1 = exteriorTopology.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [exteriorTopology.String(), exteriorTopology.Type(), exteriorTopology.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Topologies"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                            if toContents:
+                                contents = []
+                                _ = exteriorTopology.Contents(contents)
+                                for content in contents:
+                                    if useInternalVertex == True:
+                                        vst2 = Topology.InternalVertex(content, tolerance)
+                                    else:
+                                        vst2 = content.CenterOfMass()
+                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    d1 = content.GetDictionary()
+                                    if storeBRep:
+                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                        d3 = mergeDictionaries2([d1, d2])
+                                        _ = vst2.SetDictionary(d3)
+                                    else:
+                                        _ = vst2.SetDictionary(d1)
+                                    vertices.append(vst2)
+                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                                    _ = tempe.SetDictionary(tempd)
+                                    edges.append(tempe)
+                    if toExteriorApertures:
+                        for exteriorAperture in exteriorApertures:
+                            extTop = exteriorAperture.Topology()
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(extTop, tolerance)
+                            else:
+                                vst = exteriorAperture.Topology().CenterOfMass()
+                            d1 = exteriorAperture.Topology().GetDictionary()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [exteriorAperture.Topology().String(), exteriorAperture.Topology().Type(), exteriorAperture.Topology().GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                    if toContents:
+                        contents = []
+                        _ = topology.Contents(contents)
+                        for content in contents:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(content, tolerance)
+                            else:
+                                vst = content.CenterOfMass()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            d1 = content.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+
+            return topologic.Graph.ByVerticesEdges(vertices, edges)
+
+        def processShell(item):
+            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            graph = None
+            edges = []
+            vertices = []
+            facemat = []
+            if direct == True:
+                topFaces = []
+                _ = topology.Faces(None, topFaces)
+                # Create a matrix of zeroes
+                for i in range(len(topFaces)):
+                    faceRow = []
+                    for j in range(len(topFaces)):
+                        faceRow.append(0)
+                    facemat.append(faceRow)
+                for i in range(len(topFaces)):
+                    for j in range(len(topFaces)):
+                        if (i != j) and facemat[i][j] == 0:
+                            facemat[i][j] = 1
+                            facemat[j][i] = 1
+                            sharedt = []
+                            topFaces[i].SharedTopologies(topFaces[j], 2, sharedt)
+                            if len(sharedt) > 0:
+                                if useInternalVertex == True:
+                                    v1 = topologic.FaceUtility.InternalVertex(topFaces[i], tolerance)
+                                    v2 = topologic.FaceUtility.InternalVertex(topFaces[j], tolerance)
+                                else:
+                                    v1 = topFaces[i].CenterOfMass()
+                                    v2 = topFaces[j].CenterOfMass()
+                                e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                mDict = mergeDictionaries(sharedt)
+                                if mDict:
+                                    e.SetDictionary(mDict)
+                                edges.append(e)
+            if directApertures == True:
+                facemat = []
+                topFaces = []
+                _ = topology.Faces(None, topFaces)
+                # Create a matrix of zeroes
+                for i in range(len(topFaces)):
+                    faceRow = []
+                    for j in range(len(topFaces)):
+                        faceRow.append(0)
+                    facemat.append(faceRow)
+                for i in range(len(topFaces)):
+                    for j in range(len(topFaces)):
+                        if (i != j) and facemat[i][j] == 0:
+                            facemat[i][j] = 1
+                            facemat[j][i] = 1
+                            sharedt = []
+                            topFaces[i].SharedTopologies(topFaces[j], 2, sharedt)
+                            if len(sharedt) > 0:
+                                apertureExists = False
+                                for x in sharedt:
+                                    apList = []
+                                    _ = x.Apertures(apList)
+                                    if len(apList) > 0:
+                                        apertureExists = True
+                                        break
+                                if apertureExists:
+                                    apTopList = []
+                                    for ap in apList:
+                                        apTopList.append(ap.Topology())
+                                    if useInternalVertex == True:
+                                        v1 = topologic.FaceUtility.InternalVertex(topFaces[i], tolerance)
+                                        v2 = topologic.FaceUtility.InternalVertex(topFaces[j], tolerance)
+                                    else:
+                                        v1 = topFaces[i].CenterOfMass()
+                                        v2 = topFaces[j].CenterOfMass()
+                                    e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                    mDict = mergeDictionaries(apTopList)
+                                    if mDict:
+                                        e.SetDictionary(mDict)
+                                    edges.append(e)
+
+            topFaces = []
+            _ = topology.Faces(None, topFaces)
+            if (viaSharedTopologies == True) or (viaSharedApertures == True) or (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
+                for aFace in topFaces:
+                    if useInternalVertex == True:
+                        vFace = topologic.FaceUtility.InternalVertex(aFace, tolerance)
+                    else:
+                        vFace = aFace.CenterOfMass()
+                    _ = vFace.SetDictionary(aFace.GetDictionary())
+                    vertices.append(vFace)
+                    fEdges = []
+                    _ = aFace.Edges(None, fEdges)
+                    sharedTopologies = []
+                    exteriorTopologies = []
+                    sharedApertures = []
+                    exteriorApertures = []
+                    for anEdge in fEdges:
+                        faces = []
+                        _ = anEdge.Faces(topology, faces)
+                        if len(faces) > 1:
+                            sharedTopologies.append(anEdge)
+                            apertures = []
+                            _ = anEdge.Apertures(apertures)
+                            for anAperture in apertures:
+                                sharedApertures.append(anAperture)
+                        else:
+                            exteriorTopologies.append(anEdge)
+                            apertures = []
+                            _ = anEdge.Apertures(apertures)
+                            for anAperture in apertures:
+                                exteriorApertures.append(anAperture)
+                    if viaSharedTopologies:
+                        for sharedTopology in sharedTopologies:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(sharedTopology, tolerance)
+                            else:
+                                vst = sharedTopology.CenterOfMass()
+                            d1 = sharedTopology.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [sharedTopology.String(), sharedTopology.Type(), sharedTopology.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Topologies"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                            if toContents:
+                                contents = []
+                                _ = sharedTopology.Contents(contents)
+                                for content in contents:
+                                    if useInternalVertex == True:
+                                        vst2 = Topology.InternalVertex(content, tolerance)
+                                    else:
+                                        vst2 = content.CenterOfMass()
+                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    d1 = content.GetDictionary()
+                                    if storeBRep:
+                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                        d3 = mergeDictionaries2([d1, d2])
+                                        _ = vst2.SetDictionary(d3)
+                                    else:
+                                        _ = vst2.SetDictionary(d1)
+                                    vertices.append(vst2)
+                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                                    _ = tempe.SetDictionary(tempd)
+                                    edges.append(tempe)
+                    if viaSharedApertures:
+                        for sharedAperture in sharedApertures:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(sharedAperture.Topology(), tolerance)
+                            else:
+                                vst = sharedAperture.Topology().CenterOfMass()
+                            d1 = sharedAperture.Topology().GetDictionary()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [sharedAperture.Topology().String(), sharedAperture.Topology().Type(), sharedAperture.Topology().GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Apertures"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                    if toExteriorTopologies:
+                        for exteriorTopology in exteriorTopologies:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(exteriorTopology, tolerance)
+                            else:
+                                vst = exteriorTopology.CenterOfMass()
+                            d1 = exteriorTopology.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [exteriorTopology.String(), exteriorTopology.Type(), exteriorTopology.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                            if toContents:
+                                contents = []
+                                _ = exteriorTopology.Contents(contents)
+                                for content in contents:
+                                    if useInternalVertex == True:
+                                        vst2 = Topology.InternalVertex(content, tolerance)
+                                    else:
+                                        vst2 = content.CenterOfMass()
+                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    d1 = content.GetDictionary()
+                                    if storeBRep:
+                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                        d3 = mergeDictionaries2([d1, d2])
+                                        _ = vst2.SetDictionary(d3)
+                                    else:
+                                        _ = vst2.SetDictionary(d1)
+                                    vertices.append(vst2)
+                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                                    _ = tempe.SetDictionary(tempd)
+                                    edges.append(tempe)
+                    if toExteriorApertures:
+                        for exteriorAperture in exteriorApertures:
+                            extTop = exteriorAperture.Topology()
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(extTop, tolerance)
+                            else:
+                                vst = exteriorAperture.Topology().CenterOfMass()
+                            d1 = exteriorAperture.Topology().GetDictionary()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [exteriorAperture.Topology().String(), exteriorAperture.Topology().Type(), exteriorAperture.Topology().GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                    if toContents:
+                        contents = []
+                        _ = aFace.Contents(contents)
+                        for content in contents:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(content, tolerance)
+                            else:
+                                vst = content.CenterOfMass()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            d1 = content.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+
+            for aFace in topFaces:
+                if useInternalVertex == True:
+                    vFace = Topology.InternalVertex(aFace, tolerance)
+                else:
+                    vFace = aFace.CenterOfMass()
+                d1 = aFace.GetDictionary()
+                if storeBRep:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [aFace.String(), aFace.Type(), aFace.GetTypeAsString()])
+                    d3 = mergeDictionaries2([d1, d2])
+                    _ = vFace.SetDictionary(d3)
+                else:
+                    _ = vFace.SetDictionary(d1)
+                vertices.append(vFace)
+            return topologic.Graph.ByVerticesEdges(vertices, edges)
+
+        def processFace(item):
+            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+
+            graph = None
+            vertices = []
+            edges = []
+
+            if useInternalVertex == True:
+                vFace = topologic.FaceUtility.InternalVertex(topology, tolerance)
+            else:
+                vFace = topology.CenterOfMass()
+            d1 = topology.GetDictionary()
+            if storeBRep:
+                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [topology.String(), topology.Type(), topology.GetTypeAsString()])
+                d3 = mergeDictionaries2([d1, d2])
+                _ = vFace.SetDictionary(d3)
+            else:
+                _ = vFace.SetDictionary(d1)
+            vertices.append(vFace)
+            if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
+                fEdges = []
+                _ = topology.Edges(None, fEdges)
+                exteriorTopologies = []
+                exteriorApertures = []
+
+                for anEdge in fEdges:
+                    exteriorTopologies.append(anEdge)
+                    apertures = []
+                    _ = anEdge.Apertures(apertures)
+                    for anAperture in apertures:
+                        exteriorApertures.append(anAperture)
+                    if toExteriorTopologies:
+                        for exteriorTopology in exteriorTopologies:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(exteriorTopology, tolerance)
+                            else:
+                                vst = exteriorTopology.CenterOfMass()
+                            d1 = exteriorTopology.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [exteriorTopology.String(), exteriorTopology.Type(), exteriorTopology.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Topologies"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                            if toContents:
+                                contents = []
+                                _ = exteriorTopology.Contents(contents)
+                                for content in contents:
+                                    if useInternalVertex == True:
+                                        vst2 = Topology.InternalVertex(content, tolerance)
+                                    else:
+                                        vst2 = content.CenterOfMass()
+                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    d1 = content.GetDictionary()
+                                    if storeBRep:
+                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                        d3 = mergeDictionaries2([d1, d2])
+                                        _ = vst2.SetDictionary(d3)
+                                    else:
+                                        _ = vst2.SetDictionary(d1)
+                                    vertices.append(vst2)
+                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                                    _ = tempe.SetDictionary(tempd)
+                                    edges.append(tempe)
+                    if toExteriorApertures:
+                        for exteriorAperture in exteriorApertures:
+                            extTop = exteriorAperture.Topology()
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(extTop, tolerance)
+                            else:
+                                vst = exteriorAperture.Topology().CenterOfMass()
+                            d1 = exteriorAperture.Topology().GetDictionary()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [exteriorAperture.Topology().String(), exteriorAperture.Topology().Type(), exteriorAperture.Topology().GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                    if toContents:
+                        contents = []
+                        _ = topology.Contents(contents)
+                        for content in contents:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(content, tolerance)
+                            else:
+                                vst = content.CenterOfMass()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            d1 = content.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+            return topologic.Graph.ByVertices(vertices, edges)
+
+        def processWire(item):
+            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            graph = None
+            edges = []
+            vertices = []
+            edgemat = []
+            if direct == True:
+                topEdges = []
+                _ = topology.Edges(None, topEdges)
+                # Create a matrix of zeroes
+                for i in range(len(topEdges)):
+                    edgeRow = []
+                    for j in range(len(topEdges)):
+                        edgeRow.append(0)
+                    edgemat.append(edgeRow)
+                for i in range(len(topEdges)):
+                    for j in range(len(topEdges)):
+                        if (i != j) and edgemat[i][j] == 0:
+                            edgemat[i][j] = 1
+                            edgemat[j][i] = 1
+                            sharedt = []
+                            topEdges[i].SharedTopologies(topEdges[j], 1, sharedt)
+                            if len(sharedt) > 0:
+                                try:
+                                    v1 = topologic.EdgeUtility.PointAtParameter(topEdges[i], 0.5)
+                                except:
+                                    v1 = topEdges[j].CenterOfMass()
+                                try:
+                                    v2 = topologic.EdgeUtility.PointAtParameter(topEdges[j], 0.5)
+                                except:
+                                    v2 = topEdges[j].CenterOfMass()
+                                e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                mDict = mergeDictionaries(sharedt)
+                                if mDict:
+                                    e.SetDictionary(mDict)
+                                edges.append(e)
+            if directApertures == True:
+                edgemat = []
+                topEdges = []
+                _ = topology.Edges(None, topEdges)
+                # Create a matrix of zeroes
+                for i in range(len(topEdges)):
+                    edgeRow = []
+                    for j in range(len(topEdges)):
+                        edgeRow.append(0)
+                    edgemat.append(edgeRow)
+                for i in range(len(topEdges)):
+                    for j in range(len(topEdges)):
+                        if (i != j) and edgemat[i][j] == 0:
+                            edgemat[i][j] = 1
+                            edgemat[j][i] = 1
+                            sharedt = []
+                            topEdges[i].SharedTopologies(topEdges[j], 1, sharedt)
+                            if len(sharedt) > 0:
+                                apertureExists = False
+                                for x in sharedt:
+                                    apList = []
+                                    _ = x.Apertures(apList)
+                                    if len(apList) > 0:
+                                        apertureExists = True
+                                        break
+                                if apertureExists:
+                                    try:
+                                        v1 = topologic.EdgeUtility.PointAtParameter(topEdges[i], 0.5)
+                                    except:
+                                        v1 = topEdges[j].CenterOfMass()
+                                    try:
+                                        v2 = topologic.EdgeUtility.PointAtParameter(topEdges[j], 0.5)
+                                    except:
+                                        v2 = topEdges[j].CenterOfMass()
+                                    e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                    apTopologies = []
+                                    for ap in apList:
+                                        apTopologies.append(ap.Topology())
+                                    mDict = mergeDictionaries(apTopologies)
+                                    if mDict:
+                                        e.SetDictionary(mDict)
+                                    edges.append(e)
+
+            topEdges = []
+            _ = topology.Edges(None, topEdges)
+            if (viaSharedTopologies == True) or (viaSharedApertures == True) or (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
+                for anEdge in topEdges:
+                    try:
+                        vEdge = topologic.EdgeUtility.PointAtParameter(anEdge, 0.5)
+                    except:
+                        vEdge = anEdge.CenterOfMass()
+                    d1 = anEdge.GetDictionary()
+                    if storeBRep:
+                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [anEdge.String(), anEdge.Type(), anEdge.GetTypeAsString()])
+                        d3 = mergeDictionaries2([d1, d2])
+                        _ = vEdge.SetDictionary(d3)
+                    else:
+                        _ = vEdge.SetDictionary(d1)
+                    vertices.append(vEdge)
+                    eVertices = []
+                    _ = anEdge.Vertices(None, eVertices)
+                    sharedTopologies = []
+                    exteriorTopologies = []
+                    sharedApertures = []
+                    exteriorApertures = []
+                    contents = []
+                    _ = anEdge.Contents(contents)
+                    for aVertex in eVertices:
+                        tempEdges = []
+                        _ = aVertex.Edges(topology, tempEdges)
+                        if len(tempEdges) > 1:
+                            sharedTopologies.append(aVertex)
+                            apertures = []
+                            _ = aVertex.Apertures(apertures)
+                            for anAperture in apertures:
+                                sharedApertures.append(anAperture)
+                        else:
+                            exteriorTopologies.append(aVertex)
+                            apertures = []
+                            _ = aVertex.Apertures(apertures)
+                            for anAperture in apertures:
+                                exteriorApertures.append(anAperture)
+                    if viaSharedTopologies:
+                        for sharedTopology in sharedTopologies:
+                            vst = sharedTopology.CenterOfMass()
+                            d1 = sharedTopology.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [sharedTopology.String(), sharedTopology.Type(), sharedTopology.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Topologies"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                            if toContents:
+                                contents = []
+                                _ = sharedTopology.Contents(contents)
+                                for content in contents:
+                                    if useInternalVertex == True:
+                                        vst2 = Topology.InternalVertex(content, tolerance)
+                                    else:
+                                        vst2 = content.CenterOfMass()
+                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    d1 = content.GetDictionary()
+                                    if storeBRep:
+                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                        d3 = mergeDictionaries2([d1, d2])
+                                        _ = vst2.SetDictionary(d3)
+                                    else:
+                                        _ = vst2.SetDictionary(d1)
+                                    vertices.append(vst2)
+                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                                    _ = tempe.SetDictionary(tempd)
+                                    edges.append(tempe)
+                    if viaSharedApertures:
+                        for sharedAperture in sharedApertures:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(sharedAperture.Topology(), tolerance)
+                            else:
+                                vst = sharedAperture.Topology().CenterOfMass()
+                            d1 = sharedAperture.Topology().GetDictionary()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [sharedAperture.Topology().String(), sharedAperture.Topology().Type(), sharedAperture.Topology().GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Apertures"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                    if toExteriorTopologies:
+                        for exteriorTopology in exteriorTopologies:
+                            vst = exteriorTopology
+                            vertices.append(exteriorTopology)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Topologies"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                            if toContents:
+                                contents = []
+                                _ = vst.Contents(contents)
+                                for content in contents:
+                                    if useInternalVertex == True:
+                                        vst2 = Topology.InternalVertex(content, tolerance)
+                                    else:
+                                        vst2 = content.CenterOfMass()
+                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    d1 = content.GetDictionary()
+                                    if storeBRep:
+                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                        d3 = mergeDictionaries2([d1, d2])
+                                        _ = vst2.SetDictionary(d3)
+                                    else:
+                                        _ = vst2.SetDictionary(d1)
+                                    vertices.append(vst2)
+                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                                    _ = tempe.SetDictionary(tempd)
+                                    edges.append(tempe)
+                    if toExteriorApertures:
+                        for exteriorAperture in exteriorApertures:
+                            extTop = exteriorAperture.Topology()
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(extTop, tolerance)
+                            else:
+                                vst = extTop.CenterOfMass()
+                            d1 = extTop.GetDictionary()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [extTop.String(), extTop.Type(), extTop.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                    if toContents:
+                        contents = []
+                        _ = anEdge.Contents(contents)
+                        for content in contents:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(content, tolerance)
+                            else:
+                                vst = content.CenterOfMass()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            d1 = content.GetDictionary()
+                            vst = topologic.Vertex.ByCoordinates(vst.X(), vst.Y(), vst.Z())
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+            for anEdge in topEdges:
+                try:
+                    vEdge = topologic.EdgeUtility.PointAtParameter(anEdge, 0.5)
+                except:
+                    vEdge = anEdge.CenterOfMass()
+                d1 = anEdge.GetDictionary()
+                if storeBRep:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [anEdge.String(), anEdge.Type(), anEdge.GetTypeAsString()])
+                    d3 = mergeDictionaries2([d1, d2])
+                    _ = vEdge.SetDictionary(d3)
+                else:
+                    _ = vEdge.SetDictionary(d1)
+                vertices.append(vEdge)
+            return topologic.Graph.ByVerticesEdges(vertices, edges)
+
+        def processEdge(item):
+            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            graph = None
+            vertices = []
+            edges = []
+
+            if useInternalVertex == True:
+                try:
+                    vEdge = topologic.EdgeUtility.PointAtParameter(topology, 0.5)
+                except:
+                    vEdge = topology.CenterOfMass()
+            else:
+                vEdge = topology.CenterOfMass()
+
+            d1 = vEdge.GetDictionary()
+            if storeBRep:
+                d2 = Dictionary.ByKeysValues(["brep"], [topology.String()])
+                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [topology.String(), topology.Type(), topology.GetTypeAsString()])
+                d3 = mergeDictionaries2([d1, d2])
+                _ = vEdge.SetDictionary(d3)
+            else:
+                _ = vEdge.SetDictionary(topology.GetDictionary())
+
+            vertices.append(vEdge)
+
+            if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
+                eVertices = []
+                _ = topology.Vertices(None, eVertices)
+                exteriorTopologies = []
+                exteriorApertures = []
+                for aVertex in eVertices:
+                    exteriorTopologies.append(aVertex)
+                    apertures = []
+                    _ = aVertex.Apertures(apertures)
+                    for anAperture in apertures:
+                        exteriorApertures.append(anAperture)
+                    if toExteriorTopologies:
+                        for exteriorTopology in exteriorTopologies:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(exteriorTopology, tolerance)
+                            else:
+                                vst = exteriorTopology.CenterOfMass()
+                            d1 = exteriorTopology.GetDictionary()
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [exteriorTopology.String(), exteriorTopology.Type(), exteriorTopology.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Topologies"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                            if toContents:
+                                contents = []
+                                _ = vst.Contents(contents)
+                                for content in contents:
+                                    if useInternalVertex == True:
+                                        vst2 = Topology.InternalVertex(content, tolerance)
+                                    else:
+                                        vst2 = content.CenterOfMass()
+                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    d1 = content.GetDictionary()
+                                    if storeBRep:
+                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                        d3 = mergeDictionaries2([d1, d2])
+                                        _ = vst2.SetDictionary(d3)
+                                    else:
+                                        _ = vst2.SetDictionary(d1)
+                                    vertices.append(vst2)
+                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                                    _ = tempe.SetDictionary(tempd)
+                                    edges.append(tempe)
+                    if toExteriorApertures:
+                        for exteriorAperture in exteriorApertures:
+                            extTop = exteriorAperture.Topology()
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(extTop, tolerance)
+                            else:
+                                vst = exteriorAperture.Topology().CenterOfMass()
+                            d1 = exteriorAperture.Topology().GetDictionary()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [exteriorAperture.Topology().String(), exteriorAperture.Topology().Type(), exteriorAperture.Topology().GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            _ = vst.SetDictionary(exteriorAperture.Topology().GetDictionary())
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+                    if toContents:
+                        contents = []
+                        _ = topology.Contents(contents)
+                        for content in contents:
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(content, tolerance)
+                            else:
+                                vst = content.CenterOfMass()
+                            d1 = content.GetDictionary()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            if storeBRep:
+                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                                d3 = mergeDictionaries2([d1, d2])
+                                _ = vst.SetDictionary(d3)
+                            else:
+                                _ = vst.SetDictionary(d1)
+                            vertices.append(vst)
+                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                            _ = tempe.SetDictionary(tempd)
+                            edges.append(tempe)
+            graph = topologic.Graph.ByVerticesEdges(vertices, edges)
+            return graph
+
+        def processVertex(item):
+            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            vertices = [topology]
+            edges = []
+            if toContents:
+                contents = []
+                _ = topology.Contents(contents)
+                for content in contents:
+                    if useInternalVertex == True:
+                        vst = Topology.InternalVertex(content, tolerance)
+                    else:
+                        vst = content.CenterOfMass()
+                    d1 = content.GetDictionary()
+                    vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                    if storeBRep:
+                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
+                        d3 = mergeDictionaries2([d1, d2])
+                        _ = vst.SetDictionary(d3)
+                    else:
+                        _ = vst.SetDictionary(d1)
+                    vertices.append(vst)
+                    tempe = topologic.Edge.ByStartVertexEndVertex(topology, vst)
+                    tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
+                    _ = tempe.SetDictionary(tempd)
+                    edges.append(tempe)
+            return topologic.Graph.VerticesEdges(vertices, edges)
+
+        
+        if not isinstance(topology, topologic.Topology):
+            return None
         graph = None
-        if topology:
-            classType = topology.Type()
-            if classType == 64: #CellComplex
-                graph = Process.processCellComplex(item)
-            elif classType == 32: #Cell
-                graph = Process.processCell(item)
-            elif classType == 16: #Shell
-                graph = Process.processShell(item)
-            elif classType == 8: #Face
-                graph = Process.processFace(item)
-            elif classType == 4: #Wire
-                graph = Process.processWire(item)
-            elif classType == 2: #Edge
-                graph = Process.processEdge(item)
-            elif classType == 1: #Vertex
-                graph = Process.processVertex(item)
-            elif classType == 128: #Cluster
-                raise Exception("ERROR: Graph.ByTopology: Cluster is not supported. Decompose into its sub-topologies first.")
+        item = [topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance]
+        if isinstance(topology, topologic.CellComplex):
+            graph = processCellComplex(item)
+        elif isinstance(topology, topologic.Cell):
+            graph = processCell(item)
+        elif isinstance(topology, topologic.Shell):
+            graph = processShell(item)
+        elif isinstance(topology, topologic.Face):
+            graph = processFace(item)
+        elif isinstance(topology, topologic.Wire):
+            graph = processWire(item)
+        elif isinstance(topology, topologic.Edge):
+            graph = processEdge(item)
+        elif isinstance(topology, topologic.Vertex):
+            graph = processVertex(item)
+        elif isinstance(topology, topologic.Cluster):
+            graph = None
+        else:
+            graph = None
         return graph
-
     
     @staticmethod
-    def GraphByVerticesEdges(vertices, edges):
+    def ByVerticesEdges(vertices, edges):
         """
+        Description
+        -----------
+        Creates a graph from the input list of vertices and edges.
+
         Parameters
         ----------
-        vertices : TYPE
-            DESCRIPTION.
-        edges : TYPE
-            DESCRIPTION.
+        vertices : list
+            The input list of vertices.
+        edges : list
+            The input list of edges.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Graph
+            The created graph.
 
         """
-        # vertices = item[0]
-        # edges = item[1]
-        if isinstance(vertices, list) == False:
-            vertices = [vertices]
-        if isinstance(edges, list) == False:
-            edges = [edges]
+
+        if not isinstance(vertices, list):
+            return None
+        if not isinstance(edges, list):
+            return None
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        edges = [e for e in edges if isinstance(e, topologic.Edge)]
         return topologic.Graph.ByVerticesEdges(vertices, edges)
     
     @staticmethod
-    def GraphConnect(graph, verticesA, verticesB, tolerance=0.0001):
+    def Connect(graph, verticesA, verticesB, tolerance=0.0001):
         """
+        Description
+        -----------
+        Connects the two lists of input vertices.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        verticesA : TYPE
-            DESCRIPTION.
-        verticesB : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        graph : topologic.Graph
+            The input graph.
+        verticesA : list
+            The first list of input vertices.
+        verticesB : topologic.Vertex
+            The second list of input vertices.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        graph : TYPE
-            DESCRIPTION.
+        topologic.Graph
+            The input graph with the connected input vertices.
 
         """
-        # graph = item[0]
-        # verticesA = item[1]
-        # verticesB = item[2]
-        # tolerance = item[3]
-        if isinstance(verticesA, list) == False:
-            verticesA = [verticesA]
-        if isinstance(verticesB, list) == False:
-            verticesB = [verticesB]
+        if not isinstance(verticesA, list):
+            return None
+        if not isinstance(verticesB, list):
+            return None
+        verticesA = [v for v in verticesA if isinstance(v, topologic.Vertex)]
+        verticesB = [v for v in verticesB if isinstance(v, topologic.Vertex)]
+        if len(verticesA) < 1:
+            return None
+        if len(verticesB) < 1:
+            return None
+        if not len(verticesA) == len(verticesB):
+            return None
         _ = graph.Connect(verticesA, verticesB, tolerance)
         return graph
     
     @staticmethod
-    def GraphContainsEdge(graph, edges, tolerance=0.0001):
+    def ContainsEdge(graph, edge, tolerance=0.0001):
         """
+        Description
+        -----------
+        Return True if the input graph contains the input edge. Returns False otherwise.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        edges : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        graph : topologic.Graph
+            The input graph.
+        edge : topologic.Edge
+            The input edge.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        returnList : TYPE
-            DESCRIPTION.
+        bool
+            True if the input graph contains the input edge. False otherwise.
 
         """
-        # graph = item[0]
-        # edges = item[1]
-        # tolerance = item[2]
-        if isinstance(edges, list) == False:
-            edges = [edges]
-        returnList = []
-        for anEdge in edges:
-            returnList.append(graph.ContainsEdge(anEdge, tolerance))
-        return returnList
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(edge, topologic.Edge):
+            return None
+        return graph.ContainsEdge(edge, tolerance)
     
     @staticmethod
-    def GraphContainsVertex(graph, vertices, tolerance=0.0001):
+    def ContainsVertex(graph, vertex, tolerance=0.0001):
         """
+        Description
+        -----------
+        Returns True if the input graph contains the input Vertex. Returns False otherwise.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertices : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        graph : topologic.Graph
+            The input graph.
+        vertex : topologic.Vertex
+            The input Vertex.
+        tolerance : float , optional
+            Ther desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        returnList : TYPE
-            DESCRIPTION.
+        bool
+            True if the input graph contains the input vertex. False otherwise.
 
         """
-        # graph = item[0]
-        # vertices = item[1]
-        # tolerance = item[2]
-        if isinstance(vertices, list) == False:
-            vertices = [vertices]
-        returnList = []
-        for aVertex in vertices:
-            returnList.append(graph.ContainsVertex(aVertex, tolerance))
-        return returnList
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        return graph.ContainsVertex(vertex, tolerance)
     
     @staticmethod
-    def GraphDegreeSequence(item):
+    def DegreeSequence(graph):
         """
+        Description
+        -----------
+        Returns the degree sequence of the input graph. See https://mathworld.wolfram.com/DegreeSequence.html.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
 
         Returns
         -------
-        sequence : TYPE
-            DESCRIPTION.
+        list
+            The degree sequence of the input graph.
 
         """
         sequence = []
-        _ = item.DegreeSequence(sequence)
+        _ = graph.DegreeSequence(sequence)
         return sequence
     
     @staticmethod
-    def GraphDensity(item):
+    def Density(graph):
         """
+        Description
+        -----------
+        Returns the density of the input graph. See https://en.wikipedia.org/wiki/Dense_graph.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        float
+            The density of the input graph.
 
         """
-        return item.Density()
+        if not isinstance(graph, topologic.Graph):
+            return None
+        return graph.Density()
     
     @staticmethod
-    def GraphDepthMap(graph, vertexList, tolerance=0.0001):
+    def DepthMap(graph, vertices=None, tolerance=0.0001):
         """
+        Description
+        -----------
+        Return the depth map of the input list of vertices within the input graph. The returned list contains the total of the topological distances of each vertex to every other vertex in the input graph. The order of the depth map list is the same as the order of the input list of vertices. If no vertices are specified, the depth map of all the vertices in the input graph is computed.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertexList : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
+        vertices : list , optional
+            The input list of vertices. The default is None.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        depthMap : TYPE
-            DESCRIPTION.
+        list
+            The depth map of the input list of vertices within the input graph.
 
         """
-        graphVertices = []
-        _ = graph.Vertices(graphVertices)
-        if len(vertexList) == 0:
-            vertexList = graphVertices
+        if not isinstance(graph, topologic.Graph):
+            return None
+        graphVertices = Graph.Vertices(graph)
+        if not isinstance(vertices, list):
+            vertices = graphVertices
+        else:
+            vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) < 1:
+            return None
         depthMap = []
-        for va in vertexList:
+        for va in vertices:
             depth = 0
             for vb in graphVertices:
                 if topologic.Topology.IsSame(va, vb):
                     dist = 0
                 else:
-                    dist = graph.TopologicalDistance(va, vb, tolerance)
+                    dist = Graph.TopologicalDistance(graph, va, vb, tolerance)
                 depth = depth + dist
             depthMap.append(depth)
         return depthMap
     
     @staticmethod
-    def GraphDiameter(item):
+    def Diameter(graph):
         """
+        Description
+        -----------
+        Returns the diameter of the input graph. See https://mathworld.wolfram.com/GraphDiameter.html.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        int
+            The diameter of the input graph.
 
         """
-        return item.Diameter()
+        if not isinstance(graph, topologic.Graph):
+            return None
+        return graph.Diameter()
     
     @staticmethod
-    def GraphEdge(graph, vertexA, vertexB, tolerance=0.0001):
+    def Edge(graph, vertexA, vertexB, tolerance=0.0001):
         """
+        Description
+        -----------
+        Returns the edge in the input graph that connects in the input vertices.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertexA : TYPE
-            DESCRIPTION.
-        vertexB : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
+        vertexA : topologic.Vertex
+            The first input vertex.
+        vertexB : topologic.Vertex
+            The second input Vertex.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Edge
+            The edge in the input graph that connects the input vertices.
 
         """
-        # graph = item[0]
-        # vertexA = item[1]
-        # vertexB = item[2]
-        # tolerance = item[3]
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(vertexA, topologic.Vertex) or not isinstance(vertexB, topologic.Vertex):
+            return None
         return graph.Edge(vertexA, vertexB, tolerance)
     
     @staticmethod
-    def GraphEdges(graph, tolerance=0.0001):
+    def Edges(graph, vertices=None, tolerance=0.0001):
         """
+        Description
+        -----------
+        Returns the edges found in the input graph. If the input list of vertices is specified, this method returns the edges connected to this list of vertices. Otherwise, it returns all graph edges.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
+        vertices : list , optional
+            An optional list of vertices to restrict the returned list of edges only to those connected to this list.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        edges : TYPE
-            DESCRIPTION.
+        list
+            The list of edges in the graph.
 
         """
-        vertices = []
-        _ = graph.Vertices(vertices)
-        edges = []
-        _ = graph.Edges(vertices, tolerance, edges)
-        return edges
-    
-    @staticmethod
-    def graphVertices(graph):
-        vertices = []
-        if graph:
-            try:
-                _ = graph.Vertices(vertices)
-            except:
-                print("ERROR: (Topologic>Graph.Vertices) operation failed. Returning None.")
-                vertices = None
-        if vertices:
-            return vertices
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not vertices:
+            vertices = Graph.Vertices(graph)
         else:
-            return []
-        
-    @staticmethod
-    def adjacentVertices(graph, vertex):
-        vertices = []
-        _ = graph.AdjacentVertices(vertex, vertices)
-        return list(vertices)
-    
-    @staticmethod
-    def vertexIndex(vertex, vertices):
-        for i in range(len(vertices)):
-            if topologic.Topology.IsSame(vertex, vertices[i]):
-                return i
-        return None
+            vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) > 0:
+            edges = []
+            _ = graph.Edges(vertices, tolerance, edges)
+            return edges
+        return []
 
     @staticmethod
-    def GraphExportToCSV(graph_list, graph_label_list, graphs_file_path, 
-                         edges_file_path, nodes_file_path, graph_id_header,
-                         graph_label_header, graph_num_nodes_header,
-                         edge_src_header, edge_dst_header, node_label_header,
-                         node_label_key, default_node_label, overwrite):
+    def IsComplete(graph):
         """
+        Description
+        -----------
+        Returns True if the input graph is complete. Returns False otherwise. See https://en.wikipedia.org/wiki/Complete_graph.
+
         Parameters
         ----------
-        graph_list : TYPE
-            DESCRIPTION.
-        graph_label_list : TYPE
-            DESCRIPTION.
-        graphs_file_path : TYPE
-            DESCRIPTION.
-        edges_file_path : TYPE
-            DESCRIPTION.
-        nodes_file_path : TYPE
-            DESCRIPTION.
-        graph_id_header : TYPE
-            DESCRIPTION.
-        graph_label_header : TYPE
-            DESCRIPTION.
-        graph_num_nodes_header : TYPE
-            DESCRIPTION.
-        edge_src_header : TYPE
-            DESCRIPTION.
-        edge_dst_header : TYPE
-            DESCRIPTION.
-        node_label_header : TYPE
-            DESCRIPTION.
-        node_label_key : TYPE
-            DESCRIPTION.
-        default_node_label : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
 
         Returns
         -------
         bool
-            DESCRIPTION.
+            True if the input graph is complete. False otherwise
 
         """
-        # graph_list, \
-        # graph_label_list, \
-        # graphs_file_path, \
-        # edges_file_path, \
-        # nodes_file_path, \
-        # graph_id_header, \
-        # graph_label_header, \
-        # graph_num_nodes_header, \
-        # edge_src_header, \
-        # edge_dst_header, \
-        # node_label_header, \
-        # node_label_key, \
-        # default_node_label, \
-        # overwrite = item
-
-        if not isinstance(graph_list, list):
-            graph_list = [graph_list]
-        for graph_index, graph in enumerate(graph_list):
-            graph_label = graph_label_list[graph_index]
-            # Export Graph Properties
-            vertices = Graph.graphVertices(graph)
-            graph_num_nodes = len(vertices)
-            if overwrite == False:
-                graphs = pd.read_csv(graphs_file_path)
-                max_id = max(list(graphs[graph_id_header]))
-                graph_id = max_id + graph_index + 1
-            else:
-                graph_id = graph_index
-            data = [[graph_id], [graph_label], [graph_num_nodes]]
-            data = Replication.iterate(data)
-            data = Replication.transposeList(data)
-            df = pd.DataFrame(data, columns= [graph_id_header, graph_label_header, graph_num_nodes_header])
-            if overwrite == False:
-                df.to_csv(graphs_file_path, mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(graphs_file_path, mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(graphs_file_path, mode='a', index = False, header=False)
-
-            # Export Edge Properties
-            edge_src = []
-            edge_dst = []
-            edge_graph_id = [] #Repetitive list of graph_id for each edge
-            node_graph_id = [] #Repetitive list of graph_id for each vertex/node
-            node_labels = []
-            x_list = []
-            y_list = []
-            z_list = []
-            node_data = []
-            node_columns = [graph_id_header, node_label_header, "X", "Y", "Z"]
-            # All keys should be the same for all vertices, so we can get them from the first vertex
-            d = vertices[0].GetDictionary()
-            keys = d.Keys()
-            for key in keys:
-                if key != node_label_key: #We have already saved that in its own column
-                    node_columns.append(key)
-            for i, v in enumerate(vertices):
-                # Might as well get the node labels since we are iterating through the vertices
-                d = v.GetDictionary()
-                vLabel = Dictionary.DictionaryValueAtKey(d, node_label_key)
-                if not(vLabel):
-                    vLabel = default_node_label        
-                single_node_data = [graph_id, vLabel, round(float(v.X()),5), round(float(v.Y()),5), round(float(v.Z()),5)]
-                keys = d.Keys()
-                for key in keys:
-                    if key != node_label_key and (key in node_columns):
-                        value = Dictionary.DictionaryValueAtKey(d, key)
-                        if not value:
-                            value = 'None'
-                        single_node_data.append(value)
-                node_data.append(single_node_data)
-                av = Graph.adjacentVertices(graph, v)
-                for k in range(len(av)):
-                    vi = Graph.vertexIndex(av[k], vertices)
-                    edge_graph_id.append(graph_id)
-                    edge_src.append(i)
-                    edge_dst.append(vi)
-            data = [edge_graph_id, edge_src, edge_dst]
-            data = Replication.iterate(data)
-            data = Replication.transposeList(data)
-            df = pd.DataFrame(data, columns= [graph_id_header, edge_src_header, edge_dst_header])
-            if overwrite == False:
-                df.to_csv(edges_file_path, mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(edges_file_path, mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(edges_file_path, mode='a', index = False, header=False)
-
-            # Export Node Properties
-            df = pd.DataFrame(node_data, columns= node_columns)
-
-            if overwrite == False:
-                df.to_csv(nodes_file_path, mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(nodes_file_path, mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(nodes_file_path, mode='a', index = False, header=False)
-        return True
-
+        if not isinstance(graph, topologic.Graph):
+            return None
+        return graph.IsComplete()
     
     @staticmethod
-    def GraphExportToCSV_NC(graph_list, graph_label_list, graphs_folder_path,
-                            node_label_key, node_features_keys, default_node_label, edge_label_key,
-                            edge_features_keys, default_edge_label,
-                            train_ratio, test_ratio, validate_ratio,
-                            overwrite):
+    def IsErdoesGallai(graph, sequence):
         """
+        Description
+        -----------
+        Returns True if the input sequence satisfies the Erdős–Gallai theorem. Returns False otherwise. See https://en.wikipedia.org/wiki/Erd%C5%91s%E2%80%93Gallai_theorem.
+
         Parameters
         ----------
-        graph_list : TYPE
-            DESCRIPTION.
-        graph_label_list : TYPE
-            DESCRIPTION.
-        graphs_folder_path : TYPE
-            DESCRIPTION.
-        node_label_key : TYPE
-            DESCRIPTION.
-        node_features_keys : TYPE
-            DESCRIPTION.
-        default_node_label : TYPE
-            DESCRIPTION.
-        edge_label_key : TYPE
-            DESCRIPTION.
-        edge_features_keys : TYPE
-            DESCRIPTION.
-        default_edge_label : TYPE
-            DESCRIPTION.
-        train_ratio : TYPE
-            DESCRIPTION.
-        test_ratio : TYPE
-            DESCRIPTION.
-        validate_ratio : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        # graph_list, \
-        # graph_label_list, \
-        # graphs_folder_path, \
-        # node_label_key, \
-        # node_features_keys, \
-        # default_node_label, \
-        # edge_label_key, \
-        # edge_features_keys, \
-        # default_edge_label, \
-        # train_ratio, \
-        # test_ratio, \
-        # validate_ratio, \
-        # overwrite = item
-        
-        def graphVertices(graph):
-            import random
-            vertices = []
-            if graph:
-                try:
-                    _ = graph.Vertices(vertices)
-                except:
-                    print("ERROR: (Topologic>Graph.Vertices) operation failed. Returning None.")
-                    vertices = None
-            if vertices:
-                return random.sample(vertices, len(vertices))
-            else:
-                return []
-
-        assert (train_ratio+test_ratio+validate_ratio > 0.99), "GraphExportToCSV_NC - Error: Train_Test_Validate ratios do not add up to 1."
-
-        if not isinstance(graph_list, list):
-            graph_list = [graph_list]
-        for graph_index, graph in enumerate(graph_list):
-            graph_label = graph_label_list[graph_index]
-            # Export Graph Properties
-            vertices = graphVertices(graph)
-            train_max = math.floor(float(len(vertices))*train_ratio)
-            test_max = math.floor(float(len(vertices))*test_ratio)
-            validate_max = len(vertices) - train_max - test_max
-            graph_num_nodes = len(vertices)
-            if overwrite == False:
-                graphs = pd.read_csv(os.path.join(graphs_folder_path,"graphs.csv"))
-                max_id = max(list(graphs["graph_id"]))
-                graph_id = max_id + graph_index + 1
-            else:
-                graph_id = graph_index
-            data = [[graph_id], [graph_label], [graph_num_nodes]]
-            data = Replication.iterate(data)
-            data = Replication.transposeList(data)
-            df = pd.DataFrame(data, columns= ["graph_id", "label", "num_nodes"])
-            if overwrite == False:
-                df.to_csv(os.path.join(graphs_folder_path, "graphs.csv"), mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(os.path.join(graphs_folder_path, "graphs.csv"), mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(os.path.join(graphs_folder_path, "graphs.csv"), mode='a', index = False, header=False)
-
-            # Export Edge Properties
-            edge_graph_id = [] #Repetitive list of graph_id for each edge
-            edge_src = []
-            edge_dst = []
-            edge_lab = []
-            edge_feat = []
-            node_graph_id = [] #Repetitive list of graph_id for each vertex/node
-            node_labels = []
-            x_list = []
-            y_list = []
-            z_list = []
-            node_data = []
-            node_columns = ["graph_id", "node_id","label", "train_mask","val_mask","test_mask","feat", "X", "Y", "Z"]
-            # All keys should be the same for all vertices, so we can get them from the first vertex
-            d = vertices[0].GetDictionary()
-            '''
-            keys = d.Keys()
-            for key in keys:
-                if key != node_label_key: #We have already saved that in its own column
-                    node_columns.append(key)
-            '''
-            train = 0
-            test = 0
-            validate = 0
-            
-            for i, v in enumerate(vertices):
-                if train < train_max:
-                    train_mask = True
-                    test_mask = False
-                    validate_mask = False
-                    train = train + 1
-                elif test < test_max:
-                    train_mask = False
-                    test_mask = True
-                    validate_mask = False
-                    test = test + 1
-                elif validate < validate_max:
-                    train_mask = False
-                    test_mask = False
-                    validate_mask = True
-                    validate = validate + 1
-                else:
-                    train_mask = True
-                    test_mask = False
-                    validate_mask = False
-                    train = train + 1
-                # Might as well get the node labels since we are iterating through the vertices
-                d = v.GetDictionary()
-                vLabel = Dictionary.DictionaryValueAtKey(d, node_label_key)
-                if not(vLabel):
-                    vLabel = default_node_label
-                # Might as well get the features since we are iterating through the vertices
-                features = ""
-                node_features_keys = Replication.flatten(node_features_keys)
-                for node_feature_key in node_features_keys:
-                    if len(features) > 0:
-                        features = features + ","+ str(round(float(Dictionary.DictionaryValueAtKey(d, node_feature_key)),5))
-                    else:
-                        features = str(round(float(Dictionary.DictionaryValueAtKey(d, node_feature_key)),5))
-                single_node_data = [graph_id, i, vLabel, train_mask, validate_mask, test_mask, features, round(float(v.X()),5), round(float(v.Y()),5), round(float(v.Z()),5)]
-                '''
-                keys = d.Keys()
-                for key in keys:
-                    if key != node_label_key and (key in node_columns):
-                        value = DictionaryValueAtKey.processItem([d, key])
-                        if not value:
-                            value = 'None'
-                        single_node_data.append(value)
-                '''
-                node_data.append(single_node_data)
-                av = Graph.adjacentVertices(graph, v)
-                for k in range(len(av)):
-                    vi = Graph.vertexIndex(av[k], vertices)
-                    edge_graph_id.append(graph_id)
-                    edge_src.append(i)
-                    edge_dst.append(vi)
-                    edge = graph.Edge(v, av[k], 0.0001)
-                    ed = edge.GetDictionary()
-                    edge_label = Dictionary.DictionaryValueAtKey(d, edge_label_key)
-                    if not(edge_label):
-                        edge_label = default_edge_label
-                    edge_lab.append(edge_label)
-                    edge_features = ""
-                    edge_features_keys = Replication.flatten(edge_features_keys)
-                    for edge_feature_key in edge_features_keys:
-                        if len(edge_features) > 0:
-                            edge_features = edge_features + ","+ str(round(float(Dictionary.DictionaryValueAtKey(ed, edge_feature_key)),5))
-                        else:
-                            edge_features = str(round(float(Dictionary.DictionaryValueAtKey(ed, edge_feature_key)),5))
-                    edge_feat.append(edge_features)
-            data = [edge_graph_id, edge_src, edge_dst, edge_lab, edge_feat]
-            data = Replication.iterate(data)
-            data = Replication.transposeList(data)
-            df = pd.DataFrame(data, columns= ["graph_id", "src_id", "dst_id", "label", "feat"])
-            if overwrite == False:
-                df.to_csv(os.path.join(graphs_folder_path, "edges.csv"), mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(os.path.join(graphs_folder_path, "edges.csv"), mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(os.path.join(graphs_folder_path, "edges.csv"), mode='a', index = False, header=False)
-
-            # Export Node Properties
-            df = pd.DataFrame(node_data, columns= node_columns)
-
-            if overwrite == False:
-                df.to_csv(os.path.join(graphs_folder_path, "nodes.csv"), mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(os.path.join(graphs_folder_path, "nodes.csv"), mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(os.path.join(graphs_folder_path, "nodes.csv"), mode='a', index = False, header=False)
-        # Write out the meta.yaml file
-        yaml_file = open(os.path.join(graphs_folder_path,"meta.yaml"), "w")
-        yaml_file.write('dataset_name: topologic_dataset\nedge_data:\n- file_name: edges.csv\nnode_data:\n- file_name: nodes.csv\ngraph_data:\n  file_name: graphs.csv')
-        yaml_file.close()
-        return True
-    
-    @staticmethod
-    def GraphExportToCSVGC(graph_list, graph_label_list, graphs_file_path, edges_file_path,
-                           nodes_file_path, graph_id_header, graph_label_header, graph_num_nodes_header, 
-                           edge_src_header, edge_dst_header, node_label_header, node_label_key, default_node_label, overwrite):
-        """
-        Parameters
-        ----------
-        graph_list : TYPE
-            DESCRIPTION.
-        graph_label_list : TYPE
-            DESCRIPTION.
-        graphs_file_path : TYPE
-            DESCRIPTION.
-        edges_file_path : TYPE
-            DESCRIPTION.
-        nodes_file_path : TYPE
-            DESCRIPTION.
-        graph_id_header : TYPE
-            DESCRIPTION.
-        graph_label_header : TYPE
-            DESCRIPTION.
-        graph_num_nodes_header : TYPE
-            DESCRIPTION.
-        edge_src_header : TYPE
-            DESCRIPTION.
-        edge_dst_header : TYPE
-            DESCRIPTION.
-        node_label_header : TYPE
-            DESCRIPTION.
-        node_label_key : TYPE
-            DESCRIPTION.
-        default_node_label : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
+        sequence : list
+            The input sequence.
 
         Returns
         -------
         bool
-            DESCRIPTION.
+            True if the input sequence satisfies the Erdős–Gallai theorem. False otherwise.
 
         """
-        # graph_list, \
-        # graph_label_list, \
-        # graphs_file_path, \
-        # edges_file_path, \
-        # nodes_file_path, \
-        # graph_id_header, \
-        # graph_label_header, \
-        # graph_num_nodes_header, \
-        # edge_src_header, \
-        # edge_dst_header, \
-        # node_label_header, \
-        # node_label_key, \
-        # default_node_label, \
-        # overwrite = item
-
-        if not isinstance(graph_list, list):
-            graph_list = [graph_list]
-        for graph_index, graph in enumerate(graph_list):
-            graph_label = graph_label_list[graph_index]
-            # Export Graph Properties
-            vertices = Graph.graphVertices(graph)
-            graph_num_nodes = len(vertices)
-            if overwrite == False:
-                graphs = pd.read_csv(graphs_file_path)
-                max_id = max(list(graphs[graph_id_header]))
-                graph_id = max_id + graph_index + 1
-            else:
-                graph_id = graph_index
-            data = [[graph_id], [graph_label], [graph_num_nodes]]
-            data = Replication.iterate(data)
-            data = Replication.transposeList(data)
-            df = pd.DataFrame(data, columns= [graph_id_header, graph_label_header, graph_num_nodes_header])
-            if overwrite == False:
-                df.to_csv(graphs_file_path, mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(graphs_file_path, mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(graphs_file_path, mode='a', index = False, header=False)
-
-            # Export Edge Properties
-            edge_src = []
-            edge_dst = []
-            edge_graph_id = [] #Repetitive list of graph_id for each edge
-            node_graph_id = [] #Repetitive list of graph_id for each vertex/node
-            node_labels = []
-            x_list = []
-            y_list = []
-            z_list = []
-            node_data = []
-            node_columns = [graph_id_header, node_label_header, "X", "Y", "Z"]
-            # All keys should be the same for all vertices, so we can get them from the first vertex
-            d = vertices[0].GetDictionary()
-            keys = d.Keys()
-            for key in keys:
-                if key != node_label_key: #We have already saved that in its own column
-                    node_columns.append(key)
-            for i, v in enumerate(vertices):
-                # Might as well get the node labels since we are iterating through the vertices
-                d = v.GetDictionary()
-                vLabel = Dictionary.DictionaryValueAtKey(d, node_label_key)
-                if not(vLabel):
-                    vLabel = default_node_label        
-                single_node_data = [graph_id, vLabel, round(float(v.X()),5), round(float(v.Y()),5), round(float(v.Z()),5)]
-                keys = d.Keys()
-                for key in keys:
-                    if key != node_label_key and (key in node_columns):
-                        value = Dictionary.DictionaryValueAtKey(d, key)
-                        if not value:
-                            value = 'None'
-                        single_node_data.append(value)
-                node_data.append(single_node_data)
-                av = Graph.adjacentVertices(graph, v)
-                for k in range(len(av)):
-                    vi = Graph.vertexIndex(av[k], vertices)
-                    edge_graph_id.append(graph_id)
-                    edge_src.append(i)
-                    edge_dst.append(vi)
-            data = [edge_graph_id, edge_src, edge_dst]
-            data = Replication.iterate(data)
-            data = Replication.transposeList(data)
-            df = pd.DataFrame(data, columns= [graph_id_header, edge_src_header, edge_dst_header])
-            if overwrite == False:
-                df.to_csv(edges_file_path, mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(edges_file_path, mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(edges_file_path, mode='a', index = False, header=False)
-
-            # Export Node Properties
-            df = pd.DataFrame(node_data, columns= node_columns)
-
-            if overwrite == False:
-                df.to_csv(nodes_file_path, mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(nodes_file_path, mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(nodes_file_path, mode='a', index = False, header=False)
-        return True
-    
-    @staticmethod
-    def GraphExportToCSVNC(graph_list, graph_label_list, graphs_folder_path, graph_id_header,
-                           graph_label_header, graph_num_nodes_header, edge_src_header, edge_dst_header,
-                           node_label_header, node_label_key, node_features_keys, default_node_label, overwrite):
-        """
-        Parameters
-        ----------
-        graph_list : TYPE
-            DESCRIPTION.
-        graph_label_list : TYPE
-            DESCRIPTION.
-        graphs_folder_path : TYPE
-            DESCRIPTION.
-        graph_id_header : TYPE
-            DESCRIPTION.
-        graph_label_header : TYPE
-            DESCRIPTION.
-        graph_num_nodes_header : TYPE
-            DESCRIPTION.
-        edge_src_header : TYPE
-            DESCRIPTION.
-        edge_dst_header : TYPE
-            DESCRIPTION.
-        node_label_header : TYPE
-            DESCRIPTION.
-        node_label_key : TYPE
-            DESCRIPTION.
-        node_features_keys : TYPE
-            DESCRIPTION.
-        default_node_label : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        bool
-            DESCRIPTION.
-
-        """
-        # graph_list, \
-        # graph_label_list, \
-        # graphs_folder_path, \
-        # graph_id_header, \
-        # graph_label_header, \
-        # graph_num_nodes_header, \
-        # edge_src_header, \
-        # edge_dst_header, \
-        # node_label_header, \
-        # node_label_key, \
-        # node_features_keys, \
-        # default_node_label, \
-        # overwrite = item
-
-        if not isinstance(graph_list, list):
-            graph_list = [graph_list]
-        for graph_index, graph in enumerate(graph_list):
-            graph_label = graph_label_list[graph_index]
-            # Export Graph Properties
-            vertices = Graph.graphVertices(graph)
-            graph_num_nodes = len(vertices)
-            if overwrite == False:
-                graphs = pd.read_csv(graphs_folder_path)
-                max_id = max(list(graphs[graph_id_header]))
-                graph_id = max_id + graph_index + 1
-            else:
-                graph_id = graph_index
-            data = [[graph_id], [graph_label], [graph_num_nodes]]
-            data = Replication.iterate(data)
-            data = Replication.transposeList(data)
-            df = pd.DataFrame(data, columns= [graph_id_header, graph_label_header, graph_num_nodes_header])
-            if overwrite == False:
-                df.to_csv(os.path.join(graphs_folder_path, "graphs.csv"), mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(os.path.join(graphs_folder_path, "graphs.csv"), mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(os.path.join(graphs_folder_path, "graphs.csv"), mode='a', index = False, header=False)
-
-            # Export Edge Properties
-            edge_src = []
-            edge_dst = []
-            edge_graph_id = [] #Repetitive list of graph_id for each edge
-            node_graph_id = [] #Repetitive list of graph_id for each vertex/node
-            node_labels = []
-            x_list = []
-            y_list = []
-            z_list = []
-            node_data = []
-            node_columns = [graph_id_header, node_label_header, "feat", "X", "Y", "Z"]
-            # All keys should be the same for all vertices, so we can get them from the first vertex
-            d = vertices[0].GetDictionary()
-            keys = d.Keys()
-            for key in keys:
-                if key != node_label_key: #We have already saved that in its own column
-                    node_columns.append(key)
-            for i, v in enumerate(vertices):
-                # Might as well get the node labels since we are iterating through the vertices
-                d = v.GetDictionary()
-                vLabel = Dictionary.DictionaryValueAtKey(d, node_label_key)
-                if not(vLabel):
-                    vLabel = default_node_label
-                # Might as well get the features since we are iterating through the vertices
-                features = ""
-                for node_feature_key in node_features_keys:
-                    if len(features) > 0:
-                        features = features + ","+ str(round(float(Dictionary.DictionaryValueAtKey(d, node_feature_key)),5))
-                    else:
-                        features = str(round(float(Dictionary.DictionaryValueAtKey(d, node_feature_key)),5))
-                single_node_data = [graph_id, vLabel, features, round(float(v.X()),5), round(float(v.Y()),5), round(float(v.Z()),5)]
-                keys = d.Keys()
-                for key in keys:
-                    if key != node_label_key and (key in node_columns):
-                        value = Dictionary.DictionaryValueAtKey(d, key)
-                        if not value:
-                            value = 'None'
-                        single_node_data.append(value)
-                node_data.append(single_node_data)
-                av = Graph.adjacentVertices(graph, v)
-                for k in range(len(av)):
-                    vi = Graph.vertexIndex(av[k], vertices)
-                    edge_graph_id.append(graph_id)
-                    edge_src.append(i)
-                    edge_dst.append(vi)
-            data = [edge_graph_id, edge_src, edge_dst]
-            data = Replication.iterate(data)
-            data = Replication.transposeList(data)
-            df = pd.DataFrame(data, columns= [graph_id_header, edge_src_header, edge_dst_header])
-            if overwrite == False:
-                df.to_csv(os.path.join(graphs_folder_path, "edges.csv"), mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(os.path.join(graphs_folder_path, "edges.csv"), mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(os.path.join(graphs_folder_path, "edges.csv"), mode='a', index = False, header=False)
-
-            # Export Node Properties
-            df = pd.DataFrame(node_data, columns= node_columns)
-
-            if overwrite == False:
-                df.to_csv(nodes_file_path, mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(os.path.join(graphs_folder_path, "nodes.csv"), mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(os.path.join(graphs_folder_path, "nodes.csv"), mode='a', index = False, header=False)
-        return True
-    
-    @staticmethod
-    def GraphExportToDGCNN(graph, graph_label, key, default_vertex_label, filepath, overwrite):
-        """
-        Parameters
-        ----------
-        graph : TYPE
-            DESCRIPTION.
-        graph_label : TYPE
-            DESCRIPTION.
-        key : TYPE
-            DESCRIPTION.
-        default_vertex_label : TYPE
-            DESCRIPTION.
-        filepath : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        bool
-            DESCRIPTION.
-
-        """
-        # graph, graph_label, key, default_vertex_label, filepath, overwrite = item
-        vertices = Graph.graphVertices(graph)
-        new_lines = []
-        new_lines.append("\n"+str(len(vertices))+" "+str(graph_label))
-        for j in range(len(vertices)):
-            d = vertices[j].GetDictionary()
-            vLabel = Dictionary.DictionaryValueAtKey(d, key)
-            if not(vLabel):
-                vLabel = default_vertex_label
-            av = Graph.adjacentVertices(graph, vertices[j])
-            line = "\n"+str(vLabel)+" "+ str(len(av))+" "
-            for k in range(len(av)):
-                vi = Graph.vertexIndex(av[k], vertices)
-                line = line+str(vi)+" "
-            new_lines.append(line)
-        # Make sure the file extension is .txt
-        ext = filepath[len(filepath)-4:len(filepath)]
-        if ext.lower() != ".txt":
-            filepath = filepath+".txt"
-        old_lines = ["1"]
-        if overwrite == False:
-            with open(filepath) as f:
-                old_lines = f.readlines()
-                if len(old_lines):
-                    if old_lines[0] != "":
-                        old_lines[0] = str(int(old_lines[0])+1)+"\n"
-                else:
-                    old_lines[0] = "1"
-        lines = old_lines+new_lines
-        with open(filepath, "w") as f:
-            f.writelines(lines)
-        return True
-    
-    @staticmethod
-    def GraphIsComplete(item):
-        """
-        Parameters
-        ----------
-        item : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        return item.IsComplete()
-    
-    @staticmethod
-    def GraphIsErdoesGallai(graph, sequence):
-        """
-        Parameters
-        ----------
-        graph : TYPE
-            DESCRIPTION.
-        sequence : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        # graph = item[0]
-        # sequence = item[1]
+        if not isinstance(graph, topologic.Graph):
+            return None
         return graph.IsErdoesGallai(sequence)
     
     @staticmethod
-    def GraphIsolatedVertices(graph):
+    def IsolatedVertices(graph):
         """
+        Description
+        -----------
+        Returns the list of isolated vertices in the input graph.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
 
         Returns
         -------
-        vertices : TYPE
-            DESCRIPTION.
+        list
+            The list of isolated vertices.
 
         """
-        # graph = item
+        if not isinstance(graph, topologic.Graph):
+            return None
         vertices = []
         _ = graph.IsolatedVertices(vertices)
         return vertices
     
     @staticmethod
-    def GraphMaximumDelta(item):
+    def MaximumDelta(graph):
         """
+        Description
+        -----------
+        Returns the maximum delta of the input graph. The maximum delta of a graph is the maximum degree of a vertex in the graph. 
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            the input graph.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        int
+            The maximum delta.
 
         """
-        return item.MaximumDelta()
-    
-    @staticmethod
-    def GraphMinimumDelta(item):
-        """
-        Parameters
-        ----------
-        item : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        return item.MinimumDelta()
-    
-    @staticmethod
-    def GraphMST(graph, edgeKey, tolerance=0.0001):
-        """
-        Parameters
-        ----------
-        graph : TYPE
-            DESCRIPTION.
-        edgeKey : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
-
-        Returns
-        -------
-        finalGraph : TYPE
-            DESCRIPTION.
-
-        """
-        #This code is contributed by Neelam Yadav 
-        # graph = item[0]
-        # edgeKey = item[1]
-        # tolerance = item[2]
-        
-        def listAttributeValues(listAttribute):
-            listAttributes = listAttribute.ListValue()
-            returnList = []
-            for attr in listAttributes:
-                if isinstance(attr, IntAttribute):
-                    returnList.append(attr.IntValue())
-                elif isinstance(attr, DoubleAttribute):
-                    returnList.append(attr.DoubleValue())
-                elif isinstance(attr, StringAttribute):
-                    returnList.append(attr.StringValue())
-            return returnList
-        
-        def valueAtKey(item, key):
-            try:
-                attr = item.ValueAtKey(key)
-            except:
-                raise Exception("Dictionary.ValueAtKey - Error: Could not retrieve a Value at the specified key ("+key+")")
-            if isinstance(attr, IntAttribute):
-                return (attr.IntValue())
-            elif isinstance(attr, DoubleAttribute):
-                return (attr.DoubleValue())
-            elif isinstance(attr, StringAttribute):
-                return (attr.StringValue())
-            elif isinstance(attr, ListAttribute):
-                return (listAttributeValues(attr))
-            else:
-                return None
-        
-        def vertexIndex(v, vertices, tolerance):
-            i = 0
-            for aVertex in vertices:
-                if topologic.VertexUtility.Distance(v, aVertex) < tolerance:
-                    return i
-                i = i + 1
+        if not isinstance(graph, topologic.Graph):
             return None
-        
-        vertices = []
-        _ = graph.Vertices(vertices)
-        edges = []
-        _ = graph.Edges(vertices, tolerance, edges)
-        g = Graph(len(vertices))
-        for anEdge in edges:
-            sv = anEdge.StartVertex()
-            svi = vertexIndex(sv, vertices, tolerance)
-            ev = anEdge.EndVertex()
-            evi = vertexIndex(ev, vertices, tolerance)
-            edgeDict = anEdge.GetDictionary()
-            weight = 1
-            if (edgeDict):
-                try:
-                    weight = valueAtKey(edgeDict,edgeKey)
-                except:
-                    weight = 1
-            g.addEdge(svi, evi, weight) 
-
-        graphEdges = g.KruskalMST() # Get the Minimum Spanning Tree
-        # Create an initial Topologic Graph with one Vertex
-        sv = vertices[graphEdges[0][0]]
-        finalGraph = topologic.Graph.ByTopology(sv, True, False, False, False, False, False, tolerance)
-        stl_keys = []
-        stl_keys.append(edgeKey)
-
-        eedges = []
-        for i in range(len(graphEdges)):
-            sv = vertices[graphEdges[i][0]]
-            ev = vertices[graphEdges[i][1]]
-            tEdge = topologic.Edge.ByStartVertexEndVertex(sv, ev)
-            dictValue = graphEdges[i][2]
-            stl_values = []
-            stl_values.append(topologic.DoubleAttribute(dictValue))
-            edgeDict = topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
-            _ = tEdge.SetDictionary(edgeDict)
-            eedges.append(tEdge)
-        finalGraph.AddEdges(eedges, tolerance)
-        return finalGraph
+        return graph.MaximumDelta()
     
     @staticmethod
-    def GraphNearestVertex(graph, vertex):
+    def MinimumDelta(graph):
         """
+        Description
+        -----------
+        Returns the minimum delta of the input graph. The minimum delta of a graph is the minimum degree of a vertex in the graph.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertex : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
 
         Returns
         -------
-        nearestVertex : TYPE
-            DESCRIPTION.
+        int
+            The minimum delta.
 
         """
-        # graph = input[0]
-        # vertex = input[1]
+        if not isinstance(graph, topologic.Graph):
+            return None
+        return graph.MinimumDelta()
+    
+    @staticmethod
+    def MinimumSpanningTree(graph, edgeKey=None, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Returns the minimum spanning tree of the input graph. See https://en.wikipedia.org/wiki/Minimum_spanning_tree.
 
-        vertices = []
-        _ = graph.Vertices(vertices)
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        edgeKey : string , optional
+            If set, the value of the edgeKey will be used as the weight and the tree will minimize the weight. The value associated with the edgeKey must be numerical. If the key is not set, the edges will be sorted by their length. The default is None
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Graph
+            The minimum spanning tree.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        def vertexInList(vertex, vertexList, tolerance=0.0001):
+            for v in vertexList:
+                if Vertex.Distance(v, vertex) < tolerance:
+                    return True
+            return False
+            
+        edges = Graph.Edges(graph)
+        vertices = Graph.Vertices(graph)
+        values = []
+        if isinstance(edgeKey, str):
+            for edge in edges:
+                d = Dictionary.Dictionary(edge)
+                value = Dictionary.ValueAtKey(d, edgeKey)
+                if not value or not isinstance(value, int) or not isinstance(value, float):
+                    return None
+                values.append(value)
+        else:
+            for edge in edges:
+                value = Edge.Length(edge)
+                values.append(value)
+        keydict = dict(zip(edges, values))
+        edges.sort(key=keydict.get)
+        mst = Graph.ByVerticesEdges(vertices,[])
+        for edge in edges:
+            sv = Edge.StartVertex(edge)
+            ev = Edge.EndVertex(edge)
+            if len(Graph.Vertices(mst)) > 0:
+                if not Graph.Path(mst, Graph.NearestVertex(mst, sv), Graph.NearestVertex(mst, ev)):
+                    mst = Graph.AddEdge(mst, edge)
+        return mst
+
+    @staticmethod
+    def NearestVertex(graph, vertex):
+        """
+        Description
+        -----------
+        Returns the vertex in the input graph that is the nearest to the input vertex.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertex : topologic.Vertex
+            The input vertex.
+
+        Returns
+        -------
+        topologic.Vertex
+            The vertex in the input graph that is the nearest to the input vertex.
+
+        """
+        from topologicpy.Vertex import Vertex
+
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        vertices = Graph.Vertices(graph)
         nearestVertex = vertices[0]
-        nearestDistance = topologic.VertexUtility.Distance(vertex, nearestVertex)
+        nearestDistance = Vertex.Distance(vertex, nearestVertex)
         for aGraphVertex in vertices:
-            newDistance = topologic.VertexUtility.Distance(vertex, aGraphVertex)
+            newDistance = Vertex.Distance(vertex, aGraphVertex)
             if newDistance < nearestDistance:
                 nearestDistance = newDistance
                 nearestVertex = aGraphVertex
@@ -1728,170 +2221,159 @@ class Graph:
 
     
     @staticmethod
-    def GraphPath(graph, vertexA, vertexB):
+    def Path(graph, vertexA, vertexB):
         """
+        Description
+        -----------
+        Returns a path (wire) in the input graph that connects the input vertices.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertexA : TYPE
-            DESCRIPTION.
-        vertexB : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
+        vertexA : topologic.Vertex
+            The first input vertex.
+        vertexB : topologic.Vertex
+            The second input vertex.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Wire
+            The path (wire) in the input graph that connects the input vertices.
 
         """
-        # graph = item[0]
-        # vertexA = item[1]
-        # vertexB = item[2]
         return graph.Path(vertexA, vertexB)
     
     @staticmethod
-    def GraphRemoveEdge(graph, edges, tolerance=0.0001):
+    def RemoveEdge(graph, edge, tolerance=0.0001):
         """
+        Description
+        -----------
+        Removes the input edge from the input graph.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        edges : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
+        edge : topologic.Edge
+            The input edge.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        graph : TYPE
-            DESCRIPTION.
+        topologic.Graph
+            The input graph with the input edge removed.
 
         """
-        # graph = item[0]
-        # edges = item[1]
-        # tolerance = item[2]
-        if isinstance(edges, list) == False:
-            edges = [edges]
-        _ = graph.RemoveEdges(edges, tolerance)
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(edge, topologic.Edge):
+            return None
+        _ = graph.RemoveEdges([edge], tolerance)
         return graph
     
     @staticmethod
-    def GraphRemoveVertex(graph, vertices, tolerance=0.0001):
+    def RemoveVertex(graph, vertex, tolerance=0.0001):
         """
+        Description
+        -----------
+        Removes the input vertex from the input graph.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertices : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
+        vertex : topologic.Vertex
+            The input vertex.
         tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        graph : TYPE
-            DESCRIPTION.
+        topologic.Graph
+            The input graph with the input vertex removed.
 
         """
-        # graph = item[0]
-        # vertices = item[1]
-        # tolerance = item[2]
-        
-        def nearestVertex(graph, vertex):
-            vertices = []
-            _ = graph.Vertices(vertices)
-            nearestVertex = vertices[0]
-            nearestDistance = topologic.VertexUtility.Distance(vertex, nearestVertex)
-            for aGraphVertex in vertices:
-                newDistance = topologic.VertexUtility.Distance(vertex, aGraphVertex)
-                if newDistance < nearestDistance:
-                    nearestDistance = newDistance
-                    nearestVertex = aGraphVertex
-            return nearestVertex
-        
-        if isinstance(vertices, list) == False:
-            vertices = [vertices]
-        gVertices = []
-        for aVertex in vertices:
-            gVertices.append(nearestVertex(graph, aVertex))
-        _ = graph.RemoveVertices(gVertices)
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        graphVertex = Graph.NearestVertex(graph, vertex)
+        _ = graph.RemoveVertices([graphVertex])
         return graph
     
     @staticmethod
-    def GraphShortestPath(graph, vertexA, vertexB, vertexKey, edgeKey):
+    def ShortestPath(graph, vertexA, vertexB, vertexKey=None, edgeKey=None):
         """
+        Description
+        -----------
+        Returns the shortest path that connects the input vertices.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertexA : TYPE
-            DESCRIPTION.
-        vertexB : TYPE
-            DESCRIPTION.
-        vertexKey : TYPE
-            DESCRIPTION.
-        edgeKey : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
+        vertexA : topologic.Vertex
+            The first input vertex.
+        vertexB : topologic.Vertex
+            The second input vertex.
+        vertexKey : string , optional
+            The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
+        edgeKey : string , optional
+            The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
 
         Returns
         -------
-        topology : TYPE
-            DESCRIPTION.
+        topologic.Wire
+            The shortest path between the input vertices.
 
         """
-        topology = None
-        # graph = item[0]
-        # vertexA = item[1]
-        # vertexB = item[2]
-        # vertexKey = item[3]
-        # edgeKey = item[4]
-        topology = graph.ShortestPath(vertexA, vertexB, vertexKey, edgeKey)
-        return topology
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(vertexA, topologic.Vertex):
+            return None
+        if not isinstance(vertexB, topologic.Vertex):
+            return None
+        return graph.ShortestPath(vertexA, vertexB, vertexKey, edgeKey)
     
     @staticmethod
-    def GraphShortestPaths(graph, startVertex, endVertex, vertexKey, edgeKey, timeLimit,
-                           pathLimit, tolerance=0.0001):
+    def ShortestPaths(graph, vertexA, vertexB, vertexKey=None, edgeKey=None, timeLimit=10,
+                           pathLimit=10, tolerance=0.0001):
         """
+        Description
+        -----------
+        Returns the shortest path that connects the input vertices.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        startVertex : TYPE
-            DESCRIPTION.
-        endVertex : TYPE
-            DESCRIPTION.
-        vertexKey : TYPE
-            DESCRIPTION.
-        edgeKey : TYPE
-            DESCRIPTION.
-        timeLimit : int
-            DESCRIPTION.
-        pathLimit : int
-            DESCRIPTION.
-        tolerance : float, optional
-            DESCRIPTION. The default is 0.0001.
+        graph : topologic.Graph
+            The input graph.
+        vertexA : topologic.Vertex
+            The first input vertex.
+        vertexB : topologic.Vertex
+            The second input vertex.
+        vertexKey : string , optional
+            The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
+        edgeKey : string , optional
+            The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
+        timeLimit : int , optional
+            The search time limit in seconds. The default is 10 seconds
+        pathLimit: int , optional
+            The number of found paths limit. The default is 10 paths.
 
         Returns
         -------
-        shortestPaths : TYPE
-            DESCRIPTION.
+        topologic.Wire
+            The list of shortest paths between the input vertices.
 
         """
-        # graph = item[0]
-        # startVertex = item[1]
-        # endVertex = item[2]
-        # vertexKey = item[3]
-        # edgeKey = item[4]
-        # timeLimit = int(item[5])
-        # pathLimit = int(item[6])
-        # tolerance = item[7]
-        
+        from topologicpy.Vertex import Vertex
         def nearestVertex(g, v, tolerance):
             vertices = []
             _ = g.Vertices(vertices)
             for aVertex in vertices:
-                d = topologic.VertexUtility.Distance(v, aVertex)
+                d = Vertex.Distance(v, aVertex)
                 if d < tolerance:
                     return aVertex
             return None
@@ -1910,8 +2392,8 @@ class Graph:
         start = time.time()
         end = time.time() + timeLimit
         while time.time() < end and len(shortestPaths) < pathLimit:
-            gsv = nearestVertex(graph, startVertex, tolerance)
-            gev = nearestVertex(graph, endVertex, tolerance)
+            gsv = nearestVertex(graph, vertexA, tolerance)
+            gev = nearestVertex(graph, vertexB, tolerance)
             if (graph != None):
                 wire = graph.ShortestPath(gsv,gev,vertexKey,edgeKey) # Find the first shortest path
                 wireVertices = []
@@ -1933,69 +2415,74 @@ class Graph:
         return shortestPaths
     
     @staticmethod
-    def GraphTopologicalDistance(graph, vertexA, vertexB, tolerance=0.0001):
+    def TopologicalDistance(graph, vertexA, vertexB, tolerance=0.0001):
         """
+        Description
+        -----------
+        Returns the topological distance between the input vertices. See https://en.wikipedia.org/wiki/Distance_(graph_theory).
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertexA : TYPE
-            DESCRIPTION.
-        vertexB : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        graph : topologic.Graph
+            The input graph.
+        vertexA : topologic.Vertex
+            The first input vertex.
+        vertexB : topologic.Vertex
+            The second input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        int
+            The topological distance between the input vertices.
 
         """
-        # graph = item[0]
-        # vertexA = item[1]
-        # vertexB = item[2]
-        # tolerance = item[3]
         return graph.TopologicalDistance(vertexA, vertexB, tolerance)
     
     @staticmethod
-    def GraphTopology(item):
+    def Topology(graph):
         """
+        Description
+        -----------
+        Returns the topology (cluster) of the input graph
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Cluster
+            The topology of the input graph.
 
         """
-        return item.Topology()
+        return graph.Topology()
     
     @staticmethod
-    def GraphTree(graph, rootVertex, xSpacing, ySpacing):
+    def Tree(graph, vertex=None, tolerance=0.0001):
         """
+        Description
+        -----------
+        Creates a tree graph version of the input graph rooted at the input vertex.
+
         Parameters
         ----------
-        graph : TYPE
+        graph : topologic.Graph
             DESCRIPTION.
-        rootVertex : TYPE
-            DESCRIPTION.
-        xSpacing : TYPE
-            DESCRIPTION.
-        ySpacing : TYPE
-            DESCRIPTION.
+        vertex : topologic.Vertex , optional
+            The input root vertex. If not set, the first vertex in the graph is set as the root vertex. The default is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Graph
+            The tree graph version of the input graph.
 
         """
-        # graph, rootVertex, xSpacing, ySpacing = item
-        
+        from topologicpy.Vertex import Vertex
         def vertexInList(vertex, vertexList):
             if vertex and vertexList:
                 if isinstance(vertex, topologic.Vertex) and isinstance(vertexList, list):
@@ -2006,7 +2493,7 @@ class Graph:
                                     return True
             return False
 
-        def getChildren(vertex, parent, graph, masterVertexList):
+        def getChildren(vertex, parent, graph, vertices):
             children = []
             adjVertices = []
             if vertex:
@@ -2015,213 +2502,86 @@ class Graph:
                 return adjVertices
             else:
                 for aVertex in adjVertices:
-                    if (not vertexInList(aVertex, [parent])) and (not vertexInList(aVertex, masterVertexList)):
+                    if (not vertexInList(aVertex, [parent])) and (not vertexInList(aVertex, vertices)):
                         children.append(aVertex)
             return children
         
-        def buildTree(vertex, parent, graph, masterVertexList, masterEdgeList, level):
-            if not vertexInList(vertex, masterVertexList):
-                masterVertexList.append(vertex)
+        def buildTree(graph, dictionary, vertex, parent, tolerance=0.0001):
+            vertices = dictionary['vertices']
+            edges = dictionary['edges']
+            if not vertexInList(vertex, vertices):
+                vertices.append(vertex)
+                if parent:
+                    edges.append(Graph.Edge(graph, parent, vertex, tolerance))
             if parent == None:
                 parent = vertex
-            children = getChildren(vertex, parent, graph, masterVertexList)
-            width = 1
-            for aVertex in children:
-                v = buildTree(aVertex, vertex, graph, masterVertexList, masterEdgeList, level+1)
-                d = v.GetDictionary()
-                w = d.ValueAtKey("TOPOLOGIC_width").IntValue()
-                width = width + w
-                if v:
-                    vertex = vertex.AddContents([v], 0)
-            top_d = vertex.GetDictionary()
-            top_d = Dictionary.DictionarySetValueAtKey(top_d, "TOPOLOGIC_width", width)
-            top_d = Dictionary.DictionarySetValueAtKey(top_d, "TOPOLOGIC_depth", level)
-            vertex.SetDictionary(top_d)
-            return vertex
+            children = getChildren(vertex, parent, graph, vertices)
+            dictionary['vertices'] = vertices
+            dictionary['edges'] = edges
+            for child in children:
+                dictionary = buildTree(graph, dictionary, child, vertex, tolerance)
+            return dictionary
         
-        def buildGraph(vertex, parent, xSpacing, ySpacing, xStart, vertexMasterList, edgeMasterList):
-            d = vertex.GetDictionary()
-            width = d.ValueAtKey("TOPOLOGIC_width").IntValue()
-            depth = d.ValueAtKey("TOPOLOGIC_depth").IntValue()
-            
-            xLoc = xStart + 0.5*(width-1)*xSpacing
-            yLoc = depth*ySpacing
-            newVertex = topologic.Vertex.ByCoordinates(xLoc, yLoc, 0)
-            newVertex.SetDictionary(vertex.GetDictionary())
-            vertexMasterList.append(newVertex)
-            if parent:
-                e = topologic.Edge.ByStartVertexEndVertex(parent, newVertex)
-                edgeMasterList.append(e)
-            children = []
-            _ = vertex.Contents(children)
-            for aChild in children:
-                d = aChild.GetDictionary()
-                childWidth = d.ValueAtKey("TOPOLOGIC_width").IntValue()
-                vertexMasterList, edgeMasterList = buildGraph(aChild, newVertex, xSpacing, ySpacing, xStart, vertexMasterList, edgeMasterList)
-                xStart = xStart + childWidth*xSpacing
-            return [vertexMasterList, edgeMasterList]
-        
-        v = None
-        if graph != None and rootVertex != None:
-            v = buildTree(rootVertex, None, graph, [], 0)
-        else:
+        if not isinstance(graph, topologic.Graph):
             return None
-        d = v.GetDictionary()
-        width = d.ValueAtKey("TOPOLOGIC_width").IntValue()
-        xStart = -width*xSpacing
-        vList, eList = buildGraph(v, None, xSpacing, ySpacing, xStart, [], [])
-        return topologic.Graph.ByVerticesEdges(vList, eList)
+        if not isinstance(vertex, topologic.Vertex):
+            vertex = Graph.Vertices(graph)[0]
+        else:
+            vertex = Graph.NearestVertex(graph, vertex)
+        dictionary = {'vertices':[], 'edges':[]}
+        dictionary = buildTree(graph, dictionary, vertex, None, tolerance)
+        return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'])
     
     @staticmethod
-    def GraphVertexDegree(graph, vertices):
+    def VertexDegree(graph, vertex):
         """
+        Description
+        -----------
+        Returns the degree of the input vertex. See https://en.wikipedia.org/wiki/Degree_(graph_theory).
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
-        vertices : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
+        vertices : topologic.Vertex
+            The input vertex.
 
         Returns
         -------
-        returnList : TYPE
-            DESCRIPTION.
+        int
+            The degree of the input vertex.
 
         """
-        # graph = item[0]
-        # vertices = item[1]
-        if isinstance(vertices, list) == False:
-            vertices = [vertices]
-        returnList = []
-        for aVertex in vertices:
-            returnList.append(graph.VertexDegree(aVertex))
-        return returnList
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        return graph.VertexDegree(vertex)
     
     @staticmethod
-    def GraphVertices(graph):
+    def Vertices(graph):
         """
+        Description
+        -----------
+        Returns the list of vertices in the input graph.
+
         Parameters
         ----------
-        graph : TYPE
-            DESCRIPTION.
+        graph : topologic.Graph
+            The input graph.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        list
+            The list of vertices in the input graph.
 
         """
+        if not isinstance(graph, topologic.Graph):
+            return None
         vertices = []
         if graph:
             try:
                 _ = graph.Vertices(vertices)
             except:
-                print("ERROR: (Topologic>Graph.Vertices) operation failed. Returning None.")
-                vertices = None
-        if vertices:
-            return vertices
-        else:
-            return []
-    
-    @staticmethod
-    def GraphVerticesAtKeyValue(vertexList, key, value):
-        """
-        Parameters
-        ----------
-        vertexList : TYPE
-            DESCRIPTION.
-        key : TYPE
-            DESCRIPTION.
-        value : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        returnVertices : TYPE
-            DESCRIPTION.
-
-        """
-        # key = item[0]
-        # value = item[1]
-        
-        def listAttributeValues(listAttribute):
-            listAttributes = listAttribute.ListValue()
-            returnList = []
-            for attr in listAttributes:
-                if isinstance(attr, IntAttribute):
-                    returnList.append(attr.IntValue())
-                elif isinstance(attr, DoubleAttribute):
-                    returnList.append(attr.DoubleValue())
-                elif isinstance(attr, StringAttribute):
-                    returnList.append(attr.StringValue())
-            return returnList
-
-        def valueAtKey(item, key):
-            try:
-                attr = item.ValueAtKey(key)
-            except:
-                raise Exception("Dictionary.ValueAtKey - Error: Could not retrieve a Value at the specified key ("+key+")")
-            if isinstance(attr, topologic.IntAttribute):
-                return (attr.IntValue())
-            elif isinstance(attr, topologic.DoubleAttribute):
-                return (attr.DoubleValue())
-            elif isinstance(attr, topologic.StringAttribute):
-                return (attr.StringValue())
-            elif isinstance(attr, topologic.ListAttribute):
-                return (listAttributeValues(attr))
-            else:
-                return None
-
-        if isinstance(value, list):
-            value.sort()
-        returnVertices = []
-        for aVertex in vertexList:
-            d = aVertex.GetDictionary()
-            v = valueAtKey(d, key)
-            if isinstance(v, list):
-                v.sort()
-            if str(v) == str(value):
-                returnVertices.append(aVertex)
-        return returnVertices
-    
-    @staticmethod
-    def GraphVisibilityGraph(cluster):
-        """
-        Parameters
-        ----------
-        cluster : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        graph : TYPE
-            DESCRIPTION.
-
-        """
-        wires = []
-        _ = cluster.Wires(None, wires)
-        polys = []
-        for aWire in wires:
-            vertices = []
-            _ = aWire.Vertices(None, vertices)
-            poly = []
-            for v in vertices:
-                p = vg.Point(round(v.X(),4),round(v.Y(),4), 0)
-                poly.append(p)
-            polys.append(poly)
-        g = vg.VisGraph()
-        g.build(polys)
-        tpEdges = []
-        vgEdges = g.visgraph.get_edges()
-        for vgEdge in vgEdges:
-            sv = topologic.Vertex.ByCoordinates(vgEdge.p1.x, vgEdge.p1.y,0)
-            ev = topologic.Vertex.ByCoordinates(vgEdge.p2.x, vgEdge.p2.y,0)
-            tpEdges.append(topologic.Edge.ByStartVertexEndVertex(sv, ev))
-        tpVertices = []
-        vgPoints = g.visgraph.get_points()
-        for vgPoint in vgPoints:
-            v = topologic.Vertex.ByCoordinates(vgPoint.x, vgPoint.y,0)
-            tpVertices.append(v)
-        graph = topologic.Graph(tpVertices, tpEdges)
-        return graph
-    
+                vertices = []
+        return vertices
