@@ -461,9 +461,6 @@ class Face(topologic.Face):
             return None
         if not Wire.IsClosed(wire):
             return None
-        edges = Wire.Edges(wire)
-        random.shuffle(edges)
-        wire = Wire.ByEdges(edges)
         f = topologic.Face.ByExternalBoundary(wire)
         return f
 
@@ -787,7 +784,39 @@ class Face(topologic.Face):
         if not isinstance(face, topologic.Face):
             return None
         return topologic.FaceUtility.InternalVertex(face, tolerance)
-    
+
+    @staticmethod
+    def Invert(face):
+        """
+        Description
+        ----------
+        Creates a face that is an inversion (mirror) of the input face.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+
+        Returns
+        -------
+        topologic.Face
+            The inverted face.
+
+        """
+        from topologicpy.Wire import Wire
+        if not isinstance(face, topologic.Face):
+            return None
+        eb = Face.ExternalBoundary(face)
+        vertices = Wire.Vertices(eb)
+        reversed_vertices = vertices[::-1]
+        inverted_wire = Wire.ByVertices(reversed_vertices)
+        internal_boundaries = Face.InternalBoundaries(face)
+        if not internal_boundaries:
+            inverted_face = Face.ByWire(inverted_wire)
+        else:
+            inverted_face = Face.ByWires(inverted_wire, internal_boundaries)
+        return inverted_face
+
     @staticmethod
     def IsCoplanar(faceA, faceB, tolerance=0.0001):
         """
@@ -862,7 +891,7 @@ class Face(topologic.Face):
         face : topologic.Face
             The input face.
         u : float , optional
-            THe *u* parameter at which to compute the normal to the input face. The default is 0.5.
+            The *u* parameter at which to compute the normal to the input face. The default is 0.5.
         v : float , optional
             The *v* parameter at which to compute the normal to the input face. The default is 0.5.
         outputType : string , optional

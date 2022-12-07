@@ -1,85 +1,108 @@
 import topologic
-from py2neo.data import spatial as sp
 import time
+import random
+
 try:
     import py2neo
+    from py2neo import NodeMatcher,RelationshipMatcher
+    from py2neo.data import spatial as sp
 except:
     raise Exception("Error: Could not import py2neo.")
 
 class Neo4jGraph:
+
     @staticmethod
-    def listAttributeValues(listAttribute):
+    def ExportToGraph(neo4jGraph):
         """
+        Description
+        -----------
+        Creates a vertex at the coordinates specified by the x, y, z inputs.
+
         Parameters
         ----------
-        listAttribute : TYPE
+        neo4jGraph : TYPE
             DESCRIPTION.
 
         Returns
         -------
-        returnList : TYPE
+        TYPE
             DESCRIPTION.
 
         """
-        listAttributes = listAttribute.ListValue()
-        returnList = []
-        for attr in listAttributes:
-            if isinstance(attr, topologic.IntAttribute):
-                returnList.append(attr.IntValue())
-            elif isinstance(attr, topologic.DoubleAttribute):
-                returnList.append(attr.DoubleValue())
-            elif isinstance(attr, topologic.StringAttribute):
-                returnList.append(attr.StringValue())
-        return returnList
-    
-    @staticmethod
-    def getKeysAndValues(item):
-        """
-        Parameters
-        ----------
-        item : TYPE
-            DESCRIPTION.
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Graph import Graph
 
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
-
-        Returns
-        -------
-        list
-            DESCRIPTION.
-
-        """
-        keys = item.Keys()
-        returnList = []
-        for key in keys:
-            try:
-                attr = item.ValueAtKey(key)
-            except:
-                raise Exception("Dictionary.Values - Error: Could not retrieve a Value at the specified key ("+key+")")
-            if isinstance(attr, topologic.IntAttribute):
-                returnList.append(attr.IntValue())
-            elif isinstance(attr, topologic.DoubleAttribute):
-                returnList.append(attr.DoubleValue())
-            elif isinstance(attr, topologic.StringAttribute):
-                returnList.append(attr.StringValue())
-            elif isinstance(attr, topologic.ListAttribute):
-                returnList.append(Neo4jGraph.listAttributeValues(attr))
+        def randomVertex(vertices, minDistance):
+            flag = True
+            while flag:
+                x = random.uniform(0, 1000)
+                y = random.uniform(0, 1000)
+                z = random.uniform(0, 1000)
+                v = Vertex.ByCoordinates(x, y, z)
+                test = False
+                if len(vertices) < 1:
+                    return v
+                for vertex in vertices:
+                    d = Vertex.Distance(v, vertex)
+                    if d < minDistance:
+                        test = True
+                        break
+                if test == False:
+                    return v
+                else:
+                    continue
+        
+        node_labels =  neo4jGraph.schema.node_labels
+        relationship_types = neo4jGraph.schema.relationship_types
+        node_matcher = NodeMatcher(neo4jGraph)
+        relationship_matcher = RelationshipMatcher(neo4jGraph)
+        vertices = []
+        edges = []
+        nodes = []
+        for node_label in node_labels:
+            nodes = nodes + (list(node_matcher.match(node_label)))
+        for node in nodes:
+            #Check if they have X, Y, Z coordinates
+            if ('x' in node.keys()) and ('y' in node.keys()) and ('z' in node.keys()) or ('X' in node.keys()) and ('Y' in node.keys()) and ('Z' in node.keys()):
+                x = node['x']
+                y = node['y']
+                z = node['z']
+                vertex = Vertex.ByCoordinates(x, y, z)
             else:
-                returnList.append("")
-        return [keys,returnList]
-
-    @staticmethod
-    def vertexIndex(v, vertexList, tolerance):
-        for i in range(len(vertexList)):
-            d = topologic.VertexUtility.Distance(v, vertexList[i])
-            if d < tolerance:
-                return i
-        return None
+                vertex = randomVertex(vertices, 1)
+            keys = list(node.keys())
+            values = []
+            for key in keys:
+                values.append(node[key])
+            d = Dictionary.ByKeysValues(keys, values)
+            _ = Topology.SetDictionary(vertex, d)
+            vertices.append(vertex)
+        for node in nodes:
+            for relationship_type in relationship_types:
+                relationships = list(relationship_matcher.match([node], r_type=relationship_type))
+                for relationship in relationships:
+                    sv = vertices[nodes.index(relationship.start_node)]
+                    ev = vertices[nodes.index(relationship.end_node)]
+                    edge = Edge.ByVertices([sv, ev])
+                    if relationship.start_node['name']:
+                        sv_name = relationship.start_node['name']
+                    else:
+                        sv_name = 'None'
+                    if relationship.end_node['name']:
+                        ev_name = relationship.end_node['name']
+                    else:
+                        ev_name = 'None'
+                    d = Dictionary.ByKeysValues(["relationship_type", "from", "to"], [relationship_type, sv_name, ev_name])
+                    if d:
+                        _ = Topology.SetDictionary(edge, d)
+                    edges.append(edge)
+        return Graph.ByVerticesEdges(vertices,edges)
     
     @staticmethod
-    def Neo4jGraphAddTopologicGraph(neo4jGraph, topologicGraph, categoryKey, tolerance):
+    def AddTopologicGraph(neo4jGraph, topologicGraph, categoryKey, tolerance):
         """
         Parameters
         ----------
@@ -98,18 +121,16 @@ class Neo4jGraph:
             DESCRIPTION.
 
         """
+        from topologicpy.Topology import Topology
+        from topologicpy.Graph import Graph
         gmt = time.gmtime()
         timestamp =  str(gmt.tm_zone)+"_"+str(gmt.tm_year)+"_"+str(gmt.tm_mon)+"_"+str(gmt.tm_wday)+"_"+str(gmt.tm_hour)+"_"+str(gmt.tm_min)+"_"+str(gmt.tm_sec)
-        # neo4jGraph, topologicGraph, categoryKey, tolerance = item
-        vertices = []
-        _ = topologicGraph.Vertices(vertices)
-        edges = []
-        _ = topologicGraph.Edges(edges)
-        notUsed = []
+        vertices = Graph.Vertices(topologicGraph)
+        edges = Graph.Edges(topologicGraph)
         tx = neo4jGraph.begin()
         nodes = []
         for  i in range(len(vertices)):
-            vDict = vertices[i].GetDictionary()
+            vDict = Topology.GetDictionary(vertices[i])
             keys, values = Neo4jGraph.getKeysAndValues(vDict)
             keys.append("x")
             keys.append("y")
@@ -130,11 +151,6 @@ class Neo4jGraph:
             n = py2neo.Node(nodeName, **pydict)
             neo4jGraph.cypher.execute("CREATE INDEX FOR (n:%s) on (n.name)" %
                     n.nodelabel)
-            #try:
-                #neo4jGraph.cypher.execute("CREATE INDEX FOR (n:%s) on (n.name)" %
-                    #n.nodelabel)
-            #except:
-                #pass
             tx.create(n)
             nodes.append(n)
         for i in range(len(edges)):
@@ -152,7 +168,7 @@ class Neo4jGraph:
 
     
     @staticmethod
-    def Neo4jGraphByParameters(url, username, password, run):
+    def ByParameters(url, username, password, run):
         """
         Parameters
         ----------
@@ -171,13 +187,12 @@ class Neo4jGraph:
             DESCRIPTION.
 
         """
-        # url, username, password, run = item
         if not (run):
             return None
         return py2neo.Graph(url, auth=(username, password))
     
     @staticmethod
-    def Neo4jGraphDeleteAll(neo4jGraph):
+    def DeleteAll(neo4jGraph):
         """
         Parameters
         ----------
@@ -195,7 +210,7 @@ class Neo4jGraph:
         return neo4jGraph
     
     @staticmethod
-    def Neo4jGraphNodeLabels(neo4jGraph):
+    def NodeLabels(neo4jGraph):
         """
         Parameters
         ----------
@@ -208,11 +223,10 @@ class Neo4jGraph:
             DESCRIPTION.
 
         """
-        # neo4jGraph = item
         return neo4jGraph.schema.node_labels
     
     @staticmethod
-    def Neo4jGraphSetGraph(neo4jGraph, topologicGraph, labelKey, relationshipKey, bidirectional, deleteAll, run, tolerance=0.0001):
+    def SetGraph(neo4jGraph, topologicGraph, labelKey, relationshipKey, bidirectional, deleteAll, run, tolerance=0.0001):
         """
         Parameters
         ----------
@@ -240,13 +254,8 @@ class Neo4jGraph:
 
         """
         # neo4jGraph, topologicGraph, labelKey, relationshipKey, bidirectional, deleteAll, tolerance, run = item
-        
-        def getValueAtKey(d, searchString):
-            keys, values = Neo4jGraph.getKeysAndValues(d)
-            for i in range(len(keys)):
-                if keys[i].lower() == searchString.lower():
-                    return values[i]
-            return None
+        from topologicpy.Graph import Graph
+        from topologicpy.Dictionary import Dictionary
         
         if not (run):
             return None
@@ -254,16 +263,14 @@ class Neo4jGraph:
         gmt = time.gmtime()
         timestamp =  str(gmt.tm_zone)+"_"+str(gmt.tm_year)+"_"+str(gmt.tm_mon)+"_"+str(gmt.tm_wday)+"_"+str(gmt.tm_hour)+"_"+str(gmt.tm_min)+"_"+str(gmt.tm_sec)
 
-        vertices = []
-        _ = topologicGraph.Vertices(vertices)
-        edges = []
-        _ = topologicGraph.Edges(edges)
-        notUsed = []
+        vertices = Graph.Vertices(topologicGraph)
+        edges = Graph.Edges(topologicGraph)
         tx = neo4jGraph.begin()
         nodes = []
         for  i in range(len(vertices)):
             vDict = vertices[i].GetDictionary()
-            keys, values = Neo4jGraph.getKeysAndValues(vDict)
+            keys = Dictionary.Keys(vDict)
+            values = Dictionary.Values(vDict)
             keys.append("x")
             keys.append("y")
             keys.append("z")
@@ -279,7 +286,7 @@ class Neo4jGraph:
             if (labelKey == 'None') or (not (labelKey)):
                 nodeName = "TopologicGraphVertex"
             else:
-                nodeName = str(getValueAtKey(vDict, labelKey))
+                nodeName = str(Dictionary.ValueAtKey(vDict, labelKey))
             n = py2neo.Node(nodeName, **pydict)
             tx.create(n)
             nodes.append(n)
@@ -290,7 +297,7 @@ class Neo4jGraph:
             sn = nodes[Neo4jGraph.vertexIndex(sv, vertices, tolerance)]
             en = nodes[Neo4jGraph.vertexIndex(ev, vertices, tolerance)]
             ed = e.GetDictionary()
-            relationshipType = getValueAtKey(ed, relationshipKey)
+            relationshipType = Dictionary.ValueAtKey(ed, relationshipKey)
             if not (relationshipType):
                 relationshipType = "Connected To"
             snen = py2neo.Relationship(sn, relationshipType, en)

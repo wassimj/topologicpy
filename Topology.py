@@ -383,6 +383,10 @@ class Topology():
                 ap = ap + 1
             return None
 
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(apertureCluster, topologic.Cluster):
+            return None
         subTopologies = []
         if subTopologyType == "Face":
             _ = topology.Faces(None, subTopologies)
@@ -415,6 +419,8 @@ class Topology():
             The input topology with the content list added to it.
 
         """
+        if not isinstance(topology, topologic.Topology):
+            return None
         t = 0
         if targetType.lower() == "vertex":
             t = topologic.Vertex.Type()
@@ -455,137 +461,16 @@ class Topology():
 
         """
         
-        def listAttributeValues(listAttribute):
-            listAttributes = listAttribute.ListValue()
-            returnList = []
-            for attr in listAttributes:
-                if isinstance(attr, topologic.IntAttribute):
-                    returnList.append(attr.IntValue())
-                elif isinstance(attr, topologic.DoubleAttribute):
-                    returnList.append(attr.DoubleValue())
-                elif isinstance(attr, topologic.StringAttribute):
-                    returnList.append(attr.StringValue())
-            return returnList
-        
-        def getValueAtKey(item, key):
-            try:
-                attr = item.ValueAtKey(key)
-            except:
-                raise Exception("Dictionary.ValueAtKey - Error: Could not retrieve a Value at the specified key ("+key+")")
-            if isinstance(attr, topologic.IntAttribute):
-                return (attr.IntValue())
-            elif isinstance(attr, topologic.DoubleAttribute):
-                return (attr.DoubleValue())
-            elif isinstance(attr, topologic.StringAttribute):
-                return (attr.StringValue())
-            elif isinstance(attr, topologic.ListAttribute):
-                return (listAttributeValues(attr))
-            else:
-                return None
-
-        def getValues(item):
-            keys = item.Keys()
-            returnList = []
-            for key in keys:
-                try:
-                    attr = item.ValueAtKey(key)
-                except:
-                    raise Exception("Dictionary.Values - Error: Could not retrieve a Value at the specified key ("+key+")")
-                if isinstance(attr, topologic.IntAttribute):
-                    returnList.append(attr.IntValue())
-                elif isinstance(attr, topologic.DoubleAttribute):
-                    returnList.append(attr.DoubleValue())
-                elif isinstance(attr, topologic.StringAttribute):
-                    returnList.append(attr.StringValue())
-                elif isinstance(attr, topologic.ListAttribute):
-                    returnList.append(listAttributeValues(attr))
-                else:
-                    returnList.append("")
-            return returnList
-
-        def processKeysValues(keys, values):
-            if len(keys) != len(values):
-                raise Exception("DictionaryByKeysValues - Keys and Values do not have the same length")
-            stl_keys = []
-            stl_values = []
-            for i in range(len(keys)):
-                if isinstance(keys[i], str):
-                    stl_keys.append(keys[i])
-                else:
-                    stl_keys.append(str(keys[i]))
-                if isinstance(values[i], list) and len(values[i]) == 1:
-                    value = values[i][0]
-                else:
-                    value = values[i]
-                if isinstance(value, bool):
-                    if value == False:
-                        stl_values.append(topologic.IntAttribute(0))
-                    else:
-                        stl_values.append(topologic.IntAttribute(1))
-                elif isinstance(value, int):
-                    stl_values.append(topologic.IntAttribute(value))
-                elif isinstance(value, float):
-                    stl_values.append(topologic.DoubleAttribute(value))
-                elif isinstance(value, str):
-                    stl_values.append(topologic.StringAttribute(value))
-                elif isinstance(value, list):
-                    l = []
-                    for v in value:
-                        if isinstance(v, bool):
-                            l.append(topologic.IntAttribute(v))
-                        elif isinstance(v, int):
-                            l.append(topologic.IntAttribute(v))
-                        elif isinstance(v, float):
-                            l.append(topologic.DoubleAttribute(v))
-                        elif isinstance(v, str):
-                            l.append(topologic.StringAttribute(v))
-                    stl_values.append(topologic.ListAttribute(l))
-                else:
-                    raise Exception("Error: Value type is not supported. Supported types are: Boolean, Integer, Double, String, or List.")
-            myDict = topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
-            return myDict
-        
-        def mergeDictionaries(sources):
-            sinkKeys = []
-            sinkValues = []
-            d = sources[0]
-            if d != None:
-                stlKeys = d.Keys()
-                if len(stlKeys) > 0:
-                    sinkKeys = d.Keys()
-                    sinkValues = getValues(d)
-                for i in range(1,len(sources)):
-                    d = sources[i]
-                    if d == None:
-                        continue
-                    stlKeys = d.Keys()
-                    if len(stlKeys) > 0:
-                        sourceKeys = d.Keys()
-                        for aSourceKey in sourceKeys:
-                            if aSourceKey not in sinkKeys:
-                                sinkKeys.append(aSourceKey)
-                                sinkValues.append("")
-                        for i in range(len(sourceKeys)):
-                            index = sinkKeys.index(sourceKeys[i])
-                            sourceValue = getValueAtKey(d,sourceKeys[i])
-                            if sourceValue != None:
-                                if sinkValues[index] != "":
-                                    if isinstance(sinkValues[index], list):
-                                        sinkValues[index].append(sourceValue)
-                                    else:
-                                        sinkValues[index] = [sinkValues[index], sourceValue]
-                                else:
-                                    sinkValues[index] = sourceValue
-            if len(sinkKeys) > 0 and len(sinkValues) > 0:
-                newDict = processKeysValues(sinkKeys, sinkValues)
-                return newDict
+        from topologicpy.Dictionary import Dictionary
+        if not isinstance(topology, topologic.Topology):
             return None
-
+        if not isinstance(dictionary, topologic.Dictionary):
+            return None
         tDict = topology.GetDictionary()
         if len(tDict.Keys()) < 1:
             _ = topology.SetDictionary(dictionary)
         else:
-            newDict = mergeDictionaries([tDict, dictionary])
+            newDict = Dictionary.ByMergedDictionaries([tDict, dictionary])
             if newDict:
                 _ = topology.SetDictionary(newDict)
         return topology
@@ -3466,6 +3351,8 @@ class Topology():
             d = (- a * v1.X() - b * v1.Y() - c * v1.Z())
             return [a,b,c,d]
 
+        if not isinstance(topology, topologic.Topology):
+            return None
         vertices = []
         _ = topology.Vertices(None, vertices)
 
@@ -4722,6 +4609,8 @@ class Topology():
         # x = item[1]
         # y = item[2]
         # z = item[3]
+        if not isinstance(topology, topologic.Topology):
+            return None
         return topologic.TopologyUtility.Translate(topology, x, y, z)
 
     
@@ -4756,7 +4645,8 @@ class Topology():
                     continue
             faceTriangles.append(face)
             return faceTriangles
-        
+        if not isinstance(topology, topologic.Topology):
+            return None
         t = topology.Type()
         if (t == 1) or (t == 2) or (t == 4) or (t == 128):
             return topology

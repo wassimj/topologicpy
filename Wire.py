@@ -169,6 +169,7 @@ class Wire(topologic.Wire):
             The created wire.
 
         """
+        from topologicpy.Cluster import Cluster
         if not isinstance(vertices, list):
             return None
         vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
@@ -195,7 +196,9 @@ class Wire(topologic.Wire):
                 pass
         if len(edges) < 1:
             return None
-        return Wire.ByEdges(edges)
+        #return Wire.ByEdges(edges)
+        c = Cluster.ByTopologies(edges)
+        return Cluster.SelfMerge(c)
 
     @staticmethod
     def ByVerticesCluster(cluster, close=True):

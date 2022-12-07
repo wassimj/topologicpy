@@ -120,9 +120,9 @@ class Vertex(Topology):
             The input vertex.
         topology : topologic.Topology
             The input topology.
-        exclusive : boolean, optional
+        exclusive : boolean , optional
             If set to True, return only the first found enclosing cell. The default is True.
-        tolerance : float, optional
+        tolerance : float , optional
             The tolerance for computing if the input vertex is enclosed in a cell. The default is 0.0001.
 
         Returns
@@ -164,6 +164,46 @@ class Vertex(Topology):
                         enclosingCells.append(cells[i])
         return enclosingCells
 
+    @staticmethod
+    def Index(vertex, vertices, strict=False, tolerance=0.0001):
+        """
+        Description
+        -----------
+        Returns index of the input vertex in the input list of vertices
+
+        Parameters
+        ----------
+        vertex : topologic.Vertex
+            The input vertex.
+        vertices : list
+            The input list of vertices.
+        strict : bool , optional
+            If set to True, the vertex must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. The default is False.
+        tolerance : float , optional
+            The tolerance for computing if the input vertex is enclosed in a cell. The default is 0.0001.
+
+        Returns
+        -------
+        int
+            The index of the input vertex in the input list of vertices.
+
+        """
+        from topologicpy.Topology import Topology
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        if not isinstance(vertices, list):
+            return None
+        new_vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if not len(new_vertices) == len(vertices):
+            return None
+        for i in range(len(vertices)):
+            if strict:
+                if Topology.IsSame(vertex, vertices[i]):
+                    return i
+            else:
+                if Vertex.Distance(vertex, vertices[i]) < tolerance:
+                    return i
+        return None
     
     @staticmethod
     def NearestVertex(vertex, topology, useKDTree=True):

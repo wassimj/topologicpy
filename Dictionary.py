@@ -90,6 +90,8 @@ class Dictionary(topologic.Dictionary):
                 stl_values.append(topologic.ListAttribute(l))
             else:
                 return None
+        print("STL keys", stl_keys)
+        print("STL values", stl_values)
         return topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
     
     @staticmethod
@@ -241,7 +243,7 @@ class Dictionary(topologic.Dictionary):
         """
         if isinstance(dictionary, dict):
             return list(dictionary.keys())
-        elif isinstance(dictionary, Dictionary):
+        elif isinstance(dictionary, topologic.Dictionary):
             return dictionary.Keys()
         else:
             return None
@@ -292,9 +294,21 @@ class Dictionary(topologic.Dictionary):
             return None
     
     @staticmethod
-    def _listAttributeValues(listAttribute):
+    def ListAttributeValues(listAttribute):
         """
-        Returns the list of values embedded in the input listAttribute
+        Description
+        __________
+            Returns the list of values embedded in the input listAttribute.
+
+        Parameters
+        ----------
+        listAttribute : listAttribute
+            The input list attribute.
+ 
+        Returns
+        -------
+        list
+            The list of values found in the input list attribute
 
         """
         listAttributes = listAttribute.ListValue()
@@ -344,11 +358,11 @@ class Dictionary(topologic.Dictionary):
         elif isinstance(attr, StringAttribute):
             return (attr.StringValue())
         elif isinstance(attr, ListAttribute):
-            return (Dictionary.listAttributeValues(attr))
+            return (Dictionary.ListAttributeValues(attr))
         elif isinstance(attr, float) or isinstance(attr, int) or isinstance(attr, str):
             return attr
         elif isinstance(attr, list):
-            return Dictionary.listAttributeValues(attr)
+            return Dictionary.ListAttributeValues(attr)
         elif isinstance(attr, dict):
             return attr
         else:
@@ -374,31 +388,31 @@ class Dictionary(topologic.Dictionary):
         """
         if isinstance(dictionary, dict):
             keys = dictionary.keys()
-        elif isinstance(dictionary, Dictionary):
+        elif isinstance(dictionary, topologic.Dictionary):
             keys = dictionary.Keys()
         returnList = []
         for key in keys:
             try:
                 if isinstance(dictionary, dict):
                     attr = dictionary[key]
-                elif isinstance(dictionary, Dictionary):
+                elif isinstance(dictionary, topologic.Dictionary):
                     attr = dictionary.ValueAtKey(key)
                 else:
                     attr = None
             except:
                 return None
-            if isinstance(attr, IntAttribute):
+            if isinstance(attr, topologic.IntAttribute):
                 returnList.append(attr.IntValue())
-            elif isinstance(attr, DoubleAttribute):
+            elif isinstance(attr, topologic.DoubleAttribute):
                 returnList.append(attr.DoubleValue())
-            elif isinstance(attr, StringAttribute):
+            elif isinstance(attr, topologic.StringAttribute):
                 returnList.append(attr.StringValue())
-            elif isinstance(attr, ListAttribute):
-                returnList.append(Dictionary.listAttributeValues(attr))
+            elif isinstance(attr, topologic.ListAttribute):
+                returnList.append(Dictionary.ListAttributeValues(attr))
             elif isinstance(attr, float) or isinstance(attr, int) or isinstance(attr, str):
                 returnList.append(attr)
             elif isinstance(attr, list):
-                returnList.append(Dictionary.listAttributeValues(attr))
+                returnList.append(Dictionary.ListAttributeValues(attr))
             else:
                 returnList.append("")
         return returnList
