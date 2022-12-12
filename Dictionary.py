@@ -33,9 +33,7 @@ class Dictionary(topologic.Dictionary):
     @staticmethod
     def ByKeysValues(keys, values):
         """
-        Description
-        __________
-            Creates a Dictionary from the input list of keys and the input list of values.
+        Creates a Dictionary from the input list of keys and the input list of values.
 
         Parameters
         ----------
@@ -90,16 +88,12 @@ class Dictionary(topologic.Dictionary):
                 stl_values.append(topologic.ListAttribute(l))
             else:
                 return None
-        print("STL keys", stl_keys)
-        print("STL values", stl_values)
         return topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
     
     @staticmethod
     def ByMergedDictionaries(dictionaries):
         """
-        Description
-        __________
-            Creates a dictionary by merging the list of input dictionaries.
+        Creates a dictionary by merging the list of input dictionaries.
 
         Parameters
         ----------
@@ -226,9 +220,7 @@ class Dictionary(topologic.Dictionary):
     @staticmethod
     def Keys(dictionary):
         """
-        Description
-        __________
-            Returns the keys of the input dictionary.
+        Returns the keys of the input dictionary.
 
         Parameters
         ----------
@@ -251,9 +243,7 @@ class Dictionary(topologic.Dictionary):
     @staticmethod
     def SetValueAtKey(dictionary, key, value):
         """
-        Description
-        __________
-            Creates a key/value pair in the input dictionary.
+        Creates a key/value pair in the input dictionary.
 
         Parameters
         ----------
@@ -296,9 +286,7 @@ class Dictionary(topologic.Dictionary):
     @staticmethod
     def ListAttributeValues(listAttribute):
         """
-        Description
-        __________
-            Returns the list of values embedded in the input listAttribute.
+        Returns the list of values embedded in the input listAttribute.
 
         Parameters
         ----------
@@ -327,9 +315,7 @@ class Dictionary(topologic.Dictionary):
     @staticmethod
     def ValueAtKey(dictionary, key):
         """
-        Description
-        __________
-            Returns the value of the input key in the input dictionary.
+        Returns the value of the input key in the input dictionary.
 
         Parameters
         ----------
@@ -371,9 +357,7 @@ class Dictionary(topologic.Dictionary):
     @staticmethod
     def Values(dictionary):
         """
-        Description
-        __________
-            Returns the list of values in the input dictionary.
+        Returns the list of values in the input dictionary.
 
         Parameters
         ----------

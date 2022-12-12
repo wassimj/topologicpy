@@ -7,33 +7,31 @@ class CellComplex(topologic.CellComplex):
     def Box(origin=None, width=1, length=1, height=1, uSides=2, vSides=2, wSides=2,
                          dirX=0, dirY=0, dirZ=1, placement="center"):
         """
-        Description
-        ----------
         Creates a box with internal cells.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The origin location of the box. The default is None which results in the box being placed at (0,0,0).
-        width : float, optional
+        width : float , optional
             The width of the box. The default is 1.
-        length : float, optional
+        length : float , optional
             The length of the box. The default is 1.
-        height : float, optional
+        height : float , optional
             The height of the box.
-        uSides : int, optional
+        uSides : int , optional
             The number of sides along the width. The default is 1.
         vSides : int, optional
             The number of sides along the length. The default is 1.
-        wSides : int, optional
+        wSides : int , optional
             The number of sides along the height. The default is 1.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the box. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the box. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the box. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
 
         Returns
@@ -47,15 +45,13 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def ByCells(cells, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cellcomplex by merging the input cells.
 
         Parameters
         ----------
         cells : topologic.Cell
             The input cells.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -91,15 +87,13 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def ByCellsCluster(cluster, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cellcomplex by merging the cells within the input cluster.
 
         Parameters
         ----------
         cluster : topologic.Cluster
             The input cluster of cells.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -119,15 +113,13 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def ByFaces(faces, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cellcomplex by merging the input faces.
 
         Parameters
         ----------
         faces : topologic.Face
             The input faces.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -169,15 +161,13 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def ByFacesCluster(cluster, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cellcomplex by merging the faces within the input cluster.
 
         Parameters
         ----------
         cluster : topologic.Cluster
             The input cluster of faces.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -197,8 +187,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def ByWires(wires, triangulate=True, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cellcomplex by lofting through the input wires.
 
         Parameters
@@ -207,7 +195,7 @@ class CellComplex(topologic.CellComplex):
             The input wires.
         triangulate : bool , optional
             If set to True, the faces will be triangulated. The default is True.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -289,8 +277,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def ByWiresCluster(cluster, triangulate=True, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cellcomplex by lofting through the wires in the input cluster.
 
         Parameters
@@ -299,7 +285,7 @@ class CellComplex(topologic.CellComplex):
             The input cluster of wires.
         triangulate : bool , optional
             If set to True, the faces will be triangulated. The default is True.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -319,8 +305,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def Cells(cellComplex):
         """
-        Description
-        __________
         Returns the cells of the input cellComplex.
 
         Parameters
@@ -343,8 +327,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def Decompose(cellComplex, tiltAngle=10, tolerance=0.0001):
         """
-        Description
-        __________
         Decomposes the input cellComplex into its logical components. This method assumes that the positive Z direction is UP.
 
         Parameters
@@ -489,8 +471,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def Edges(cellComplex):
         """
-        Description
-        __________
         Returns the edges of the input cellComplex.
 
         Parameters
@@ -513,8 +493,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def ExternalBoundary(cellComplex):
         """
-        Description
-        __________
         Returns the external boundary (cell) of the input cellComplex.
 
         Parameters
@@ -533,8 +511,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def Faces(cellComplex):
         """
-        Description
-        __________
         Returns the faces of the input cellComplex.
 
         Parameters
@@ -557,8 +533,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def InternalBoundary(cellComplex):
         """
-        Description
-        __________
         Returns the internal boundaries (faces) of the input cellComplex.
 
         Parameters
@@ -579,8 +553,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def NonManifoldFaces(cellComplex):
         """
-        Description
-        __________
         Returns the non-manifold faces of the input cellComplex.
 
         Parameters
@@ -602,33 +574,31 @@ class CellComplex(topologic.CellComplex):
     def Prism(origin=None, width=1, length=1, height=1, uSides=2, vSides=2, wSides=2,
                          dirX=0, dirY=0, dirZ=1, placement="center"):
         """
-        Description
-        ----------
         Creates a prismatic cellComplex with internal cells.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The origin location of the prism. The default is None which results in the prism being placed at (0,0,0).
-        width : float, optional
+        width : float , optional
             The width of the prism. The default is 1.
-        length : float, optional
+        length : float , optional
             The length of the prism. The default is 1.
-        height : float, optional
+        height : float , optional
             The height of the prism.
-        uSides : int, optional
+        uSides : int , optional
             The number of sides along the width. The default is 1.
-        vSides : int, optional
+        vSides : int , optional
             The number of sides along the length. The default is 1.
-        wSides : int, optional
+        wSides : int , optional
             The number of sides along the height. The default is 1.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the prism. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the prism. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the prism. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
 
         Returns
@@ -694,8 +664,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def Shells(cellComplex):
         """
-        Description
-        __________
         Returns the shells of the input cellComplex.
 
         Parameters
@@ -718,8 +686,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def Vertices(cellComplex):
         """
-        Description
-        __________
         Returns the vertices of the input cellComplex.
 
         Parameters
@@ -742,8 +708,6 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def Wires(cellComplex):
         """
-        Description
-        __________
         Returns the wires of the input cellComplex.
 
         Parameters

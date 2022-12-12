@@ -4,8 +4,6 @@ class Cluster(topologic.Cluster):
     @staticmethod
     def ByTopologies(topologies):
         """
-        Description
-        -----------
         Creates a topologic Cluster from the input list of topologies.
 
         Parameters
@@ -26,8 +24,6 @@ class Cluster(topologic.Cluster):
     @staticmethod
     def CellComplexes(cluster):
         """
-        Description
-        __________
         Returns the cellComplexes of the input cluster.
 
         Parameters
@@ -50,8 +46,6 @@ class Cluster(topologic.Cluster):
     @staticmethod
     def Cells(cluster):
         """
-        Description
-        __________
         Returns the cells of the input cluster.
 
         Parameters
@@ -74,8 +68,6 @@ class Cluster(topologic.Cluster):
     @staticmethod
     def Edges(cluster):
         """
-        Description
-        __________
         Returns the edges of the input cluster.
 
         Parameters
@@ -98,8 +90,6 @@ class Cluster(topologic.Cluster):
     @staticmethod
     def Faces(cluster):
         """
-        Description
-        __________
         Returns the faces of the input cluster.
 
         Parameters
@@ -122,8 +112,6 @@ class Cluster(topologic.Cluster):
     @staticmethod
     def MysticRose(wire=None, origin=None, radius=1, sides=16, perimeter=True, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a mystic rose.
 
         Parameters
@@ -179,8 +167,6 @@ class Cluster(topologic.Cluster):
     @staticmethod
     def Shells(cluster):
         """
-        Description
-        __________
         Returns the shells of the input cluster.
 
         Parameters
@@ -203,8 +189,6 @@ class Cluster(topologic.Cluster):
     @staticmethod
     def Vertices(cluster):
         """
-        Description
-        __________
         Returns the vertices of the input cluster.
 
         Parameters
@@ -227,8 +211,6 @@ class Cluster(topologic.Cluster):
     @staticmethod
     def Wires(cluster):
         """
-        Description
-        __________
         Returns the wires of the input cluster.
 
         Parameters

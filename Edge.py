@@ -7,8 +7,6 @@ class Edge():
     @staticmethod
     def Angle(edgeA, edgeB, mantissa=4, bracket=False):
         """
-        Description
-        -----------
         Returns the angle in degrees between the two input edges.
 
         Parameters
@@ -17,7 +15,7 @@ class Edge():
             The first input edge.
         edgeB : topologic Edge
             The second input edge.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
         bracket : bool
             If set to True, the returned angle is bracketed between 0 and 180. The default is False.
@@ -42,8 +40,6 @@ class Edge():
     @staticmethod
     def Bisect(edgeA, edgeB, length=1.0, placement=0, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a bisecting edge between edgeA and edgeB.
 
         Parameters
@@ -52,15 +48,15 @@ class Edge():
             The first topologic Edge.
         edgeB : topologic Edge
             The second topologic Edge.
-        length : float, optional
+        length : float , optional
             The desired length of the bisecting edge. The default is 1.0.
-        placement : int, optional
+        placement : int , optional
             The desired placement of the bisecting edge.
             If set to 0, the bisecting edge centroid will be placed at the end vertex of the first edge.
             If set to 1, the bisecting edge start vertex will be placed at the end vertex of the first edge.
             If set to 2, the bisecting edge end vertex will be placed at the end vertex of the first edge.
             If set to any number other than 0, 1, or 2, the bisecting edge centroid will be placed at the end vertex of the first edge. The default is 0.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance to decide if an Edge can be created. The default is 0.0001.
 
         Returns
@@ -97,8 +93,6 @@ class Edge():
     @staticmethod
     def ByStartVertexEndVertex(vertexA, vertexB, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a straight edge that connects the input vertices.
 
         Parameters
@@ -107,7 +101,7 @@ class Edge():
             The first input vertex. This is considered the start vertex.
         vertexB : toopologic.Vertex
             The second input vertex. This is considered the end vertex.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance to decide if an Edge can be created. The default is 0.0001.
 
         Returns
@@ -134,15 +128,13 @@ class Edge():
     @staticmethod
     def ByVertices(vertices, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a straight edge that connects the input list of vertices.
 
         Parameters
         ----------
         vertices : list
             The input list of vertices. The first item is considered the start vertex and the last item is considered the end vertex.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance to decide if an edge can be created. The default is 0.0001.
 
         Returns
@@ -161,15 +153,13 @@ class Edge():
     @staticmethod
     def ByVerticesCluster(cluster, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a straight edge that connects the input cluster of vertices.
 
         Parameters
         ----------
         cluster : topologic.Cluster
             The input cluster of vertices. The first item is considered the start vertex and the last item is considered the end vertex.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance to decide if an edge can be created. The default is 0.0001.
 
         Returns
@@ -190,15 +180,13 @@ class Edge():
     @staticmethod
     def Direction(edge, mantissa=4):
         """
-        Description
-        -----------
         Returns the direction of the input edge.
 
         Parameters
         ----------
         edge : topologic.Edge
             The input edge.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns
@@ -223,8 +211,6 @@ class Edge():
     @staticmethod
     def EndVertex(edge):
         """
-        Description
-        -----------
         Returns the end vertex of the input edge.
 
         Parameters
@@ -250,8 +236,6 @@ class Edge():
     @staticmethod
     def Extend(edge, distance=1, bothSides=True, reverse=False, tolerance=0.0001):
         """
-        Description
-        -----------
         Extends the input edge by the input distance.
 
         Parameters
@@ -264,7 +248,7 @@ class Edge():
             If set to True, the edge will be extended by half the distance at each end. The default is False.
         reverse : bool , optional
             If set to True, the edge will be extended from its start vertex. Otherwise, it will be extended from its end vertex. The default is False.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -294,8 +278,6 @@ class Edge():
     @staticmethod
     def IsCollinear(edgeA, edgeB, mantissa=4, angTolerance=0.1, tolerance=0.0001):
         """
-        Description
-        -----------
         Tests if the two input edges are collinear.
 
         Parameters
@@ -306,9 +288,9 @@ class Edge():
             The second input edge.
         mantissa : int , optional
             The desired length of the mantissa. The default is 4.
-        angTolerance : float, optional
+        angTolerance : float , optional
             The angular tolerance used for the test. The default is 0.1.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -335,8 +317,6 @@ class Edge():
     @staticmethod
     def IsParallel(edgeA, edgeB, mantissa=4, angTolerance=0.1):
         """
-        Description
-        -----------
         Tests if the two input edges are collinear.
 
         Parameters
@@ -347,7 +327,7 @@ class Edge():
             The second input edge.
         mantissa : int , optional
             The desired length of the mantissa. The default is 4.
-        angTolerance : float, optional
+        angTolerance : float , optional
             The angular tolerance used for the test. The default is 0.1.
 
         Returns
@@ -366,15 +346,13 @@ class Edge():
     @staticmethod
     def Length(edge, mantissa=4):
         """
-        Description
-        -----------
         Returns the length of the input edge.
 
         Parameters
         ----------
         edge : topologic.Edge
             The input edge.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns
@@ -395,15 +373,13 @@ class Edge():
     @staticmethod
     def Normalize(edge, useEndVertex=False):
         """
-        Description
-        -----------
         Creates a normalized edge that has the same direction as the input edge, but a length of 1.
 
         Parameters
         ----------
         edge : topologic.Edge
             The input edge.
-        useEndVertex : bool, optional
+        useEndVertex : bool , optional
             If True the normalized edge end vertex will be placed at the end vertex of the input edge. Otherwise, the normalized edge start vertex will be placed at the start vertex of the input edge. The default is False.
 
         Returns
@@ -425,8 +401,6 @@ class Edge():
     @staticmethod
     def ParameterAtVertex(edge, vertex, mantissa=4):
         """
-        Description
-        -----------
         Returns the *u* parameter along the input edge based on the location of the input vertex.
 
         Parameters
@@ -435,7 +409,7 @@ class Edge():
             The input edge.
         vertex : topologic.Vertex
             The input vertex.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns
@@ -456,8 +430,6 @@ class Edge():
     @staticmethod
     def Reverse(edge):
         """
-        Description
-        -----------
         Creates an edge that has the reverse direction of the input edge.
 
         Parameters
@@ -478,8 +450,6 @@ class Edge():
     @staticmethod
     def SetLength(edge, length=1, bothSides=True, reverse=False, tolerance=0.0001):
         """
-        Description
-        -----------
         Returns an edge with the new length in the same direction as the input edge.
 
         Parameters
@@ -492,7 +462,7 @@ class Edge():
             If set to True, the edge will be offset symmetrically from each end. The default is False.
         reverse : bool , optional
             If set to True, the edge will be offset from its start vertex. Otherwise, it will be offset from its end vertex. The default is False.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -511,8 +481,6 @@ class Edge():
     @staticmethod
     def StartVertex(edge):
         """
-        Description
-        -----------
         Returns the start vertex of the input edge.
 
         Parameters
@@ -538,8 +506,6 @@ class Edge():
     @staticmethod
     def Trim(edge, distance=0, bothSides=True, reverse=False, tolerance=0.0001):
         """
-        Description
-        -----------
         Trims the input edge by the input distance.
 
         Parameters
@@ -552,7 +518,7 @@ class Edge():
             If set to True, the edge will be trimmed by half the distance at each end. The default is False.
         reverse : bool , optional
             If set to True, the edge will be trimmed from its start vertex. Otherwise, it will be trimmed from its end vertex. The default is False.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -582,8 +548,6 @@ class Edge():
     @staticmethod
     def VertexByDistance(edge, distance=0, origin=None, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a vertex along the input edge offset by the input distance from the input origin.
 
         Parameters
@@ -594,7 +558,7 @@ class Edge():
             The offset distance. The default is 0.
         origin : topologic.Vertex , optional
             The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. The default is None.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -622,8 +586,6 @@ class Edge():
     @staticmethod
     def VertexByParameter(edge, parameter=0):
         """
-        Description
-        -----------
         Creates a vertex along the input edge offset by the input *u* parameter.
 
         Parameters
@@ -656,8 +618,6 @@ class Edge():
     @staticmethod
     def Vertices(edge):
         """
-        Description
-        __________
         Returns the vertices of the input edge.
 
         Parameters

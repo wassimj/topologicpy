@@ -10,8 +10,6 @@ class Face(topologic.Face):
     @staticmethod
     def AddInternalBoundaries(face, wires):
         """
-        Description
-        ----------
         Adds internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
 
         Parameters
@@ -48,8 +46,6 @@ class Face(topologic.Face):
     @staticmethod
     def AddInternalBoundariesCluster(face, cluster):
         """
-        Description
-        ----------
         Adds the input cluster of internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
 
         Parameters
@@ -80,8 +76,6 @@ class Face(topologic.Face):
     @staticmethod
     def Angle(faceA, faceB, mantissa=4):
         """
-        Description
-        ----------
         Returns the angle in degrees between the two input faces.
 
         Parameters
@@ -119,8 +113,6 @@ class Face(topologic.Face):
     @staticmethod
     def Area(face, mantissa=4):
         """
-        Description
-        ----------
         Returns the area of the input face.
 
         Parameters
@@ -148,8 +140,6 @@ class Face(topologic.Face):
     @staticmethod
     def BoundingFace(face):
         """
-        Description
-        ----------
         Returns the bounding face of the input face.
 
         Parameters
@@ -179,8 +169,6 @@ class Face(topologic.Face):
     @staticmethod
     def ByEdges(edges):
         """
-        Description
-        ----------
         Creates a face from the input list of edges.
 
         Parameters
@@ -205,8 +193,6 @@ class Face(topologic.Face):
     @staticmethod
     def ByEdgesCluster(cluster):
         """
-        Description
-        ----------
         Creates a face from the input cluster of edges.
 
         Parameters
@@ -229,8 +215,6 @@ class Face(topologic.Face):
     @staticmethod
     def ByOffset(face, offset, reverse, tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a face by offsetting the input face along its own face normal vector.
 
         Parameters
@@ -241,7 +225,7 @@ class Face(topologic.Face):
             The desired offset value. The default is 0.
         reverse : bool , optional
             If set to True the offset will be computed to the inside of the input face. Otherwise, it will be computed to the outside of the face. The default is False.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -292,15 +276,13 @@ class Face(topologic.Face):
     @staticmethod
     def ByShell(shell, angTolerance=0.1):
         """
-        Description
-        ----------
         Creates a face by merging the faces of the input shell.
 
         Parameters
         ----------
         shell : topologic.Shell
             The input shell.
-        angTolerance : float, optional
+        angTolerance : float , optional
             The desired angular tolerance. The default is 0.1.
 
         Returns
@@ -370,8 +352,6 @@ class Face(topologic.Face):
     @staticmethod
     def ByVertices(vertices):
         """
-        Description
-        ----------
         Creates a face from the input list of vertices.
 
         Parameters
@@ -415,8 +395,6 @@ class Face(topologic.Face):
 
     def ByVerticesCluster(cluster):
         """
-        Description
-        ----------
         Creates a face from the input cluster of vertices.
 
         Parameters
@@ -439,8 +417,6 @@ class Face(topologic.Face):
     @staticmethod
     def ByWire(wire):
         """
-        Description
-        ----------
         Creates a face from the input closed wire.
 
         Parameters
@@ -467,8 +443,6 @@ class Face(topologic.Face):
     @staticmethod
     def ByWires(externalBoundary, internalBoundaries=[]):
         """
-        Description
-        ----------
         Creates a face from the input external boundary (closed wire) and the input list of internal boundaries (closed wires).
 
         Parameters
@@ -494,8 +468,6 @@ class Face(topologic.Face):
     @staticmethod
     def ByWiresCluster(externalBoundary, internalBoundariesCluster=None):
         """
-        Description
-        ----------
         Creates a face from the input external boundary (closed wire) and the input cluster of internal boundaries (closed wires).
 
         Parameters
@@ -526,34 +498,32 @@ class Face(topologic.Face):
         return Face.ByWires(externalBoundary, internalBoundaries)
     
     @staticmethod
-    def Circle(origin=None, radius=1, sides=16, fromAngle=0, toAngle=360, dirX=0,
+    def Circle(origin=None, radius=0.5, sides=16, fromAngle=0, toAngle=360, dirX=0,
                    dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a circle.
 
         Parameters
         ----------
         origin : topologic.Vertex, optional
             The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
-        radius : float, optional
+        radius : float , optional
             The radius of the circle. The default is 1.
-        sides : int, optional
+        sides : int , optional
             The number of sides of the circle. The default is 16.
-        fromAngle : float, optional
+        fromAngle : float , optional
             The angle in degrees from which to start creating the arc of the circle. The default is 0.
-        toAngle : float, optional
+        toAngle : float , optional
             The angle in degrees at which to end creating the arc of the circle. The default is 360.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the circle. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the circle. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the circle. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the circle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -571,8 +541,6 @@ class Face(topologic.Face):
     @staticmethod
     def Compactness(face, mantissa=4):
         """
-        Description
-        ----------
         Returns the compactness measure of the input face. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
         Parameters
@@ -608,8 +576,6 @@ class Face(topologic.Face):
     @staticmethod
     def Edges(face):
         """
-        Description
-        __________
         Returns the edges of the input face.
 
         Parameters
@@ -631,8 +597,6 @@ class Face(topologic.Face):
 
     def ExternalBoundary(face):
         """
-        Description
-        ----------
         Returns the external boundary (closed wire) of the input face.
 
         Parameters
@@ -651,8 +615,6 @@ class Face(topologic.Face):
     @staticmethod
     def FacingToward(face, direction=[0,0,-1], asVertex=False, tolerance=0.0001):
         """
-        Description
-        ----------
         Returns True if the input face is facing toward the input direction.
 
         Parameters
@@ -695,8 +657,6 @@ class Face(topologic.Face):
     @staticmethod
     def Flatten(face):
         """
-        Description
-        ----------
         Flattens the input face such that its center of mass is located at the origin and its normal is pointed in the positive Z axis.
 
         Parameters
@@ -740,8 +700,6 @@ class Face(topologic.Face):
     @staticmethod
     def InternalBoundaries(face):
         """
-        Description
-        ----------
         Returns the internal boundaries (closed wires) of the input face.
 
         Parameters
@@ -764,15 +722,13 @@ class Face(topologic.Face):
     @staticmethod
     def InternalVertex(face, tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a vertex guaranteed to be inside the input face.
 
         Parameters
         ----------
         face : topologic.Face
             The input face.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -788,9 +744,7 @@ class Face(topologic.Face):
     @staticmethod
     def Invert(face):
         """
-        Description
-        ----------
-        Creates a face that is an inversion (mirror) of the input face.
+        Creates a face that is an inverse (mirror) of the input face.
 
         Parameters
         ----------
@@ -820,8 +774,6 @@ class Face(topologic.Face):
     @staticmethod
     def IsCoplanar(faceA, faceB, tolerance=0.0001):
         """
-        Description
-        ----------
         Returns True if the two input faces are coplanar. Returns False otherwise.
 
         Parameters
@@ -830,7 +782,7 @@ class Face(topologic.Face):
             The first input face.
         faceB : topologic.Face
             The second input face
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The deafault is 0.0001.
 
         Raises
@@ -853,8 +805,6 @@ class Face(topologic.Face):
     @staticmethod
     def IsInside(face, vertex, tolerance=0.0001):
         """
-        Description
-        ----------
         Returns True if the input vertex is inside the input face. Returns False otherwise.
 
         Parameters
@@ -863,7 +813,7 @@ class Face(topologic.Face):
             The input face.
         vertex : topologic.Vertex
             The input vertex.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -882,8 +832,6 @@ class Face(topologic.Face):
     @staticmethod
     def NormalAtParameters(face, u=0.5, v=0.5, outputType="xyz", mantissa=4):
         """
-        Description
-        ----------
         Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
 
         Parameters
@@ -926,8 +874,6 @@ class Face(topologic.Face):
     @staticmethod
     def Project(faceA, faceB, direction=None, mantissa=4, tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a projection of the first input face unto the second input face.
 
         Parameters
@@ -971,27 +917,25 @@ class Face(topologic.Face):
     @staticmethod
     def Rectangle(origin=None, width=1.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a rectangle.
 
         Parameters
         ----------
         origin : topologic.Vertex, optional
             The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0,0,0).
-        width : float, optional
+        width : float , optional
             The width of the rectangle. The default is 1.0.
-        length : float, optional
+        length : float , optional
             The length of the rectangle. The default is 1.0.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the rectangle. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the rectangle. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the rectangle. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1008,29 +952,27 @@ class Face(topologic.Face):
     @staticmethod
     def Star(origin=None, radiusA=1.0, radiusB=0.4, rays=5, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a star.
 
         Parameters
         ----------
         origin : topologic.Vertex, optional
             The location of the origin of the star. The default is None which results in the star being placed at (0,0,0).
-        radiusA : float, optional
+        radiusA : float , optional
             The outer radius of the star. The default is 1.0.
-        radiusB : float, optional
+        radiusB : float , optional
             The outer radius of the star. The default is 0.4.
-        rays : int, optional
+        rays : int , optional
             The number of star rays. The default is 5.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the star. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the star. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the star. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the star. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1047,33 +989,31 @@ class Face(topologic.Face):
     @staticmethod
     def Trapezoid(origin=None, widthA=1.0, widthB=0.75, offsetA=0.0, offsetB=0.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a trapezoid.
 
         Parameters
         ----------
         origin : topologic.Vertex, optional
             The location of the origin of the trapezoid. The default is None which results in the trapezoid being placed at (0,0,0).
-        widthA : float, optional
+        widthA : float , optional
             The width of the bottom edge of the trapezoid. The default is 1.0.
-        widthB : float, optional
+        widthB : float , optional
             The width of the top edge of the trapezoid. The default is 0.75.
-        offsetA : float, optional
+        offsetA : float , optional
             The offset of the bottom edge of the trapezoid. The default is 0.0.
-        offsetB : float, optional
+        offsetB : float , optional
             The offset of the top edge of the trapezoid. The default is 0.0.
-        length : float, optional
+        length : float , optional
             The length of the trapezoid. The default is 1.0.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the trapezoid. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the trapezoid. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the trapezoid. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1090,8 +1030,6 @@ class Face(topologic.Face):
     @staticmethod
     def Triangulate(face):
         """
-        Description
-        ----------
         Triangulates the input face and returns a list of faces.
 
         Parameters
@@ -1118,8 +1056,6 @@ class Face(topologic.Face):
     @staticmethod
     def TrimByWire(face, wire, reverse = False):
         """
-        Description
-        ----------
         Trims the input face by the input wire.
 
         Parameters
@@ -1149,8 +1085,6 @@ class Face(topologic.Face):
     @staticmethod
     def VertexByParameters(face, u=0.5, v=0.5):
         """
-        Description
-        ----------
         Creates a vertex at the *u* and *v* parameters of the input face.
 
         Parameters
@@ -1175,8 +1109,6 @@ class Face(topologic.Face):
     @staticmethod
     def VertexParameters(face, vertex, outputType="uv", mantissa=4):
         """
-        Description
-        ----------
         Returns the *u* and *v* parameters of the input face at the location of the input vertex.
 
         Parameters
@@ -1215,8 +1147,6 @@ class Face(topologic.Face):
     @staticmethod
     def Vertices(face):
         """
-        Description
-        __________
         Returns the vertices of the input face.
 
         Parameters
@@ -1239,8 +1169,6 @@ class Face(topologic.Face):
     @staticmethod
     def Wires(face):
         """
-        Description
-        __________
         Returns the wires of the input face.
 
         Parameters

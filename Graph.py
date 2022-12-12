@@ -4,14 +4,89 @@ from topologicpy.Dictionary import Dictionary
 from topologicpy.Topology import Topology
 import random
 import time
-#import pyvisgraph as vg
 
 class Graph:
     @staticmethod
+    def AdjacencyMatrix(graph, tolerance=0.0001):
+        """
+        Returns the adjacency matrix of the input Graph. See https://en.wikipedia.org/wiki/Adjacency_matrix.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The adjacency matrix.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        if not isinstance(graph, topologic.Graph):
+            return None
+        topology = Graph.Topology(graph)
+        topology = Topology.SelfMerge(topology)
+        vertices = Topology.SubTopologies(topology, "vertex")
+        order = len(vertices)
+        matrix = []
+        for i in range(order):
+            tempRow = []
+            for j in range(order):
+                tempRow.append(0)
+            matrix.append(tempRow)
+        for i in range(order):
+            v = Graph.NearestVertex(graph, vertices[i])
+            adjVertices = Graph.AdjacentVertices(graph, v)
+            for adjVertex in adjVertices:
+                adjIndex = Vertex.Index(vertex=adjVertex, vertices=vertices, strict=None, tolerance=tolerance)
+                if adjIndex:
+                    if 0 <= adjIndex < order:
+                        matrix[i][adjIndex] = 1
+        return matrix
+    @staticmethod
+    def AdjacencyList(graph, tolerance=0.0001):
+        """
+        Returns the adjacency list of the input Graph. See https://en.wikipedia.org/wiki/Adjacency_list.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The adjacency list.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        if not isinstance(graph, topologic.Graph):
+            return None
+        topology = Graph.Topology(graph)
+        topology = Topology.SelfMerge(topology)
+        vertices = Topology.SubTopologies(topology, "vertex")
+        order = len(vertices)
+        adjList = []
+        for i in range(order):
+            tempRow = []
+            v = Graph.NearestVertex(graph, vertices[i])
+            adjVertices = Graph.AdjacentVertices(graph, v)
+            for adjVertex in adjVertices:
+                adjIndex = Vertex.Index(vertex=adjVertex, vertices=vertices, strict=None, tolerance=tolerance)
+                if not adjIndex == None:
+                    tempRow.append(adjIndex)
+            tempRow.sort()
+            adjList.append(tempRow)
+        return adjList
+
+    @staticmethod
     def AddEdge(graph, edge, tolerance=0.0001):
         """
-        Description
-        -----------
         Adds the input edge to the input Graph.
 
         Parameters
@@ -20,7 +95,7 @@ class Graph:
             The input graph.
         edges : topologic.Edge
             The input edge.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -79,8 +154,6 @@ class Graph:
     @staticmethod
     def AddVertex(graph, vertex, tolerance=0.0001):
         """
-        Description
-        -----------
         Adds the input vertex to the input graph.
 
         Parameters
@@ -108,8 +181,6 @@ class Graph:
     @staticmethod
     def AddVertices(graph, vertices, tolerance=0.0001):
         """
-        Description
-        -----------
         Adds the input vertex to the input graph.
 
         Parameters
@@ -140,8 +211,6 @@ class Graph:
     @staticmethod
     def AdjacentVertices(graph, vertex):
         """
-        Description
-        -----------
         Returns the list of vertices connected to the input vertex.
 
         Parameters
@@ -164,8 +233,6 @@ class Graph:
     @staticmethod
     def AllPaths(graph, vertexA, vertexB, timeLimit=10):
         """
-        Description
-        -----------
         Returns all the paths that connect the input vertices within the allowed time limit in seconds.
 
         Parameters
@@ -193,9 +260,7 @@ class Graph:
     @staticmethod
     def ByImportedDGCNN(file_path, key):
         """
-        Description
-        -----------
-        Creates a vertex at the coordinates specified by the x, y, z inputs.
+        Insert description here.
 
         Parameters
         ----------
@@ -256,8 +321,6 @@ class Graph:
     @staticmethod
     def ByTopology(topology, direct=True, directApertures=False, viaSharedTopologies=False, viaSharedApertures=False, toExteriorTopologies=False, toExteriorApertures=False, toContents=False, useInternalVertex=True, storeBRep=False, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a graph.See https://en.wikipedia.org/wiki/Graph_(discrete_mathematics).
 
         Parameters
@@ -1554,8 +1617,6 @@ class Graph:
     @staticmethod
     def ByVerticesEdges(vertices, edges):
         """
-        Description
-        -----------
         Creates a graph from the input list of vertices and edges.
 
         Parameters
@@ -1583,8 +1644,6 @@ class Graph:
     @staticmethod
     def Connect(graph, verticesA, verticesB, tolerance=0.0001):
         """
-        Description
-        -----------
         Connects the two lists of input vertices.
 
         Parameters
@@ -1622,9 +1681,7 @@ class Graph:
     @staticmethod
     def ContainsEdge(graph, edge, tolerance=0.0001):
         """
-        Description
-        -----------
-        Return True if the input graph contains the input edge. Returns False otherwise.
+        Returns True if the input graph contains the input edge. Returns False otherwise.
 
         Parameters
         ----------
@@ -1650,8 +1707,6 @@ class Graph:
     @staticmethod
     def ContainsVertex(graph, vertex, tolerance=0.0001):
         """
-        Description
-        -----------
         Returns True if the input graph contains the input Vertex. Returns False otherwise.
 
         Parameters
@@ -1678,8 +1733,6 @@ class Graph:
     @staticmethod
     def DegreeSequence(graph):
         """
-        Description
-        -----------
         Returns the degree sequence of the input graph. See https://mathworld.wolfram.com/DegreeSequence.html.
 
         Parameters
@@ -1700,8 +1753,6 @@ class Graph:
     @staticmethod
     def Density(graph):
         """
-        Description
-        -----------
         Returns the density of the input graph. See https://en.wikipedia.org/wiki/Dense_graph.
 
         Parameters
@@ -1722,8 +1773,6 @@ class Graph:
     @staticmethod
     def DepthMap(graph, vertices=None, tolerance=0.0001):
         """
-        Description
-        -----------
         Return the depth map of the input list of vertices within the input graph. The returned list contains the total of the topological distances of each vertex to every other vertex in the input graph. The order of the depth map list is the same as the order of the input list of vertices. If no vertices are specified, the depth map of all the vertices in the input graph is computed.
 
         Parameters
@@ -1732,7 +1781,7 @@ class Graph:
             The input graph.
         vertices : list , optional
             The input list of vertices. The default is None.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1765,8 +1814,6 @@ class Graph:
     @staticmethod
     def Diameter(graph):
         """
-        Description
-        -----------
         Returns the diameter of the input graph. See https://mathworld.wolfram.com/GraphDiameter.html.
 
         Parameters
@@ -1785,10 +1832,36 @@ class Graph:
         return graph.Diameter()
     
     @staticmethod
+    def Distance(graph, vertexA, vertexB, tolerance=0.0001):
+        """
+        Returns the shortest-path distance between the input vertices. See https://en.wikipedia.org/wiki/Distance_(graph_theory).
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertexA : topologic.Vertex
+            The first input vertex.
+        vertexB : topologic.Vertex
+            The second input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        int
+            The shortest-path distance between the input vertices.
+
+        """
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if not isinstance(vertexA, topologic.Vertex) or not isinstance(vertexB, topologic.Vertex):
+            return None
+        return graph.TopologicalDistance(vertexA, vertexB, tolerance)
+
+    @staticmethod
     def Edge(graph, vertexA, vertexB, tolerance=0.0001):
         """
-        Description
-        -----------
         Returns the edge in the input graph that connects in the input vertices.
 
         Parameters
@@ -1799,7 +1872,7 @@ class Graph:
             The first input vertex.
         vertexB : topologic.Vertex
             The second input Vertex.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1817,8 +1890,6 @@ class Graph:
     @staticmethod
     def Edges(graph, vertices=None, tolerance=0.0001):
         """
-        Description
-        -----------
         Returns the edges found in the input graph. If the input list of vertices is specified, this method returns the edges connected to this list of vertices. Otherwise, it returns all graph edges.
 
         Parameters
@@ -1827,7 +1898,7 @@ class Graph:
             The input graph.
         vertices : list , optional
             An optional list of vertices to restrict the returned list of edges only to those connected to this list.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1849,10 +1920,85 @@ class Graph:
         return []
 
     @staticmethod
+    def IsBipartite(graph, tolerance=0.0001):
+        """
+        Returns True if the input graph is bipartite. Returns False otherwise. See https://en.wikipedia.org/wiki/Bipartite_graph.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the input graph is complete. False otherwise
+
+        """
+        # From https://www.geeksforgeeks.org/bipartite-graph/
+        # This code is contributed by divyesh072019.
+        def isBipartite(V, adj):
+            # vector to store colour of vertex
+            # assigning all to -1 i.e. uncoloured
+            # colours are either 0 or 1
+            # for understanding take 0 as red and 1 as blue
+            col = [-1]*(V)
+
+            # queue for BFS storing {vertex , colour}
+            q = []
+
+            #loop incase graph is not connected
+            for i in range(V):
+    
+                # if not coloured
+                if (col[i] == -1):
+        
+                    # colouring with 0 i.e. red
+                    q.append([i, 0])
+                    col[i] = 0
+        
+                    while len(q) != 0:
+                        p = q[0]
+                        q.pop(0)
+            
+                        # current vertex
+                        v = p[0]
+                
+                        # colour of current vertex
+                        c = p[1]
+                
+                        # traversing vertexes connected to current vertex
+                        for j in adj[v]:
+                
+                            # if already coloured with parent vertex color
+                            # then bipartite graph is not possible
+                            if (col[j] == c):
+                                return False
+                
+                            # if uncoloured
+                            if (col[j] == -1):
+                    
+                                # colouring with opposite color to that of parent
+                                if c == 1:
+                                    col[j] = 0
+                                else:
+                                    col[j] = 1
+                                q.append([j, col[j]])
+    
+            # if all vertexes are coloured such that
+            # no two connected vertex have same colours
+            return True
+        if not isinstance(graph, topologic.Graph):
+            return None
+        order = Graph.Order(graph)
+        adjList = Graph.AdjacencyList(graph, tolerance)
+        return isBipartite(order, adjList)
+
+    @staticmethod
     def IsComplete(graph):
         """
-        Description
-        -----------
         Returns True if the input graph is complete. Returns False otherwise. See https://en.wikipedia.org/wiki/Complete_graph.
 
         Parameters
@@ -1873,8 +2019,6 @@ class Graph:
     @staticmethod
     def IsErdoesGallai(graph, sequence):
         """
-        Description
-        -----------
         Returns True if the input sequence satisfies the Erdős–Gallai theorem. Returns False otherwise. See https://en.wikipedia.org/wiki/Erd%C5%91s%E2%80%93Gallai_theorem.
 
         Parameters
@@ -1897,8 +2041,6 @@ class Graph:
     @staticmethod
     def IsolatedVertices(graph):
         """
-        Description
-        -----------
         Returns the list of isolated vertices in the input graph.
 
         Parameters
@@ -1921,8 +2063,6 @@ class Graph:
     @staticmethod
     def MaximumDelta(graph):
         """
-        Description
-        -----------
         Returns the maximum delta of the input graph. The maximum delta of a graph is the maximum degree of a vertex in the graph. 
 
         Parameters
@@ -1943,8 +2083,6 @@ class Graph:
     @staticmethod
     def MinimumDelta(graph):
         """
-        Description
-        -----------
         Returns the minimum delta of the input graph. The minimum delta of a graph is the minimum degree of a vertex in the graph.
 
         Parameters
@@ -1965,8 +2103,6 @@ class Graph:
     @staticmethod
     def MinimumSpanningTree(graph, edgeKey=None, tolerance=0.0001):
         """
-        Description
-        -----------
         Returns the minimum spanning tree of the input graph. See https://en.wikipedia.org/wiki/Minimum_spanning_tree.
 
         Parameters
@@ -2021,8 +2157,6 @@ class Graph:
     @staticmethod
     def NearestVertex(graph, vertex):
         """
-        Description
-        -----------
         Returns the vertex in the input graph that is the nearest to the input vertex.
 
         Parameters
@@ -2054,12 +2188,29 @@ class Graph:
                 nearestVertex = aGraphVertex
         return nearestVertex
 
-    
+    @staticmethod
+    def Order(graph):
+        """
+        Returns the graph order of the input graph. The graph order is its number of vertices
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+
+        Returns
+        -------
+        int
+            The number of vertices in the input graph
+
+        """
+        if not isinstance(graph, topologic.Graph):
+            return None
+        return len(Graph.Vertices(graph))
+
     @staticmethod
     def Path(graph, vertexA, vertexB):
         """
-        Description
-        -----------
         Returns a path (wire) in the input graph that connects the input vertices.
 
         Parameters
@@ -2082,8 +2233,6 @@ class Graph:
     @staticmethod
     def RemoveEdge(graph, edge, tolerance=0.0001):
         """
-        Description
-        -----------
         Removes the input edge from the input graph.
 
         Parameters
@@ -2092,7 +2241,7 @@ class Graph:
             The input graph.
         edge : topologic.Edge
             The input edge.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -2111,8 +2260,6 @@ class Graph:
     @staticmethod
     def RemoveVertex(graph, vertex, tolerance=0.0001):
         """
-        Description
-        -----------
         Removes the input vertex from the input graph.
 
         Parameters
@@ -2121,7 +2268,7 @@ class Graph:
             The input graph.
         vertex : topologic.Vertex
             The input vertex.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -2139,10 +2286,8 @@ class Graph:
         return graph
     
     @staticmethod
-    def ShortestPath(graph, vertexA, vertexB, vertexKey=None, edgeKey=None):
+    def ShortestPath(graph, vertexA, vertexB, vertexKey=None, edgeKey="Length"):
         """
-        Description
-        -----------
         Returns the shortest path that connects the input vertices.
 
         Parameters
@@ -2156,7 +2301,7 @@ class Graph:
         vertexKey : string , optional
             The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
         edgeKey : string , optional
-            The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
+            The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. The default is "length".
 
         Returns
         -------
@@ -2170,14 +2315,15 @@ class Graph:
             return None
         if not isinstance(vertexB, topologic.Vertex):
             return None
+        if edgeKey:
+            if edgeKey.lower() == "length":
+                edgeKey = "Length"
         return graph.ShortestPath(vertexA, vertexB, vertexKey, edgeKey)
     
     @staticmethod
-    def ShortestPaths(graph, vertexA, vertexB, vertexKey=None, edgeKey=None, timeLimit=10,
+    def ShortestPaths(graph, vertexA, vertexB, vertexKey=None, edgeKey="length", timeLimit=10,
                            pathLimit=10, tolerance=0.0001):
         """
-        Description
-        -----------
         Returns the shortest path that connects the input vertices.
 
         Parameters
@@ -2191,7 +2337,7 @@ class Graph:
         vertexKey : string , optional
             The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
         edgeKey : string , optional
-            The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
+            The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. The default is "length".
         timeLimit : int , optional
             The search time limit in seconds. The default is 10 seconds
         pathLimit: int , optional
@@ -2224,12 +2370,14 @@ class Graph:
             return True
         
         shortestPaths = []
-        start = time.time()
         end = time.time() + timeLimit
         while time.time() < end and len(shortestPaths) < pathLimit:
             gsv = nearestVertex(graph, vertexA, tolerance)
             gev = nearestVertex(graph, vertexB, tolerance)
             if (graph != None):
+                if edgeKey:
+                    if edgeKey.lower() == "length":
+                        edgeKey = "Length"
                 wire = graph.ShortestPath(gsv,gev,vertexKey,edgeKey) # Find the first shortest path
                 wireVertices = []
                 flag = False
@@ -2248,12 +2396,30 @@ class Graph:
                 _ = graph.Edges(edges)
                 graph = topologic.Graph.ByVerticesEdges(vertices, edges)
         return shortestPaths
-    
+
+    @staticmethod
+    def Size(graph):
+        """
+        Returns the graph size of the input graph. The graph size is its number of edges
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+
+        Returns
+        -------
+        int
+            The number of edges in the input graph.
+
+        """
+        if not isinstance(graph, topologic.Graph):
+            return None
+        return len(Graph.Edges(graph))
+
     @staticmethod
     def TopologicalDistance(graph, vertexA, vertexB, tolerance=0.0001):
         """
-        Description
-        -----------
         Returns the topological distance between the input vertices. See https://en.wikipedia.org/wiki/Distance_(graph_theory).
 
         Parameters
@@ -2278,8 +2444,6 @@ class Graph:
     @staticmethod
     def Topology(graph):
         """
-        Description
-        -----------
         Returns the topology (cluster) of the input graph
 
         Parameters
@@ -2298,8 +2462,6 @@ class Graph:
     @staticmethod
     def Tree(graph, vertex=None, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a tree graph version of the input graph rooted at the input vertex.
 
         Parameters
@@ -2370,8 +2532,6 @@ class Graph:
     @staticmethod
     def VertexDegree(graph, vertex):
         """
-        Description
-        -----------
         Returns the degree of the input vertex. See https://en.wikipedia.org/wiki/Degree_(graph_theory).
 
         Parameters
@@ -2396,8 +2556,6 @@ class Graph:
     @staticmethod
     def Vertices(graph):
         """
-        Description
-        -----------
         Returns the list of vertices in the input graph.
 
         Parameters
@@ -2420,3 +2578,87 @@ class Graph:
             except:
                 vertices = []
         return vertices
+
+    @staticmethod
+    def VisibilityGraph(boundary, obstaclesCluster, tolerance=0.0001):
+        """
+        Creates a 2D visibility graph.
+
+        Parameters
+        ----------
+        boundary : topologic.Wire
+            The input boundary.
+        obstaclesCluster : topologic.Cluster
+            The input cluster of obstacles (wires).
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Graph
+            The visibility graph.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Graph import Graph
+        from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
+        def addEdge(edge, edges, vertices, tolerance=0.0001):
+            # Add edge to edges only if its end points are in vertices
+            sv = Edge.StartVertex(edge)
+            ev = Edge.EndVertex(edge)
+            con1 = Vertex.Index(sv, vertices, strict=False, tolerance=tolerance)
+            con2 = Vertex.Index(ev, vertices, strict=False, tolerance=tolerance)
+            if con1 != None and con2 != None:
+                edges.append(edge)
+            return edges
+
+        if not isinstance(boundary, topologic.Wire):
+            return None
+        if not isinstance(obstaclesCluster, topologic.Cluster):
+            return None
+        boundaryFace = Face.ByWire(boundary)
+        boundaryVertices = Wire.Vertices(boundary)
+        obstacleVertices = Cluster.Vertices(obstaclesCluster)
+
+        allVertices = boundaryVertices + obstacleVertices
+        edges = []
+        i = 0
+        for bv in boundaryVertices:
+            i = i + 1
+            for ov in allVertices:
+                e = Edge.ByVertices([bv, ov])
+                if e:
+                    e = Topology.Boolean(e, obstaclesCluster, "difference", False)
+                    if e:
+                        e = Topology.Boolean(e, boundaryFace, "intersect", False)
+                        if isinstance(e, topologic.Edge):
+                            edges = addEdge(e, edges, allVertices, 0.0001)
+                        elif isinstance(e, topologic.Cluster):
+                            tempEdges = Cluster.Edges(e)
+                            if tempEdges:
+                                for tempEdge in tempEdges:
+                                    edges = addEdge(tempEdge, edges, allVertices, 0.0001)
+
+        for x in obstacleVertices:
+            for y in obstacleVertices:
+                e = Edge.ByVertices([x, y])
+                if e:
+                    e = Topology.Boolean(e, obstaclesCluster, "difference", False)
+                    if e:
+                        e = Topology.Boolean(e, boundaryFace, "intersect", False)
+                        if isinstance(e, topologic.Edge):
+                            edges = addEdge(e, edges, allVertices, 0.0001)
+                        elif isinstance(e, topologic.Cluster):
+                            tempEdges = Cluster.Edges(e)
+                            if tempEdges:
+                                for tempEdge in tempEdges:
+                                    edges = addEdge(tempEdge, edges, allVertices, 0.0001)
+
+        obstaclesEdges = Cluster.Edges(obstaclesCluster)
+        edges = edges + obstaclesEdges
+        return Graph.ByVerticesEdges(allVertices, edges)

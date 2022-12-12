@@ -4,10 +4,8 @@ import topologic
 
 class Grid(topologic.Cluster):
     @staticmethod
-    def ByDistances(face=None, uOrigin=None, vOrigin=None, uRange=[0,0.25,0.5,0.75,1.0], vRange=[0,0.25,0.5,0.75,1.0], clip=False, tolerance=0.0001):
+    def EdgesByDistances(face=None, uOrigin=None, vOrigin=None, uRange=[-0.5,-0.25,0, 0.25,0.5], vRange=[-0.5,-0.25,0, 0.25,0.5], clip=False, tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a grid (cluster of edges).
 
         Parameters
@@ -19,9 +17,9 @@ class Grid(topologic.Cluster):
         vOrigin : topologic.Vertex , optional
             The origin of the *v* grid lines. If set to None: if the face is set, the vOrigin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the vOrigin will be set to the origin. The default is None.
         uRange : list , optional
-            A list of distances for the *u* grid lines from the uOrigin. The default is [0,0.25,0.5, 0.75, 1.0].
+            A list of distances for the *u* grid lines from the uOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
         vRange : list , optional
-            A list of distances for the *v* grid lines from the vOrigin. The default is [0,0.25,0.5, 0.75, 1.0].
+            A list of distances for the *v* grid lines from the vOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
         clip : bool , optional
             If True the grid will be clipped by the shape of the input face. The default is False.
         tolerance : float , optional
@@ -37,6 +35,7 @@ class Grid(topologic.Cluster):
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Vector import Vector
         if len(uRange) < 1 or len(vRange) < 1:
@@ -116,10 +115,8 @@ class Grid(topologic.Cluster):
         return grid
     
     @staticmethod
-    def ByParameters(face, uRange=[0,0.25,0.5,0.75,1.0], vRange=[0,0.25,0.5,0.75,1.0], clip=False):
+    def EdgesByParameters(face, uRange=[0,0.25,0.5,0.75,1.0], vRange=[0,0.25,0.5,0.75,1.0], clip=False):
         """
-        Description
-        ----------
         Creates a grid (cluster of edges).
 
         Parameters
@@ -195,4 +192,80 @@ class Grid(topologic.Cluster):
         if len(gridEdges) > 0:
             grid = Cluster.ByTopologies(gridEdges)
         return grid
+
+
+    @staticmethod
+    def VerticesByDistances(face=None, origin=None, uRange=[-0.5,-0.25,0, 0.25,0.5], vRange=[-0.5,-0.25,0,0.25,0.5], clip=False, tolerance=0.0001):
+        """
+        Creates a grid (cluster of vertices).
+
+        Parameters
+        ----------
+        face : topologic.Face , optional
+            The input face. If set to None, the grid will be created on the XY plane. The default is None.
+        origin : topologic.Vertex , optional
+            The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the origin will be set to (0,0,0). The default is None.
+        uRange : list , optional
+            A list of distances for the *u* grid lines from the uOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
+        vRange : list , optional
+            A list of distances for the *v* grid lines from the vOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
+        clip : bool , optional
+            If True the grid will be clipped by the shape of the input face. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Cluster
+            The created grid. Vertices in the grid have an identifying dictionary with two keys: "u" and "v". The "dir" key can have one of two values: "u" or "v" that contain the *u* and *v* offset distances of that grid vertex from the specified origin.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Vector import Vector
+        if len(uRange) < 1 or len(vRange) < 1:
+            return None
+        if not origin:
+            if not isinstance(face, topologic.Face):
+                origin = Vertex.ByCoordinates(0,0,0)
+            else:
+                origin = Face.VertexByParameters(face, 0, 0)
         
+        if isinstance(face, topologic.Face):
+            v1 = Face.VertexByParameters(face, 0, 0)
+            v2 = Face.VertexByParameters(face, 1, 0)
+            v3 = Face.VertexByParameters(face, 0, 0)
+            v4 = Face.VertexByParameters(face, 0, 1)
+        else:
+            v1 = Vertex.ByCoordinates(0,0,0)
+            v2 = Vertex.ByCoordinates(max(uRange),0,0)
+            v3 = Vertex.ByCoordinates(0,0,0)
+            v4 = Vertex.ByCoordinates(0,max(vRange),0)
+
+        uVector = [v2.X()-v1.X(), v2.Y()-v1.Y(),v2.Z()-v1.Z()]
+        vVector = [v4.X()-v3.X(), v4.Y()-v3.Y(),v4.Z()-v3.Z()]
+        gridVertices = []
+        if len(uRange) > 0:
+            uRange.sort()
+            uuVector = Vector.Normalize(uVector)
+            uvVector = Vector.Normalize(vVector)
+            for u in uRange:
+                for v in vRange:
+                    uTempVec = Vector.Multiply(uuVector, u, tolerance)
+                    vTempVec = Vector.Multiply(uvVector, v, tolerance)
+                    gridVertex = Vertex.ByCoordinates(origin.X()+uTempVec[0], origin.Y()+vTempVec[1], origin.Z()+uTempVec[2])
+                    if clip and isinstance(face, topologic.Face):
+                        gridVertex = gridVertex.Intersect(face, False)
+                    if isinstance(gridVertex, topologic.Vertex):
+                        d = Dictionary.ByKeysValues(["u","v"],[u,v])
+                        if d:
+                            gridVertex.SetDictionary(d)
+                        gridVertices.append(gridVertex)
+        grid = None
+        if len(gridVertices) > 0:
+            grid = Cluster.ByTopologies(gridVertices)
+        return grid

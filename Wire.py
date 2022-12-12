@@ -12,8 +12,6 @@ class Wire(topologic.Wire):
     @staticmethod
     def ByEdges(edges):
         """
-        Description
-        ----------
         Creates a wire from the input list of edges.
 
         Parameters
@@ -36,7 +34,7 @@ class Wire(topologic.Wire):
         for anEdge in edgeList:
             if anEdge.Type() == 2:
                 if wire == None:
-                    wire = anEdge
+                    wire = topologic.Wire.ByEdges([anEdge])
                 else:
                     try:
                         wire = wire.Merge(anEdge)
@@ -49,8 +47,6 @@ class Wire(topologic.Wire):
     @staticmethod
     def ByEdgesCluster(cluster):
         """
-        Description
-        ----------
         Creates a wire from the input cluster of edges.
 
         Parameters
@@ -73,8 +69,6 @@ class Wire(topologic.Wire):
     @staticmethod
     def ByOffset(wire, offset=0, reverse=False, tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a wire by offsetting the edges of the input wire.
 
         Parameters
@@ -85,7 +79,7 @@ class Wire(topologic.Wire):
             The desired offset value. The default is 0.
         reverse : bool , optional
             If set to True the offset will be computed to the inside of the input wire. Otherwise, it will be computed to the outside of the wire. The default is False.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -152,15 +146,13 @@ class Wire(topologic.Wire):
     @staticmethod
     def ByVertices(vertices, close=True):
         """
-        Description
-        ----------
         Creates a wire from the input list of vertices.
 
         Parameters
         ----------
         vertices : list
             the input list of vertices.
-        close : bool, optional
+        close : bool , optional
             If True the last vertex will be connected to the first vertex to close the wire. The default is True.
 
         Returns
@@ -203,15 +195,13 @@ class Wire(topologic.Wire):
     @staticmethod
     def ByVerticesCluster(cluster, close=True):
         """
-        Description
-        ----------
         Creates a wire from the input cluster of vertices.
 
         Parameters
         ----------
         cluster : topologic.cluster
             the input cluster of vertices.
-        close : bool, optional
+        close : bool , optional
             If True the last vertex will be connected to the first vertex to close the wire. The default is True.
 
         Returns
@@ -230,33 +220,31 @@ class Wire(topologic.Wire):
     def Circle(origin=None, radius=0.5, sides=16, fromAngle=0, toAngle=360, close=True, dirX=0,
                    dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a circle.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
-        radius : float, optional
+        radius : float , optional
             The radius of the circle. The default is 0.5.
-        sides : int, optional
+        sides : int , optional
             The number of sides of the circle. The default is 16.
-        fromAngle : float, optional
+        fromAngle : float , optional
             The angle in degrees from which to start creating the arc of the circle. The default is 0.
-        toAngle : float, optional
+        toAngle : float , optional
             The angle in degrees at which to end creating the arc of the circle. The default is 360.
-        close : bool, optional
+        close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the circle. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the circle. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the circle. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the circle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -322,17 +310,15 @@ class Wire(topologic.Wire):
     @staticmethod
     def Cycles(wire, maxVertices=4, tolerance=0.0001):
         """
-        Description
-        ----------
         Returns the closed circuits of wires found within the input wire.
 
         Parameters
         ----------
         wire : topologic.Wire
             The input wire.
-        maxVertices : int, optional
+        maxVertices : int , optional
             The maximum number of vertices of the circuits to be searched. The default is 4.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -440,8 +426,6 @@ class Wire(topologic.Wire):
     @staticmethod
     def Edges(wire):
         """
-        Description
-        __________
         Returns the edges of the input wire.
 
         Parameters
@@ -464,50 +448,48 @@ class Wire(topologic.Wire):
     @staticmethod
     def Ellipse(origin=None, inputMode=1, width=2.0, length=1.0, focalLength=0.866025, eccentricity=0.866025, majorAxisLength=1.0, minorAxisLength=0.5, sides=32, fromAngle=0, toAngle=360, close=True, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates an ellipse and returns all its geometry and parameters.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0,0,0).
-        inputMode : int, optional
+        inputMode : int , optional
             The method by wich the ellipse is defined. The default is 1.
             Based on the inputMode value, only the following inputs will be considered. The options are:
             1. Width and Length (considered inputs: width, length)
             2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
             3. Focal Length and Minor Axis Length (considered inputs: focalLength, minorAxisLength)
             4. Major Axis Length and Minor Axis Length (considered input: majorAxisLength, minorAxisLength)
-        width : float, optional
+        width : float , optional
             The width of the ellipse. The default is 2.0. This is considered if the inputMode is 1.
-        length : float, optional
+        length : float , optional
             The length of the ellipse. The default is 1.0. This is considered if the inputMode is 1.
-        focalLength : float, optional
+        focalLength : float , optional
             The focal length of the ellipse. The default is 0.866025. This is considered if the inputMode is 2 or 3.
-        eccentricity : float, optional
+        eccentricity : float , optional
             The eccentricity of the ellipse. The default is 0.866025. This is considered if the inputMode is 2.
-        majorAxisLength : float, optional
+        majorAxisLength : float , optional
             The length of the major axis of the ellipse. The default is 1.0. This is considered if the inputMode is 4.
-        minorAxisLength : float, optional
+        minorAxisLength : float , optional
             The length of the minor axis of the ellipse. The default is 0.5. This is considered if the inputMode is 3 or 4.
-        sides : int, optional
+        sides : int , optional
             The number of sides of the ellipse. The default is 32.
-        fromAngle : float, optional
+        fromAngle : float , optional
             The angle in degrees from which to start creating the arc of the ellipse. The default is 0.
-        toAngle : float, optional
+        toAngle : float , optional
             The angle in degrees at which to end creating the arc of the ellipse. The default is 360.
-        close : bool, optional
+        close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the ellipse. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the ellipse. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the ellipse. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -522,50 +504,48 @@ class Wire(topologic.Wire):
     @staticmethod
     def EllipseAll(origin=None, inputMode=1, width=2.0, length=1.0, focalLength= 0.866025, eccentricity=0.866025, majorAxisLength=1.0, minorAxisLength=0.5, sides=32, fromAngle=0, toAngle=360, close=True, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates an ellipse and returns all its geometry and parameters.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0,0,0).
-        inputMode : int, optional
+        inputMode : int , optional
             The method by wich the ellipse is defined. The default is 1.
             Based on the inputMode value, only the following inputs will be considered. The options are:
             1. Width and Length (considered inputs: width, length)
             2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
             3. Focal Length and Minor Axis Length (considered inputs: focalLength, minorAxisLength)
             4. Major Axis Length and Minor Axis Length (considered input: majorAxisLength, minorAxisLength)
-        width : float, optional
+        width : float , optional
             The width of the ellipse. The default is 2.0. This is considered if the inputMode is 1.
-        length : float, optional
+        length : float , optional
             The length of the ellipse. The default is 1.0. This is considered if the inputMode is 1.
-        focalLength : float, optional
+        focalLength : float , optional
             The focal length of the ellipse. The default is 0.866025. This is considered if the inputMode is 2 or 3.
-        eccentricity : float, optional
+        eccentricity : float , optional
             The eccentricity of the ellipse. The default is 0.866025. This is considered if the inputMode is 2.
-        majorAxisLength : float, optional
+        majorAxisLength : float , optional
             The length of the major axis of the ellipse. The default is 1.0. This is considered if the inputMode is 4.
-        minorAxisLength : float, optional
+        minorAxisLength : float , optional
             The length of the minor axis of the ellipse. The default is 0.5. This is considered if the inputMode is 3 or 4.
-        sides : int, optional
+        sides : int , optional
             The number of sides of the ellipse. The default is 32.
-        fromAngle : float, optional
+        fromAngle : float , optional
             The angle in degrees from which to start creating the arc of the ellipse. The default is 0.
-        toAngle : float, optional
+        toAngle : float , optional
             The angle in degrees at which to end creating the arc of the ellipse. The default is 360.
-        close : bool, optional
+        close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the ellipse. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the ellipse. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the ellipse. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -700,8 +680,6 @@ class Wire(topologic.Wire):
     @staticmethod
     def IsClosed(wire):
         """
-        Description
-        ----------
         Returns True if the input wire is closed. Returns False otherwise.
 
         Parameters
@@ -722,10 +700,8 @@ class Wire(topologic.Wire):
         return status
     
     @staticmethod
-    def Isovist(viewPoint, externalBoundary, obstaclesCluster):
+    def Isovist(viewPoint, externalBoundary, obstaclesCluster, tolerance=0.0001):
         """
-        Description
-        ----------
         Returns a list of faces representing the isovist projection from the input viewpoint.
 
         Parameters
@@ -774,41 +750,53 @@ class Wire(topologic.Wire):
         rays = []
         for aVertex in (internalVertices+exBoundaryVertices):
             d = topologic.VertexUtility.Distance(viewPoint, aVertex)
-            if d > 0:
+            if d > tolerance:
                 scaleFactor = maxDistance/d
                 newV = topologic.TopologyUtility.Scale(aVertex, viewPoint, scaleFactor, scaleFactor, scaleFactor)
-                ray = topologic.Edge.ByStartVertexEndVertex(viewPoint, newV)
-                topologyC = ray.Intersect(externalBoundary, False)
-                vertices = []
-                _ = topologyC.Vertices(None, vertices)
-                if topologyC:
-                    rays.append(topologic.Edge.ByStartVertexEndVertex(viewPoint, vertices[0]))
-                rays.append(topologic.Edge.ByStartVertexEndVertex(viewPoint, aVertex))
+                try:
+                    ray = topologic.Edge.ByStartVertexEndVertex(viewPoint, newV)
+                    topologyC = ray.Intersect(externalBoundary, False)
+                    vertices = []
+                    _ = topologyC.Vertices(None, vertices)
+                    if topologyC:
+                        try:
+                            rays.append(topologic.Edge.ByStartVertexEndVertex(viewPoint, vertices[0]))
+                        except:
+                            pass
+                    try:
+                        rays.append(topologic.Edge.ByStartVertexEndVertex(viewPoint, aVertex))
+                    except:
+                        pass
+                except:
+                    pass
         rayEdges = []
+        print("Length of Rays", len(rays))
         for r in rays:
             a = r.Difference(obstaclesCluster, False)
-            edges = []
-            _ = a.Edges(None, edges)
-            w = None
-            try:
-                w = topologic.Wire.ByEdges(edges)
-                rayEdges = rayEdges + edges
-            except:
-                c = topologic.Cluster.ByTopologies(edges)
-                c = c.SelfMerge()
-                wires = []
-                _ = c.Wires(None, wires)
-                if len(wires) > 0:
-                    edges = []
-                    _ = wires[0].Edges(None, edges)
+            print("A", a)
+            if a:
+                edges = []
+                _ = a.Edges(None, edges)
+                w = None
+                try:
+                    w = topologic.Wire.ByEdges(edges)
                     rayEdges = rayEdges + edges
-                else:
-                    for e in edges:
-                        vertices = []
-                        e.Vertices(None, vertices)
-                        for v in vertices:
-                            if topologic.VertexUtility.Distance(viewPoint, v) < 0.0001:
-                                rayEdges.append(e)
+                except:
+                    c = topologic.Cluster.ByTopologies(edges)
+                    c = c.SelfMerge()
+                    wires = []
+                    _ = c.Wires(None, wires)
+                    if len(wires) > 0:
+                        edges = []
+                        _ = wires[0].Edges(None, edges)
+                        rayEdges = rayEdges + edges
+                    else:
+                        for e in edges:
+                            vertices = []
+                            e.Vertices(None, vertices)
+                            for v in vertices:
+                                if topologic.VertexUtility.Distance(viewPoint, v) < tolerance:
+                                    rayEdges.append(e)
         rayCluster = topologic.Cluster.ByTopologies(rayEdges)
         #return rayCluster
         shell = face.Slice(rayCluster, False)
@@ -824,8 +812,6 @@ class Wire(topologic.Wire):
     @staticmethod
     def IsSimilar(wireA, wireB, tolerance=0.0001, angTolerance=0.1):
         """
-        Description
-        ----------
         Returns True if the input wires are similar. Returns False otherwise. The wires must be closed.
 
         Parameters
@@ -834,9 +820,9 @@ class Wire(topologic.Wire):
             The first input wire.
         wireB : topologic.Wire
             The second input wire.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
-        angTolerance : float, optional
+        angTolerance : float , optional
             The desired angular tolerance. The default is 0.1.
 
         Returns
@@ -926,15 +912,13 @@ class Wire(topologic.Wire):
     @staticmethod
     def Length(wire, mantissa=4):
         """
-        Description
-        ----------
         Returns the length of the input wire.
 
         Parameters
         ----------
         wire : topologic.Wire
             The input wire.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns
@@ -962,8 +946,6 @@ class Wire(topologic.Wire):
     @staticmethod
     def Planarize(wire):
         """
-        Description
-        ----------
         Returns a planarized version of the input wire.
 
         Parameters
@@ -997,8 +979,6 @@ class Wire(topologic.Wire):
     @staticmethod
     def Project(wire, face, direction=None, mantissa=4, tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a projection of the input wire unto the input face.
 
         Parameters
@@ -1009,9 +989,9 @@ class Wire(topologic.Wire):
             The face unto which to project the input wire.
         direction : list, optional
             The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. The default is None.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1060,27 +1040,25 @@ class Wire(topologic.Wire):
     @staticmethod
     def Rectangle(origin=None, width=1.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a rectangle.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0,0,0).
-        width : float, optional
+        width : float , optional
             The width of the rectangle. The default is 1.0.
-        length : float, optional
+        length : float , optional
             The length of the rectangle. The default is 1.0.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the rectangle. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the rectangle. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the rectangle. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1137,15 +1115,13 @@ class Wire(topologic.Wire):
     @staticmethod
     def RemoveCollinearEdges(wire, angTolerance=0.1):
         """
-        Description
-        ----------
         Removes any collinear edges in the input wire.
 
         Parameters
         ----------
         wire : topologic.Wire
             The input wire.
-        angTolerance : float, optional
+        angTolerance : float , optional
             The desired angular tolerance. The default is 0.1.
 
         Returns
@@ -1185,9 +1161,21 @@ class Wire(topologic.Wire):
         for aWire in wires:
             returnWires.append(rce(aWire, angTolerance=angTolerance))
         if len(returnWires) == 1:
-            return returnWires[0]
+            returnWire = returnWires[0]
+            if isinstance(returnWire, topologic.Edge):
+                return Wire.ByEdges([returnWire])
+            elif isinstance(returnWire, topologic.Wire):
+                return returnWire
+            else:
+                return None
         elif len(returnWires) > 1:
-            return topologic.Cluster.ByTopologies(returnWires).SelfMerge()
+            returnWire = topologic.Cluster.ByTopologies(returnWires).SelfMerge()
+            if isinstance(returnWire, topologic.Edge):
+                return Wire.ByEdges([returnWire])
+            elif isinstance(returnWire, topologic.Wire):
+                return returnWire
+            else:
+                return None
         else:
             return None
 
@@ -1195,8 +1183,6 @@ class Wire(topologic.Wire):
     @staticmethod
     def Split(wire):
         """
-        Description
-        ----------
         Splits the input wire into segments at its intersections (i.e. at any vertex where more than two edges meet).
 
         Parameters
@@ -1276,29 +1262,27 @@ class Wire(topologic.Wire):
     @staticmethod
     def Star(origin=None, radiusA=1.0, radiusB=0.4, rays=5, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a star.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the star. The default is None which results in the star being placed at (0,0,0).
-        radiusA : float, optional
+        radiusA : float , optional
             The outer radius of the star. The default is 1.0.
-        radiusB : float, optional
+        radiusB : float , optional
             The outer radius of the star. The default is 0.4.
-        rays : int, optional
+        rays : int , optional
             The number of star rays. The default is 5.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the star. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the star. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the star. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the star. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1376,33 +1360,31 @@ class Wire(topologic.Wire):
     @staticmethod
     def Trapezoid(origin=None, widthA=1.0, widthB=0.75, offsetA=0.0, offsetB=0.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a trapezoid.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the trapezoid. The default is None which results in the trapezoid being placed at (0,0,0).
-        widthA : float, optional
+        widthA : float , optional
             The width of the bottom edge of the trapezoid. The default is 1.0.
-        widthB : float, optional
+        widthB : float , optional
             The width of the top edge of the trapezoid. The default is 0.75.
-        offsetA : float, optional
+        offsetA : float , optional
             The offset of the bottom edge of the trapezoid. The default is 0.0.
-        offsetB : float, optional
+        offsetB : float , optional
             The offset of the top edge of the trapezoid. The default is 0.0.
-        length : float, optional
+        length : float , optional
             The length of the trapezoid. The default is 1.0.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the trapezoid. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the trapezoid. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the trapezoid. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1459,8 +1441,6 @@ class Wire(topologic.Wire):
     @staticmethod
     def Vertices(wire):
         """
-        Description
-        __________
         Returns the vertices of the input wire.
 
         Parameters

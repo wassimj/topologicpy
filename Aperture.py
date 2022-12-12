@@ -5,8 +5,6 @@ class Aperture(topologic.Aperture):
     @staticmethod
     def ByTopologyContext(topology, context):
         """
-        Description
-        -----------
         Creates an aperture.
 
         Parameters
@@ -32,8 +30,6 @@ class Aperture(topologic.Aperture):
     @staticmethod
     def ApertureTopology(aperture):
         """
-        Description
-        -----------
         Returns the topology of the input aperture.
         
         Parameters

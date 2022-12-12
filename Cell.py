@@ -8,15 +8,13 @@ class Cell(Topology):
     @staticmethod
     def Area(cell, mantissa=4):
         """
-        Description
-        __________
         Returns the surface area of the input cell.
 
         Parameters
         ----------
         cell : topologic.Cell
             The cell.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns
@@ -36,33 +34,31 @@ class Cell(Topology):
     def Box(origin=None, width=1, length=1, height=1, uSides=1, vSides=1, wSides=1, dirX=0,
                   dirY=0, dirZ=1, placement="center"):
         """
-        Description
-        ----------
         Creates a box.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The origin location of the box. The default is None which results in the box being placed at (0,0,0).
-        width : float, optional
+        width : float , optional
             The width of the box. The default is 1.
-        length : float, optional
+        length : float , optional
             The length of the box. The default is 1.
-        height : float, optional
+        height : float , optional
             The height of the box.
-        uSides : int, optional
+        uSides : int , optional
             The number of sides along the width. The default is 1.
-        vSides : int, optional
+        vSides : int , optional
             The number of sides along the length. The default is 1.
-        wSides : int, optional
+        wSides : int , optional
             The number of sides along the height. The default is 1.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the box. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the box. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the box. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
 
         Returns
@@ -77,15 +73,13 @@ class Cell(Topology):
     @staticmethod
     def ByFaces(faces, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cell from the input list of faces.
 
         Parameters
         ----------
         faces : list
             The input list of faces.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -107,8 +101,6 @@ class Cell(Topology):
     @staticmethod
     def ByShell(shell):
         """
-        Description
-        -----------
         Creates a cell from the input shell.
 
         Parameters
@@ -132,21 +124,19 @@ class Cell(Topology):
     def ByThickenedFace(face, thickness=1.0, bothSides=True, reverse=False,
                             tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cell by thickening the input face.
 
         Parameters
         ----------
         face : topologic.Face
             The input face to be thickened.
-        thickness : float, optional
+        thickness : float , optional
             The desired thickness. The default is 1.0.
         bothSides : bool
             If True, the cell will be lofted to each side of the face. Otherwise, it will be lofted in the direction of the normal to the input face. The default is True.
         reverse : bool
             If True, the cell will be lofted in the opposite direction of the normal to the face. The default is False.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -184,21 +174,19 @@ class Cell(Topology):
     def ByThickenedShell(shell, direction=[0,0,1], thickness=1.0, bothSides=True, reverse=False,
                             tolerance=0.0001):
         """
-        Description
-        -----------
-        Creates a cell by thickening the input shell. The shell must be open
+        Creates a cell by thickening the input shell. The shell must be open.
 
         Parameters
         ----------
         shell : topologic.Shell
             The input shell to be thickened.
-        thickness : float, optional
+        thickness : float , optional
             The desired thickness. The default is 1.0.
         bothSides : bool
             If True, the cell will be lofted to each side of the shell. Otherwise, it will be lofted along the input direction. The default is True.
         reverse : bool
             If True, the cell will be lofted along the opposite of the input direction. The default is False.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -238,8 +226,6 @@ class Cell(Topology):
     @staticmethod
     def ByWires(wires, close=False, triangulate=True, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cell by lofting through the input list of wires.
 
         Parameters
@@ -250,7 +236,7 @@ class Cell(Topology):
             If set to True, the last wire in the list of input wires will be connected to the first wire in the list of input wires. The default is False.
         triangulate : bool , optional
             If set to True, the faces will be triangulated. The default is True.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Raises
@@ -346,8 +332,6 @@ class Cell(Topology):
     @staticmethod
     def ByWiresCluster(cluster, close=False, triangulate=True, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cell by lofting through the input cluster of wires.
 
         Parameters
@@ -358,7 +342,7 @@ class Cell(Topology):
             If set to True, the last wire in the cluster of input wires will be connected to the first wire in the cluster of input wires. The default is False.
         triangulate : bool , optional
             If set to True, the faces will be triangulated. The default is True.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Raises
@@ -381,15 +365,13 @@ class Cell(Topology):
     @staticmethod
     def Compactness(cell, mantissa=4):
         """
-        Description
-        -----------
         Returns the compactness measure of the input cell. This is also known as 'sphericity' (https://en.wikipedia.org/wiki/Sphericity).
 
         Parameters
         ----------
         cell : topologic.Cell
             The input cell.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
         Raises
@@ -421,31 +403,29 @@ class Cell(Topology):
     def Cone(origin=None, baseRadius=0.5, topRadius=0, height=1, uSides=16, vSides=1, dirX=0, dirY=0,
                  dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cone.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the cone. The default is None which results in the cone being placed at (0,0,0).
-        baseRadius : float, optional
+        baseRadius : float , optional
             The radius of the base circle of the cone. The default is 0.5.
-        topRadius : float, optional
+        topRadius : float , optional
             The radius of the top circle of the cone. The default is 0.
-        height : float, optional
+        height : float , optional
             The height of the cone. The default is 1.
-        sides : int, optional
+        sides : int , optional
             The number of sides of the cone. The default is 16.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the cone. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the cone. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the cone. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the cone. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -563,31 +543,29 @@ class Cell(Topology):
     def Cylinder(origin=None, radius=0.5, height=1, uSides=16, vSides=1, dirX=0, dirY=0, dirZ=1,
                      placement="center", tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a cylinder.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the cylinder. The default is None which results in the cylinder being placed at (0,0,0).
-        radius : float, optional
+        radius : float , optional
             The radius of the cylinder. The default is 0.5.
-        height : float, optional
+        height : float , optional
             The height of the cylinder. The default is 1.
-        uSides : int, optional
+        uSides : int , optional
             The number of circle segments of the cylinder. The default is 16.
-        vSides : int, optional
+        vSides : int , optional
             The number of vertical segments of the cylinder. The default is 1.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the cylinder. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the cylinder. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the cylinder. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the cylinder. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -654,8 +632,6 @@ class Cell(Topology):
     @staticmethod
     def Decompose(cell, tiltAngle=10, tolerance=0.0001):
         """
-        Description
-        __________
         Decomposes the input cell into its logical components. This method assumes that the positive Z direction is UP.
 
         Parameters
@@ -763,8 +739,6 @@ class Cell(Topology):
     @staticmethod
     def Edges(cell):
         """
-        Description
-        __________
         Returns the edges of the input cell.
 
         Parameters
@@ -787,8 +761,6 @@ class Cell(Topology):
     @staticmethod
     def ExternalBoundary(cell):
         """
-        Description
-        -----------
         Returns the external boundary of the input cell.
 
         Parameters
@@ -814,8 +786,6 @@ class Cell(Topology):
     @staticmethod
     def Faces(cell):
         """
-        Description
-        __________
         Returns the faces of the input cell.
 
         Parameters
@@ -839,33 +809,31 @@ class Cell(Topology):
     def Hyperboloid(origin=None, baseRadius=0.5, topRadius=0.5, height=1, sides=16, dirX=0,
                         dirY=0, dirZ=1, twist=360, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a hyperboloid.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the hyperboloid. The default is None which results in the hyperboloid being placed at (0,0,0).
-        baseRadius : float, optional
+        baseRadius : float , optional
             The radius of the base circle of the hyperboloid. The default is 0.5.
-        topRadius : float, optional
+        topRadius : float , optional
             The radius of the top circle of the hyperboloid. The default is 0.5.
-        height : float, optional
+        height : float , optional
             The height of the cone. The default is 1.
-        sides : int, optional
+        sides : int , optional
             The number of sides of the cone. The default is 16.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the hyperboloid. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the hyperboloid. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the hyperboloid. The default is 1.
-        twist : float, optional
+        twist : float , optional
             The angle to twist the base cylinder. The default is 360.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the hyperboloid. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -949,8 +917,6 @@ class Cell(Topology):
     @staticmethod
     def InternalBoundaries(cell):
         """
-        Description
-        ----------
         Returns the internal boundaries of the input cell.
 
         Parameters
@@ -971,15 +937,13 @@ class Cell(Topology):
     @staticmethod
     def InternalVertex(cell, tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a vertex that is guaranteed to be inside the input cell.
 
         Parameters
         ----------
         cell : topologic.Cell
             The input cell.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1000,8 +964,6 @@ class Cell(Topology):
     @staticmethod
     def IsInside(cell, vertex, tolerance=0.0001):
         """
-        Description
-        ----------
         Returns True if the input vertex is inside the input cell. Returns False otherwise.
 
         Parameters
@@ -1010,7 +972,7 @@ class Cell(Topology):
             The input cell.
         vertex : topologic.Vertex
             The input vertex.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1041,13 +1003,13 @@ class Cell(Topology):
             The centerline of the pipe.
         profile : topologic.Wire , optional
             The profile of the pipe. It is assumed that the profile is in the XY plane. If set to None, a circle of radius 0.5 will be used. The default is None.
-        radius : float, optional
+        radius : float , optional
             The radius of the pipe. The default is 0.5.
-        sides : int, optional
+        sides : int , optional
             The number of sides of the pipe. The default is 16.
-        startOffset : float, optional
+        startOffset : float , optional
             The offset distance from the start vertex of the centerline edge. The default is 0.
-        endOffset : float, optional
+        endOffset : float , optional
             The offset distance from the end vertex of the centerline edge. The default is 0.
         endcapA : topologic.Topology, optional
             The topology to place at the start vertex of the centerline edge. The positive Z direction of the end cap will be oriented in the direction of the centerline edge.
@@ -1164,27 +1126,27 @@ class Cell(Topology):
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The origin location of the prism. The default is None which results in the prism being placed at (0,0,0).
-        width : float, optional
+        width : float , optional
             The width of the prism. The default is 1.
-        length : float, optional
+        length : float , optional
             The length of the prism. The default is 1.
-        height : float, optional
+        height : float , optional
             The height of the prism.
-        uSides : int, optional
+        uSides : int , optional
             The number of sides along the width. The default is 1.
-        vSides : int, optional
+        vSides : int , optional
             The number of sides along the length. The default is 1.
-        wSides : int, optional
+        wSides : int , optional
             The number of sides along the height. The default is 1.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the prism. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the prism. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the prism. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
 
         Returns
@@ -1260,8 +1222,6 @@ class Cell(Topology):
     @staticmethod
     def Sets(inputCells, superCells, tolerance=0.0001):
         """
-        Description
-        ----------
         Classifies the input cells into sets based on their enclosure within the input list of super cells. The order of the sets follows the order of the input list of super cells.
 
         Parameters
@@ -1270,7 +1230,7 @@ class Cell(Topology):
             The list of input cells.
         superCells : list
             The list of super cells.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1305,8 +1265,6 @@ class Cell(Topology):
     @staticmethod
     def Shells(cell):
         """
-        Description
-        __________
         Returns the shells of the input cell.
 
         Parameters
@@ -1330,29 +1288,27 @@ class Cell(Topology):
     def Sphere(origin=None, radius=0.5, uSides=16, vSides=8, dirX=0, dirY=0, dirZ=1,
                    placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a sphere.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The origin location of the sphere. The default is None which results in the sphere being placed at (0,0,0).
-        radius : float, optional
+        radius : float , optional
             The radius of the sphere. The default is 0.5.
-        uSides : int, optional
+        uSides : int , optional
             The number of sides along the longitude of the sphere. The default is 16.
-        vSides : int, optional
+        vSides : int , optional
             The number of sides along the latitude of the sphere. The default is 8.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the sphere. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the sphere. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the sphere. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1395,15 +1351,13 @@ class Cell(Topology):
     @staticmethod
     def SurfaceArea(cell, mantissa=4):
         """
-        Description
-        __________
         Returns the surface area of the input cell.
 
         Parameters
         ----------
         cell : topologic.Cell
             The cell.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns
@@ -1418,31 +1372,29 @@ class Cell(Topology):
     def Torus(origin=None, majorRadius=0.5, minorRadius=0.125, uSides=16, vSides=8, dirX=0, dirY=0,
                   dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        __________
         Creates a torus.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The origin location of the torus. The default is None which results in the torus being placed at (0,0,0).
-        majorRadius : float, optional
+        majorRadius : float , optional
             The major radius of the torus. The default is 0.5.
-        minorRadius : float, optional
+        minorRadius : float , optional
             The minor radius of the torus. The default is 0.1.
-        uSides : int, optional
+        uSides : int , optional
             The number of sides along the longitude of the torus. The default is 16.
-        vSides : int, optional
+        vSides : int , optional
             The number of sides along the latitude of the torus. The default is 8.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the sphere. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the sphere. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the sphere. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -1486,8 +1438,6 @@ class Cell(Topology):
     @staticmethod
     def Vertices(cell):
         """
-        Description
-        __________
         Returns the vertices of the input cell.
 
         Parameters
@@ -1510,15 +1460,13 @@ class Cell(Topology):
     @staticmethod
     def Volume(cell, mantissa=4):
         """
-        Description
-        __________
         Returns the volume of the input cell.
 
         Parameters
         ----------
         cell : topologic.Cell
             The input cell.
-        manitssa: int, optional
+        manitssa: int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns
@@ -1534,8 +1482,6 @@ class Cell(Topology):
     @staticmethod
     def Wires(cell):
         """
-        Description
-        __________
         Returns the wires of the input cell.
 
         Parameters

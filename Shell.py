@@ -7,15 +7,13 @@ class Shell(Topology):
     @staticmethod
     def ByFaces(faces, tolerance=0.0001):
         """
-        Description
-        -----------
         Creates a shell from the input list of faces.
 
         Parameters
         ----------
         faces : list
             The input list of faces.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -41,8 +39,6 @@ class Shell(Topology):
     @staticmethod
     def ByFacesCluster(cluster):
         """
-        Description
-        ----------
         Creates a shell from the input cluster of faces.
 
         Parameters
@@ -65,8 +61,6 @@ class Shell(Topology):
     @staticmethod
     def ByWires(wires, triangulate=True, tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a shell by lofting through the input wires
 
         Parameters
@@ -75,7 +69,7 @@ class Shell(Topology):
             The input list of wires.
         triangulate : bool , optional
             If set to True, the faces will be triangulated. The default is True.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -162,8 +156,6 @@ class Shell(Topology):
     @staticmethod
     def ByWiresCluster(cluster, triangulate=True, tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a shell by lofting through the input cluster of wires
 
         Parameters
@@ -172,7 +164,7 @@ class Shell(Topology):
             The input cluster of wires.
         triangulate : bool , optional
             If set to True, the faces will be triangulated. The default is True.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -192,31 +184,29 @@ class Shell(Topology):
     @staticmethod
     def Circle(origin=None, radius=0.5, sides=32, fromAngle=0, toAngle=360, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a circle.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
-        radius : float, optional
+        radius : float , optional
             The  radius of the circle. The default is 0.5.
-        sides : int, optional
+        sides : int , optional
             The number of sides of the circle. The default is 32.
-        fromAngle : float, optional
+        fromAngle : float , optional
             The angle in degrees from which to start creating the arc of the circle. The default is 0.
-        toAngle : float, optional
+        toAngle : float , optional
             The angle in degrees at which to end creating the arc of the circle. The default is 360.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the circle. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the circle. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the circle. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -229,8 +219,6 @@ class Shell(Topology):
     @staticmethod
     def Edges(shell):
         """
-        Description
-        __________
         Returns the edges of the input shell.
 
         Parameters
@@ -253,8 +241,6 @@ class Shell(Topology):
     @staticmethod
     def ExternalBoundary(shell):
         """
-        Description
-        ----------
         Returns the external boundary (closed wire) of the input shell.
 
         Parameters
@@ -289,8 +275,6 @@ class Shell(Topology):
     @staticmethod
     def Faces(shell):
         """
-        Description
-        __________
         Returns the faces of the input shell.
 
         Parameters
@@ -313,8 +297,6 @@ class Shell(Topology):
     @staticmethod
     def HyperbolicParaboloidRectangularDomain(origin=None, llVertex=None, lrVertex=None, ulVertex=None, urVertex=None, u=10, v=10, dirX=0, dirY=0, dirZ=1, placement="bottom"):
         """
-        Description
-        __________
         Creates a hyperbolic paraboloid with a rectangular domain.
 
         Parameters
@@ -333,13 +315,13 @@ class Shell(Topology):
             The number of segments along the X axis. The default is 10.
         v : int , optional
             The number of segments along the Y axis. The default is 10.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the circle. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the circle. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the circle. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the circle. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
 
         Returns
@@ -427,8 +409,6 @@ class Shell(Topology):
     @staticmethod
     def HyperbolicParaboloidCircularDomain(origin=None, radius=0.5, sides=36, rings=10, A=1.0, B=-1.0, dirX=0, dirY=0, dirZ=1, placement="bottom"):
         """
-        Description
-        __________
         Creates a hyperbolic paraboloid with a circular domain. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
         Parameters
@@ -445,13 +425,13 @@ class Shell(Topology):
             The *A* constant in the equation z = A*x^2^ + B*y^2^. The default is 1.0.
         B : float , optional
             The *B* constant in the equation z = A*x^2^ + B*y^2^. The default is -1.0.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the circle. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the circle. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the circle. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the circle. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
 
         Returns
@@ -603,8 +583,6 @@ class Shell(Topology):
     @staticmethod
     def InternalBoundaries(shell):
         """
-        Description
-        __________
         Returns the internal boundaries (closed wires) of the input shell. Internal boundaries are considered holes.
 
         Parameters
@@ -632,8 +610,6 @@ class Shell(Topology):
     @staticmethod
     def IsClosed(shell):
         """
-        Description
-        __________
         Returns True if the input shell is closed. Returns False otherwise.
 
         Parameters
@@ -652,35 +628,33 @@ class Shell(Topology):
     @staticmethod
     def Pie(origin=None, radiusA=0.5, radiusB=0, sides=32, rings=1, fromAngle=0, toAngle=360, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a pie shape.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the pie. The default is None which results in the pie being placed at (0,0,0).
-        radiusA : float, optional
+        radiusA : float , optional
             The outer radius of the pie. The default is 0.5.
-        radiusB : float, optional
+        radiusB : float , optional
             The inner radius of the pie. The default is 0.25.
-        sides : int, optional
+        sides : int , optional
             The number of sides of the pie. The default is 32.
-        rings : int, optional
+        rings : int , optional
             The number of rings of the pie. The default is 1.
-        fromAngle : float, optional
+        fromAngle : float , optional
             The angle in degrees from which to start creating the arc of the pie. The default is 0.
-        toAngle : float, optional
+        toAngle : float , optional
             The angle in degrees at which to end creating the arc of the pie. The default is 360.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the pie. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the pie. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the pie. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -797,31 +771,29 @@ class Shell(Topology):
     @staticmethod
     def Rectangle(origin=None, width=1.0, length=1.0, uSides=2, vSides=2, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
-        Description
-        ----------
         Creates a rectangle.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic.Vertex , optional
             The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0,0,0).
-        width : float, optional
+        width : float , optional
             The width of the rectangle. The default is 1.0.
-        length : float, optional
+        length : float , optional
             The length of the rectangle. The default is 1.0.
-        uSides : int, optional
+        uSides : int , optional
             The number of sides along the width. The default is 2.
-        vSides : int, optional
+        vSides : int , optional
             The number of sides along the length. The default is 2.
-        dirX : float, optional
+        dirX : float , optional
             The X component of the vector representing the up direction of the rectangle. The default is 0.
-        dirY : float, optional
+        dirY : float , optional
             The Y component of the vector representing the up direction of the rectangle. The default is 0.
-        dirZ : float, optional
+        dirZ : float , optional
             The Z component of the vector representing the up direction of the rectangle. The default is 1.
-        placement : str, optional
+        placement : str , optional
             The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -877,15 +849,13 @@ class Shell(Topology):
     @staticmethod
     def SelfMerge(shell, angTolerance=0.1):
         """
-        Description
-        ----------
         Creates a face by merging the faces of the input shell. The shell must be planar within the input angular tolerance.
 
         Parameters
         ----------
         shell : topologic.Shell
             The input shell.
-        angTolerance : float, optional
+        angTolerance : float , optional
             The desired angular tolerance. The default is 0.1.
 
         Returns
@@ -949,8 +919,6 @@ class Shell(Topology):
     @staticmethod
     def Vertices(shell):
         """
-        Description
-        __________
         Returns the vertices of the input shell.
 
         Parameters
@@ -973,8 +941,6 @@ class Shell(Topology):
     @staticmethod
     def Wires(shell):
         """
-        Description
-        __________
         Returns the wires of the input shell.
 
         Parameters

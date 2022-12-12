@@ -8,8 +8,6 @@ class Vertex(Topology):
     @staticmethod
     def ByCoordinates(x, y, z):
         """
-        Description
-        -----------
         Creates a vertex at the coordinates specified by the x, y, z inputs.
 
         Parameters
@@ -37,8 +35,6 @@ class Vertex(Topology):
     @staticmethod
     def Coordinates(vertex, outputType="xyz", mantissa=4):
         """
-        Description
-        -----------
         Returns the coordinates of the input vertex.
 
         Parameters
@@ -47,7 +43,7 @@ class Vertex(Topology):
             The input vertex.
         outputType : string, optional
             The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". The default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns
@@ -84,8 +80,6 @@ class Vertex(Topology):
     @staticmethod
     def Distance(vertex, topology, mantissa=4):
         """
-        Description
-        -----------
         Returns the distance between the input vertex and the input topology.
 
         Parameters
@@ -94,7 +88,7 @@ class Vertex(Topology):
             The input vertex.
         topology : topologic.Topology
             The input topology.
-        mantissa: int, optional
+        mantissa: int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns
@@ -110,8 +104,6 @@ class Vertex(Topology):
     @staticmethod
     def EnclosingCell(vertex, topology, exclusive=True, tolerance=0.0001):
         """
-        Description
-        -----------
         Returns the list of Cells found in the input topology that enclose the input vertex.
 
         Parameters
@@ -120,7 +112,7 @@ class Vertex(Topology):
             The input vertex.
         topology : topologic.Topology
             The input topology.
-        exclusive : boolean , optional
+        exclusive : bool , optional
             If set to True, return only the first found enclosing cell. The default is True.
         tolerance : float , optional
             The tolerance for computing if the input vertex is enclosed in a cell. The default is 0.0001.
@@ -167,8 +159,6 @@ class Vertex(Topology):
     @staticmethod
     def Index(vertex, vertices, strict=False, tolerance=0.0001):
         """
-        Description
-        -----------
         Returns index of the input vertex in the input list of vertices
 
         Parameters
@@ -208,8 +198,6 @@ class Vertex(Topology):
     @staticmethod
     def NearestVertex(vertex, topology, useKDTree=True):
         """
-        Description
-        -----------
         Returns the vertex found in the input topology that is the nearest to the input vertex.
 
         Parameters
@@ -218,7 +206,7 @@ class Vertex(Topology):
             The input vertex.
         topology : topologic.Topology
             The input topology to be searched for the nearest vertex.
-        useKDTree : boolean, optional
+        useKDTree : bool , optional
             if set to True, the algorithm will use a KDTree method to search for the nearest vertex. The default is True.
 
         Returns
@@ -354,8 +342,6 @@ class Vertex(Topology):
     @staticmethod
     def Project(vertex, face, direction=None, mantissa=4, tolerance=0.0001):
         """
-        Description
-        -----------
         Returns a vertex that is the projection of the input vertex unto the input face.
 
         Parameters
@@ -366,9 +352,9 @@ class Vertex(Topology):
             The input face that receives the projection of the input vertex.
         direction : vector, optional
             The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. The default is None.
-        mantissa : int, optional
+        mantissa : int , optional
             The length of the desired mantissa. The default is 4.
-        tolerance : float, optional
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -407,15 +393,13 @@ class Vertex(Topology):
     @staticmethod
     def X(vertex, mantissa=4):
         """
-        Description
-        -----------
         Returns the X coordinate of the input vertex.
 
         Parameters
         ----------
         vertex : topologic.Vertex
             The input vertex.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns
@@ -431,15 +415,13 @@ class Vertex(Topology):
     @staticmethod
     def Y(vertex, mantissa=4):
         """
-        Description
-        -----------
         Returns the Y coordinate of the input vertex.
 
         Parameters
         ----------
         vertex : topologic.Vertex
             The input vertex.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns
@@ -455,15 +437,13 @@ class Vertex(Topology):
     @staticmethod
     def Z(vertex, mantissa=4):
         """
-        Description
-        -----------
         Returns the Z coordinate of the input vertex.
 
         Parameters
         ----------
         vertex : topologic.Vertex
             The input vertex.
-        mantissa : int, optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
         Returns

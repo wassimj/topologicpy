@@ -1083,21 +1083,21 @@ class Topology():
                 return(topology.Type())
             
         try:
-            if operation == "Union":
+            if operation.lower() == "union":
                 topologyC = topologyA.Union(topologyB, False)
-            elif operation == "Difference":
+            elif operation.lower() == "difference":
                 topologyC = topologyA.Difference(topologyB, False)
-            elif operation == "Intersect":
+            elif operation.lower() == "intersect":
                 topologyC = topologyA.Intersect(topologyB, False)
-            elif operation == "SymDif":
+            elif operation.lower() == "symdif":
                 topologyC = topologyA.XOR(topologyB, False)
-            elif operation == "Merge":
+            elif operation.lower() == "merge":
                 topologyC = topologyA.Merge(topologyB, False)
-            elif operation == "Slice":
+            elif operation.lower() == "slice":
                 topologyC = topologyA.Slice(topologyB, False)
-            elif operation == "Impose":
+            elif operation.lower() == "impose":
                 topologyC = topologyA.Impose(topologyB, False)
-            elif operation == "Imprint":
+            elif operation.lower() == "imprint":
                 topologyC = topologyA.Imprint(topologyB, False)
             else:
                 raise Exception("ERROR: (Topologic>Topology.Boolean) invalid boolean operation name: "+operation)
@@ -3368,24 +3368,26 @@ class Topology():
         return result
     
     @staticmethod
-    def IsSame(item):
+    def IsSame(topologyA, topologyB):
         """
         Description
         __________
-            DESCRIPTION
+            Returns True of the input topologies are the same topology. Returns False otherwise.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topologyA : topologic.Topology
+            The first input topology.
+        topologyB : topologic.Topology
+            The second input topology.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        bool
+            True of the input topologies are the same topology. False otherwise..
 
         """
-        return topologic.Topology.IsSame(item[0], item[1])
+        return topologic.Topology.IsSame(topologyA, topologyB)
     
     @staticmethod
     def MergeAll(item):
