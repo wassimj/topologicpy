@@ -509,6 +509,26 @@ class CellComplex(topologic.CellComplex):
         return cellComplex.ExternalBoundary()
 
     @staticmethod
+    def ExternalFaces(cellComplex):
+        """
+        Returns the external boundary (cell) of the input cellComplex.
+
+        Parameters
+        ----------
+        cellComplex : topologic.CellComplex
+            The input cellComplex.
+
+        Returns
+        -------
+        topologic.Cell
+            The external boundary of the input cellComplex.
+
+        """
+        from topologicpy.Cell import Cell
+        cell = cellComplex.ExternalBoundary()
+        return Cell.Faces(cell)
+
+    @staticmethod
     def Faces(cellComplex):
         """
         Returns the faces of the input cellComplex.
@@ -531,7 +551,7 @@ class CellComplex(topologic.CellComplex):
         return faces
 
     @staticmethod
-    def InternalBoundary(cellComplex):
+    def InternalFaces(cellComplex):
         """
         Returns the internal boundaries (faces) of the input cellComplex.
 
@@ -543,7 +563,7 @@ class CellComplex(topologic.CellComplex):
         Returns
         -------
         list
-            The list of internal boundaries (faces) of the input cellComplex.
+            The list of internal faces of the input cellComplex.
 
         """
         faces = []
@@ -704,6 +724,33 @@ class CellComplex(topologic.CellComplex):
         vertices = []
         _ = cellComplex.Vertices(None, vertices)
         return vertices
+
+    @staticmethod
+    def Volume(cellComplex, mantissa=4):
+        """
+        Returns the volume of the input cellComplex.
+
+        Parameters
+        ----------
+        cellComplex : topologic.CellComplex
+            The input cellComplex.
+        manitssa: int , optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        float
+            The volume of the input cellComplex.
+
+        """
+        from topologicpy.Cell import Cell
+        if not isinstance(cellComplex, topologic.CellComplex):
+            return None
+        cells = CellComplex.Cells(cellComplex)
+        volume = 0
+        for cell in cells:
+            volume += Cell.Volume(cell)
+        return round(volume, mantissa)
 
     @staticmethod
     def Wires(cellComplex):

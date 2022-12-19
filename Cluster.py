@@ -110,6 +110,46 @@ class Cluster(topologic.Cluster):
         return faces
 
     @staticmethod
+    def HighestType(cluster):
+        """
+        Returns the type of the highest dimension subtopology found in the input cluster.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input cluster.
+
+        Returns
+        -------
+        int
+            The type of the highest dimension subtopology found in the input cluster.
+
+        """
+        if not isinstance(topologic.Cluster):
+            return None
+        cellComplexes = Cluster.CellComplexes(cluster)
+        if len(cellComplexes) > 0:
+            return topologic.CellComplex.Type()
+        cells = Cluster.Cells(cluster)
+        if len(cells) > 0:
+            return topologic.Cell.Type()
+        shells = Cluster.Shells(cluster)
+        if len(shells) > 0:
+            return topologic.Shell.Type()
+        faces = Cluster.Faces(cluster)
+        if len(faces) > 0:
+            return topologic.Face.Type()
+        wires = Cluster.Wires(cluster)
+        if len(wires) > 0:
+            return topologic.Wire.Type()
+        edges = Cluster.Edges(cluster)
+        if len(edges) > 0:
+            return topologic.Edge.Type()
+        vertices = Cluster.Vertices(cluster)
+        if len(vertices) > 0:
+            return topologic.Vertex.Type()
+
+    @staticmethod
     def MysticRose(wire=None, origin=None, radius=1, sides=16, perimeter=True, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
         """
         Creates a mystic rose.
@@ -185,6 +225,82 @@ class Cluster(topologic.Cluster):
         shells = []
         _ = cluster.Shells(None, shells)
         return shells
+
+    @staticmethod
+    def Simplify(cluster):
+        """
+        Simplifies the input cluster if possible. For example, if the cluster contains only one cell, that cell is returned.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input cluster.
+
+        Returns
+        -------
+        topologic.Topology or list
+            The simplification of the cluster.
+
+        """
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        resultingTopologies = []
+        topCC = []
+        _ = cluster.CellComplexes(None, topCC)
+        topCells = []
+        _ = cluster.Cells(None, topCells)
+        topShells = []
+        _ = cluster.Shells(None, topShells)
+        topFaces = []
+        _ = cluster.Faces(None, topFaces)
+        topWires = []
+        _ = cluster.Wires(None, topWires)
+        topEdges = []
+        _ = cluster.Edges(None, topEdges)
+        topVertices = []
+        _ = cluster.Vertices(None, topVertices)
+        if len(topCC) == 1:
+            cc = topCC[0]
+            ccVertices = []
+            _ = cc.Vertices(None, ccVertices)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(cc)
+        if len(topCC) == 0 and len(topCells) == 1:
+            cell = topCells[0]
+            ccVertices = []
+            _ = cell.Vertices(None, ccVertices)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(cell)
+        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 1:
+            shell = topShells[0]
+            ccVertices = []
+            _ = shell.Vertices(None, ccVertices)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(shell)
+        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 1:
+            face = topFaces[0]
+            ccVertices = []
+            _ = face.Vertices(None, ccVertices)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(face)
+        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 1:
+            wire = topWires[0]
+            ccVertices = []
+            _ = wire.Vertices(None, ccVertices)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(wire)
+        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 1:
+            edge = topEdges[0]
+            ccVertices = []
+            _ = wire.Vertices(None, ccVertices)
+            if len(topVertices) == len(ccVertices):
+                resultingTopologies.append(edge)
+        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 0 and len(topVertices) == 1:
+            vertex = topVertices[0]
+            resultingTopologies.append(vertex)
+        if len(resultingTopologies) == 1:
+            return resultingTopologies[0]
+        return cluster
 
     @staticmethod
     def Vertices(cluster):

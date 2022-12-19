@@ -1,3 +1,5 @@
+from base64 import b16encode
+from tkinter import N
 import topologicpy
 import topologic
 
@@ -17,367 +19,48 @@ except:
     raise Exception("Error: TopologyByImportedIFC: ifcopenshell is not present on your system. Install BlenderBIM or ifcopenshell to resolve.")
 '''
 
-
-def listAttributeValues(listAttribute):
-    listAttributes = listAttribute.ListValue()
-    returnList = []
-    for attr in listAttributes:
-        if isinstance(attr, topologic.IntAttribute):
-            returnList.append(attr.IntValue())
-        elif isinstance(attr, topologic.DoubleAttribute):
-            returnList.append(attr.DoubleValue())
-        elif isinstance(attr, topologic.StringAttribute):
-            returnList.append(attr.StringValue())
-    return returnList
-
-def valueAtKey(item, key):
-    try:
-        attr = item.ValueAtKey(key)
-    except:
-        raise Exception("Dictionary.ValueAtKey - Error: Could not retrieve a Value at the specified key ("+key+")")
-    if isinstance(attr, topologic.IntAttribute):
-        return (attr.IntValue())
-    elif isinstance(attr, topologic.DoubleAttribute):
-        return (attr.DoubleValue())
-    elif isinstance(attr, topologic.StringAttribute):
-        return (attr.StringValue())
-    elif isinstance(attr, topologic.ListAttribute):
-        return (listAttributeValues(attr))
-    else:
-        return None
-
-def getValueAtKey(item, key):
-    try:
-        attr = item.ValueAtKey(key)
-    except:
-        raise Exception("Dictionary.ValueAtKey - Error: Could not retrieve a Value at the specified key ("+key+")")
-    if isinstance(attr, topologic.IntAttribute):
-        return (attr.IntValue())
-    elif isinstance(attr, topologic.DoubleAttribute):
-        return (attr.DoubleValue())
-    elif isinstance(attr, topologic.StringAttribute):
-        return (attr.StringValue())
-    elif isinstance(attr, topologic.ListAttribute):
-        return (listAttributeValues(attr))
-    else:
-        return None
-
-def internalVertex(topology, tolerance):
-    vst = None
-    classType = topology.Type()
-    if classType == 64: #CellComplex
-        tempCells = []
-        _ = topology.Cells(tempCells)
-        tempCell = tempCells[0]
-        vst = topologic.CellUtility.InternalVertex(tempCell, tolerance)
-    elif classType == 32: #Cell
-        vst = topologic.CellUtility.InternalVertex(topology, tolerance)
-    elif classType == 16: #Shell
-        tempFaces = []
-        _ = topology.Faces(None, tempFaces)
-        tempFace = tempFaces[0]
-        vst = topologic.FaceUtility.InternalVertex(tempFace, tolerance)
-    elif classType == 8: #Face
-        vst = topologic.FaceUtility.InternalVertex(topology, tolerance)
-    elif classType == 4: #Wire
-        if topology.IsClosed():
-            internalBoundaries = []
-            tempFace = topologic.Face.ByExternalInternalBoundaries(topology, internalBoundaries)
-            vst = topologic.FaceUtility.InternalVertex(tempFace, tolerance)
-        else:
-            tempEdges = []
-            _ = topology.Edges(None, tempEdges)
-            vst = topologic.EdgeUtility.PointAtParameter(tempVertex[0], 0.5)
-    elif classType == 2: #Edge
-        vst = topologic.EdgeUtility.PointAtParameter(topology, 0.5)
-    elif classType == 1: #Vertex
-        vst = topology
-    else:
-        vst = topology.Centroid()
-    return vst
-
-def processKeysValues(keys, values):
-    if len(keys) != len(values):
-        raise Exception("DictionaryByKeysValues - Keys and Values do not have the same length")
-    stl_keys = []
-    stl_values = []
-    for i in range(len(keys)):
-        if isinstance(keys[i], str):
-            stl_keys.append(keys[i])
-        else:
-            stl_keys.append(str(keys[i]))
-        if isinstance(values[i], list) and len(values[i]) == 1:
-            value = values[i][0]
-        else:
-            value = values[i]
-        if isinstance(value, bool):
-            if value == False:
-                stl_values.append(topologic.IntAttribute(0))
-            else:
-                stl_values.append(topologic.IntAttribute(1))
-        elif isinstance(value, int):
-            stl_values.append(topologic.IntAttribute(value))
-        elif isinstance(value, float):
-            stl_values.append(topologic.DoubleAttribute(value))
-        elif isinstance(value, str):
-            stl_values.append(topologic.StringAttribute(value))
-        elif isinstance(value, list):
-            l = []
-            for v in value:
-                if isinstance(v, bool):
-                    l.append(topologic.IntAttribute(v))
-                elif isinstance(v, int):
-                    l.append(topologic.IntAttribute(v))
-                elif isinstance(v, float):
-                    l.append(topologic.DoubleAttribute(v))
-                elif isinstance(v, str):
-                    l.append(topologic.StringAttribute(v))
-            stl_values.append(topologic.ListAttribute(l))
-        else:
-            raise Exception("Error: Value type is not supported. Supported types are: Boolean, Integer, Double, String, or List.")
-    myDict = topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
-    return myDict
-
-def dictionaryByPythonDictionary(pydict):
-    keys = list(pydict.keys())
-    values = []
-    for key in keys:
-        values.append(pydict[key])
-    return processKeysValues(keys, values)
-
-def processApertures(subTopologies, apertures, exclusive, tolerance):
-    usedTopologies = []
-    for subTopology in subTopologies:
-            usedTopologies.append(0)
-    ap = 1
-    for aperture in apertures:
-        apCenter = internalVertex(aperture, tolerance)
-        for i in range(len(subTopologies)):
-            subTopology = subTopologies[i]
-            if exclusive == True and usedTopologies[i] == 1:
-                continue
-            if topologic.VertexUtility.Distance(apCenter, subTopology) < tolerance:
-                context = topologic.Context.ByTopologyParameters(subTopology, 0.5, 0.5, 0.5)
-                _ = topologic.Aperture.ByTopologyContext(aperture, context)
-                if exclusive == True:
-                    usedTopologies[i] = 1
-        ap = ap + 1
-    return None
-
-def assignDictionary(item):
-    selector = item['selector']
-    pydict = item['dictionary']
-    v = topologic.Vertex.ByCoordinates(selector[0], selector[1], selector[2])
-    d = dictionaryByPythonDictionary(pydict)
-    _ = v.SetDictionary(d)
-    return v
-
-def relevantSelector(topology, tol):
-    returnVertex = None
-    if topology.Type() == topologic.Vertex.Type():
-        return topology
-    elif topology.Type() == topologic.Edge.Type():
-        return topologic.EdgeUtility.PointAtParameter(topology, 0.5)
-    elif topology.Type() == topologic.Face.Type():
-        return topologic.FaceUtility.InternalVertex(topology, tol)
-    elif topology.Type() == topologic.Cell.Type():
-        return topologic.CellUtility.InternalVertex(topology, tol)
-    else:
-        return topology.CenterOfMass()
-
-def topologyContains(topology, vertex, tol):
-    contains = False
-    if topology.Type() == topologic.Vertex.Type():
-        try:
-            contains = (topologic.VertexUtility.Distance(vertex, topology) <= tol)
-        except:
-            contains = False
-        return contains
-    elif topology.Type() == topologic.Edge.Type():
-        try:
-            contains = (topologic.VertexUtility.Distance(vertex, topology) <= tol)
-        except:
-            contains = False
-        return contains
-    elif topology.Type() == topologic.Face.Type():
-        return topologic.FaceUtility.IsInside(topology, vertex, tol)
-    elif topology.Type() == topologic.Cell.Type():
-        return (topologic.CellUtility.Contains(topology, vertex, tol) == 0)
-    return False
-
-def transferDictionaries(sources, sinks, tol):
-    usedSources = []
-    for i in range(len(sources)):
-        usedSources.append(False)
-    for sink in sinks:
-        sinkKeys = []
-        sinkValues = []
-        for j in range(len(sources)):
-            source = sources[j]
-            if usedSources[j] == False:
-                d = source.GetDictionary()
-                if d:
-                    sourceKeys = d.Keys()
-                    if len(sourceKeys) > 0:
-                        iv = relevantSelector(source, tol)
-                        if topologyContains(sink, iv, tol):
-                            usedSources[j] = True
-                            for aSourceKey in sourceKeys:
-                                if aSourceKey not in sinkKeys:
-                                    sinkKeys.append(aSourceKey)
-                                    sinkValues.append("")
-                            for i in range(len(sourceKeys)):
-                                index = sinkKeys.index(sourceKeys[i])
-                                sourceValue = valueAtKey(d, sourceKeys[i])
-                                if sourceValue != None:
-                                    if sinkValues[index] != "":
-                                        if isinstance(sinkValues[index], list):
-                                            sinkValues[index].append(sourceValue)
-                                        else:
-                                            sinkValues[index] = [sinkValues[index], sourceValue]
-                                    else:
-                                        sinkValues[index] = sourceValue
-                    else:
-                        usedSources[j] = True # Has no keys so not useful to reconsider
-                else:
-                    usedSources[j] = True # Has no dictionary so not useful to reconsider
-        if len(sinkKeys) > 0 and len(sinkValues) > 0:
-            newDict = processKeysValues(sinkKeys, sinkValues)
-            _ = sink.SetDictionary(newDict)
-
-def highestDimension(topology):
-    if (topology.Type() == topologic.Cluster.Type()):
-        cellComplexes = []
-        _ = topology.CellComplexes(None, cellComplexes)
-        if len(cellComplexes) > 0:
-            return topologic.CellComplex.Type()
-        cells = []
-        _ = topology.Cells(None, cells)
-        if len(cells) > 0:
-            return topologic.Cell.Type()
-        shells = []
-        _ = topology.Shells(None, shells)
-        if len(shells) > 0:
-            return topologic.Shell.Type()
-        faces = []
-        _ = topology.Faces(None, faces)
-        if len(faces) > 0:
-            return topologic.Face.Type()
-        wires = []
-        _ = topology.Wires(None, wires)
-        if len(wires) > 0:
-            return topologic.Wire.Type()
-        edges = []
-        _ = topology.Edges(None, edges)
-        if len(edges) > 0:
-            return topologic.Edge.Type()
-        vertices = []
-        _ = topology.Vertices(None, vertices)
-        if len(vertices) > 0:
-            return topologic.Vertex.Type()
-    else:
-        return(topology.Type())
-
-def processSelectors(sources, sink, tranVertices, tranEdges, tranFaces, tranCells, tolerance):
-    sourceVertices = []
-    sourceEdges = []
-    sourceFaces = []
-    sourceCells = []
-    sinVertices = []
-    sinkEdges = []
-    sinkFaces = []
-    sinkCells = []
-    hidimSink = highestDimension(sink)
-    if tranVertices == True:
-        sinkVertices = []
-        if sink.Type() == topologic.Vertex.Type():
-            sinkVertices.append(sink)
-        elif hidimSink >= topologic.Vertex.Type():
-            sink.Vertices(None, sinkVertices)
-        _ = transferDictionaries(sources, sinkVertices, tolerance)
-    if tranEdges == True:
-        sinkEdges = []
-        if sink.Type() == topologic.Edge.Type():
-            sinkEdges.append(sink)
-        elif hidimSink >= topologic.Edge.Type():
-            sink.Edges(None, sinkEdges)
-            _ = transferDictionaries(sources, sinkEdges, tolerance)
-    if tranFaces == True:
-        sinkFaces = []
-        if sink.Type() == topologic.Face.Type():
-            sinkFaces.append(sink)
-        elif hidimSink >= topologic.Face.Type():
-            sink.Faces(None, sinkFaces)
-        _ = transferDictionaries(sources, sinkFaces, tolerance)
-    if tranCells == True:
-        sinkCells = []
-        if sink.Type() == topologic.Cell.Type():
-            sinkCells.append(sink)
-        elif hidimSink >= topologic.Cell.Type():
-            sink.Cells(None, sinkCells)
-        _ = transferDictionaries(sources, sinkCells, tolerance)
-    return sink
-
 class Topology():
     @staticmethod
-    def AddApertures(topology, apertureCluster, exclusive, subTopologyType, tolerance=0.0001):
+    def AddApertures(topology, apertures, exclusive=False, subTopologyType=None, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Adds the input list of apertures to the input topology or to its subtpologies based on the input subTopologyType.
 
         Parameters
         ----------
         topology : topologic.Topology
             The input topology.
-        apertureCluster : topologic.Cluster
-            The input cluster of apertures.
-        exclusive : bool
-            If set to True, one aperture will be assigned exclusively to one topology.
-        subTopologyType : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        apertures : list
+            The input list of apertures.
+        exclusive : bool , optional
+            If set to True, one (sub)topology will accept only one aperture. Otherwise, one (sub)topology can accept multiple apertures. The default is False.
+        subTopologyType : string , optional
+            The subtopology type to which to add the apertures. This can be "cell", "face", "edge", or "vertex". It is case insensitive. If set to None, the apertures will be added to the input topology. The defaul is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
         topologic.Topology
-            The returned topology with the apertures added to it.
+            The input topology with the apertures added to it.
 
         """
-        def processApertures(subTopologies, apertureCluster, exclusive, tolerance):
-            apertures = []
-            cells = []
-            faces = []
-            edges = []
-            vertices = []
-            _ = apertureCluster.Cells(None, cells)
-            _ = apertureCluster.Faces(None, faces)
-            _ = apertureCluster.Vertices(None, vertices)
-            # apertures are assumed to all be of the same topology type.
-            if len(cells) > 0:
-                apertures = cells
-            elif len(faces) > 0:
-                apertures = faces
-            elif len(edges) > 0:
-                apertures = edges
-            elif len(vertices) > 0:
-                apertures = vertices
-            else:
-                apertures = []
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Aperture import Aperture
+        def processApertures(subTopologies, apertures, exclusive=False, tolerance=0.001):
             usedTopologies = []
             for subTopology in subTopologies:
                     usedTopologies.append(0)
             ap = 1
             for aperture in apertures:
-                apCenter = internalVertex(aperture, tolerance)
+                apCenter = Topology.InternalVertex(aperture, tolerance)
                 for i in range(len(subTopologies)):
                     subTopology = subTopologies[i]
                     if exclusive == True and usedTopologies[i] == 1:
                         continue
-                    if topologic.VertexUtility.Distance(apCenter, subTopology) < tolerance:
+                    if Vertex.Distance(apCenter, subTopology) < tolerance:
                         context = topologic.Context.ByTopologyParameters(subTopology, 0.5, 0.5, 0.5)
-                        _ = topologic.Aperture.ByTopologyContext(aperture, context)
+                        _ = Aperture.ByTopologyContext(aperture, context)
                         if exclusive == True:
                             usedTopologies[i] = 1
                 ap = ap + 1
@@ -385,67 +68,81 @@ class Topology():
 
         if not isinstance(topology, topologic.Topology):
             return None
-        if not isinstance(apertureCluster, topologic.Cluster):
+        if not apertures:
+            return topology
+        if not isinstance(apertures, list):
             return None
-        subTopologies = []
-        if subTopologyType == "Face":
-            _ = topology.Faces(None, subTopologies)
-        elif subTopologyType == "Edge":
-            _ = topology.Edges(None, subTopologies)
-        elif subTopologyType == "Vertex":
-            _ = topology.Vertices(None, subTopologies)
-        processApertures(subTopologies, apertureCluster, exclusive, tolerance)
+        apertures = [x for x in apertures if isinstance(x , topologic.Topology)]
+        if len(apertures) < 1:
+            return topology
+        if not subTopologyType:
+            subTopologyType = "self"
+        if not subTopologyType.lower() in ["self", "cell", "face", "edge", "vertex"]:
+            return None
+        if subTopologyType.lower() == "self":
+            subTopologies = [topology]
+        else:
+            subTopologies = Topology.SubTopologies(topology, subTopologyType)
+        processApertures(subTopologies, apertures, exclusive, tolerance)
         return topology
     
     @staticmethod
-    def AddContent(topology, contents, targetType="host"):
+    def AddContent(topology, contents, subTopologyType=None, tolerance=0.0001):
         """
-        Description
-        __________
-            Adds the list of contents to the input topology or one of its sub-tpologies based on the input targetType
+        Adds the input list of contents to the input topology or to its subtpologies based on the input subTopologyType.
 
         Parameters
         ----------
         topology : topologic.Topology
             The input topology.
-        contents : list
-            The list of contents.
-        targetType : string , optional
-            Specifies to what topology the contents should be added. It is case in-sensitive. Possible values are "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "host".
+        conntents : list
+            The input list of contents.
+        subTopologyType : string , optional
+            The subtopology type to which to add the contents. This can be "cellcomplex", "cell", "shell", "face", "wire", "edge", or "vertex". It is case insensitive. If set to None, the contents will be added to the input topology. The defaul is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
         topologic.Topology
-            The input topology with the content list added to it.
+            The input topology with the contents added to it.
 
         """
         if not isinstance(topology, topologic.Topology):
             return None
-        t = 0
-        if targetType.lower() == "vertex":
+        if not contents:
+            return topology
+        if not isinstance(contents, list):
+            return None
+        contents = [x for x in contents if isinstance(x, topologic.Topology)]
+        if len(contents) < 1:
+            return topology
+        if not subTopologyType:
+            subTopologyType = "self"
+        if not subTopologyType.lower() in ["self", "cellcomplex", "cell", "shell", "face", "wire", "edge", "vertex"]:
+            return None
+        if subTopologyType.lower() == "vertex":
             t = topologic.Vertex.Type()
-        elif targetType.lower() == "edge":
+        elif subTopologyType.lower() == "edge":
             t = topologic.Edge.Type()
-        elif targetType.lower() == "wire":
+        elif subTopologyType.lower() == "wire":
             t = topologic.Wire.Type()
-        elif targetType.lower() == "face":
+        elif subTopologyType.lower() == "face":
             t = topologic.Face.Type()
-        elif targetType.lower() == "shell":
+        elif subTopologyType.lower() == "shell":
             t = topologic.Shell.Type()
-        elif targetType.lower() == "cell":
+        elif subTopologyType.lower() == "cell":
             t = topologic.Cell.Type()
-        elif targetType.lower() == "cellcomplex":
+        elif subTopologyType.lower() == "cellcomplex":
             t = topologic.CellComplex.Type()
-        elif targetType.lower() == "host":
+        else:
             t = 0
         return topology.AddContents(contents, t)
     
     @staticmethod
     def AddDictionary(topology, dictionary):
         """
-        Description
-        __________
-            Adds the input dictionary to the input topology
+        Adds the input dictionary to the input topology.
 
         Parameters
         ----------
@@ -476,429 +173,429 @@ class Topology():
         return topology
     
     @staticmethod
-    def AdjacentTopologies(item, hostTopology, topologyType):
+    def AdjacentTopologies(topology, hostTopology, topologyType=None):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the topologies, as specified by the input topology type, adjacent to the input topology witin the input host topology.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
-        hostTopology : TYPE
-            DESCRIPTION.
-        topologyType : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        hostTopology : topologic.Topology
+            The host topology in which to search.
+        topologyType : str
+            The type of topology for which to search. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex". It is case-insensitive. If it is set to None, the type will be set to the same type as the input topology. The default is None.
 
         Returns
         -------
-        adjacentTopologies : TYPE
-            DESCRIPTION.
+        adjacentTopologies : list
+            The list of adjacent topologies.
 
         """
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(hostTopology, topologic.Topology):
+            return None
+        if not topologyType:
+            topologyType = Topology.TypeAsString(topology).lower()
+        if not isinstance(topologyType, str):
+            return None
+        if not topologyType.lower() in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex"]:
+            return None
         adjacentTopologies = []
         error = False
-        itemType = item.Type()
-        if itemType == topologic.Vertex.Type():
-            if topologyType == "Vertex":
+        if isinstance(topology, topologic.Vertex):
+            if topologyType.lower() == "vertex":
                 try:
-                    _ = item.AdjacentVertices(hostTopology, adjacentTopologies)
+                    _ = topology.AdjacentVertices(hostTopology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Vertices(hostTopology, adjacentTopologies)
+                        _ = topology.Vertices(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Edge":
+            elif topologyType.lower() == "edge":
                 try:
-                    _ = topologic.VertexUtility.AdjacentEdges(item, hostTopology, adjacentTopologies)
+                    _ = topologic.VertexUtility.AdjacentEdges(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Edges(hostTopology, adjacentTopologies)
+                        _ = topology.Edges(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Wire":
+            elif topologyType.lower() == "wire":
                 try:
-                    _ = topologic.VertexUtility.AdjacentWires(item, hostTopology, adjacentTopologies)
+                    _ = topologic.VertexUtility.AdjacentWires(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Wires(hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Face":
+            elif topologyType.lower() == "face":
                 try:
-                    _ = topologic.VertexUtility.AdjacentFaces(item, hostTopology, adjacentTopologies)
+                    _ = topologic.VertexUtility.AdjacentFaces(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Faces(hostTopology, adjacentTopologies)
+                        _ = topology.Faces(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Shell":
+            elif topologyType.lower() == "shell":
                 try:
-                    _ = topologic.VertexUtility.AdjacentShells(item, hostTopology, adjacentTopologies)
+                    _ = topologic.VertexUtility.AdjacentShells(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Shells(hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Cell":
+            elif topologyType.lower() == "cell":
                 try:
-                    _ = topologic.VertexUtility.AdjacentCells(item, hostTopology, adjacentTopologies)
+                    _ = topologic.VertexUtility.AdjacentCells(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Cells(hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "CellComplex":
+            elif topologyType.lower() == "cellcomplex":
                 try:
-                    _ = topologic.VertexUtility.AdjacentCellComplexes(item, hostTopology, adjacentTopologies)
+                    _ = topologic.VertexUtility.AdjacentCellComplexes(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.CellComplexes(hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies)
                     except:
                         error = True
-        elif itemType == topologic.Edge.Type():
-            if topologyType == "Vertex":
+        elif isinstance(topology, topologic.Edge):
+            if topologyType.lower() == "vertex":
                 try:
-                    _ = item.Vertices(hostTopology, adjacentTopologies)
+                    _ = topology.Vertices(hostTopology, adjacentTopologies)
                 except:
                     error = True
-            elif topologyType == "Edge":
+            elif topologyType.lower() == "edge":
                 try:
-                    _ = item.AdjacentEdges(hostTopology, adjacentTopologies)
+                    _ = topology.AdjacentEdges(hostTopology, adjacentTopologies)
                 except:
                     error = True
-            elif topologyType == "Wire":
+            elif topologyType.lower() == "wire":
                 try:
-                    _ = topologic.EdgeUtility.AdjacentWires(item, adjacentTopologies)
+                    _ = topologic.EdgeUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Wires(hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Face":
+            elif topologyType.lower() == "face":
                 try:
-                    _ = topologic.EdgeUtility.AdjacentFaces(item, adjacentTopologies)
+                    _ = topologic.EdgeUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Faces(hostTopology, adjacentTopologies)
+                        _ = topology.Faces(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Shell":
+            elif topologyType.lower() == "shell":
                 try:
                     _ = topologic.EdgeUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        _ = item.Shells(hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Cell":
+            elif topologyType.lower() == "cell":
                 try:
                     _ = topologic.EdgeUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        _ = item.Cells(hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "CellComplex":
+            elif topologyType.lower() == "cellcomplex":
                 try:
                     _ = topologic.EdgeUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        _ = item.CellComplexes(hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies)
                     except:
                         error = True
-        elif itemType == topologic.Wire.Type():
-            if topologyType == "Vertex":
+        elif isinstance(topology, topologic.Wire):
+            if topologyType.lower() == "vertex":
                 try:
-                    _ = topologic.WireUtility.AdjacentVertices(item, adjacentTopologies)
+                    _ = topologic.WireUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Vertices(hostTopology, adjacentTopologies)
+                        _ = topology.Vertices(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Edge":
+            elif topologyType.lower() == "edge":
                 try:
-                    _ = topologic.WireUtility.AdjacentEdges(item, adjacentTopologies)
+                    _ = topologic.WireUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Edges(hostTopology, adjacentTopologies)
+                        _ = topology.Edges(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Wire":
+            elif topologyType.lower() == "wire":
                 try:
-                    _ = topologic.WireUtility.AdjacentWires(item, adjacentTopologies)
+                    _ = topologic.WireUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Wires(hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Face":
+            elif topologyType.lower() == "face":
                 try:
-                    _ = topologic.WireUtility.AdjacentFaces(item, adjacentTopologies)
+                    _ = topologic.WireUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Faces(hostTopology, adjacentTopologies)
+                        _ = topology.Faces(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Shell":
+            elif topologyType.lower() == "shell":
                 try:
                     _ = topologic.WireUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        _ = item.Shells(hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Cell":
+            elif topologyType.lower() == "cell":
                 try:
                     _ = topologic.WireUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        _ = item.Cells(hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "CellComplex":
+            elif topologyType.lower() == "cellcomplex":
                 try:
                     _ = topologic.WireUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        _ = item.CellComplexes(hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies)
                     except:
                         error = True
-        elif itemType == topologic.Face.Type():
-            if topologyType == "Vertex":
+        elif isinstance(topology, topologic.Face):
+            if topologyType.lower() == "vertex":
                 try:
-                    _ = topologic.FaceUtility.AdjacentVertices(item, adjacentTopologies)
+                    _ = topologic.FaceUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Vertices(hostTopology, adjacentTopologies)
+                        _ = topology.Vertices(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Edge":
+            elif topologyType.lower() == "edge":
                 try:
-                    _ = topologic.FaceUtility.AdjacentEdges(item, adjacentTopologies)
+                    _ = topologic.FaceUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Edges(hostTopology, adjacentTopologies)
+                        _ = topology.Edges(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Wire":
+            elif topologyType.lower() == "wire":
                 try:
-                    _ = topologic.FaceUtility.AdjacentWires(item, adjacentTopologies)
+                    _ = topologic.FaceUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Wires(hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Face":
-                _ = item.AdjacentFaces(hostTopology, adjacentTopologies)
-            elif topologyType == "Shell":
+            elif topologyType.lower() == "face":
+                _ = topology.AdjacentFaces(hostTopology, adjacentTopologies)
+            elif topologyType.lower() == "shell":
                 try:
                     _ = topologic.FaceUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        _ = item.Shells(hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Cell":
+            elif topologyType.lower() == "cell":
                 try:
                     _ = topologic.FaceUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        _ = item.Cells(hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "CellComplex":
+            elif topologyType.lower() == "cellcomplex":
                 try:
                     _ = topologic.FaceUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        _ = item.CellComplexes(hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies)
                     except:
                         error = True
-        elif itemType == topologic.Shell.Type():
-            if topologyType == "Vertex":
+        elif isinstance(topology, topologic.Shell):
+            if topologyType.lower() == "vertex":
                 try:
-                    _ = topologic.ShellUtility.AdjacentVertices(item, adjacentTopologies)
+                    _ = topologic.ShellUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Vertices(hostTopology, adjacentTopologies)
+                        _ = topology.Vertices(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Edge":
+            elif topologyType.lower() == "edge":
                 try:
-                    _ = topologic.ShellUtility.AdjacentEdges(item, adjacentTopologies)
+                    _ = topologic.ShellUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Edges(hostTopology, adjacentTopologies)
+                        _ = topology.Edges(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Wire":
+            elif topologyType.lower() == "wire":
                 try:
-                    _ = topologic.ShellUtility.AdjacentWires(item, adjacentTopologies)
+                    _ = topologic.ShellUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Wires(hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Face":
+            elif topologyType.lower() == "face":
                 try:
-                    _ = topologic.ShellUtility.AdjacentFaces(item, adjacentTopologies)
+                    _ = topologic.ShellUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Faces(hostTopology, adjacentTopologies)
+                        _ = topology.Faces(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Shell":
+            elif topologyType.lower() == "shell":
                 try:
                     _ = topologic.ShellUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        _ = item.Shells(hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Cell":
+            elif topologyType.lower() == "cell":
                 try:
                     _ = topologic.ShellUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        _ = item.Cells(hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "CellComplex":
+            elif topologyType.lower() == "cellcomplex":
                 try:
                     _ = topologic.ShellUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        _ = item.CellComplexes(hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies)
                     except:
                         error = True
-        elif itemType == topologic.Cell.Type():
-            if topologyType == "Vertex":
+        elif isinstance(topology, topologic.Cell):
+            if topologyType.lower() == "vertex":
                 try:
-                    _ = topologic.CellUtility.AdjacentVertices(item, adjacentTopologies)
+                    _ = topologic.CellUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Vertices(hostTopology, adjacentTopologies)
+                        _ = topology.Vertices(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Edge":
+            elif topologyType.lower() == "edge":
                 try:
-                    _ = topologic.CellUtility.AdjacentEdges(item, adjacentTopologies)
+                    _ = topologic.CellUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Edges(hostTopology, adjacentTopologies)
+                        _ = topology.Edges(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Wire":
+            elif topologyType.lower() == "wire":
                 try:
-                    _ = topologic.CellUtility.AdjacentWires(item, adjacentTopologies)
+                    _ = topologic.CellUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Wires(hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Face":
+            elif topologyType.lower() == "face":
                 try:
-                    _ = topologic.CellUtility.AdjacentFaces(item, adjacentTopologies)
+                    _ = topologic.CellUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Faces(hostTopology, adjacentTopologies)
+                        _ = topology.Faces(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Shell":
+            elif topologyType.lower() == "shell":
                 try:
                     _ = topologic.CellUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        _ = item.Shells(hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "Cell":
+            elif topologyType.lower() == "cell":
                 try:
-                    _ = item.AdjacentCells(hostTopology, adjacentTopologies)
+                    _ = topology.AdjacentCells(hostTopology, adjacentTopologies)
                 except:
                     try:
-                        _ = item.Cells(hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies)
                     except:
                         error = True
-            elif topologyType == "CellComplex":
+            elif topologyType.lower() == "cellcomplex":
                 try:
                     _ = topologic.CellUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        _ = item.CellComplexes(hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies)
                     except:
                         error = True
-        elif itemType == topologic.CellComplex.Type():
-            if topologyType == "Vertex":
+        elif isinstance(topology, topologic.CellComplex):
+            if topologyType.lower() == "vertex":
                 try:
-                    _ = item.Vertices(hostTopology, adjacentTopologies)
+                    _ = topology.Vertices(hostTopology, adjacentTopologies)
                 except:
                     error = True
-            elif topologyType == "Edge":
+            elif topologyType.lower() == "edge":
                 try:
-                    _ = item.Edges(hostTopology, adjacentTopologies)
+                    _ = topology.Edges(hostTopology, adjacentTopologies)
                 except:
                     error = True
-            elif topologyType == "Wire":
+            elif topologyType.lower() == "wire":
                 try:
-                    _ = item.Wires(hostTopology, adjacentTopologies)
+                    _ = topology.Wires(hostTopology, adjacentTopologies)
                 except:
                     error = True
-            elif topologyType == "Face":
+            elif topologyType.lower() == "face":
                 try:
-                    _ = item.Faces(hostTopology, adjacentTopologies)
+                    _ = topology.Faces(hostTopology, adjacentTopologies)
                 except:
                     error = True
-            elif topologyType == "Shell":
+            elif topologyType.lower() == "shell":
                 try:
-                    _ = item.Shells(hostTopology, adjacentTopologies)
+                    _ = topology.Shells(hostTopology, adjacentTopologies)
                 except:
                     error = True
-            elif topologyType == "Cell":
+            elif topologyType.lower() == "cell":
                 try:
-                    _ = item.Cells(hostTopology, adjacentTopologies)
+                    _ = topology.Cells(hostTopology, adjacentTopologies)
                 except:
                     error = True
-            elif topologyType == "CellComplex":
+            elif topologyType.lower() == "cellcomplex":
                 raise Exception("Topology.AdjacentTopologies - Error: Cannot search for adjacent topologies of a CellComplex")
-        elif itemType == topologic.Cluster.Type():
+        elif isinstance(topology, topologic.Cluster):
             raise Exception("Topology.AdjacentTopologies - Error: Cannot search for adjacent topologies of a Cluster")
         if error:
             raise Exception("Topology.AdjacentTopologies - Error: Failure in search for adjacent topologies of type "+topologyType)
         return adjacentTopologies
 
     @staticmethod
-    def Analyze(item):
+    def Analyze(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns an analysis string that describes the input topology.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        str
+            The analysis string.
 
         """
-        return topologic.Topology.Analyze(item)
+        if not isinstance(topology, topologic.Topology):
+            return None
+        return topologic.Topology.Analyze(topology)
     
     @staticmethod
     def Apertures(topology):
         """
-        Description
-        -----------
         Returns the apertures of the input topology.
         
         Parameters
@@ -921,19 +618,17 @@ class Topology():
     @staticmethod
     def ApertureTopologies(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the aperture topologies of the input topology.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
         list
-            DESCRIPTION.
+            The list of aperture topologies found in the input topology.
 
         """
         from topologicpy.Aperture import Aperture
@@ -946,22 +641,22 @@ class Topology():
         return apTopologies
     
     @staticmethod
-    def Boolean(topologyA, topologyB, operation, tranDict, tolerance=0.0001, topologyC=None):
+    def Boolean(topologyA, topologyB, operation="union", tranDict=False, tolerance=0.0001):
         """
+        Execute the input boolean operation type on the input operand topologies and return the result. See https://en.wikipedia.org/wiki/Boolean_operation.
+
         Parameters
         ----------
-        topologyA : TYPE
-            DESCRIPTION.
-        topologyB : TYPE
-            DESCRIPTION.
-        operation : TYPE
-            DESCRIPTION.
-        tranDict : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
-        topologyC : TYPE, optional
-            DESCRIPTION. The default is None.
+        topologyA : topologic.Topology
+            The first input topology.
+        topologyB : topologic.Topology
+            The second input topology.
+        operation : str , optional
+            The boolean operation. This can be one of "union", "difference", "intersect", "symdif", "merge", "slice", "impose", "imprint". It is case insensitive. The default is "union".
+        tranDict : bool , optional
+            If set to True the dictionaries of the operands are merged and transferred to the result. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Raises
         ------
@@ -970,118 +665,23 @@ class Topology():
 
         Returns
         -------
-        topologyC : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            the resultant topology.
 
         """
-        # topologyA = item[0]
-        # topologyB = item[1]
-        # operation = item[2]
-        # tranDict = item[3]
-        # tolerance = item[4]
-        # topologyC = None
         from topologicpy.Dictionary import Dictionary
-
-        def topologyContains(topology, vertex, tol):
-            contains = False
-            if topology.Type() == topologic.Vertex.Type():
-                try:
-                    contains = (topologic.VertexUtility.Distance(sourceVertex, vertex) <= tol)
-                except:
-                    contains = False
-                return contains
-            elif topology.Type() == topologic.Edge.Type():
-                try:
-                    _ = topologic.EdgeUtility.ParameterAtPoint(topology, vertex)
-                    contains = True
-                except:
-                    contains = False
-                return contains
-            elif topology.Type() == topologic.Face.Type():
-                return topologic.FaceUtility.IsInside(topology, vertex, tol)
-            elif topology.Type() == topologic.Cell.Type():
-                return (topologic.CellUtility.Contains(topology, vertex, tol) == 0)
-            return False
-
-        def relevantSelector(topology, tol):
-            returnVertex = None
-            if topology.Type() == topologic.Vertex.Type():
-                return topology
-            elif topology.Type() == topologic.Edge.Type():
-                return topologic.EdgeUtility.PointAtParameter(topology, 0.5)
-            elif topology.Type() == topologic.Face.Type():
-                return topologic.FaceUtility.InternalVertex(topology, tol)
-            elif topology.Type() == topologic.Cell.Type():
-                return topologic.CellUtility.InternalVertex(topology, tol)
-            else:
-                return topology.CenterOfMass()
         
-        def transferDictionaries(sources, sinks, tol):
-            for sink in sinks:
-                sinkKeys = []
-                sinkValues = []
-                iv = relevantSelector(sink, tol)
-                j = 1
-                for source in sources:
-                    if topologyContains(source, iv, tol):
-                        d = source.GetDictionary()
-                        if d == None:
-                            continue
-                        stlKeys = d.Keys()
-                        if len(stlKeys) > 0:
-                            sourceKeys = d.Keys()
-                            for aSourceKey in sourceKeys:
-                                if aSourceKey not in sinkKeys:
-                                    sinkKeys.append(aSourceKey)
-                                    sinkValues.append("")
-                            for i in range(len(sourceKeys)):
-                                index = sinkKeys.index(sourceKeys[i])
-                                sourceValue = Dictionary.DictionaryValueAtKey(d, sourceKeys[i])
-                                if sourceValue != None:
-                                    if sinkValues[index] != "":
-                                        if isinstance(sinkValues[index], list):
-                                            sinkValues[index].append(sourceValue)
-                                        else:
-                                            sinkValues[index] = [sinkValues[index], sourceValue]
-                                    else:
-                                        sinkValues[index] = sourceValue
-                if len(sinkKeys) > 0 and len(sinkValues) > 0:
-                    newDict = Dictionary.DictionaryByKeysValues(sinkKeys, sinkValues)
-                    _ = sink.SetDictionary(newDict)
-        
-        def highestDimension(topology):
-            if (topology.Type() == topologic.Cluster.Type()):
-                cellComplexes = []
-                _ = topology.CellComplexes(None, cellComplexes)
-                if len(cellComplexes) > 0:
-                    return topologic.CellComplex.Type()
-                cells = []
-                _ = topology.Cells(None, cells)
-                if len(cells) > 0:
-                    return topologic.Cell.Type()
-                shells = []
-                _ = topology.Shells(None, shells)
-                if len(shells) > 0:
-                    return topologic.Shell.Type()
-                faces = []
-                _ = topology.Faces(None, faces)
-                if len(faces) > 0:
-                    return topologic.Face.Type()
-                wires = []
-                _ = topology.Wires(None, wires)
-                if len(wires) > 0:
-                    return topologic.Wire.Type()
-                edges = []
-                _ = topology.Edges(None, edges)
-                if len(edges) > 0:
-                    return topologic.Edge.Type()
-                vertices = []
-                _ = topology.Vertices(None, vertices)
-                if len(vertices) > 0:
-                    return topologic.Vertex.Type()
-            else:
-                return(topology.Type())
-            
+        if not isinstance(topologyA, topologic.Topology):
+            return None
+        if not isinstance(topologyB, topologic.Topology):
+            return None
+        if not isinstance(operation, str):
+            return None
+        if not operation.lower() in ["union", "difference", "intersect", "symdif", "merge", "slice", "impose", "imprint"]:
+            return None
+        if not isinstance(tranDict, bool):
+            return None
+        topologyC = None
         try:
             if operation.lower() == "union":
                 topologyC = topologyA.Union(topologyB, False)
@@ -1100,19 +700,17 @@ class Topology():
             elif operation.lower() == "imprint":
                 topologyC = topologyA.Imprint(topologyB, False)
             else:
-                raise Exception("ERROR: (Topologic>Topology.Boolean) invalid boolean operation name: "+operation)
+                return None
         except:
-            raise Exception("ERROR: (Topologic>Topology.Boolean) operation failed.")
-            topologyC = None
-        #topologyC = promote(topologyC)
+            return None
         if tranDict == True:
             sourceVertices = []
             sourceEdges = []
             sourceFaces = []
             sourceCells = []
-            hidimA = highestDimension(topologyA)
-            hidimB = highestDimension(topologyB)
-            hidimC = highestDimension(topologyC)
+            hidimA = Topology.HighestType(topologyA)
+            hidimB = Topology.HighestType(topologyB)
+            hidimC = Topology.HighestType(topologyC)
             verticesA = []
             if topologyA.Type() == topologic.Vertex.Type():
                 verticesA.append(topologyA)
@@ -1152,7 +750,7 @@ class Topology():
                 sinkEdges.append(topologyC)
             elif hidimC >= topologic.Edge.Type():
                 _ = topologyC.Edges(None, sinkEdges)
-            _ = transferDictionaries(sourceEdges, sinkEdges, tolerance)
+            _ = Topology.TransferDictionaries(sourceEdges, sinkEdges, tolerance)
 
             if topologyA.Type() == topologic.Face.Type():
                 sourceFaces.append(topologyA)
@@ -1173,7 +771,7 @@ class Topology():
                 sinkFaces.append(topologyC)
             elif hidimC >= topologic.Face.Type():
                 _ = topologyC.Faces(None, sinkFaces)
-            _ = transferDictionaries(sourceFaces, sinkFaces, tolerance)
+            _ = Topology.TransferDictionaries(sourceFaces, sinkFaces, tolerance)
             if topologyA.Type() == topologic.Cell.Type():
                 sourceCells.append(topologyA)
             elif hidimA >= topologic.Cell.Type():
@@ -1193,22 +791,23 @@ class Topology():
                 sinkCells.append(topologyC)
             elif hidimC >= topologic.Cell.Type():
                 _ = topologyC.Cells(None, sinkCells)
-            _ = transferDictionaries(sourceCells, sinkCells, tolerance)
+            _ = Topology.TransferDictionaries(sourceCells, sinkCells, tolerance)
         return topologyC
 
     
     @staticmethod
-    def BoundingBox(topology):
+    def BoundingBox(topology, optimize=0, axes="xyz"):
         """
-        Description
-        __________
-            Returns a cell representing the axis-aligned bounding box of the input topology
+        Returns a cell representing a bounding box of the input topology. The returned cell contains a dictionary with keys "xrot", "yrot", and "zrot" that represents rotations around the X,Y, and Z axes. If applied in the order of Z,Y,Z, the resulting box will become axis-aligned.
 
         Parameters
         ----------
         topology : topologic.Topology
             The input topology.
-
+        optimize : int , optional
+            If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding box so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding box. The default is 0.
+        axes : str , optional
+            Sets what axes are to be used for rotating the bounding box. This can be any permutation or substring of "xyz". It is not case sensitive. The default is "xyz".
         Returns
         -------
         topologic.Cell
@@ -1216,24 +815,122 @@ class Topology():
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
         from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+        def bb(topology):
+            vertices = []
+            _ = topology.Vertices(None, vertices)
+            x = []
+            y = []
+            z = []
+            for aVertex in vertices:
+                x.append(aVertex.X())
+                y.append(aVertex.Y())
+                z.append(aVertex.Z())
+            minX = min(x)
+            minY = min(y)
+            minZ = min(z)
+            maxX = max(x)
+            maxY = max(y)
+            maxZ = max(z)
+            return [minX, minY, minZ, maxX, maxY, maxZ]
 
-        vertices = []
-        _ = item.Vertices(None, vertices)
-        x = []
-        y = []
-        z = []
-        for aVertex in vertices:
-            x.append(aVertex.X())
-            y.append(aVertex.Y())
-            z.append(aVertex.Z())
-        minX = min(x)
-        minY = min(y)
-        minZ = min(z)
-        maxX = max(x)
-        maxY = max(y)
-        maxZ = max(z)
+        if not isinstance(topology, topologic.Topology):
+            return None
+        axes = axes.lower()
+        x_flag = "x" in axes
+        y_flag = "y" in axes
+        z_flag = "z" in axes
+        if not x_flag and not y_flag and not z_flag:
+            return None
+        vertices = Topology.SubTopologies(topology, subTopologyType="vertex")
+        topology = Cluster.ByTopologies(vertices)
+        boundingBox = bb(topology)
+        minX = boundingBox[0]
+        minY = boundingBox[1]
+        minZ = boundingBox[2]
+        maxX = boundingBox[3]
+        maxY = boundingBox[4]
+        maxZ = boundingBox[5]
+        w = abs(maxX - minX)
+        l = abs(maxY - minY)
+        h = abs(maxZ - minZ)
+        best_area = 2*l*w + 2*l*h + 2*w*h
+        orig_area = best_area
+        best_x = 0
+        best_y = 0
+        best_z = 0
+        best_bb = boundingBox
+        origin = Topology.Centroid(topology)
+        optimize = min(max(optimize, 0), 10)
+        if optimize > 0:
+            factor = (round(((11 - optimize)/30 + 0.57), 2))
+            flag = False
+            for n in range(10,0,-1):
+                if flag:
+                    break
+                if x_flag:
+                    xa = n
+                    xb = 90+n
+                    xc = n
+                else:
+                    xa = 0
+                    xb = 1
+                    xc = 1
+                if y_flag:
+                    ya = n
+                    yb = 90+n
+                    yc = n
+                else:
+                    ya = 0
+                    yb = 1
+                    yc = 1
+                if z_flag:
+                    za = n
+                    zb = 90+n
+                    zc = n
+                else:
+                    za = 0
+                    zb = 1
+                    zc = 1
+                for x in range(xa,xb,xc):
+                    if flag:
+                        break
+                    for y in range(ya,yb,yc):
+                        if flag:
+                            break
+                        for z in range(za,zb,zc):
+                            if flag:
+                                break
+                            t = Topology.Rotate(topology, origin=origin, x=0,y=0,z=1, degree=z)
+                            t = Topology.Rotate(t, origin=origin, x=0,y=1,z=0, degree=y)
+                            t = Topology.Rotate(t, origin=origin, x=1,y=0,z=0, degree=x)
+                            minX, minY, minZ, maxX, maxY, maxZ = bb(t)
+                            w = abs(maxX - minX)
+                            l = abs(maxY - minY)
+                            h = abs(maxZ - minZ)
+                            area = 2*l*w + 2*l*h + 2*w*h
+                            if area < orig_area*factor:
+                                best_area = area
+                                best_x = x
+                                best_y = y
+                                best_z = z
+                                best_bb = [minX, minY, minZ, maxX, maxY, maxZ]
+                                flag = True
+                                break
+                            if area < best_area:
+                                best_area = area
+                                best_x = x
+                                best_y = y
+                                best_z = z
+                                best_bb = [minX, minY, minZ, maxX, maxY, maxZ]
+                        
+        else:
+            best_bb = boundingBox
 
+        minX, minY, minZ, maxX, maxY, maxZ = best_bb
         vb1 = topologic.Vertex.ByCoordinates(minX, minY, minZ)
         vb2 = topologic.Vertex.ByCoordinates(maxX, minY, minZ)
         vb3 = topologic.Vertex.ByCoordinates(maxX, maxY, minZ)
@@ -1244,36 +941,42 @@ class Topology():
         vt3 = topologic.Vertex.ByCoordinates(maxX, maxY, maxZ)
         vt4 = topologic.Vertex.ByCoordinates(minX, maxY, maxZ)
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
-        topWire = Wire.ByVertices([vt1, vt2, vt3, vt4], close=True)
-        wires = [baseWire, topWire]
-        return (Cell.ByWires(wires))
+        baseFace = Face.ByWire(baseWire)
+        box = Cell.ByThickenedFace(baseFace, thickness=abs(maxZ-minZ), bothSides=False)
+        #topWire = Wire.ByVertices([vt1, vt2, vt3, vt4], close=True)
+        #wires = [baseWire, topWire]
+        #box = Cell.ByWires(wires)
+        box = Topology.Rotate(box, origin=origin, x=1,y=0,z=0, degree=-best_x)
+        box = Topology.Rotate(box, origin=origin, x=0,y=1,z=0, degree=-best_y)
+        box = Topology.Rotate(box, origin=origin, x=0,y=0,z=1, degree=-best_z)
+        dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot"], [best_x, best_y, best_z])
+        box = Topology.SetDictionary(box, dictionary)
+        return box
 
     @staticmethod
-    def ByImportedBRep(item):
+    def ByImportedBRep(path):
         """
-        Description
-        __________
-            DESCRIPTION
+        Create a topology by importing it from a BRep file path.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        path : str
+            The path to the BRep file.
 
         Returns
         -------
-        topology : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The created topology.
 
         """
         topology = None
-        file = open(item)
-        if file:
-            brepString = file.read()
-            topology = topologic.Topology.ByString(brepString)
-            file.close()
-            return topology
-        return None
+        brep_file = open(path)
+        if not brep_file:
+            return None
+        brep_string = brep_file.read()
+        topology = Topology.ByString(brep_string)
+        brep_file.close()
+        return topology
     '''
     @staticmethod
     def ByImportedIFC(filePath, typeList):
@@ -1408,7 +1111,7 @@ class Topology():
                     continue
                 returnList.append(topology)
         return returnList
-    '''
+
     @staticmethod
     def ByImportedIPFS(hash_, url, port):
         """
@@ -1436,9 +1139,9 @@ class Topology():
         url = '/dns/'+url+'/tcp/'+port+'/https'
         client = ipfshttpclient.connect(url)
         brepString = client.cat(hash_).decode("utf-8")
-        topology = topologic.Topology.DeepCopy(topologic.Topology.ByString(brepString))
+        topology = Topology.ByString(brepString)
         return topology
-
+    '''
     @staticmethod
     def ByImportedJSONMK1(item):
         """
@@ -1457,22 +1160,87 @@ class Topology():
             DESCRIPTION.
 
         """
-        
+        from topologicpy.Dictionary import Dictionary
+        def isInside(aperture, face, tolerance):
+            return (topologic.VertexUtility.Distance(aperture.Topology.Centroid(), face) < tolerance)
+
+        def internalVertex(topology, tolerance):
+            vst = None
+            classType = topology.Type()
+            if classType == 64: #CellComplex
+                tempCells = []
+                _ = topology.Cells(tempCells)
+                tempCell = tempCells[0]
+                vst = topologic.CellUtility.InternalVertex(tempCell, tolerance)
+            elif classType == 32: #Cell
+                vst = topologic.CellUtility.InternalVertex(topology, tolerance)
+            elif classType == 16: #Shell
+                tempFaces = []
+                _ = topology.Faces(None, tempFaces)
+                tempFace = tempFaces[0]
+                vst = topologic.FaceUtility.InternalVertex(tempFace, tolerance)
+            elif classType == 8: #Face
+                vst = topologic.FaceUtility.InternalVertex(topology, tolerance)
+            elif classType == 4: #Wire
+                if topology.IsClosed():
+                    internalBoundaries = []
+                    tempFace = topologic.Face.ByExternalInternalBoundaries(topology, internalBoundaries)
+                    vst = topologic.FaceUtility.InternalVertex(tempFace, tolerance)
+                else:
+                    tempEdges = []
+                    _ = topology.Edges(None, tempEdges)
+                    tempEdge = tempEdges[0]
+                    vst = topologic.EdgeUtility.PointAtParameter(tempEdge, 0.5)
+            elif classType == 2: #Edge
+                vst = topologic.EdgeUtility.PointAtParameter(topology, 0.5)
+            elif classType == 1: #Vertex
+                vst = topology
+            else:
+                vst = topology.Centroid()
+            return vst
+
+        def processApertures(subTopologies, apertures, exclusive, tolerance):
+            usedTopologies = []
+            for subTopology in subTopologies:
+                    usedTopologies.append(0)
+            ap = 1
+            for aperture in apertures:
+                apCenter = internalVertex(aperture, tolerance)
+                for i in range(len(subTopologies)):
+                    subTopology = subTopologies[i]
+                    if exclusive == True and usedTopologies[i] == 1:
+                        continue
+                    if topologic.VertexUtility.Distance(apCenter, subTopology) < tolerance:
+                        context = topologic.Context.ByTopologyParameters(subTopology, 0.5, 0.5, 0.5)
+                        _ = topologic.Aperture.ByTopologyContext(aperture, context)
+                        if exclusive == True:
+                            usedTopologies[i] = 1
+                ap = ap + 1
+            return None
+
         def getApertures(apertureList):
             returnApertures = []
             for item in apertureList:
-                aperture = topologic.Topology.ByString(item['brep'])
+                aperture = Topology.ByString(item['brep'])
                 dictionary = item['dictionary']
                 keys = list(dictionary.keys())
                 values = []
                 for key in keys:
                     values.append(dictionary[key])
-                topDictionary = processKeysValues(keys, values)
+                topDictionary = Dictionary.ByKeysValues(keys, values)
                 if len(keys) > 0:
                     _ = aperture.SetDictionary(topDictionary)
                 returnApertures.append(aperture)
             return returnApertures
         
+        def assignDictionary(item):
+            selector = item['selector']
+            pydict = item['dictionary']
+            v = topologic.Vertex.ByCoordinates(selector[0], selector[1], selector[2])
+            d = Dictionary.ByPythonDictionary(pydict)
+            _ = v.SetDictionary(d)
+            return v
+
         topology = None
         file = open(item)
         if file:
@@ -1480,10 +1248,10 @@ class Topology():
             jsondata = json.load(file)
             for jsonItem in jsondata:
                 brep = jsonItem['brep']
-                topology = topologic.Topology.ByString(brep)
+                topology = Topology.ByString(brep)
                 dictionary = jsonItem['dictionary']
-                topDictionary = dictionaryByPythonDictionary(dictionary)
-                _ = topology.SetDictionary(topDictionary)
+                topDictionary = Dictionary.ByPythonDictionary(dictionary)
+                topology = Topology.SetDictionary(topology, topDictionary)
                 cellApertures = getApertures(jsonItem['cellApertures'])
                 cells = []
                 try:
@@ -1554,7 +1322,7 @@ class Topology():
             DESCRIPTION.
 
         """
-        
+        from topologicpy.Dictionary import Dictionary
         def getApertures(apertureList, folderPath):
             returnApertures = []
             for item in apertureList:
@@ -1563,14 +1331,14 @@ class Topology():
                 brepFile = open(brepFilePath)
                 if brepFile:
                     brepString = brepFile.read()
-                    aperture = topologic.Topology.ByString(brepString)
+                    aperture = Topology.ByString(brepString)
                     brepFile.close()
                 dictionary = item['dictionary']
                 keys = list(dictionary.keys())
                 values = []
                 for key in keys:
                     values.append(dictionary[key])
-                topDictionary = processKeysValues(keys, values)
+                topDictionary = Dictionary.ByKeysValues(keys, values)
                 if len(keys) > 0:
                     _ = aperture.SetDictionary(topDictionary)
                 returnApertures.append(aperture)
@@ -1588,11 +1356,11 @@ class Topology():
                 brepFile = open(brepFilePath)
                 if brepFile:
                     brepString = brepFile.read()
-                    topology = topologic.Topology.ByString(brepString)
+                    topology = Topology.ByString(brepString)
                     brepFile.close()
                 #topology = topologic.Topology.ByString(brep)
                 dictionary = jsonItem['dictionary']
-                topDictionary = dictionaryByPythonDictionary(dictionary)
+                topDictionary = Dictionary.ByPythonDictionary(dictionary)
                 _ = topology.SetDictionary(topDictionary)
                 cellApertures = getApertures(jsonItem['cellApertures'], folderPath)
                 cells = []
@@ -1667,24 +1435,29 @@ class Topology():
         return topologic.Topology.ByOcctShape(item, "")
     
     @staticmethod
-    def ByString(item):
+    def ByString(string):
         """
-        Description
-        __________
-            DESCRIPTION
+        Creates a topology from the input brep string
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        string : str
+            The input brep string.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The created topology.
 
         """
-        return topologic.Topology.DeepCopy(Topology.ByString(item))
+        if not isinstance(string, str):
+            return None
+        returnTopology = None
+        try:
+            returnTopology = topologic.Topology.DeepCopy(topologic.Topology.ByString(string))
+        except:
+            returnTopology = None
+        return returnTopology
     
     @staticmethod
     def CenterOfMass(item):
@@ -1847,7 +1620,7 @@ class Topology():
                     tempList.append(faces[index])
                 returnList.append(Topology.SelfMerge(topologic.Cluster.ByTopologies(tempList)))
         return returnList
-    
+
     @staticmethod
     def Content(item):
         """
@@ -2230,128 +2003,6 @@ class Topology():
                 d = processKeysValues(keys, values)
                 _ = contents[i].SetDictionary(d)
         return topology
-
-    @staticmethod
-    def EncodeInformation(topology, csv_string, tolerance=0.0001):
-        """
-        Description
-        __________
-            DESCRIPTION
-
-        Parameters
-        ----------
-        topology : TYPE
-            DESCRIPTION.
-        csv_string : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
-
-        Returns
-        -------
-        topology : TYPE
-            DESCRIPTION.
-
-        """
-        def topologyContains(topology, vertex, tolerance):
-            contains = False
-            if topology.Type() == topologic.Vertex.Type():
-                try:
-                    contains = (topologic.VertexUtility.Distance(topology, vertex) <= tolerance)
-                except:
-                    contains = False
-                return contains
-            elif topology.Type() == topologic.Edge.Type():
-                try:
-                    _ = topologic.EdgeUtility.ParameterAtPoint(topology, vertex)
-                    contains = True
-                except:
-                    contains = False
-                return contains
-            elif topology.Type() == topologic.Face.Type():
-                return topologic.FaceUtility.IsInside(topology, vertex, tolerance)
-            elif topology.Type() == topologic.Cell.Type():
-                return (topologic.CellUtility.Contains(topology, vertex, tolerance) == 0)
-            return contains
-
-        def transferDictionaries(selectors, dictionaries, topologyType, topology, tolerance):
-            if topologyType == topologic.Vertex.Type():
-                if topology.Type() == topologic.Vertex.Type():
-                    sinks = [topology]
-                else:
-                    sinks = []
-                    _ = topology.Vertices(None, sinks)
-            elif topologyType == topologic.Edge.Type():
-                if topology.Type() == topologic.Edge.Type():
-                    sinks = [topology]
-                else:
-                    sinks = []
-                    _ = topology.Edges(None, sinks)
-            elif topologyType == topologic.Face.Type():
-                if topology.Type() == topologic.Face.Type():
-                    sinks = [topology]
-                else:
-                    sinks = []
-                    _ = topology.Faces(None, sinks)
-            elif topologyType == topologic.Cell.Type():
-                if topology.Type() == topologic.Cell.Type():
-                    sinks = [topology]
-                else:
-                    sinks = []
-                    _ = topology.Cells(None, sinks)
-            else:
-                sinks = []
-            for i in range(len(selectors)):
-                selector = selectors[i]
-                if selector == None:
-                    continue
-                d = dictionaries[i]
-                if d == None:
-                    continue
-                sourceKeys = d.Keys()
-                sinkKeys = []
-                sinkValues = []
-                for sink in sinks:
-                    if topologyContains(sink, selector, tolerance):
-                        for aSourceKey in sourceKeys:
-                            if aSourceKey not in sinkKeys:
-                                sinkKeys.append(aSourceKey)
-                                sinkValues.append("")
-                        for j in range(len(sourceKeys)):
-                            index = sinkKeys.index(sourceKeys[j])
-                            k = sourceKeys[j]
-                            sourceValue = str(getValueAtKey(d, k))
-                            if sourceValue != None:
-                                if sinkValues[index] != "":
-                                    sinkValues[index] = sinkValues[index]+","+sourceValue
-                                else:
-                                    sinkValues[index] = sourceValue
-                        if len(sinkKeys) > 0 and len(sinkValues) > 0:
-                            newDict = processKeysValues(sinkKeys, sinkValues)
-                            _ = sink.SetDictionary(newDict)
-            return topology
-        
-        rows = csv_string.split("\n",50000)
-        for row in rows:
-            if row == "": #Ignore empty lines
-                continue
-            if row[0].isdigit() == False: # Ignore header
-                continue
-            columns = row.split(",",6)
-            topologyType = int(columns[0])
-            x = float(columns[1])
-            y = float(columns[2])
-            z = float(columns[3])
-            v = topologic.Vertex.ByCoordinates(x,y,z)
-            selectors = []
-            selectors.append(v)
-            keys = columns[4].split("|",1024)
-            values = columns[5].split("|",1024)
-            d = processKeysValues(keys, values)
-            dictionaries = []
-            dictionaries.append(d)
-            topology = transferDictionaries(selectors, dictionaries, topologyType, topology, tolerance)
-        return topology
     
     @staticmethod
     def Explode(topology, origin, scale, typeFilter):
@@ -2382,18 +2033,7 @@ class Topology():
         # scale = item[2]
         # typeFilter = item[3]
         
-        def relevantSelector(topology):
-            returnVertex = None
-            if topology.Type() == topologic.Vertex.Type():
-                return topology
-            elif topology.Type() == topologic.Edge.Type():
-                return topologic.EdgeUtility.PointAtParameter(topology, 0.5)
-            elif topology.Type() == topologic.Face.Type():
-                return topologic.FaceUtility.InternalVertex(topology, 0.0001)
-            elif topology.Type() == topologic.Cell.Type():
-                return topologic.CellUtility.InternalVertex(topology, 0.0001)
-            else:
-                return topology.Centroid()
+        
         
         topologies = []
         newTopologies = []
@@ -2441,7 +2081,7 @@ class Topology():
                 topologies = []
                 _ = topology.Vertices(None, topologies)
             for aTopology in topologies:
-                c = relevantSelector(aTopology)
+                c = Topology.RelevantSelector(aTopology)
                 oldX = c.X()
                 oldY = c.Y()
                 oldZ = c.Z()
@@ -2589,6 +2229,7 @@ class Topology():
             DESCRIPTION.
 
         """
+        from topologicpy.Dictionary import Dictionary
         def getTopologyDictionary(topology):
             d = topology.GetDictionary()
             keys = d.Keys()
@@ -2624,7 +2265,7 @@ class Topology():
                 _ = aCell.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     cellApertures.append(anAperture)
-                cellDictionary = getTopologyDictionary(aCell)
+                cellDictionary = Topology.Dictionary(aCell)
                 if len(cellDictionary.keys()) > 0:
                     cellDictionaries.append(cellDictionary)
                     iv = topologic.CellUtility.InternalVertex(aCell, tol)
@@ -2645,7 +2286,7 @@ class Topology():
                 _ = aFace.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     faceApertures.append(anAperture)
-                faceDictionary = getTopologyDictionary(aFace)
+                faceDictionary = Topology.Dictionary(aFace)
                 if len(faceDictionary.keys()) > 0:
                     faceDictionaries.append(faceDictionary)
                     iv = topologic.FaceUtility.InternalVertex(aFace, tol)
@@ -2666,7 +2307,7 @@ class Topology():
                 _ = anEdge.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     edgeApertures.append(anAperture)
-                edgeDictionary = getTopologyDictionary(anEdge)
+                edgeDictionary = Topology.Dictionary(anEdge)
                 if len(edgeDictionary.keys()) > 0:
                     edgeDictionaries.append(edgeDictionary)
                     iv = topologic.EdgeUtility.PointAtParameter(anEdge, 0.5)
@@ -2687,7 +2328,7 @@ class Topology():
                 _ = aVertex.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     vertexApertures.append(anAperture)
-                vertexDictionary = getTopologyDictionary(aVertex)
+                vertexDictionary = Topology.Dictionary(aVertex)
                 if len(vertexDictionary.keys()) > 0:
                     vertexDictionaries.append(vertexDictionary)
                     vertexSelectors.append([aVertex.X(), aVertex.Y(), aVertex.Z()])
@@ -3255,6 +2896,32 @@ class Topology():
         return [vertices, edges, faces]
 
     @staticmethod
+    def HighestType(topology):
+        """
+        Description
+        __________
+            Bla Bla Bla.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        tolerance : float , ptional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Vertex
+            A vertex guaranteed to be inside the input topology.
+
+        """
+        from topologicpy.Cluster import Cluster
+        if (topology.Type() == topologic.Cluster.Type()):
+            return Cluster.HighestType(topology)
+        else:
+            return(topology.Type())
+
+    @staticmethod
     def InternalVertex(topology, tolerance=0.0001):
         """
         Description
@@ -3308,6 +2975,94 @@ class Topology():
         else:
             vst = topology.Centroid()
         return vst
+
+    @staticmethod
+    def IsInside(topology, vertex, tolerance=0.0001):
+        """
+        Description
+        __________
+            DESCRIPTION
+
+        Parameters
+        ----------
+        topology : TYPE
+            DESCRIPTION.
+        vertex : TYPE
+            DESCRIPTION.
+        tolerance : TYPE, optional
+            DESCRIPTION. The default is 0.0001.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Shell import Shell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        is_inside = False
+        if topology.Type() == topologic.Vertex.Type():
+            try:
+                is_inside = (Vertex.Distance(vertex, topology) <= tolerance)
+            except:
+                is_inside = False
+            return is_inside
+        elif topology.Type() == topologic.Edge.Type():
+            try:
+                is_inside = (Vertex.Distance(vertex, topology) <= tolerance)
+            except:
+                is_inside = False
+            return is_inside
+        elif topology.Type() == topologic.Wire.Type():
+            edges = Wire.Edges(topology)
+            for edge in edges:
+                is_inside = (Vertex.Distance(vertex, edge) <= tolerance)
+                if is_inside:
+                    return is_inside
+        elif topology.Type() == topologic.Face.Type():
+            return Face.IsInside(topology, vertex, tolerance)
+        elif topology.Type() == topologic.Shell.Type():
+            faces = Shell.Faces(topology)
+            for face in faces:
+                is_inside = Face.IsInside(face, vertex, tolerance)
+                if is_inside:
+                    return is_inside
+        elif topology.Type() == topologic.Cell.Type():
+            return Cell.IsInside(topology, vertex, tolerance)
+        elif topology.Type() == topologic.CellComplex.Type():
+            cells = CellComplex.Cells(topology)
+            for cell in cells:
+                is_inside = Cell.IsInside(cell, vertex, tolerance)
+                if is_inside:
+                    return is_inside
+        elif topology.Type() == topologic.Cluster.Type():
+            cells = Cluster.Cells(topology)
+            faces = Cluster.Faces(topology)
+            edges = Cluster.Edges(topology)
+            vertices = Cluster.Vertices(topology)
+            subTopologies = []
+            if isinstance(cells, list):
+                subTopologies += cells
+            if isinstance(faces, list):
+                subTopologies += faces
+            if isinstance(edges, list):
+                subTopologies += edges
+            if isinstance(vertices, list):
+                subTopologies += vertices
+            for subTopology in subTopologies:
+                is_inside = Topology.IsInside(subTopology, vertex, tolerance)
+                if is_inside:
+                    return is_inside
+        return False
 
     @staticmethod
     def IsPlanar(topology, tolerance=0.0001):
@@ -3536,6 +3291,39 @@ class Topology():
             newTopology = None
         return newTopology
     
+    def RelevantSelector(topology, tol):
+        """
+        Description
+        __________
+            DESCRIPTION
+
+        Parameters
+        ----------
+        topology : TYPE
+            DESCRIPTION.
+        angTol : TYPE, optional
+            DESCRIPTION. The default is 0.1.
+        tolerance : TYPE, optional
+            DESCRIPTION. The default is 0.0001.
+
+        Returns
+        -------
+        returnTopology : TYPE
+            DESCRIPTION.
+
+        """
+        returnVertex = None
+        if topology.Type() == topologic.Vertex.Type():
+            return topology
+        elif topology.Type() == topologic.Edge.Type():
+            return topologic.EdgeUtility.PointAtParameter(topology, 0.5)
+        elif topology.Type() == topologic.Face.Type():
+            return topologic.FaceUtility.InternalVertex(topology, tol)
+        elif topology.Type() == topologic.Cell.Type():
+            return topologic.CellUtility.InternalVertex(topology, tol)
+        else:
+            return topology.CenterOfMass()
+
     @staticmethod
     def RemoveCollinearEdges(topology, angTol=0.1, tolerance=0.0001):
         """
@@ -4063,7 +3851,7 @@ class Topology():
             found = False
             for j in range(len(topologies)):
                 if usedTopologies[j] == 0:
-                    if topologyContains(topologies[j], selectors[i], tolerance):
+                    if Topology.IsInside(topologies[j], selectors[i], tolerance):
                         sortedTopologies.append(topologies[j])
                         if exclusive == True:
                             usedTopologies[j] = 1
@@ -4215,18 +4003,16 @@ class Topology():
         return item.String()
     
     @staticmethod
-    def SubTopologies(topology, subTopologyType):
+    def SubTopologies(topology, subTopologyType="vertex"):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the subtopologies of the input topology as specified by the subTopologyType input string.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        subTopologyType : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        subTopologyType : str , optional
+            The requested subtopology type. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. The default is "vertex".
 
         Returns
         -------
@@ -4234,8 +4020,9 @@ class Topology():
             DESCRIPTION.
 
         """
-        # topology, subTopologyType = item
-        if topology.GetTypeAsString() == subTopologyType:
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if topology.GetTypeAsString().lower() == subTopologyType.lower():
             return [topology]
         subTopologies = []
         if subTopologyType.lower() == "vertex":
@@ -4397,75 +4184,43 @@ class Topology():
             DESCRIPTION.
 
         """
-        sourceVertices = []
-        sourceEdges = []
-        sourceFaces = []
-        sourceCells = []
-        sinVertices = []
-        sinkEdges = []
-        sinkFaces = []
-        sinkCells = []
-        hidimSink = highestDimension(sink)
-        if tranVertices == True:
-            sinkVertices = []
-            if sink.Type() == topologic.Vertex.Type():
-                sinkVertices.append(sink)
-            elif hidimSink >= topologic.Vertex.Type():
-                sink.Vertices(None, sinkVertices)
-        if tranEdges == True:
-            sinkEdges = []
-            if sink.Type() == topologic.Edge.Type():
-                sinkEdges.append(sink)
-            elif hidimSink >= topologic.Edge.Type():
-                sink.Edges(None, sinkEdges)
-        if tranFaces == True:
-            sinkFaces = []
-            if sink.Type() == topologic.Face.Type():
-                sinkFaces.append(sink)
-            elif hidimSink >= topologic.Face.Type():
-                sink.Faces(None, sinkFaces)
-        if tranCells == True:
-            sinkCells = []
-            if sink.Type() == topologic.Cell.Type():
-                sinkCells.append(sink)
-            elif hidimSink >= topologic.Cell.Type():
-                sink.Cells(None, sinkCells)
-        for source in sources:
-            _ = transferDictionaries([source], [sink], tolerance)
-            hidimSource = highestDimension(source)
-            if tranVertices == True:
-                sourceVertices = []
-                if source.Type() == topologic.Vertex.Type():
-                    sourceVertices.append(source)
-                elif hidimSource >= topologic.Vertex.Type():
-                    source.Vertices(None, sourceVertices)
-                _ = transferDictionaries(sourceVertices, sinkVertices, tolerance)
-            if tranEdges == True:
-                if source.Type() == topologic.Edge.Type():
-                    sourceEdges.append(source)
-                elif hidimSource >= topologic.Edge.Type():
-                    sourceEdges = []
-                    source.Edges(None, sourceEdges)
-                _ = transferDictionaries(sourceEdges, sinkEdges, tolerance)
-            if tranFaces == True:
-                if source.Type() == topologic.Face.Type():
-                    sourceFaces.append(source)
-                elif hidimSource >= topologic.Face.Type():
-                    sourceFaces = []
-                    source.Faces(None, sourceFaces)
-                _ = transferDictionaries(sourceFaces, sinkFaces, tolerance)
-            if tranCells == True:
-                if source.Type() == topologic.Cell.Type():
-                    sourceCells.append(source)
-                elif hidimSource >= topologic.Cell.Type():
-                    sourceCells = []
-                    source.Cells(None, sourceCells)
-                _ = transferDictionaries(sourceCells, sinkCells, tolerance)
-        return sink
+        from topologicpy.Dictionary import Dictionary
+        def transferDictionaries(sources, sinks, tol):
+            for sink in sinks:
+                sinkKeys = []
+                sinkValues = []
+                iv = Topology.RelevantSelector(sink, tol)
+                j = 1
+                for source in sources:
+                    if Topology.IsInside(source, iv, tol):
+                        d = source.GetDictionary()
+                        if d == None:
+                            continue
+                        stlKeys = d.Keys()
+                        if len(stlKeys) > 0:
+                            sourceKeys = d.Keys()
+                            for aSourceKey in sourceKeys:
+                                if aSourceKey not in sinkKeys:
+                                    sinkKeys.append(aSourceKey)
+                                    sinkValues.append("")
+                            for i in range(len(sourceKeys)):
+                                index = sinkKeys.index(sourceKeys[i])
+                                sourceValue = Dictionary.DictionaryValueAtKey(d, sourceKeys[i])
+                                if sourceValue != None:
+                                    if sinkValues[index] != "":
+                                        if isinstance(sinkValues[index], list):
+                                            sinkValues[index].append(sourceValue)
+                                        else:
+                                            sinkValues[index] = [sinkValues[index], sourceValue]
+                                    else:
+                                        sinkValues[index] = sourceValue
+                if len(sinkKeys) > 0 and len(sinkValues) > 0:
+                    newDict = Dictionary.DictionaryByKeysValues(sinkKeys, sinkValues)
+                    _ = sink.SetDictionary(newDict)
 
     
     @staticmethod
-    def TransferDictionariesBySelectors(sources, sink, tranVertices, tranEdges, tranFaces, tranCells, tolerance=0.0001):
+    def TransferDictionariesBySelectors(topology, selectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001):
         """
         Description
         __________
@@ -4473,9 +4228,9 @@ class Topology():
 
         Parameters
         ----------
-        sources : TYPE
+        topology : TYPE
             DESCRIPTION.
-        sink : TYPE
+        selectors : TYPE
             DESCRIPTION.
         tranVertices : TYPE
             DESCRIPTION.
@@ -4494,44 +4249,39 @@ class Topology():
             DESCRIPTION.
 
         """
-        sourceVertices = []
-        sourceEdges = []
-        sourceFaces = []
-        sourceCells = []
-        sinVertices = []
         sinkEdges = []
         sinkFaces = []
         sinkCells = []
-        hidimSink = highestDimension(sink)
+        hidimSink = Topology.HighestType(topology)
         if tranVertices == True:
             sinkVertices = []
-            if sink.Type() == topologic.Vertex.Type():
-                sinkVertices.append(sink)
+            if topology.Type() == topologic.Vertex.Type():
+                sinkVertices.append(topology)
             elif hidimSink >= topologic.Vertex.Type():
-                sink.Vertices(None, sinkVertices)
-            _ = transferDictionaries(sources, sinkVertices, tolerance)
+                topology.Vertices(None, sinkVertices)
+            _ = transferDictionaries(selectors, sinkVertices, tolerance)
         if tranEdges == True:
             sinkEdges = []
-            if sink.Type() == topologic.Edge.Type():
-                sinkEdges.append(sink)
+            if topology.Type() == topologic.Edge.Type():
+                sinkEdges.append(topology)
             elif hidimSink >= topologic.Edge.Type():
-                sink.Edges(None, sinkEdges)
-                _ = transferDictionaries(sources, sinkEdges, tolerance)
+                topology.Edges(None, sinkEdges)
+                _ = transferDictionaries(selectors, sinkEdges, tolerance)
         if tranFaces == True:
             sinkFaces = []
-            if sink.Type() == topologic.Face.Type():
-                sinkFaces.append(sink)
+            if topology.Type() == topologic.Face.Type():
+                sinkFaces.append(topology)
             elif hidimSink >= topologic.Face.Type():
-                sink.Faces(None, sinkFaces)
-            _ = transferDictionaries(sources, sinkFaces, tolerance)
+                topology.Faces(None, sinkFaces)
+            _ = transferDictionaries(selectors, sinkFaces, tolerance)
         if tranCells == True:
             sinkCells = []
-            if sink.Type() == topologic.Cell.Type():
-                sinkCells.append(sink)
+            if topology.Type() == topologic.Cell.Type():
+                sinkCells.append(topology)
             elif hidimSink >= topologic.Cell.Type():
-                sink.Cells(None, sinkCells)
-            _ = transferDictionaries(sources, sinkCells, tolerance)
-        return sink
+                topology.Cells(None, sinkCells)
+            _ = transferDictionaries(selectors, sinkCells, tolerance)
+        return topology
 
     
     @staticmethod
@@ -4668,7 +4418,7 @@ class Topology():
 
     
     @staticmethod
-    def Type(item):
+    def Type(topology):
         """
         Description
         __________
@@ -4685,7 +4435,7 @@ class Topology():
             DESCRIPTION.
 
         """
-        return item.Type()
+        return topology.Type()
     
     @staticmethod
     def TypeAsString(item):

@@ -440,7 +440,10 @@ class Shell(Topology):
             The created hyperboloic paraboloid.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
+        if not isinstance(origin, topologic.Vertex):
+            origin = Vertex.ByCoordinates(0,0,0)
         uOffset = float(360)/float(sides)
         vOffset = float(radius)/float(rings)
         faces = []
@@ -875,7 +878,7 @@ class Shell(Topology):
             return returnList
         if not isinstance(shell, topologic.Shell):
             return None
-        ext_boundary = Shell.ShellExternalBoundary(shell)
+        ext_boundary = Shell.ExternalBoundary(shell)
         if isinstance(ext_boundary, topologic.Wire):
             try:
                 return topologic.Face.ByExternalBoundary(Wire.RemoveCollinearEdges(ext_boundary, angTolerance))

@@ -2580,16 +2580,20 @@ class Graph:
         return vertices
 
     @staticmethod
-    def VisibilityGraph(boundary, obstaclesCluster, tolerance=0.0001):
+    def VisibilityGraph(boundary, obstacles=None, viewpointsA=None, viewpointsB=None, tolerance=0.0001):
         """
         Creates a 2D visibility graph.
 
         Parameters
         ----------
         boundary : topologic.Wire
-            The input boundary.
-        obstaclesCluster : topologic.Cluster
-            The input cluster of obstacles (wires).
+            The input boundary. View edges will be clipped to this face.
+        obstacles : list
+            The input list of obstacles (wires).
+        viewpointsA : list
+            The first input list of viewpoints (vertices). Visibility edges will connect these veritces to viewpointsB.
+        viewpointsB : list
+            The input list of viewpoints (vertices). Visibility edges will connect these vertices to viewpointsA.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -2607,58 +2611,63 @@ class Graph:
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
-        def addEdge(edge, edges, vertices, tolerance=0.0001):
+        def addEdge(edge, edges, viewpointsA, viewpointsB, tolerance=0.0001):
             # Add edge to edges only if its end points are in vertices
             sv = Edge.StartVertex(edge)
             ev = Edge.EndVertex(edge)
-            con1 = Vertex.Index(sv, vertices, strict=False, tolerance=tolerance)
-            con2 = Vertex.Index(ev, vertices, strict=False, tolerance=tolerance)
+            con1 = Vertex.Index(sv, viewpointsA, strict=False, tolerance=tolerance)
+            con2 = Vertex.Index(ev, viewpointsB, strict=False, tolerance=tolerance)
             if con1 != None and con2 != None:
                 edges.append(edge)
             return edges
 
         if not isinstance(boundary, topologic.Wire):
             return None
-        if not isinstance(obstaclesCluster, topologic.Cluster):
+        if not obstacles:
+            obstacles = []
+        obstacles = [x for x in obstacles if isinstance(x, topologic.Wire)]
+        if not viewpointsA and not viewpointsB:
+            viewpointsA = Wire.Vertices(boundary)
+            for obstacle in obstacles:
+                obstacleVertices = Wire.Vertices(obstacle)
+                viewpointsA += obstacleVertices
+        if not isinstance(viewpointsA, list):
             return None
-        boundaryFace = Face.ByWire(boundary)
-        boundaryVertices = Wire.Vertices(boundary)
-        obstacleVertices = Cluster.Vertices(obstaclesCluster)
+        else:
+            viewpointsA = [x for x in viewpointsA if isinstance(x, topologic.Vertex)]
+        if not len(viewpointsA) > 0:
+            return None
+        if not isinstance(viewpointsB, list):
+            viewpointsB = []
+        else:
+            viewpointsB = [x for x in viewpointsB if isinstance(x, topologic.Vertex)]
 
-        allVertices = boundaryVertices + obstacleVertices
+        boundaryFace = Face.ByWires(boundary, obstacles)
         edges = []
-        i = 0
-        for bv in boundaryVertices:
-            i = i + 1
-            for ov in allVertices:
-                e = Edge.ByVertices([bv, ov])
-                if e:
-                    e = Topology.Boolean(e, obstaclesCluster, "difference", False)
+        matrix = []
+        if not viewpointsB:
+            viewpointsB = viewpointsA
+        for i in range(max(len(viewpointsA), len(viewpointsB))):
+            tempRow = []
+            for j in range(max(len(viewpointsA), len(viewpointsB))):
+                tempRow.append(0)
+            matrix.append(tempRow)
+        for i in range(len(viewpointsA)):
+            for j in range(len(viewpointsB)):
+                if not Topology.IsSame(viewpointsA[i], viewpointsB[j]) and matrix[i][j] == 0:
+                    matrix[i][j] = 1
+                    matrix[j][i] = 1
+                    e = Edge.ByVertices([viewpointsA[i], viewpointsB[j]])
                     if e:
                         e = Topology.Boolean(e, boundaryFace, "intersect", False)
                         if isinstance(e, topologic.Edge):
-                            edges = addEdge(e, edges, allVertices, 0.0001)
+                            edges = addEdge(e, edges, viewpointsA, viewpointsB, 0.0001)
                         elif isinstance(e, topologic.Cluster):
                             tempEdges = Cluster.Edges(e)
                             if tempEdges:
                                 for tempEdge in tempEdges:
-                                    edges = addEdge(tempEdge, edges, allVertices, 0.0001)
-
-        for x in obstacleVertices:
-            for y in obstacleVertices:
-                e = Edge.ByVertices([x, y])
-                if e:
-                    e = Topology.Boolean(e, obstaclesCluster, "difference", False)
-                    if e:
-                        e = Topology.Boolean(e, boundaryFace, "intersect", False)
-                        if isinstance(e, topologic.Edge):
-                            edges = addEdge(e, edges, allVertices, 0.0001)
-                        elif isinstance(e, topologic.Cluster):
-                            tempEdges = Cluster.Edges(e)
-                            if tempEdges:
-                                for tempEdge in tempEdges:
-                                    edges = addEdge(tempEdge, edges, allVertices, 0.0001)
-
-        obstaclesEdges = Cluster.Edges(obstaclesCluster)
-        edges = edges + obstaclesEdges
-        return Graph.ByVerticesEdges(allVertices, edges)
+                                    edges = addEdge(tempEdge, edges, viewpointsA, viewpointsB, 0.0001)
+        cluster = Cluster.ByTopologies(viewpointsA+viewpointsB)
+        cluster = Cluster.SelfMerge(cluster)
+        viewpoints = Cluster.Vertices(cluster)
+        return Graph.ByVerticesEdges(viewpoints, edges)

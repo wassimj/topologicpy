@@ -217,6 +217,31 @@ class Dictionary(topologic.Dictionary):
 
         return Dictionary.ByKeysValues(dictKeys, dictValues)
     '''
+
+    @staticmethod
+    def ByPythonDictionary(pythonDictionary):
+        """
+        Creates a dictionary equivalent to the input python dictionary.
+
+        Parameters
+        ----------
+        pythonDictionary : dict
+            The input python dictionary.
+
+        Returns
+        -------
+        topologic.Dictionary
+            The dictionary equivalent to the input python dictionary.
+
+        """
+        if not isinstance(pythonDictionary, dict):
+            return None
+        keys = list(pythonDictionary.keys())
+        values = []
+        for key in keys:
+            values.append(pythonDictionary[key])
+        return Dictionary.ByKeysValues(keys, values)
+
     @staticmethod
     def Keys(dictionary):
         """
@@ -239,7 +264,73 @@ class Dictionary(topologic.Dictionary):
             return dictionary.Keys()
         else:
             return None
-        
+
+    @staticmethod
+    def ListAttributeValues(listAttribute):
+        """
+        Returns the list of values embedded in the input listAttribute.
+
+        Parameters
+        ----------
+        listAttribute : listAttribute
+            The input list attribute.
+ 
+        Returns
+        -------
+        list
+            The list of values found in the input list attribute
+
+        """
+        listAttributes = listAttribute.ListValue()
+        returnList = []
+        for attr in listAttributes:
+            if isinstance(attr, IntAttribute):
+                returnList.append(attr.IntValue())
+            elif isinstance(attr, DoubleAttribute):
+                returnList.append(attr.DoubleValue())
+            elif isinstance(attr, StringAttribute):
+                returnList.append(attr.StringValue())
+            elif isinstance(attr, float) or isinstance(attr, int) or isinstance(attr, str) or isinstance(attr, dict):
+                returnList.append(attr)
+        return returnList    
+       
+    @staticmethod
+    def PythonDictionary(dictionary):
+        """
+        Returns the input dictionary as a python dictionary
+
+        Parameters
+        ----------
+        dicitonary : topologic.Dictionary
+            The input dictionary.
+
+        Returns
+        -------
+        dict
+            The python dictionary equivalent of the input dictionary
+
+        """
+        if not isinstance(dictionary, topologic.Dictionary):
+            return None
+        keys = dictionary.Keys()
+        pythonDict = {}
+        for key in keys:
+            try:
+                attr = dictionary.ValueAtKey(key)
+            except:
+                raise Exception("Dictionary.Values - Error: Could not retrieve a Value at the specified key ("+key+")")
+            if isinstance(attr, topologic.IntAttribute):
+                pythonDict[key] = (attr.IntValue())
+            elif isinstance(attr, topologic.DoubleAttribute):
+                pythonDict[key] = (attr.DoubleValue())
+            elif isinstance(attr, topologic.StringAttribute):
+                pythonDict[key] = (attr.StringValue())
+            elif isinstance(attr, topologic.ListAttribute):
+                pythonDict[key] = (Dictionary.ListAttributeValues(attr))
+            else:
+                pythonDict[key]=("")
+        return pythonDict
+
     @staticmethod
     def SetValueAtKey(dictionary, key, value):
         """
@@ -247,7 +338,7 @@ class Dictionary(topologic.Dictionary):
 
         Parameters
         ----------
-        dicitonary : topologic.DIctionary or dict
+        dicitonary : topologic.Dictionary or dict
             The input dictionary.
         key : string
             The input key.
@@ -282,36 +373,7 @@ class Dictionary(topologic.Dictionary):
             return processTopologicDictionary(dictionary, key, value)
         else:
             return None
-    
-    @staticmethod
-    def ListAttributeValues(listAttribute):
-        """
-        Returns the list of values embedded in the input listAttribute.
-
-        Parameters
-        ----------
-        listAttribute : listAttribute
-            The input list attribute.
  
-        Returns
-        -------
-        list
-            The list of values found in the input list attribute
-
-        """
-        listAttributes = listAttribute.ListValue()
-        returnList = []
-        for attr in listAttributes:
-            if isinstance(attr, IntAttribute):
-                returnList.append(attr.IntValue())
-            elif isinstance(attr, DoubleAttribute):
-                returnList.append(attr.DoubleValue())
-            elif isinstance(attr, StringAttribute):
-                returnList.append(attr.StringValue())
-            elif isinstance(attr, float) or isinstance(attr, int) or isinstance(attr, str) or isinstance(attr, dict):
-                returnList.append(attr)
-        return returnList    
-    
     @staticmethod
     def ValueAtKey(dictionary, key):
         """

@@ -194,6 +194,82 @@ class Vertex(Topology):
                 if Vertex.Distance(vertex, vertices[i]) < tolerance:
                     return i
         return None
+
+    @staticmethod
+    def IsInside(vertex, topology, tolerance=0.0001):
+        """
+        Returns True if the input vertex is inside the input topology. Returns False otherwise.
+
+        Parameters
+        ----------
+        vertex : topologic.Vertex
+            The input vertex.
+        topology : topologic.Topology
+            The input topology.
+        tolerance : float , optional
+            The tolerance for computing if the input vertex is enclosed in a cell. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the input vertex is inside the input topology. False otherwise.
+
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Shell import Shell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        if not isinstance(topology, topologic.Topology):
+            return None
+
+        if isinstance(topology, topologic.Vertex):
+            return topologic.VertexUtility.Distance(vertex, topology) < tolerance
+        elif isinstance(topology, topologic.Edge):
+            try:
+                parameter = topologic.EdgeUtility.ParameterAtPoint(topology, vertex)
+            except:
+                parameter = 400 #aribtrary large number greater than 1
+            return 0 <= parameter <= 1
+        elif isinstance(topology, topologic.Wire):
+            edges = Wire.Edges(topology)
+            for edge in edges:
+                if Vertex.IsInside(vertex, edge, tolerance):
+                    return True
+            return False
+        elif isinstance(topology, topologic.Face):
+            return topologic.FaceUtility.IsInside(topology, vertex, tolerance)
+        elif isinstance(topology, topologic.Shell):
+            faces = Shell.Faces(topology)
+            for face in faces:
+                if Vertex.IsInside(vertex, face, tolerance):
+                    return True
+            return False
+        elif isinstance(topology, topologic.Cell):
+            return topologic.CellUtility.Contains(topology, vertex, tolerance) == 0
+        elif isinstance(topology, topologic.CellComplex):
+            cells = CellComplex.Cells(topology)
+            faces = CellComplex.Faces(topology)
+            edges = CellComplex.Edges(topology)
+            vertices = CellComplex.Vertices(topology)
+            subtopologies = cells + faces + edges + vertices
+            for subtopology in subtopologies:
+                if Vertex.IsInside(vertex, subtopology, tolerance):
+                    return True
+            return False
+        elif isinstance(topology, topologic.Cluster):
+            cells = Cluster.Cells(topology)
+            faces = Cluster.Faces(topology)
+            edges = Cluster.Edges(topology)
+            vertices = Cluster.Vertices(topology)
+            subtopologies = cells + faces + edges + vertices
+            for subtopology in subtopologies:
+                if Vertex.IsInside(vertex, subtopology, tolerance):
+                    return True
+            return False
+        return False
     
     @staticmethod
     def NearestVertex(vertex, topology, useKDTree=True):

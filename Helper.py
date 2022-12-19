@@ -109,3 +109,43 @@ def projectFace(face, other_face):
     return [None, None]
 
   return [dist, top_space_boundary[0]]
+
+def transferDictionaries(sources, sinks, tol):
+    usedSources = []
+    for i in range(len(sources)):
+        usedSources.append(False)
+    for sink in sinks:
+        sinkKeys = []
+        sinkValues = []
+        for j in range(len(sources)):
+            source = sources[j]
+            if usedSources[j] == False:
+                d = source.GetDictionary()
+                if d:
+                    sourceKeys = d.Keys()
+                    if len(sourceKeys) > 0:
+                        iv = relevantSelector(source, tol)
+                        if topologyContains(sink, iv, tol):
+                            usedSources[j] = True
+                            for aSourceKey in sourceKeys:
+                                if aSourceKey not in sinkKeys:
+                                    sinkKeys.append(aSourceKey)
+                                    sinkValues.append("")
+                            for i in range(len(sourceKeys)):
+                                index = sinkKeys.index(sourceKeys[i])
+                                sourceValue = valueAtKey(d, sourceKeys[i])
+                                if sourceValue != None:
+                                    if sinkValues[index] != "":
+                                        if isinstance(sinkValues[index], list):
+                                            sinkValues[index].append(sourceValue)
+                                        else:
+                                            sinkValues[index] = [sinkValues[index], sourceValue]
+                                    else:
+                                        sinkValues[index] = sourceValue
+                    else:
+                        usedSources[j] = True # Has no keys so not useful to reconsider
+                else:
+                    usedSources[j] = True # Has no dictionary so not useful to reconsider
+        if len(sinkKeys) > 0 and len(sinkValues) > 0:
+            newDict = Dictionary.ByKeysValues(sinkKeys, sinkValues)
+            sink = Topology.SetDictionary(sink, newDict)
