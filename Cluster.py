@@ -40,7 +40,7 @@ class Cluster(topologic.Cluster):
         if not isinstance(cluster, topologic.Cluster):
             return None
         cellComplexes = []
-        _ = cluster.Cells(None, cellComplexes)
+        _ = cluster.CellComplexes(None, cellComplexes)
         return cellComplexes
 
     @staticmethod

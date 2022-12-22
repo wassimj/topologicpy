@@ -89,6 +89,7 @@ class Wire(topologic.Wire):
 
         """
         from topologicpy.Edge import Edge
+        from topologicpy.Vector import Vector
         face = topologic.Face.ByExternalBoundary(wire)
         if reverse:
             offset = -offset

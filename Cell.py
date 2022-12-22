@@ -660,6 +660,7 @@ class Cell(Topology):
         from topologicpy.Face import Face
         from topologicpy.Vector import Vector
         from topologicpy.Aperture import Aperture
+        from topologicpy.Topology import Topology
         from numpy import arctan, pi, signbit, arctan2, rad2deg
 
         def angleCode(f, up, tiltAngle):
@@ -676,11 +677,11 @@ class Cell(Topology):
             return code
 
         def getApertures(topology):
-            apertures = []
             apTopologies = []
-            apertures = topology.Apertures(apertures)
-            for aperture in apertures:
-                apTopologies.append(Aperture.Topology(aperture))
+            apertures = Topology.Apertures(topology)
+            if isinstance(apertures, list):
+                for aperture in apertures:
+                    apTopologies.append(Aperture.Topology(aperture))
             return apTopologies
 
         if not isinstance(cell, topologic.Cell):

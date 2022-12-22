@@ -1,5 +1,5 @@
-from base64 import b16encode
-from tkinter import N
+#from base64 import b16encode
+#from tkinter import N
 import topologicpy
 import topologic
 
@@ -1685,8 +1685,13 @@ class Topology():
             DESCRIPTION.
 
         """
-        # topology, tol = item
-
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
         def convexHull3D(item, tol, option):
             if item:
                 vertices = []
@@ -1706,20 +1711,20 @@ class Topology():
                     for i in range(len(simplex)-1):
                         sp = hull.points[simplex[i]]
                         ep = hull.points[simplex[i+1]]
-                        sv = topologic.Vertex.ByCoordinates(sp[0], sp[1], sp[2])
-                        ev = topologic.Vertex.ByCoordinates(ep[0], ep[1], ep[2])
-                        edges.append(topologic.Edge.ByStartVertexEndVertex(sv, ev))
+                        sv = Vertex.ByCoordinates(sp[0], sp[1], sp[2])
+                        ev = Vertex.ByCoordinates(ep[0], ep[1], ep[2])
+                        edges.append(Edge.ByVertices([sv, ev]))
                     sp = hull.points[simplex[-1]]
                     ep = hull.points[simplex[0]]
-                    sv = topologic.Vertex.ByCoordinates(sp[0], sp[1], sp[2])
-                    ev = topologic.Vertex.ByCoordinates(ep[0], ep[1], ep[2])
-                    edges.append(topologic.Edge.ByStartVertexEndVertex(sv, ev))
-                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges(edges)))
+                    sv = Vertex.ByCoordinates(sp[0], sp[1], sp[2])
+                    ev = Vertex.ByCoordinates(ep[0], ep[1], ep[2])
+                    edges.append(Edge.ByVertices([sv, ev]))
+                    faces.append(Face.ByWire(Wire.ByEdges(edges)))
             try:
                 c = Cell.ByFaces(faces, tol)
                 return c
             except:
-                returnTopology = Topology.SelfMerge(topologic.Cluster.ByTopologies(faces))
+                returnTopology = Cluster.SelfMerge(Cluster.ByTopologies(faces))
                 if returnTopology.Type() == 16:
                     return Shell.ExternalBoundary(returnTopology)
         returnObject = None
@@ -1749,119 +1754,6 @@ class Topology():
         """
         return topologic.Topology.DeepCopy(item)
     
-    @staticmethod
-    def DecodeInformation(topology):
-        """
-        Description
-        __________
-            DESCRIPTION
-
-        Parameters
-        ----------
-        topology : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        finalString : TYPE
-            DESCRIPTION.
-
-        """
-        
-        def dictionaryString(sources):
-            returnList = []
-            for source in sources:
-                type = ""
-                x = ""
-                y = ""
-                z = ""
-                sourceKeys = ""
-                sourceValues = ""
-                d = source.GetDictionary()
-                if d == None:
-                    continue
-                stl_keys = d.Keys()
-                if len(stl_keys) > 0:
-                    sourceType = source.Type()
-                    type = str(sourceType)
-                    if sourceType == topologic.Vertex.Type():
-                        sourceSelector = source
-                    elif sourceType == topologic.Edge.Type():
-                        sourceSelector = topologic.EdgeUtility.PointAtParameter(source, 0.5)
-                    elif sourceType == topologic.Face.Type():
-                        sourceSelector = topologic.FaceUtility.InternalVertex(source, 0.0001)
-                    elif sourceType == topologic.Cell.Type():
-                        sourceSelector = topologic.CellUtility.InternalVertex(source, 0.0001)
-                    elif sourceType == topologic.CellComplex.Type():
-                        sourceSelector = source.Centroid()
-                    x = "{:.4f}".format(sourceSelector.X())
-                    y = "{:.4f}".format(sourceSelector.Y())
-                    z = "{:.4f}".format(sourceSelector.Z())
-                    for aSourceKey in stl_keys:
-                        if sourceKeys == "":
-                            sourceKeys = aSourceKey
-                        else:
-                            sourceKeys = sourceKeys+"|"+aSourceKey
-                        aSourceValue = str(getValueAtKey(d, aSourceKey))
-                        if sourceValues == "":
-                            sourceValues = aSourceValue
-                        else:
-                            sourceValues = sourceValues+"|"+aSourceValue
-
-                    returnList.append(type+","+x+","+y+","+z+","+sourceKeys+","+sourceValues)
-            return returnList
-        
-        finalList = []
-        for anItem in topology:
-            itemType = anItem.Type()
-            if itemType == topologic.CellComplex.Type():
-                finalList = finalList + (dictionaryString([anItem]))
-                cells = []
-                _ = anItem.Cells(None, cells)
-                finalList = finalList + (dictionaryString(cells))
-                faces = []
-                _ = anItem.Faces(None, faces)
-                finalList = finalList + (dictionaryString(faces))
-                edges = []
-                _ = anItem.Edges(None, edges)
-                finalList = finalList + (dictionaryString(edges))
-                vertices = []
-                _ = anItem.Vertices(None, vertices)
-                finalList = finalList + (dictionaryString(vertices))
-            if itemType == topologic.Cell.Type():
-                finalList = finalList + (dictionaryString([anItem]))
-                faces = []
-                _ = anItem.Faces(None, faces)
-                finalList = finalList + (dictionaryString(faces))
-                edges = []
-                _ = anItem.Edges(None, edges)
-                finalList = finalList + (dictionaryString(edges))
-                vertices = []
-                _ = anItem.Vertices(None, vertices)
-                finalList = finalList + (dictionaryString(vertices))
-            if itemType == topologic.Face.Type():
-                finalList = finalList + (dictionaryString([anItem]))
-                edges = []
-                _ = anItem.Edges(None, edges)
-                finalList = finalList + (dictionaryString(edges))
-                vertices = []
-                _ = anItem.Vertices(None, vertices)
-                finalList = finalList + (dictionaryString(vertices))
-            if itemType == topologic.Edge.Type():
-                finalList = finalList + (dictionaryString([anItem]))
-                vertices = []
-                _ = anItem.Vertices(None, vertices)
-                finalList = finalList + (dictionaryString(vertices))
-            if itemType == topologic.Vertex.Type():
-                finalList = finalList + (dictionaryString([anItem]))
-        finalString = ""
-        for i in range(len(finalList)):
-            if i == len(finalList) - 1:
-                finalString = finalString+finalList[i]
-            else:
-                finalString = finalString+finalList[i]+'\n'
-        return finalString
-
     @staticmethod
     def Dictionary(topology):
         """

@@ -93,7 +93,7 @@ class Face(topologic.Face):
             The angle in degrees between the two input faces.
 
         """
-        
+        from topologicpy.Vector import Vector
         if not faceA or not isinstance(faceA, topologic.Face):
             return None
         if not faceB or not isinstance(faceB, topologic.Face):
@@ -207,7 +207,7 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Cluster import Cluster
-        if not isinstance(edges, topologic.Cluster):
+        if not isinstance(cluster, topologic.Cluster):
             return None
         edges = Cluster.Edges(cluster)
         return Face.ByEdges(edges)

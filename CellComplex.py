@@ -49,8 +49,8 @@ class CellComplex(topologic.CellComplex):
 
         Parameters
         ----------
-        cells : topologic.Cell
-            The input cells.
+        cells : list
+            The list of input cells.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -191,8 +191,8 @@ class CellComplex(topologic.CellComplex):
 
         Parameters
         ----------
-        wires : topologic.Wire
-            The input wires.
+        wires : list
+            The input list of wires.
         triangulate : bool , optional
             If set to True, the faces will be triangulated. The default is True.
         tolerance : float , optional
@@ -582,7 +582,7 @@ class CellComplex(topologic.CellComplex):
 
         Returns
         -------
-        ist
+        list
             The list of non-manifold faces of the input cellComplex.
 
         """
