@@ -97,11 +97,12 @@ class Plotly:
 
         def faceData(topology, color="lightblue", opacity=0.5):
             if isinstance(topology, topologic.Cluster):
-                cells = Cluster.Cells(topology)
-                triangulated_cells = []
-                for cell in cells:
-                    triangulated_cells.append(Topology.Triangulate(cell, 0.0001))
-                topology = Cluster.ByTopologies(triangulated_cells)
+                faces = Cluster.Faces(topology)
+                if len(faces) > 0:
+                    triangulated_faces = []
+                    for face in faces:
+                        triangulated_faces.append(Topology.Triangulate(face, 0.0001))
+                    topology = Cluster.ByTopologies(triangulated_faces)
             else:
                 topology = Topology.Triangulate(topology, 0.0001)
             tp_vertices = []
@@ -214,6 +215,7 @@ class Plotly:
                 yaxis = dict(visible=yAxis),
                 zaxis =dict(visible=zAxis),
                 ),
+            scene_aspectmode='auto',
             paper_bgcolor=paperBackgroundColor,
             plot_bgcolor=plotBackgroundColor,
             margin=dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),

@@ -730,7 +730,7 @@ class Topology():
                 sinkVertices.append(topologyC)
             elif hidimC >= topologic.Vertex.Type():
                 _ = topologyC.Vertices(None, sinkVertices)
-            _ = transferDictionaries(sourceVertices, sinkVertices, tolerance)
+            _ = Topology.TransferDictionaries(sourceVertices, sinkVertices, tolerance)
             if topologyA.Type() == topologic.Edge.Type():
                 sourceEdges.append(topologyA)
             elif hidimA >= topologic.Edge.Type():
@@ -1797,46 +1797,29 @@ class Topology():
         return item.Dimensionality()
     
     @staticmethod
-    def Divide(topology, tool, transferDictionary, addNestingDepth):
+    def Divide(topology, tool, transferDictionary=False, addNestingDepth=False):
         """
-        Description
-        __________
-            DESCRIPTION
+        Divides the input topology by the input tool and places the results in the contents of the input topology.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        tool : TYPE
-            DESCRIPTION.
-        transferDictionary : TYPE
-            DESCRIPTION.
-        addNestingDepth : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        tool : topologic.Topology
+            the tool used to divide the input topology.
+        transferDictionary : bool , optional
+            If set to True the dictionary of the input topology is transferred to the divided topologies.
+        addNestingDepth : bool , optional
+            If set to True the nesting depth of the division is added to the dictionaries of the divided topologies.
 
         Returns
         -------
-        topology : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The input topology with the divided topologies added to it as contents.
 
         """
-        # topology = item[0]
-        # tool = item[1]
-        # transferDictionary = item[2]
-        # addNestingDepth = item[3]
         
-        def getKeysAndValues(item):
-            keys = item.Keys()
-            values = []
-            for key in keys:
-                value = getValueAtKey(item, key)
-                values.append(value)
-            return [keys, values]
+        from topologicpy.Dictionary import Dictionary
         
         try:
             _ = topology.Divide(tool, False) # Don't transfer dictionaries just yet
@@ -1859,134 +1842,158 @@ class Topology():
             if addNestingDepth and transferDictionary:
                 parentDictionary = topology.GetDictionary()
                 if parentDictionary != None:
-                    keys, values = getKeysAndValues(parentDictionary)
+                    keys = Dictionary.Keys(parentDictionary)
+                    values = Dictionary.Values(parentDictionary)
                     if ("nesting_depth" in keys):
                         nestingDepth = parentDictionary.ValueAtKey("nesting_depth").StringValue()
                     else:
                         keys.append("nesting_depth")
                         values.append(nestingDepth)
-                    parentDictionary = processKeysValues(keys, values)
+                    parentDictionary = Dictionary.ByKeysValues(keys, values)
                 else:
                     keys = ["nesting_depth"]
                     values = [nestingDepth]
-                parentDictionary = processKeysValues(keys, values)
+                parentDictionary = Dictionary.ByKeysValues(keys, values)
                 _ = topology.SetDictionary(parentDictionary)
                 values[keys.index("nesting_depth")] = nestingDepth+"_"+str(i+1)
-                d = processKeysValues(keys, values)
+                d = Dictionary.ByKeysValues(keys, values)
                 _ = contents[i].SetDictionary(d)
             if addNestingDepth and  not transferDictionary:
                 parentDictionary = topology.GetDictionary()
                 if parentDictionary != None:
-                    keys, values = getKeysAndValues(parentDictionary)
+                    keys, values = Dictionary.ByKeysValues(parentDictionary)
                     if ("nesting_depth" in keys):
                         nestingDepth = parentDictionary.ValueAtKey("nesting_depth").StringValue()
                     else:
                         keys.append("nesting_depth")
                         values.append(nestingDepth)
-                    parentDictionary = processKeysValues(keys, values)
+                    parentDictionary = Dictionary.ByKeysValues(keys, values)
                 else:
                     keys = ["nesting_depth"]
                     values = [nestingDepth]
-                parentDictionary = processKeysValues(keys, values)
+                parentDictionary = Dictionary.ByKeysValues(keys, values)
                 _ = topology.SetDictionary(parentDictionary)
                 keys = ["nesting_depth"]
                 v = nestingDepth+"_"+str(i+1)
                 values = [v]
-                d = processKeysValues(keys, values)
+                d = Dictionary.ByKeysValues(keys, values)
                 _ = contents[i].SetDictionary(d)
         return topology
     
     @staticmethod
-    def Explode(topology, origin, scale, typeFilter):
+    def Explode(topology, origin=None, scale=1.25, typeFilter=None, axes="xyz"):
         """
-        Description
-        __________
-            DESCRIPTION
+        Explodes the input topology. See https://en.wikipedia.org/wiki/Exploded-view_drawing.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        origin : TYPE
-            DESCRIPTION.
-        scale : TYPE
-            DESCRIPTION.
-        typeFilter : TYPE
-            DESCRIPTION.
-
+        topology : topologic.Topology
+            The input topology.
+        origin : topologic.Vertex , optional
+            The origin of the explosion. If set to None, the centroid of the input topology will be used. The defaul is None.
+        scale : float , optional
+            The scale factor of the explosion. The default is 1.25.
+        typeFilter : str , optional
+            The type of the subtopologies to explode. This can be any of "vertex", "edge", "face", or "cell". If set to None, a subtopology one level below the type of the input topology will be used. The default is None.
+        axes : str , optional
+            Sets what axes are to be used for exploding the topology. This can be any permutation or substring of "xyz". It is not case sensitive. The default is "xyz".
+        
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Cluster
+            The exploded topology.
 
         """
-        # topology = item[0]
-        # origin = item[1]
-        # scale = item[2]
-        # typeFilter = item[3]
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Graph import Graph
+
+        def processClusterTypeFilter(cluster):
+            if len(Cluster.CellComplexes()) > 0:
+                return "cell"
+            elif len(Cluster.Cells()) > 0:
+                return "face"
+            elif len(Cluster.Shells()) > 0:
+                return "face"
+            elif len(Cluster.Faces()) > 0:
+                return "edge"
+            elif len(Cluster.Wires()) > 0:
+                return "edge"
+            elif len(Cluster.Edges()) > 0:
+                return "vertex"
+            else:
+                return "self"
+
+        def getTypeFilter(topology):
+            typeFilter = "self"
+            if isinstance(topology, topologic.Vertex):
+                typeFilter = "self"
+            elif isinstance(topology, topologic.Edge):
+                typeFilter = "vertex"
+            elif isinstance(topology, topologic.Wire):
+                typeFilter = "edge"
+            elif isinstance(topology, topologic.Face):
+                typeFilter = "edge"
+            elif isinstance(topology, topologic.Shell):
+                typeFilter = "face"
+            elif isinstance(topology, topologic.Cell):
+                typeFilter = "face"
+            elif isinstance(topology, topologic.CellComplex):
+                typeFilter = "cell"
+            elif isinstance(topology, topologic.Cluster):
+                typeFilter = processClusterTypeFilter(topology)
+            elif isinstance(topology, topologic.Graph):
+                typeFilter = "edge"
+            return typeFilter
         
-        
-        
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(origin, topologic.Vertex):
+            origin = Topology.CenterOfMass(topology)
+        if not typeFilter:
+            typeFilter = getTypeFilter(topology)
+        if not isinstance(typeFilter, str):
+            return None
+        if not isinstance(axes, str):
+            return None
+        axes = axes.lower()
+        x_flag = "x" in axes
+        y_flag = "y" in axes
+        z_flag = "z" in axes
+        if not x_flag and not y_flag and not z_flag:
+            return None
+
         topologies = []
         newTopologies = []
-        cluster = None
-        if topology.__class__ == topologic.Graph:
-            graphTopology = topology.Topology()
-            graphEdges = []
-            _ = graphTopology.Edges(None, graphEdges)
-            for anEdge in graphEdges:
-                sv = anEdge.StartVertex()
-                oldX = sv.X()
-                oldY = sv.Y()
-                oldZ = sv.Z()
-                newX = (oldX - origin.X())*scale + origin.X()
-                newY = (oldY - origin.Y())*scale + origin.Y()
-                newZ = (oldZ - origin.Z())*scale + origin.Z()
-                newSv = topologic.Vertex.ByCoordinates(newX, newY, newZ)
-                ev = anEdge.EndVertex()
-                oldX = ev.X()
-                oldY = ev.Y()
-                oldZ = ev.Z()
-                newX = (oldX - origin.X())*scale + origin.X()
-                newY = (oldY - origin.Y())*scale + origin.Y()
-                newZ = (oldZ - origin.Z())*scale + origin.Z()
-                newEv = topologic.Vertex.ByCoordinates(newX, newY, newZ)
-                newEdge = topologic.Edge.ByStartVertexEndVertex(newSv, newEv)
-                newTopologies.append(newEdge)
-            cluster = topologic.Cluster.ByTopologies(newTopologies)
+        if isinstance(topology, topologic.Graph):
+            topology = Graph.Topology(topology)
+
+        if typeFilter.lower() == "self":
+            topologies = [topology]
         else:
-            if typeFilter == "Vertex":
-                topologies = []
-                _ = topology.Vertices(None, topologies)
-            elif typeFilter == "Edge":
-                topologies = []
-                _ = topology.Edges(None, topologies)
-            elif typeFilter == "Face":
-                topologies = []
-                _ = topology.Faces(None, topologies)
-            elif typeFilter == "Cell":
-                topologies = []
-                _ = topology.Cells(None, topologies)
-            elif typeFilter == 'Self':
-                topologies = [topology]
-            else:
-                topologies = []
-                _ = topology.Vertices(None, topologies)
-            for aTopology in topologies:
-                c = Topology.RelevantSelector(aTopology)
-                oldX = c.X()
-                oldY = c.Y()
-                oldZ = c.Z()
+            topologies = Topology.SubTopologies(topology, subTopologyType=typeFilter.lower())
+        for aTopology in topologies:
+            c = Topology.RelevantSelector(aTopology)
+            oldX = c.X()
+            oldY = c.Y()
+            oldZ = c.Z()
+            if x_flag:
                 newX = (oldX - origin.X())*scale + origin.X()
+            else:
+                newX = oldX
+            if y_flag:
                 newY = (oldY - origin.Y())*scale + origin.Y()
+            else:
+                newY = oldY
+            if z_flag:
                 newZ = (oldZ - origin.Z())*scale + origin.Z()
-                xT = newX - oldX
-                yT = newY - oldY
-                zT = newZ - oldZ
-                newTopology = topologic.TopologyUtility.Translate(aTopology, xT, yT, zT)
-                newTopologies.append(newTopology)
-            cluster = topologic.Cluster.ByTopologies(newTopologies)
-        return cluster
+            else:
+                newZ = oldZ
+            xT = newX - oldX
+            yT = newY - oldY
+            zT = newZ - oldZ
+            newTopology = Topology.Translate(aTopology, xT, yT, zT)
+            newTopologies.append(newTopology)
+        return Cluster.ByTopologies(newTopologies)
 
     
     @staticmethod
@@ -3183,36 +3190,31 @@ class Topology():
             newTopology = None
         return newTopology
     
-    def RelevantSelector(topology, tol):
+    def RelevantSelector(topology, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the relevant selector (vertex) of the input topology
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        angTol : TYPE, optional
-            DESCRIPTION. The default is 0.1.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        topology : topologic.Topology
+            The input topology.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        returnTopology : TYPE
-            DESCRIPTION.
+        topologic.Vertex
+            The relevant selector.
 
         """
-        returnVertex = None
         if topology.Type() == topologic.Vertex.Type():
             return topology
         elif topology.Type() == topologic.Edge.Type():
             return topologic.EdgeUtility.PointAtParameter(topology, 0.5)
         elif topology.Type() == topologic.Face.Type():
-            return topologic.FaceUtility.InternalVertex(topology, tol)
+            return topologic.FaceUtility.InternalVertex(topology, tolerance)
         elif topology.Type() == topologic.Cell.Type():
-            return topologic.CellUtility.InternalVertex(topology, tol)
+            return topologic.CellUtility.InternalVertex(topology, tolerance)
         else:
             return topology.CenterOfMass()
 
@@ -4047,100 +4049,105 @@ class Topology():
         return topologyC
     
     @staticmethod
-    def TransferDictionaries(sources, sink, tranVertices, tranEdges, tranFaces, tranCells, tolerance=0.0001):
+    def TransferDictionaries(sources, sinks, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Transfers the dictionaries from the list of sources to the list of sinks.
 
         Parameters
         ----------
-        sources : TYPE
-            DESCRIPTION.
-        sink : TYPE
-            DESCRIPTION.
-        tranVertices : TYPE
-            DESCRIPTION.
-        tranEdges : TYPE
-            DESCRIPTION.
-        tranFaces : TYPE
-            DESCRIPTION.
-        tranCells : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        sources : list
+            The list of topologies from which to transfer the dictionaries.
+        sinks : list
+            The list of topologies to which to transfer the dictionaries.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        sink : TYPE
-            DESCRIPTION.
+        dict
+            Returns a dictionary with the lists of sources and sinks. The keys are "sinks" and "sources".
 
         """
         from topologicpy.Dictionary import Dictionary
-        def transferDictionaries(sources, sinks, tol):
-            for sink in sinks:
-                sinkKeys = []
-                sinkValues = []
-                iv = Topology.RelevantSelector(sink, tol)
-                j = 1
-                for source in sources:
-                    if Topology.IsInside(source, iv, tol):
-                        d = source.GetDictionary()
-                        if d == None:
-                            continue
-                        stlKeys = d.Keys()
-                        if len(stlKeys) > 0:
-                            sourceKeys = d.Keys()
-                            for aSourceKey in sourceKeys:
-                                if aSourceKey not in sinkKeys:
-                                    sinkKeys.append(aSourceKey)
-                                    sinkValues.append("")
-                            for i in range(len(sourceKeys)):
-                                index = sinkKeys.index(sourceKeys[i])
-                                sourceValue = Dictionary.DictionaryValueAtKey(d, sourceKeys[i])
-                                if sourceValue != None:
-                                    if sinkValues[index] != "":
-                                        if isinstance(sinkValues[index], list):
-                                            sinkValues[index].append(sourceValue)
-                                        else:
-                                            sinkValues[index] = [sinkValues[index], sourceValue]
+        if not isinstance(sources, list):
+            return None
+        if not isinstance(sinks, list):
+            return None
+        sources = [x for x in sources if isinstance(x, topologic.Topology)]
+        sinks = [x for x in sinks if isinstance(x, topologic.Topology)]
+        if len(sources) < 1:
+            return None
+        if len(sinks) < 1:
+            return None
+        for sink in sinks:
+            sinkKeys = []
+            sinkValues = []
+            iv = Topology.RelevantSelector(sink, tolerance)
+            j = 1
+            for source in sources:
+                if Topology.IsInside(source, iv, tolerance):
+                    d = source.GetDictionary()
+                    if d == None:
+                        continue
+                    stlKeys = d.Keys()
+                    if len(stlKeys) > 0:
+                        sourceKeys = d.Keys()
+                        for aSourceKey in sourceKeys:
+                            if aSourceKey not in sinkKeys:
+                                sinkKeys.append(aSourceKey)
+                                sinkValues.append("")
+                        for i in range(len(sourceKeys)):
+                            index = sinkKeys.index(sourceKeys[i])
+                            sourceValue = Dictionary.DictionaryValueAtKey(d, sourceKeys[i])
+                            if sourceValue != None:
+                                if sinkValues[index] != "":
+                                    if isinstance(sinkValues[index], list):
+                                        sinkValues[index].append(sourceValue)
                                     else:
-                                        sinkValues[index] = sourceValue
-                if len(sinkKeys) > 0 and len(sinkValues) > 0:
-                    newDict = Dictionary.DictionaryByKeysValues(sinkKeys, sinkValues)
-                    _ = sink.SetDictionary(newDict)
+                                        sinkValues[index] = [sinkValues[index], sourceValue]
+                                else:
+                                    sinkValues[index] = sourceValue
+            if len(sinkKeys) > 0 and len(sinkValues) > 0:
+                newDict = Dictionary.DictionaryByKeysValues(sinkKeys, sinkValues)
+                _ = sink.SetDictionary(newDict)
+        return {"sources": sources, "sinks": sinks}
 
     
     @staticmethod
     def TransferDictionariesBySelectors(topology, selectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Transfers the dictionaries of the list of selectors to the subtopologies of the input topology based on the input parameters.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        selectors : TYPE
-            DESCRIPTION.
-        tranVertices : TYPE
-            DESCRIPTION.
-        tranEdges : TYPE
-            DESCRIPTION.
-        tranFaces : TYPE
-            DESCRIPTION.
-        tranCells : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        topology : topologic.Topology
+            The input topology.
+        selectors : list
+            The list of input selectors from which to transfer the dictionaries.
+        tranVertices : bool , optional
+            If True transfer dictionaries to the vertices of the input topology.
+        tranEdges : bool , optional
+            If True transfer dictionaries to the edges of the input topology.
+        tranFaces : bool , optional
+            If True transfer dictionaries to the faces of the input topology.
+        tranCells : bool , optional
+            If True transfer dictionaries to the cells of the input topology.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        sink : TYPE
-            DESCRIPTION.
+        topology.Topology
+            The input topology with the dictionaries transferred to its subtopologies.
 
         """
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(selectors, list):
+            return None
+        selectors = [x for x in selectors if isinstance(x, topologic.Topology)]
+        if len(selectors) < 1:
+            return None
         sinkEdges = []
         sinkFaces = []
         sinkCells = []
@@ -4151,52 +4158,49 @@ class Topology():
                 sinkVertices.append(topology)
             elif hidimSink >= topologic.Vertex.Type():
                 topology.Vertices(None, sinkVertices)
-            _ = transferDictionaries(selectors, sinkVertices, tolerance)
+            _ = Topology.TransferDictionaries(selectors, sinkVertices, tolerance)
         if tranEdges == True:
             sinkEdges = []
             if topology.Type() == topologic.Edge.Type():
                 sinkEdges.append(topology)
             elif hidimSink >= topologic.Edge.Type():
                 topology.Edges(None, sinkEdges)
-                _ = transferDictionaries(selectors, sinkEdges, tolerance)
+                _ = Topology.TransferDictionaries(selectors, sinkEdges, tolerance)
         if tranFaces == True:
             sinkFaces = []
             if topology.Type() == topologic.Face.Type():
                 sinkFaces.append(topology)
             elif hidimSink >= topologic.Face.Type():
                 topology.Faces(None, sinkFaces)
-            _ = transferDictionaries(selectors, sinkFaces, tolerance)
+            _ = Topology.TransferDictionaries(selectors, sinkFaces, tolerance)
         if tranCells == True:
             sinkCells = []
             if topology.Type() == topologic.Cell.Type():
                 sinkCells.append(topology)
             elif hidimSink >= topologic.Cell.Type():
                 topology.Cells(None, sinkCells)
-            _ = transferDictionaries(selectors, sinkCells, tolerance)
+            _ = Topology.TransferDictionaries(selectors, sinkCells, tolerance)
         return topology
 
     
     @staticmethod
     def Transform(topology, matrix):
         """
-        Description
-        __________
-            DESCRIPTION
+        Transforms the input topology by the input 4X4 transformation matrix.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        matrix : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        matrix : list
+            The input 4x4 transformation matrix.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The transformed topology.
 
         """
-        # topology, matrix = item
         kTranslationX = 0.0
         kTranslationY = 0.0
         kTranslationZ = 0.0
@@ -4226,33 +4230,27 @@ class Topology():
         return topologic.TopologyUtility.Transform(topology, kTranslationX, kTranslationY, kTranslationZ, kRotation11, kRotation12, kRotation13, kRotation21, kRotation22, kRotation23, kRotation31, kRotation32, kRotation33)
 
     @staticmethod
-    def Translate(topology, x, y, z):
+    def Translate(topology, x=0, y=0, z=0):
         """
-        Description
-        __________
-            DESCRIPTION
+        Translates (moves) the input topology.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        x : TYPE
-            DESCRIPTION.
-        y : TYPE
-            DESCRIPTION.
-        z : TYPE
-            DESCRIPTION.
+        topology : topologic.topology
+            The input topology.
+        x : float , optional
+            The x translation value. The default is 0.
+        y : float , optional
+            The y translation value. The default is 0.
+        z : float , optional
+            The z translation value. The default is 0.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The translated topology.
 
         """
-        # topology = item[0]
-        # x = item[1]
-        # y = item[2]
-        # z = item[3]
         if not isinstance(topology, topologic.Topology):
             return None
         return topologic.TopologyUtility.Translate(topology, x, y, z)
@@ -4261,34 +4259,25 @@ class Topology():
     @staticmethod
     def Triangulate(topology, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Triangulates the input topology.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        topology : topologic.Topology
+            The input topologgy.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The triangulated topology.
 
         """
-        
-        def triangulateFace(face):
-            faceTriangles = []
-            for i in range(0,5,1):
-                try:
-                    _ = topologic.FaceUtility.Triangulate(face, float(i)*0.1, faceTriangles)
-                    return faceTriangles
-                except:
-                    continue
-            faceTriangles.append(face)
-            return faceTriangles
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
         if not isinstance(topology, topologic.Topology):
             return None
         t = topology.Type()
@@ -4298,94 +4287,94 @@ class Topology():
         _ = topology.Faces(None, topologyFaces)
         faceTriangles = []
         for aFace in topologyFaces:
-            triFaces = triangulateFace(aFace)
+            triFaces = Face.Triangulate(aFace)
             for triFace in triFaces:
                 faceTriangles.append(triFace)
         if t == 8 or t == 16: # Face or Shell
-            return topologic.Shell.ByFaces(faceTriangles, tolerance)
+            return Shell.ByFaces(faceTriangles, tolerance)
         elif t == 32: # Cell
-            return topologic.Cell.ByFaces(faceTriangles, tolerance)
+            return Cell.ByFaces(faceTriangles, tolerance)
         elif t == 64: #CellComplex
-            return topologic.CellComplex.ByFaces(faceTriangles, tolerance)
+            return CellComplex.ByFaces(faceTriangles, tolerance)
 
     
     @staticmethod
     def Type(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the type of the input topology.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        int
+            The type of the input topology.
 
         """
+        if not isinstance(topology, topologic.Topology):
+            return None
         return topology.Type()
     
     @staticmethod
-    def TypeAsString(item):
+    def TypeAsString(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the type of the input topology as a string.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        str
+            The type of the topology as a string.
 
         """
-        return item.GetTypeAsString()
+        if not isinstance(topology, topologic.Topology):
+            return None
+        return topology.GetTypeAsString()
     
     @staticmethod
-    def TypeID(topologyType):
+    def TypeID(topologyType=None):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the type id of the input topologyType string.
 
         Parameters
         ----------
-        topologyType : TYPE
-            DESCRIPTION.
+        topologyType : str , optional
+            The input topology type string. This could be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. The default is None.
 
         Returns
         -------
-        typeID : TYPE
-            DESCRIPTION.
+        int
+            The type id of the input topologyType string.
 
         """
-        typeID = None
+
+        if not isinstance(topologyType, str):
+            return None
         topologyType = topologyType.lower()
-        try:
-            if topologyType == "vertex":
-                typeID = topologic.Vertex.Type()
-            elif topologyType == "edge":
-                typeID = topologic.Edge.Type()
-            elif topologyType == "wire":
-                typeID = topologic.Wire.Type()
-            elif topologyType == "face":
-                typeID = topologic.Face.Type()
-            elif topologyType == "shell":
-                typeID = topologic.Shell.Type()
-            elif topologyType == "cell":
-                typeID = topologic.Cell.Type()
-            elif topologyType == "cellComplex":
-                typeID = topologic.CellComplex.Type()
-            elif topologyType == "cluster":
-                typeID = topologic.Cluster.Type()
-        except:
-            typeID = None
+        if not topologyType in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster"]:
+            return None
+        typeID = None
+        if topologyType == "vertex":
+            typeID = topologic.Vertex.Type()
+        elif topologyType == "edge":
+            typeID = topologic.Edge.Type()
+        elif topologyType == "wire":
+            typeID = topologic.Wire.Type()
+        elif topologyType == "face":
+            typeID = topologic.Face.Type()
+        elif topologyType == "shell":
+            typeID = topologic.Shell.Type()
+        elif topologyType == "cell":
+            typeID = topologic.Cell.Type()
+        elif topologyType == "cellComplex":
+            typeID = topologic.CellComplex.Type()
+        elif topologyType == "cluster":
+            typeID = topologic.Cluster.Type()
         return typeID
