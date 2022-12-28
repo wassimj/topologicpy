@@ -103,6 +103,104 @@ class Face(topologic.Face):
         return round((Vector.Angle(dirA, dirB)), mantissa)
 
     @staticmethod
+    def BoundingRectangle(topology, optimize=0):
+        """
+        Returns a face representing a bounding rectangle of the input topology. The returned face contains a dictionary with key "zrot" that represents rotations around the Z axis. If applied the resulting face will become axis-aligned.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        optimize : int , optional
+            If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding rectangle. The default is 0.
+        
+        Returns
+        -------
+        topologic.Face
+            The bounding rectangle of the input topology.
+
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        def bb(topology):
+            vertices = []
+            _ = topology.Vertices(None, vertices)
+            x = []
+            y = []
+            for aVertex in vertices:
+                x.append(aVertex.X())
+                y.append(aVertex.Y())
+            minX = min(x)
+            minY = min(y)
+            maxX = max(x)
+            maxY = max(y)
+            return [minX, minY, maxX, maxY]
+
+        if not isinstance(topology, topologic.Topology):
+            return None
+        vertices = Topology.SubTopologies(topology, subTopologyType="vertex")
+        topology = Cluster.ByTopologies(vertices)
+        boundingBox = bb(topology)
+        minX = boundingBox[0]
+        minY = boundingBox[1]
+        maxX = boundingBox[2]
+        maxY = boundingBox[3]
+        w = abs(maxX - minX)
+        l = abs(maxY - minY)
+        best_area = l*w
+        orig_area = best_area
+        best_z = 0
+        best_bb = boundingBox
+        origin = Topology.Centroid(topology)
+        optimize = min(max(optimize, 0), 10)
+        if optimize > 0:
+            factor = (round(((11 - optimize)/30 + 0.57), 2))
+            flag = False
+            for n in range(10,0,-1):
+                if flag:
+                    break
+                za = n
+                zb = 90+n
+                zc = n
+                for z in range(za,zb,zc):
+                    if flag:
+                        break
+                    t = Topology.Rotate(topology, origin=origin, x=0,y=0,z=1, degree=z)
+                    minX, minY, maxX, maxY = bb(t)
+                    w = abs(maxX - minX)
+                    l = abs(maxY - minY)
+                    area = l*w
+                    if area < orig_area*factor:
+                        best_area = area
+                        best_z = z
+                        best_bb = [minX, minY, maxX, maxY]
+                        flag = True
+                        break
+                    if area < best_area:
+                        best_area = area
+                        best_z = z
+                        best_bb = [minX, minY, maxX, maxY]
+                        
+        else:
+            best_bb = boundingBox
+
+        minX, minY, maxX, maxY = best_bb
+        vb1 = topologic.Vertex.ByCoordinates(minX, minY, 0)
+        vb2 = topologic.Vertex.ByCoordinates(maxX, minY, 0)
+        vb3 = topologic.Vertex.ByCoordinates(maxX, maxY, 0)
+        vb4 = topologic.Vertex.ByCoordinates(minX, maxY, 0)
+
+        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
+        baseFace = Face.ByWire(baseWire)
+        baseFace = Topology.Rotate(baseFace, origin=origin, x=0,y=0,z=1, degree=-best_z)
+        dictionary = Dictionary.ByKeysValues(["zrot"], [best_z])
+        baseFace = Topology.SetDictionary(baseFace, dictionary)
+        return baseFace
+
+    @staticmethod
     def CompassAngle(face, north, mantissa=4):
         from topologicpy.Vector import Vector
         if not isinstance(face, topologic.Face):
@@ -672,9 +770,10 @@ class Face(topologic.Face):
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
         if not isinstance(face, topologic.Face):
             return None
-        origin = Vertex.ByCoordinates(0,0,0)
+        world_origin = Vertex.ByCoordinates(0,0,0)
         cm = face.CenterOfMass()
         coords = Face.NormalAtParameters(face, 0.5, 0.5)
         x1 = cm.X()
@@ -692,10 +791,29 @@ class Face(topologic.Face):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        flat_face = Topology.Translate(face, -cm.X(), -cm.Y(), -cm.Z())
-        flat_face = Topology.Rotate(flat_face, origin, 0, 0, 1, -phi)
-        flat_face = Topology.Rotate(flat_face, origin, 0, 1, 0, -theta)
-        return flat_face
+        flatFace = Topology.Translate(face, -cm.X(), -cm.Y(), -cm.Z())
+        flatFace = Topology.Rotate(flatFace, world_origin, 0, 0, 1, -phi)
+        flatFace = Topology.Rotate(flatFace, world_origin, 0, 1, 0, -theta)
+        # Ensure flatness. Force Z to be zero
+        flatExternalBoundary = Face.ExternalBoundary(flatFace)
+        flatFaceVertices = Wire.Vertices(flatExternalBoundary)
+        tempVertices = []
+        for ffv in flatFaceVertices:
+            tempVertices.append(Vertex.ByCoordinates(ffv.X(), ffv.Y(), 0))
+        flatExternalBoundary = Wire.ByVertices(tempVertices)
+
+        internalBoundaries = Face.InternalBoundaries(flatFace)
+        flatInternalBoundaries = []
+        for internalBoundary in internalBoundaries:
+            ibVertices = Wire.Vertices(internalBoundary)
+            tempVertices = []
+            for ibVertex in ibVertices:
+                tempVertices.append(Vertex.ByCoordinates(ibVertex.X(), ibVertex.Y(), 0))
+            flatInternalBoundaries.append(Wire.ByVertices(tempVertices))
+        flatFace = Face.ByWires(flatExternalBoundary, flatInternalBoundaries)
+        dictionary = Dictionary.ByKeysValues(["xTran", "yTran", "zTran", "phi", "theta"], [cm.X(), cm.Y(), cm.Z(), phi, theta])
+        flatFace = Topology.SetDictionary(flatFace, dictionary)
+        return flatFace
     
     @staticmethod
     def InternalBoundaries(face):

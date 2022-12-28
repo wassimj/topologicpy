@@ -10,6 +10,129 @@ import numpy as np
 
 class Wire(topologic.Wire):
     @staticmethod
+    def BoundingRectangle(topology, optimize=0):
+        """
+        Returns a wire representing a bounding rectangle of the input topology. The returned wire contains a dictionary with key "zrot" that represents rotations around the Z axis. If applied the resulting wire will become axis-aligned.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        optimize : int , optional
+            If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding rectangle. The default is 0.
+        
+        Returns
+        -------
+        topologic.Wire
+            The bounding rectangle of the input topology.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from random import sample
+
+        def br(topology):
+            vertices = []
+            _ = topology.Vertices(None, vertices)
+            x = []
+            y = []
+            for aVertex in vertices:
+                x.append(aVertex.X())
+                y.append(aVertex.Y())
+            minX = min(x)
+            minY = min(y)
+            maxX = max(x)
+            maxY = max(y)
+            return [minX, minY, maxX, maxY]
+
+        if not isinstance(topology, topologic.Topology):
+            return None
+
+        world_origin = Vertex.ByCoordinates(0,0,0)
+
+        # Create a sample face
+        vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
+        v = sample(vertices, 3)
+        w = Wire.ByVertices(v)
+        f = Face.ByWire(w)
+        f = Face.Flatten(f)
+        dictionary = Topology.Dictionary(f)
+        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+        
+        topology = Topology.Translate(topology, -xTran, -yTran, -zTran)
+        topology = Topology.Rotate(topology, origin=world_origin, x=0, y=0, z=1, degree=-phi)
+        topology = Topology.Rotate(topology, origin=world_origin, x=0, y=1, z=0, degree=-theta)
+        
+        cm = Topology.CenterOfMass(f)
+        boundingRectangle = br(topology)
+        minX = boundingRectangle[0]
+        minY = boundingRectangle[1]
+        maxX = boundingRectangle[2]
+        maxY = boundingRectangle[3]
+        w = abs(maxX - minX)
+        l = abs(maxY - minY)
+        best_area = l*w
+        orig_area = best_area
+        best_z = 0
+        best_br = boundingRectangle
+        origin = Topology.Centroid(topology)
+        optimize = min(max(optimize, 0), 10)
+        if optimize > 0:
+            factor = (round(((11 - optimize)/30 + 0.57), 2))
+            flag = False
+            for n in range(10,0,-1):
+                if flag:
+                    break
+                za = n
+                zb = 90+n
+                zc = n
+                for z in range(za,zb,zc):
+                    if flag:
+                        break
+                    t = Topology.Rotate(topology, origin=origin, x=0,y=0,z=1, degree=z)
+                    minX, minY, maxX, maxY = br(t)
+                    w = abs(maxX - minX)
+                    l = abs(maxY - minY)
+                    area = l*w
+                    if area < orig_area*factor:
+                        best_area = area
+                        best_z = z
+                        best_br = [minX, minY, maxX, maxY]
+                        flag = True
+                        break
+                    if area < best_area:
+                        best_area = area
+                        best_z = z
+                        best_br = [minX, minY, maxX, maxY]
+                        
+        else:
+            best_br = boundingRectangle
+
+        minX, minY, maxX, maxY = best_br
+        vb1 = topologic.Vertex.ByCoordinates(minX, minY, 0)
+        vb2 = topologic.Vertex.ByCoordinates(maxX, minY, 0)
+        vb3 = topologic.Vertex.ByCoordinates(maxX, maxY, 0)
+        vb4 = topologic.Vertex.ByCoordinates(minX, maxY, 0)
+
+        boundingRectangle = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
+        boundingRectangle = Topology.Rotate(boundingRectangle, origin=origin, x=0,y=0,z=1, degree=-best_z)
+        boundingRectangle = Topology.Rotate(boundingRectangle, origin=world_origin, x=0, y=1, z=0, degree=theta)
+        boundingRectangle = Topology.Rotate(boundingRectangle, origin=world_origin, x=0, y=0, z=1, degree=phi)
+        boundingRectangle = Topology.Translate(boundingRectangle, xTran, yTran, zTran)
+
+        dictionary = Dictionary.ByKeysValues(["zrot"], [best_z])
+        boundingRectangle = Topology.SetDictionary(boundingRectangle, dictionary)
+        return boundingRectangle
+
+    @staticmethod
     def ByEdges(edges):
         """
         Creates a wire from the input list of edges.

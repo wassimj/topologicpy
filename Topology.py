@@ -163,7 +163,7 @@ class Topology():
             return None
         if not isinstance(dictionary, topologic.Dictionary):
             return None
-        tDict = topology.GetDictionary()
+        tDict = Topology.Dictionary(topology)
         if len(tDict.Keys()) < 1:
             _ = topology.SetDictionary(dictionary)
         else:
@@ -1143,21 +1143,21 @@ class Topology():
         return topology
     '''
     @staticmethod
-    def ByImportedJSONMK1(item):
+    def ByImportedJSONMK1(filePath, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Imports the topology from a JSON file.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        filePath : str
+            The file path to the json file.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologies : TYPE
-            DESCRIPTION.
+        list
+            The list of imported topologies.
 
         """
         from topologicpy.Dictionary import Dictionary
@@ -1233,16 +1233,16 @@ class Topology():
                 returnApertures.append(aperture)
             return returnApertures
         
-        def assignDictionary(item):
-            selector = item['selector']
-            pydict = item['dictionary']
+        def assignDictionary(dictionary):
+            selector = dictionary['selector']
+            pydict = dictionary['dictionary']
             v = topologic.Vertex.ByCoordinates(selector[0], selector[1], selector[2])
             d = Dictionary.ByPythonDictionary(pydict)
             _ = v.SetDictionary(d)
             return v
 
         topology = None
-        file = open(item)
+        file = open(filePath)
         if file:
             topologies = []
             jsondata = json.load(file)
@@ -1284,32 +1284,32 @@ class Topology():
                 cellSelectors = []
                 for cellDataItem in cellDataList:
                     cellSelectors.append(assignDictionary(cellDataItem))
-                processSelectors(cellSelectors, topology, False, False, False, True, 0.001)
+                Topology.TransferDictionariesBySelectors(topology=topology, selectors=cellSelectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=True, tolerance=0.0001)
                 faceDataList = jsonItem['faceDictionaries']
                 faceSelectors = []
                 for faceDataItem in faceDataList:
                     faceSelectors.append(assignDictionary(faceDataItem))
-                processSelectors(faceSelectors, topology, False, False, True, False, 0.001)
+                Topology.TransferDictionariesBySelectors(topology=topology, selectors=faceSelectors, tranVertices=False, tranEdges=False, tranFaces=True, tranCells=False, tolerance=0.0001)
                 edgeDataList = jsonItem['edgeDictionaries']
                 edgeSelectors = []
                 for edgeDataItem in edgeDataList:
                     edgeSelectors.append(assignDictionary(edgeDataItem))
-                processSelectors(edgeSelectors, topology, False, True, False, False, 0.001)
+                Topology.TransferDictionariesBySelectors(topology=topology, selectors=edgeSelectors, tranVertices=False, tranEdges=True, tranFaces=False, tranCells=False, tolerance=0.0001)
                 vertexDataList = jsonItem['vertexDictionaries']
                 vertexSelectors = []
                 for vertexDataItem in vertexDataList:
                     vertexSelectors.append(assignDictionary(vertexDataItem))
-                processSelectors(vertexSelectors, topology, True, False, False, False, 0.001)
+                Topology.TransferDictionariesBySelectors(topology=topology, selectors=vertexSelectors, tranVertices=True, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001)
                 topologies.append(topology)
             return topologies
         return None
 
     @staticmethod
-    def ByImportedJSONMK2(jsonFilePath):
+    def ByImportedJSONMK2(jsonFilePath, tolerance=0.0001):
         """
         Description
         __________
-            DESCRIPTION
+            NOT DONE YET
 
         Parameters
         ----------
@@ -1343,7 +1343,34 @@ class Topology():
                     _ = aperture.SetDictionary(topDictionary)
                 returnApertures.append(aperture)
             return returnApertures
-        
+
+        def processApertures(subTopologies, apertures, exclusive, tolerance):
+            usedTopologies = []
+            for subTopology in subTopologies:
+                    usedTopologies.append(0)
+            ap = 1
+            for aperture in apertures:
+                apCenter = Topology.InternalVertex(aperture, tolerance)
+                for i in range(len(subTopologies)):
+                    subTopology = subTopologies[i]
+                    if exclusive == True and usedTopologies[i] == 1:
+                        continue
+                    if topologic.VertexUtility.Distance(apCenter, subTopology) < tolerance:
+                        context = topologic.Context.ByTopologyParameters(subTopology, 0.5, 0.5, 0.5)
+                        _ = topologic.Aperture.ByTopologyContext(aperture, context)
+                        if exclusive == True:
+                            usedTopologies[i] = 1
+                ap = ap + 1
+            return None
+
+        def assignDictionary(dictionary):
+            selector = dictionary['selector']
+            pydict = dictionary['dictionary']
+            v = topologic.Vertex.ByCoordinates(selector[0], selector[1], selector[2])
+            d = Dictionary.ByPythonDictionary(pydict)
+            _ = v.SetDictionary(d)
+            return v
+
         topology = None
         jsonFile = open(jsonFilePath)
         folderPath = os.path.dirname(jsonFilePath)
@@ -1394,45 +1421,43 @@ class Topology():
                 cellSelectors = []
                 for cellDataItem in cellDataList:
                     cellSelectors.append(assignDictionary(cellDataItem))
-                processSelectors(cellSelectors, topology, False, False, False, True, 0.001)
+                Topology.TransferDictionariesBySelectors(topology, cellSelectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=True, tolerance=tolerance)
                 faceDataList = jsonItem['faceDictionaries']
                 faceSelectors = []
                 for faceDataItem in faceDataList:
                     faceSelectors.append(assignDictionary(faceDataItem))
-                processSelectors(faceSelectors, topology, False, False, True, False, 0.001)
+                Topology.TransferDictionariesBySelectors(topology, faceSelectors, tranVertices=False, tranEdges=False, tranFaces=True, tranCells=False, tolerance=tolerance)
                 edgeDataList = jsonItem['edgeDictionaries']
                 edgeSelectors = []
                 for edgeDataItem in edgeDataList:
                     edgeSelectors.append(assignDictionary(edgeDataItem))
-                processSelectors(edgeSelectors, topology, False, True, False, False, 0.001)
+                Topology.TransferDictionariesBySelectors(topology, edgeSelectors, tranVertices=False, tranEdges=True, tranFaces=False, tranCells=False, tolerance=tolerance)
                 vertexDataList = jsonItem['vertexDictionaries']
                 vertexSelectors = []
                 for vertexDataItem in vertexDataList:
                     vertexSelectors.append(assignDictionary(vertexDataItem))
-                processSelectors(vertexSelectors, topology, True, False, False, False, 0.001)
+                Topology.TransferDictionariesBySelectors(topology, vertexSelectors, tranVertices=True, tranEdges=False, tranFaces=False, tranCells=False, tolerance=tolerance)
                 topologies.append(topology)
             return topologies
         return None
 
     @staticmethod
-    def ByOCCTShape(item):
+    def ByOCCTShape(occtShape):
         """
-        Description
-        __________
-            DESCRIPTION
+        Creates a topology from the input OCCT shape. See https://dev.opencascade.org/doc/overview/html/occt_user_guides__modeling_data.html.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        occtShape : topologic.TopoDS_Shape
+            The inoput OCCT Shape.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The created topology.
 
         """
-        return topologic.Topology.ByOcctShape(item, "")
+        return topologic.Topology.ByOcctShape(occtShape, "")
     
     @staticmethod
     def ByString(string):
@@ -1454,75 +1479,67 @@ class Topology():
             return None
         returnTopology = None
         try:
-            returnTopology = topologic.Topology.DeepCopy(topologic.Topology.ByString(string))
+            returnTopology = topologic.Topology.ByString(string)
         except:
             returnTopology = None
         return returnTopology
     
     @staticmethod
-    def CenterOfMass(item):
+    def CenterOfMass(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the center of mass of the input topology. See https://en.wikipedia.org/wiki/Center_of_mass.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Vertex
+            The center of mass of the input topology.
 
         """
-        if item:
-            return item.CenterOfMass()
-        else:
+        if not isinstance(topology, topologic.Topology):
             return None
+        return topology.CenterOfMass()
     
     @staticmethod
-    def Centroid(item):
+    def Centroid(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the centroid of the vertices of the input topology. See https://en.wikipedia.org/wiki/Centroid.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Vertex
+            The centroid of the input topology.
 
         """
-        if item:
-            return item.CenterOfMass()
-        else:
+        if not isinstance(topology, topologic.Topology):
             return None
+        return topology.Centroid()
     
     @staticmethod
     def ClusterFaces(topology, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Clusters the faces of the input topology by their direction.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        topology : topologic.Topology
+            The input topology.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        returnList : TYPE
-            DESCRIPTION.
+        list
+            The list of clusters of faces where faces in the same cluster have the same direction.
 
         """
         from topologicpy.Face import Face
@@ -1622,67 +1639,61 @@ class Topology():
         return returnList
 
     @staticmethod
-    def Content(item):
+    def Contents(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the contents of the input topology
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        contents : TYPE
-            DESCRIPTION.
+        list
+            The list of contents of the input topology.
 
         """
         contents = []
-        _ = item.Contents(contents)
+        _ = topology.Contents(contents)
         return contents
     
     @staticmethod
-    def Context(item):
+    def Contexts(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the list of contexts of the input topology
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        contexts : TYPE
-            DESCRIPTION.
+        list
+            The list of contexts of the input topology.
 
         """
         contexts = []
-        _ = item.Contexts(contexts)
+        _ = topology.Contexts(contexts)
         return contexts
 
     @staticmethod
     def ConvexHull(topology, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Creates a convex hull
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        topology : topologic.Topology
+            The input Topology.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        returnObject : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The created convex hull of the input topology.
 
         """
         from topologicpy.Vertex import Vertex
@@ -1704,7 +1715,6 @@ class Topology():
                     hull = ConvexHull(points, qhull_options=option)
                 else:
                     hull = ConvexHull(points)
-                hull_vertices = []
                 faces = []
                 for simplex in hull.simplices:
                     edges = []
@@ -1735,31 +1745,27 @@ class Topology():
         return returnObject
     
     @staticmethod
-    def Copy(item):
+    def Copy(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns a copy of the input topology
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            A copy of the input topology.
 
         """
-        return topologic.Topology.DeepCopy(item)
+        return topologic.Topology.DeepCopy(topology)
     
     @staticmethod
     def Dictionary(topology):
         """
-        Description
-        __________
-            Returns the dictionary of the input topology
+        Returns the dictionary of the input topology
 
         Parameters
         ----------
@@ -1777,24 +1783,22 @@ class Topology():
         return topology.GetDictionary()
     
     @staticmethod
-    def Dimensionality(item):
+    def Dimensionality(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the dimensionality of the input topology
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        int
+            The dimensionality of the input topology.
 
         """
-        return item.Dimensionality()
+        return topology.Dimensionality()
     
     @staticmethod
     def Divide(topology, tool, transferDictionary=False, addNestingDepth=False):
@@ -1836,11 +1840,11 @@ class Topology():
         _ = topology.Contents(contents)
         for i in range(len(contents)):
             if not addNestingDepth and transferDictionary:
-                parentDictionary = topology.GetDictionary()
+                parentDictionary = Topology.Dictionary(topology)
                 if parentDictionary != None:
                     _ = contents[i].SetDictionary(parentDictionary)
             if addNestingDepth and transferDictionary:
-                parentDictionary = topology.GetDictionary()
+                parentDictionary = Topology.Dictionary(topology)
                 if parentDictionary != None:
                     keys = Dictionary.Keys(parentDictionary)
                     values = Dictionary.Values(parentDictionary)
@@ -1859,7 +1863,7 @@ class Topology():
                 d = Dictionary.ByKeysValues(keys, values)
                 _ = contents[i].SetDictionary(d)
             if addNestingDepth and  not transferDictionary:
-                parentDictionary = topology.GetDictionary()
+                parentDictionary = Topology.Dictionary(topology)
                 if parentDictionary != None:
                     keys, values = Dictionary.ByKeysValues(parentDictionary)
                     if ("nesting_depth" in keys):
@@ -1997,56 +2001,53 @@ class Topology():
 
     
     @staticmethod
-    def ExportToBRep(topology, filepath, overwrite):
+    def ExportToBRep(topology, filePath, overwrite=True):
         """
-        Description
-        __________
-            DESCRIPTION
+        Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html#:~:text=BREP%20format%20is%20used%20to,triangulations%2C%20space%20location%20and%20orientation.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        filepath : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        filePath : str
+            The input file path.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
 
         Returns
         -------
         bool
-            DESCRIPTION.
+            True if the export operation is successful. False otherwise.
 
         """
+
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(filePath, str):
+            return None
         # Make sure the file extension is .BREP
-        ext = filepath[len(filepath)-5:len(filepath)]
+        ext = filePath[len(filePath)-5:len(filePath)]
         if ext.lower() != ".brep":
-            filepath = filepath+".brep"
+            filePath = filePath+".brep"
         f = None
         try:
             if overwrite == True:
-                f = open(filepath, "w")
+                f = open(filePath, "w")
             else:
-                f = open(filepath, "x") # Try to create a new File
+                f = open(filePath, "x") # Try to create a new File
         except:
-            raise Exception("Error: Could not create a new file at the following location: "+filepath)
+            raise Exception("Error: Could not create a new file at the following location: "+filePath)
         if (f):
             f.write(topology.String())
             f.close()    
             return True
         return False
 
+    '''
     @staticmethod
     def ExportToIPFS(topology, url, port, user, password):
         """
-        Description
-        __________
-            DESCRIPTION
+        NOT DONE YET
 
         Parameters
         ----------
@@ -2069,19 +2070,19 @@ class Topology():
         """
         # topology, url, port, user, password = item
         
-        def exportToBREP(topology, filepath, overwrite):
+        def exportToBREP(topology, filePath, overwrite):
             # Make sure the file extension is .BREP
-            ext = filepath[len(filepath)-5:len(filepath)]
+            ext = filePath[len(filePath)-5:len(filePath)]
             if ext.lower() != ".brep":
-                filepath = filepath+".brep"
+                filePath = filePath+".brep"
             f = None
             try:
                 if overwrite == True:
-                    f = open(filepath, "w")
+                    f = open(filePath, "w")
                 else:
-                    f = open(filepath, "x") # Try to create a new File
+                    f = open(filePath, "x") # Try to create a new File
             except:
-                raise Exception("Error: Could not create a new file at the following location: "+filepath)
+                raise Exception("Error: Could not create a new file at the following location: "+filePath)
             if (f):
                 topString = topology.String()
                 f.write(topString)
@@ -2089,18 +2090,19 @@ class Topology():
                 return True
             return False
         
-        filepath = os.path.expanduser('~')+"/tempFile.brep"
-        if exportToBREP(topology, filepath, True):
+        filePath = os.path.expanduser('~')+"/tempFile.brep"
+        if exportToBREP(topology, filePath, True):
             url = url.replace('http://','')
             url = '/dns/'+url+'/tcp/'+port+'/https'
             client = ipfshttpclient.connect(url, auth=(user, password))
-            newfile = client.add(filepath)
-            os.remove(filepath)
+            newfile = client.add(filePath)
+            os.remove(filePath)
             return newfile['Hash']
         return ''
+    '''
 
     @staticmethod
-    def ExportToJSONMK1(topologyList, filepath, overwrite, tolerance=0.0001):
+    def ExportToJSONMK1(topologyList, filePath, overwrite, tolerance=0.0001):
         """
         Description
         __________
@@ -2110,7 +2112,7 @@ class Topology():
         ----------
         topologyList : TYPE
             DESCRIPTION.
-        filepath : TYPE
+        filePath : TYPE
             DESCRIPTION.
         overwrite : TYPE
             DESCRIPTION.
@@ -2128,28 +2130,8 @@ class Topology():
             DESCRIPTION.
 
         """
+
         from topologicpy.Dictionary import Dictionary
-        def getTopologyDictionary(topology):
-            d = topology.GetDictionary()
-            keys = d.Keys()
-            returnDict = {}
-            for key in keys:
-                try:
-                    attr = d.ValueAtKey(key)
-                except:
-                    raise Exception("Dictionary.Values - Error: Could not retrieve a Value at the specified key ("+key+")")
-                if isinstance(attr, topologic.IntAttribute):
-                    returnDict[key] = (attr.IntValue())
-                elif isinstance(attr, topologic.DoubleAttribute):
-                    returnDict[key] = (attr.DoubleValue())
-                elif isinstance(attr, topologic.StringAttribute):
-                    returnDict[key] = (attr.StringValue())
-                elif isinstance(attr, topologic.ListAttribute):
-                    returnDict[key] = (listAttributeValues(attr))
-                else:
-                    returnDict[key]=("")
-            return returnDict
-        
         def cellAperturesAndDictionaries(topology, tol):
             cells = []
             try:
@@ -2238,7 +2220,7 @@ class Topology():
             for anAperture in apertureList:
                 apertureData = {}
                 apertureData['brep'] = anAperture.String()
-                apertureData['dictionary'] = getTopologyDictionary(anAperture)
+                apertureData['dictionary'] = Topology.Dictionary(anAperture)
                 apertureDicts.append(apertureData)
             return apertureDicts
 
@@ -2254,7 +2236,7 @@ class Topology():
         def getTopologyData(topology, tol):
             returnDict = {}
             brep = topology.String()
-            dictionary = getTopologyDictionary(topology)
+            dictionary = Topology.Dictionary(topology)
             returnDict['brep'] = brep
             returnDict['dictionary'] = dictionary
             cellApertures, cellDictionaries, cellSelectors = cellAperturesAndDictionaries(topology, tol)
@@ -2274,20 +2256,20 @@ class Topology():
         # topologyList = item[0]
         if not (isinstance(topologyList,list)):
             topologyList = [topologyList]
-        # filepath = item[1]
+        # filePath = item[1]
         # tol = item[2]
         # Make sure the file extension is .json
-        ext = filepath[len(filepath)-5:len(filepath)]
+        ext = filePath[len(filePath)-5:len(filePath)]
         if ext.lower() != ".json":
-            filepath = filepath+".json"
+            filePath = filePath+".json"
         f = None
         try:
             if overwrite == True:
-                f = open(filepath, "w")
+                f = open(filePath, "w")
             else:
-                f = open(filepath, "x") # Try to create a new File
+                f = open(filePath, "x") # Try to create a new File
         except:
-            raise Exception("Error: Could not create a new file at the following location: "+filepath)
+            raise Exception("Error: Could not create a new file at the following location: "+filePath)
         if (f):
             jsondata = []
             for topology in topologyList:
@@ -2329,27 +2311,6 @@ class Topology():
             DESCRIPTION.
 
         """
-        
-        def getTopologyDictionary(topology):
-            d = topology.GetDictionary()
-            keys = d.Keys()
-            returnDict = {}
-            for key in keys:
-                try:
-                    attr = d.ValueAtKey(key)
-                except:
-                    raise Exception("Dictionary.Values - Error: Could not retrieve a Value at the specified key ("+key+")")
-                if isinstance(attr, topologic.IntAttribute):
-                    returnDict[key] = (attr.IntValue())
-                elif isinstance(attr, topologic.DoubleAttribute):
-                    returnDict[key] = (attr.DoubleValue())
-                elif isinstance(attr, topologic.StringAttribute):
-                    returnDict[key] = (attr.StringValue())
-                elif isinstance(attr, topologic.ListAttribute):
-                    returnDict[key] = (listAttributeValues(attr))
-                else:
-                    returnDict[key]=("")
-            return returnDict
 
         def cellAperturesAndDictionaries(topology, tol):
             if topology.Type() <= 32:
@@ -2367,7 +2328,7 @@ class Topology():
                 _ = aCell.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     cellApertures.append(anAperture)
-                cellDictionary = getTopologyDictionary(aCell)
+                cellDictionary = Topology.Dictionary(aCell)
                 if len(cellDictionary.keys()) > 0:
                     cellDictionaries.append(cellDictionary)
                     iv = topologic.CellUtility.InternalVertex(aCell, tol)
@@ -2390,7 +2351,7 @@ class Topology():
                 _ = aFace.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     faceApertures.append(anAperture)
-                faceDictionary = getTopologyDictionary(aFace)
+                faceDictionary = Topology.Dictionary(aFace)
                 if len(faceDictionary.keys()) > 0:
                     faceDictionaries.append(faceDictionary)
                     iv = topologic.FaceUtility.InternalVertex(aFace, tol)
@@ -2413,7 +2374,7 @@ class Topology():
                 _ = anEdge.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     edgeApertures.append(anAperture)
-                edgeDictionary = getTopologyDictionary(anEdge)
+                edgeDictionary = Topology.Dictionary(anEdge)
                 if len(edgeDictionary.keys()) > 0:
                     edgeDictionaries.append(edgeDictionary)
                     iv = topologic.EdgeUtility.PointAtParameter(anEdge, 0.5)
@@ -2436,7 +2397,7 @@ class Topology():
                 _ = aVertex.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     vertexApertures.append(anAperture)
-                vertexDictionary = getTopologyDictionary(aVertex)
+                vertexDictionary = Topology.Dictionary(aVertex)
                 if len(vertexDictionary.keys()) > 0:
                     vertexDictionaries.append(vertexDictionary)
                     vertexSelectors.append([aVertex.X(), aVertex.Y(), aVertex.Z()])
@@ -2453,7 +2414,7 @@ class Topology():
                 brepFile.close()
                 apertureData = {}
                 apertureData['brep'] = apertureName
-                apertureData['dictionary'] = getTopologyDictionary(anAperture)
+                apertureData['dictionary'] = Topology.Dictionary(anAperture)
                 apertureDicts.append(apertureData)
             return apertureDicts
 
@@ -2469,7 +2430,7 @@ class Topology():
         def getTopologyData(topology, brepName, folderPath, tol):
             returnDict = {}
             #brep = topology.String()
-            dictionary = getTopologyDictionary(topology)
+            dictionary = Topology.Dictionary(topology)
             returnDict['brep'] = brepName
             returnDict['dictionary'] = dictionary
             cellApertures, cellDictionaries, cellSelectors = cellAperturesAndDictionaries(topology, tol)
@@ -2547,7 +2508,8 @@ class Topology():
         """
         # key = item[0]
         # value = item[1]
-        
+        from topologicpy.Dictionary import Dictionary
+
         def listToString(item):
             returnString = ""
             if isinstance(item, list):
@@ -2558,22 +2520,6 @@ class Topology():
                     for i in range(1, len(item)):
                         returnString = returnString+str(item[i])
             return returnString
-        
-        def valueAtKey(item, key):
-            try:
-                attr = item.ValueAtKey(key)
-            except:
-                raise Exception("Dictionary.ValueAtKey - Error: Could not retrieve a Value at the specified key ("+key+")")
-            if isinstance(attr, topologic.IntAttribute):
-                return str(attr.IntValue())
-            elif isinstance(attr, topologic.DoubleAttribute):
-                return str(attr.DoubleValue())
-            elif isinstance(attr, topologic.StringAttribute):
-                return (attr.StringValue())
-            elif isinstance(attr, topologic.ListAttribute):
-                return listToString(listAttributeValues(attr))
-            else:
-                return None
         
         filteredTopologies = []
         otherTopologies = []
@@ -2589,8 +2535,8 @@ class Topology():
                         value = str(value)
                     value.replace("*",".+")
                     value = value.lower()
-                    d = aTopology.GetDictionary()
-                    v = valueAtKey(d, key)
+                    d = Topology.Dictionary(aTopology)
+                    v = Dictionary.ValueAtKey(d, key)
                     if v != None:
                         v = v.lower()
                         if searchType == "Equal To":
@@ -2823,9 +2769,7 @@ class Topology():
     @staticmethod
     def InternalVertex(topology, tolerance=0.0001):
         """
-        Description
-        __________
-            Returns an vertex guaranteed to be inside the input topology.
+        Returns an vertex guaranteed to be inside the input topology.
 
         Parameters
         ----------
@@ -2866,7 +2810,7 @@ class Topology():
             else:
                 tempEdges = []
                 _ = topology.Edges(None, tempEdges)
-                vst = topologic.EdgeUtility.PointAtParameter(tempVertex[0], 0.5)
+                vst = topologic.EdgeUtility.PointAtParameter(tempEdges[0], 0.5)
         elif classType == 2: #Edge
             vst = topologic.EdgeUtility.PointAtParameter(topology, 0.5)
         elif classType == 1: #Vertex
@@ -2878,23 +2822,21 @@ class Topology():
     @staticmethod
     def IsInside(topology, vertex, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns True if the input vertex is inside the input topology. Returns False otherwise.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        vertex : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        topology : topologic.Topology
+            The input topology.
+        vertex : topologic.Vertex
+            The input Vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        bool
+            True if the input vertex is inside the input topology. False otherwise.
 
         """
         from topologicpy.Vertex import Vertex
@@ -2966,24 +2908,21 @@ class Topology():
     @staticmethod
     def IsPlanar(topology, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns True if all the vertices of the input topology are co-planar. Returns False otherwise.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        topology : topologic.Topology
+            The input topology.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        bool
+            True if all the vertices of the input topology are co-planar. False otherwise.
 
         """
-        # topology, tolerance = item
         
         def isOnPlane(v, plane, tolerance):
             x, y, z = v
@@ -3024,9 +2963,7 @@ class Topology():
     @staticmethod
     def IsSame(topologyA, topologyB):
         """
-        Description
-        __________
-            Returns True of the input topologies are the same topology. Returns False otherwise.
+        Returns True of the input topologies are the same topology. Returns False otherwise.
 
         Parameters
         ----------
@@ -3038,7 +2975,7 @@ class Topology():
         Returns
         -------
         bool
-            True of the input topologies are the same topology. False otherwise..
+            True of the input topologies are the same topology. False otherwise.
 
         """
         return topologic.Topology.IsSame(topologyA, topologyB)
@@ -3655,9 +3592,9 @@ class Topology():
         if not isinstance(topology, topologic.Topology):
             return None
         if not isinstance(dictionary, topologic.Dictionary):
-            return None
+            return topology
         if len(dictionary.Keys()) < 1:
-            return None
+            return topology
         _ = topology.SetDictionary(dictionary)
         return topology
     
@@ -4086,7 +4023,7 @@ class Topology():
             j = 1
             for source in sources:
                 if Topology.IsInside(source, iv, tolerance):
-                    d = source.GetDictionary()
+                    d = Topology.Dictionary(source)
                     if d == None:
                         continue
                     stlKeys = d.Keys()
@@ -4098,7 +4035,7 @@ class Topology():
                                 sinkValues.append("")
                         for i in range(len(sourceKeys)):
                             index = sinkKeys.index(sourceKeys[i])
-                            sourceValue = Dictionary.DictionaryValueAtKey(d, sourceKeys[i])
+                            sourceValue = Dictionary.ValueAtKey(d, sourceKeys[i])
                             if sourceValue != None:
                                 if sinkValues[index] != "":
                                     if isinstance(sinkValues[index], list):
@@ -4108,7 +4045,7 @@ class Topology():
                                 else:
                                     sinkValues[index] = sourceValue
             if len(sinkKeys) > 0 and len(sinkValues) > 0:
-                newDict = Dictionary.DictionaryByKeysValues(sinkKeys, sinkValues)
+                newDict = Dictionary.ByKeysValues(sinkKeys, sinkValues)
                 _ = sink.SetDictionary(newDict)
         return {"sources": sources, "sinks": sinks}
 

@@ -13,6 +13,67 @@ from topologicpy.Topology import Topology
 
 class Plotly:
     @staticmethod
+    def Colors():
+        """
+        Returns the list of named CSS colors that plotly can use.
+
+        Returns
+        -------
+        list
+            The list of named CSS colors.
+        """
+        return ["aliceblue","antiquewhite","aqua",
+                "aquamarine","azure","beige",
+                "bisque","black","blanchedalmond",
+                "blue","blueviolet","brown",
+                "burlywood","cadetblue",
+                "chartreuse","chocolate",
+                "coral","cornflowerblue","cornsilk",
+                "crimson","cyan","darkblue",
+                "darkcyan","darkgoldenrod","darkgray",
+                "darkgrey","darkgreen","darkkhaki",
+                "darkmagenta","darkolivegreen","darkorange",
+                "darkorchid","darkred","darksalmon",
+                "darkseagreen","darkslateblue","darkslategray",
+                "darkslategrey","darkturquoise","darkviolet",
+                "deeppink","deepskyblue","dimgray",
+                "dimgrey","dodgerblue","firebrick",
+                "floralwhite","forestgreen","fuchsia",
+                "gainsboro","ghostwhite","gold",
+                "goldenrod","gray","grey",
+                "green"," greenyellow","honeydew",
+                "hotpink","indianred","indigo",
+                "ivory","khaki","lavender",
+                "lavenderblush","lawngreen","lemonchiffon",
+                "lightblue","lightcoral","lightcyan",
+                "lightgoldenrodyellow","lightgray","lightgrey",
+                "lightgreen","lightpink","lightsalmon",
+                "lightseagreen","lightskyblue","lightslategray",
+                "lightslategrey","lightsteelblue","lightyellow",
+                "lime","limegreen","linen",
+                "magenta","maroon","mediumaquamarine",
+                "mediumblue","mediumorchid","mediumpurple",
+                "mediumseagreen","mediumslateblue","mediumspringgreen",
+                "mediumturquoise","mediumvioletred","midnightblue",
+                "mintcream","mistyrose","moccasin",
+                "navajowhite","navy","oldlace",
+                "olive","olivedrab","orange",
+                "orangered","orchid","palegoldenrod",
+                "palegreen","paleturquoise","palevioletred",
+                "papayawhip","peachpuff","peru",
+                "pink","plum","powderblue",
+                "purple","red","rosybrown",
+                "royalblue","rebeccapurple","saddlebrown",
+                "salmon","sandybrown","seagreen",
+                "seashell","sienna","silver",
+                "skyblue","slateblue","slategray",
+                "slategrey","snow","springgreen",
+                "steelblue","tan","teal",
+                "thistle","tomato","turquoise",
+                "violet","wheat","white",
+                "whitesmoke","yellow","yellowgreen"]
+    
+    @staticmethod
     def DataByTopology(topology, faceColor="lightblue", faceOpacity=0.5, wireColor="black", wireWidth=1, vertexColor="black", vertexSize=1.1, drawFaces=True, drawWires=True, drawVertices=True):
         """
         Creates plotly face, wire, and vertex data.
@@ -22,15 +83,33 @@ class Plotly:
         topology : topologic.Topology
             The input topology. This must contain faces and or wires.
         faceColor : str , optional
-            The desired color of the output faces. This can be any plotly color string. The default is "lightblue".
+            The desired color of the output faces. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "lightblue".
         faceOpacity : float , optional
             The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
         wireColor : str , optional
-            The desired color of the output wires (edges). This can be any plotly color string. The default is "black".
+            The desired color of the output wires (edges). This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
         wireWidth : float , optional
             The desired thickness of the output wires (edges). The default is 1.
         vertexColor : str , optional
-            The desired color of the output vertices. This can be any plotly color string. The default is "black".
+            The desired color of the output vertices. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
         vertexSize : float , optional
             The desired size of the vertices. The default is 1.1.
         drawFaces : bool , optional
@@ -82,9 +161,6 @@ class Plotly:
                         x.append(v.X())
                         y.append(v.Y())
                         z.append(v.Z())
-                    #x.append(vertices[0].X())
-                    #y.append(vertices[0].Y())
-                    #z.append(vertices[0].Z())
                     x.append(None)
                     y.append(None)
                     z.append(None)
@@ -167,7 +243,7 @@ class Plotly:
         return data
 
     @staticmethod
-    def FigureByData(data, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, paperBackgroundColor='lightgrey', plotBackgroundColor='lightgrey', marginLeft=2, marginRight=2, marginTop=2, marginBottom=2):
+    def FigureByData(data, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=0, marginBottom=0):
         """
         Creates plotly figure.
 
@@ -185,18 +261,22 @@ class Plotly:
             If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.
         zAxis : bool , optional
             If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
-        paperBackgroundColor : str , optional
-            The desired color of the paper background. This can be any plotly color string. The default is "lightgrey".
-        paperBackgroundColor : str , optional
-            The desired color of the plot background. This can be any plotly color string. The default is "lightgrey".
+        backgroundColor : str , optional
+            The desired color of the background. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "rgba(0,0,0,0)".
         marginLeft : int , optional
-            The size in pixels of the left margin. The default value is 2.
+            The size in pixels of the left margin. The default value is 0.
         marginRight : int , optional
-            The size in pixels of the right margin. The default value is 2.
+            The size in pixels of the right margin. The default value is 0.
         marginTop : int , optional
-            The size in pixels of the top margin. The default value is 2.
+            The size in pixels of the top margin. The default value is 0.
         marginBottom : int , optional
-            The size in pixels of the bottom margin. The default value is 2.
+            The size in pixels of the bottom margin. The default value is 0.
         
         Returns
         -------
@@ -204,41 +284,129 @@ class Plotly:
             The created plotly figure.
 
         """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
         if not isinstance(data, list):
             return None
+
+        v0 = Vertex.ByCoordinates(0,0,0)
+        v1 = Vertex.ByCoordinates(1,0,0)
+        v2 = Vertex.ByCoordinates(0,1,0)
+        v3 = Vertex.ByCoordinates(0,0,1)
+
+        if xAxis:
+            xEdge = Edge.ByVertices([v0,v1])
+            xWire = Wire.ByEdges([xEdge])
+            xData = Plotly.DataByTopology(xWire, wireColor="red", wireWidth=6, drawFaces=False, drawWires=True, drawVertices=False)
+            data = data + xData
+        if yAxis:
+            yEdge = Edge.ByVertices([v0,v2])
+            yWire = Wire.ByEdges([yEdge])
+            yData = Plotly.DataByTopology(yWire, wireColor="green", wireWidth=6, drawFaces=False, drawWires=True, drawVertices=False)
+            data = data + yData
+        if zAxis:
+            zEdge = Edge.ByVertices([v0,v3])
+            zWire = Wire.ByEdges([zEdge])
+            zData = Plotly.DataByTopology(zWire, wireColor="blue", wireWidth=6, drawFaces=False, drawWires=True, drawVertices=False)
+            data = data + zData
+
         figure = go.Figure(data=data)
         figure.update_layout(
             width=width,
             height=height,
             scene = dict(
-                xaxis = dict(visible=xAxis),
-                yaxis = dict(visible=yAxis),
-                zaxis =dict(visible=zAxis),
+                xaxis = dict(visible=False),
+                yaxis = dict(visible=False),
+                zaxis =dict(visible=False),
                 ),
-            scene_aspectmode='auto',
-            paper_bgcolor=paperBackgroundColor,
-            plot_bgcolor=plotBackgroundColor,
+            scene_aspectmode='data',
+            paper_bgcolor=backgroundColor,
+            plot_bgcolor=backgroundColor,
             margin=dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
             )
         return figure
 
     @staticmethod
     def Show(figure, renderer="browser"):
+        """
+        Shows the input figure.
+
+        Parameters
+        ----------
+        figure : plotly.graph_objs._figure.Figure
+            The input plotly figure.
+        renderer : str , optional
+            The desired rendered. See Plotly.Renderers(). The default is "browser".
+        
+        Returns
+        -------
+        None
+            
+
+        """
         if not isinstance(figure, plotly.graph_objs._figure.Figure):
             return None
-        if not renderer.lower() in ['plotly_mimetype', 'jupyterlab', 'nteract', 'vscode',
-         'notebook', 'notebook_connected', 'kaggle', 'azure', 'colab',
-         'cocalc', 'databricks', 'json', 'png', 'jpeg', 'jpg', 'svg',
-         'pdf', 'browser', 'firefox', 'chrome', 'chromium', 'iframe',
-         'iframe_connected', 'sphinx_gallery', 'sphinx_gallery_png']:
+        if not renderer.lower() in Plotly.Renderers():
             return None
         figure.show(renderer=renderer)
         return None
 
     @staticmethod
     def Renderers():
+        """
+        Returns a list of the available plotly renderers.
+
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        list
+            The list of the available plotly renderers.
+
+        """
         return ['plotly_mimetype', 'jupyterlab', 'nteract', 'vscode',
          'notebook', 'notebook_connected', 'kaggle', 'azure', 'colab',
          'cocalc', 'databricks', 'json', 'png', 'jpeg', 'jpg', 'svg',
          'pdf', 'browser', 'firefox', 'chrome', 'chromium', 'iframe',
          'iframe_connected', 'sphinx_gallery', 'sphinx_gallery_png']
+
+    @staticmethod
+    def ExportToImage(figure, filePath, format="png", width="1920", height="1080"):
+        """
+        Exports the plotly figure to an image.
+
+        Parameters
+        ----------
+        figure : plotly.graph_objs._figure.Figure
+            The input plotly figure.
+        filePath : str
+            The image file path.
+        format : str , optional
+            The desired format. This can be any of "jpg", "jpeg", "pdf", "png", "svg", or "webp". It is case insensitive. The default is "png". 
+        width : int , optional
+            The width in pixels of the figure. The default value is 1920.
+        height : int , optional
+            The height in pixels of the figure. The default value is 1080.
+        
+        Returns
+        -------
+        bool
+            True if the image was exported sucessfully. False otherwise.
+
+        """
+        if not isinstance(figure, plotly.graph_objs._figure.Figure):
+            return None
+        if not isinstance(filePath, str):
+            return None
+        if not format.lower() in ["jpg", "jpeg", "pdf", "png", "svg", "webp"]:
+            return None
+        returnStatus = False
+        try:
+            plotly.io.write_image(figure, filePath, format=format.lower(), scale=None, width=width, height=height, validate=True, engine='auto')
+            returnStatus = True
+        except:
+            returnStatus = False
+        return returnStatus
+

@@ -1,3 +1,4 @@
+#from types import NoneType
 import topologicpy
 import topologic
 from topologicpy.Topology import Topology
@@ -215,6 +216,99 @@ class Shell(Topology):
             The created circle.
         """
         return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=1, fromAngle=fromAngle, toAngle=toAngle, dirX=dirX, dirY=dirY, dirZ=dirZ, placement=placement, tolerance=tolerance)
+
+    @staticmethod
+    def Delaunay(vertices, face=None):
+        """
+        Returns a delaunay partitioning of the input vertices. The vertices must be coplanar. See https://en.wikipedia.org/wiki/Delaunay_triangulation.
+
+        Parameters
+        ----------
+        vertices : list
+            The input list of vertices.
+        face : topologic.Face , optional
+            The input face. If specified, the delaunay triangulation is clipped to the face.
+
+        Returns
+        -------
+        shell
+            A shell representing the delaunay triangulation of the input vertices.
+
+        """
+        import scipy
+        from scipy.spatial import Delaunay
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from random import sample
+
+        if not isinstance(vertices, list):
+            return None
+        vertices = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        if len(vertices) < 2:
+            return None
+
+        if not isinstance(face, topologic.Face):
+            face_vertices = sample(vertices,3)
+            tempFace = Face.ByWire(Wire.ByVertices(face_vertices))
+            # Flatten the input face
+            flatFace = Face.Flatten(tempFace)
+        else:
+            flatFace = Face.Flatten(face)
+            faceVertices = Face.Vertices(face)
+            vertices += faceVertices
+        # Retrieve the needed transformations
+        dictionary = Topology.Dictionary(flatFace)
+        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+
+        # Create a Vertex at the world's origin (0,0,0)
+        world_origin = Vertex.ByCoordinates(0,0,0)
+
+        # Create a cluster of the input vertices
+        verticesCluster = Cluster.ByTopologies(vertices)
+
+        # Flatten the cluster using the same transformations
+        verticesCluster = Topology.Translate(verticesCluster, -xTran, -yTran, -zTran)
+        verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=0, z=1, degree=-phi)
+        verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=1, z=0, degree=-theta)
+
+        flatVertices = Cluster.Vertices(verticesCluster)
+        tempFlatVertices = []
+        points = []
+        for flatVertex in flatVertices:
+            tempFlatVertices.append(Vertex.ByCoordinates(flatVertex.X(), flatVertex.Y(), 0))
+            points.append([flatVertex.X(), flatVertex.Y()])
+        flatVertices = tempFlatVertices
+        delaunay = Delaunay(points)
+        simplices = delaunay.simplices
+
+        faces = []
+        for simplex in simplices:
+            tempTriangleVertices = []
+            tempTriangleVertices.append(flatVertices[simplex[0]])
+            tempTriangleVertices.append(flatVertices[simplex[1]])
+            tempTriangleVertices.append(flatVertices[simplex[2]])
+            faces.append(Face.ByWire(Wire.ByVertices(tempTriangleVertices)))
+
+        shell = Shell.ByFaces(faces)
+        print(shell)
+        if isinstance(face, topologic.Face):
+            edges = Shell.Edges(shell)
+            edgesCluster = Cluster.ByTopologies(edges)
+            shell = Topology.Boolean(flatFace,edgesCluster, operation="slice")
+        shell = Topology.Rotate(shell, origin=world_origin, x=0, y=1, z=0, degree=theta)
+        shell = Topology.Rotate(shell, origin=world_origin, x=0, y=0, z=1, degree=phi)
+        shell = Topology.Translate(shell, xTran, yTran, zTran)
+        return shell
+
 
     @staticmethod
     def Edges(shell):
@@ -940,6 +1034,110 @@ class Shell(Topology):
         vertices = []
         _ = shell.Vertices(None, vertices)
         return vertices
+
+    @staticmethod
+    def Voronoi(vertices, face=None):
+        """
+        Returns a voronoi partitioning of the input face based on the input vertices. The vertices must be coplanar and within the face. See https://en.wikipedia.org/wiki/Voronoi_diagram.
+
+        Parameters
+        ----------
+        vertices : list
+            The input list of vertices.
+        face : topologic.Face , optional
+            The input face. If the face is not set an optimised bounding rectangle of the input vertices is used instead. The default is None.
+
+        Returns
+        -------
+        shell
+            A shell representing the voronoi partitioning of the input face.
+
+        """
+        from scipy.spatial import Voronoi
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not isinstance(face, topologic.Face):
+            cluster = Cluster.ByTopologies(vertices)
+            br = Wire.BoundingRectangle(cluster, optimize=5)
+            face = Face.ByWire(br)
+        if not isinstance(vertices, list):
+            return None
+        vertices = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        if len(vertices) < 2:
+            return None
+
+        # Flatten the input face
+        flatFace = Face.Flatten(face)
+        # Retrieve the needed transformations
+        dictionary = Topology.Dictionary(flatFace)
+        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+
+        # Create a Vertex at the world's origin (0,0,0)
+        world_origin = Vertex.ByCoordinates(0,0,0)
+
+        # Create a cluster of the input vertices
+        verticesCluster = Cluster.ByTopologies(vertices)
+
+        # Flatten the cluster using the same transformations
+        verticesCluster = Topology.Translate(verticesCluster, -xTran, -yTran, -zTran)
+        verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=0, z=1, degree=-phi)
+        verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=1, z=0, degree=-theta)
+
+        flatVertices = Cluster.Vertices(verticesCluster)
+        points = []
+        for flatVertex in flatVertices:
+            points.append([flatVertex.X(), flatVertex.Y()])
+
+        br = Wire.BoundingRectangle(flatFace)
+        br_vertices = Wire.Vertices(br)
+        br_x = []
+        br_y = []
+        for br_v in br_vertices:
+            x, y = Vertex.Coordinates(br_v, outputType="xy")
+            br_x.append(x)
+            br_y.append(y)
+        min_x = min(br_x)
+        max_x = max(br_x)
+        min_y = min(br_y)
+        max_y = max(br_y)
+        br_width = abs(max_x - min_x)
+        br_length = abs(max_y - min_y)
+
+        points.append((-br_width*4, -br_length*4))
+        points.append((-br_width*4, br_length*4))
+        points.append((br_width*4, -br_length*4))
+        points.append((br_width*4, br_length*4))
+
+        voronoi = Voronoi(points, furthest_site=False)
+        voronoiVertices = []
+        for v in voronoi.vertices:
+            voronoiVertices.append(Vertex.ByCoordinates(v[0], v[1], 0))
+
+        faces = []
+        for region in voronoi.regions:
+            tempWire = []
+            if len(region) > 1 and not -1 in region:
+                for v in region:
+                    tempWire.append(Vertex.ByCoordinates(voronoiVertices[v].X(), voronoiVertices[v].Y(),0))
+                faces.append(Face.ByWire(Wire.ByVertices(tempWire, close=True)))
+        shell = Shell.ByFaces(faces)
+        edges = Shell.Edges(shell)
+        edgesCluster = Cluster.ByTopologies(edges)
+        shell = Topology.Boolean(flatFace,edgesCluster, operation="slice")
+        shell = Topology.Rotate(shell, origin=world_origin, x=0, y=1, z=0, degree=theta)
+        shell = Topology.Rotate(shell, origin=world_origin, x=0, y=0, z=1, degree=phi)
+        shell = Topology.Translate(shell, xTran, yTran, zTran)
+        return shell
 
     @staticmethod
     def Wires(shell):
