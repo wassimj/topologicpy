@@ -328,6 +328,42 @@ class Plotly:
         return figure
 
     @staticmethod
+    def SetCamera(figure, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1]):
+        """
+        Sets the camera for the input figure.
+
+        Parameters
+        ----------
+        figure : plotly.graph_objs._figure.Figure
+            The input plotly figure.
+        camera : list , optional
+            The desired location of the camera). The default is [0,0,0].
+        center : list , optional
+            The desired center (camera target). The default is [0,0,0].
+        up : list , optional
+            The desired up vector. The default is [0,0,1].
+        
+        Returns
+        -------
+        plotly.graph_objs._figure.Figure
+            The updated figure
+
+        """
+        if not isinstance(camera, list):
+            return None
+        if not isinstance(target, list):
+            return None
+        if not isinstance(up, list):
+            return None
+        scene_camera = dict(
+        up=dict(x=up[0], y=up[1], z=up[2]),
+        eye=dict(x=camera[0], y=camera[1], z=camera[2]),
+        center=dict(x=target[0], y=target[1], z=target[2])
+        )
+        figure.update_layout(scene_camera=scene_camera)
+        return figure
+
+    @staticmethod
     def Show(figure, renderer="browser"):
         """
         Shows the input figure.
@@ -343,7 +379,6 @@ class Plotly:
         -------
         None
             
-
         """
         if not isinstance(figure, plotly.graph_objs._figure.Figure):
             return None
