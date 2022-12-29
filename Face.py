@@ -3,8 +3,6 @@ import topologic
 from topologicpy.Vector import Vector
 from topologicpy.Wire import Wire
 import math
-import numpy as np
-from numpy.linalg import norm
 
 class Face(topologic.Face):
     @staticmethod
@@ -311,31 +309,13 @@ class Face(topologic.Face):
         return Face.ByEdges(edges)
 
     @staticmethod
-    def ByOffset(face, offset, reverse, tolerance=0.0001):
-        """
-        Creates a face by offsetting the input face along its own face normal vector.
+    def ByOffset(face, offset=0.1, reverse=False, tolerance=0.0001):
+        from topologicpy.Wire import Wire
 
-        Parameters
-        ----------
-        face : topologic.Face
-            The input face.
-        offset : float , optional
-            The desired offset value. The default is 0.
-        reverse : bool , optional
-            If set to True the offset will be computed to the inside of the input face. Otherwise, it will be computed to the outside of the face. The default is False.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        topologic.Face
-            The offsetted face.
-
-        """
         external_boundary = face.ExternalBoundary()
         internal_boundaries = []
         _ = face.InternalBoundaries(internal_boundaries)
-        offset_external_boundary = Wire.ByOffset(external_boundary, offset, reverse, tolerance)
+        offset_external_boundary = Wire.ByOffset(external_boundary, offset, reverse)
         offset_external_face = topologic.Face.ByExternalBoundary(offset_external_boundary)
         if topologic.FaceUtility.Area(offset_external_face) < tolerance:
             raise Exception("ERROR: (Topologic>Face.ByOffset) external boundary area is less than tolerance.")
@@ -343,14 +323,14 @@ class Face(topologic.Face):
         reverse = not reverse
         area_sum = 0
         for internal_boundary in internal_boundaries:
-            internal_wire = Wire.ByOffset(internal_boundary, offset, reverse, tolerance)
+            internal_wire = Wire.ByOffset(internal_boundary, offset, reverse)
             internal_face = topologic.Face.ByExternalBoundary(internal_wire)
             # Check if internal boundary has a trivial area
             if topologic.FaceUtility.Area(internal_face) < tolerance:
-                return None
+                raise Exception("ERROR: (Topologic>Face.ByOffset) internal boundary area is less than tolerance.")
             # Check if area of internal boundary is larger than area of external boundary
             if topologic.FaceUtility.Area(internal_face) > topologic.FaceUtility.Area(offset_external_face):
-                return None
+                raise Exception("ERROR: (Topologic>Face.ByOffset) internal boundary area is larger than the area of the external boundary.")
             dif_wire = internal_wire.Difference(offset_external_boundary)
             internal_vertices = []
             _ = internal_wire.Vertices(None, internal_vertices)
@@ -358,17 +338,17 @@ class Face(topologic.Face):
             _ = dif_wire.Vertices(None, dif_vertices)
             # Check if internal boundary intersect the outer boundary
             if len(internal_vertices) != len(dif_vertices):
-                return None
+                raise Exception("ERROR: (Topologic>Face.ByOffset) internal boundaries intersect outer boundary.")
             offset_internal_boundaries.append(internal_wire)
             area_sum = area_sum + topologic.FaceUtility.Area(internal_face)
         if area_sum > topologic.FaceUtility.Area(offset_external_face):
-            return None
+            raise Exception("ERROR: (Topologic>Face.ByOffset) total area of internal boundaries is larger than the area of the external boundary.")
         # NOT IMPLEMENTED: Check if internal boundaries intersect each other!
         returnFace = topologic.Face.ByExternalInternalBoundaries(offset_external_boundary, offset_internal_boundaries)
         if returnFace.Type() != 8:
-            return None
+            raise Exception("ERROR: (Topologic>Face.ByOffset) invalid resulting face.")
         if topologic.FaceUtility.Area(returnFace) < tolerance:
-            return None
+            raise Exception("ERROR: (Topologic>Face.ByOffset) area of resulting face is smaller than the tolerance.")
         return returnFace
     
     @staticmethod
@@ -946,6 +926,124 @@ class Face(topologic.Face):
             return None
         return (topologic.FaceUtility.IsInside(face, vertex, tolerance))
 
+    @staticmethod
+    def MedialAxis(face, resolution=0, externalVertices=False, internalVertices=False, toLeavesOnly=False, tolerance=0.0001, angTolerance=0.1):
+        """
+        Returns a wire representing an approximation of the medial axis of the input topology. See https://en.wikipedia.org/wiki/Medial_axis.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        resolution : int , optional
+            The desired resolution of the solution (range is 0: standard resolution to 10: high resolution). This determines the density of the sampling along each edge. The default is 0.
+        externalVertices : bool , optional
+            If set to True, the external vertices of the face will be connected to the nearest vertex on the medial axis. The default is False.
+        internalVertices : bool , optional
+            If set to True, the internal vertices of the face will be connected to the nearest vertex on the medial axis. The default is False.
+        toLeavesOnly : bool , optional
+            If set to True, the vertices of the face will be connected to the nearest vertex on the medial axis only if this vertex is a leaf (end point). Otherwise, it will connect to any nearest vertex. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        angTolerance : float , optional
+            The desired angular tolerance in degrees for removing collinear edges. The default is 0.1.
+        
+        Returns
+        -------
+        topologic.Wire
+            The medial axis of the input face.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        def touchesEdge(vertex,edges, tolerance=0.0001):
+            if not isinstance(vertex, topologic.Vertex):
+                return False
+            for edge in edges:
+                u = Edge.ParameterAtVertex(edge, vertex, mantissa=4)
+                if not u:
+                    continue
+                if 0<u<1:
+                    return True
+            return False
+
+        # Flatten the input face
+        flatFace = Face.Flatten(face)
+        # Retrieve the needed transformations
+        dictionary = Topology.Dictionary(flatFace)
+        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+
+        # Create a Vertex at the world's origin (0,0,0)
+        world_origin = Vertex.ByCoordinates(0,0,0)
+
+        faceVertices = Face.Vertices(flatFace)
+        faceEdges = Face.Edges(flatFace)
+        vertices = []
+        resolution = 10 - resolution
+        resolution = min(max(resolution, 1), 10)
+        for e in faceEdges:
+            for n in range(resolution, 100, resolution):
+                vertices.append(Edge.VertexByParameter(e,n*0.01))
+        
+        voronoi = Shell.Voronoi(vertices=vertices, face=flatFace)
+        voronoiEdges = Shell.Edges(voronoi)
+
+        medialAxisEdges = []
+        for e in voronoiEdges:
+            sv = Edge.StartVertex(e)
+            ev = Edge.EndVertex(e)
+            svTouchesEdge = touchesEdge(sv, faceEdges, tolerance=tolerance)
+            evTouchesEdge = touchesEdge(ev, faceEdges, tolerance=tolerance)
+            #connectsToCorners = (Vertex.Index(sv, faceVertices) != None) or (Vertex.Index(ev, faceVertices) != None)
+            #if Face.IsInside(flatFace, sv, tolerance=tolerance) and Face.IsInside(flatFace, ev, tolerance=tolerance):
+            if not svTouchesEdge and not evTouchesEdge:
+                medialAxisEdges.append(e)
+
+        extBoundary = Face.ExternalBoundary(flatFace)
+        extVertices = Wire.Vertices(extBoundary)
+
+        intBoundaries = Face.InternalBoundaries(flatFace)
+        intVertices = []
+        for ib in intBoundaries:
+            intVertices = intVertices+Wire.Vertices(ib)
+        
+        theVertices = []
+        if internalVertices:
+            theVertices = theVertices+intVertices
+        if externalVertices:
+            theVertices = theVertices+extVertices
+
+        tempWire = Cluster.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
+        if isinstance(tempWire, topologic.Wire) and angTolerance > 0:
+            tempWire = Wire.RemoveCollinearEdges(tempWire, angTolerance=angTolerance)
+        medialAxisEdges = Wire.Edges(tempWire)
+        for v in theVertices:
+            nv = Vertex.NearestVertex(v, tempWire, useKDTree=False)
+
+            if isinstance(nv, topologic.Vertex):
+                if toLeavesOnly:
+                    adjVertices = Topology.AdjacentTopologies(nv, tempWire)
+                    if len(adjVertices) < 2:
+                        medialAxisEdges.append(Edge.ByVertices([nv, v]))
+                else:
+                    medialAxisEdges.append(Edge.ByVertices([nv, v]))
+        medialAxis = Cluster.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
+        if isinstance(medialAxis, topologic.Wire) and angTolerance > 0:
+            medialAxis = Wire.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance)
+        medialAxis = Topology.Rotate(medialAxis, origin=world_origin, x=0, y=1, z=0, degree=theta)
+        medialAxis = Topology.Rotate(medialAxis, origin=world_origin, x=0, y=0, z=1, degree=phi)
+        medialAxis = Topology.Translate(medialAxis, xTran, yTran, zTran)
+        return medialAxis
 
     @staticmethod
     def NormalAtParameters(face, u=0.5, v=0.5, outputType="xyz", mantissa=4):
@@ -1197,7 +1295,7 @@ class Face(topologic.Face):
             return face
         trimmed_face = topologic.FaceUtility.TrimByWire(face, wire, False)
         if reverse:
-	        trimmed_face = face.Difference(trimmed_face)
+            trimmed_face = face.Difference(trimmed_face)
         return trimmed_face
     
     @staticmethod

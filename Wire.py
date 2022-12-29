@@ -190,29 +190,27 @@ class Wire(topologic.Wire):
         return Wire.ByEdges(edges)
 
     @staticmethod
-    def ByOffset(wire, offset=0, reverse=False, tolerance=0.0001):
+    def ByOffset(wire, offset = 0, reverse = False):
         """
-        Creates a wire by offsetting the edges of the input wire.
+        Offsets the input wire.
 
         Parameters
         ----------
         wire : topologic.Wire
             The input wire.
         offset : float , optional
-            The desired offset value. The default is 0.
+            The desired offset distance. The default is 0.
         reverse : bool , optional
-            If set to True the offset will be computed to the inside of the input wire. Otherwise, it will be computed to the outside of the wire. The default is False.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            If set to True, the direction of the offset is reversed. The default is False.
 
         Returns
         -------
         topologic.Wire
-            The offsetted wire.
+            The offset wire.
 
         """
-        from topologicpy.Edge import Edge
-        from topologicpy.Vector import Vector
+        def normalize(u):
+            return u / np.linalg.norm(u)
         face = topologic.Face.ByExternalBoundary(wire)
         if reverse:
             offset = -offset
@@ -223,47 +221,43 @@ class Wire(topologic.Wire):
             vrtx = [external_vertices[idx].X(), external_vertices[idx].Y(), external_vertices[idx].Z()]
             vrtx1 = [external_vertices[idx+1].X(), external_vertices[idx+1].Y(), external_vertices[idx+1].Z()]
             vrtx2 = [external_vertices[idx-1].X(), external_vertices[idx-1].Y(), external_vertices[idx-1].Z()]
-            u = Vector.Normalize([(vrtx1[0] - vrtx[0]), (vrtx1[1] - vrtx[1]),(vrtx1[2] - vrtx[2])])
-            v = Vector.Normalize([(vrtx2[0] - vrtx[0]), (vrtx2[1] - vrtx[1]),(vrtx2[2] - vrtx[2])])
+            u = normalize([(vrtx1[0] - vrtx[0]), (vrtx1[1] - vrtx[1]),(vrtx1[2] - vrtx[2])])
+            v = normalize([(vrtx2[0] - vrtx[0]), (vrtx2[1] - vrtx[1]),(vrtx2[2] - vrtx[2])])
             ev = external_vertices[idx]
             v3 = vrtx + u
             v4 = vrtx + v
-            offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
+            offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
             topologic_offset_vertex = topologic.Vertex.ByCoordinates(offset_vertex[0], offset_vertex[1], offset_vertex[2])
             status = (topologic.FaceUtility.IsInside(face, topologic_offset_vertex, 0.001))
             if reverse:
                 status = not status
             if status:
                 offset = -offset
-                offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
-            offset_vertices.append([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
+                offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
+            offset_vertices.append([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
 
         idx = len(external_vertices)-1
         v = [external_vertices[idx].X(), external_vertices[idx].Y(), external_vertices[idx].Z()]
         v1 = [external_vertices[0].X(), external_vertices[0].Y(), external_vertices[0].Z()]
         v2 = [external_vertices[idx-1].X(), external_vertices[idx-1].Y(), external_vertices[idx-1].Z()]
-        u = Vector.Normalize([(v1[0]-v[0]), (v1[1]-v[1]), (v1[2]-v[2])])
-        v = Vector.Normalize([(v2[0]-v[0]), (v2[1]-v[1]),(v2[2]-v[2])])
+        u = normalize([(v1[0]-v[0]), (v1[1]-v[1]), (v1[2]-v[2])])
+        v = normalize([(v2[0]-v[0]), (v2[1]-v[1]),(v2[2]-v[2])])
         ev = external_vertices[idx]
-        offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
+        offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
         topologic_offset_vertex = topologic.Vertex.ByCoordinates(offset_vertex[0], offset_vertex[1], offset_vertex[2])
         status = (topologic.FaceUtility.IsInside(face, topologic_offset_vertex, 0.001))
         if reverse:
             status = not status
         if status:
             offset = -offset
-            offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
-        offset_vertices.append([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * Vector.Normalize(u + v))
+            offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
+        offset_vertices.append([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
         edges = []
         for iv, v in enumerate(offset_vertices[:-1]):
             e = topologic.Edge.ByStartVertexEndVertex(topologic.Vertex.ByCoordinates(offset_vertices[iv][0], offset_vertices[iv][1], offset_vertices[iv][2]), topologic.Vertex.ByCoordinates(offset_vertices[iv+1][0], offset_vertices[iv+1][1], offset_vertices[iv+1][2]))
-            if Edge.Length(e) < tolerance:
-                return None
             edges.append(e)
         iv = len(offset_vertices)-1
         e = topologic.Edge.ByStartVertexEndVertex(topologic.Vertex.ByCoordinates(offset_vertices[iv][0], offset_vertices[iv][1], offset_vertices[iv][2]), topologic.Vertex.ByCoordinates(offset_vertices[0][0], offset_vertices[0][1], offset_vertices[0][2]))
-        if Edge.Length(e) < tolerance:
-            return None
         edges.append(e)
         return topologic.Wire.ByEdges(edges)
 
@@ -894,10 +888,8 @@ class Wire(topologic.Wire):
                 except:
                     pass
         rayEdges = []
-        print("Length of Rays", len(rays))
         for r in rays:
             a = r.Difference(obstaclesCluster, False)
-            print("A", a)
             if a:
                 edges = []
                 _ = a.Edges(None, edges)

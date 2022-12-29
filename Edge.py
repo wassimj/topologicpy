@@ -424,7 +424,7 @@ class Edge():
         try:
             parameter = topologic.EdgeUtility.ParameterAtPoint(edge, vertex)
         except:
-            parameter = None
+            return None
         return round(parameter, mantissa)
 
     @staticmethod
