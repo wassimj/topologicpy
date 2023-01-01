@@ -3878,78 +3878,55 @@ class Topology():
 
     
     @staticmethod
-    def SuperTopologies(item, hostTopology, topologyType):
+    def SuperTopologies(topology, hostTopology, topologyType = None):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the supertopologies connected to the input topology.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
-        hostTopology : TYPE
-            DESCRIPTION.
-        topologyType : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        hostTopology : topologic.Topology
+            The host to topology in which to search for ther supertopologies.
+        topologyType : str , optional
+            The topology type to search for. This can be any of "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. If set to None, the immediate supertopology type is searched for. The default is None.
 
         Returns
         -------
-        superTopologies : TYPE
-            DESCRIPTION.
+        list
+            The list of supertopologies connected to the input topology.
 
         """
         
-        def topologyTypeID(topologyType):
-            typeID = None
-            try:
-                if topologyType == "Vertex":
-                    typeID = topologic.Vertex.Type()
-                elif topologyType == "Edge":
-                    typeID = topologic.Edge.Type()
-                elif topologyType == "Wire":
-                    typeID = topologic.Wire.Type()
-                elif topologyType == "Face":
-                    typeID = topologic.Face.Type()
-                elif topologyType == "Shell":
-                    typeID = topologic.Shell.Type()
-                elif topologyType == "Cell":
-                    typeID = topologic.Cell.Type()
-                elif topologyType == "CellComplex":
-                    typeID = topologic.CellComplex.Type()
-                elif topologyType == "Cluster":
-                    typeID = topologic.Cluster.Type()
-            except:
-                typeID = None
-            return typeID
-        
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(hostTopology, topologic.Topology):
+            return None
+
         superTopologies = []
-        typeID = topologyTypeID(topologyType)
-        if item.Type() >= typeID:
-            raise Exception("TopologySuperTopologies - Error: the requested Topology Type (" + topologyType + ") cannot be a Super Topology of the input Topology Type (" + item.GetTypeAsString() + ")")
-        elif typeID == topologic.Vertex.Type():
-            item.Vertices(hostTopology, superTopologies)
-        elif typeID == topologic.Edge.Type():
-            item.Edges(hostTopology, superTopologies)
-        elif typeID == topologic.Wire.Type():
-            item.Wires(hostTopology, superTopologies)
-        elif typeID == topologic.Face.Type():
-            item.Faces(hostTopology, superTopologies)
-        elif typeID == topologic.Shell.Type():
-            item.Shells(hostTopology, superTopologies)
-        elif typeID == topologic.Cell.Type():
-            item.Cells(hostTopology, superTopologies)
-        elif typeID == topologic.CellComplex.Type():
-            item.CellComplexes(hostTopology, superTopologies)
-        elif typeID == topologic.Cluster.Type():
-            item.Cluster(hostTopology, superTopologies)
+
+        if not topologyType:
+            typeID = 2*Topology.TypeID(topology)
         else:
-            raise Exception("TopologySuperTopologies - Error: the requested Topology Type (" + topologyType + ") could not be found.")
+            typeID = Topology.TypeID(topologyType)
+        if topology.Type() >= typeID:
+            return None #The user has asked for a topology type lower than the input topology
+        elif typeID == topologic.Edge.Type():
+            topology.Edges(hostTopology, superTopologies)
+        elif typeID == topologic.Wire.Type():
+            topology.Wires(hostTopology, superTopologies)
+        elif typeID == topologic.Face.Type():
+            topology.Faces(hostTopology, superTopologies)
+        elif typeID == topologic.Shell.Type():
+            topology.Shells(hostTopology, superTopologies)
+        elif typeID == topologic.Cell.Type():
+            topology.Cells(hostTopology, superTopologies)
+        elif typeID == topologic.CellComplex.Type():
+            topology.CellComplexes(hostTopology, superTopologies)
+        elif typeID == topologic.Cluster.Type():
+            topology.Cluster(hostTopology, superTopologies)
+        else:
+            return None
         return superTopologies
     
     @staticmethod

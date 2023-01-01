@@ -148,22 +148,18 @@ class Plotly:
             y = []
             z = []
             if isinstance(topology, topologic.Edge):
-                wires = [Wire.ByEdges(topology)]
-            elif isinstance(topology, topologic.Wire):
-                wires = [topology]
+                edges = [topology]
             else:
-                wires = Topology.SubTopologies(topology, "wire")
-            for w in wires:
-                edges = Wire.Edges(w)
-                for edge in edges:
-                    vertices = Edge.Vertices(edge)
-                    for v in vertices:
-                        x.append(v.X())
-                        y.append(v.Y())
-                        z.append(v.Z())
-                    x.append(None)
-                    y.append(None)
-                    z.append(None)
+                edges = Topology.SubTopologies(topology, "edge")
+            for edge in edges:
+                vertices = Edge.Vertices(edge)
+                for v in vertices:
+                    x.append(v.X())
+                    y.append(v.Y())
+                    z.append(v.Z())
+                x.append(None)
+                y.append(None)
+                z.append(None)
 
             return go.Scatter3d(x=x, y=y, z=z, showlegend=False, marker_size=0, mode="lines",
                                      line=dict(

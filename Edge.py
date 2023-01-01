@@ -91,6 +91,32 @@ class Edge():
         return bisectingEdge
 
     @staticmethod
+    def ByOffset(edge, offset=1, tolerance=0.0001):
+        """
+        Creates and edge offset from the input edge
+
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The input edge.
+        offset : float , optional
+            The desired offset. The default is 1.
+        tolerance : float , optiona
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Edge
+            An edge offset from the input edge.
+
+        """
+        from topologicpy.Topology import Topology
+        n = Edge.Normal(edge)
+        n = Vector.Multiply(n, offset, tolerance)
+
+        return Topology.Translate(edge, n[0], n[1], 0)
+
+    @staticmethod
     def ByStartVertexEndVertex(vertexA, vertexB, tolerance=0.0001):
         """
         Creates a straight edge that connects the input vertices.
@@ -276,6 +302,87 @@ class Edge():
         return Edge.ByVertices([sve, eve])
 
     @staticmethod
+    def ExtendToEdge2D(edgeA, edgeB):
+        """
+        Extends the first input edge to meet the second input edge. This works only in the XY plane. Z coordinates are ignored.
+
+        Parameters
+        ----------
+        edgeA : topologic.Edge
+            The first input edge.
+        edgeB : topologic.Edge
+            The second input edge.
+
+        Returns
+        -------
+        topologic.Edge
+            The extended edge.
+
+        """
+        from topologicpy.Topology import Topology
+        if not isinstance(edgeA, topologic.Edge):
+            return None
+        if not isinstance(edgeB, topologic.Edge):
+            return None
+        sva = Edge.StartVertex(edgeA)
+        eva = Edge.EndVertex(edgeA)
+        intVertex = Edge.Intersect2D(edgeA, edgeB)
+        if intVertex and not (Topology.IsInside(edgeA, intVertex)):
+            e1 = Edge.ByVertices([sva, intVertex])
+            e2 = Edge.ByVertices([eva, intVertex])
+            l1 = Edge.Length(e1)
+            l2 = Edge.Length(e2)
+            if l1 > l2:
+                return e1
+            else:
+                return e2
+        return None
+
+    @staticmethod
+    def Intersect2D(edgeA, edgeB):
+        """
+        Returns the intersection of the two input edges. This works only in the XY plane. Z coordinates are ignored.
+
+        Parameters
+        ----------
+        edgeA : topologic.Edge
+            The first input edge.
+        edgeB : topologic.Edge
+            The second input edge.
+
+        Returns
+        -------
+        topologic.Vertex
+            The intersection of the two input edges.
+
+        """
+        sva = Edge.StartVertex(edgeA)
+        eva = Edge.EndVertex(edgeA)
+        svb = Edge.StartVertex(edgeB)
+        evb = Edge.EndVertex(edgeB)
+        # Line AB represented as a1x + b1y = c1
+        a1 = Vertex.Y(eva) - Vertex.Y(sva)
+        b1 = Vertex.X(sva) - Vertex.X(eva)
+        c1 = a1*(Vertex.X(sva)) + b1*(Vertex.Y(sva))
+ 
+        # Line CD represented as a2x + b2y = c2
+        a2 = Vertex.Y(evb) - Vertex.Y(svb)
+        b2 = Vertex.X(svb) - Vertex.X(evb)
+        c2 = a2*(Vertex.X(svb)) + b2*(Vertex.Y(svb))
+ 
+        determinant = a1*b2 - a2*b1
+ 
+        if (determinant == 0):
+            # The lines are parallel. This is simplified
+            # by returning a pair of FLT_MAX
+            return None
+        else:
+            x = (b2*c1 - b1*c2)/determinant
+            y = (a1*c2 - a2*c1)/determinant
+            return Vertex.ByCoordinates(x,y,0)
+
+
+    @staticmethod
     def IsCollinear(edgeA, edgeB, mantissa=4, angTolerance=0.1, tolerance=0.0001):
         """
         Tests if the two input edges are collinear.
@@ -371,6 +478,35 @@ class Edge():
         return length
 
     @staticmethod
+    def Normal(edge):
+        """
+        Returns the normal (perpendicular) vector to the input edge. This method is intended for edges that are in the XY plane. Z is assumed to be zero and ignored.
+
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The input edge.
+
+        Returns
+        -------
+        list
+            The normal (perpendicular ) vector to the input edge.
+
+        """
+        from topologicpy.Vector import Vector
+        sv = Edge.StartVertex(edge)
+        ev = Edge.EndVertex(edge)
+        x1 = Vertex.X(sv)
+        y1 = Vertex.Y(sv)
+
+        x2 = Vertex.X(ev)
+        y2 = Vertex.Y(ev)
+
+        dx = x2 - x1
+        dy = y2 - y1
+        return Vector.Normalize([-dy, dx, 0])
+
+    @staticmethod
     def Normalize(edge, useEndVertex=False):
         """
         Creates a normalized edge that has the same direction as the input edge, but a length of 1.
@@ -448,7 +584,7 @@ class Edge():
         return Edge.ByVertices([edge.EndVertex(), edge.StartVertex()])
     
     @staticmethod
-    def SetLength(edge, length=1, bothSides=True, reverse=False, tolerance=0.0001):
+    def SetLength(edge , length=1.0, bothSides=True, reverse=False, tolerance=0.0001):
         """
         Returns an edge with the new length in the same direction as the input edge.
 
@@ -459,7 +595,7 @@ class Edge():
         length : float , optional
             The desired length of the edge. The default is 1.
         bothSides : bool , optional
-            If set to True, the edge will be offset symmetrically from each end. The default is False.
+            If set to True, the edge will be offset symmetrically from each end. The default is True.
         reverse : bool , optional
             If set to True, the edge will be offset from its start vertex. Otherwise, it will be offset from its end vertex. The default is False.
         tolerance : float , optional
@@ -529,21 +665,54 @@ class Edge():
         """
         if not isinstance(edge, topologic.Edge):
             return None
-        distance = abs(distance)*-1
+        distance = abs(distance)
         if distance < tolerance:
             return edge
         sv = Edge.StartVertex(edge)
         ev = Edge.EndVertex(edge)
         if bothSides:
-            sve = Edge.VertexByDistance(edge, distance=-distance*0.5, origin=sv, tolerance=tolerance)
-            eve = Edge.VertexByDistance(edge, distance=distance*0.5, origin=ev, tolerance=tolerance)
+            sve = Edge.VertexByDistance(edge, distance=distance*0.5, origin=sv, tolerance=tolerance)
+            eve = Edge.VertexByDistance(edge, distance=-distance*0.5, origin=ev, tolerance=tolerance)
         elif reverse:
-            sve = Edge.VertexByDistance(edge, distance=-distance, origin=sv, tolerance=tolerance)
+            sve = Edge.VertexByDistance(edge, distance=distance, origin=sv, tolerance=tolerance)
             eve = Edge.EndVertex(edge)
         else:
             sve = Edge.StartVertex(edge)
-            eve = Edge.VertexByDistance(edge, distance=distance, origin=ev, tolerance=tolerance)
+            eve = Edge.VertexByDistance(edge, distance=-distance, origin=ev, tolerance=tolerance)
         return Edge.ByVertices([sve, eve])
+
+    @staticmethod
+    def TrimByEdge2D(edgeA, edgeB, reverse=False):
+        """
+        Trims the first input edge by the second input edge. This works only in the XY plane. Z coordinates are ignored.
+
+        Parameters
+        ----------
+        edgeA : topologic.Edge
+            The first input edge.
+        edgeB : topologic.Edge
+            The second input edge.
+
+        Returns
+        -------
+        topologic.Edge
+            The trimmed edge.
+
+        """
+        from topologicpy.Topology import Topology
+        if not isinstance(edgeA, topologic.Edge):
+            return None
+        if not isinstance(edgeB, topologic.Edge):
+            return None
+        sva = Edge.StartVertex(edgeA)
+        eva = Edge.EndVertex(edgeA)
+        intVertex = Edge.Intersect2D(edgeA, edgeB)
+        if intVertex and (Topology.IsInside(edgeA, intVertex)):
+            if reverse:
+                return Edge.ByVertices([eva, intVertex])
+            else:
+                return Edge.ByVertices([sva, intVertex])
+        return edgeA
 
     @staticmethod
     def VertexByDistance(edge, distance=0, origin=None, tolerance=0.0001):

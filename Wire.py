@@ -190,76 +190,88 @@ class Wire(topologic.Wire):
         return Wire.ByEdges(edges)
 
     @staticmethod
-    def ByOffset(wire, offset = 0, reverse = False):
-        """
-        Offsets the input wire.
+    def ByOffset(wire, offset=1.0, miter=False, miterThreshold=None):
 
-        Parameters
-        ----------
-        wire : topologic.Wire
-            The input wire.
-        offset : float , optional
-            The desired offset distance. The default is 0.
-        reverse : bool , optional
-            If set to True, the direction of the offset is reversed. The default is False.
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
 
-        Returns
-        -------
-        topologic.Wire
-            The offset wire.
+        if not isinstance(wire, topologic.Wire):
+            return None
+        if not miterThreshold:
+            miterThreshold = offset
+        flatFace = Face.ByWire(wire)
+        flatFace = Face.Flatten(flatFace)
+        world_origin = Vertex.ByCoordinates(0,0,0)
+        # Retrieve the needed transformations
+        dictionary = Topology.Dictionary(flatFace)
+        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+        wire = Face.ExternalBoundary(flatFace)
+        if not isinstance(wire, topologic.Wire):
+            return None
+        edges = Wire.Edges(wire)
+        vertices = Wire.Vertices(wire)
+        newEdges = []
+        for i in range(len(edges)):
+            e1 = Edge.ByOffset(edges[i],offset)
+            newEdges.append(e1)
+        newVertices = []
+        e1 = newEdges[-1]
+        e2 = newEdges[0]
+        newVertices.append(Edge.Intersect2D(e1,e2))
+        for i in range(len(newEdges)-1):
+            e1 = newEdges[i]
+            e2 = newEdges[i+1]
+            newVertices.append(Edge.Intersect2D(e1,e2))
+        
+        newWire = Wire.ByVertices(newVertices)
+        newVertices = Wire.Vertices(newWire)
+        miterEdges = []
+        # Handle miter
+        if miter:
+            edges = Wire.Edges(newWire)
+            for i in range(len(newVertices)):
+                if Vertex.Distance(vertices[i], newVertices[i]) > abs(miterThreshold):
+                    e1, e2 = Topology.SuperTopologies(newVertices[i], newWire, topologyType="edge")
+                    e1 = Edge.Reverse(e1)
+                    bisector = Edge.ByVertices([vertices[i], newVertices[i]])
+                    if miterThreshold > 0:
+                        nv = Edge.VertexByDistance(bisector, distance=miterThreshold, origin=Edge.StartVertex(bisector), tolerance=0.0001)
+                    else:
+                        nv = Edge.VertexByDistance(bisector, distance=-miterThreshold, origin=Edge.StartVertex(bisector), tolerance=0.0001)
+                    vec = Edge.Normal(bisector)
+                    nv2 = Topology.Translate(nv, vec[0], vec[1], 0)
+                    nv3 = Topology.Translate(nv, -vec[0], -vec[1], 0)
+                    miterEdge = Edge.ByVertices([nv2,nv3])
+                    miterEdge = Edge.SetLength(miterEdge, abs(offset)*10)
+                    msv = Edge.Intersect2D(miterEdge, e1)
+                    mev = Edge.Intersect2D(miterEdge, e2)
+                    if (Topology.IsInside(e1, msv)) and (Topology.IsInside(e2, mev)):
+                        miterEdge = Edge.ByVertices([msv, mev])
+                        miterEdge = Edge.SetLength(miterEdge, Edge.Length(miterEdge)*1.02)
+                        miterEdges.append(miterEdge)
+            c = Cluster.ByTopologies(miterEdges)
+            f = Face.ByWire(newWire)
+            s = Topology.Boolean(f, c, operation="slice")
+            if isinstance(s, topologic.Shell):
+                faces = Shell.Faces(s)
+                for face in faces:
+                    adjacentFaces = Topology.AdjacentTopologies(face, s, topologyType="face")
+                    if len(adjacentFaces) > 1:
+                        newWire = Face.ExternalBoundary(face)
+                        break
 
-        """
-        def normalize(u):
-            return u / np.linalg.norm(u)
-        face = topologic.Face.ByExternalBoundary(wire)
-        if reverse:
-            offset = -offset
-        external_vertices = []
-        _ = wire.Vertices(None, external_vertices)
-        offset_vertices = []
-        for idx in range(len(external_vertices)-1):
-            vrtx = [external_vertices[idx].X(), external_vertices[idx].Y(), external_vertices[idx].Z()]
-            vrtx1 = [external_vertices[idx+1].X(), external_vertices[idx+1].Y(), external_vertices[idx+1].Z()]
-            vrtx2 = [external_vertices[idx-1].X(), external_vertices[idx-1].Y(), external_vertices[idx-1].Z()]
-            u = normalize([(vrtx1[0] - vrtx[0]), (vrtx1[1] - vrtx[1]),(vrtx1[2] - vrtx[2])])
-            v = normalize([(vrtx2[0] - vrtx[0]), (vrtx2[1] - vrtx[1]),(vrtx2[2] - vrtx[2])])
-            ev = external_vertices[idx]
-            v3 = vrtx + u
-            v4 = vrtx + v
-            offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
-            topologic_offset_vertex = topologic.Vertex.ByCoordinates(offset_vertex[0], offset_vertex[1], offset_vertex[2])
-            status = (topologic.FaceUtility.IsInside(face, topologic_offset_vertex, 0.001))
-            if reverse:
-                status = not status
-            if status:
-                offset = -offset
-                offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
-            offset_vertices.append([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
-
-        idx = len(external_vertices)-1
-        v = [external_vertices[idx].X(), external_vertices[idx].Y(), external_vertices[idx].Z()]
-        v1 = [external_vertices[0].X(), external_vertices[0].Y(), external_vertices[0].Z()]
-        v2 = [external_vertices[idx-1].X(), external_vertices[idx-1].Y(), external_vertices[idx-1].Z()]
-        u = normalize([(v1[0]-v[0]), (v1[1]-v[1]), (v1[2]-v[2])])
-        v = normalize([(v2[0]-v[0]), (v2[1]-v[1]),(v2[2]-v[2])])
-        ev = external_vertices[idx]
-        offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
-        topologic_offset_vertex = topologic.Vertex.ByCoordinates(offset_vertex[0], offset_vertex[1], offset_vertex[2])
-        status = (topologic.FaceUtility.IsInside(face, topologic_offset_vertex, 0.001))
-        if reverse:
-            status = not status
-        if status:
-            offset = -offset
-            offset_vertex = ([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
-        offset_vertices.append([ev.X(), ev.Y(), ev.Z()] + offset * math.sqrt(2 / (1 - np.dot(u, v))) * normalize(u + v))
-        edges = []
-        for iv, v in enumerate(offset_vertices[:-1]):
-            e = topologic.Edge.ByStartVertexEndVertex(topologic.Vertex.ByCoordinates(offset_vertices[iv][0], offset_vertices[iv][1], offset_vertices[iv][2]), topologic.Vertex.ByCoordinates(offset_vertices[iv+1][0], offset_vertices[iv+1][1], offset_vertices[iv+1][2]))
-            edges.append(e)
-        iv = len(offset_vertices)-1
-        e = topologic.Edge.ByStartVertexEndVertex(topologic.Vertex.ByCoordinates(offset_vertices[iv][0], offset_vertices[iv][1], offset_vertices[iv][2]), topologic.Vertex.ByCoordinates(offset_vertices[0][0], offset_vertices[0][1], offset_vertices[0][2]))
-        edges.append(e)
-        return topologic.Wire.ByEdges(edges)
+        newWire = Topology.Rotate(newWire, origin=world_origin, x=0, y=1, z=0, degree=theta)
+        newWire = Topology.Rotate(newWire, origin=world_origin, x=0, y=0, z=1, degree=phi)
+        newWire = Topology.Translate(newWire, xTran, yTran, zTran)
+        return newWire
 
     @staticmethod
     def ByVertices(vertices, close=True):

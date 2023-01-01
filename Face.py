@@ -309,47 +309,17 @@ class Face(topologic.Face):
         return Face.ByEdges(edges)
 
     @staticmethod
-    def ByOffset(face, offset=0.1, reverse=False, tolerance=0.0001):
+    def ByOffset(face, offset=1, miter=False, miterThreshold=None):
         from topologicpy.Wire import Wire
 
         external_boundary = face.ExternalBoundary()
         internal_boundaries = []
         _ = face.InternalBoundaries(internal_boundaries)
-        offset_external_boundary = Wire.ByOffset(external_boundary, offset, reverse)
-        offset_external_face = topologic.Face.ByExternalBoundary(offset_external_boundary)
-        if topologic.FaceUtility.Area(offset_external_face) < tolerance:
-            raise Exception("ERROR: (Topologic>Face.ByOffset) external boundary area is less than tolerance.")
+        offset_external_boundary = Wire.ByOffset(external_boundary, offset=offset, miter=miter, miterThreshold=miterThreshold)
         offset_internal_boundaries = []
-        reverse = not reverse
-        area_sum = 0
         for internal_boundary in internal_boundaries:
-            internal_wire = Wire.ByOffset(internal_boundary, offset, reverse)
-            internal_face = topologic.Face.ByExternalBoundary(internal_wire)
-            # Check if internal boundary has a trivial area
-            if topologic.FaceUtility.Area(internal_face) < tolerance:
-                raise Exception("ERROR: (Topologic>Face.ByOffset) internal boundary area is less than tolerance.")
-            # Check if area of internal boundary is larger than area of external boundary
-            if topologic.FaceUtility.Area(internal_face) > topologic.FaceUtility.Area(offset_external_face):
-                raise Exception("ERROR: (Topologic>Face.ByOffset) internal boundary area is larger than the area of the external boundary.")
-            dif_wire = internal_wire.Difference(offset_external_boundary)
-            internal_vertices = []
-            _ = internal_wire.Vertices(None, internal_vertices)
-            dif_vertices = []
-            _ = dif_wire.Vertices(None, dif_vertices)
-            # Check if internal boundary intersect the outer boundary
-            if len(internal_vertices) != len(dif_vertices):
-                raise Exception("ERROR: (Topologic>Face.ByOffset) internal boundaries intersect outer boundary.")
-            offset_internal_boundaries.append(internal_wire)
-            area_sum = area_sum + topologic.FaceUtility.Area(internal_face)
-        if area_sum > topologic.FaceUtility.Area(offset_external_face):
-            raise Exception("ERROR: (Topologic>Face.ByOffset) total area of internal boundaries is larger than the area of the external boundary.")
-        # NOT IMPLEMENTED: Check if internal boundaries intersect each other!
-        returnFace = topologic.Face.ByExternalInternalBoundaries(offset_external_boundary, offset_internal_boundaries)
-        if returnFace.Type() != 8:
-            raise Exception("ERROR: (Topologic>Face.ByOffset) invalid resulting face.")
-        if topologic.FaceUtility.Area(returnFace) < tolerance:
-            raise Exception("ERROR: (Topologic>Face.ByOffset) area of resulting face is smaller than the tolerance.")
-        return returnFace
+            offset_internal_boundaries.append(Wire.ByOffset(internal_boundary, -offset, miter=miter, miterThreshold=miterThreshold))
+        return Face.ByWires(offset_external_boundary, offset_internal_boundaries)
     
     @staticmethod
     def ByShell(shell, angTolerance=0.1):
