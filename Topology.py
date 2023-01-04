@@ -1543,6 +1543,7 @@ class Topology():
 
         """
         from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
         def angle_between(v1, v2):
             u1 = v1 / norm(v1)
             u2 = v2 / norm(v2)
@@ -1635,7 +1636,7 @@ class Topology():
             if len(aCategory) > 0:
                 for index in aCategory:
                     tempList.append(faces[index])
-                returnList.append(Topology.SelfMerge(topologic.Cluster.ByTopologies(tempList)))
+                returnList.append(Cluster.SelfMerge(Cluster.ByTopologies(tempList)))
         return returnList
 
     @staticmethod
@@ -2612,21 +2613,19 @@ class Topology():
         return flat_topology
     
     @staticmethod
-    def Geometry(item):
+    def Geometry(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the geometry (mesh data format) of the input topology as a dictionary of vertices, edges, and faces.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        dict
+            A dictionary containing the vertices, edges, and faces data. The keys found in the dictionary are "vertices", "edges", and "faces".
 
         """
         
@@ -2662,23 +2661,23 @@ class Topology():
         vertices = []
         edges = []
         faces = []
-        if item == None:
+        if topology == None:
             return [None, None, None]
         topVerts = []
-        if (item.Type() == 1): #input is a vertex, just add it and process it
-            topVerts.append(item)
+        if (topology.Type() == 1): #input is a vertex, just add it and process it
+            topVerts.append(topology)
         else:
-            _ = item.Vertices(None, topVerts)
+            _ = topology.Vertices(None, topVerts)
         for aVertex in topVerts:
             try:
                 vertices.index([aVertex.X(), aVertex.Y(), aVertex.Z()]) # Vertex already in list
             except:
                 vertices.append([aVertex.X(), aVertex.Y(), aVertex.Z()]) # Vertex not in list, add it.
         topEdges = []
-        if (item.Type() == 2): #Input is an Edge, just add it and process it
-            topEdges.append(item)
-        elif (item.Type() > 2):
-            _ = item.Edges(None, topEdges)
+        if (topology.Type() == 2): #Input is an Edge, just add it and process it
+            topEdges.append(topology)
+        elif (topology.Type() > 2):
+            _ = topology.Edges(None, topEdges)
         for anEdge in topEdges:
             e = []
             sv = anEdge.StartVertex()
@@ -2698,10 +2697,10 @@ class Topology():
             if ([e[0], e[1]] not in edges) and ([e[1], e[0]] not in edges):
                 edges.append(e)
         topFaces = []
-        if (item.Type() == 8): # Input is a Face, just add it and process it
-            topFaces.append(item)
-        elif (item.Type() > 8):
-            _ = item.Faces(None, topFaces)
+        if (topology.Type() == 8): # Input is a Face, just add it and process it
+            topFaces.append(topology)
+        elif (topology.Type() > 8):
+            _ = topology.Faces(None, topFaces)
         for aFace in topFaces:
             ib = []
             _ = aFace.InternalBoundaries(ib)
@@ -2738,26 +2737,22 @@ class Topology():
             edges = [[]]
         if len(faces) == 0:
             faces = [[]]
-        return [vertices, edges, faces]
+        return {"vertices":vertices, "edges":edges, "faces":faces}
 
     @staticmethod
     def HighestType(topology):
         """
-        Description
-        __________
-            Bla Bla Bla.
+        Returns the highest topology type found in the input topology.
 
         Parameters
         ----------
         topology : topologic.Topology
             The input topology.
-        tolerance : float , ptional
-            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Vertex
-            A vertex guaranteed to be inside the input topology.
+        int
+            The highest type found in the input topology.
 
         """
         from topologicpy.Cluster import Cluster
@@ -3020,24 +3015,22 @@ class Topology():
         return sets
     
     @staticmethod
-    def OCCTShape(item):
+    def OCCTShape(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the occt shape of the input topology.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.TopoDS_Shape
+            The OCCT Shape.
 
         """
-        return item.GetOcctShape()
+        return topology.GetOcctShape()
     
     def Orient(topology, origin=None, dirA=[0,0,1], dirB=[0,0,1], tolerance=0.0001):
         """
@@ -3308,7 +3301,7 @@ class Topology():
         return topology.RemoveContents(contentList)
     
     @staticmethod
-    def RemoveCoplanarFaces(topology, angTol=0.1, tolerance=0.0001):
+    def RemoveCoplanarFaces(topology, angTolerance=0.1, tolerance=0.0001):
         """
         Description
         __________
@@ -3318,7 +3311,7 @@ class Topology():
         ----------
         topology : TYPE
             DESCRIPTION.
-        angTol : TYPE, optional
+        angTolerance : float , optional
             DESCRIPTION. The default is 0.1.
         tolerance : TYPE, optional
             DESCRIPTION. The default is 0.0001.
@@ -3329,7 +3322,7 @@ class Topology():
             DESCRIPTION.
 
         """
-        # topology, angTol, tolerance = item
+        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
         t = topology.Type()
@@ -3339,18 +3332,35 @@ class Topology():
         faces = []
         for aCluster in clusters:
             shells = Cluster.Shells(aCluster)
+            tempFaces = Cluster.Faces(aCluster)
+            if len(shells) == 0:
+                if tempFaces:
+                    faces += tempFaces
             if shells:
                 for aShell in shells:
-                    aFace = Face.ByShell(aShell, angTol)
-                    if aFace:
-                        if isinstance(aFace, topologic.Face):
-                            faces.append(aFace)
+                    aFace = Face.ByShell(aShell, angTolerance)
+                    if isinstance(aFace, topologic.Face):
+                        faces.append(aFace)
+                    for tempFace in tempFaces:
+                        if not Topology.IsInside(aShell, Face.InternalVertex(tempFace)):
+                            faces.append(tempFace)
             else:
                 cFaces = Cluster.Faces(aCluster)
                 if cFaces:
                     for aFace in cFaces:
                         faces.append(aFace)
         returnTopology = None
+        finalFaces = []
+        for aFace in faces:
+            eb = Face.ExternalBoundary(aFace)
+            ibList = Face.InternalBoundaries(aFace)
+            eb = Wire.RemoveCollinearEdges(eb, angTolerance=angTolerance)
+            finalIbList = []
+            if ibList:
+                for ib in ibList:
+                    finalIbList.append(Wire.RemoveCollinearEdges(ib, angTolerance=angTolerance))
+            finalFaces.append(Face.ByWires(eb, finalIbList))
+        faces = finalFaces
         if t == 16:
             returnTopology = topologic.Shell.ByFaces(faces, tolerance)
             if not returnTopology:
@@ -4021,6 +4031,7 @@ class Topology():
                                         sinkValues[index] = [sinkValues[index], sourceValue]
                                 else:
                                     sinkValues[index] = sourceValue
+                    break;
             if len(sinkKeys) > 0 and len(sinkValues) > 0:
                 newDict = Dictionary.ByKeysValues(sinkKeys, sinkValues)
                 _ = sink.SetDictionary(newDict)

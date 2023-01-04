@@ -112,9 +112,11 @@ class Edge():
         """
         from topologicpy.Topology import Topology
         n = Edge.Normal(edge)
+        n = Vector.Normalize(n)
         n = Vector.Multiply(n, offset, tolerance)
+        edge2 = Topology.Translate(edge, n[0], n[1], n[2])
+        return edge2
 
-        return Topology.Translate(edge, n[0], n[1], 0)
 
     @staticmethod
     def ByStartVertexEndVertex(vertexA, vertexB, tolerance=0.0001):
@@ -356,6 +358,12 @@ class Edge():
             The intersection of the two input edges.
 
         """
+        if not isinstance(edgeA, topologic.Edge):
+            print("Intersect2D: edgeA is not a topologic.Edge")
+            return None
+        if not isinstance(edgeB, topologic.Edge):
+            print("Intersect2D: edgeB is not a topologic.Edge")
+            return None
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
         svb = Edge.StartVertex(edgeB)
