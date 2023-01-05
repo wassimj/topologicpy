@@ -342,6 +342,7 @@ class Face(topologic.Face):
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Shell import Shell
+        from topologicpy.Topology import Topology
         
         def planarizeList(wireList):
             returnList = []
@@ -351,7 +352,8 @@ class Face(topologic.Face):
         
         ext_boundary = Shell.ExternalBoundary(shell)
         ext_boundary = Wire.RemoveCollinearEdges(ext_boundary, angTolerance)
-        ext_boundary = Wire.Planarize(ext_boundary)
+        if not Topology.IsPlanar(ext_boundary):
+            ext_boundary = Wire.Planarize(ext_boundary)
 
         if isinstance(ext_boundary, topologic.Wire):
             try:
@@ -807,7 +809,8 @@ class Face(topologic.Face):
         """
         if not isinstance(face, topologic.Face):
             return None
-        return topologic.FaceUtility.InternalVertex(face, tolerance)
+        v = topologic.FaceUtility.InternalVertex(face, tolerance)
+        return v
 
     @staticmethod
     def Invert(face):
@@ -870,8 +873,105 @@ class Face(topologic.Face):
         dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
         return Vector.IsCollinear(dirA, dirB, tolerance)
     
+
     @staticmethod
     def IsInside(face, vertex, tolerance=0.0001):
+        """
+        Returns True if the input vertex is inside the input face. Returns False otherwise.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the input vertex is inside the input face. False otherwise.
+
+        """
+
+        # Ray tracing from https://stackoverflow.com/questions/36399381/whats-the-fastest-way-of-checking-if-a-point-is-inside-a-polygon-in-python
+        def ray_tracing_method(x,y,poly):
+            n = len(poly)
+            inside = False
+
+            p1x,p1y = poly[0]
+            for i in range(n+1):
+                p2x,p2y = poly[i % n]
+                if y > min(p1y,p2y):
+                    if y <= max(p1y,p2y):
+                        if x <= max(p1x,p2x):
+                            if p1y != p2y:
+                                xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                            if p1x == p2x or x <= xints:
+                                inside = not inside
+                p1x,p1y = p2x,p2y
+
+            return inside
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not isinstance(face, topologic.Face):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+
+        world_origin = Vertex.ByCoordinates(0,0,0)
+        # Flatten face and vertex
+        flatFace = Face.Flatten(face)
+        # Retrieve the needed transformations
+        dictionary = Topology.Dictionary(flatFace)
+        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+
+        vertex = Topology.Translate(vertex, -xTran, -yTran, -zTran)
+        vertex = Topology.Rotate(vertex, origin=world_origin, x=0, y=0, z=1, degree=-phi)
+        vertex = Topology.Rotate(vertex, origin=world_origin, x=0, y=1, z=0, degree=-theta)
+
+        # Test if Vertex is hovering above or below face
+        if abs(Vertex.Z(vertex)) > tolerance:
+            return False
+
+        # Build 2D poly from flat face
+        wire = Face.ExternalBoundary(flatFace)
+        vertices = Wire.Vertices(wire)
+        poly = []
+        for v in vertices:
+            poly.append([Vertex.X(v), Vertex.Y(v)])
+
+        # Use ray tracing method to test if vertex is inside the face
+        status = ray_tracing_method(Vertex.X(vertex), Vertex.Y(vertex), poly)
+        # Vertex is not inside
+        if not status:
+            return status
+
+        # If it is inside, we must check if it is inside a hole in the face
+        internal_boundaries = Face.InternalBoundaries(flatFace)
+        if len(internal_boundaries) == 0:
+            return status
+        
+        for ib in internal_boundaries:
+            vertices = Wire.Vertices(ib)
+            poly = []
+            for v in vertices:
+                poly.append([Vertex.X(v), Vertex.Y(v)])
+            status2 = ray_tracing_method(Vertex.X(vertex), Vertex.Y(vertex), poly)
+            if status2:
+                return False
+        return status
+
+    @staticmethod
+    def IsInside_original(face, vertex, tolerance=0.0001):
         """
         Returns True if the input vertex is inside the input face. Returns False otherwise.
 
@@ -894,7 +994,12 @@ class Face(topologic.Face):
             return None
         if not isinstance(vertex, topologic.Vertex):
             return None
-        return (topologic.FaceUtility.IsInside(face, vertex, tolerance))
+        print("Calling FaceUtility Is Inside")
+        status = topologic.FaceUtility.IsInside(face, vertex, tolerance)
+        print("Is Inside status:", status)
+        if status == None:
+            return False
+        return status
 
     @staticmethod
     def MedialAxis(face, resolution=0, externalVertices=False, internalVertices=False, toLeavesOnly=False, tolerance=0.0001, angTolerance=0.1):

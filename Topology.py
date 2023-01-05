@@ -658,11 +658,6 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
-
         Returns
         -------
         topologic.Topology
@@ -1305,21 +1300,21 @@ class Topology():
         return None
 
     @staticmethod
-    def ByImportedJSONMK2(jsonFilePath, tolerance=0.0001):
+    def ByImportedJSONMK2(filePath, tolerance=0.0001):
         """
-        Description
-        __________
-            NOT DONE YET
+        Imports the topology from a JSON file.
 
         Parameters
         ----------
-        jsonFilePath : TYPE
-            DESCRIPTION.
+        filePath : str
+            The file path to the json file.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologies : TYPE
-            DESCRIPTION.
+        list
+            The list of imported topologies.
 
         """
         from topologicpy.Dictionary import Dictionary
@@ -1372,8 +1367,8 @@ class Topology():
             return v
 
         topology = None
-        jsonFile = open(jsonFilePath)
-        folderPath = os.path.dirname(jsonFilePath)
+        jsonFile = open(filePath)
+        folderPath = os.path.dirname(filePath)
         if jsonFile:
             topologies = []
             jsondata = json.load(jsonFile)
@@ -2103,32 +2098,25 @@ class Topology():
     '''
 
     @staticmethod
-    def ExportToJSONMK1(topologyList, filePath, overwrite, tolerance=0.0001):
+    def ExportToJSONMK1(topologies, filePath, overwrite=False, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Export the input list of topologies to a JSON file
 
         Parameters
         ----------
-        topologyList : TYPE
-            DESCRIPTION.
-        filePath : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        topologies : list
+            The input list of topologies.
+        filePath : str
+            The path to the JSON file.
+        overwrite : bool , optional
+            If set to True, any existing file will be overwritten. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
         bool
-            DESCRIPTION.
+            The status of exporting the JSON file. If True, the operation was successful. Otherwise, it was unsuccesful.
 
         """
 
@@ -2254,9 +2242,8 @@ class Topology():
             returnDict['vertexDictionaries'] = subTopologyDicts(vertexDictionaries, vertexSelectors)
             return returnDict
 
-        # topologyList = item[0]
-        if not (isinstance(topologyList,list)):
-            topologyList = [topologyList]
+        if not (isinstance(topologies,list)):
+            topologies = [topologies]
         # filePath = item[1]
         # tol = item[2]
         # Make sure the file extension is .json
@@ -2273,7 +2260,7 @@ class Topology():
             raise Exception("Error: Could not create a new file at the following location: "+filePath)
         if (f):
             jsondata = []
-            for topology in topologyList:
+            for topology in topologies:
                 jsondata.append(getTopologyData(topology, tolerance))
             json.dump(jsondata, f, indent=4, sort_keys=True)
             f.close()    
@@ -2282,34 +2269,27 @@ class Topology():
 
     
     @staticmethod
-    def ExportToJSONMK2(topologyList, folderPath, fileName, overwrite, tolerance=0.0001):
+    def ExportToJSONMK2(topologies, folderPath, fileName, overwrite=False, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Export the input list of topologies to a JSON file
 
         Parameters
         ----------
-        topologyList : TYPE
-            DESCRIPTION.
-        folderPath : TYPE
-            DESCRIPTION.
-        fileName : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        topologies : list
+            The input list of topologies.
+        folderPath : list
+            The path to the folder containing the json file and brep files.
+        filePath : str
+            The path to the JSON file.
+        overwrite : bool , optional
+            If set to True, any existing file will be overwritten. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
         bool
-            DESCRIPTION.
+            The status of exporting the JSON file. If True, the operation was successful. Otherwise, it was unsuccesful.
 
         """
 
@@ -2448,9 +2428,8 @@ class Topology():
             returnDict['vertexDictionaries'] = subTopologyDicts(vertexDictionaries, vertexSelectors)
             return returnDict
         
-        # topologyList = item[0]
-        if not (isinstance(topologyList,list)):
-            topologyList = [topologyList]
+        if not (isinstance(topologies,list)):
+            topologies = [topologies]
         # folderPath = item[1]
         # fileName = item[2]
         # tol = item[3]
@@ -2469,7 +2448,7 @@ class Topology():
             raise Exception("Error: Could not create a new file at the following location: "+jsonFilePath)
         if (jsonFilePath):
             jsondata = []
-            for index, topology in enumerate(topologyList):
+            for index, topology in enumerate(topologies):
                 brepName = "topology_"+str(index+1).zfill(5)
                 brepFilePath = os.path.join(folderPath, brepName+".brep")
                 brepFile = open(brepFilePath, "w")
@@ -2484,9 +2463,7 @@ class Topology():
     @staticmethod
     def Filter(topologies, topologyType, searchType, key, value):
         """
-        Description
-        __________
-            DESCRIPTION
+        Filters the input list of topologies based on the input parameters.
 
         Parameters
         ----------
@@ -3303,49 +3280,61 @@ class Topology():
     @staticmethod
     def RemoveCoplanarFaces(topology, angTolerance=0.1, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Removes coplanar faces in the input topology
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
         angTolerance : float , optional
-            DESCRIPTION. The default is 0.1.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+            The desired angular tolerance for removing coplanar faces. The default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The input topology with coplanar faces merged into one face.
 
         """
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
         t = topology.Type()
         if (t == 1) or (t == 2) or (t == 4) or (t == 8) or (t == 128):
             return topology
-        clusters = Topology.ClusterFaces(topology, tolerance)
+        clusters = Topology.ClusterFaces(topology, tolerance=tolerance)
         faces = []
         for aCluster in clusters:
             shells = Cluster.Shells(aCluster)
             tempFaces = Cluster.Faces(aCluster)
-            if len(shells) == 0:
-                if tempFaces:
-                    faces += tempFaces
+            if not shells:
+                if isinstance(aCluster, topologic.Shell):
+                    shells = [aCluster]
+                    tempFaces = Shell.Faces(aCluster)
             if shells:
                 for aShell in shells:
+                    junk_faces = Shell.Faces(aShell)
+                    if len(junk_faces) > 2:
+                        aFace = Face.ByShell(aShell, angTolerance)
                     aFace = Face.ByShell(aShell, angTolerance)
                     if isinstance(aFace, topologic.Face):
                         faces.append(aFace)
+                    else:
+                        for f in Shell.Faces(aShell):
+                            faces.append(f)
                     for tempFace in tempFaces:
-                        if not Topology.IsInside(aShell, Face.InternalVertex(tempFace)):
+                        isInside = False
+                        for tempShell in shells:
+                            if Topology.IsInside(tempShell, Face.InternalVertex(tempFace), tolerance=tolerance):
+                                isInside = True
+                                break;
+                        if not isInside:
                             faces.append(tempFace)
             else:
                 cFaces = Cluster.Faces(aCluster)
+                print("cFaces", cFaces)
                 if cFaces:
                     for aFace in cFaces:
                         faces.append(aFace)
@@ -3354,11 +3343,19 @@ class Topology():
         for aFace in faces:
             eb = Face.ExternalBoundary(aFace)
             ibList = Face.InternalBoundaries(aFace)
-            eb = Wire.RemoveCollinearEdges(eb, angTolerance=angTolerance)
+            try:
+                eb = Wire.RemoveCollinearEdges(eb, angTolerance=angTolerance)
+            except:
+                pass
             finalIbList = []
             if ibList:
                 for ib in ibList:
-                    finalIbList.append(Wire.RemoveCollinearEdges(ib, angTolerance=angTolerance))
+                    temp_ib = ib
+                    try:
+                        temp_ib = Wire.RemoveCollinearEdges(ib, angTolerance=angTolerance)
+                    except:
+                        pass
+                    finalIbList.append(temp_ib)
             finalFaces.append(Face.ByWires(eb, finalIbList))
         faces = finalFaces
         if t == 16:
@@ -3383,72 +3380,71 @@ class Topology():
 
     
     @staticmethod
-    def Rotate(topology, origin, x, y, z, degree):
+    def Rotate(topology, origin=None, x=0, y=0, z=1, degree=0):
         """
-        Description
-        __________
-            DESCRIPTION
+        Rototates the input topology
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        origin : TYPE
-            DESCRIPTION.
-        x : TYPE
-            DESCRIPTION.
-        y : TYPE
-            DESCRIPTION.
-        z : TYPE
-            DESCRIPTION.
-        degree : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        origin : topologic.Vertex , optional
+            The origin (center) of the rotation. If set to None, the world origin (0,0,0) is used. The default is None.
+        x : float , optional
+            The 'x' component of the rotation axis. The default is 0.
+        y : float , optional
+            The 'y' component of the rotation axis. The default is 0.
+        z : float , optional
+            The 'z' component of the rotation axis. The default is 0.
+        degree : float , optional
+            The angle of rotation in degrees. The default is 0.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The rotated topology.
 
         """
-        # topology = item[0]
-        # origin = item[1]
-        # x = item[2]
-        # y = item[3]
-        # z = item[4]
-        # degree = item[5]
+        from topologicpy.Vertex import Vertex
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
         return topologic.TopologyUtility.Rotate(topology, origin, x, y, z, degree)
     
     @staticmethod
-    def Scale(topology, origin, x, y, z):
+    def Scale(topology, origin=None, x=1, y=1, z=1):
         """
-        Description
-        __________
-            DESCRIPTION
+        Scales the input topology
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        origin : TYPE
-            DESCRIPTION.
-        x : TYPE
-            DESCRIPTION.
-        y : TYPE
-            DESCRIPTION.
-        z : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        origin : topologic.Vertex , optional
+            The origin (center) of the scaling. If set to None, the world origin (0,0,0) is used. The default is None.
+        x : float , optional
+            The 'x' component of the scaling factor. The default is 1.
+        y : float , optional
+            The 'y' component of the scaling factor. The default is 1.
+        z : float , optional
+            The 'z' component of the scaling factor. The default is 1..
 
         Returns
         -------
-        newTopology : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The scaled topology.
 
         """
-        # topology = item[0]
-        # origin = item[1]
-        # x = item[2]
-        # y = item[3]
-        # z = item[4]
+        from topologicpy.Vertex import Vertex
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
         newTopology = None
         try:
             newTopology = topologic.TopologyUtility.Scale(topology, origin, x, y, z)
@@ -3459,82 +3455,80 @@ class Topology():
 
     
     @staticmethod
-    def SelectSubTopology(topology, selector, topologyType):
+    def SelectSubTopology(topology, selector, subTopologyType="vertex"):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the subtopology within the input topology based on the input selector and the subTopologyType.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        selector : TYPE
-            DESCRIPTION.
-        topologyType : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        selector : topologic.Vertex
+            A vertex located on the desired subtopology.
+        subTopologyType : str , optional.
+            The desired subtopology type. This can be of "vertex", "edge", "wire", "face", "shell", "cell", or "cellcomplex". It is case insensitive. The default is "vertex".
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The selected subtopology.
 
         """
-        # topology = item[0]
-        # selector = item[1]
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(selector, topologic.Vertex):
+            return None
         t = 1
-        if topologyType == "Vertex":
+        if topologyType.lower() == "vertex":
             t = 1
-        elif topologyType == "Edge":
+        elif topologyType.lower() == "edge":
             t = 2
-        elif topologyType == "Wire":
+        elif topologyType.lower() == "wire":
             t = 4
-        elif topologyType == "Face":
+        elif topologyType.lower() == "face":
             t = 8
-        elif topologyType == "Shell":
+        elif topologyType.lower() == "shell":
             t = 16
-        elif topologyType == "Cell":
+        elif topologyType.lower() == "cell":
             t = 32
-        elif topologyType == "CellComplex":
+        elif topologyType.lower() == "cellcomplex":
             t = 64
         return topology.SelectSubtopology(selector, t)
 
     
     @staticmethod
-    def SelfMerge(item):
+    def SelfMerge(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Self merges the input topology to return the most logical topology type given the input data.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The self-merged topology.
 
         """
-        if item.Type() != 128:
-            item = topologic.Cluster.ByTopologies([item])
+        if topology.Type() != 128:
+            topology = topologic.Cluster.ByTopologies([topology])
         resultingTopologies = []
         topCC = []
-        _ = item.CellComplexes(None, topCC)
+        _ = topology.CellComplexes(None, topCC)
         topCells = []
-        _ = item.Cells(None, topCells)
+        _ = topology.Cells(None, topCells)
         topShells = []
-        _ = item.Shells(None, topShells)
+        _ = topology.Shells(None, topShells)
         topFaces = []
-        _ = item.Faces(None, topFaces)
+        _ = topology.Faces(None, topFaces)
         topWires = []
-        _ = item.Wires(None, topWires)
+        _ = topology.Wires(None, topWires)
         topEdges = []
-        _ = item.Edges(None, topEdges)
+        _ = topology.Edges(None, topEdges)
         topVertices = []
-        _ = item.Vertices(None, topVertices)
+        _ = topology.Vertices(None, topVertices)
         if len(topCC) == 1:
             cc = topCC[0]
             ccVertices = []
@@ -3576,15 +3570,13 @@ class Topology():
             resultingTopologies.append(vertex)
         if len(resultingTopologies) == 1:
             return resultingTopologies[0]
-        return item.SelfMerge()
+        return topology.SelfMerge()
 
     
     @staticmethod
     def SetDictionary(topology, dictionary):
         """
-        Description
-        __________
-            Sets the input topology's dictionary to the input dictionary
+        Sets the input topology's dictionary to the input dictionary
 
         Parameters
         ----------
@@ -3609,79 +3601,68 @@ class Topology():
         return topology
     
     @staticmethod
-    def SharedTopologies(topoA, topoB, vertices, edges, wires, faces):
+    def SharedTopologies(topologyA, topologyB, vertices=True, edges=False, wires=False, faces=False):
         """
-        Description
-        __________
-            DESCRIPTION
+        Returns the shared topologies between the two input topologies
 
         Parameters
         ----------
-        topoA : TYPE
-            DESCRIPTION.
-        topoB : TYPE
-            DESCRIPTION.
-        vertices : TYPE
-            DESCRIPTION.
-        edges : TYPE
-            DESCRIPTION.
-        wires : TYPE
-            DESCRIPTION.
-        faces : TYPE
-            DESCRIPTION.
+        topologyA : topologic.Topology
+            The first input topology.
+        topologyB : topologic.Topology
+            The second input topology.
+        vertices : bool , optional
+            If set to True, shared vertices will be returned. The default is True.
+        edges : bool , optional
+            If set to True, shared edges will be returned. The default is False.
+        wires : bool , optional
+            If set to True, shared wires will be returned. The default is False.
+        faces : bool , optional
+            If set to True, shared faces will be returned. The default is False.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        dict
+            A dictionary with the list of vertices, edges, wires, and faces. The keys are "vertices", "edges", "wires", and "faces".
 
         """
-        # topoA = input[0]
-        # topoB = input[1]
-        # vertices = input[2]
-        # edges = input[3]
-        # wires = input[4]
-        # faces = input[5]
         vOutput = []
         eOutput = []
         wOutput = []
         fOutput = []
         if vertices:
-            _ = topoA.SharedTopologies(topoB, 1, vOutput)
+            _ = topologyA.SharedTopologies(topologyB, 1, vOutput)
         if edges:
-            _ = topoA.SharedTopologies(topoB, 2, eOutput)
+            _ = topologyA.SharedTopologies(topologyB, 2, eOutput)
         if wires:
-            _ = topoA.SharedTopologies(topoB, 4, wOutput)
+            _ = topologyA.SharedTopologies(topologyB, 4, wOutput)
         if faces:
-            _ = topoA.SharedTopologies(topoB, 8, fOutput)
-        return [vOutput, eOutput, wOutput, fOutput]
+            _ = topologyA.SharedTopologies(topologyB, 8, fOutput)
+        return {"vertices":vOutput, "edges":eOutput, "wires":wOutput, "faces":fOutput}
 
     
     @staticmethod
-    def SortBySelectors(selectors, topologies, exclusive, tolerance=0.0001):
+    def SortBySelectors(topologies, selectors, exclusive=False, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Sorts the input list of topologies according to the input list of selectors.
 
         Parameters
         ----------
-        selectors : TYPE
-            DESCRIPTION.
-        topologies : TYPE
-            DESCRIPTION.
-        exclusive : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        topologies : list
+            The input list of topologies.
+        selectors : list
+            The input list of selectors (vertices).
+        exclusive : bool , optional
+            If set to True only one selector can be used to select on topology. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        dict
+            A dictionary containing the list of sorted and unsorted topologies. The keys are "sorted" and "unsorted".
 
         """
-        # selectors, topologies, exclusive = item
         usedTopologies = []
         sortedTopologies = []
         unsortedTopologies = []
@@ -3703,41 +3684,39 @@ class Topology():
         for i in range(len(usedTopologies)):
             if usedTopologies[i] == 0:
                 unsortedTopologies.append(topologies[i])
-        return [sortedTopologies, unsortedTopologies]
+        return {"sorted":sortedTopologies, "unsorted":unsortedTopologies}
     
     @staticmethod
     def Spin(topology, origin=None, triangulate=True, dirX=0, dirY=0, dirZ=1, degree=360, sides=16,
                      tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Spins the input topology around an axis to create a new topology.See https://en.wikipedia.org/wiki/Solid_of_revolution.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        origin : TYPE
-            DESCRIPTION.
-        triangulate : TYPE
-            DESCRIPTION.
-        dirX : TYPE
-            DESCRIPTION.
-        dirY : TYPE
-            DESCRIPTION.
-        dirZ : TYPE
-            DESCRIPTION.
-        degree : TYPE
-            DESCRIPTION.
-        sides : TYPE
-            DESCRIPTION.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        topology : topologic.Topology
+            The input topology.
+        origin : topologic.Vertex
+            The origin (center) of the spin.
+        triangulate : bool , optional
+            If set to True, the result will be triangulated. The default is True.
+        dirX : float , optional
+            The 'x' component of the axis (vector) of spin. The default is 0.
+        dirY : float , optional
+            The 'y' component of the axis (vector) of spin. The default is 0.
+        dirZ : float , optional
+            The 'z' component of the axis (vector) of spin. The default is 1.
+        degree : float , optional
+            The angle in degrees for the spin. The default is 360.
+        sides : int , optional
+            The desired number of sides. The default is 16.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        returnTopology : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The spun topology.
 
         """
         from topologicpy.Vertex import Vertex
@@ -3761,7 +3740,6 @@ class Topology():
             returnTopology = Wire.ByVertices(topologies, False)
         elif topology.Type() == topologic.Edge.Type():
             try:
-                print("Topology Spin - Calling Shell.ByWires")
                 returnTopology = Shell.ByWires(topologies,triangulate=triangulate, tolerance=tolerance)
             except:
                 try:
@@ -3773,6 +3751,8 @@ class Topology():
                 returnTopology = Cell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
                 try:
                     returnTopology = Cell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
+                    returnTopology = Cell.ExternalBoundary(returnTopology)
+                    returnTopology = Cell.ByShell(returnTopology)
                 except:
                     try:
                         returnTopology = CellComplex.ByWires(topologies, tolerance)
@@ -3824,24 +3804,24 @@ class Topology():
 
     
     @staticmethod
-    def String(item):
+    def String(topology):
         """
-        Description
-        __________
-            DESCRIPTION
+        Return the BRep string of the input topology.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        str
+            The BRep string.
 
         """
-        return item.String()
+        if not isinstance(topology, topologic.Topology):
+            return None
+        return topology.String()
     
     @staticmethod
     def SubTopologies(topology, subTopologyType="vertex"):
@@ -3857,8 +3837,8 @@ class Topology():
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        list
+            The list of subtopologies.
 
         """
         if not isinstance(topology, topologic.Topology):
@@ -3940,30 +3920,25 @@ class Topology():
         return superTopologies
     
     @staticmethod
-    def SymmetricDifference(topologyA, topologyB, tranDict):
+    def SymmetricDifference(topologyA, topologyB, tranDict=False):
         """
-        Description
-        __________
-            DESCRIPTION
+        Return the symmetric difference (XOR) of the two input topologies. See https://en.wikipedia.org/wiki/Symmetric_difference.
 
         Parameters
         ----------
-        topologyA : TYPE
-            DESCRIPTION.
-        topologyB : TYPE
-            DESCRIPTION.
-        tranDict : TYPE
-            DESCRIPTION.
+        topologyA : topologic.Topology
+            The first input topology.
+        topologyB : topologic.Topology
+            The second input topology.
+        tranDict : bool , opetional
+            If set to True, the dictionaries of the input topologies are transferred to the resulting topology.
 
         Returns
         -------
-        topologyC : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The symmetric difference of the two input topologies.
 
         """
-        # topologyA = item[0]
-        # topologyB = item[1]
-        # tranDict = item[2]
         topologyC = None
         try:
             topologyC = topologyA.XOR(topologyB, tranDict)

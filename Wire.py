@@ -1301,11 +1301,16 @@ class Wire(topologic.Wire):
 
         """
         from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
         def rce(wire, angTolerance=0.1):
             final_wire = None
             vertices = []
             wire_verts = []
-            _ = wire.Vertices(None, vertices)
+            try:
+                _ = wire.Vertices(None, vertices)
+            except:
+                return None
             for aVertex in vertices:
                 edges = []
                 _ = aVertex.Edges(wire, edges)
