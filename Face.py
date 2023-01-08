@@ -768,6 +768,51 @@ class Face(topologic.Face):
         return flatFace
     
     @staticmethod
+    def Harmonize(face):
+        """
+        Returns a harmonized version of the input face such that the *u* and *v* origins are always in the upperleft corner.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+
+        Returns
+        -------
+        topologic.Face
+            The harmonized face.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not isinstance(face, topologic.Face):
+            return None
+        flatFace = Face.Flatten(face)
+        world_origin = Vertex.ByCoordinates(0,0,0)
+        # Retrieve the needed transformations
+        dictionary = Topology.Dictionary(flatFace)
+        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+        vertices = Wire.Vertices(Face.ExternalBoundary(flatFace))
+        harmonizedEB = Wire.ByVertices(vertices)
+        internalBoundaries = Face.InternalBoundaries(flatFace)
+        harmonizedIB = []
+        for ib in internalBoundaries:
+            ibVertices = Wire.Vertices(ib)
+            harmonizedIB.append(Wire.ByVertices(ibVertices))
+        harmonizedFace = Face.ByWires(harmonizedEB, harmonizedIB)
+        harmonizedFace = Topology.Rotate(harmonizedFace, origin=world_origin, x=0, y=1, z=0, degree=theta)
+        harmonizedFace = Topology.Rotate(harmonizedFace, origin=world_origin, x=0, y=0, z=1, degree=phi)
+        harmonizedFace = Topology.Translate(harmonizedFace, xTran, yTran, zTran)
+        return harmonizedFace
+
+    @staticmethod
     def InternalBoundaries(face):
         """
         Returns the internal boundaries (closed wires) of the input face.

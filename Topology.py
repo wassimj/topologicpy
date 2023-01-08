@@ -976,9 +976,7 @@ class Topology():
     @staticmethod
     def ByImportedIFC(filePath, typeList):
         """
-        Description
-        __________
-            DESCRIPTION
+        NOT DONE YET
 
         Parameters
         ----------
@@ -1110,9 +1108,7 @@ class Topology():
     @staticmethod
     def ByImportedIPFS(hash_, url, port):
         """
-        Description
-        __________
-            DESCRIPTION
+        NOT DONE YET.
 
         Parameters
         ----------
@@ -1156,43 +1152,8 @@ class Topology():
 
         """
         from topologicpy.Dictionary import Dictionary
-        def isInside(aperture, face, tolerance):
-            return (topologic.VertexUtility.Distance(aperture.Topology.Centroid(), face) < tolerance)
 
-        def internalVertex(topology, tolerance):
-            vst = None
-            classType = topology.Type()
-            if classType == 64: #CellComplex
-                tempCells = []
-                _ = topology.Cells(tempCells)
-                tempCell = tempCells[0]
-                vst = topologic.CellUtility.InternalVertex(tempCell, tolerance)
-            elif classType == 32: #Cell
-                vst = topologic.CellUtility.InternalVertex(topology, tolerance)
-            elif classType == 16: #Shell
-                tempFaces = []
-                _ = topology.Faces(None, tempFaces)
-                tempFace = tempFaces[0]
-                vst = topologic.FaceUtility.InternalVertex(tempFace, tolerance)
-            elif classType == 8: #Face
-                vst = topologic.FaceUtility.InternalVertex(topology, tolerance)
-            elif classType == 4: #Wire
-                if topology.IsClosed():
-                    internalBoundaries = []
-                    tempFace = topologic.Face.ByExternalInternalBoundaries(topology, internalBoundaries)
-                    vst = topologic.FaceUtility.InternalVertex(tempFace, tolerance)
-                else:
-                    tempEdges = []
-                    _ = topology.Edges(None, tempEdges)
-                    tempEdge = tempEdges[0]
-                    vst = topologic.EdgeUtility.PointAtParameter(tempEdge, 0.5)
-            elif classType == 2: #Edge
-                vst = topologic.EdgeUtility.PointAtParameter(topology, 0.5)
-            elif classType == 1: #Vertex
-                vst = topology
-            else:
-                vst = topology.Centroid()
-            return vst
+        
 
         def processApertures(subTopologies, apertures, exclusive, tolerance):
             usedTopologies = []
@@ -1200,7 +1161,7 @@ class Topology():
                     usedTopologies.append(0)
             ap = 1
             for aperture in apertures:
-                apCenter = internalVertex(aperture, tolerance)
+                apCenter = Topology.InternalVertex(aperture, tolerance)
                 for i in range(len(subTopologies)):
                     subTopology = subTopologies[i]
                     if exclusive == True and usedTopologies[i] == 1:
@@ -1997,7 +1958,7 @@ class Topology():
 
     
     @staticmethod
-    def ExportToBRep(topology, filePath, overwrite=True):
+    def ExportToBRep(topology, filePath, overwrite=True, version=3):
         """
         Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html#:~:text=BREP%20format%20is%20used%20to,triangulations%2C%20space%20location%20and%20orientation.
 
@@ -2009,6 +1970,8 @@ class Topology():
             The input file path.
         overwrite : bool , optional
             If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
+        version : int , optional
+            Replaces the BREP version number and header to make the file compatible with older version of OCCT.
 
         Returns
         -------
@@ -2034,7 +1997,11 @@ class Topology():
         except:
             raise Exception("Error: Could not create a new file at the following location: "+filePath)
         if (f):
-            f.write(topology.String())
+            if version < 3:
+                s = topology.String().replace("V3, (c) Open Cascade", "V1, (c) Matra-Datavision")
+            else:
+                s = topology.String()
+            f.write(s)
             f.close()    
             return True
         return False
@@ -2461,31 +2428,29 @@ class Topology():
         return False
     
     @staticmethod
-    def Filter(topologies, topologyType, searchType, key, value):
+    def Filter(topologies, topologyType="vertex", searchType="any", key=None, value=None):
         """
         Filters the input list of topologies based on the input parameters.
 
         Parameters
         ----------
-        topologies : TYPE
-            DESCRIPTION.
-        topologyType : TYPE
-            DESCRIPTION.
-        searchType : TYPE
-            DESCRIPTION.
-        key : TYPE
-            DESCRIPTION.
-        value : TYPE
-            DESCRIPTION.
+        topologies : list
+            The input list of topologies.
+        topologyType : str , optional
+            The type of topology to filter by. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", or "cluster". It is case insensitive. The default is "vertex".
+        searchType : str , optional
+            The type of search query to conduct in the topology's dictionary. This can be one of "any", "equal to", "contains", "starts with", "ends with", "not equal to", "does not contain". The default is "any".
+        key : str , optional
+            The dictionary key to search within. The default is None which means it will filter by topology type only.
+        value : str , optional
+            The value to search for at the specified key. The default is None which means it will filter by topology type only.
 
         Returns
         -------
         list
-            DESCRIPTION.
+            The list of filtered topologies.
 
         """
-        # key = item[0]
-        # value = item[1]
         from topologicpy.Dictionary import Dictionary
 
         def listToString(item):
@@ -2504,7 +2469,7 @@ class Topology():
         for aTopology in topologies:
             if not aTopology:
                 continue
-            if (topologyType == "Any") or (aTopology.GetTypeAsString() == topologyType):
+            if (topologyType.lower() == "any") or (aTopology.GetTypeAsString().lower() == topologyType.lower()):
                 if value == "" or key == "":
                     filteredTopologies.append(aTopology)
                 else:
@@ -2517,17 +2482,17 @@ class Topology():
                     v = Dictionary.ValueAtKey(d, key)
                     if v != None:
                         v = v.lower()
-                        if searchType == "Equal To":
+                        if searchType.lower() == "equal to":
                             searchResult = (value == v)
-                        elif searchType == "Contains":
+                        elif searchType.lower() == "contains":
                             searchResult = (value in v)
-                        elif searchType == "Starts With":
+                        elif searchType.lower() == "starts with":
                             searchResult = (value == v[0: len(value)])
-                        elif searchType == "Ends With":
+                        elif searchType.lower() == "ends with":
                             searchResult = (value == v[len(v)-len(value):len(v)])
-                        elif searchType == "Not Equal To":
+                        elif searchType.lower() == "not equal to":
                             searchResult = not (value == v)
-                        elif searchType == "Does Not Contain":
+                        elif searchType.lower() == "does not contain":
                             searchResult = not (value in v)
                         else:
                             searchResult = False
@@ -2543,8 +2508,6 @@ class Topology():
 
     def Flatten(topology, origin=None, vector=[0,0,1]):
         """
-        Description
-        ----------
         Flattens the input topology such that the input origin is located at the world origin and the input topology is rotated such that the input vector is pointed in the positive Z axis.
 
         Parameters
@@ -2812,6 +2775,7 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Cell import Cell
@@ -2830,9 +2794,11 @@ class Topology():
                 is_inside = False
             return is_inside
         elif topology.Type() == topologic.Edge.Type():
-            try:
-                is_inside = (Vertex.Distance(vertex, topology) <= tolerance)
-            except:
+            u = Edge.ParameterAtVertex(topology, vertex)
+            d = Vertex.Distance(vertex, topology)
+            if u:
+                is_inside = (0 <= u <= 1) and (d <= tolerance)              
+            else:
                 is_inside = False
             return is_inside
         elif topology.Type() == topologic.Wire.Type():
@@ -2953,41 +2919,38 @@ class Topology():
         return topologic.Topology.IsSame(topologyA, topologyB)
     
     @staticmethod
-    def MergeAll(item):
+    def MergeAll(topologies):
         """
-        Description
-        __________
-            DESCRIPTION
+        Merge all the input topologies.
 
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        topologies : list
+            The list of input topologies.
 
         Returns
         -------
-        sets : TYPE
-            DESCRIPTION.
+        sets : list
+            The sets of merged topologies.
 
         """
-        resultTopology = item[0]
-        topologies = []
-        for i in range(1, len(item)):
-            resultTopology = resultTopology.Union(item[i])
+        resultTopology = topologies[0]
+        for i in range(1, len(topologies)):
+            resultTopology = resultTopology.Union(topologies[i])
         cells = []
         _ = resultTopology.Cells(None, cells)
         unused = []
-        for i in range(len(item)):
+        for i in range(len(topologies)):
             unused.append(True)
         sets = []
         for i in range(len(cells)):
             sets.append([])
-        for i in range(len(item)):
+        for i in range(len(topologies)):
             if unused[i]:
-                iv = topologic.CellUtility.InternalVertex(item[i], 0.0001)
+                iv = topologic.CellUtility.InternalVertex(topologies[i], 0.0001)
                 for j in range(len(cells)):
                     if (topologic.CellUtility.Contains(cells[j], iv, 0.0001) == 0):
-                        sets[j].append(item[i])
+                        sets[j].append(topologies[i])
                         unused[i] = False
         return sets
     
@@ -3011,8 +2974,6 @@ class Topology():
     
     def Orient(topology, origin=None, dirA=[0,0,1], dirB=[0,0,1], tolerance=0.0001):
         """
-        Description
-        ----------
         Orients the input topology such that the input such that the input dirA vector is parallel to the input dirB vector.
 
         Parameters
@@ -3062,36 +3023,39 @@ class Topology():
         return returnTopology
 
     @staticmethod
-    def Place(topology, oldLoc, newLoc):
+    def Place(topology, oldLocation=None, newLocation=None):
         """
-        Description
-        __________
-            DESCRIPTION
+        Places the input topology at the specified location.
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        oldLoc : TYPE
-            DESCRIPTION.
-        newLoc : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        oldLocation : topologic.Vertex , optional
+            The old location to use as the origin of the movement. If set to None, the centroid of the input topology is used. The default is None.
+        newLocation : topologic.Vertex , optional
+            The new location at which to place the topology. If set to None, the world origin (0,0,0) is used. The default is None.
 
         Returns
         -------
-        newTopology : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The placed topology.
 
         """
-        # topology = item[0]
-        # oldLoc = item[1]
-        # newLoc = item[2]
-        x = newLoc.X() - oldLoc.X()
-        y = newLoc.Y() - oldLoc.Y()
-        z = newLoc.Z() - oldLoc.Z()
+        from topologicpy.Vertex import Vertex
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(oldLocation, topologic.Vertex):
+            oldLocation = Topology.Centroid(topology)
+        if not isinstance(newLocation, topologic.Vertex):
+            newLocation = Vertex.ByCoordinates(0,0,0)
+
+        x = newLocation.X() - oldLocation.X()
+        y = newLocation.Y() - oldLocation.Y()
+        z = newLocation.Z() - oldLocation.Z()
         newTopology = None
         try:
-            newTopology = topologic.TopologyUtility.Translate(topology, x, y, z)
+            newTopology = Topology.Translate(topology, x, y, z)
         except:
             print("ERROR: (Topologic>TopologyUtility.Place) operation failed. Returning None.")
             newTopology = None
@@ -3126,25 +3090,23 @@ class Topology():
             return topology.CenterOfMass()
 
     @staticmethod
-    def RemoveCollinearEdges(topology, angTol=0.1, tolerance=0.0001):
+    def RemoveCollinearEdges(topology, angTolerance=0.1, tolerance=0.0001):
         """
-        Description
-        __________
-            DESCRIPTION
+        Removes the collinear edges of the input topology
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        angTol : TYPE, optional
-            DESCRIPTION. The default is 0.1.
-        tolerance : TYPE, optional
-            DESCRIPTION. The default is 0.0001.
+        topology : topologic.Topology
+            The input topology.
+        angTolerance : float , optional
+            The desired angular tolerance. The default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        returnTopology : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The input topology with the collinear edges removed.
 
         """
         
@@ -3207,15 +3169,15 @@ class Topology():
         if (t == 1) or (t == 2) or (t == 128): #Vertex or Edge or Cluster, return the original topology
             return returnTopology
         elif (t == 4): #wire
-            returnTopology = processWire(topology, angTol)
+            returnTopology = processWire(topology, angTolerance)
             return returnTopology
         elif (t == 8): #Face
-            extBoundary = processWire(topology.ExternalBoundary(), angTol)
+            extBoundary = processWire(topology.ExternalBoundary(), angTolerance)
             internalBoundaries = []
             _ = topology.InternalBoundaries(internalBoundaries)
             cleanIB = []
             for ib in internalBoundaries:
-                cleanIB.append(processWire(ib, angTol))
+                cleanIB.append(processWire(ib, angTolerance))
             try:
                 returnTopology = topologic.Face.ByExternalInternalBoundaries(extBoundary, cleanIB)
             except:
@@ -3225,12 +3187,12 @@ class Topology():
         _ = topology.Faces(None, faces)
         stl_final_faces = []
         for aFace in faces:
-            extBoundary = processWire(aFace.ExternalBoundary(), angTol)
+            extBoundary = processWire(aFace.ExternalBoundary(), angTolerance)
             internalBoundaries = []
             _ = aFace.InternalBoundaries(internalBoundaries)
             cleanIB = []
             for ib in internalBoundaries:
-                cleanIB.append(processWire(ib, angTol))
+                cleanIB.append(processWire(ib, angTolerance))
             stl_final_faces.append(topologic.Face.ByExternalInternalBoundaries(extBoundary, cleanIB))
         returnTopology = topology
         if t == 16: # Shell
@@ -3252,30 +3214,26 @@ class Topology():
 
     
     @staticmethod
-    def RemoveContent(topology, contentList):
+    def RemoveContent(topology, contents):
         """
-        Description
-        __________
-            DESCRIPTION
+        Removes the input content list from the input topology
 
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        contentList : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        contentList : list
+            The input list of contents.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The input topology with the input list of contents removed.
 
         """
-        # topology = item[0]
-        # contentList = item[1]
-        if isinstance(contentList, list) == False:
-            contentList = [contentList]
-        return topology.RemoveContents(contentList)
+        if isinstance(contents, list) == False:
+            contents = [contents]
+        return topology.RemoveContents(contents)
     
     @staticmethod
     def RemoveCoplanarFaces(topology, angTolerance=0.1, tolerance=0.0001):
@@ -3334,7 +3292,6 @@ class Topology():
                             faces.append(tempFace)
             else:
                 cFaces = Cluster.Faces(aCluster)
-                print("cFaces", cFaces)
                 if cFaces:
                     for aFace in cFaces:
                         faces.append(aFace)
@@ -3981,10 +3938,10 @@ class Topology():
         for sink in sinks:
             sinkKeys = []
             sinkValues = []
-            iv = Topology.RelevantSelector(sink, tolerance)
+            #iv = Topology.RelevantSelector(sink, tolerance)
             j = 1
             for source in sources:
-                if Topology.IsInside(source, iv, tolerance):
+                if Topology.IsInside(sink, source, tolerance):
                     d = Topology.Dictionary(source)
                     if d == None:
                         continue

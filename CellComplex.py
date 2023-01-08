@@ -656,7 +656,7 @@ class CellComplex(topologic.CellComplex):
         for i in range(uSides):
             for j in range(vSides):
                 for k in range(wSides):
-                    cOrigin = Vertex.ByCoordinates(i*uOffset - xOffset, j*vOffset - yOffset, k*wOffset - zOffset)
+                    cOrigin = Vertex.ByCoordinates(origin.X()+i*uOffset - xOffset, origin.Y()+ j*vOffset - yOffset, origin.Z() + k*wOffset - zOffset)
                     cells.append(Cell.Prism(cOrigin, width=uOffset, length=vOffset, height=wOffset, placement="lowerleft"))
         prism = CellComplex.ByCells(cells)
         if prism:

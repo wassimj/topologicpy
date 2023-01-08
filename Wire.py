@@ -173,8 +173,8 @@ class Wire(topologic.Wire):
 
         Parameters
         ----------
-        cluster : topologic.cluster
-            the input cluster of edges.
+        cluster : topologic.Cluster
+            The input cluster of edges.
 
         Returns
         -------
@@ -189,23 +189,47 @@ class Wire(topologic.Wire):
         return Wire.ByEdges(edges)
 
     @staticmethod
-    def ByOffset(wire, offset=1.0, miter=False, miterThreshold=None, offsetKey=None, miterThresholdKey=None):
+    def ByOffset(wire, offset=1.0, miter=False, miterThreshold=None, offsetKey=None, miterThresholdKey=None, step=True):
+        """
+        Creates an offset wire from the input wire.
 
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+        offset : float , optional
+            The desired offset distance. The default is 1.0.
+        miter : bool , optional
+            if set to True, the corners will be mitered. The default is False.
+        miterThreshold : float , optional
+            The distance beyond which a miter should be added. The default is None which means the miter threshold is set to the offset distance multiplied by the square root of 2.
+        offsetKey : str , optional
+            If specified, the dictionary of the edges will be queried for this key to sepcify the desired offset. The default is None.
+        miterThresholdKey : str , optional
+            If specified, the dictionary of the vertices will be queried for this key to sepcify the desired miter threshold distance. The default is None.
+        step : bool , optional
+            If set to True, The transition between collinear edges with different offsets will be a step. Otherwise, it will be a continous edge. The default is True.
+
+        Returns
+        -------
+        topologic.Wire
+            The created wire.
+
+        """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Vector import Vector
         from random import randrange, sample
 
         if not isinstance(wire, topologic.Wire):
             return None
         if not miterThreshold:
-            miterThreshold = offset
-        tempVerts = Wire.Vertices(wire)[:3]
-        tempWire = Wire.ByVertices(tempVerts)
-        flatFace = Face.ByWire(tempWire)
+            miterThreshold = offset*math.sqrt(2)
+        flatFace = Face.ByWire(wire)
         flatFace = Face.Flatten(flatFace)
         
         world_origin = Vertex.ByCoordinates(0,0,0)
@@ -217,41 +241,94 @@ class Wire(topologic.Wire):
         phi = Dictionary.ValueAtKey(dictionary,"phi")
         theta = Dictionary.ValueAtKey(dictionary,"theta")
 
-        flatWire = Topology.Translate(wire, -xTran, -yTran, -zTran)
-        flatWire = Topology.Rotate(flatWire, origin=world_origin, x=0, y=0, z=1, degree=-phi)
-        flatWire = Topology.Rotate(flatWire, origin=world_origin, x=0, y=1, z=0, degree=-theta)
         
-        edges = Wire.Edges(flatWire)
-        vertices = Wire.Vertices(flatWire)
+        
+        edges = Wire.Edges(wire)
+        vertices = Wire.Vertices(wire)
+        flatEdges = []
+        flatVertices = []
         newEdges = []
+        for i in range(len(vertices)):
+            flatVertex = Topology.Translate(vertices[i], -xTran, -yTran, -zTran)
+            flatVertex = Topology.Rotate(flatVertex, origin=world_origin, x=0, y=0, z=1, degree=-phi)
+            flatVertex = Topology.Rotate(flatVertex, origin=world_origin, x=0, y=1, z=0, degree=-theta)
+            flatVertices.append(flatVertex)
+        vertices = flatVertices
         for i in range(len(edges)):
+            flatEdge = Topology.Translate(edges[i], -xTran, -yTran, -zTran)
+            flatEdge = Topology.Rotate(flatEdge, origin=world_origin, x=0, y=0, z=1, degree=-phi)
+            flatEdge = Topology.Rotate(flatEdge, origin=world_origin, x=0, y=1, z=0, degree=-theta)
+            flatEdges.append(flatEdge)
             if offsetKey:
                 d = Topology.Dictionary(edges[i])
                 value = Dictionary.ValueAtKey(d, key=offsetKey)
+                c = Topology.Centroid(flatEdge)
+                print(c.X(), c.Y(), c.Z(), ": ", value)
                 if value:
                     finalOffset = value
                 else:
                     finalOffset = offset
             else:
                 finalOffset = offset
-            e1 = Edge.ByOffset(edges[i],finalOffset)
+            e1 = Edge.ByOffset(flatEdge,finalOffset)
             newEdges.append(e1)
-
+        edges = flatEdges
         newVertices = []
-        if Wire.IsClosed(flatWire):
+        dupVertices = []
+        if Wire.IsClosed(wire):
             e1 = newEdges[-1]
             e2 = newEdges[0]
-            newVertices.append(Edge.Intersect2D(e1,e2))
+            intV = Edge.Intersect2D(e1,e2)
+            if intV:
+                newVertices.append(intV)
+                dupVertices.append(vertices[0])
+            elif step:
+                edgeVertices= Edge.Vertices(e1)
+                newVertices.append(Vertex.NearestVertex(vertices[-1], Cluster.ByTopologies(edgeVertices), useKDTree=False))
+                edgeVertices= Edge.Vertices(e2)
+                newVertices.append(Vertex.NearestVertex(vertices[0], Cluster.ByTopologies(edgeVertices), useKDTree=False))
+                dupVertices.append(vertices[0])
+                dupVertices.append(vertices[0])
+            else:
+                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)])
+                normal = Edge.Normal(e1)
+                normal = [normal[0]*finalOffset*10, normal[1]*finalOffset*10, normal[2]*finalOffset*10]
+                tempV = Vertex.ByCoordinates(vertices[0].X()+normal[0], vertices[0].Y()+normal[1], vertices[0].Z()+normal[2])
+                tempEdge2 = Edge.ByVertices([vertices[0], tempV])
+                intV = Edge.Intersect2D(tempEdge1,tempEdge2)
+                newVertices.append(intV)
+                dupVertices.append(vertices[0])
+
+
         else:
             newVertices.append(Edge.StartVertex(newEdges[0]))
         
         for i in range(len(newEdges)-1):
             e1 = newEdges[i]
             e2 = newEdges[i+1]
-            newVertices.append(Edge.Intersect2D(e1,e2))
-        if not Wire.IsClosed(flatWire):
+            intV = Edge.Intersect2D(e1,e2)
+            if intV:
+                newVertices.append(intV)
+                dupVertices.append(vertices[i+1])
+            elif step:
+                newVertices.append(Edge.EndVertex(e1))
+                newVertices.append(Edge.StartVertex(e2))
+                dupVertices.append(vertices[i+1])
+                dupVertices.append(vertices[i+1])
+            else:
+                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)])
+                normal = Edge.Normal(e1)
+                normal = [normal[0]*finalOffset*10, normal[1]*finalOffset*10, normal[2]*finalOffset*10]
+                tempV = Vertex.ByCoordinates(vertices[i+1].X()+normal[0], vertices[i+1].Y()+normal[1], vertices[i+1].Z()+normal[2])
+                tempEdge2 = Edge.ByVertices([vertices[i+1], tempV])
+                intV = Edge.Intersect2D(tempEdge1,tempEdge2)
+                newVertices.append(intV)
+                dupVertices.append(vertices[i+1])
+
+        vertices = dupVertices
+        if not Wire.IsClosed(wire):
             newVertices.append(Edge.EndVertex(newEdges[-1]))
-        newWire = Wire.ByVertices(newVertices, close=Wire.IsClosed(flatWire))
+        newWire = Wire.ByVertices(newVertices, close=Wire.IsClosed(wire))
         
         newVertices = Wire.Vertices(newWire)
         newEdges = Wire.Edges(newWire)
@@ -274,21 +351,24 @@ class Wire(topologic.Wire):
                     if len(st) > 1:
                         e1 = st[0]
                         e2 = st[1]
-                        e1 = Edge.Reverse(e1)
-                        bisector = Edge.ByVertices([vertices[i], newVertices[i]])
-                        nv = Edge.VertexByDistance(bisector, distance=finalMiterThreshold, origin=Edge.StartVertex(bisector), tolerance=0.0001)
-                        vec = Edge.Normal(bisector)
-                        nv2 = Topology.Translate(nv, vec[0], vec[1], 0)
-                        nv3 = Topology.Translate(nv, -vec[0], -vec[1], 0)
-                        miterEdge = Edge.ByVertices([nv2,nv3])
-                        miterEdge = Edge.SetLength(miterEdge, abs(offset)*10)
-                        msv = Edge.Intersect2D(miterEdge, e1)
-                        mev = Edge.Intersect2D(miterEdge, e2)
-                        if (Topology.IsInside(e1, msv)) and (Topology.IsInside(e2, mev)):
-                            miterEdge = Edge.ByVertices([msv, mev])
-                            cleanMiterEdges.append(miterEdge)
-                            miterEdge = Edge.SetLength(miterEdge, Edge.Length(miterEdge)*1.02)
-                            miterEdges.append(miterEdge)
+                        if not Edge.IsCollinear(e1, e2):
+                            e1 = Edge.Reverse(e1)
+                            bisector = Edge.ByVertices([vertices[i], newVertices[i]])
+                            nv = Edge.VertexByDistance(bisector, distance=finalMiterThreshold, origin=Edge.StartVertex(bisector), tolerance=0.0001)
+                            vec = Edge.Normal(bisector)
+                            nv2 = Topology.Translate(nv, vec[0], vec[1], 0)
+                            nv3 = Topology.Translate(nv, -vec[0], -vec[1], 0)
+                            miterEdge = Edge.ByVertices([nv2,nv3])
+                            if miterEdge:
+                                miterEdge = Edge.SetLength(miterEdge, abs(offset)*10)
+                                msv = Edge.Intersect2D(miterEdge, e1)
+                                mev = Edge.Intersect2D(miterEdge, e2)
+                                if (Topology.IsInside(e1, msv,tolerance=0.01) and (Topology.IsInside(e2, mev, tolerance=0.01))):
+                                    miterEdge = Edge.ByVertices([msv, mev])
+                                    if miterEdge:
+                                        cleanMiterEdges.append(miterEdge)
+                                        miterEdge = Edge.SetLength(miterEdge, Edge.Length(miterEdge)*1.02)
+                                        miterEdges.append(miterEdge)
 
             c = Cluster.SelfMerge(Cluster.ByTopologies(newEdges+miterEdges))
             vertices = Wire.Vertices(c)
@@ -296,20 +376,20 @@ class Wire(topologic.Wire):
             for v in vertices:
                 edges = Topology.SuperTopologies(v, c, topologyType="edge")
                 if len(edges) == 2:
-                    adjacentVertices = Topology.AdjacentTopologies(v, c)
-                    total = 0
-                    for adjV in adjacentVertices:
-                        tempEdges = Topology.SuperTopologies(adjV, c, topologyType="edge")
-                        total += len(tempEdges)
-                    if total == 8:
-                        subtractEdges = subtractEdges+edges
+                    if not Edge.IsCollinear(edges[0], edges[1]):
+                        adjacentVertices = Topology.AdjacentTopologies(v, c)
+                        total = 0
+                        for adjV in adjacentVertices:
+                            tempEdges = Topology.SuperTopologies(adjV, c, topologyType="edge")
+                            total += len(tempEdges)
+                        if total == 8:
+                            subtractEdges = subtractEdges+edges
 
             if len(subtractEdges) > 0:
-                subtractCluster = Cluster.ByTopologies(subtractEdges)
-                newWire = Topology.Boolean(newWire, subtractCluster, operation="Difference")
+                newWire = Topology.Boolean(newWire, Cluster.ByTopologies(subtractEdges), operation="difference")
                 if len(cleanMiterEdges) > 0:
-                    newWire = Topology.Boolean(newWire, Cluster.ByTopologies(cleanMiterEdges), operation="Merge")
-        
+                    newWire = Topology.Boolean(newWire, Cluster.ByTopologies(cleanMiterEdges), operation="merge")
+
         newWire = Topology.Rotate(newWire, origin=world_origin, x=0, y=1, z=0, degree=theta)
         newWire = Topology.Rotate(newWire, origin=world_origin, x=0, y=0, z=1, degree=phi)
         newWire = Topology.Translate(newWire, xTran, yTran, zTran)
