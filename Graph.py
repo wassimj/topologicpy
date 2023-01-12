@@ -1910,13 +1910,15 @@ class Graph:
         if not isinstance(graph, topologic.Graph):
             return None
         if not vertices:
-            vertices = Graph.Vertices(graph)
+            edges = []
+            _ = graph.Edges(edges, tolerance)
+            return edges
         else:
             vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
         if len(vertices) > 0:
             edges = []
             _ = graph.Edges(vertices, tolerance, edges)
-            return edges
+            return list(dict.fromkeys(edges)) # remove duplicates
         return []
 
     @staticmethod
@@ -2350,9 +2352,9 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
         def nearestVertex(g, v, tolerance):
-            vertices = []
-            _ = g.Vertices(vertices)
+            vertices = Graph.Vertices(g)
             for aVertex in vertices:
                 d = Vertex.Distance(v, aVertex)
                 if d < tolerance:
@@ -2382,19 +2384,17 @@ class Graph:
                 wireVertices = []
                 flag = False
                 try:
-                    _ = wire.Vertices(None, wireVertices)
+                    wireVertices = Wire.Vertices(wire)
                     flag = True
                 except:
                     flag = False
                 if (flag):
                     if isUnique(shortestPaths, wire):
                         shortestPaths.append(wire)
-                vertices = []
-                _ = graph.Vertices(vertices)
+                vertices = Graph.Vertices(graph)
                 random.shuffle(vertices)
-                edges = []
-                _ = graph.Edges(edges)
-                graph = topologic.Graph.ByVerticesEdges(vertices, edges)
+                edges = Graph.Edges(graph)
+                graph = Graph.ByVerticesEdges(vertices, edges)
         return shortestPaths
 
     @staticmethod
@@ -2494,7 +2494,7 @@ class Graph:
             children = []
             adjVertices = []
             if vertex:
-                _ = topologic.Graph.AdjacentVertices(graph, vertex, adjVertices)
+                adjVertices = Graph.AdjacentVertices(graph, vertex)
             if parent == None:
                 return adjVertices
             else:

@@ -361,6 +361,7 @@ class CellComplex(topologic.CellComplex):
         from topologicpy.Face import Face
         from topologicpy.Vector import Vector
         from topologicpy.Aperture import Aperture
+        from topologicpy.Topology import Topology
         from numpy import arctan, pi, signbit, arctan2, rad2deg
 
         def angleCode(f, up, tiltAngle):
@@ -379,7 +380,7 @@ class CellComplex(topologic.CellComplex):
         def getApertures(topology):
             apertures = []
             apTopologies = []
-            apertures = topology.Apertures(apertures)
+            apertures = Topology.Apertures(topology)
             for aperture in apertures:
                 apTopologies.append(Aperture.Topology(aperture))
             return apTopologies

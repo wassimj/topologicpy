@@ -1979,7 +1979,6 @@ class Topology():
             True if the export operation is successful. False otherwise.
 
         """
-
         if not isinstance(topology, topologic.Topology):
             return None
         if not isinstance(filePath, str):
@@ -1998,7 +1997,9 @@ class Topology():
             raise Exception("Error: Could not create a new file at the following location: "+filePath)
         if (f):
             if version < 3:
+                topology = Topology.SelfMerge(topology)
                 s = topology.String().replace("V3, (c) Open Cascade", "V1, (c) Matra-Datavision")
+                s = "DBRep_DrawableShape\n"+s
             else:
                 s = topology.String()
             f.write(s)

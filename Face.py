@@ -705,7 +705,7 @@ class Face(topologic.Face):
         return True
     
     @staticmethod
-    def Flatten(face):
+    def Flatten(face, oldLocation=None, newLocation=None):
         """
         Flattens the input face such that its center of mass is located at the origin and its normal is pointed in the positive Z axis.
 
@@ -713,6 +713,10 @@ class Face(topologic.Face):
         ----------
         face : topologic.Face
             The input face.
+        oldLocation : topologic.Vertex , optional
+            The old location to use as the origin of the movement. If set to None, the center of mass of the input topology is used. The default is None.
+        newLocation : topologic.Vertex , optional
+            The new location at which to place the topology. If set to None, the world origin (0,0,0) is used. The default is None.
 
         Returns
         -------
@@ -725,15 +729,19 @@ class Face(topologic.Face):
         from topologicpy.Dictionary import Dictionary
         if not isinstance(face, topologic.Face):
             return None
-        world_origin = Vertex.ByCoordinates(0,0,0)
-        cm = face.CenterOfMass()
+        if not isinstance(oldLocation, topologic.Vertex):
+            oldLocation = Topology.CenterOfMass(face)
+        if not isinstance(newLocation, topologic.Vertex):
+            newLocation = Vertex.ByCoordinates(0,0,0)
+        cm = oldLocation
+        world_origin = newLocation
         coords = Face.NormalAtParameters(face, 0.5, 0.5)
-        x1 = cm.X()
-        y1 = cm.Y()
-        z1 = cm.Z()
-        x2 = cm.X() + coords[0]
-        y2 = cm.Y() + coords[1]
-        z2 = cm.Z() + coords[2]
+        x1 = Vertex.X(cm)
+        y1 = Vertex.Y(cm)
+        z1 = Vertex.Z(cm)
+        x2 = Vertex.X(cm) + coords[0]
+        y2 = Vertex.Y(cm) + coords[1]
+        z2 = Vertex.Z(cm) + coords[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    
@@ -1164,6 +1172,28 @@ class Face(topologic.Face):
         medialAxis = Topology.Rotate(medialAxis, origin=world_origin, x=0, y=0, z=1, degree=phi)
         medialAxis = Topology.Translate(medialAxis, xTran, yTran, zTran)
         return medialAxis
+
+    @staticmethod
+    def Normal(face, outputType="xyz", mantissa=4):
+        """
+        Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        outputType : string , optional
+            The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. The default is "xyz".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        list
+            The normal vector to the input face. This is computed at the approximate center of the face.
+
+        """
+        return Face.NormalAtParameters(face, u=0.5, v=0.5, outputType=outputType, mantissa=mantissa)
 
     @staticmethod
     def NormalAtParameters(face, u=0.5, v=0.5, outputType="xyz", mantissa=4):
