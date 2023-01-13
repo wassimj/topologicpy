@@ -3,6 +3,30 @@ import numpy as np
 import numpy.linalg as la
 import math
 
+class Helper:
+    @staticmethod
+    def Flatten(nested_list):
+        """
+        Flattens the input nested list.
+
+        Parameters
+        ----------
+        nested_list : list
+            The input nested list.
+
+        Returns
+        -------
+        list
+            The flattened list.
+
+        """
+
+        if not isinstance(nested_list, list):
+            return [nested_list]
+        flat_list = []
+        for item in nested_list:
+            flat_list = flat_list + Helper.Flatten(item)
+        return flat_list
 
 # From https://gis.stackexchange.com/questions/387237/deleting-collinear-vertices-from-polygon-feature-class-using-arcpy
 def are_collinear(v1, v2, v3, tolerance=0.5):

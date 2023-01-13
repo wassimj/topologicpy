@@ -22,6 +22,7 @@ class Graph:
         -------
         list
             The adjacency matrix.
+
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology

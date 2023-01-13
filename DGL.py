@@ -1,16 +1,43 @@
-import dgl
+import sys, subprocess
+try:
+    import numpy as np
+except:
+    call = [sys.executable, '-m', 'pip', 'install', 'numpy', '-t', sys.path[0]]
+    subprocess.run(call)
+    import numpy as np
+try:
+    import pandas as pd
+except:
+    call = [sys.executable, '-m', 'pip', 'install', 'pandas', '-t', sys.path[0]]
+    subprocess.run(call)
+    import pandas as pd
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except:
+    call = [sys.executable, '-m', 'pip', 'install', 'torch', '-t', sys.path[0]]
+    subprocess.run(call)
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+try:
+    import dgl
+    from dgl.data import DGLDataset
+    from dgl.nn import GraphConv
+except:
+    call = [sys.executable, '-m', 'pip', 'install', 'dgl', 'dglgo', '-f', 'https://data.dgl.ai/wheels/repo.html', '--upgrade', '-t', sys.path[0]]
+    subprocess.run(call)
+    import dgl
+    from dgl.data import DGLDataset
+    from dgl.nn import GraphConv
+
+
+import topologicpy
 import topologic
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import pandas as pd
-import numpy as np
-from dgl.data import DGLDataset
-from dgl.nn import GraphConv
-import Dictionary
+from topologicpy.Dictionary import Dictionary
 import os
 import plotly.express as px
-import Replication
 import random
 
 checkpoint_path = os.path.join(os.path.expanduser('~'), "dgl_classifier.pt")
@@ -390,7 +417,7 @@ class DGL:
         
         for i in range(len(vertices)):
             vDict = vertices[i].GetDictionary()
-            vLabel = Dictionary.DictionaryValueAtKey(vDict, key)
+            vLabel = Dictionary.ValueAtKey(vDict, key)
             graph_dict["node_labels"][i] = vLabel
             # appending tensor of onehotencoded feature for each node following index i
             graph_dict["node_features"].append(torch.tensor(DGL.oneHotEncode(vLabel, categories)))
@@ -794,6 +821,8 @@ class DGL:
             DESCRIPTION.
 
         """
+        from topologicpy.Helper import Helper
+
         # classifier, dataset  = item
         allLabels = []
         allPredictions = []
@@ -837,7 +866,7 @@ class DGL:
             valPredictions.append(val_predictions.tolist())
             testPredictions.append(test_predictions.tolist())
             
-        return [Replication.flatten(allLabels), Replication.flatten(allPredictions),Replication.flatten(trainLabels), Replication.flatten(trainPredictions), Replication.flatten(valLabels), Replication.flatten(valPredictions), Replication.flatten(testLabels), Replication.flatten(testPredictions)]
+        return [Helper.Flatten(allLabels), Helper.Flatten(allPredictions),Helper.Flatten(trainLabels), Helper.Flatten(trainPredictions), Helper.Flatten(valLabels), Helper.Flatten(valPredictions), Helper.Flatten(testLabels), Helper.Flatten(testPredictions)]
     
     @staticmethod
     def train2(graphs, model, hparams):
