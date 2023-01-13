@@ -7,10 +7,10 @@ import pandas as pd
 import numpy as np
 from dgl.data import DGLDataset
 from dgl.nn import GraphConv
-import Dictionary
+from topologicpy import Dictionary
 import os
 import plotly.express as px
-import Replication
+from topologicpy import Replication
 import random
 
 checkpoint_path = os.path.join(os.path.expanduser('~'), "dgl_classifier.pt")

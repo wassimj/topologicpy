@@ -1,7 +1,7 @@
 import topologic
 import openstudio
-import Topology
-import Dictionary
+from topologicpy import Topology
+from topologicpy import Dictionary
 import math
 from collections import OrderedDict
 import os
