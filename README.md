@@ -1,7 +1,8 @@
 # topologicpy
 
-![topologicpy-logo](assets/topologicpy-logo.svg)
+[<img src="assets/topologicpy-logo.png" width="250"/>](image.png)
 
+## Introduction
 **topologicpy** is a FOSS python 3 implementation of [Topologic](https://topologic.app).
 
 [**Topologic**](https://topologic.app/) is a software modeling library enabling hierarchical and topological representations of architectural spaces, buildings and artefacts through non-manifold topology. 
