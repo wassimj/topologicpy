@@ -21,16 +21,27 @@ except:
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
+    from torch.utils.data.sampler import SubsetRandomSampler
+    from torch.utils.data import DataLoader, ConcatDataset
 try:
     import dgl
     from dgl.data import DGLDataset
-    from dgl.nn import GraphConv
+    from dgl.dataloading import GraphDataLoader
+    from dgl.nn import GINConv, GraphConv, SAGEConv, TAGConv
 except:
     call = [sys.executable, '-m', 'pip', 'install', 'dgl', 'dglgo', '-f', 'https://data.dgl.ai/wheels/repo.html', '--upgrade', '-t', sys.path[0]]
     subprocess.run(call)
     import dgl
     from dgl.data import DGLDataset
     from dgl.nn import GraphConv
+try:
+    import sklearn
+    from sklearn.model_selection import KFold
+except:
+    call = [sys.executable, '-m', 'pip', 'install', 'sklearn', '-t', sys.path[0]]
+    subprocess.run(call)
+    import sklearn
+    from sklearn.model_selection import KFold
 
 
 import topologicpy
@@ -38,7 +49,10 @@ import topologic
 from topologicpy.Dictionary import Dictionary
 import os
 import plotly.express as px
+
 import random
+import time
+from datetime import datetime
 
 checkpoint_path = os.path.join(os.path.expanduser('~'), "dgl_classifier.pt")
 results_path = os.path.join(os.path.expanduser('~'), "dgl_results.csv")
@@ -344,7 +358,7 @@ class ClassifierSplit:
             self.model = GCN_TAGConv(trainingDataset.dim_nfeats, hparams.hidden_layers, 
                             trainingDataset.gclasses, hparams.pooling).to(device)
         elif hparams.conv_layer_type == 'GCN':
-            self.model = GCN(trainingDataset.dim_nfeats, hparams.hidden_layers, 
+            self.model = GCN_Classic(trainingDataset.dim_nfeats, hparams.hidden_layers, 
                             trainingDataset.gclasses).to(device)
         else:
             raise NotImplementedError
@@ -533,7 +547,7 @@ class ClassifierKFold:
                                                 batch_size=self.hparams.batch_size,
                                                 drop_last=False)
             # Init the neural network
-            self.model.apply(reset_weights)
+            self.model.apply(self.reset_weights())
 
             # Run the training loop for defined number of epochs
             for _ in range(self.hparams.epochs):
@@ -607,7 +621,6 @@ class ClassifierKFold:
         for i in range(len(dgl_predictions)):
             if dgl_predictions[i] == dgl_labels[i]:
                 num_correct = num_correct + 1
-        size = len(dgl_predictions)
         return (num_correct / len(dgl_predictions))
 
     def predict(self):
@@ -845,7 +858,7 @@ class DGL:
         return graphs
     
     @staticmethod
-    def oneHotEncode(item, categories):
+    def OneHotEncode(item, categories):
         """
         Parameters
         ----------
@@ -946,7 +959,7 @@ class DGL:
             vLabel = Dictionary.ValueAtKey(vDict, key)
             graph_dict["node_labels"][i] = vLabel
             # appending tensor of onehotencoded feature for each node following index i
-            graph_dict["node_features"].append(torch.tensor(DGL.oneHotEncode(vLabel, categories)))
+            graph_dict["node_features"].append(torch.tensor(DGL.OneHotEncode(vLabel, categories)))
             nodes.append(i)
 
 
@@ -1059,7 +1072,7 @@ class DGL:
             #graph_dict["node_labels"][graph_id] = node_labels
 
             for node_label in node_labels:
-                graph_dict["node_features"].append(torch.tensor(DGL.oneHotEncode(node_label, categories)))
+                graph_dict["node_features"].append(torch.tensor(DGL.OneHotEncode(node_label, categories)))
             # Create a graph and add it to the list of graphs and labels.
             dgl_graph = dgl.graph((src, dst), num_nodes=num_nodes)
             # Setting the node features as node_attr_key using onehotencoding of node_label
@@ -1111,7 +1124,7 @@ class DGL:
                     line = lines[index+j].split()
                     node_label = int(line[0])
                     graph_dict["node_labels"][j] = node_label
-                    graph_dict["node_features"].append(torch.tensor(DGL.oneHotEncode(node_label, categories)))
+                    graph_dict["node_features"].append(torch.tensor(DGL.OneHotEncode(node_label, categories)))
                     adj_vertices = line[2:]
                     for adj_vertex in adj_vertices:
                         graph_dict["src"].append(j)
@@ -1257,7 +1270,7 @@ class DGL:
             DESCRIPTION.
         use_markers : TYPE
             DESCRIPTION.
-        chart_type : TYPE
+        chart_type : str
             DESCRIPTION.
 
         Raises
@@ -1273,11 +1286,11 @@ class DGL:
         # data, data_labels, chart_title, x_title, x_spacing, y_title, y_spacing, use_markers, chart_type = item
         dlist = list(map(list, zip(*data)))
         df = pd.DataFrame(dlist, columns=data_labels)
-        if chart_type == "Line":
+        if chart_type.lower() == "line":
             fig = px.line(df, x = data_labels[0], y=data_labels[1:], title=chart_title, markers=use_markers)
-        elif chart_type == "Bar":
+        elif chart_type.lower() == "bar":
             fig = px.bar(df, x = data_labels[0], y=data_labels[1:], title=chart_title)
-        elif chart_type == "Scatter":
+        elif chart_type.lower() == "scatter":
             fig = px.scatter(df, x = data_labels[0], y=data_labels[1:], title=chart_title)
         else:
             raise NotImplementedError
