@@ -2,3 +2,10 @@
 */__pycache__/*
 *.py[cod]
 *.pynb_*/*
+*/.vs/
+*.json
+*.suo
+*.wsuo
+*.lock
+*.vsidx
+*.sqlite
