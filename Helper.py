@@ -3,149 +3,134 @@ import numpy as np
 import numpy.linalg as la
 import math
 
+class Helper:
+    @staticmethod
+    def Flatten(l):
+        """
+        Flattens the input nested list.
 
-# From https://gis.stackexchange.com/questions/387237/deleting-collinear-vertices-from-polygon-feature-class-using-arcpy
-def are_collinear(v1, v2, v3, tolerance=0.5):
-  e1 = topologic.EdgeUtility.ByVertices([v2, v1])
-  e2 = topologic.EdgeUtility.ByVertices([v2, v3])
-  rad = topologic.EdgeUtility.AngleBetween(e1, e2)
+        Parameters
+        ----------
+        l : list
+            The input nested list.
 
-  return abs(math.sin(rad)) < math.sin(math.radians(tolerance))
+        Returns
+        -------
+        list
+            The flattened list.
 
-def removeCollinearEdges(wire, angTol):
-  vertices = getSubTopologies(wire, topologic.Vertex)
+        """
 
-  indexes_of_vertices_to_remove = [
-    idx for idx, vertex in enumerate(vertices)
-    if are_collinear(vertices[idx-1], vertex, vertices[idx+1 if idx+1 < len(vertices) else 0], angTol)
-  ]
+        if not isinstance(l, list):
+            return [l]
+        flat_list = []
+        for item in l:
+            flat_list = flat_list + Helper.Flatten(item)
+        return flat_list
 
-  vertices_to_keep = [
-    val for idx, val in enumerate(vertices)
-    if idx not in indexes_of_vertices_to_remove
-  ]
+    @staticmethod
+    def Iterate(l):
+        """
+        Iterates the input nested list so that each sublist has the same number of members. To fill extra members, the shorter lists are iterated from their first member.
+        For example Iterate([[1,2,3],['m','n','o','p'],['a','b','c','d','e']]) yields [[1, 2, 3, 1, 2], ['m', 'n', 'o', 'p', 'm'], ['a', 'b', 'c', 'd', 'e']]
 
-  return vertices_to_keep
+        Parameters
+        ----------
+        l : list
+            The input nested list.
 
-def meshData(topology):
-  vertices = []
-  faces = []
-  if topology is None:
-    return [vertices, faces]
+        Returns
+        -------
+        list
+            The iterated list.
 
-  topVerts = []
-  if (topology.Type() == 1): #input is a vertex, just add it and process it
-    topVerts.append(topology)
-  else:
-    _ = topology.Vertices(None, topVerts)
-  for aVertex in topVerts:
-    try:
-      vertices.index(tuple([aVertex.X(), aVertex.Y(), aVertex.Z()])) # Vertex already in list
-    except:
-      vertices.append(tuple([aVertex.X(), aVertex.Y(), aVertex.Z()])) # Vertex not in list, add it.
+        """
+        # From https://stackoverflow.com/questions/34432056/repeat-elements-of-list-between-each-other-until-we-reach-a-certain-length
+        def onestep(cur,y,base):
+            # one step of the iteration
+            if cur is not None:
+                y.append(cur)
+                base.append(cur)
+            else:
+                y.append(base[0])  # append is simplest, for now
+                base = base[1:]+[base[0]]  # rotate
+            return base
 
-  topFaces = []
-  if (topology.Type() == 8): # Input is a Face, just add it and process it
-    topFaces.append(topology)
-  elif (topology.Type() > 8):
-    _ = topology.Faces(None, topFaces)
-  for aFace in topFaces:
-    wires = []
-    ib = []
-    _ = aFace.InternalBoundaries(ib)
-    if(len(ib) > 0):
-      triFaces = []
-      topologic.FaceUtility.Triangulate(aFace, 0.0, triFaces)
-      for aTriFace in triFaces:
-        wires.append(aTriFace.ExternalBoundary())
-    else:
-      wires.append(aFace.ExternalBoundary())
+        maxLength = len(l[0])
+        iterated_list = []
+        for aSubList in l:
+            newLength = len(aSubList)
+            if newLength > maxLength:
+                maxLength = newLength
+        for anItem in l:
+            for i in range(len(anItem), maxLength):
+                anItem.append(None)
+            y=[]
+            base=[]
+            for cur in anItem:
+                base = onestep(cur,y,base)
+            iterated_list.append(y)
+        return iterated_list
 
-    for wire in wires:
-      f = []
-      for aVertex in removeCollinearEdges(wire, 0.1):
-        try:
-          fVertexIndex = vertices.index(tuple([aVertex.X(), aVertex.Y(), aVertex.Z()]))
-        except:
-          vertices.append(tuple([aVertex.X(), aVertex.Y(), aVertex.Z()]))
-          fVertexIndex = len(vertices)-1
-        f.append(fVertexIndex)
+    @staticmethod
+    def Repeat(l):
+        """
+        Repeats the input nested list so that each sublist has the same number of members. To fill extra members, the last item in the shorter lists are repeated and appended.
+        For example Iterate([[1,2,3],['m','n','o','p'],['a','b','c','d','e']]) yields [[1, 2, 3, 3, 3], ['m', 'n', 'o', 'p', 'p'], ['a', 'b', 'c', 'd', 'e']]
 
-      if len(f) < 3:
-        continue
+        Parameters
+        ----------
+        l : list
+            The input nested list.
 
-      p = np.array(vertices[f[0]])
-      u = normalize(vertices[f[1]] - p)
-      v = normalize(vertices[f[-1]] - p)
-      normal = topologic.FaceUtility.NormalAtParameters(aFace, 0.5, 0.5)
-      if (np.cross(u, v) @ [normal[0], normal[1], normal[2]]) + 1 < 1e-6:
-        f.reverse()
+        Returns
+        -------
+        list
+            The repeated list.
 
-      faces.append(tuple(f))
+        """
+        if not isinstance(l, list):
+            return None
+        repeated_list = [x for x in l if isinstance(x, list)]
+        if len(repeated_list) < 1:
+            return None
+        maxLength = len(repeated_list[0])
+        for aSubList in repeated_list:
+            newLength = len(aSubList)
+            if newLength > maxLength:
+                maxLength = newLength
+        for anItem in repeated_list:
+            if (len(anItem) > 0):
+                itemToAppend = anItem[-1]
+            else:
+                itemToAppend = None
+            for i in range(len(anItem), maxLength):
+                anItem.append(itemToAppend)
+        return repeated_list
 
-  return [vertices, faces]
+    @staticmethod
+    def Transpose(l):
+        """
+        Transposes (swaps rows and columns) the input list.
 
-def projectFace(face, other_face):
-  normal = topologic.FaceUtility.NormalAtParameters(face, 0.5, 0.5)
-  n = [normal[0], normal[1], normal[2]]
-  point = topologic.FaceUtility.VertexAtParameters(face, 0.5, 0.5)
-  d = np.dot(n, [point.X(), point.Y(), point.Z()])
+        Parameters
+        ----------
+        l : list
+            The input list.
 
-  other_normal = topologic.FaceUtility.NormalAtParameters(other_face, 0.5, 0.5)
-  if np.dot(n, [other_normal[0], other_normal[1], other_normal[2]]) + 1 > 1e-6:
-    return [None, None]
+        Returns
+        -------
+        list
+            The transposed list.
 
-  other_point = topologic.FaceUtility.VertexAtParameters(other_face, 0.5, 0.5)
-  dist = -np.dot(n, [other_point.X(), other_point.Y(), other_point.Z()]) + d
-  if dist < 1e-6:
-    return [None, None]
-
-  top_space_boundary = boolean(face, topologic.TopologyUtility.Translate(other_face, dist*normal[0], dist*normal[1], dist*normal[2]), "Intersect")
-  if top_space_boundary is None:
-    return [None, None]
-
-  top_space_boundary = getSubTopologies(top_space_boundary, topologic.Face)
-  if not top_space_boundary:
-    return [None, None]
-
-  return [dist, top_space_boundary[0]]
-
-def transferDictionaries(sources, sinks, tol):
-    usedSources = []
-    for i in range(len(sources)):
-        usedSources.append(False)
-    for sink in sinks:
-        sinkKeys = []
-        sinkValues = []
-        for j in range(len(sources)):
-            source = sources[j]
-            if usedSources[j] == False:
-                d = source.GetDictionary()
-                if d:
-                    sourceKeys = d.Keys()
-                    if len(sourceKeys) > 0:
-                        iv = relevantSelector(source, tol)
-                        if topologyContains(sink, iv, tol):
-                            usedSources[j] = True
-                            for aSourceKey in sourceKeys:
-                                if aSourceKey not in sinkKeys:
-                                    sinkKeys.append(aSourceKey)
-                                    sinkValues.append("")
-                            for i in range(len(sourceKeys)):
-                                index = sinkKeys.index(sourceKeys[i])
-                                sourceValue = valueAtKey(d, sourceKeys[i])
-                                if sourceValue != None:
-                                    if sinkValues[index] != "":
-                                        if isinstance(sinkValues[index], list):
-                                            sinkValues[index].append(sourceValue)
-                                        else:
-                                            sinkValues[index] = [sinkValues[index], sourceValue]
-                                    else:
-                                        sinkValues[index] = sourceValue
-                    else:
-                        usedSources[j] = True # Has no keys so not useful to reconsider
-                else:
-                    usedSources[j] = True # Has no dictionary so not useful to reconsider
-        if len(sinkKeys) > 0 and len(sinkValues) > 0:
-            newDict = Dictionary.ByKeysValues(sinkKeys, sinkValues)
-            sink = Topology.SetDictionary(sink, newDict)
+        """
+        if not isinstance(l, list):
+            return None
+        length = len(l[0])
+        transposed_list = []
+        for i in range(length):
+            tempRow = []
+            for j in range(len(l)):
+                tempRow.append(l[j][i])
+            transposed_list.append(tempRow)
+        return transposed_list
