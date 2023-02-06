@@ -1,4 +1,4 @@
-from topologicpy import topologic
+import topologicpy
 import numpy as np
 import numpy.linalg as la
 import math
@@ -134,3 +134,21 @@ class Helper:
                 tempRow.append(l[j][i])
             transposed_list.append(tempRow)
         return transposed_list
+    
+    @staticmethod
+    def Version():
+        """
+        Returns the current version of the software.
+
+        Parameters
+        ----------
+        None
+            
+
+        Returns
+        -------
+        str
+            The current version of the software.
+
+        """
+        return topologicpy.__version__

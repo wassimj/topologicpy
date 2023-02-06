@@ -1,7 +1,10 @@
 import sys
 import os, re
 from sys import platform
+
 __version__ = "0.0.23"
+VERSION = __version__
+
 if platform == 'win32':
     os_name = 'windows'
 else:
