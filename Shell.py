@@ -32,7 +32,11 @@ class Shell(Topology):
             remainder = faceList[1:]
             cluster = topologic.Cluster.ByTopologies(remainder, False)
             result = result.Merge(cluster, False)
-            if result.Type() != 16: #16 is the type of a Shell
+            if result.Type() > 16:
+                returnShells = []
+                _ = result.Shells(None, returnShells)
+                return returnShells
+            else:
                 return None
         else:
             return shell
