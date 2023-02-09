@@ -925,6 +925,7 @@ class Wire(topologic.Wire):
         d['a'] = a
         d['b'] = b
         d['c'] = c
+        d['e'] = e
         d['w'] = w
         d['l'] = l
         return d

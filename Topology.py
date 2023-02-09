@@ -3546,19 +3546,27 @@ class Topology():
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
         t = topology.Type()
         if (t == 1) or (t == 2) or (t == 4) or (t == 8) or (t == 128):
             return topology
         clusters = Topology.ClusterFaces(topology, tolerance=tolerance)
         faces = []
         for aCluster in clusters:
+            aCluster = Cluster.SelfMerge(aCluster)
             shells = Cluster.Shells(aCluster)
             tempFaces = Cluster.Faces(aCluster)
-            if not shells:
+            if not shells or len(shells) < 1:
                 if isinstance(aCluster, topologic.Shell):
                     shells = [aCluster]
-                    tempFaces = Shell.Faces(aCluster)
-            if shells:
+                else:
+                    tempFaces = Topology.SubTopologies(aCluster, subTopologyType="Face")
+                    temp_shell = Shell.ByFaces(tempFaces)
+                    if isinstance(temp_shell, list):
+                        shells = temp_shell
+                    else:
+                        shells = [temp_shell]
+            if len(shells) > 1:
                 for aShell in shells:
                     junk_faces = Shell.Faces(aShell)
                     if len(junk_faces) > 2:

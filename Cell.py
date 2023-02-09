@@ -867,8 +867,11 @@ class Cell(Topology):
             if returnTopology == None:
                 returnTopology = topologic.Cluster.ByTopologies(faces)
             return returnTopology
+        
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
         baseV = []
         topV = []
         xOffset = 0
@@ -1177,7 +1180,9 @@ class Cell(Topology):
             return topologic.Cell.ByShell(shell)
         
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -1318,7 +1323,9 @@ class Cell(Topology):
 
         """
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
         c = Wire.Circle(origin, radius, vSides, 90, 270, False, 0, 1, 0, "center")
         s = Topology.Spin(c, origin=origin, triangulate=False, dirX=0, dirY=0, dirZ=1, degree=360, sides=uSides, tolerance=tolerance)
         if s.Type() == topologic.CellComplex.Type():
@@ -1405,7 +1412,9 @@ class Cell(Topology):
         """
         from topologicpy.Topology import Topology
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            return None
         c = Wire.Circle(origin, minorRadius, vSides, 0, 360, False, 0, 1, 0, "center")
         c = topologic.TopologyUtility.Translate(c, abs(majorRadius-minorRadius), 0, 0)
         s = Topology.Spin(c, origin=origin, triangulate=False, dirX=0, dirY=0, dirZ=1, degree=360, sides=uSides, tolerance=tolerance)
