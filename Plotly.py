@@ -74,7 +74,7 @@ class Plotly:
                 "whitesmoke","yellow","yellowgreen"]
     
     @staticmethod
-    def DataByTopology(topology, faceColor="lightblue", faceOpacity=0.5, wireColor="black", wireWidth=1, vertexColor="black", vertexSize=1.1, drawFaces=True, drawWires=True, drawVertices=True):
+    def DataByTopology(topology, faceColor="white", faceOpacity=0.5, wireColor="black", wireWidth=1, vertexColor="black", vertexSize=1.1, drawFaces=True, drawWires=True, drawVertices=True):
         """
         Creates plotly face, wire, and vertex data.
 
@@ -89,7 +89,7 @@ class Plotly:
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
-            The default is "lightblue".
+            The default is "white".
         faceOpacity : float , optional
             The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
         wireColor : str , optional
@@ -360,7 +360,7 @@ class Plotly:
         return figure
 
     @staticmethod
-    def Show(figure, renderer="browser"):
+    def Show(figure, renderer="notebook"):
         """
         Shows the input figure.
 
@@ -369,7 +369,7 @@ class Plotly:
         figure : plotly.graph_objs._figure.Figure
             The input plotly figure.
         renderer : str , optional
-            The desired rendered. See Plotly.Renderers(). The default is "browser".
+            The desired rendered. See Plotly.Renderers(). The default is "notebook".
         
         Returns
         -------

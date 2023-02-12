@@ -3610,7 +3610,99 @@ class Topology():
             _ = topologyA.SharedTopologies(topologyB, 8, fOutput)
         return {"vertices":vOutput, "edges":eOutput, "wires":wOutput, "faces":fOutput}
 
-    
+    @staticmethod
+    def Show(topology, faceColor='white', faceOpacity=0.5, wireColor='black', wireWidth=1, vertexColor='black', vertexSize=1.1, drawFaces=True, drawWires=True, drawVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=0, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
+        """
+        Shows the input topology on screen.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology. This must contain faces and or wires.
+        faceColor : str , optional
+            The desired color of the output faces. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "lightblue".
+        faceOpacity : float , optional
+            The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
+        wireColor : str , optional
+            The desired color of the output wires (edges). This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        wireWidth : float , optional
+            The desired thickness of the output wires (edges). The default is 1.
+        vertexColor : str , optional
+            The desired color of the output vertices. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        vertexSize : float , optional
+            The desired size of the vertices. The default is 1.1.
+        drawFaces : bool , optional
+            If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
+        drawWires : bool , optional
+            If set to True the wires (edges) will be drawn. Otherwise, they will not be drawn. The default is True.
+        drawVertices : bool , optional
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+        width : int , optional
+            The width in pixels of the figure. The default value is 950.
+        height : int , optional
+            The height in pixels of the figure. The default value is 950.
+        xAxis : bool , optional
+            If set to True the x axis is drawn. Otherwise it is not drawn. The default is False.
+        yAxis : bool , optional
+            If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.
+        zAxis : bool , optional
+            If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
+        backgroundColor : str , optional
+            The desired color of the background. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "rgba(0,0,0,0)".
+        marginLeft : int , optional
+            The size in pixels of the left margin. The default value is 0.
+        marginRight : int , optional
+            The size in pixels of the right margin. The default value is 0.
+        marginTop : int , optional
+            The size in pixels of the top margin. The default value is 0.
+        marginBottom : int , optional
+            The size in pixels of the bottom margin. The default value is 0.
+        camera : list , optional
+            The desired location of the camera). The default is [0,0,0].
+        center : list , optional
+            The desired center (camera target). The default is [0,0,0].
+        up : list , optional
+            The desired up vector. The default is [0,0,1].
+        renderer : str , optional
+            The desired rendered. See Plotly.Renderers(). The default is "browser".
+
+        Returns
+        -------
+        None
+
+        """
+        from topologicpy.Plotly import Plotly
+        if not isinstance(topology, topologic.Topology):
+            return None
+        data = Plotly.DataByTopology(topology=topology, faceColor=faceColor, faceOpacity=faceOpacity, wireColor=wireColor, wireWidth=wireWidth, vertexColor=vertexColor, vertexSize=vertexSize, drawFaces=drawFaces, drawWires=drawWires, drawVertices=drawVertices)
+        figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
+        figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
+        Plotly.Show(figure=figure, renderer=renderer)
+
     @staticmethod
     def SortBySelectors(topologies, selectors, exclusive=False, tolerance=0.0001):
         """
