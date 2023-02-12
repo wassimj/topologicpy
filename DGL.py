@@ -1095,7 +1095,7 @@ class DGL:
             if bidirectional:
                 dgl_graph = dgl.add_reverse_edges(dgl_graph)        
             dgl_graphs.append(dgl_graph)
-        return [dgl_graphs, labels]
+        return {"graphs":dgl_graphs, "labels":labels}
 
     @staticmethod
     def LabelDistribution(labels, categories=None, mantissa=4):
