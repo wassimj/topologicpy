@@ -1412,7 +1412,7 @@ class Cell(Topology):
         """
         from topologicpy.Topology import Topology
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
             return None
         c = Wire.Circle(origin, minorRadius, vSides, 0, 360, False, 0, 1, 0, "center")

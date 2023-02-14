@@ -9,3 +9,8 @@
 *.lock
 *.vsidx
 *.sqlite
+
+*.dll
+*.exp
+*.lib
+*.pdb
