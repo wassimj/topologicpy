@@ -360,7 +360,7 @@ class Plotly:
         return figure
 
     @staticmethod
-    def Show(figure, renderer="notebook"):
+    def Show(figure, renderer="browser"):
         """
         Shows the input figure.
 
