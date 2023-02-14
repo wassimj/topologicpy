@@ -1397,147 +1397,6 @@ class Topology():
             return topologies
         return None
 
-
-    @staticmethod
-    def ByImportedJSONMK3(filePath, tolerance=0.0001):
-        """
-        Imports the topology from a JSON file.
-
-        Parameters
-        ----------
-        filePath : str
-            The file path to the json file.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        list
-            The list of imported topologies.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Context import Context
-        from topologicpy.Aperture import Aperture
-
-        def processApertures(topology, apertures, subTopologyType="face"):
-            topology_ids = []
-            topologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType)
-            for subTopology in topologies:
-                    d = Topology.Dictionary(subTopology)
-                    topology_ids.append(Dictionary.ValueAtKey(d, "TOPOLOGIC_id"))
-            for aperture in apertures:
-                apDict = Topology.Dictionary(aperture)
-                context_id = Dictionary.ValueAtKey(apDict, "TOPOLOGIC_context")
-                i = topology_ids.index(context_id)
-                selected_topology = topologies[i]
-                context = Context.ByTopologyParameters(selected_topology, 0.5, 0.5, 0.5)
-                aperture = Aperture.ByTopologyContext(aperture, context)
-            return topology
-
-        def getApertures(apertureList):
-            returnApertures = []
-            for item in apertureList:
-                aperture = Topology.ByString(item['brep'])
-                dictionary = item['dictionary']
-                keys = list(dictionary.keys())
-                values = []
-                for key in keys:
-                    values.append(dictionary[key])
-                topDictionary = Dictionary.ByKeysValues(keys, values)
-                if len(keys) > 0:
-                    aperture =Topology.SetDictionary(aperture, topDictionary)
-                returnApertures.append(aperture)
-            return returnApertures
-        
-        def assignDictionary(dictionary):
-            selector = dictionary['selector']
-            pydict = dictionary['dictionary']
-            v = Vertex.ByCoordinates(selector[0], selector[1], selector[2])
-            d = Dictionary.ByPythonDictionary(pydict)
-            v = Topology.SetDictionary(v,d)
-            return v
-
-        topology = None
-        file = open(filePath)
-        if file:
-            topologies = []
-            jsondata = json.load(file)
-            for jsonItem in jsondata:
-                brep = jsonItem['brep']
-                topology = Topology.ByString(brep)
-                dictionary = jsonItem['dictionary']
-                topDictionary = Dictionary.ByPythonDictionary(dictionary)
-                topology = Topology.SetDictionary(topology, topDictionary)
-                '''
-                cellApertures = getApertures(jsonItem['cellApertures'])
-                cells = []
-                try:
-                    _ = topology.Cells(None, cells)
-                except:
-                    pass
-                processApertures(cells, cellApertures)
-                faceApertures = getApertures(jsonItem['faceApertures'])
-                faces = []
-                try:
-                    _ = topology.Faces(None, faces)
-                except:
-                    pass
-                processApertures(faces, faceApertures)
-                edgeApertures = getApertures(jsonItem['edgeApertures'])
-                edges = []
-                try:
-                    _ = topology.Edges(None, edges)
-                except:
-                    pass
-                processApertures(edges, edgeApertures)
-                vertexApertures = getApertures(jsonItem['vertexApertures'])
-                vertices = []
-                try:
-                    _ = topology.Vertices(None, vertices)
-                except:
-                    pass
-                processApertures(vertices, vertexApertures)
-                '''
-                cellDataList = jsonItem['cellDictionaries']
-                cellSelectors = []
-                for cellDataItem in cellDataList:
-                    cellSelectors.append(assignDictionary(cellDataItem))
-                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=cellSelectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=True, tolerance=tolerance)
-                faceDataList = jsonItem['faceDictionaries']
-                faceSelectors = []
-                for faceDataItem in faceDataList:
-                    faceSelectors.append(assignDictionary(faceDataItem))
-                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=faceSelectors, tranVertices=False, tranEdges=False, tranFaces=True, tranCells=False, tolerance=tolerance)
-                edgeDataList = jsonItem['edgeDictionaries']
-                edgeSelectors = []
-                for edgeDataItem in edgeDataList:
-                    edgeSelectors.append(assignDictionary(edgeDataItem))
-                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=edgeSelectors, tranVertices=False, tranEdges=True, tranFaces=False, tranCells=False, tolerance=tolerance)
-                vertexDataList = jsonItem['vertexDictionaries']
-                vertexSelectors = []
-                for vertexDataItem in vertexDataList:
-                    vertexSelectors.append(assignDictionary(vertexDataItem))
-                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=vertexSelectors, tranVertices=True, tranEdges=False, tranFaces=False, tranCells=False, tolerance=tolerance)
-                cellApertures = getApertures(jsonItem['cellApertures'])
-                if len(cellApertures) > 0:
-                    topology = processApertures(topology, cellApertures, subTopologyType="cell")
-                faceApertures = getApertures(jsonItem['faceApertures'])
-                if len(faceApertures) > 0:
-                    topology = processApertures(topology, faceApertures, subTopologyType="face")
-                edgeApertures = getApertures(jsonItem['edgeApertures'])
-                if len(edgeApertures) > 0:
-                    topology = processApertures(topology, edgeApertures, subTopologyType="edge")
-                vertexApertures = getApertures(jsonItem['vertexApertures'])
-                if len(vertexApertures) > 0:
-                    topology = processApertures(topology, vertexApertures, subTopologyType="vertex")
-                topologies.append(topology)
-            return topologies
-        return None
-
-
-
     @staticmethod
     def ByOCCTShape(occtShape):
         """
@@ -2569,151 +2428,6 @@ class Topology():
             return True
         return False
     
-
-    @staticmethod
-    def ExportToJSONMK3(topologies, filePath, overwrite=False, tolerance=0.0001):
-        """
-        Export the input list of topologies to a JSON file
-
-        Parameters
-        ----------
-        topologies : list
-            The input list of topologies.
-        filePath : str
-            The path to the JSON file.
-        overwrite : bool , optional
-            If set to True, any existing file will be overwritten. The default is False.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            The status of exporting the JSON file. If True, the operation was successful. Otherwise, it was unsuccesful.
-
-        """
-
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Dictionary import Dictionary
-
-        def fixApertureDictionary(aperture, context_id):
-            apertureDictionary = Topology.Dictionary(aperture)
-            aperture_id = str(uuid.uuid4())
-            if len(Dictionary.Keys(apertureDictionary)) < 1:
-                apertureDictionary = Dictionary.ByKeysValues(["TOPOLOGIC_id", "TOPOLOGIC_context"], [aperture_id, context_id])
-            else:
-                keys = Dictionary.Keys(apertureDictionary)
-                values = Dictionary.Values(apertureDictionary)
-                if not "TOPOLOGIC_id" in keys:
-                    keys.append("TOPOLOGIC_id")
-                    values.append(aperture_id)
-                if not "TOPOLOGIC_context" in keys:
-                    keys.append("TOPOLOGIC_context")
-                    values.append(context_id)
-                    apertureDictionary = Dictionary.ByKeysValues(keys, values)
-            return Topology.SetDictionary(aperture, apertureDictionary)
-        
-        def fixTopologyDictionary(topology):
-            topologyDictionary = Topology.Dictionary(topology)
-            topology_id = str(uuid.uuid4())
-            if len(Dictionary.Keys(topologyDictionary)) < 1:
-                topologyDictionary = Dictionary.ByKeysValues(["TOPOLOGIC_id"], [topology_id])
-            else:
-                keys = Dictionary.Keys(topologyDictionary)
-                values = Dictionary.Values(topologyDictionary)
-                if not "TOPOLOGIC_id" in keys:
-                    keys.append("TOPOLOGIC_id")
-                    values.append(str(uuid.uuid4()))
-                    topologyDictionary = Dictionary.ByKeysValues(keys, values)
-            return Topology.SetDictionary(topology, topologyDictionary)
-        
-        def aperturesDictionariesSelectors(topology, subTopologyType):
-            subTopologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType)
-            if not isinstance(subTopologies, list):
-                return [[],[],[]]
-            elif len(subTopologies) < 1:
-                return [[],[],[]]
-            topologyApertures = []
-            topologyDictionaries = []
-            topologySelectors = []
-            for aTopology in subTopologies:
-                aTopology = fixTopologyDictionary(aTopology)
-                topologyDictionary = Topology.Dictionary(aTopology)
-                topologyDictionaries.append(Dictionary.PythonDictionary(topologyDictionary))
-                context_id = Dictionary.ValueAtKey(topologyDictionary, "TOPOLOGIC_id")
-                s = Topology.InternalVertex(aTopology)
-                topologySelectors.append([Vertex.X(s), Vertex.Y(s), Vertex.Z(s)])
-                tempApertures = []
-                _ = aTopology.Apertures(tempApertures)
-                if isinstance(tempApertures, list):
-                    for anAperture in tempApertures:
-                        anAperture = fixApertureDictionary(anAperture, context_id)
-                        topologyApertures.append(anAperture)
-            return [topologyApertures, topologyDictionaries, topologySelectors]
-        
-        def apertureDicts(apertureList):
-            apertureDicts = []
-            for anAperture in apertureList:
-                apertureData = {}
-                apertureData['brep'] = anAperture.String()
-                apertureData['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(anAperture))
-                apertureDicts.append(apertureData)
-            return apertureDicts
-
-        def subTopologyDicts(dicts, selectors):
-            returnDicts = []
-            for i in range(len(dicts)):
-                data = {}
-                data['dictionary'] = dicts[i]
-                data['selector'] = selectors[i]
-                returnDicts.append(data)
-            return returnDicts
-
-        def getTopologyData(topology):
-            returnDict = {}
-            brep = topology.String()
-            dictionary = Topology.Dictionary(topology)
-            returnDict['brep'] = brep
-            returnDict['dictionary'] = Dictionary.PythonDictionary(dictionary)
-            cellApertures, cellDictionaries, cellSelectors = aperturesDictionariesSelectors(topology, subTopologyType="cell")
-            faceApertures, faceDictionaries, faceSelectors = aperturesDictionariesSelectors(topology, subTopologyType="face")
-            edgeApertures, edgeDictionaries, edgeSelectors = aperturesDictionariesSelectors(topology, subTopologyType="edge")
-            vertexApertures, vertexDictionaries, vertexSelectors = aperturesDictionariesSelectors(topology, subTopologyType="vertex")
-            returnDict['cellApertures'] = apertureDicts(cellApertures)
-            returnDict['faceApertures'] = apertureDicts(faceApertures)
-            returnDict['edgeApertures'] = apertureDicts(edgeApertures)
-            returnDict['vertexApertures'] = apertureDicts(vertexApertures)
-            returnDict['cellDictionaries'] = subTopologyDicts(cellDictionaries, cellSelectors)
-            returnDict['faceDictionaries'] = subTopologyDicts(faceDictionaries, faceSelectors)
-            returnDict['edgeDictionaries'] = subTopologyDicts(edgeDictionaries, edgeSelectors)
-            returnDict['vertexDictionaries'] = subTopologyDicts(vertexDictionaries, vertexSelectors)
-            return returnDict
-
-        if not (isinstance(topologies,list)):
-            topologies = [topologies]
-        if len(topologies) < 1:
-            return None
-        # Make sure the file extension is .json
-        ext = filePath[len(filePath)-5:len(filePath)]
-        if ext.lower() != ".json":
-            filePath = filePath+".json"
-        f = None
-        try:
-            if overwrite == True:
-                f = open(filePath, "w")
-            else:
-                f = open(filePath, "x") # Try to create a new File
-        except:
-            raise Exception("Error: Could not create a new file at the following location: "+filePath)
-        if (f):
-            jsondata = []
-            for topology in topologies:
-                jsondata.append(getTopologyData(topology))
-            json.dump(jsondata, f, indent=4, sort_keys=True)
-            f.close()    
-            return True
-        return False
-
     @staticmethod
     def Filter(topologies, topologyType="vertex", searchType="any", key=None, value=None):
         """
@@ -3554,19 +3268,21 @@ class Topology():
         faces = []
         for aCluster in clusters:
             aCluster = Cluster.SelfMerge(aCluster)
-            shells = Cluster.Shells(aCluster)
-            tempFaces = Cluster.Faces(aCluster)
+            if isinstance(aCluster, topologic.Shell):
+                shells = [aCluster]
+            else:
+                shells = Cluster.Shells(aCluster)
+            tempFaces = Topology.SubTopologies(aCluster, subTopologyType="Face")
             if not shells or len(shells) < 1:
                 if isinstance(aCluster, topologic.Shell):
                     shells = [aCluster]
                 else:
-                    tempFaces = Topology.SubTopologies(aCluster, subTopologyType="Face")
                     temp_shell = Shell.ByFaces(tempFaces)
                     if isinstance(temp_shell, list):
                         shells = temp_shell
                     else:
                         shells = [temp_shell]
-            if len(shells) > 1:
+            if len(shells) > 0:
                 for aShell in shells:
                     junk_faces = Shell.Faces(aShell)
                     if len(junk_faces) > 2:
@@ -3610,6 +3326,8 @@ class Topology():
                     finalIbList.append(temp_ib)
             finalFaces.append(Face.ByWires(eb, finalIbList))
         faces = finalFaces
+        if len(faces) == 1:
+            return faces[0]
         if t == 16:
             returnTopology = topologic.Shell.ByFaces(faces, tolerance)
             if not returnTopology:
@@ -3892,7 +3610,99 @@ class Topology():
             _ = topologyA.SharedTopologies(topologyB, 8, fOutput)
         return {"vertices":vOutput, "edges":eOutput, "wires":wOutput, "faces":fOutput}
 
-    
+    @staticmethod
+    def Show(topology, faceColor='white', faceOpacity=0.5, wireColor='black', wireWidth=1, vertexColor='black', vertexSize=1.1, drawFaces=True, drawWires=True, drawVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=0, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
+        """
+        Shows the input topology on screen.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology. This must contain faces and or wires.
+        faceColor : str , optional
+            The desired color of the output faces. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "lightblue".
+        faceOpacity : float , optional
+            The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
+        wireColor : str , optional
+            The desired color of the output wires (edges). This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        wireWidth : float , optional
+            The desired thickness of the output wires (edges). The default is 1.
+        vertexColor : str , optional
+            The desired color of the output vertices. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        vertexSize : float , optional
+            The desired size of the vertices. The default is 1.1.
+        drawFaces : bool , optional
+            If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
+        drawWires : bool , optional
+            If set to True the wires (edges) will be drawn. Otherwise, they will not be drawn. The default is True.
+        drawVertices : bool , optional
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+        width : int , optional
+            The width in pixels of the figure. The default value is 950.
+        height : int , optional
+            The height in pixels of the figure. The default value is 950.
+        xAxis : bool , optional
+            If set to True the x axis is drawn. Otherwise it is not drawn. The default is False.
+        yAxis : bool , optional
+            If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.
+        zAxis : bool , optional
+            If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
+        backgroundColor : str , optional
+            The desired color of the background. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "rgba(0,0,0,0)".
+        marginLeft : int , optional
+            The size in pixels of the left margin. The default value is 0.
+        marginRight : int , optional
+            The size in pixels of the right margin. The default value is 0.
+        marginTop : int , optional
+            The size in pixels of the top margin. The default value is 0.
+        marginBottom : int , optional
+            The size in pixels of the bottom margin. The default value is 0.
+        camera : list , optional
+            The desired location of the camera). The default is [0,0,0].
+        center : list , optional
+            The desired center (camera target). The default is [0,0,0].
+        up : list , optional
+            The desired up vector. The default is [0,0,1].
+        renderer : str , optional
+            The desired rendered. See Plotly.Renderers(). The default is "browser".
+
+        Returns
+        -------
+        None
+
+        """
+        from topologicpy.Plotly import Plotly
+        if not isinstance(topology, topologic.Topology):
+            return None
+        data = Plotly.DataByTopology(topology=topology, faceColor=faceColor, faceOpacity=faceOpacity, wireColor=wireColor, wireWidth=wireWidth, vertexColor=vertexColor, vertexSize=vertexSize, drawFaces=drawFaces, drawWires=drawWires, drawVertices=drawVertices)
+        figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
+        figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
+        Plotly.Show(figure=figure, renderer=renderer)
+
     @staticmethod
     def SortBySelectors(topologies, selectors, exclusive=False, tolerance=0.0001):
         """

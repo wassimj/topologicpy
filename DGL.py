@@ -15,6 +15,8 @@ try:
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
+    from torch.utils.data.sampler import SubsetRandomSampler
+    from torch.utils.data import DataLoader, ConcatDataset
 except:
     call = [sys.executable, '-m', 'pip', 'install', 'torch', '-t', sys.path[0]]
     subprocess.run(call)
@@ -38,7 +40,7 @@ try:
     import sklearn
     from sklearn.model_selection import KFold
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'sklearn', '-t', sys.path[0]]
+    call = [sys.executable, '-m', 'pip', 'install', 'scikit-learn', '-t', sys.path[0]]
     subprocess.run(call)
     import sklearn
     from sklearn.model_selection import KFold
@@ -65,15 +67,15 @@ checkpoint_path = os.path.join(os.path.expanduser('~'), "dgl_classifier.pt")
 results_path = os.path.join(os.path.expanduser('~'), "dgl_results.csv")
 
 class GraphDGL(DGLDataset):
-    def __init__(self, graphs, labels, node_attr_keys):
+    def __init__(self, graphs, labels, node_attr_key):
         super().__init__(name='GraphDGL')
         self.graphs = graphs
         self.labels = torch.LongTensor(labels)
+        self.node_attr_key = node_attr_key
         # as all graphs have same length of node features then we get dim_nfeats from first graph in the list
-        self.dim_nfeats = graphs[0].ndata[node_attr_keys[0]].shape[1]
-                # to get the number of classes for graphs
+        self.dim_nfeats = graphs[0].ndata[node_attr_key].shape[1]
+        # to get the number of classes for graphs
         self.gclasses = len(set(labels))
-        self.node_attr_key = node_attr_keys[0]
 
     def __getitem__(self, i):
         return self.graphs[i], self.labels[i]
@@ -83,7 +85,7 @@ class GraphDGL(DGLDataset):
 
 class Hparams:
     def __init__(self, optimizer_str="Adam", amsgrad=False, betas=(0.9, 0.999), eps=1e-6, lr=0.001, lr_decay= 0, maximize=False, rho=0.9, weight_decay=0, cv_type="Holdout", split=0.2, k_folds=5, hidden_layers=[32], conv_layer_type='SAGEConv', pooling="AvgPooling", batch_size=32, epochs=1, 
-                 use_gpu=False, loss_function="Cross-Entropy", checkpoint_path=checkpoint_path, results_path=results_path):
+                 use_gpu=False, loss_function="Cross Entropy", checkpoint_path=checkpoint_path, results_path=results_path):
         """
         Parameters
         ----------
@@ -198,11 +200,11 @@ class GCN_GINConv(nn.Module):
         self.final = nn.Linear(dim[-1], num_classes)
 
         # Pooling layer
-        if pooling == "AvgPooling":
+        if pooling.lower() == "avgpooling":
             self.pooling_layer = dgl.nn.AvgPooling()
-        elif pooling == "MaxPooling":
+        elif pooling.lower() == "maxpooling":
             self.pooling_layer = dgl.nn.MaxPooling()
-        elif pooling == "SumPooling":
+        elif pooling.lower() == "sumpooling":
             self.pooling_layer = dgl.nn.SumPooling()
         else:
             raise NotImplementedError
@@ -239,11 +241,11 @@ class GCN_GraphConv(nn.Module):
         self.final = GraphConv(dim[-1], num_classes)
 
         # Pooling layer
-        if pooling == "AvgPooling":
+        if pooling.lower() == "avgpooling":
             self.pooling_layer = dgl.nn.AvgPooling()
-        elif pooling == "MaxPooling":
+        elif pooling.lower() == "maxpooling":
             self.pooling_layer = dgl.nn.MaxPooling()
-        elif pooling == "SumPooling":
+        elif pooling.lower() == "sumpooling":
             self.pooling_layer = dgl.nn.SumPooling()
         else:
             raise NotImplementedError
@@ -279,11 +281,11 @@ class GCN_SAGEConv(nn.Module):
         self.final = nn.Linear(dim[-1], num_classes)
 
         # Pooling layer
-        if pooling == "AvgPooling":
+        if pooling.lower() == "avgpooling":
             self.pooling_layer = dgl.nn.AvgPooling()
-        elif pooling == "MaxPooling":
+        elif pooling.lower() == "maxpooling":
             self.pooling_layer = dgl.nn.MaxPooling()
-        elif pooling == "SumPooling":
+        elif pooling.lower() == "sumpooling":
             self.pooling_layer = dgl.nn.SumPooling()
         else:
             raise NotImplementedError
@@ -319,11 +321,11 @@ class GCN_TAGConv(nn.Module):
         self.final = nn.Linear(dim[-1], num_classes)
 
         # Pooling layer
-        if pooling == "AvgPooling":
+        if pooling.lower() == "avgpooling":
             self.pooling_layer = dgl.nn.AvgPooling()
-        elif pooling == "MaxPooling":
+        elif pooling.lower() == "maxpooling":
             self.pooling_layer = dgl.nn.MaxPooling()
-        elif pooling == "SumPooling":
+        elif pooling.lower() == "sumpooling":
             self.pooling_layer = dgl.nn.SumPooling()
         else:
             raise NotImplementedError
@@ -370,13 +372,13 @@ class ClassifierSplit:
         else:
             raise NotImplementedError
 
-        if hparams.optimizer_str == "Adadelta":
+        if hparams.optimizer_str.lower() == "adadelta":
             self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
                                             lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str == "Adagrad":
+        elif hparams.optimizer_str.lower() == "adagrad":
             self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
                                             lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str == "Adam":
+        elif hparams.optimizer_str.lower() == "adam":
             self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
                                             lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
         self.use_gpu = hparams.use_gpu
@@ -412,20 +414,18 @@ class ClassifierSplit:
             num_correct = 0
             num_tests = 0
             temp_loss_list = []
-
             # Iterate over the DataLoader for training data
             for batched_graph, labels in self.train_dataloader:
-                    
                 # Zero the gradients
                 self.optimizer.zero_grad()
 
                 # Perform forward pass
                 pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
                 # Compute loss
-                if self.hparams.loss_function == "Negative Log Likelihood":
+                if self.hparams.loss_function.lower() == "negative log likelihood":
                     logp = F.log_softmax(pred, 1)
                     loss = F.nll_loss(logp, labels)
-                elif self.hparams.loss_function == "Cross Entropy":
+                elif self.hparams.loss_function.lower() == "cross entropy":
                     loss = F.cross_entropy(pred, labels)
 
                 # Save loss information for reporting
@@ -457,10 +457,10 @@ class ClassifierSplit:
         temp_testing_loss = []
         for batched_graph, labels in self.test_dataloader:
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
-            if self.hparams.loss_function == "Negative Log Likelihood":
+            if self.hparams.loss_function.lower() == "negative log likelihood":
                 logp = F.log_softmax(pred, 1)
                 loss = F.nll_loss(logp, labels)
-            elif self.hparams.loss_function == "Cross Entropy":
+            elif self.hparams.loss_function.lower() == "cross entropy":
                 loss = F.cross_entropy(pred, labels)
             temp_testing_loss.append(loss.item())
             num_correct += (pred.argmax(1) == labels).sum().item()
@@ -495,13 +495,13 @@ class ClassifierKFold:
         else:
             raise NotImplementedError
 
-        if hparams.optimizer_str == "Adadelta":
+        if hparams.optimizer_str.lower() == "adadelta":
             self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
                                             lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str == "Adagrad":
+        elif hparams.optimizer_str.lower() == "adagrad":
             self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
                                             lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str == "Adam":
+        elif hparams.optimizer_str.lower() == "adam":
             self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
                                             lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
         self.use_gpu = hparams.use_gpu
@@ -572,10 +572,10 @@ class ClassifierKFold:
                     pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float())
 
                     # Compute loss
-                    if self.hparams.loss_function == "Negative Log Likelihood":
+                    if self.hparams.loss_function.lower() == "negative log likelihood":
                         logp = F.log_softmax(pred, 1)
                         loss = F.nll_loss(logp, labels)
-                    elif self.hparams.loss_function == "Cross Entropy":
+                    elif self.hparams.loss_function.lower() == "cross entropy":
                         loss = F.cross_entropy(pred, labels)
 
                     # Save loss information for reporting
@@ -609,10 +609,10 @@ class ClassifierKFold:
         temp_testing_loss = []
         for batched_graph, labels in self.test_dataloader:
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float())
-            if self.hparams.loss_function == "Negative Log Likelihood":
+            if self.hparams.loss_function.lower() == "negative log likelihood":
                 logp = F.log_softmax(pred, 1)
                 loss = F.nll_loss(logp, labels)
-            elif self.hparams.loss_function == "Cross Entropy":
+            elif self.hparams.loss_function.lower() == "cross entropy":
                 loss = F.cross_entropy(pred, labels)
             temp_testing_loss.append(loss.item())
             num_correct += (pred.argmax(1) == labels).sum().item()
@@ -666,10 +666,10 @@ class ClassifierKFold:
             for batched_graph, labels in dataloader:
                 #pred = self.model(batched_graph, batched_graph.ndata['attr'].float()).to(device)
                 pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
-                if self.hparams.loss_function == "Negative Log Likelihood":
+                if self.hparams.loss_function.lower() == "negative log likelihood":
                     logp = F.log_softmax(pred, 1)
                     loss = F.nll_loss(logp, labels)
-                elif self.hparams.loss_function == "Cross Entropy":
+                elif self.hparams.loss_function.lower() == "cross entropy":
                     loss = F.cross_entropy(pred, labels)
                 num_correct += (pred.argmax(1) == labels).sum().item()
                 num_tests += len(labels)
@@ -693,39 +693,50 @@ class ClassifierKFold:
 
 class DGL:
     @staticmethod
-    def Accuracy(dgl_labels, dgl_predictions):
+    def Accuracy(predictions, labels, mantissa=4):
         """
+        Computes the accuracy of the input predictions based on the input labels
         Parameters
         ----------
-        dgl_labels : TYPE
-            DESCRIPTION.
-        dgl_predictions : TYPE
-            DESCRIPTION.
+        predictions : list
+            The input list of predictions.
+        labels : list
+            The input list of labels.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        dict
+            A dictionary returning the accuracy information. This contains the following keys and values:
+            - "accuracy" (float): The number of correct predictions divided by the length of the list.
+            - "correct" (int): The number of correct predictions
+            - "mask" (list): A boolean mask for correct vs. wrong predictions which can be used to filter the list of predictions
+            - "size" (int): The size of the predictions list
+            - "wrong" (int): The number of wrong predictions
 
         """
-        # dgl_labels, dgl_predictions = item
-        num_correct = 0
+        if len(predictions) < 1 or len(labels) < 1 or not len(predictions) == len(labels):
+            return None
+        correct = 0
         mask = []
-        for i in range(len(dgl_predictions)):
-            if dgl_predictions[i] == dgl_labels[i]:
-                num_correct = num_correct + 1
+        for i in range(len(predictions)):
+            if predictions[i] == labels[i]:
+                correct = correct + 1
                 mask.append(True)
             else:
                 mask.append(False)
-        size = len(dgl_predictions)
-        return [size, num_correct, len(dgl_predictions)- num_correct, mask, num_correct / len(dgl_predictions)]
+        size = len(predictions)
+        wrong = len(predictions)- correct
+        accuracy = round(float(correct) / float(len(predictions)), mantissa)
+        return {"accuracy":accuracy, "correct":correct, "mask":mask, "size":size, "wrong":wrong}
     
     @staticmethod
-    def ClassifierByFilePath(item):
+    def ClassifierByFilePath(filePath):
         """
         Parameters
         ----------
-        item : str
+        filePath : str
             Path for the saved checkpoint of the model
 
         Returns
@@ -734,57 +745,55 @@ class DGL:
             The classifier model
 
         """
-        return torch.load(item)
+        return torch.load(filePath)
     
     @staticmethod
-    def DatasetByDGLGraph(dgl_graphs, dgl_labels, node_attr_key):
+    def DatasetByDGLGraphs(DGLGraphs, labels, key="node_attr"):
         """
         Parameters
         ----------
-        dgl_graphs : TYPE
-            DESCRIPTION.
-        dgl_labels : TYPE
-            DESCRIPTION.
-        node_attr_key : TYPE
-            DESCRIPTION.
+        DGLGraphs : list
+            The input list dgl graphs.
+        labels : list
+            The list of labels.
+        key : str
+            THe key used for the node attributes.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        DGL.Dataset
+            The creatred DGL dataset.
 
         """
-        # dgl_graphs, dgl_labels, node_attr_key = item
-        if isinstance(dgl_graphs, list) == False:
-            dgl_graphs = [dgl_graphs]
-        if isinstance(dgl_labels, list) == False:
-            dgl_labels = [dgl_labels]
-        return GraphDGL(dgl_graphs, dgl_labels, node_attr_key)
+        if isinstance(DGLGraphs, list) == False:
+            DGLGraphs = [DGLGraphs]
+        if isinstance(labels, list) == False:
+            labels = [labels]
+        return GraphDGL(DGLGraphs, labels, key)
     
     @staticmethod
-    def DatasetByImportedCSV_NC(item):
+    def DatasetByImportedCSV_NC(folderPath):
         """
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        folderPath : str
+            The path to folder containing the input CSV files. In that folder there should be graphs.csv, edges.csv, and vertices.csv
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        DGLDataset
+            The returns DGL dataset.
 
         """
-        graphs_folder_path = item
-        return dgl.data.CSVDataset(graphs_folder_path, force_reload=True)
+        return dgl.data.CSVDataset(folderPath, force_reload=True)
     
     @staticmethod
-    def DatasetBySample(sample):
+    def DatasetBySample(name="ENZYMES"):
         """
         Parameters
         ----------
-        sample : TYPE
-            DESCRIPTION.
+        name : str
+            The name of the sample dataset. This can be "ENZYMES", "DD", "COLLAB", or "MUTAG". It is case insensitive. The default is "MUTAG"
 
         Raises
         ------
@@ -797,15 +806,16 @@ class DGL:
             DESCRIPTION.
 
         """
-        dataset = dgl.data.TUDataset(sample)
+        name = name.upper()
+        dataset = dgl.data.TUDataset(name)
         dgl_graphs, dgl_labels = zip(*[dataset[i] for i in range(len(dataset.graph_lists))])
-        if sample == 'ENZYMES':
+        if name == 'ENZYMES':
             node_attr_key = 'node_attr'
-        elif sample == 'DD':
+        elif name == 'DD':
             node_attr_key = 'node_labels'
-        elif sample == 'COLLAB':
+        elif name == 'COLLAB':
             node_attr_key = '_ID'
-        elif sample == 'MUTAG':
+        elif name == 'MUTAG':
             node_attr_key = 'node_labels'
         else:
             raise NotImplementedError
@@ -889,7 +899,7 @@ class DGL:
         return returnList
     
     @staticmethod
-    def ByGraph(graph, bidirectional, key, categories, node_attr_key, tolerance=0.0001):
+    def ByGraph(graph, bidirectional=True, key=None, categories=[], node_attr_key="node_attr", tolerance=0.0001):
         """
         Parameters
         ----------
@@ -962,8 +972,13 @@ class DGL:
 
         
         for i in range(len(vertices)):
-            vDict = vertices[i].GetDictionary()
-            vLabel = Dictionary.ValueAtKey(vDict, key)
+            from topologicpy.Dictionary import Dictionary
+            from topologicpy.Topology import Topology
+            vDict = Topology.Dictionary(vertices[i])
+            if key:
+                vLabel = Dictionary.ValueAtKey(vDict, key)
+            else:
+                vLabel = ""
             graph_dict["node_labels"][i] = vLabel
             # appending tensor of onehotencoded feature for each node following index i
             graph_dict["node_features"].append(torch.tensor(DGL.OneHotEncode(vLabel, categories)))
@@ -999,10 +1014,10 @@ class DGL:
     
     @staticmethod
     def ByImportedCSV(graphs_file_path, edges_file_path,
-                              nodes_file_path, graph_id_header,
-                              graph_label_header, num_nodes_header, src_header,
-                              dst_header, node_label_header, node_attr_key,
-                              categories, bidirectional):
+                              nodes_file_path, graph_id_header="graph_id",
+                              graph_label_header="label", num_nodes_header="num_nodes", src_header="src",
+                              dst_header="dst", node_label_header="label", node_attr_key="node_attr",
+                              categories=[], bidirectional=True):
         """
         Parameters
         ----------
@@ -1087,27 +1102,59 @@ class DGL:
             if bidirectional:
                 dgl_graph = dgl.add_reverse_edges(dgl_graph)        
             dgl_graphs.append(dgl_graph)
-        return [dgl_graphs, labels]
+        return {"graphs":dgl_graphs, "labels":labels}
 
     @staticmethod
-    def ByImportedDGCNN(file_path, categories, bidirectional):
+    def LabelDistribution(labels, categories=None, mantissa=4):
         """
+        Returns the category distribution in the input list of labels. This is useful to determine if the dataset is balanced or not.
+
+        Parameters
+        ----------
+        labels : list
+            The input list of labels.
+        categories : list , optional
+            The list of node categories expected in the imported DGCNN file. If not specified, the categories are computed directly from the labels. The default is None.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        dict
+            A dictionary object that contains the categories and their corresponding ratios. The dictionary has the following keys and values:
+            - "categories" (list): The list of categories.
+            - "ratios" (list): The list of ratios of each category as found in the input list of labels.
+
+        """
+        if not categories:
+            categories = list(set(labels))
+        ratios = []
+        for category in categories:
+            ratios.append(round(float(labels.count(category))/float(len(labels)), mantissa))
+        return {"categories":categories, "ratios":ratios}
+
+    @staticmethod
+    def ByImportedDGCNN(file_path, categories=[], bidirectional=True):
+        """
+        Returns the Graphs from the imported DGCNN file.
+
         Parameters
         ----------
         file_path : TYPE
             DESCRIPTION.
-        categories : TYPE
-            DESCRIPTION.
+        categories : list
+            The list of node categories expected in the imported DGCNN file. This is used to one-hot-encode the node features.
         bidirectional : TYPE
             DESCRIPTION.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        dict
+            A dictionary object that contains the imported graphs and their corresponding labels. The dictionary has the following keys and values:
+            - "graphs" (list): The list of DGL graphs
+            - "labels" (list): The list of graph labels
 
         """
-        # file_path, categories, bidirectional = item
         graphs = []
         labels = []
         file = open(file_path)
@@ -1149,7 +1196,7 @@ class DGL:
                 graphs.append(dgl_graph)
                 index+=n_nodes
             file.close()
-        return [graphs, labels]
+        return {"graphs":graphs, "labels":labels}
     
     @staticmethod
     def EdgeData_NC(dglGraph):
@@ -1184,10 +1231,10 @@ class DGL:
         return dglGraph.ndata
     
     @staticmethod
-    def Hyperparameters(optimizer, cv_type, split, k_folds,
-                           hidden_layers_str, conv_layer_type, pooling,
-                           batch_size, epochs, use_gpu, loss_function,
-                           checkpoint_path, results_path):
+    def Hyperparameters(optimizer, cv_type="Holdout", split=0.2, k_folds=5,
+                           hidden_layers=[32], conv_layer_type="SAGEConv", pooling="AvgPooling",
+                           batch_size=1, epochs=1, use_gpu=False, loss_function="Cross Entropy",
+                           classifier_path="", results_path=""):
         """
         Parameters
         ----------
@@ -1225,39 +1272,88 @@ class DGL:
 
         """
         
-        # optimizer, cv_type, split, k_folds, hidden_layers_str, conv_layer_type, pooling, batch_size, epochs, use_gpu, loss_function, checkpoint_path, results_path = item
-        amsgrad = False
-        betas=(0.9, 0.999)
-        eps=1e-6
-        lr=0.001
-        lr_decay= 0
-        maximize=False
-        rho=0.9
-        weight_decay=0
-        if optimizer[0] == "Adadelta":
-            optimizer_str, eps, lr, rho, weight_decay = optimizer
-        elif optimizer[0] == "Adagrad":
-            optimizer_str, eps, lr, lr_decay, weight_decay = optimizer
-        elif optimizer[0] == "Adam":
-            optimizer_str, amsgrad, betas, eps, lr, maximize, weight_decay = optimizer
-        hl_str_list = hidden_layers_str.split()
-        hidden_layers = []
-        for hl in hl_str_list:
-            if hl != None and hl.isnumeric():
-                hidden_layers.append(int(hl))
+        if optimizer['name'].lower() == "adadelta":
+            name = "Adadelta"
+        elif optimizer['name'].lower() == "adagrad":
+            name = "Adagrad"
+        elif optimizer['name'].lower() == "adam":
+            name = "Adam"
         # Classifier: Make sure the file extension is .pt
-        ext = checkpoint_path[len(checkpoint_path)-3:len(checkpoint_path)]
+        ext = classifier_path[len(classifier_path)-3:len(classifier_path)]
         if ext.lower() != ".pt":
-            checkpoint_path = checkpoint_path+".pt"
+            classifier_path = classifier_path+".pt"
         # Results: Make sure the file extension is .csv
         ext = results_path[len(results_path)-4:len(results_path)]
         if ext.lower() != ".csv":
             results_path = results_path+".csv"
-        return Hparams(optimizer_str, amsgrad, betas, eps, lr, lr_decay, maximize, rho, weight_decay, cv_type, split, k_folds, hidden_layers, conv_layer_type, pooling, batch_size, epochs, use_gpu, loss_function, checkpoint_path, results_path)
+        return Hparams(name,
+                       optimizer['amsgrad'],
+                       optimizer['betas'],
+                       optimizer['eps'],
+                       optimizer['lr'],
+                       optimizer['lr_decay'],
+                       optimizer['maximize'],
+                       optimizer['rho'],
+                       optimizer['weight_decay'],
+                       cv_type,
+                       split,
+                       k_folds,
+                       hidden_layers,
+                       conv_layer_type,
+                       pooling,
+                       batch_size,
+                       epochs,
+                       use_gpu,
+                       loss_function,
+                       classifier_path,
+                       results_path)
+
 
     @staticmethod
-    def Plot(data, data_labels, chart_title, x_title, x_spacing, y_title,
-                y_spacing, use_markers, chart_type):
+    def Optimizer(name="Adam", amsgrad=True, betas=(0.9,0.999), eps=0.000001, lr=0.001, maximize=False, weightDecay=0.0, rho=0.9, lr_decay=0.0):
+        """
+        Returns the parameters of the Adam optimizer
+        Parameters
+        ----------
+        amsgrad : bool . optional.
+            DESCRIPTION. The default is True.
+        betas : tuple . optional
+            DESCRIPTION. The default is (0.9, 0.999)
+        eps : float . optional.
+            DESCRIPTION. The default is 0.000001
+        lr : float
+            DESCRIPTION. The default is 0.001
+        maximize : float . optional
+            DESCRIPTION. The default is False.
+        weightDecay : float . optional
+            DESCRIPTION. The default is 0.0.
+
+        Returns
+        -------
+        dict
+            The dictionary of the optimizer parameters. The dictionary contains the following keys and values:
+            - "name" (str): The name of the optimizer
+            - "amsgrad" (bool):
+            - "betas" (tuple):
+            - "eps" (float):
+            - "lr" (float):
+            - "maximize" (bool):
+            - weightDecay (float):
+
+        """
+        return {"name":name, "amsgrad":amsgrad, "betas":betas, "eps":eps, "lr": lr, "maximize":maximize, "weight_decay":weightDecay, "rho":rho, "lr_decay":lr_decay}
+
+    @staticmethod
+    def Show(data,
+             labels=["Epochs","Training Accuracy", "Testing Accuracy", "Training Loss", "Testing Loss"],
+             chart_title="Untitled",
+             x_title="Epochs",
+             x_spacing=1,
+             y_title="Accuracy and Losss",
+             y_spacing=0.1,
+             use_markers=False,
+             chart_type="Line",
+             renderer = "notebook"):
         """
         Parameters
         ----------
@@ -1290,31 +1386,35 @@ class DGL:
         None.
 
         """
-        # data, data_labels, chart_title, x_title, x_spacing, y_title, y_spacing, use_markers, chart_type = item
-        dlist = list(map(list, zip(*data)))
-        df = pd.DataFrame(dlist, columns=data_labels)
+        epoch_list = list(range(1,data[labels[0]][0]+1))
+        plot_data = [epoch_list]
+        for i in range(1,len(labels)):
+            plot_data.append(data[labels[i]][0][:data[labels[0]][0]])
+
+        dlist = list(map(list, zip(*plot_data)))
+        df = pd.DataFrame(dlist, columns=labels)
         if chart_type.lower() == "line":
-            fig = px.line(df, x = data_labels[0], y=data_labels[1:], title=chart_title, markers=use_markers)
+            fig = px.line(df, x=labels[0], y=labels[1:], title=chart_title, markers=use_markers)
         elif chart_type.lower() == "bar":
-            fig = px.bar(df, x = data_labels[0], y=data_labels[1:], title=chart_title)
+            fig = px.bar(df, x=labels[0], y=labels[1:], title=chart_title)
         elif chart_type.lower() == "scatter":
-            fig = px.scatter(df, x = data_labels[0], y=data_labels[1:], title=chart_title)
+            fig = px.scatter(df, x=labels[0], y=labels[1:], title=chart_title)
         else:
             raise NotImplementedError
         fig.layout.xaxis.title=x_title
         fig.layout.xaxis.dtick=x_spacing
         fig.layout.yaxis.title=y_title
         fig.layout.yaxis.dtick= y_spacing
-        #fig.show()
-        import os
-        from os.path import expanduser
-        home = expanduser("~")
-        filePath = os.path.join(home, "dgl_result.html")
-        html = fig.to_html(full_html=True, include_plotlyjs=True)
+        fig.show(renderer=renderer)
+        #import os
+        #from os.path import expanduser
+        #home = expanduser("~")
+        #filePath = os.path.join(home, "dgl_result.html")
+        #html = fig.to_html(full_html=True, include_plotlyjs=True)
         # save html file
-        with open(filePath, "w") as f:
-            f.write(html)
-        os.system("start "+filePath)
+        #with open(filePath, "w") as f:
+            #f.write(html)
+        #os.system("start "+filePath)
         
     @staticmethod
     def Predict(test_dataset, classifier, node_attr_key):
@@ -1340,7 +1440,6 @@ class DGL:
         probabilities = []
         for item in test_dataset:
             graph = item[0]
-            print("Node Label:", graph.ndata[node_attr_key].float())
             pred = classifier(graph, graph.ndata[node_attr_key].float())
             labels.append(pred.argmax(1).item())
             probability = (torch.nn.functional.softmax(pred, dim=1).tolist())
@@ -1349,7 +1448,7 @@ class DGL:
             for p in probability:
                 temp_probability.append(round(p, 3))
             probabilities.append(temp_probability)
-        return [labels, probabilities]
+        return {"labels":labels, "probabilities":probabilities}
     
     @staticmethod
     def Predict_NC(classifier, dataset):
@@ -1419,17 +1518,16 @@ class DGL:
 
 
     @staticmethod
-    def Train(i, item):
+    def Train(i, hparams, trainingDataset, validationDataset):
         from topologicpy.Helper import Helper
         import time
         import datetime
         start = time.time()
-        hparams, trainingDataset, validationDataset = item
-        if hparams.cv_type == "Holdout":
+        if hparams.cv_type.lower() == "holdout":
             classifier = ClassifierSplit(hparams, trainingDataset)
             classifier.train()
             accuracy = classifier.test()
-        elif hparams.cv_type == "K-Fold":
+        elif hparams.cv_type.lower() == "k-fold":
             classifier = ClassifierKFold(hparams, trainingDataset, validationDataset)
             classifier.train()
             final_epochs = classifier.validate()
@@ -1459,12 +1557,12 @@ class DGL:
     
         end = time.time()
         duration = round(end - start,3)
-        utcnow = datetime.utcnow()
+        utcnow = datetime.datetime.utcnow()
         timestamp_str = "UTC-"+str(utcnow.year)+"-"+str(utcnow.month)+"-"+str(utcnow.day)+"-"+str(utcnow.hour)+"-"+str(utcnow.minute)+"-"+str(utcnow.second)
         epoch_list = list(range(1,classifier.hparams.epochs+1))
         data_list = [timestamp_str, duration, classifier.model, classifier.hparams.optimizer_str, classifier.hparams.cv_type, classifier.hparams.split, classifier.hparams.k_folds, classifier.hparams.hidden_layers, classifier.hparams.conv_layer_type, classifier.hparams.pooling, classifier.hparams.lr, classifier.hparams.batch_size, list(range(1,classifier.hparams.epochs+1)), classifier.training_accuracy_list, classifier.testing_accuracy_list, classifier.training_loss_list, classifier.testing_loss_list]
         d2 = [[timestamp_str], [duration], [classifier.hparams.optimizer_str], [classifier.hparams.cv_type], [classifier.hparams.split], [classifier.hparams.k_folds], classifier.hparams.hidden_layers, [classifier.hparams.conv_layer_type], [classifier.hparams.pooling], [classifier.hparams.lr], [classifier.hparams.batch_size], epoch_list, classifier.training_accuracy_list, classifier.testing_accuracy_list, classifier.training_loss_list, classifier.testing_loss_list]
-        d2 = Replication.iterate(d2)
+        d2 = Helper.Iterate(d2)
         d2 = Helper.Transpose(d2)
     
         data = {'TimeStamp': "UTC-"+str(utcnow.year)+"-"+str(utcnow.month)+"-"+str(utcnow.day)+"-"+str(utcnow.hour)+"-"+str(utcnow.minute)+"-"+str(utcnow.second),
@@ -1492,7 +1590,7 @@ class DGL:
                 df.to_csv(classifier.hparams.results_path, mode='a', index = False, header=False)
 
 
-        return data_list
+        return data
 
 
 
@@ -1538,13 +1636,13 @@ class DGL:
         """
         # Default optimizer
         optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-        if hparams.optimizer_str == "Adadelta":
+        if hparams.optimizer_str.lower() == "adadelta":
             optimizer = torch.optim.Adadelta(model.parameters(), eps=hparams.eps, 
                                                 lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str == "Adagrad":
+        elif hparams.optimizer_str.lower() == "adagrad":
             optimizer = torch.optim.Adagrad(model.parameters(), eps=hparams.eps, 
                                                 lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str == "Adam":
+        elif hparams.optimizer_str.lower() == "adam":
             optimizer = torch.optim.Adam(model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
                                                 lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
         
@@ -1571,10 +1669,10 @@ class DGL:
                 # Compute loss
                 # Note that you should only compute the losses of the nodes in the training set.
                 # Compute loss
-                if hparams.loss_function == "Negative Log Likelihood":
+                if hparams.loss_function.lower() == "negative log likelihood":
                     logp = F.log_softmax(logits[train_mask], 1)
                     loss = F.nll_loss(logp, labels[train_mask])
-                elif hparams.loss_function == "Cross Entropy":
+                elif hparams.loss_function.lower() == "cross entropy":
                     loss = F.cross_entropy(logits[train_mask], labels[train_mask])
                 # Compute accuracy on training/validation/test
                 train_acc = (pred[train_mask] == labels[train_mask]).float().mean()
