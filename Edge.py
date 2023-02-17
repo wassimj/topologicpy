@@ -91,6 +91,41 @@ class Edge():
         return bisectingEdge
 
     @staticmethod
+    def ByFaceNormal(face, origin=None, length=1):
+        """
+        Creates a straight edge representing the normal to the input face.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face
+        origin : toopologic.Vertex , optional
+            The desired origin of the edge. If set to None, the centroid of the face is chosen as the origin of the edge. The default is None.
+        length : float , optional
+            The desired length of the edge. The default is 1.
+
+        Returns
+        -------
+        edge : topologic.Edge
+            The created edge.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        edge = None
+        if not isinstance(face, topologic.Face):
+            return None
+        if not isinstance(origin, topologic.Vertex):
+            origin = Topology.Centroid(face)
+        
+        n = Face.Normal(face)
+        v2 = Topology.Translate(origin, n[0], n[1], n[2])
+        edge = topologic.Edge.ByStartVertexEndVertex(origin, v2)
+        edge = Edge.SetLength(edge, length, bothSides=False)
+        return edge
+
+    @staticmethod
     def ByOffset(edge, offset=1, tolerance=0.0001):
         """
         Creates and edge offset from the input edge

@@ -270,7 +270,81 @@ class Vertex(Topology):
                     return True
             return False
         return False
+
+    @staticmethod
+    def IsOnSameSide(vertexA, vertexB, face):
+        """
+        Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
+
+        Parameters
+        ----------
+        vertexA : topologic.Vertex
+            The first input vertex.
+        vertexB : topologic.Vertex
+            The second input vertex.
+        face : topologic.Face
+            The input face
+
+        Returns
+        -------
+        bool
+            True if the input vertices are on the same side of the face. False otherwise. If at least one of the vertices is on the face, this method return True.
+
+        """
+        return IsIpsileteral(vertexA, vertexB, face)
     
+    @staticmethod
+    def IsIpsilateral(vertexA, vertexB, face):
+        """
+        Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
+
+        Parameters
+        ----------
+        vertexA : topologic.Vertex
+            The first input vertex.
+        vertexB : topologic.Vertex
+            The second input vertex.
+        face : topologic.Face
+            The input face
+
+        Returns
+        -------
+        bool
+            True if the input vertices are on the same side of the face. False otherwise. If at least one of the vertices is on the face, this method return True.
+
+        """
+        def check(pointA, pointB, pointC, normal):
+            # Calculate the dot products of the vectors from the surface point to each of the input points.
+            dot_productA = (pointA[0] - pointC[0]) * normal[0] + \
+                        (pointA[1] - pointC[1]) * normal[1] + \
+                        (pointA[2] - pointC[2]) * normal[2]
+            dot_productB = (pointB[0] - pointC[0]) * normal[0] + \
+                        (pointB[1] - pointC[1]) * normal[1] + \
+                        (pointB[2] - pointC[2]) * normal[2]
+
+            # Check if both points are on the same side of the surface.
+            if dot_productA * dot_productB > 0:
+                return True
+
+            # Check if both points are on opposite sides of the surface.
+            elif dot_productA * dot_productB < 0:
+                return False
+
+            # Otherwise, at least one point is on the surface.
+            else:
+                return True
+    
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        if not isinstance(vertexA, topologic.Vertex) or not isinstance(vertexA, topologic.Vertex) or not isinstance(face, topologic.Face):
+            return None
+        pointA = Vertex.Coordinates(vertexA)
+        pointB = Vertex.Coordinates(vertexB)
+        vertexC = Face.VertexByParameters(face, 0.5, 0.5)
+        pointC = Vertex.Coordinates(vertexC)
+        normal = Face.Normal(face)
+        return check(pointA, pointB, pointC, normal)
+
     @staticmethod
     def NearestVertex(vertex, topology, useKDTree=True):
         """
