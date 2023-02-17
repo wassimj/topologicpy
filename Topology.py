@@ -1996,12 +1996,7 @@ class Topology():
         except:
             raise Exception("Error: Could not create a new file at the following location: "+filePath)
         if (f):
-            if version < 3:
-                topology = Topology.SelfMerge(topology)
-                s = topology.String().replace("V3, (c) Open Cascade", "V1, (c) Matra-Datavision")
-                s = "DBRep_DrawableShape\n"+s
-            else:
-                s = topology.String()
+            s = topology.String(version)
             f.write(s)
             f.close()    
             return True
@@ -3866,7 +3861,7 @@ class Topology():
 
     
     @staticmethod
-    def String(topology):
+    def String(topology, version=3):
         """
         Return the BRep string of the input topology.
 
@@ -3874,6 +3869,8 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
+        version : int , optional
+            The desired BRep version number. The default is 3.
 
         Returns
         -------
@@ -3883,7 +3880,7 @@ class Topology():
         """
         if not isinstance(topology, topologic.Topology):
             return None
-        return topology.String()
+        return topology.String(version)
     
     @staticmethod
     def SubTopologies(topology, subTopologyType="vertex"):

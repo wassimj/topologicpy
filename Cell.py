@@ -868,6 +868,8 @@ class Cell(Topology):
                 returnTopology = topologic.Cluster.ByTopologies(faces)
             return returnTopology
         
+        from topologicpy.Vertex import Vertex
+
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
@@ -1026,6 +1028,9 @@ class Cell(Topology):
             A list containing the pipe as the first element, the start endcap as the second element, and the end endcap as the last element if they have been specified.
 
         """
+        from topologicpy.Topology import Topology
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
         if not edge:
             return None
         if not isinstance(edge, topologic.Edge):
@@ -1179,6 +1184,8 @@ class Cell(Topology):
             shell = shell.Slice(sliceCluster, False)
             return topologic.Cell.ByShell(shell)
         
+        from topologicpy.Vertex import Vertex
+
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
@@ -1322,6 +1329,8 @@ class Cell(Topology):
             The created sphere.
 
         """
+        from topologicpy.Vertex import Vertex
+
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
@@ -1411,6 +1420,8 @@ class Cell(Topology):
 
         """
         from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        
         if not origin:
             origin = topologic.Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):

@@ -13,6 +13,147 @@ from topologicpy.Topology import Topology
 
 class Plotly:
     @staticmethod
+    def FigureByConfusionMatrix(matrix,
+             categories=[],
+             chart_title="Untitled",
+             x_title = "X Axis",
+             y_title = "Y Axis",
+             showscale = True,
+             colorscale='Viridis'):
+        """
+        Returns a Plotly Figure of the input matrix
+
+        Parameters
+        ----------
+        matrix : list
+            The matrix to display.
+        categories : list
+            The list of categories to use on the X and Y axes.
+
+        """
+        #import plotly.figure_factory as ff
+        import plotly.graph_objects as go
+
+        data = go.Heatmap(z=matrix, y=categories, x=categories, showscale=showscale, colorscale=colorscale)
+        annotations = []
+        for i, row in enumerate(matrix):
+            for j, value in enumerate(row):
+                annotations.append(
+                    {
+                        "x": categories[i],
+                        "y": categories[j],
+                        "font": {"color": "white"},
+                        "text": str(value),
+                        "xref": "x1",
+                        "yref": "y1",
+                        "showarrow": False
+                    }
+                )
+        layout = {
+            "title": chart_title,
+            "xaxis": {"title": x_title},
+            "yaxis": {"title": y_title},
+            "annotations": annotations
+        }
+        fig = go.Figure(data=data, layout=layout)
+        return fig
+        '''
+        z = matrix.copy()
+
+        x = y = [str(category) for category in categories]
+
+        # change each element of z to type string for annotations
+        z_text = [[str(y) for y in x] for x in z]
+
+        # set up figure 
+        fig = ff.create_annotated_heatmap(z, x=x, y=y, annotation_text=z_text, colorscale='Viridis')
+
+        # add title
+        fig.update_layout(title_text='<b>'+chart_tile+'</b>')
+
+        # add custom xaxis title
+        fig.add_annotation(dict(font=dict(color="black",size=14),
+                                x=0.5,
+                                y=-0.15,
+                                showarrow=False,
+                                text=x_title,
+                                xref="paper",
+                                yref="paper"))
+
+        # add custom yaxis title
+        fig.add_annotation(dict(font=dict(color="black",size=14),
+                                x=-0.15,
+                                y=0.5,
+                                showarrow=False,
+                                text=y_title,
+                                textangle=-90,
+                                xref="paper",
+                                yref="paper"))
+
+        # adjust margins to make room for yaxis title
+        fig.update_layout(margin=dict(t=50, l=150))
+
+        # add colorbar
+        fig['data'][0]['showscale'] = True
+        return fig
+        '''
+    @staticmethod
+    def FigureByDataFrame(df,
+             labels=[],
+             title="Untitled",
+             x_title="X Axis",
+             x_spacing=1.0,
+             y_title="Y Axis",
+             y_spacing=1,
+             use_markers=False,
+             chart_type="Line"):
+        """
+        Returns a Plotly Figure of the input dataframe
+
+        Parameters
+        ----------
+        df : pandas.df
+            The p[andas dataframe to display.
+        data_labels : list
+            The labels to use for the data.
+        title : str , optional
+            The chart title. The default is "Untitled".
+        x_title : str , optional
+            The X-axis title. The default is "Epochs".
+        x_spacing : float , optional
+            The X-axis spacing. The default is 1.0.
+        y_title : str , optional
+            The Y-axis title. The default is "Accuracy and Loss".
+        y_spacing : float , optional
+            THe Y-axis spacing. The default is 0.1.
+        use_markers : bool , optional
+            If set to True, markers will be displayed. The default is False.
+        chart_type : str , optional
+            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. The default is "Line".
+        renderer : str , optional
+            The desired plotly renderer. The default is "notebook".
+
+        Returns
+        -------
+        None.
+
+        """
+        import plotly.express as px
+        if chart_type.lower() == "line":
+            fig = px.line(df, x=labels[0], y=labels[1:], title=title, markers=use_markers)
+        elif chart_type.lower() == "bar":
+            fig = px.bar(df, x=labels[0], y=labels[1:], title=title)
+        elif chart_type.lower() == "scatter":
+            fig = px.scatter(df, x=labels[0], y=labels[1:], title=title)
+        else:
+            raise NotImplementedError
+        fig.layout.xaxis.title=x_title
+        fig.layout.xaxis.dtick=x_spacing
+        fig.layout.yaxis.title=y_title
+        fig.layout.yaxis.dtick= y_spacing
+        return fig
+
+    @staticmethod
     def Colors():
         """
         Returns the list of named CSS colors that plotly can use.
@@ -323,6 +464,13 @@ class Plotly:
             )
         return figure
 
+    @staticmethod
+    def PieChartByData(data, values, names):
+        import plotly.express as px
+        dlist = list(map(list, zip(*data)))
+        df = pd.DataFrame(dlist, columns=data['names'])
+        fig = px.pie(df, values=values, names=names)
+        fig.show(renderer=renderer)
     @staticmethod
     def SetCamera(figure, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1]):
         """
