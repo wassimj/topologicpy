@@ -1409,15 +1409,23 @@ class Face(topologic.Face):
             The list of triangles of the input face.
 
         """
+        from topologicpy.Topology import Topology
         faceTriangles = []
         for i in range(0,5,1):
             try:
                 _ = topologic.FaceUtility.Triangulate(face, float(i)*0.1, faceTriangles)
-                return faceTriangles
+                break
             except:
                 continue
-        faceTriangles.append(face)
-        return faceTriangles
+        if len(faceTriangles) < 1:
+            return [face]
+        finalFaces = []
+        for f in faceTriangles:
+            if Face.Angle(face, f) > 90:
+                finalFaces.append(Face.Invert(f))
+            else:
+                finalFaces.append(f)
+        return finalFaces
 
     @staticmethod
     def TrimByWire(face, wire, reverse = False):
