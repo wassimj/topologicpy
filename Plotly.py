@@ -13,147 +13,6 @@ from topologicpy.Topology import Topology
 
 class Plotly:
     @staticmethod
-    def FigureByConfusionMatrix(matrix,
-             categories=[],
-             chart_title="Untitled",
-             x_title = "X Axis",
-             y_title = "Y Axis",
-             showscale = True,
-             colorscale='Viridis'):
-        """
-        Returns a Plotly Figure of the input matrix
-
-        Parameters
-        ----------
-        matrix : list
-            The matrix to display.
-        categories : list
-            The list of categories to use on the X and Y axes.
-
-        """
-        #import plotly.figure_factory as ff
-        import plotly.graph_objects as go
-
-        data = go.Heatmap(z=matrix, y=categories, x=categories, showscale=showscale, colorscale=colorscale)
-        annotations = []
-        for i, row in enumerate(matrix):
-            for j, value in enumerate(row):
-                annotations.append(
-                    {
-                        "x": categories[i],
-                        "y": categories[j],
-                        "font": {"color": "white"},
-                        "text": str(value),
-                        "xref": "x1",
-                        "yref": "y1",
-                        "showarrow": False
-                    }
-                )
-        layout = {
-            "title": chart_title,
-            "xaxis": {"title": x_title},
-            "yaxis": {"title": y_title},
-            "annotations": annotations
-        }
-        fig = go.Figure(data=data, layout=layout)
-        return fig
-        '''
-        z = matrix.copy()
-
-        x = y = [str(category) for category in categories]
-
-        # change each element of z to type string for annotations
-        z_text = [[str(y) for y in x] for x in z]
-
-        # set up figure 
-        fig = ff.create_annotated_heatmap(z, x=x, y=y, annotation_text=z_text, colorscale='Viridis')
-
-        # add title
-        fig.update_layout(title_text='<b>'+chart_tile+'</b>')
-
-        # add custom xaxis title
-        fig.add_annotation(dict(font=dict(color="black",size=14),
-                                x=0.5,
-                                y=-0.15,
-                                showarrow=False,
-                                text=x_title,
-                                xref="paper",
-                                yref="paper"))
-
-        # add custom yaxis title
-        fig.add_annotation(dict(font=dict(color="black",size=14),
-                                x=-0.15,
-                                y=0.5,
-                                showarrow=False,
-                                text=y_title,
-                                textangle=-90,
-                                xref="paper",
-                                yref="paper"))
-
-        # adjust margins to make room for yaxis title
-        fig.update_layout(margin=dict(t=50, l=150))
-
-        # add colorbar
-        fig['data'][0]['showscale'] = True
-        return fig
-        '''
-    @staticmethod
-    def FigureByDataFrame(df,
-             labels=[],
-             title="Untitled",
-             x_title="X Axis",
-             x_spacing=1.0,
-             y_title="Y Axis",
-             y_spacing=1,
-             use_markers=False,
-             chart_type="Line"):
-        """
-        Returns a Plotly Figure of the input dataframe
-
-        Parameters
-        ----------
-        df : pandas.df
-            The p[andas dataframe to display.
-        data_labels : list
-            The labels to use for the data.
-        title : str , optional
-            The chart title. The default is "Untitled".
-        x_title : str , optional
-            The X-axis title. The default is "Epochs".
-        x_spacing : float , optional
-            The X-axis spacing. The default is 1.0.
-        y_title : str , optional
-            The Y-axis title. The default is "Accuracy and Loss".
-        y_spacing : float , optional
-            THe Y-axis spacing. The default is 0.1.
-        use_markers : bool , optional
-            If set to True, markers will be displayed. The default is False.
-        chart_type : str , optional
-            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. The default is "Line".
-        renderer : str , optional
-            The desired plotly renderer. The default is "notebook".
-
-        Returns
-        -------
-        None.
-
-        """
-        import plotly.express as px
-        if chart_type.lower() == "line":
-            fig = px.line(df, x=labels[0], y=labels[1:], title=title, markers=use_markers)
-        elif chart_type.lower() == "bar":
-            fig = px.bar(df, x=labels[0], y=labels[1:], title=title)
-        elif chart_type.lower() == "scatter":
-            fig = px.scatter(df, x=labels[0], y=labels[1:], title=title)
-        else:
-            raise NotImplementedError
-        fig.layout.xaxis.title=x_title
-        fig.layout.xaxis.dtick=x_spacing
-        fig.layout.yaxis.title=y_title
-        fig.layout.yaxis.dtick= y_spacing
-        return fig
-
-    @staticmethod
     def Colors():
         """
         Returns the list of named CSS colors that plotly can use.
@@ -213,9 +72,113 @@ class Plotly:
                 "thistle","tomato","turquoise",
                 "violet","wheat","white",
                 "whitesmoke","yellow","yellowgreen"]
-    
+
+
     @staticmethod
-    def DataByTopology(topology, faceColor="white", faceOpacity=0.5, wireColor="black", wireWidth=1, vertexColor="black", vertexSize=1.1, drawFaces=True, drawWires=True, drawVertices=True):
+    def DataByGraph(graph, vertexColor="white", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True):
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+        from topologicpy.Graph import Graph
+        import plotly.graph_objs as go
+
+        if not isinstance(graph, topologic.Graph):
+            return None
+        
+        v_labels = []
+        v_groupList = []
+        data = []
+        if showVertices:
+            vertices = Graph.Vertices(graph)
+            if vertexLabelKey or vertexGroupKey:
+                for v in vertices:
+                    d = Topology.Dictionary(v)
+                    if d:
+                        try:
+                            v_label = str(Dictionary.ValueAtKey(d, key=vertexLabelKey)) or ""
+                        except:
+                            v_label = ""
+                        try:
+                            v_group = str(Dictionary.ValueAtKey(d, key=vertexGroupKey)) or ""
+                        except:
+                            v_group = ""
+                        try:
+                            v_groupList.append(vertexGroups.index(v_group))
+                        except:
+                            v_groupList.append(len(vertexGroups))
+                        if not v_label == "" and not v_group == "":
+                            v_label = v_label+" ("+v_group+")"
+                    v_labels.append(v_label)
+            if len(list(set(v_groupList))) < 2:
+                v_groupList = vertexColor
+            Xn=[Vertex.X(v) for v in vertices] # x-coordinates of nodes
+            Yn=[Vertex.Y(v) for v in vertices] # y-coordinates of nodes
+            Zn=[Vertex.Z(v) for v in vertices] # x-coordinates of nodes
+            v_trace=go.Scatter3d(x=Xn,
+                y=Yn,
+                z=Zn,
+                mode='markers',
+                name='Graph Nodes',
+                legendgroup=4,
+                legendrank=4,
+                marker=dict(symbol='circle',
+                                size=vertexSize,
+                                color=v_groupList,
+                                colorscale='Viridis',
+                                line=dict(color=edgeColor, width=0.5)
+                                ),
+                text=v_labels,
+                hoverinfo='text'
+                )
+            data.append(v_trace)
+        
+        if showEdges:
+            Xe=[]
+            Ye=[]
+            Ze=[]
+            e_labels = []
+            e_groupList = []
+            edges = Graph.Edges(graph)
+            for e in edges:
+                sv = Edge.StartVertex(e)
+                ev = Edge.EndVertex(e)
+                if edgeLabelKey or edgeGroupKey:
+                    for e in edges:
+                        d = Topology.Dictionary(e)
+                        if d:
+                            e_label = str(Dictionary.ValueAtKey(d, key=edgeLabelKey)) or ""
+                            e_group = str(Dictionary.ValueAtKey(d, key=edgeGroupKey)) or ""
+                            try:
+                                e_groupList.append(edgeGroups.index(e_group))
+                            except:
+                                e_groupList.append(len(edgeGroups))
+                            if not e_label == "" and not e_group == "":
+                                e_label = e_label+" ("+e_group+")"
+                        e_labels.append(e_label)
+                Xe+=[Vertex.X(sv),Vertex.X(ev), None] # x-coordinates of edge ends
+                Ye+=[Vertex.Y(sv),Vertex.Y(ev), None] # y-coordinates of edge ends
+                Ze+=[Vertex.Z(sv),Vertex.Z(ev), None] # z-coordinates of edge ends
+            if len(list(set(e_groupList))) < 2:
+                    e_groupList = edgeColor
+            e_trace=go.Scatter3d(x=Xe,
+                        y=Ye,
+                        z=Ze,
+                        mode='lines',
+                        name='Graph Edges',
+                        legendgroup=5,
+                        legendrank=5,
+                        line=dict(color=e_groupList, width=edgeWidth),
+                        text=e_labels,
+                        hoverinfo='text'
+                        )
+            data.append(e_trace)
+
+        return data
+
+    @staticmethod
+    def DataByTopology(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor="white", faceOpacity=0.5, edgeColor="black", edgeWidth=1, vertexColor="black", vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True):
         """
         Creates plotly face, wire, and vertex data.
 
@@ -223,6 +186,18 @@ class Plotly:
         ----------
         topology : topologic.Topology
             The input topology. This must contain faces and or wires.
+        vertexLabelKey : str , optional
+            The dictionary key to use to display the vertex label. The default is None.
+        vertexGroupKey : str , optional
+            The dictionary key to use to display the vertex group. The default is None.
+        edgeLabelKey : str , optional
+            The dictionary key to use to display the edge label. The default is None.
+        edgeGroupKey : str , optional
+            The dictionary key to use to display the edge group. The default is None.
+        faceLabelKey : str , optional
+            The dictionary key to use to display the face label. The default is None.
+        faceGroupKey : str , optional
+            The dictionary key to use to display the face group. The default is None.
         faceColor : str , optional
             The desired color of the output faces. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -233,7 +208,7 @@ class Plotly:
             The default is "white".
         faceOpacity : float , optional
             The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
-        wireColor : str , optional
+        edgeColor : str , optional
             The desired color of the output wires (edges). This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
             - An rgb/rgba string (e.g. 'rgb(255,0,0)')
@@ -241,7 +216,7 @@ class Plotly:
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
-        wireWidth : float , optional
+        edgeWidth : float , optional
             The desired thickness of the output wires (edges). The default is 1.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
@@ -253,11 +228,11 @@ class Plotly:
             The default is "black".
         vertexSize : float , optional
             The desired size of the vertices. The default is 1.1.
-        drawFaces : bool , optional
+        showFaces : bool , optional
             If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
-        drawWires : bool , optional
+        showEdges : bool , optional
             If set to True the wires (edges) will be drawn. Otherwise, they will not be drawn. The default is True.
-        drawVertices : bool , optional
+        showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
 
         Returns
@@ -266,7 +241,10 @@ class Plotly:
             The vertex, wire, and face data list.
 
         """
-        def vertexData(topology, color="black", size=1.1):
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        def vertexData(topology, color="black", size=1.1, labelKey=None, groupKey=None, groups=[]):
             if isinstance(topology, topologic.Vertex):
                 vertices = [topology]
             else:
@@ -274,17 +252,27 @@ class Plotly:
             x = []
             y = []
             z = []
+            v_labels = []
             for v in vertices:
                 x.append(v.X())
                 y.append(v.Y())
                 z.append(v.Z())
+                d = Topology.Dictionary(v)
+                if d:
+                    v_label = Dictionary.ValueAtKey(d, key=labelKey) or ""
+                    v_labels.append(v_label)
+            return go.Scatter3d(x=x,
+                                y=y,
+                                z=z,
+                                name='Topology Vertices',
+                                showlegend=True,
+                                marker=dict(color=color,  size=size),
+                                mode='markers',
+                                legendgroup=1,
+                                legendrank=1,
+                                text=v_labels)
 
-            return go.Scatter3d(x=x, y=y, z=z, showlegend=False, marker=dict(
-                            color=color,  
-                            size=size),
-                            mode='markers')
-
-        def wireData(topology, color="black", width=1):
+        def edgeData(topology, color="black", width=1, labelKey=None, groupKey=None, groups=[]):
             x = []
             y = []
             z = []
@@ -302,13 +290,19 @@ class Plotly:
                 y.append(None)
                 z.append(None)
 
-            return go.Scatter3d(x=x, y=y, z=z, showlegend=False, marker_size=0, mode="lines",
-                                     line=dict(
-                                         color=color,
-                                         width=width
-                                     ))
+            return go.Scatter3d(x=x,
+                                y=y,
+                                z=z,
+                                name="Topology Edges",
+                                showlegend=True,
+                                marker_size=0,
+                                mode="lines",
+                                line=dict(color=color, width=width),
+                                legendgroup=2,
+                                legendrank=2,
+                                hoverinfo='text')
 
-        def faceData(topology, color="lightblue", opacity=0.5):
+        def faceData(topology, color="white", opacity=0.5, labelKey=None, groupKey=None, groups=[]):
             if isinstance(topology, topologic.Cluster):
                 faces = Cluster.Faces(topology)
                 if len(faces) > 0:
@@ -357,9 +351,11 @@ class Plotly:
                     i=i,
                     j=j,
                     k=k,
-                    name='y',
+                    name='Topology Faces',
                     showscale=False,
-                    showlegend = False,
+                    showlegend = True,
+                    legendgroup=3,
+                    legendrank=3,
                     color = color,
                     opacity = opacity,
                     flatshading = True,
@@ -371,16 +367,154 @@ class Plotly:
         if not isinstance(topology, topologic.Topology):
             return None
         data = []
-        if drawVertices:
-            data.append(vertexData(topology, color=vertexColor, size=vertexSize))
-        if drawWires and topology.Type() > topologic.Vertex.Type():
-            data.append(wireData(topology, color=wireColor, width=wireWidth))
-        if drawFaces and topology.Type() >= topologic.Face.Type():
-            data.append(faceData(topology, color=faceColor, opacity=faceOpacity))
+        if showVertices:
+            data.append(vertexData(topology, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, groups=vertexGroups))
+        if showEdges and topology.Type() > topologic.Vertex.Type():
+            data.append(edgeData(topology, color=edgeColor, width=edgeWidth, labelKey=edgeLabelKey, groupKey=edgeGroupKey, groups=edgeGroups))
+        if showFaces and topology.Type() >= topologic.Face.Type():
+            data.append(faceData(topology, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, groups=faceGroups))
         return data
 
     @staticmethod
-    def FigureByData(data, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=0, marginBottom=0):
+    def FigureByConfusionMatrix(matrix,
+             categories=[],
+             minValue=None,
+             maxValue=None,
+             title="Confusion Matrix",
+             xTitle = "Actual",
+             yTitle = "Predicted",
+             width=950,
+             height=500,
+             showscale = True,
+             colorscale='Viridis',
+             backgroundColor='rgba(0,0,0,0)',
+             marginLeft=0,
+             marginRight=0,
+             marginTop=40,
+             marginBottom=0):
+        """
+        Returns a Plotly Figure of the input matrix
+
+        Parameters
+        ----------
+        matrix : list
+            The matrix to display.
+        categories : list
+            The list of categories to use on the X and Y axes.
+
+        """
+        #import plotly.figure_factory as ff
+        import plotly.graph_objects as go
+
+        annotations = []
+       
+        if not minValue:
+            minValue = 0
+        if not maxValue:
+            max_values = []
+            for i, row in enumerate(matrix):
+                max_values.append(max(row))
+                for j, value in enumerate(row):
+                    annotations.append(
+                        {
+                            "x": categories[i],
+                            "y": categories[j],
+                            "font": {"color": "white"},
+                            "text": str(value),
+                            "xref": "x1",
+                            "yref": "y1",
+                            "showarrow": False
+                        }
+                    )
+            maxValue = max(max_values)
+        else:
+            for i, row in enumerate(matrix):
+                for j, value in enumerate(row):
+                    annotations.append(
+                        {
+                            "x": categories[i],
+                            "y": categories[j],
+                            "font": {"color": "white"},
+                            "text": str(value),
+                            "xref": "x1",
+                            "yref": "y1",
+                            "showarrow": False
+                        }
+                    )
+        data = go.Heatmap(z=matrix, y=categories, x=categories, zmin=minValue, zmax=maxValue, showscale=showscale, colorscale=colorscale)
+        
+        layout = {
+            "width": width,
+            "height": height,
+            "title": title,
+            "xaxis": {"title": xTitle},
+            "yaxis": {"title": yTitle},
+            "annotations": annotations,
+            "paper_bgcolor": backgroundColor,
+            "plot_bgcolor": backgroundColor,
+            "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
+        }
+        fig = go.Figure(data=data, layout=layout)
+        return fig
+        
+    @staticmethod
+    def FigureByDataFrame(df,
+             labels=[],
+             title="Untitled",
+             x_title="X Axis",
+             x_spacing=1.0,
+             y_title="Y Axis",
+             y_spacing=1,
+             use_markers=False,
+             chart_type="Line"):
+        """
+        Returns a Plotly Figure of the input dataframe
+
+        Parameters
+        ----------
+        df : pandas.df
+            The p[andas dataframe to display.
+        data_labels : list
+            The labels to use for the data.
+        title : str , optional
+            The chart title. The default is "Untitled".
+        x_title : str , optional
+            The X-axis title. The default is "Epochs".
+        x_spacing : float , optional
+            The X-axis spacing. The default is 1.0.
+        y_title : str , optional
+            The Y-axis title. The default is "Accuracy and Loss".
+        y_spacing : float , optional
+            THe Y-axis spacing. The default is 0.1.
+        use_markers : bool , optional
+            If set to True, markers will be displayed. The default is False.
+        chart_type : str , optional
+            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. The default is "Line".
+        renderer : str , optional
+            The desired plotly renderer. The default is "notebook".
+
+        Returns
+        -------
+        None.
+
+        """
+        import plotly.express as px
+        if chart_type.lower() == "line":
+            fig = px.line(df, x=labels[0], y=labels[1:], title=title, markers=use_markers)
+        elif chart_type.lower() == "bar":
+            fig = px.bar(df, x=labels[0], y=labels[1:], title=title)
+        elif chart_type.lower() == "scatter":
+            fig = px.scatter(df, x=labels[0], y=labels[1:], title=title)
+        else:
+            raise NotImplementedError
+        fig.layout.xaxis.title=x_title
+        fig.layout.xaxis.dtick=x_spacing
+        fig.layout.yaxis.title=y_title
+        fig.layout.yaxis.dtick= y_spacing
+        return fig
+
+    @staticmethod
+    def FigureByData(data, color=None, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0):
         """
         Creates plotly figure.
 
@@ -411,7 +545,7 @@ class Plotly:
         marginRight : int , optional
             The size in pixels of the right margin. The default value is 0.
         marginTop : int , optional
-            The size in pixels of the top margin. The default value is 0.
+            The size in pixels of the top margin. The default value is 20.
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         
@@ -452,6 +586,7 @@ class Plotly:
         figure.update_layout(
             width=width,
             height=height,
+            showlegend=True,
             scene = dict(
                 xaxis = dict(visible=False),
                 yaxis = dict(visible=False),
@@ -465,12 +600,14 @@ class Plotly:
         return figure
 
     @staticmethod
-    def PieChartByData(data, values, names):
+    def PieChartByData(data, values, names, renderer="notebook"):
+        import pandas as pd
         import plotly.express as px
         dlist = list(map(list, zip(*data)))
         df = pd.DataFrame(dlist, columns=data['names'])
         fig = px.pie(df, values=values, names=names)
         fig.show(renderer=renderer)
+    
     @staticmethod
     def SetCamera(figure, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1]):
         """
@@ -508,7 +645,7 @@ class Plotly:
         return figure
 
     @staticmethod
-    def Show(figure, renderer="notebook"):
+    def Show(figure, renderer="notebook", camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1]):
         """
         Shows the input figure.
 
@@ -528,6 +665,7 @@ class Plotly:
             return None
         if not renderer.lower() in Plotly.Renderers():
             return None
+        figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
         figure.show(renderer=renderer)
         return None
 

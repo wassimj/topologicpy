@@ -949,6 +949,155 @@ class Topology():
         return box
 
     @staticmethod
+    def ByGeometry(vertices=[], edges=[], faces=[], color=[1.0,1.0,1.0,1.0], id=None, name=None, lengthUnit="METERS", outputMode="default", tolerance=0.0001):
+        """
+        Create a topology by the input lists of vertices, edges, and faces.
+
+        Parameters
+        ----------
+        vertices : list
+            The input list of vertices in the form of [x, y, z]
+        edges : list , optional
+            The input list of edges in the form of [i, j] where i and j are vertex indices.
+        faces : list , optional
+            The input list of faces in the form of [i, j, k, l, ...] where the items in the list are vertex indices. The face is assumed to be closed to the last vertex is connected to the first vertex automatically.
+        color : list , optional
+            The desired color of the object in the form of [r, g, b, a] where the components are between 0 and 1 and represent red, blue, green, and alpha (transparency) repsectively. The default is [1.0, 1.0, 1.0, 1.0].
+        id : str , optional
+            The desired ID of the object. If set to None, an automatic uuid4 will be assigned to the object. The default is None.
+        name : str , optional
+            The desired name of the object. If set to None, a default name "Topologic_[topology_type]" will be assigned to the object. The default is None.
+        lengthUnit : str , optional
+            The length unit used for the object. The default is "METERS"
+        outputMode : str , optional
+            The desired otuput mode of the object. This can be "Shell", "Cell", "CellComplex", or "Default". It is case insensitive. The default is "default".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topology : topologic.Topology
+            The created topology. The topology will have a dictionary embedded in it that records the input attributes (color, id, lengthUnit, name, type)
+
+        """
+        def topologyByFaces(faces, outputMode, tolerance):
+            output = None
+            if len(faces) == 1:
+                return faces[0]
+            if outputMode.lower() == "cell":
+                output = Cell.ByFaces(faces, tolerance)
+                if output:
+                    return output
+                else:
+                    return None
+            if outputMode.lower() == "cellcomplex":
+                output = CellComplex.ByFaces(faces, tolerance)
+                if output:
+                    return output
+                else:
+                    return None
+            if outputMode.lower() == "shell":
+                output = Shell.ByFaces(faces, tolerance)
+                if output:
+                    return output
+                else:
+                    return None
+            if outputMode.lower() == "default":
+                output = Topology.SelfMerge(Cluster.ByTopologies(faces))
+            if output:
+                if output:
+                    return output
+            return output
+        def topologyByEdges(edges):
+            output = None
+            if len(edges) == 1:
+                return edges[0]
+            output = Cluster.ByTopologies(edges)
+            output = Cluster.SelfMerge(output)
+            return output
+        def edgesByVertices(vertices, topVerts):
+            edges = []
+            for i in range(len(vertices)-1):
+                v1 = vertices[i]
+                v2 = vertices[i+1]
+                e1 = Edge.ByVertices([topVerts[v1], topVerts[v2]])
+                edges.append(e1)
+            # connect the last vertex to the first one
+            v1 = vertices[-1]
+            v2 = vertices[0]
+            e1 = Edge.ByVertices([topVerts[v1], topVerts[v2]])
+            edges.append(e1)
+            return edges
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+        import uuid
+        returnTopology = None
+        topVerts = []
+        topEdges = []
+        topFaces = []
+        if len(vertices) > 0:
+            for aVertex in vertices:
+                v = Vertex.ByCoordinates(aVertex[0], aVertex[1], aVertex[2])
+                topVerts.append(v)
+        else:
+            return None
+        if (outputMode.lower == "wire") and (len(edges) > 0):
+            for anEdge in edges:
+                topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]])
+                topEdges.append(topEdge)
+            returnTopology = topologyByEdges(topEdges)
+        elif len(faces) > 0:
+            for aFace in faces:
+                faceEdges = edgesByVertices(aFace, topVerts)
+                faceWire = Wire.ByEdges(faceEdges)
+                topFace = Face.ByExternalBoundary(faceWire)
+                topFaces.append(topFace)
+            returnTopology = topologyByFaces(topFaces, outputMode=outputMode, tolerance=tolerance)
+        elif len(edges) > 0:
+            for anEdge in edges:
+                topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]])
+                topEdges.append(topEdge)
+            returnTopology = topologyByEdges(topEdges)
+        else:
+            returnTopology = Cluster.ByTopologies(topVerts)
+        if returnTopology:
+            keys = []
+            values = []
+            keys.append("TOPOLOGIC_color")
+            keys.append("TOPOLOGIC_id")
+            keys.append("TOPOLOGIC_name")
+            keys.append("TOPOLOGIC_type")
+            keys.append("TOPOLOGIC_length_unit")
+            if color:
+                if isinstance(color, tuple):
+                    color = list(color)
+                elif isinstance(color, list):
+                    if isinstance(color[0], tuple):
+                        color = list(color[0])
+                values.append(color)
+            else:
+                values.append([1.0,1.0,1.0,1.0])
+            if id:
+                values.append(id)
+            else:
+                values.append(str(uuid.uuid4()))
+            if name:
+                values.append(name)
+            else:
+                values.append("Topologic_"+Topology.TypeAsString(returnTopology))
+            values.append(Topology.TypeAsString(returnTopology))
+            values.append(lengthUnit)
+            topDict = Dictionary.ByKeysValues(keys, values)
+            Topology.SetDictionary(returnTopology, topDict)
+        return returnTopology
+
+    @staticmethod
     def ByImportedBRep(path):
         """
         Create a topology by importing it from a BRep file path.
@@ -1083,7 +1232,7 @@ class Topology():
                     keys.append("TOPOLOGIC_name")
                     values.append(p.Name)
                     keys.append("TOPOLOGIC_type")
-                    values.append(topology.GetTypeAsString())
+                    values.append(Topology.TypeAsString(topology))
                     keys.append("IFC_id")
                     values.append(str(p.GlobalId))
                     keys.append("IFC_name")
@@ -1396,6 +1545,47 @@ class Topology():
                 topologies.append(topology)
             return topologies
         return None
+
+    @staticmethod
+    def ByImportedOBJ(filePath, transposeAxes = True, tolerance=0.0001):
+        """
+        Imports the topology from a Weverfront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+
+        Parameters
+        ----------
+        filePath : str
+            The file path to the OBJ file.
+        transposeAxes : bool , optional
+            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topology
+            The imported topology.
+
+        """
+        vertices = []
+        faces = []
+        file = open(filePath)
+        if file:
+            lines = file.readlines()
+            for i in range(len(lines)):
+                s = lines[i].split()
+                if s[0].lower() == "v":
+                    if transposeAxes:
+                        vertices.append([float(s[1]), float(s[3]), float(s[2])])
+                    else:
+                        vertices.append([float(s[1]), float(s[2]), float(s[3])])
+                elif s[0].lower() == "f":
+                    temp_faces = []
+                    for j in range(1,len(s)):
+                        f = s[j].split("/")[0]
+                        temp_faces.append(int(f)-1)
+                    faces.append(temp_faces)
+            file.close()
+        return Topology.ByGeometry(vertices = vertices, faces = faces, outputMode="default", tolerance=tolerance)
 
     @staticmethod
     def ByOCCTShape(occtShape):
@@ -1960,7 +2150,7 @@ class Topology():
     @staticmethod
     def ExportToBRep(topology, filePath, overwrite=True, version=3):
         """
-        Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html#:~:text=BREP%20format%20is%20used%20to,triangulations%2C%20space%20location%20and%20orientation.
+        Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html.
 
         Parameters
         ----------
@@ -1971,7 +2161,7 @@ class Topology():
         overwrite : bool , optional
             If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
         version : int , optional
-            Replaces the BREP version number and header to make the file compatible with older version of OCCT.
+            The desired version number for the BREP file. The default is 3.
 
         Returns
         -------
@@ -2424,6 +2614,70 @@ class Topology():
         return False
     
     @staticmethod
+    def ExportToOBJ(topology, filePath, transposeAxes=True, overwrite=True):
+        """
+        Exports the input topology to a Wavefront OBJ file. This is very experimental and outputs a simple solid topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        filePath : str
+            The input file path.
+        transposeAxes : bool , optional
+            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
+
+        Returns
+        -------
+        bool
+            True if the export operation is successful. False otherwise.
+
+        """
+        from os.path import exists
+        from topologicpy.Helper import Helper
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not overwrite and exists(filePath):
+            return None
+        
+        	# Make sure the file extension is .txt
+        ext = filePath[len(filePath)-4:len(filePath)]
+        if ext.lower() != ".obj":
+            filePath = filePath+".obj"
+        status = False
+        lines = []
+        version = Helper.Version()
+        lines.append("# topologicpy "+version)
+        d = Topology.Geometry(topology)
+        vertices = d['vertices']
+        faces = d['faces']
+        tVertices = []
+        if transposeAxes:
+            for v in vertices:
+                tVertices.append([v[0], v[2], v[1]])
+            vertices = tVertices
+        for v in vertices:
+            lines.append("v "+str(v[0])+" "+str(v[1])+" "+str(v[2]))
+        for f in faces:
+            line = "f"
+            for j in f:
+                line = line+" "+str(j+1)
+            lines.append(line)
+        finalLines = lines[0]
+        for i in range(1,len(lines)):
+            finalLines = finalLines+"\n"+lines[i]
+        with open(filePath, "w") as f:
+            f.writelines(finalLines)
+            f.close()
+            status = True
+        return status
+
+    @staticmethod
     def Filter(topologies, topologyType="vertex", searchType="any", key=None, value=None):
         """
         Filters the input list of topologies based on the input parameters.
@@ -2465,7 +2719,7 @@ class Topology():
         for aTopology in topologies:
             if not aTopology:
                 continue
-            if (topologyType.lower() == "any") or (aTopology.GetTypeAsString().lower() == topologyType.lower()):
+            if (topologyType.lower() == "any") or (Topology.TypeAsString(aTopology).lower() == topologyType.lower()):
                 if value == "" or key == "":
                     filteredTopologies.append(aTopology)
                 else:
@@ -3695,8 +3949,7 @@ class Topology():
             return None
         data = Plotly.DataByTopology(topology=topology, faceColor=faceColor, faceOpacity=faceOpacity, wireColor=wireColor, wireWidth=wireWidth, vertexColor=vertexColor, vertexSize=vertexSize, drawFaces=drawFaces, drawWires=drawWires, drawVertices=drawVertices)
         figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
-        figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
-        Plotly.Show(figure=figure, renderer=renderer)
+        Plotly.Show(figure=figure, renderer=renderer, camera=camera, target=target, up=up)
 
     @staticmethod
     def SortBySelectors(topologies, selectors, exclusive=False, tolerance=0.0001):
@@ -3880,7 +4133,7 @@ class Topology():
         """
         if not isinstance(topology, topologic.Topology):
             return None
-        return topology.String(version)
+        return topologic.Topology.String(topology, version)
     
     @staticmethod
     def SubTopologies(topology, subTopologyType="vertex"):
@@ -3902,7 +4155,7 @@ class Topology():
         """
         if not isinstance(topology, topologic.Topology):
             return None
-        if topology.GetTypeAsString().lower() == subTopologyType.lower():
+        if Topology.TypeAsString(topology).lower() == subTopologyType.lower():
             return [topology]
         subTopologies = []
         if subTopologyType.lower() == "vertex":

@@ -454,6 +454,7 @@ class Graph:
                             sharedt = []
                             cells[i].SharedTopologies(cells[j], 8, sharedt)
                             if len(sharedt) > 0:
+                                print("Number of Shared Topologies:", len(sharedt))
                                 if useInternalVertex == True:
                                     v1 = topologic.CellUtility.InternalVertex(cells[i], tolerance)
                                     v2 = topologic.CellUtility.InternalVertex(cells[j], tolerance)
@@ -462,6 +463,10 @@ class Graph:
                                     v2 = cells[j].CenterOfMass()
                                 e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
                                 mDict = mergeDictionaries(sharedt)
+                                keys = Dictionary.Keys(mDict)+["relationship"]
+                                values = Dictionary.Values(mDict)+["Direct"]
+                                print("Values",values)
+                                mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
                                     e.SetDictionary(mDict)
                                 edges.append(e)
@@ -2397,6 +2402,15 @@ class Graph:
                 edges = Graph.Edges(graph)
                 graph = Graph.ByVerticesEdges(vertices, edges)
         return shortestPaths
+
+    @staticmethod
+    def Show(graph, labelKey="name", groupKey="group", groups=[], wireColor="black", wireWidth=1, vertexColor="white", vertexSize=6, drawWires=True, drawVertices=True, renderer="notebook"):
+        from topologicpy.Plotly import Plotly
+        if not isinstance(graph, topologic.Graph):
+            return None
+        data= Plotly.DataByGraph(graph, labelKey=labelKey, groupKey=groupKey, groups=groups, wireColor=wireColor, wireWidth=wireWidth, vertexColor=vertexColor, vertexSize=vertexSize, drawWires=drawWires, drawVertices=drawVertices)
+        fig = Plotly.FigureByData(data, color=groups)
+        Plotly.Show(fig, renderer=renderer)
 
     @staticmethod
     def Size(graph):
