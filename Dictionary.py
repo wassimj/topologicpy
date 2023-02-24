@@ -432,11 +432,14 @@ class Dictionary(topologic.Dictionary):
             The list of values found in the input dictionary.
 
         """
+        keys = None
         if isinstance(dictionary, dict):
             keys = dictionary.keys()
         elif isinstance(dictionary, topologic.Dictionary):
             keys = dictionary.Keys()
         returnList = []
+        if not keys:
+            return None
         for key in keys:
             try:
                 if isinstance(dictionary, dict):

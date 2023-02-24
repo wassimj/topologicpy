@@ -86,7 +86,6 @@ class Plotly:
 
         if not isinstance(graph, topologic.Graph):
             return None
-        
         v_labels = []
         v_groupList = []
         data = []
@@ -94,6 +93,11 @@ class Plotly:
             vertices = Graph.Vertices(graph)
             if vertexLabelKey or vertexGroupKey:
                 for v in vertices:
+                    Xn=[Vertex.X(v) for v in vertices] # x-coordinates of nodes
+                    Yn=[Vertex.Y(v) for v in vertices] # y-coordinates of nodes
+                    Zn=[Vertex.Z(v) for v in vertices] # x-coordinates of nodes
+                    v_label = ""
+                    v_group = ""
                     d = Topology.Dictionary(v)
                     if d:
                         try:
@@ -104,23 +108,27 @@ class Plotly:
                             v_group = str(Dictionary.ValueAtKey(d, key=vertexGroupKey)) or ""
                         except:
                             v_group = ""
-                        try:
-                            v_groupList.append(vertexGroups.index(v_group))
-                        except:
-                            v_groupList.append(len(vertexGroups))
-                        if not v_label == "" and not v_group == "":
-                            v_label = v_label+" ("+v_group+")"
+                    try:
+                        v_groupList.append(vertexGroups.index(v_group))
+                    except:
+                        v_groupList.append(len(vertexGroups))
+                    if not v_label == "" and not v_group == "":
+                        v_label = v_label+" ("+v_group+")"
                     v_labels.append(v_label)
+            else:
+                for v in vertices:
+                    Xn=[Vertex.X(v) for v in vertices] # x-coordinates of nodes
+                    Yn=[Vertex.Y(v) for v in vertices] # y-coordinates of nodes
+                    Zn=[Vertex.Z(v) for v in vertices] # x-coordinates of nodes
             if len(list(set(v_groupList))) < 2:
                 v_groupList = vertexColor
-            Xn=[Vertex.X(v) for v in vertices] # x-coordinates of nodes
-            Yn=[Vertex.Y(v) for v in vertices] # y-coordinates of nodes
-            Zn=[Vertex.Z(v) for v in vertices] # x-coordinates of nodes
+            if len(v_labels) < 1:
+                v_labels = ""
             v_trace=go.Scatter3d(x=Xn,
                 y=Yn,
                 z=Zn,
                 mode='markers',
-                name='Graph Nodes',
+                name='Graph Vertices',
                 legendgroup=4,
                 legendrank=4,
                 marker=dict(symbol='circle',
@@ -141,38 +149,57 @@ class Plotly:
             e_labels = []
             e_groupList = []
             edges = Graph.Edges(graph)
-            for e in edges:
-                sv = Edge.StartVertex(e)
-                ev = Edge.EndVertex(e)
-                if edgeLabelKey or edgeGroupKey:
-                    for e in edges:
-                        d = Topology.Dictionary(e)
-                        if d:
+                
+            if edgeLabelKey or edgeGroupKey:
+                for e in edges:
+                    sv = Edge.StartVertex(e)
+                    ev = Edge.EndVertex(e)
+                    Xe+=[Vertex.X(sv),Vertex.X(ev), None] # x-coordinates of edge ends
+                    Ye+=[Vertex.Y(sv),Vertex.Y(ev), None] # y-coordinates of edge ends
+                    Ze+=[Vertex.Z(sv),Vertex.Z(ev), None] # z-coordinates of edge ends
+                    e_label = ""
+                    e_group = ""
+                    d = Topology.Dictionary(e)
+                    if d:
+                        try:
                             e_label = str(Dictionary.ValueAtKey(d, key=edgeLabelKey)) or ""
+                        except:
+                            e_label = ""
+                        try:
                             e_group = str(Dictionary.ValueAtKey(d, key=edgeGroupKey)) or ""
-                            try:
-                                e_groupList.append(edgeGroups.index(e_group))
-                            except:
-                                e_groupList.append(len(edgeGroups))
-                            if not e_label == "" and not e_group == "":
-                                e_label = e_label+" ("+e_group+")"
-                        e_labels.append(e_label)
-                Xe+=[Vertex.X(sv),Vertex.X(ev), None] # x-coordinates of edge ends
-                Ye+=[Vertex.Y(sv),Vertex.Y(ev), None] # y-coordinates of edge ends
-                Ze+=[Vertex.Z(sv),Vertex.Z(ev), None] # z-coordinates of edge ends
+                        except:
+                            e_group = ""
+                    try:
+                        e_groupList.append(edgeGroups.index(e_group))
+                    except:
+                        e_groupList.append(len(edgeGroups))
+                    if not e_label == "" and not e_group == "":
+                        e_label = e_label+" ("+e_group+")"
+                    e_labels.append(e_label)
+            else:
+                for e in edges:
+                    sv = Edge.StartVertex(e)
+                    ev = Edge.EndVertex(e)
+                    Xe+=[Vertex.X(sv),Vertex.X(ev), None] # x-coordinates of edge ends
+                    Ye+=[Vertex.Y(sv),Vertex.Y(ev), None] # y-coordinates of edge ends
+                    Ze+=[Vertex.Z(sv),Vertex.Z(ev), None] # z-coordinates of edge ends
+
             if len(list(set(e_groupList))) < 2:
-                    e_groupList = edgeColor
+                e_groupList = edgeColor
+            if len(e_labels) < 1:
+                e_labels = ""
+            
             e_trace=go.Scatter3d(x=Xe,
-                        y=Ye,
-                        z=Ze,
-                        mode='lines',
-                        name='Graph Edges',
-                        legendgroup=5,
-                        legendrank=5,
-                        line=dict(color=e_groupList, width=edgeWidth),
-                        text=e_labels,
-                        hoverinfo='text'
-                        )
+                                 y=Ye,
+                                 z=Ze,
+                                 mode='lines',
+                                 name='Graph Edges',
+                                 legendgroup=5,
+                                 legendrank=5,
+                                 line=dict(color=e_groupList, width=edgeWidth),
+                                 text=e_labels,
+                                 hoverinfo='text'
+                                )
             data.append(e_trace)
 
         return data
@@ -198,6 +225,12 @@ class Plotly:
             The dictionary key to use to display the face label. The default is None.
         faceGroupKey : str , optional
             The dictionary key to use to display the face group. The default is None.
+        vertexGroups : list , optional
+            The list of vertex groups against which to index the color of the vertex. The default is [].
+        edgeGroups : list , optional
+            The list of edge groups against which to index the color of the edge. The default is [].
+        faceGroups : list , optional
+            The list of face groups against which to index the color of the face. The default is [].
         faceColor : str , optional
             The desired color of the output faces. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -217,7 +250,7 @@ class Plotly:
             - A named CSS color.
             The default is "black".
         edgeWidth : float , optional
-            The desired thickness of the output wires (edges). The default is 1.
+            The desired thickness of the output edges. The default is 1.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -231,7 +264,7 @@ class Plotly:
         showFaces : bool , optional
             If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
         showEdges : bool , optional
-            If set to True the wires (edges) will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
 
@@ -244,7 +277,7 @@ class Plotly:
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
-        def vertexData(topology, color="black", size=1.1, labelKey=None, groupKey=None, groups=[]):
+        def vertexData(topology, vertexColor="black", vertexSize=1.1, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[]):
             if isinstance(topology, topologic.Vertex):
                 vertices = [topology]
             else:
@@ -253,26 +286,57 @@ class Plotly:
             y = []
             z = []
             v_labels = []
-            for v in vertices:
-                x.append(v.X())
-                y.append(v.Y())
-                z.append(v.Z())
-                d = Topology.Dictionary(v)
-                if d:
-                    v_label = Dictionary.ValueAtKey(d, key=labelKey) or ""
+            v_groupList = []
+            v_label = ""
+            v_group = ""
+            if vertexLabelKey or vertexGroupKey:
+                for v in vertices:
+                    x.append(v.X())
+                    y.append(v.Y())
+                    z.append(v.Z())
+                    v_label = ""
+                    v_group = ""
+                    d = Topology.Dictionary(v)
+                    if d:
+                        try:
+                            v_label = str(Dictionary.ValueAtKey(d, key=vertexLabelKey)) or ""
+                        except:
+                            v_label = ""
+                        try:
+                            v_group = str(Dictionary.ValueAtKey(d, key=vertexGroupKey)) or ""
+                        except:
+                            v_group = ""
+                    try:
+                        v_groupList.append(vertexGroups.index(v_group))
+                    except:
+                        v_groupList.append(len(vertexGroups))
+                    if not v_label == "" and not v_group == "":
+                        v_label = v_label+" ("+v_group+")"
                     v_labels.append(v_label)
+            else:
+                for v in vertices:
+                    x.append(v.X())
+                    y.append(v.Y())
+                    z.append(v.Z())
+            
+            if len(list(set(v_groupList))) < 2:
+                v_groupList = vertexColor
+            if len(v_labels) < 1:
+                v_labels = ""
             return go.Scatter3d(x=x,
                                 y=y,
                                 z=z,
                                 name='Topology Vertices',
                                 showlegend=True,
-                                marker=dict(color=color,  size=size),
+                                marker=dict(color=v_groupList,  size=vertexSize),
                                 mode='markers',
                                 legendgroup=1,
                                 legendrank=1,
-                                text=v_labels)
+                                text=v_labels,
+                                hoverinfo='text',
+                                hovertext=v_labels)
 
-        def edgeData(topology, color="black", width=1, labelKey=None, groupKey=None, groups=[]):
+        def edgeData(topology, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[]):
             x = []
             y = []
             z = []
@@ -280,16 +344,48 @@ class Plotly:
                 edges = [topology]
             else:
                 edges = Topology.SubTopologies(topology, "edge")
-            for edge in edges:
-                vertices = Edge.Vertices(edge)
-                for v in vertices:
-                    x.append(v.X())
-                    y.append(v.Y())
-                    z.append(v.Z())
-                x.append(None)
-                y.append(None)
-                z.append(None)
 
+            e_labels = []
+            e_groupList = []
+            e_label = ""
+            if edgeLabelKey or edgeGroupKey:
+                for e in edges:
+                    sv = Edge.StartVertex(e)
+                    ev = Edge.EndVertex(e)
+                    x+=[Vertex.X(sv),Vertex.X(ev), None] # x-coordinates of edge ends
+                    y+=[Vertex.Y(sv),Vertex.Y(ev), None] # y-coordinates of edge ends
+                    z+=[Vertex.Z(sv),Vertex.Z(ev), None] # z-coordinates of edge ends
+                    e_label = ""
+                    e_group = ""
+                    d = Topology.Dictionary(e)
+                    if d:
+                        try:
+                            e_label = str(Dictionary.ValueAtKey(d, key=edgeLabelKey)) or ""
+                        except:
+                            e_label = ""
+                        try:
+                            e_group = str(Dictionary.ValueAtKey(d, key=edgeGroupKey)) or ""
+                        except:
+                            e_group = ""
+                    try:
+                        e_groupList.append(edgeGroups.index(e_group))
+                    except:
+                        e_groupList.append(len(edgeGroups))
+                    if not e_label == "" and not e_group == "":
+                        e_label = e_label+" ("+e_group+")"
+                    e_labels.append(e_label)
+            else:
+                for e in edges:
+                    sv = Edge.StartVertex(e)
+                    ev = Edge.EndVertex(e)
+                    x+=[Vertex.X(sv),Vertex.X(ev), None] # x-coordinates of edge ends
+                    y+=[Vertex.Y(sv),Vertex.Y(ev), None] # y-coordinates of edge ends
+                    z+=[Vertex.Z(sv),Vertex.Z(ev), None] # z-coordinates of edge ends
+                
+            if len(list(set(e_groupList))) < 2:
+                    e_groupList = edgeColor
+            if len(e_labels) < 1:
+                e_labels = ""
             return go.Scatter3d(x=x,
                                 y=y,
                                 z=z,
@@ -297,21 +393,24 @@ class Plotly:
                                 showlegend=True,
                                 marker_size=0,
                                 mode="lines",
-                                line=dict(color=color, width=width),
+                                line=dict(color=e_groupList, width=edgeWidth),
                                 legendgroup=2,
                                 legendrank=2,
+                                text=e_labels,
                                 hoverinfo='text')
 
-        def faceData(topology, color="white", opacity=0.5, labelKey=None, groupKey=None, groups=[]):
+        def faceData(topology, faceColor="white", faceOpacity=0.5, faceLabelKey=None, faceGroupKey=None, faceGroups=[]):
+
             if isinstance(topology, topologic.Cluster):
                 faces = Cluster.Faces(topology)
                 if len(faces) > 0:
                     triangulated_faces = []
                     for face in faces:
-                        triangulated_faces.append(Topology.Triangulate(face, 0.0001))
+                        triangulated_faces.append(Topology.Triangulate(face, transferDictionaries=True, tolerance=0.0001))
                     topology = Cluster.ByTopologies(triangulated_faces)
             else:
-                topology = Topology.Triangulate(topology, 0.0001)
+                topology = Topology.Triangulate(topology, transferDictionaries=True, tolerance=0.0001)
+            
             tp_vertices = []
             _ = topology.Vertices(None, tp_vertices)
             x = []
@@ -337,11 +436,42 @@ class Plotly:
             i = []
             j = []
             k = []
-            for f in faces:
-                i.append(f[0])
-                j.append(f[1])
-                k.append(f[2])
-
+            f_labels = []
+            f_groupList = []
+            if faceLabelKey or faceGroupKey:
+                for m, f in enumerate(faces):
+                    i.append(f[0])
+                    j.append(f[1])
+                    k.append(f[2])
+                    f_label = ""
+                    f_group = ""
+                    d = Topology.Dictionary(tp_faces[m])
+                    if d:
+                        try:
+                            f_label = str(Dictionary.ValueAtKey(d, key=faceLabelKey)) or ""
+                        except:
+                            f_label = ""
+                        try:
+                            f_group = str(Dictionary.ValueAtKey(d, key=faceGroupKey)) or ""
+                        except:
+                            f_group = ""
+                    try:
+                        f_groupList.append(faceGroups.index(f_group))
+                    except:
+                        f_groupList.append(len(faceGroups))
+                    if not f_label == "" and not f_group == "":
+                        f_label = f_label+" ("+f_group+")"
+                    f_labels.append(f_label)
+            else:
+                for f in faces:
+                    i.append(f[0])
+                    j.append(f[1])
+                    k.append(f[2])
+                
+            if len(list(set(f_groupList))) < 2:
+                    f_groupList = faceColor
+            if len(f_labels) < 1:
+                f_labels = ""
             return go.Mesh3d(
                     x=x,
                     y=y,
@@ -356,23 +486,26 @@ class Plotly:
                     showlegend = True,
                     legendgroup=3,
                     legendrank=3,
-                    color = color,
-                    opacity = opacity,
+                    color = f_groupList,
+                    opacity = faceOpacity,
+                    hoverinfo = 'text',
+                    text=f_labels,
+                    hovertext = f_labels,
                     flatshading = True,
                     lighting = {"facenormalsepsilon": 0},
                 )
-        from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
         if not isinstance(topology, topologic.Topology):
             return None
         data = []
         if showVertices:
-            data.append(vertexData(topology, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, groups=vertexGroups))
+            data.append(vertexData(topology, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups))
         if showEdges and topology.Type() > topologic.Vertex.Type():
-            data.append(edgeData(topology, color=edgeColor, width=edgeWidth, labelKey=edgeLabelKey, groupKey=edgeGroupKey, groups=edgeGroups))
+            data.append(edgeData(topology, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups))
         if showFaces and topology.Type() >= topologic.Face.Type():
-            data.append(faceData(topology, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, groups=faceGroups))
+            data.append(faceData(topology, faceColor=faceColor, faceOpacity=faceOpacity, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups))
         return data
 
     @staticmethod

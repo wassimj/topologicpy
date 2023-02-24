@@ -3860,7 +3860,7 @@ class Topology():
         return {"vertices":vOutput, "edges":eOutput, "wires":wOutput, "faces":fOutput}
 
     @staticmethod
-    def Show(topology, faceColor='white', faceOpacity=0.5, wireColor='black', wireWidth=1, vertexColor='black', vertexSize=1.1, drawFaces=True, drawWires=True, drawVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=0, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
+    def Show(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor='white', faceOpacity=0.5, edgeColor='black', edgeWidth=1, vertexColor='black', vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
         """
         Shows the input topology on screen.
 
@@ -3868,6 +3868,24 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology. This must contain faces and or wires.
+        vertexLabelKey : str , optional
+            The dictionary key to use to display the vertex label. The default is None.
+        vertexGroupKey : str , optional
+            The dictionary key to use to display the vertex group. The default is None.
+        edgeLabelKey : str , optional
+            The dictionary key to use to display the edge label. The default is None.
+        edgeGroupKey : str , optional
+            The dictionary key to use to display the edge group. The default is None.
+        faceLabelKey : str , optional
+            The dictionary key to use to display the face label. The default is None.
+        faceGroupKey : str , optional
+            The dictionary key to use to display the face group. The default is None.
+        vertexGroups : list , optional
+            The list of vertex groups against which to index the color of the vertex. The default is [].
+        edgeGroups : list , optional
+            The list of edge groups against which to index the color of the edge. The default is [].
+        faceGroups : list , optional
+            The list of face groups against which to index the color of the face. The default is [].
         faceColor : str , optional
             The desired color of the output faces. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -3878,16 +3896,16 @@ class Topology():
             The default is "lightblue".
         faceOpacity : float , optional
             The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
-        wireColor : str , optional
-            The desired color of the output wires (edges). This can be any plotly color string and may be specified as:
+        edgeolor : str , optional
+            The desired color of the output edges. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
             - An rgb/rgba string (e.g. 'rgb(255,0,0)')
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
-        wireWidth : float , optional
-            The desired thickness of the output wires (edges). The default is 1.
+        edgeWidth : float , optional
+            The desired thickness of the output edges. The default is 1.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -3898,11 +3916,11 @@ class Topology():
             The default is "black".
         vertexSize : float , optional
             The desired size of the vertices. The default is 1.1.
-        drawFaces : bool , optional
+        showFaces : bool , optional
             If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
-        drawWires : bool , optional
-            If set to True the wires (edges) will be drawn. Otherwise, they will not be drawn. The default is True.
-        drawVertices : bool , optional
+        showEdges : bool , optional
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+        showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
         width : int , optional
             The width in pixels of the figure. The default value is 950.
@@ -3927,7 +3945,7 @@ class Topology():
         marginRight : int , optional
             The size in pixels of the right margin. The default value is 0.
         marginTop : int , optional
-            The size in pixels of the top margin. The default value is 0.
+            The size in pixels of the top margin. The default value is 20.
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
@@ -3947,7 +3965,7 @@ class Topology():
         from topologicpy.Plotly import Plotly
         if not isinstance(topology, topologic.Topology):
             return None
-        data = Plotly.DataByTopology(topology=topology, faceColor=faceColor, faceOpacity=faceOpacity, wireColor=wireColor, wireWidth=wireWidth, vertexColor=vertexColor, vertexSize=vertexSize, drawFaces=drawFaces, drawWires=drawWires, drawVertices=drawVertices)
+        data = Plotly.DataByTopology(topology=topology, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, vertexGroups=vertexGroups, edgeGroups=edgeGroups, faceGroups=faceGroups, faceColor=faceColor, faceOpacity=faceOpacity, edgeColor=edgeColor, edgeWidth=edgeWidth, vertexColor=vertexColor, vertexSize=vertexSize, showFaces=showFaces, showEdges=showEdges, showVertices=showVertices)
         figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
         Plotly.Show(figure=figure, renderer=renderer, camera=camera, target=target, up=up)
 
@@ -4469,7 +4487,7 @@ class Topology():
 
     
     @staticmethod
-    def Triangulate(topology, tolerance=0.0001):
+    def Triangulate(topology, transferDictionaries = False, tolerance=0.0001):
         """
         Triangulates the input topology.
 
@@ -4477,6 +4495,8 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topologgy.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries of the faces in the input topology will be transferred to the created triangular faces. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -4490,6 +4510,8 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
         if not isinstance(topology, topologic.Topology):
             return None
         t = topology.Type()
@@ -4498,16 +4520,28 @@ class Topology():
         topologyFaces = []
         _ = topology.Faces(None, topologyFaces)
         faceTriangles = []
+        selectors = []
         for aFace in topologyFaces:
             triFaces = Face.Triangulate(aFace)
             for triFace in triFaces:
+                if transferDictionaries:
+                    selectors.append(Topology.SetDictionary(Face.Centroid(triFace), Topology.Dictionary(aFace)))
                 faceTriangles.append(triFace)
         if t == 8 or t == 16: # Face or Shell
-            return Shell.ByFaces(faceTriangles, tolerance)
+            shell = Shell.ByFaces(faceTriangles, tolerance)
+            if transferDictionaries:
+                shell = Topology.TransferDictionariesBySelectors(shell, selectors, tranFaces=True)
+            return shell
         elif t == 32: # Cell
-            return Cell.ByFaces(faceTriangles, tolerance)
+            cell = Cell.ByFaces(faceTriangles, tolerance)
+            if transferDictionaries:
+                cell = Topology.TransferDictionariesBySelectors(cell, selectors, tranFaces=True)
+            return cell
         elif t == 64: #CellComplex
-            return CellComplex.ByFaces(faceTriangles, tolerance)
+            cellComplex = CellComplex.ByFaces(faceTriangles, tolerance)
+            if transferDictionaries:
+                cellComplex = Topology.TransferDictionariesBySelectors(cellComplex, selectors, tranFaces=True)
+            return cellComplex
 
     
     @staticmethod
