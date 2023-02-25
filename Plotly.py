@@ -76,7 +76,52 @@ class Plotly:
 
     @staticmethod
     def DataByGraph(graph, vertexColor="white", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True):
+        """
+        Creates plotly vertex and edge data from the input graph.
 
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertexLabelKey : str , optional
+            The dictionary key to use to display the vertex label. The default is None.
+        vertexGroupKey : str , optional
+            The dictionary key to use to display the vertex group. The default is None.
+        edgeLabelKey : str , optional
+            The dictionary key to use to display the edge label. The default is None.
+        edgeGroupKey : str , optional
+            The dictionary key to use to display the edge group. The default is None.
+        edgeColor : str , optional
+            The desired color of the output wires (edges). This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        edgeWidth : float , optional
+            The desired thickness of the output edges. The default is 1.
+        vertexColor : str , optional
+            The desired color of the output vertices. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        vertexSize : float , optional
+            The desired size of the vertices. The default is 1.1.
+        showEdges : bool , optional
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+        showVertices : bool , optional
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+
+        Returns
+        -------
+        list
+            The vertex and edge data list.
+
+        """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Dictionary import Dictionary
@@ -271,7 +316,7 @@ class Plotly:
         Returns
         -------
         list
-            The vertex, wire, and face data list.
+            The vertex, edge, and face data list.
 
         """
         from topologicpy.Topology import Topology
@@ -518,15 +563,15 @@ class Plotly:
              yTitle = "Predicted",
              width=950,
              height=500,
-             showscale = True,
-             colorscale='Viridis',
+             showScale = True,
+             colorScale='Viridis',
              backgroundColor='rgba(0,0,0,0)',
              marginLeft=0,
              marginRight=0,
              marginTop=40,
              marginBottom=0):
         """
-        Returns a Plotly Figure of the input matrix
+        Returns a Plotly Figure of the input confusion matrix. Actual categories are displayed on the X-Axis, Predicted categories are displayed on the Y-Axis.
 
         Parameters
         ----------
@@ -534,6 +579,40 @@ class Plotly:
             The matrix to display.
         categories : list
             The list of categories to use on the X and Y axes.
+        minValue : float , optional
+            The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. The default is None.
+        maxValue : float , optional
+            The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. The default is None.
+        title : str , optional
+            The desired title to display. The default is "Confusion Matrix".
+        xTitle : str , optional
+            The desired X-axis title to display. The default is "Actual".
+        yTitle : str , optional
+            The desired Y-axis title to display. The default is "Predicted".
+        width : int , optional
+            The desired width of the figure. The default is 950.
+        height : int , optional
+            The desired height of the figure. The default is 500.
+        showScale : bool , optional
+            If set to True, a color scale is shown on the right side of the figure. The default is True.
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+        backgroundColor : str , optional
+            The desired background color. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'rgba(0,0,0,0)' (transparent).
+        marginLeft : int , optional
+            The desired left margin in pixels. The default is 0.
+        marginRight : int , optional
+            The desired right margin in pixels. The default is 0.
+        marginTop : int , optional
+            The desired top margin in pixels. The default is 40.
+        marginBottom : int , optional
+            The desired bottom margin in pixels. The default is 0.
 
         """
         #import plotly.figure_factory as ff
@@ -574,7 +653,7 @@ class Plotly:
                             "showarrow": False
                         }
                     )
-        data = go.Heatmap(z=matrix, y=categories, x=categories, zmin=minValue, zmax=maxValue, showscale=showscale, colorscale=colorscale)
+        data = go.Heatmap(z=matrix, y=categories, x=categories, zmin=minValue, zmax=maxValue, showscale=showScale, colorscale=colorScale)
         
         layout = {
             "width": width,
@@ -751,9 +830,9 @@ class Plotly:
         figure : plotly.graph_objs._figure.Figure
             The input plotly figure.
         camera : list , optional
-            The desired location of the camera). The default is [0,0,0].
-        center : list , optional
-            The desired center (camera target). The default is [0,0,0].
+            The desired location of the camera. The default is [0,0,0].
+        target : list , optional
+            The desired camera target. The default is [0,0,0].
         up : list , optional
             The desired up vector. The default is [0,0,1].
         
@@ -778,7 +857,7 @@ class Plotly:
         return figure
 
     @staticmethod
-    def Show(figure, renderer="notebook", camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1]):
+    def Show(figure, camera=[1.25, 1.25, 1.25], renderer="notebook", target=[0, 0, 0], up=[0, 0, 1]):
         """
         Shows the input figure.
 
@@ -786,8 +865,14 @@ class Plotly:
         ----------
         figure : plotly.graph_objs._figure.Figure
             The input plotly figure.
+        camera : list , optional
+            The desired location of the camera. The default is [0,0,0].
         renderer : str , optional
             The desired rendered. See Plotly.Renderers(). The default is "notebook".
+        target : list , optional
+            The desired camera target. The default is [0,0,0].
+        up : list , optional
+            The desired up vector. The default is [0,0,1].
         
         Returns
         -------

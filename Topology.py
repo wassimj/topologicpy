@@ -2059,17 +2059,17 @@ class Topology():
         from topologicpy.Graph import Graph
 
         def processClusterTypeFilter(cluster):
-            if len(Cluster.CellComplexes()) > 0:
+            if len(Cluster.CellComplexes(cluster)) > 0:
                 return "cell"
-            elif len(Cluster.Cells()) > 0:
+            elif len(Cluster.Cells(cluster)) > 0:
                 return "face"
-            elif len(Cluster.Shells()) > 0:
+            elif len(Cluster.Shells(cluster)) > 0:
                 return "face"
-            elif len(Cluster.Faces()) > 0:
+            elif len(Cluster.Faces(cluster)) > 0:
                 return "edge"
-            elif len(Cluster.Wires()) > 0:
+            elif len(Cluster.Wires(cluster)) > 0:
                 return "edge"
-            elif len(Cluster.Edges()) > 0:
+            elif len(Cluster.Edges(cluster)) > 0:
                 return "vertex"
             else:
                 return "self"
