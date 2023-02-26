@@ -1121,6 +1121,87 @@ class Topology():
         topology = Topology.ByString(brep_string)
         brep_file.close()
         return topology
+    
+    @staticmethod
+    def ByImportedIFC(path):
+        """
+        Create a topology by importing it from an IFC file path.
+
+        Parameters
+        ----------
+        path : str
+            The path to the IFC file.
+        
+        Returns
+        -------
+        topologic.Cluster
+            The created cluster of Topologies.
+        
+        """
+        import ifcopenshell
+        import ifcopenshell.geom
+        import multiprocessing
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+        import uuid
+
+        ifc_file = None
+        try:
+            ifc_file = ifcopenshell.open(path)
+        except:
+            return None
+        topologies = []
+        if ifc_file:
+            settings = ifcopenshell.geom.settings()
+            settings.set(settings.USE_BREP_DATA,False)
+            iterator = ifcopenshell.geom.iterator(settings, ifc_file, multiprocessing.cpu_count())
+            if iterator.initialize():
+                while True:
+                    shape = iterator.get()
+                    m = shape.transformation.matrix.data
+                    mat = [[m[0], m[3], m[6], m[9]], [m[1], m[4], m[7], m[10]], [m[2], m[5], m[8], m[11]], [0, 0, 0, 1]]
+                    # X Y Z of vertices in flattened list e.g. [v1x, v1y, v1z, v2x, v2y, v2z, ...]
+                    verts = shape.geometry.verts
+                    # Indices of vertices per edge e.g. [e1v1, e1v2, e2v1, e2v2, ...]
+                    edges = shape.geometry.edges
+                    # Indices of vertices per triangle face e.g. [f1v1, f1v2, f1v3, f2v1, f2v2, f2v3, ...]
+                    faces = shape.geometry.faces
+                    # Since the lists are flattened, you may prefer to group them like so depending on your geometry kernel
+                    grouped_verts = [[verts[i], verts[i + 1], verts[i + 2]] for i in range(0, len(verts), 3)]
+                    grouped_edges = [[edges[i], edges[i + 1]] for i in range(0, len(edges), 2)]
+                    grouped_faces = [[faces[i], faces[i + 1], faces[i + 2]] for i in range(0, len(faces), 3)]
+                    topology = Topology.ByGeometry(vertices=grouped_verts, edges=grouped_edges, faces=grouped_faces)
+                    topology = Topology.SelfMerge(topology)
+                    topology = Topology.RemoveCoplanarFaces(topology)
+                    topology = Topology.Transform(topology, mat)
+                    keys = []
+                    values = []
+                    keys.append("TOPOLOGIC_color")
+                    values.append([1.0,1.0,1.0,1.0])
+                    keys.append("TOPOLOGIC_id")
+                    values.append(str(uuid.uuid4()))
+                    keys.append("TOPOLOGIC_name")
+                    values.append(shape.name)
+                    keys.append("TOPOLOGIC_type")
+                    values.append(Topology.TypeAsString(topology))
+                    keys.append("IFC_id")
+                    values.append(str(shape.id))
+                    keys.append("IFC_guid")
+                    values.append(str(shape.guid))
+                    keys.append("IFC_unique_id")
+                    values.append(str(shape.unique_id))
+                    keys.append("IFC_name")
+                    values.append(shape.name)
+                    keys.append("IFC_type")
+                    values.append(shape.type)
+                    d = Dictionary.ByKeysValues(keys, values)
+                    topology = Topology.SetDictionary(topology, d)
+                    topologies.append(topology)
+                    if not iterator.next():
+                        break
+    
+        return Cluster.ByTopologies(topologies)
+
     '''
     @staticmethod
     def ByImportedIFC(filePath, typeList):

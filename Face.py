@@ -1024,37 +1024,6 @@ class Face(topologic.Face):
         return status
 
     @staticmethod
-    def IsInside_original(face, vertex, tolerance=0.0001):
-        """
-        Returns True if the input vertex is inside the input face. Returns False otherwise.
-
-        Parameters
-        ----------
-        face : topologic.Face
-            The input face.
-        vertex : topologic.Vertex
-            The input vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            True if the input vertex is inside the input face. False otherwise.
-
-        """
-        if not isinstance(face, topologic.Face):
-            return None
-        if not isinstance(vertex, topologic.Vertex):
-            return None
-        print("Calling FaceUtility Is Inside")
-        status = topologic.FaceUtility.IsInside(face, vertex, tolerance)
-        print("Is Inside status:", status)
-        if status == None:
-            return False
-        return status
-
-    @staticmethod
     def MedialAxis(face, resolution=0, externalVertices=False, internalVertices=False, toLeavesOnly=False, tolerance=0.0001, angTolerance=0.1):
         """
         Returns a wire representing an approximation of the medial axis of the input topology. See https://en.wikipedia.org/wiki/Medial_axis.
