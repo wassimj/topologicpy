@@ -146,7 +146,7 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allCellsCluster, cellComplexesCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Cell):
             return [resultingCluster]
-        return Cluster.Cells(resultingCluster)
+        return Topology.SubTopologies(resultingCluster, subTopologyType="cell")
     
     @staticmethod
     def FreeShells(cluster):
@@ -184,7 +184,7 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allShellsCluster, cellsCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Shell):
             return [resultingCluster]
-        return Cluster.Shells(resultingCluster)
+        return Topology.SubTopologies(resultingCluster, subTopologyType="shell")
     
     @staticmethod
     def FreeFaces(cluster):
@@ -221,7 +221,7 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allFacesCluster, shellCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Face):
             return [resultingCluster]
-        return Cluster.Faces(resultingCluster)
+        return Topology.SubTopologies(resultingCluster, subTopologyType="face")
 
     @staticmethod
     def FreeWires(cluster):
@@ -259,7 +259,7 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allWiresCluster, facesCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Wire):
             return [resultingCluster]
-        return Cluster.Wires(resultingCluster)
+        return Topology.SubTopologies(resultingCluster, subTopologyType="wire")
     
     @staticmethod
     def FreeEdges(cluster):
@@ -297,7 +297,7 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allEdgesCluster, wireCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Edge):
             return [resultingCluster]
-        return Cluster.Edges(resultingCluster)
+        return Topology.SubTopologies(resultingCluster, subTopologyType="edge")
     
     @staticmethod
     def FreeVertices(cluster):
@@ -335,7 +335,7 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allVerticesCluster, edgesCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Vertex):
             return [resultingCluster]
-        return Cluster.Vertices(resultingCluster)
+        return Topology.SubTopologies(resultingCluster, subTopologyType="vertex")
     
     @staticmethod
     def HighestType(cluster):
