@@ -65,4 +65,4 @@ Download the latest Release binaries from the Releases link found on the right s
 1. Start using the API
 
 ## API Documentation
-API documentation can be found at [https://topologic.app/topologicpy_doc/topologic_pdoc/](https://topologic.app/topologicpy_doc/topologic_pdoc/)
+API documentation can be found at [https://topologic.app/topologicpy_doc/](https://topologic.app/topologicpy_doc/)
