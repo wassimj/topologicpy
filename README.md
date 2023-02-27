@@ -61,4 +61,5 @@ topologicpy depends on the following python libraries which will be installed au
 API documentation can be found at [https://topologic.app/topologicpy_doc/](https://topologic.app/topologicpy_doc/)
 
 topologicpy: &copy; 2023 Wassim Jabi
+
 Topologic: &copy; 2023 Cardiff University and UCL
