@@ -1134,8 +1134,8 @@ class Topology():
         
         Returns
         -------
-        topologic.Cluster
-            The created cluster of Topologies.
+        list
+            The created list of topologies.
         
         """
         import ifcopenshell
@@ -1200,7 +1200,7 @@ class Topology():
                     if not iterator.next():
                         break
     
-        return Cluster.ByTopologies(topologies)
+        return topologies
 
     '''
     @staticmethod
@@ -4036,7 +4036,7 @@ class Topology():
         up : list , optional
             The desired up vector. The default is [0,0,1].
         renderer : str , optional
-            The desired rendered. See Plotly.Renderers(). The default is "browser".
+            The desired renderer. See Plotly.Renderers(). The default is "notebook".
 
         Returns
         -------
