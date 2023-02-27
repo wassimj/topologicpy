@@ -2,24 +2,18 @@
 
 <img src="https://topologic.app/wp-content/uploads/2023/02/topologicpy-logo-no-loop.gif" alt="topologicpy logo" width="250" loop="1">
 
-# Topologic - A Hierarchical and Topological Modelling and Spatial Analysis Library for Architecture
+# A Hierarchical and Topological Modelling and Spatial Analysis Library for Architecture
 
 ## Introduction
-Welcome to Topologic, the powerful software modelling and spatial analysis library that revolutionizes the way you design architectural spaces, buildings, and artefacts. Topologic's advanced features enable you to create hierarchical and topological 3D representations that offer unprecedented flexibility and control in your design process. With Topologic, you can achieve your design vision faster and more efficiently than ever before. With the integration of geometry, topology, information, and artificial intelligence, Topologic replaces Building Information Models (BIM) with Building *Intelligence* Models.
+Welcome to **topologicpy** (pronounced the same as apple pie). **topologicpy** is a free and open-source python 3 implementation of [Topologic](https://topologic.app). **Topologic** is a powerful software modelling and spatial analysis library that revolutionizes the way you design architectural spaces, buildings, and artefacts. **Topologic's** advanced features enable you to create hierarchical and topological 3D representations that offer unprecedented flexibility and control in your design process. With Topologic, you can achieve your design vision faster and more efficiently than ever before. With the integration of geometry, topology, information, and artificial intelligence, **Topologic** replaces Building Information Models (BIM) with Building *Intelligence* Models.
 
-Two of Topologic's main strengths are its support for *defeaturing* and *encoded meshing*. By simplifying the geometry of a model and removing small or unnecessary details not needed for analysis, defeaturing allows for faster and more accurate analysis while maintaining topological consistency. This feature enables you to transform low-quality, heavy BIM models into high-quality, lightweight representations ready for rigorous analysis effortlessly. Encoded meshing allows you to use the same base elements available in your commercial BIM platform to cleanly build 3D information-encoded models that match your exacting specifications.
+Two of **Topologic's** main strengths are its support for *defeaturing* and *encoded meshing*. By simplifying the geometry of a model and removing small or unnecessary details not needed for analysis, defeaturing allows for faster and more accurate analysis while maintaining topological consistency. This feature enables you to transform low-quality, heavy BIM models into high-quality, lightweight representations ready for rigorous analysis effortlessly. Encoded meshing allows you to use the same base elements available in your commercial BIM platform to cleanly build 3D information-encoded models that match your exacting specifications.
 
-Topologic's versatility extends to entities with mixed dimensionalities, enabling structural models to be represented coherently. Lines can represent columns and beams, surfaces can represent walls and slabs, and volumes can represent solids. Even non-building entities like structural loads can be efficiently attached to the structure. This approach creates a lightweight model that are highly compatible with structural analysis simulation software.
+**Topologic's** versatility extends to entities with mixed dimensionalities, enabling structural models to be represented coherently. Lines can represent columns and beams, surfaces can represent walls and slabs, and volumes can represent solids. Even non-building entities like structural loads can be efficiently attached to the structure. This approach creates a lightweight model that are highly compatible with structural analysis simulation software.
 
-Experience Topologic's comprehensive and well-documented Application Protocol Interface (API) and enjoy the freedom and flexibility that Topologic offers in your architectural design process. Topologic uses cutting-edge C++-based non-manifold topology (NMT) core technology, python bindings, and optional visual data flow programming (VDFP) plugins for popular BIM software. With Topologic, you can easily interact with the software in various ways to perform design and analysis tasks. Plus, Topologic’s open-source philosophy means that your information is yours and is never trapped. Topologic includes several methods for data transport including IFC, OBJ, BREP, HBJSON, CSV, and serializing through Speckle.
+Experience **Topologic's** comprehensive and well-documented Application Protocol Interface (API) and enjoy the freedom and flexibility that Topologic offers in your architectural design process. **Topologic** uses cutting-edge C++-based non-manifold topology (NMT) core technology, python bindings, and optional visual data flow programming (VDFP) plugins for popular BIM software. With **Topologic**, you can easily interact with the software in various ways to perform design and analysis tasks. Plus, **Topologic’s** open-source philosophy means that your information is yours and is never trapped. **Topologic** includes several methods for data transport including IFC, OBJ, BREP, HBJSON, CSV, and serializing through Speckle.
 
-Join the revolution in architectural design with Topologic. Try it today and see the difference for yourself.
-
-**topologicpy** is a free and open-source python 3 implementation of [Topologic](https://topologic.app).
-
-[**Topologic**](https://topologic.app/) is a software modeling library enabling hierarchical and topological representations of architectural spaces, buildings and artefacts through non-manifold topology. 
-
-[**Sverchok**](http://nortikin.github.io/sverchok/) is a powerful Blender Addon parametric tool for architects, allowing geometry to be programmed visually with nodes. 
+Join the revolution in architectural design with **Topologic**. Try it today and see the difference for yourself.
 
 ## Installation
 **topologicpy** can be install using the **pip** command as such:
@@ -28,7 +22,7 @@ Join the revolution in architectural design with Topologic. Try it today and see
 
 ## Prerequisites
 
-topologicpy depends on the following python libraries which will be installed automatically from pip:
+**topologicpy** depends on the following python libraries which will be installed automatically from pip:
 
 <details>
 <summary>
