@@ -641,6 +641,94 @@ class Topology():
         return apTopologies
     
     @staticmethod
+    def Union(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean()
+
+        """
+        return Topology.Boolean(topologyA, topologyB, operation="union", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Difference(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="difference", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Intersect(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="intersect", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def SymmetricDifference(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def SymDif(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def XOR(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Merge(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Slice(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="slice", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Merge(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Impose(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="impose", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Imprint(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
     def Boolean(topologyA, topologyB, operation="union", tranDict=False, tolerance=0.0001):
         """
         Execute the input boolean operation type on the input operand topologies and return the result. See https://en.wikipedia.org/wiki/Boolean_operation.
