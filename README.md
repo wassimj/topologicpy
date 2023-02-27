@@ -64,7 +64,7 @@ Download the latest Release binaries from the Releases link found on the right s
 1. Place the topologicpy folder at a location that your python system can find.
 
 ## How to use
-1. Open your favourite python editor
+1. Open your favourite python editor ([jupyter notebook](https://jupyter.org/) is highly recommended)
 1. Type 'import topologicpy'
 1. Start using the API
 
