@@ -18,7 +18,7 @@ Experience Topologic's comprehensive and well-documented Application Protocol In
 Join the revolution in architectural design with Topologic. Try it today and see the difference for yourself.
 
 ## Installation
-topologicpy can be install using the **pip** command as such:
+topologicpy can be installed using the **pip** command as such:
 
 `pip install topologicpy --upgrade`
 
