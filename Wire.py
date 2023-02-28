@@ -1385,6 +1385,8 @@ class Wire(topologic.Wire):
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
         def rce(wire, angTolerance=0.1):
+            if not isinstance(wire, topologic.Wire):
+                return None
             final_wire = None
             vertices = []
             wire_verts = []
@@ -1415,7 +1417,10 @@ class Wire(topologic.Wire):
             wires = [wire]
         returnWires = []
         for aWire in wires:
-            returnWires.append(rce(aWire, angTolerance=angTolerance))
+            if not isinstance(aWire, topologic.Wire):
+                returnWires.append(aWire)
+            else:
+                returnWires.append(rce(aWire, angTolerance=angTolerance))
         if len(returnWires) == 1:
             returnWire = returnWires[0]
             if isinstance(returnWire, topologic.Edge):

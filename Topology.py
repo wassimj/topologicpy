@@ -1211,7 +1211,7 @@ class Topology():
         return topology
     
     @staticmethod
-    def ByImportedIFC(path):
+    def ByImportedIFC(path, transferDictionaries=False):
         """
         Create a topology by importing it from an IFC file path.
 
@@ -1219,6 +1219,8 @@ class Topology():
         ----------
         path : str
             The path to the IFC file.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won't. The default is False.
         
         Returns
         -------
@@ -1241,53 +1243,42 @@ class Topology():
         topologies = []
         if ifc_file:
             settings = ifcopenshell.geom.settings()
-            settings.set(settings.USE_BREP_DATA,False)
+            settings.set(settings.DISABLE_TRIANGULATION, False)
+            settings.set(settings.USE_BREP_DATA, True)
+            settings.set(settings.USE_WORLD_COORDS, True)
+            settings.set(settings.SEW_SHELLS, True)
             iterator = ifcopenshell.geom.iterator(settings, ifc_file, multiprocessing.cpu_count())
             if iterator.initialize():
                 while True:
                     shape = iterator.get()
-                    m = shape.transformation.matrix.data
-                    mat = [[m[0], m[3], m[6], m[9]], [m[1], m[4], m[7], m[10]], [m[2], m[5], m[8], m[11]], [0, 0, 0, 1]]
-                    # X Y Z of vertices in flattened list e.g. [v1x, v1y, v1z, v2x, v2y, v2z, ...]
-                    verts = shape.geometry.verts
-                    # Indices of vertices per edge e.g. [e1v1, e1v2, e2v1, e2v2, ...]
-                    edges = shape.geometry.edges
-                    # Indices of vertices per triangle face e.g. [f1v1, f1v2, f1v3, f2v1, f2v2, f2v3, ...]
-                    faces = shape.geometry.faces
-                    # Since the lists are flattened, you may prefer to group them like so depending on your geometry kernel
-                    grouped_verts = [[verts[i], verts[i + 1], verts[i + 2]] for i in range(0, len(verts), 3)]
-                    grouped_edges = [[edges[i], edges[i + 1]] for i in range(0, len(edges), 2)]
-                    grouped_faces = [[faces[i], faces[i + 1], faces[i + 2]] for i in range(0, len(faces), 3)]
-                    topology = Topology.ByGeometry(vertices=grouped_verts, edges=grouped_edges, faces=grouped_faces)
-                    topology = Topology.SelfMerge(topology)
-                    topology = Topology.RemoveCoplanarFaces(topology)
-                    topology = Topology.Transform(topology, mat)
-                    keys = []
-                    values = []
-                    keys.append("TOPOLOGIC_color")
-                    values.append([1.0,1.0,1.0,1.0])
-                    keys.append("TOPOLOGIC_id")
-                    values.append(str(uuid.uuid4()))
-                    keys.append("TOPOLOGIC_name")
-                    values.append(shape.name)
-                    keys.append("TOPOLOGIC_type")
-                    values.append(Topology.TypeAsString(topology))
-                    keys.append("IFC_id")
-                    values.append(str(shape.id))
-                    keys.append("IFC_guid")
-                    values.append(str(shape.guid))
-                    keys.append("IFC_unique_id")
-                    values.append(str(shape.unique_id))
-                    keys.append("IFC_name")
-                    values.append(shape.name)
-                    keys.append("IFC_type")
-                    values.append(shape.type)
-                    d = Dictionary.ByKeysValues(keys, values)
-                    topology = Topology.SetDictionary(topology, d)
+                    brep = shape.geometry.brep_data
+                    topology = Topology.ByString(brep)
+                    if transferDictionaries:
+                            keys = []
+                            values = []
+                            keys.append("TOPOLOGIC_color")
+                            values.append([1.0,1.0,1.0,1.0])
+                            keys.append("TOPOLOGIC_id")
+                            values.append(str(uuid.uuid4()))
+                            keys.append("TOPOLOGIC_name")
+                            values.append(shape.name)
+                            keys.append("TOPOLOGIC_type")
+                            values.append(Topology.TypeAsString(topology))
+                            keys.append("IFC_id")
+                            values.append(str(shape.id))
+                            keys.append("IFC_guid")
+                            values.append(str(shape.guid))
+                            keys.append("IFC_unique_id")
+                            values.append(str(shape.unique_id))
+                            keys.append("IFC_name")
+                            values.append(shape.name)
+                            keys.append("IFC_type")
+                            values.append(shape.type)
+                            d = Dictionary.ByKeysValues(keys, values)
+                            topology = Topology.SetDictionary(topology, d)
                     topologies.append(topology)
                     if not iterator.next():
                         break
-    
         return topologies
 
     '''
@@ -4679,13 +4670,30 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+
         if not isinstance(topology, topologic.Topology):
             return None
         t = topology.Type()
-        if (t == 1) or (t == 2) or (t == 4) or (t == 128):
+        if (t == 1) or (t == 2) or (t == 4):
             return topology
+        elif t == 128:
+            temp_topologies = []
+            cellComplexes = Topology.SubTopologies(topology, subTopologyType="cellcomplex") or []
+            for cc in cellComplexes:
+                temp_topologies.append(Topology.Triangulate(cc, transferDictionaries=transferDictionaries, tolerance=tolerance))
+            cells = Cluster.FreeCells(topology) or []
+            for c in cells:
+                temp_topologies.append(Topology.Triangulate(c, transferDictionaries=transferDictionaries, tolerance=tolerance))
+            shells = Cluster.FreeShells(topology) or []
+            for s in shells:
+                temp_topologies.append(Topology.Triangulate(s, transferDictionaries=transferDictionaries, tolerance=tolerance))
+            if len(temp_topologies) > 0:
+                return Cluster.ByTopologies(temp_topologies)
+            else:
+                return topology
         topologyFaces = []
         _ = topology.Faces(None, topologyFaces)
         faceTriangles = []

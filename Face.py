@@ -1378,11 +1378,25 @@ class Face(topologic.Face):
             The list of triangles of the input face.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+
+        flatFace = Face.Flatten(face)
+        world_origin = Vertex.ByCoordinates(0,0,0)
+        # Retrieve the needed transformations
+        dictionary = Topology.Dictionary(flatFace)
+        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+    
         faceTriangles = []
         for i in range(0,5,1):
             try:
-                _ = topologic.FaceUtility.Triangulate(face, float(i)*0.1, faceTriangles)
+                _ = topologic.FaceUtility.Triangulate(flatFace, float(i)*0.1, faceTriangles)
                 break
             except:
                 continue
@@ -1390,6 +1404,9 @@ class Face(topologic.Face):
             return [face]
         finalFaces = []
         for f in faceTriangles:
+            f = Topology.Rotate(f, origin=world_origin, x=0, y=1, z=0, degree=theta)
+            f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
+            f = Topology.Translate(f, xTran, yTran, zTran)
             if Face.Angle(face, f) > 90:
                 finalFaces.append(Face.Invert(f))
             else:

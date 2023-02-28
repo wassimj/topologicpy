@@ -322,11 +322,7 @@ class Plotly:
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
-        def vertexData(topology, vertexColor="black", vertexSize=1.1, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[]):
-            if isinstance(topology, topologic.Vertex):
-                vertices = [topology]
-            else:
-                vertices = Topology.SubTopologies(topology, "vertex")
+        def vertexData(vertices, dictionaries=None, vertexColor="black", vertexSize=1.1, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[]):
             x = []
             y = []
             z = []
@@ -335,34 +331,35 @@ class Plotly:
             v_label = ""
             v_group = ""
             if vertexLabelKey or vertexGroupKey:
-                for v in vertices:
-                    x.append(v.X())
-                    y.append(v.Y())
-                    z.append(v.Z())
+                for m, v in enumerate(vertices):
+                    x.append(v[0])
+                    y.append(v[1])
+                    z.append(v[2])
                     v_label = ""
                     v_group = ""
-                    d = Topology.Dictionary(v)
-                    if d:
+                    if len(dictionaries) > 0:
+                        d = dictionaries[m]
+                        if d:
+                            try:
+                                v_label = str(Dictionary.ValueAtKey(d, key=vertexLabelKey)) or ""
+                            except:
+                                v_label = ""
+                            try:
+                                v_group = str(Dictionary.ValueAtKey(d, key=vertexGroupKey)) or ""
+                            except:
+                                v_group = ""
                         try:
-                            v_label = str(Dictionary.ValueAtKey(d, key=vertexLabelKey)) or ""
+                            v_groupList.append(vertexGroups.index(v_group))
                         except:
-                            v_label = ""
-                        try:
-                            v_group = str(Dictionary.ValueAtKey(d, key=vertexGroupKey)) or ""
-                        except:
-                            v_group = ""
-                    try:
-                        v_groupList.append(vertexGroups.index(v_group))
-                    except:
-                        v_groupList.append(len(vertexGroups))
-                    if not v_label == "" and not v_group == "":
-                        v_label = v_label+" ("+v_group+")"
-                    v_labels.append(v_label)
+                            v_groupList.append(len(vertexGroups))
+                        if not v_label == "" and not v_group == "":
+                            v_label = v_label+" ("+v_group+")"
+                        v_labels.append(v_label)
             else:
                 for v in vertices:
-                    x.append(v.X())
-                    y.append(v.Y())
-                    z.append(v.Z())
+                    x.append(v[0])
+                    y.append(v[1])
+                    z.append(v[2])
             
             if len(list(set(v_groupList))) < 2:
                 v_groupList = vertexColor
@@ -381,51 +378,47 @@ class Plotly:
                                 hoverinfo='text',
                                 hovertext=v_labels)
 
-        def edgeData(topology, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[]):
+        def edgeData(vertices, edges, dictionaries=None, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[]):
             x = []
             y = []
             z = []
-            if isinstance(topology, topologic.Edge):
-                edges = [topology]
-            else:
-                edges = Topology.SubTopologies(topology, "edge")
-
             e_labels = []
             e_groupList = []
             e_label = ""
             if edgeLabelKey or edgeGroupKey:
-                for e in edges:
-                    sv = Edge.StartVertex(e)
-                    ev = Edge.EndVertex(e)
-                    x+=[Vertex.X(sv),Vertex.X(ev), None] # x-coordinates of edge ends
-                    y+=[Vertex.Y(sv),Vertex.Y(ev), None] # y-coordinates of edge ends
-                    z+=[Vertex.Z(sv),Vertex.Z(ev), None] # z-coordinates of edge ends
+                for m, e in enumerate(edges):
+                    sv = vertices[e[0]]
+                    ev = vertices[e[1]]
+                    x+=[sv[0],ev[0], None] # x-coordinates of edge ends
+                    y+=[sv[1],ev[1], None] # y-coordinates of edge ends
+                    z+=[sv[2],ev[2], None] # z-coordinates of edge ends
                     e_label = ""
                     e_group = ""
-                    d = Topology.Dictionary(e)
-                    if d:
+                    if len(dictionaries) > 0:
+                        d = dictionaries[m]
+                        if d:
+                            try:
+                                e_label = str(Dictionary.ValueAtKey(d, key=edgeLabelKey)) or ""
+                            except:
+                                e_label = ""
+                            try:
+                                e_group = str(Dictionary.ValueAtKey(d, key=edgeGroupKey)) or ""
+                            except:
+                                e_group = ""
                         try:
-                            e_label = str(Dictionary.ValueAtKey(d, key=edgeLabelKey)) or ""
+                            e_groupList.append(edgeGroups.index(e_group))
                         except:
-                            e_label = ""
-                        try:
-                            e_group = str(Dictionary.ValueAtKey(d, key=edgeGroupKey)) or ""
-                        except:
-                            e_group = ""
-                    try:
-                        e_groupList.append(edgeGroups.index(e_group))
-                    except:
-                        e_groupList.append(len(edgeGroups))
-                    if not e_label == "" and not e_group == "":
-                        e_label = e_label+" ("+e_group+")"
-                    e_labels.append(e_label)
+                            e_groupList.append(len(edgeGroups))
+                        if not e_label == "" and not e_group == "":
+                            e_label = e_label+" ("+e_group+")"
+                        e_labels.append(e_label)
             else:
                 for e in edges:
-                    sv = Edge.StartVertex(e)
-                    ev = Edge.EndVertex(e)
-                    x+=[Vertex.X(sv),Vertex.X(ev), None] # x-coordinates of edge ends
-                    y+=[Vertex.Y(sv),Vertex.Y(ev), None] # y-coordinates of edge ends
-                    z+=[Vertex.Z(sv),Vertex.Z(ev), None] # z-coordinates of edge ends
+                    sv = vertices[e[0]]
+                    ev = vertices[e[1]]
+                    x+=[sv[0],ev[0], None] # x-coordinates of edge ends
+                    y+=[sv[1],ev[1], None] # y-coordinates of edge ends
+                    z+=[sv[2],ev[2], None] # z-coordinates of edge ends
                 
             if len(list(set(e_groupList))) < 2:
                     e_groupList = edgeColor
@@ -444,40 +437,17 @@ class Plotly:
                                 text=e_labels,
                                 hoverinfo='text')
 
-        def faceData(topology, faceColor="white", faceOpacity=0.5, faceLabelKey=None, faceGroupKey=None, faceGroups=[]):
 
-            if isinstance(topology, topologic.Cluster):
-                faces = Cluster.Faces(topology)
-                if len(faces) > 0:
-                    triangulated_faces = []
-                    for face in faces:
-                        triangulated_faces.append(Topology.Triangulate(face, transferDictionaries=True, tolerance=0.0001))
-                    topology = Cluster.ByTopologies(triangulated_faces)
-            else:
-                topology = Topology.Triangulate(topology, transferDictionaries=True, tolerance=0.0001)
-            
-            tp_vertices = []
-            _ = topology.Vertices(None, tp_vertices)
+        def faceData(vertices, faces, dictionaries=None, faceColor="white", faceOpacity=0.5, faceLabelKey=None, faceGroupKey=None, faceGroups=[]):
             x = []
             y = []
             z = []
-            vertices = []
             intensities = []
-            for tp_v in tp_vertices:
-                vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
-                x.append(tp_v.X())
-                y.append(tp_v.Y())
-                z.append(tp_v.Z())
+            for v in vertices:
+                x.append(v[0])
+                y.append(v[1])
+                z.append(v[2])
                 intensities.append(0)
-            faces = []
-            tp_faces = Topology.SubTopologies(topology, "face")
-            for tp_f in tp_faces:
-                f_vertices = Face.Vertices(tp_f)
-                f = []
-                for f_v in f_vertices:
-                    f.append(vertices.index([f_v.X(), f_v.Y(), f_v.Z()]))
-                faces.append(f)
-
             i = []
             j = []
             k = []
@@ -490,23 +460,24 @@ class Plotly:
                     k.append(f[2])
                     f_label = ""
                     f_group = ""
-                    d = Topology.Dictionary(tp_faces[m])
-                    if d:
+                    if len(dictionaries) > 0:
+                        d = dictionaries[m]
+                        if d:
+                            try:
+                                f_label = str(Dictionary.ValueAtKey(d, key=faceLabelKey)) or ""
+                            except:
+                                f_label = ""
+                            try:
+                                f_group = str(Dictionary.ValueAtKey(d, key=faceGroupKey)) or ""
+                            except:
+                                f_group = ""
                         try:
-                            f_label = str(Dictionary.ValueAtKey(d, key=faceLabelKey)) or ""
+                            f_groupList.append(faceGroups.index(f_group))
                         except:
-                            f_label = ""
-                        try:
-                            f_group = str(Dictionary.ValueAtKey(d, key=faceGroupKey)) or ""
-                        except:
-                            f_group = ""
-                    try:
-                        f_groupList.append(faceGroups.index(f_group))
-                    except:
-                        f_groupList.append(len(faceGroups))
-                    if not f_label == "" and not f_group == "":
-                        f_label = f_label+" ("+f_group+")"
-                    f_labels.append(f_label)
+                            f_groupList.append(len(faceGroups))
+                        if not f_label == "" and not f_group == "":
+                            f_label = f_label+" ("+f_group+")"
+                        f_labels.append(f_label)
             else:
                 for f in faces:
                     i.append(f[0])
@@ -544,13 +515,68 @@ class Plotly:
         from topologicpy.Dictionary import Dictionary
         if not isinstance(topology, topologic.Topology):
             return None
+
+        if edgeLabelKey or edgeGroupKey:
+            tp_edges = Topology.SubTopologies(topology, subTopologyType="edge")
+            e_dictionaries = []
+            for tp_edge in tp_edges:
+                e_dictionaries.append(Topology.Dictionary(tp_edge))
+        else:
+            e_dictionaries = None
+        if faceLabelKey or faceGroupKey:
+            tp_faces = Topology.SubTopologies(topology, subTopologyType="face")
+            f_dictionaries = []
+            for tp_face in tp_faces:
+                f_dictionaries.append(Topology.Dictionary(tp_face))
+        else:
+           f_dictionaries = None
+        
+        #geometry = Topology.Geometry(topology)
+        #vertices = geometry['vertices']
+        #edges = geometry['edges']
+        #faces = geometry['faces']
         data = []
+        tp_verts = Topology.SubTopologies(topology, subTopologyType="vertex")
+        vertices = []
+        v_dictionaries = []
+        for tp_v in tp_verts:
+            vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
+            if vertexLabelKey or vertexGroupKey:
+                v_dictionaries.append(Topology.Dictionary(tp_v))
         if showVertices:
-            data.append(vertexData(topology, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups))
+            data.append(vertexData(vertices, dictionaries=v_dictionaries, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups))
         if showEdges and topology.Type() > topologic.Vertex.Type():
-            data.append(edgeData(topology, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups))
+            tp_edges = Topology.SubTopologies(topology, subTopologyType="edge")
+            edges = []
+            for tp_edge in tp_edges:
+                sv = Edge.StartVertex(tp_edge)
+                si = Vertex.Index(sv, tp_verts)
+                ev = Edge.EndVertex(tp_edge)
+                ei = Vertex.Index(ev, tp_verts)
+                edges.append([si, ei])
+            data.append(edgeData(vertices, edges, dictionaries=[], edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups))
         if showFaces and topology.Type() >= topologic.Face.Type():
-            data.append(faceData(topology, faceColor=faceColor, faceOpacity=faceOpacity, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups))
+            tp_faces = Topology.SubTopologies(topology, subTopologyType="face")
+            triangles = []
+            f_dictionaries = []
+            for tp_face in tp_faces:
+                temp_faces = Face.Triangulate(tp_face)
+                #temp_faces = [tp_face]
+                for tri in temp_faces:
+                    triangles.append(tri)
+                    if faceLabelKey or faceGroupKey:
+                        f_dictionaries.append(Topology.Dictionary(tp_face))
+            faces = []
+            for tri in triangles:
+                w = Face.ExternalBoundary(tri)
+                w_vertices = Topology.SubTopologies(w, subTopologyType="vertex")
+                temp_f = []
+                for w_v in w_vertices:
+                    i = Vertex.Index(vertex=w_v, vertices=tp_verts, tolerance=0.01)
+                    temp_f.append(i)
+                faces.append(temp_f)
+            data.append(faceData(vertices, faces, dictionaries=f_dictionaries, faceColor=faceColor, faceOpacity=faceOpacity, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups))
+            #data.append(vertexData(vertices, dictionaries=[], vertexColor=vertexColor, vertexSize=5, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups))
         return data
 
     @staticmethod
@@ -728,7 +754,7 @@ class Plotly:
     @staticmethod
     def FigureByData(data, color=None, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0):
         """
-        Creates plotly figure.
+        Creates a plotly figure.
 
         Parameters
         ----------
@@ -812,13 +838,25 @@ class Plotly:
         return figure
 
     @staticmethod
-    def PieChartByData(data, values, names, renderer="notebook"):
+    def FigureByPieChart(data, values, names):
+        """
+        Creates a plotly pie chart figure.
+
+        Parameters
+        ----------
+        data : list
+            The input list of plotly data.
+        values : list
+            The input list of values.
+        names : list
+            The input list of names.
+        """
         import pandas as pd
         import plotly.express as px
         dlist = list(map(list, zip(*data)))
         df = pd.DataFrame(dlist, columns=data['names'])
         fig = px.pie(df, values=values, names=names)
-        fig.show(renderer=renderer)
+        return fig
     
     @staticmethod
     def SetCamera(figure, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1]):
