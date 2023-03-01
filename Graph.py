@@ -462,6 +462,9 @@ class Graph:
                                     v2 = cells[j].CenterOfMass()
                                 e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
                                 mDict = mergeDictionaries(sharedt)
+                                keys = (Dictionary.Keys(mDict) or [])+["relationship"]
+                                values = (Dictionary.Values(mDict) or [])+["Direct"]
+                                mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
                                     e.SetDictionary(mDict)
                                 edges.append(e)
@@ -2397,6 +2400,15 @@ class Graph:
                 edges = Graph.Edges(graph)
                 graph = Graph.ByVerticesEdges(vertices, edges)
         return shortestPaths
+
+    @staticmethod
+    def Show(graph, vertexColor="white", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, renderer="notebook"):
+        from topologicpy.Plotly import Plotly
+        if not isinstance(graph, topologic.Graph):
+            return None
+        data= Plotly.DataByGraph(graph, vertexColor="white", vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges)
+        fig = Plotly.FigureByData(data, color=vertexColor)
+        Plotly.Show(fig, renderer=renderer)
 
     @staticmethod
     def Size(graph):

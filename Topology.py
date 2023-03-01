@@ -641,6 +641,94 @@ class Topology():
         return apTopologies
     
     @staticmethod
+    def Union(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean()
+
+        """
+        return Topology.Boolean(topologyA, topologyB, operation="union", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Difference(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="difference", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Intersect(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="intersect", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def SymmetricDifference(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def SymDif(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def XOR(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Merge(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Slice(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="slice", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Merge(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Impose(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="impose", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
+    def Imprint(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+        """
+        See Topology.Boolean().
+
+        """
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance)
+    
+    @staticmethod
     def Boolean(topologyA, topologyB, operation="union", tranDict=False, tolerance=0.0001):
         """
         Execute the input boolean operation type on the input operand topologies and return the result. See https://en.wikipedia.org/wiki/Boolean_operation.
@@ -949,6 +1037,155 @@ class Topology():
         return box
 
     @staticmethod
+    def ByGeometry(vertices=[], edges=[], faces=[], color=[1.0,1.0,1.0,1.0], id=None, name=None, lengthUnit="METERS", outputMode="default", tolerance=0.0001):
+        """
+        Create a topology by the input lists of vertices, edges, and faces.
+
+        Parameters
+        ----------
+        vertices : list
+            The input list of vertices in the form of [x, y, z]
+        edges : list , optional
+            The input list of edges in the form of [i, j] where i and j are vertex indices.
+        faces : list , optional
+            The input list of faces in the form of [i, j, k, l, ...] where the items in the list are vertex indices. The face is assumed to be closed to the last vertex is connected to the first vertex automatically.
+        color : list , optional
+            The desired color of the object in the form of [r, g, b, a] where the components are between 0 and 1 and represent red, blue, green, and alpha (transparency) repsectively. The default is [1.0, 1.0, 1.0, 1.0].
+        id : str , optional
+            The desired ID of the object. If set to None, an automatic uuid4 will be assigned to the object. The default is None.
+        name : str , optional
+            The desired name of the object. If set to None, a default name "Topologic_[topology_type]" will be assigned to the object. The default is None.
+        lengthUnit : str , optional
+            The length unit used for the object. The default is "METERS"
+        outputMode : str , optional
+            The desired otuput mode of the object. This can be "Shell", "Cell", "CellComplex", or "Default". It is case insensitive. The default is "default".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topology : topologic.Topology
+            The created topology. The topology will have a dictionary embedded in it that records the input attributes (color, id, lengthUnit, name, type)
+
+        """
+        def topologyByFaces(faces, outputMode, tolerance):
+            output = None
+            if len(faces) == 1:
+                return faces[0]
+            if outputMode.lower() == "cell":
+                output = Cell.ByFaces(faces, tolerance)
+                if output:
+                    return output
+                else:
+                    return None
+            if outputMode.lower() == "cellcomplex":
+                output = CellComplex.ByFaces(faces, tolerance)
+                if output:
+                    return output
+                else:
+                    return None
+            if outputMode.lower() == "shell":
+                output = Shell.ByFaces(faces, tolerance)
+                if output:
+                    return output
+                else:
+                    return None
+            if outputMode.lower() == "default":
+                output = Topology.SelfMerge(Cluster.ByTopologies(faces))
+            if output:
+                if output:
+                    return output
+            return output
+        def topologyByEdges(edges):
+            output = None
+            if len(edges) == 1:
+                return edges[0]
+            output = Cluster.ByTopologies(edges)
+            output = Cluster.SelfMerge(output)
+            return output
+        def edgesByVertices(vertices, topVerts):
+            edges = []
+            for i in range(len(vertices)-1):
+                v1 = vertices[i]
+                v2 = vertices[i+1]
+                e1 = Edge.ByVertices([topVerts[v1], topVerts[v2]])
+                edges.append(e1)
+            # connect the last vertex to the first one
+            v1 = vertices[-1]
+            v2 = vertices[0]
+            e1 = Edge.ByVertices([topVerts[v1], topVerts[v2]])
+            edges.append(e1)
+            return edges
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+        import uuid
+        returnTopology = None
+        topVerts = []
+        topEdges = []
+        topFaces = []
+        if len(vertices) > 0:
+            for aVertex in vertices:
+                v = Vertex.ByCoordinates(aVertex[0], aVertex[1], aVertex[2])
+                topVerts.append(v)
+        else:
+            return None
+        if (outputMode.lower == "wire") and (len(edges) > 0):
+            for anEdge in edges:
+                topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]])
+                topEdges.append(topEdge)
+            returnTopology = topologyByEdges(topEdges)
+        elif len(faces) > 0:
+            for aFace in faces:
+                faceEdges = edgesByVertices(aFace, topVerts)
+                faceWire = Wire.ByEdges(faceEdges)
+                topFace = Face.ByExternalBoundary(faceWire)
+                topFaces.append(topFace)
+            returnTopology = topologyByFaces(topFaces, outputMode=outputMode, tolerance=tolerance)
+        elif len(edges) > 0:
+            for anEdge in edges:
+                topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]])
+                topEdges.append(topEdge)
+            returnTopology = topologyByEdges(topEdges)
+        else:
+            returnTopology = Cluster.ByTopologies(topVerts)
+        if returnTopology:
+            keys = []
+            values = []
+            keys.append("TOPOLOGIC_color")
+            keys.append("TOPOLOGIC_id")
+            keys.append("TOPOLOGIC_name")
+            keys.append("TOPOLOGIC_type")
+            keys.append("TOPOLOGIC_length_unit")
+            if color:
+                if isinstance(color, tuple):
+                    color = list(color)
+                elif isinstance(color, list):
+                    if isinstance(color[0], tuple):
+                        color = list(color[0])
+                values.append(color)
+            else:
+                values.append([1.0,1.0,1.0,1.0])
+            if id:
+                values.append(id)
+            else:
+                values.append(str(uuid.uuid4()))
+            if name:
+                values.append(name)
+            else:
+                values.append("Topologic_"+Topology.TypeAsString(returnTopology))
+            values.append(Topology.TypeAsString(returnTopology))
+            values.append(lengthUnit)
+            topDict = Dictionary.ByKeysValues(keys, values)
+            Topology.SetDictionary(returnTopology, topDict)
+        return returnTopology
+
+    @staticmethod
     def ByImportedBRep(path):
         """
         Create a topology by importing it from a BRep file path.
@@ -972,6 +1209,78 @@ class Topology():
         topology = Topology.ByString(brep_string)
         brep_file.close()
         return topology
+    
+    @staticmethod
+    def ByImportedIFC(path, transferDictionaries=False):
+        """
+        Create a topology by importing it from an IFC file path.
+
+        Parameters
+        ----------
+        path : str
+            The path to the IFC file.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won't. The default is False.
+        
+        Returns
+        -------
+        list
+            The created list of topologies.
+        
+        """
+        import ifcopenshell
+        import ifcopenshell.geom
+        import multiprocessing
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+        import uuid
+
+        ifc_file = None
+        try:
+            ifc_file = ifcopenshell.open(path)
+        except:
+            return None
+        topologies = []
+        if ifc_file:
+            settings = ifcopenshell.geom.settings()
+            settings.set(settings.DISABLE_TRIANGULATION, False)
+            settings.set(settings.USE_BREP_DATA, True)
+            settings.set(settings.USE_WORLD_COORDS, True)
+            settings.set(settings.SEW_SHELLS, True)
+            iterator = ifcopenshell.geom.iterator(settings, ifc_file, multiprocessing.cpu_count())
+            if iterator.initialize():
+                while True:
+                    shape = iterator.get()
+                    brep = shape.geometry.brep_data
+                    topology = Topology.ByString(brep)
+                    if transferDictionaries:
+                            keys = []
+                            values = []
+                            keys.append("TOPOLOGIC_color")
+                            values.append([1.0,1.0,1.0,1.0])
+                            keys.append("TOPOLOGIC_id")
+                            values.append(str(uuid.uuid4()))
+                            keys.append("TOPOLOGIC_name")
+                            values.append(shape.name)
+                            keys.append("TOPOLOGIC_type")
+                            values.append(Topology.TypeAsString(topology))
+                            keys.append("IFC_id")
+                            values.append(str(shape.id))
+                            keys.append("IFC_guid")
+                            values.append(str(shape.guid))
+                            keys.append("IFC_unique_id")
+                            values.append(str(shape.unique_id))
+                            keys.append("IFC_name")
+                            values.append(shape.name)
+                            keys.append("IFC_type")
+                            values.append(shape.type)
+                            d = Dictionary.ByKeysValues(keys, values)
+                            topology = Topology.SetDictionary(topology, d)
+                    topologies.append(topology)
+                    if not iterator.next():
+                        break
+        return topologies
+
     '''
     @staticmethod
     def ByImportedIFC(filePath, typeList):
@@ -1083,7 +1392,7 @@ class Topology():
                     keys.append("TOPOLOGIC_name")
                     values.append(p.Name)
                     keys.append("TOPOLOGIC_type")
-                    values.append(topology.GetTypeAsString())
+                    values.append(Topology.TypeAsString(topology))
                     keys.append("IFC_id")
                     values.append(str(p.GlobalId))
                     keys.append("IFC_name")
@@ -1396,6 +1705,47 @@ class Topology():
                 topologies.append(topology)
             return topologies
         return None
+
+    @staticmethod
+    def ByImportedOBJ(filePath, transposeAxes = True, tolerance=0.0001):
+        """
+        Imports the topology from a Weverfront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+
+        Parameters
+        ----------
+        filePath : str
+            The file path to the OBJ file.
+        transposeAxes : bool , optional
+            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topology
+            The imported topology.
+
+        """
+        vertices = []
+        faces = []
+        file = open(filePath)
+        if file:
+            lines = file.readlines()
+            for i in range(len(lines)):
+                s = lines[i].split()
+                if s[0].lower() == "v":
+                    if transposeAxes:
+                        vertices.append([float(s[1]), float(s[3]), float(s[2])])
+                    else:
+                        vertices.append([float(s[1]), float(s[2]), float(s[3])])
+                elif s[0].lower() == "f":
+                    temp_faces = []
+                    for j in range(1,len(s)):
+                        f = s[j].split("/")[0]
+                        temp_faces.append(int(f)-1)
+                    faces.append(temp_faces)
+            file.close()
+        return Topology.ByGeometry(vertices = vertices, faces = faces, outputMode="default", tolerance=tolerance)
 
     @staticmethod
     def ByOCCTShape(occtShape):
@@ -1869,17 +2219,17 @@ class Topology():
         from topologicpy.Graph import Graph
 
         def processClusterTypeFilter(cluster):
-            if len(Cluster.CellComplexes()) > 0:
+            if len(Cluster.CellComplexes(cluster)) > 0:
                 return "cell"
-            elif len(Cluster.Cells()) > 0:
+            elif len(Cluster.Cells(cluster)) > 0:
                 return "face"
-            elif len(Cluster.Shells()) > 0:
+            elif len(Cluster.Shells(cluster)) > 0:
                 return "face"
-            elif len(Cluster.Faces()) > 0:
+            elif len(Cluster.Faces(cluster)) > 0:
                 return "edge"
-            elif len(Cluster.Wires()) > 0:
+            elif len(Cluster.Wires(cluster)) > 0:
                 return "edge"
-            elif len(Cluster.Edges()) > 0:
+            elif len(Cluster.Edges(cluster)) > 0:
                 return "vertex"
             else:
                 return "self"
@@ -1960,7 +2310,7 @@ class Topology():
     @staticmethod
     def ExportToBRep(topology, filePath, overwrite=True, version=3):
         """
-        Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html#:~:text=BREP%20format%20is%20used%20to,triangulations%2C%20space%20location%20and%20orientation.
+        Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html.
 
         Parameters
         ----------
@@ -1971,7 +2321,7 @@ class Topology():
         overwrite : bool , optional
             If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
         version : int , optional
-            Replaces the BREP version number and header to make the file compatible with older version of OCCT.
+            The desired version number for the BREP file. The default is 3.
 
         Returns
         -------
@@ -2424,6 +2774,70 @@ class Topology():
         return False
     
     @staticmethod
+    def ExportToOBJ(topology, filePath, transposeAxes=True, overwrite=True):
+        """
+        Exports the input topology to a Wavefront OBJ file. This is very experimental and outputs a simple solid topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        filePath : str
+            The input file path.
+        transposeAxes : bool , optional
+            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
+
+        Returns
+        -------
+        bool
+            True if the export operation is successful. False otherwise.
+
+        """
+        from os.path import exists
+        from topologicpy.Helper import Helper
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not overwrite and exists(filePath):
+            return None
+        
+        	# Make sure the file extension is .txt
+        ext = filePath[len(filePath)-4:len(filePath)]
+        if ext.lower() != ".obj":
+            filePath = filePath+".obj"
+        status = False
+        lines = []
+        version = Helper.Version()
+        lines.append("# topologicpy "+version)
+        d = Topology.Geometry(topology)
+        vertices = d['vertices']
+        faces = d['faces']
+        tVertices = []
+        if transposeAxes:
+            for v in vertices:
+                tVertices.append([v[0], v[2], v[1]])
+            vertices = tVertices
+        for v in vertices:
+            lines.append("v "+str(v[0])+" "+str(v[1])+" "+str(v[2]))
+        for f in faces:
+            line = "f"
+            for j in f:
+                line = line+" "+str(j+1)
+            lines.append(line)
+        finalLines = lines[0]
+        for i in range(1,len(lines)):
+            finalLines = finalLines+"\n"+lines[i]
+        with open(filePath, "w") as f:
+            f.writelines(finalLines)
+            f.close()
+            status = True
+        return status
+
+    @staticmethod
     def Filter(topologies, topologyType="vertex", searchType="any", key=None, value=None):
         """
         Filters the input list of topologies based on the input parameters.
@@ -2465,7 +2879,7 @@ class Topology():
         for aTopology in topologies:
             if not aTopology:
                 continue
-            if (topologyType.lower() == "any") or (aTopology.GetTypeAsString().lower() == topologyType.lower()):
+            if (topologyType.lower() == "any") or (Topology.TypeAsString(aTopology).lower() == topologyType.lower()):
                 if value == "" or key == "":
                     filteredTopologies.append(aTopology)
                 else:
@@ -3606,7 +4020,7 @@ class Topology():
         return {"vertices":vOutput, "edges":eOutput, "wires":wOutput, "faces":fOutput}
 
     @staticmethod
-    def Show(topology, faceColor='white', faceOpacity=0.5, wireColor='black', wireWidth=1, vertexColor='black', vertexSize=1.1, drawFaces=True, drawWires=True, drawVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=0, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
+    def Show(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor='white', faceOpacity=0.5, edgeColor='black', edgeWidth=1, vertexColor='black', vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
         """
         Shows the input topology on screen.
 
@@ -3614,6 +4028,24 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology. This must contain faces and or wires.
+        vertexLabelKey : str , optional
+            The dictionary key to use to display the vertex label. The default is None.
+        vertexGroupKey : str , optional
+            The dictionary key to use to display the vertex group. The default is None.
+        edgeLabelKey : str , optional
+            The dictionary key to use to display the edge label. The default is None.
+        edgeGroupKey : str , optional
+            The dictionary key to use to display the edge group. The default is None.
+        faceLabelKey : str , optional
+            The dictionary key to use to display the face label. The default is None.
+        faceGroupKey : str , optional
+            The dictionary key to use to display the face group. The default is None.
+        vertexGroups : list , optional
+            The list of vertex groups against which to index the color of the vertex. The default is [].
+        edgeGroups : list , optional
+            The list of edge groups against which to index the color of the edge. The default is [].
+        faceGroups : list , optional
+            The list of face groups against which to index the color of the face. The default is [].
         faceColor : str , optional
             The desired color of the output faces. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -3624,16 +4056,16 @@ class Topology():
             The default is "lightblue".
         faceOpacity : float , optional
             The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
-        wireColor : str , optional
-            The desired color of the output wires (edges). This can be any plotly color string and may be specified as:
+        edgeolor : str , optional
+            The desired color of the output edges. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
             - An rgb/rgba string (e.g. 'rgb(255,0,0)')
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
-        wireWidth : float , optional
-            The desired thickness of the output wires (edges). The default is 1.
+        edgeWidth : float , optional
+            The desired thickness of the output edges. The default is 1.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -3644,11 +4076,11 @@ class Topology():
             The default is "black".
         vertexSize : float , optional
             The desired size of the vertices. The default is 1.1.
-        drawFaces : bool , optional
+        showFaces : bool , optional
             If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
-        drawWires : bool , optional
-            If set to True the wires (edges) will be drawn. Otherwise, they will not be drawn. The default is True.
-        drawVertices : bool , optional
+        showEdges : bool , optional
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+        showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
         width : int , optional
             The width in pixels of the figure. The default value is 950.
@@ -3673,7 +4105,7 @@ class Topology():
         marginRight : int , optional
             The size in pixels of the right margin. The default value is 0.
         marginTop : int , optional
-            The size in pixels of the top margin. The default value is 0.
+            The size in pixels of the top margin. The default value is 20.
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
@@ -3683,7 +4115,7 @@ class Topology():
         up : list , optional
             The desired up vector. The default is [0,0,1].
         renderer : str , optional
-            The desired rendered. See Plotly.Renderers(). The default is "browser".
+            The desired renderer. See Plotly.Renderers(). The default is "notebook".
 
         Returns
         -------
@@ -3693,10 +4125,9 @@ class Topology():
         from topologicpy.Plotly import Plotly
         if not isinstance(topology, topologic.Topology):
             return None
-        data = Plotly.DataByTopology(topology=topology, faceColor=faceColor, faceOpacity=faceOpacity, wireColor=wireColor, wireWidth=wireWidth, vertexColor=vertexColor, vertexSize=vertexSize, drawFaces=drawFaces, drawWires=drawWires, drawVertices=drawVertices)
+        data = Plotly.DataByTopology(topology=topology, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, vertexGroups=vertexGroups, edgeGroups=edgeGroups, faceGroups=faceGroups, faceColor=faceColor, faceOpacity=faceOpacity, edgeColor=edgeColor, edgeWidth=edgeWidth, vertexColor=vertexColor, vertexSize=vertexSize, showFaces=showFaces, showEdges=showEdges, showVertices=showVertices)
         figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
-        figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
-        Plotly.Show(figure=figure, renderer=renderer)
+        Plotly.Show(figure=figure, renderer=renderer, camera=camera, target=target, up=up)
 
     @staticmethod
     def SortBySelectors(topologies, selectors, exclusive=False, tolerance=0.0001):
@@ -3880,7 +4311,7 @@ class Topology():
         """
         if not isinstance(topology, topologic.Topology):
             return None
-        return topology.String(version)
+        return topologic.Topology.String(topology, version)
     
     @staticmethod
     def SubTopologies(topology, subTopologyType="vertex"):
@@ -3902,7 +4333,7 @@ class Topology():
         """
         if not isinstance(topology, topologic.Topology):
             return None
-        if topology.GetTypeAsString().lower() == subTopologyType.lower():
+        if Topology.TypeAsString(topology).lower() == subTopologyType.lower():
             return [topology]
         subTopologies = []
         if subTopologyType.lower() == "vertex":
@@ -4216,7 +4647,7 @@ class Topology():
 
     
     @staticmethod
-    def Triangulate(topology, tolerance=0.0001):
+    def Triangulate(topology, transferDictionaries = False, tolerance=0.0001):
         """
         Triangulates the input topology.
 
@@ -4224,6 +4655,8 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topologgy.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries of the faces in the input topology will be transferred to the created triangular faces. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -4237,24 +4670,55 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
         if not isinstance(topology, topologic.Topology):
             return None
         t = topology.Type()
-        if (t == 1) or (t == 2) or (t == 4) or (t == 128):
+        if (t == 1) or (t == 2) or (t == 4):
             return topology
+        elif t == 128:
+            temp_topologies = []
+            cellComplexes = Topology.SubTopologies(topology, subTopologyType="cellcomplex") or []
+            for cc in cellComplexes:
+                temp_topologies.append(Topology.Triangulate(cc, transferDictionaries=transferDictionaries, tolerance=tolerance))
+            cells = Cluster.FreeCells(topology) or []
+            for c in cells:
+                temp_topologies.append(Topology.Triangulate(c, transferDictionaries=transferDictionaries, tolerance=tolerance))
+            shells = Cluster.FreeShells(topology) or []
+            for s in shells:
+                temp_topologies.append(Topology.Triangulate(s, transferDictionaries=transferDictionaries, tolerance=tolerance))
+            if len(temp_topologies) > 0:
+                return Cluster.ByTopologies(temp_topologies)
+            else:
+                return topology
         topologyFaces = []
         _ = topology.Faces(None, topologyFaces)
         faceTriangles = []
+        selectors = []
         for aFace in topologyFaces:
             triFaces = Face.Triangulate(aFace)
             for triFace in triFaces:
+                if transferDictionaries:
+                    selectors.append(Topology.SetDictionary(Face.Centroid(triFace), Topology.Dictionary(aFace)))
                 faceTriangles.append(triFace)
         if t == 8 or t == 16: # Face or Shell
-            return Shell.ByFaces(faceTriangles, tolerance)
+            shell = Shell.ByFaces(faceTriangles, tolerance)
+            if transferDictionaries:
+                shell = Topology.TransferDictionariesBySelectors(shell, selectors, tranFaces=True)
+            return shell
         elif t == 32: # Cell
-            return Cell.ByFaces(faceTriangles, tolerance)
+            cell = Cell.ByFaces(faceTriangles, tolerance)
+            if transferDictionaries:
+                cell = Topology.TransferDictionariesBySelectors(cell, selectors, tranFaces=True)
+            return cell
         elif t == 64: #CellComplex
-            return CellComplex.ByFaces(faceTriangles, tolerance)
+            cellComplex = CellComplex.ByFaces(faceTriangles, tolerance)
+            if transferDictionaries:
+                cellComplex = Topology.TransferDictionariesBySelectors(cellComplex, selectors, tranFaces=True)
+            return cellComplex
 
     
     @staticmethod

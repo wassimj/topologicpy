@@ -110,6 +110,234 @@ class Cluster(topologic.Cluster):
         return faces
 
     @staticmethod
+    def FreeCells(cluster):
+        """
+        Returns the free cells of the input cluster that are not part of a higher topology.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input cluster.
+
+        Returns
+        -------
+        list
+            The list of free cells.
+
+        """
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Topology import Topology
+
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        allCells = []
+        _ = cluster.Cells(None, allCells)
+        allCellsCluster = Cluster.ByTopologies(allCells)
+        freeCells = []
+        cellComplexes = []
+        _ = cluster.CellComplexes(None, cellComplexes)
+        cellComplexesCells = []
+        for cellComplex in cellComplexes:
+            tempCells = CellComplex.Cells(cellComplex)
+            cellComplexesCells += tempCells
+        if len(cellComplexesCells) == 0:
+            return allCells
+        cellComplexesCluster = Cluster.ByTopologies(cellComplexesCells)
+        resultingCluster = Topology.Boolean(allCellsCluster, cellComplexesCluster, operation="Difference")
+        if isinstance(resultingCluster, topologic.Cell):
+            return [resultingCluster]
+        return Topology.SubTopologies(resultingCluster, subTopologyType="cell")
+    
+    @staticmethod
+    def FreeShells(cluster):
+        """
+        Returns the free shells of the input cluster that are not part of a higher topology.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input cluster.
+
+        Returns
+        -------
+        list
+            The list of free shells.
+
+        """
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        allShells = []
+        _ = cluster.Shells(None, allShells)
+        allShellsCluster = Cluster.ByTopologies(allShells)
+        cells = []
+        _ = cluster.Cells(None, cells)
+        cellsShells = []
+        for cell in cells:
+            tempShells = Cell.Shells(cell)
+            cellsShells += tempShells
+        if len(cellsShells) == 0:
+            return allShells
+        cellsCluster = Cluster.ByTopologies(cellsShells)
+        resultingCluster = Topology.Boolean(allShellsCluster, cellsCluster, operation="Difference")
+        if isinstance(resultingCluster, topologic.Shell):
+            return [resultingCluster]
+        return Topology.SubTopologies(resultingCluster, subTopologyType="shell")
+    
+    @staticmethod
+    def FreeFaces(cluster):
+        """
+        Returns the free faces of the input cluster that are not part of a higher topology.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input cluster.
+
+        Returns
+        -------
+        list
+            The list of free faces.
+
+        """
+        from topologicpy.Shell import Shell
+        from topologicpy.Topology import Topology
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        allFaces = []
+        _ = cluster.Faces(None, allFaces)
+        allFacesCluster = Cluster.ByTopologies(allFaces)
+        shells = []
+        _ = cluster.Shells(None, shells)
+        shellFaces = []
+        for shell in shells:
+            tempFaces = Shell.Faces(shell)
+            shellFaces += tempFaces
+        if len(shellFaces) == 0:
+            return allFaces
+        shellCluster = Cluster.ByTopologies(shellFaces)
+        resultingCluster = Topology.Boolean(allFacesCluster, shellCluster, operation="Difference")
+        if isinstance(resultingCluster, topologic.Face):
+            return [resultingCluster]
+        return Topology.SubTopologies(resultingCluster, subTopologyType="face")
+
+    @staticmethod
+    def FreeWires(cluster):
+        """
+        Returns the free wires of the input cluster that are not part of a higher topology.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input cluster.
+
+        Returns
+        -------
+        list
+            The list of free wires.
+
+        """
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        allWires = []
+        _ = cluster.Wires(None, allWires)
+        allWiresCluster = Cluster.ByTopologies(allWires)
+        faces = []
+        _ = cluster.Faces(None, faces)
+        facesWires = []
+        for face in faces:
+            tempWires = Face.Wires(face)
+            facesWires += tempWires
+        if len(facesWires) == 0:
+            return allWires
+        facesCluster = Cluster.ByTopologies(facesWires)
+        resultingCluster = Topology.Boolean(allWiresCluster, facesCluster, operation="Difference")
+        if isinstance(resultingCluster, topologic.Wire):
+            return [resultingCluster]
+        return Topology.SubTopologies(resultingCluster, subTopologyType="wire")
+    
+    @staticmethod
+    def FreeEdges(cluster):
+        """
+        Returns the free edges of the input cluster that are not part of a higher topology.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input cluster.
+
+        Returns
+        -------
+        list
+            The list of free edges.
+
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        allEdges = []
+        _ = cluster.Edges(None, allEdges)
+        allEdgesCluster = Cluster.ByTopologies(allEdges)
+        wires = []
+        _ = cluster.Wires(None, wires)
+        wireEdges = []
+        for wire in wires:
+            tempEdges = Wire.Edges(wire)
+            wireEdges += tempEdges
+        if len(wireEdges) == 0:
+            return allEdges
+        wireCluster = Cluster.ByTopologies(wireEdges)
+        resultingCluster = Topology.Boolean(allEdgesCluster, wireCluster, operation="Difference")
+        if isinstance(resultingCluster, topologic.Edge):
+            return [resultingCluster]
+        return Topology.SubTopologies(resultingCluster, subTopologyType="edge")
+    
+    @staticmethod
+    def FreeVertices(cluster):
+        """
+        Returns the free vertices of the input cluster that are not part of a higher topology.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input cluster.
+
+        Returns
+        -------
+        list
+            The list of free vertices.
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
+        if not isinstance(cluster, topologic.Cluster):
+            return None
+        allVertices = []
+        _ = cluster.Vertices(None, allVertices)
+        allVerticesCluster = Cluster.ByTopologies(allVertices)
+        edges = []
+        _ = cluster.Edges(None, edges)
+        edgesVertices = []
+        for edge in edges:
+            tempVertices = Edge.Vertices(edge)
+            edgesVertices += tempVertices
+        if len(edgesVertices) == 0:
+            return allVertices
+        edgesCluster = Cluster.ByTopologies(edgesVertices)
+        resultingCluster = Topology.Boolean(allVerticesCluster, edgesCluster, operation="Difference")
+        if isinstance(resultingCluster, topologic.Vertex):
+            return [resultingCluster]
+        return Topology.SubTopologies(resultingCluster, subTopologyType="vertex")
+    
+    @staticmethod
     def HighestType(cluster):
         """
         Returns the type of the highest dimension subtopology found in the input cluster.
