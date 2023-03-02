@@ -722,12 +722,12 @@ class DGL:
         return metrics.confusion_matrix(actual, predicted)
 
     @staticmethod
-    def ClassifierByFilePath(filePath):
+    def ClassifierBypath(path):
         """
         Returns the classifier found at the input file path.
         Parameters
         ----------
-        filePath : str
+        path : str
             File path for the saved classifier.
 
         Returns
@@ -736,7 +736,7 @@ class DGL:
             The classifier.
 
         """
-        return torch.load(filePath)
+        return torch.load(path)
     
     @staticmethod
     def DatasetByDGLGraphs(DGLGraphs, labels, key="node_attr"):

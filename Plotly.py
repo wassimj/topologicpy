@@ -946,7 +946,7 @@ class Plotly:
          'iframe_connected', 'sphinx_gallery', 'sphinx_gallery_png']
 
     @staticmethod
-    def ExportToImage(figure, filePath, format="png", width="1920", height="1080"):
+    def ExportToImage(figure, path, format="png", width="1920", height="1080"):
         """
         Exports the plotly figure to an image.
 
@@ -954,7 +954,7 @@ class Plotly:
         ----------
         figure : plotly.graph_objs._figure.Figure
             The input plotly figure.
-        filePath : str
+        path : str
             The image file path.
         format : str , optional
             The desired format. This can be any of "jpg", "jpeg", "pdf", "png", "svg", or "webp". It is case insensitive. The default is "png". 
@@ -971,13 +971,13 @@ class Plotly:
         """
         if not isinstance(figure, plotly.graph_objs._figure.Figure):
             return None
-        if not isinstance(filePath, str):
+        if not isinstance(path, str):
             return None
         if not format.lower() in ["jpg", "jpeg", "pdf", "png", "svg", "webp"]:
             return None
         returnStatus = False
         try:
-            plotly.io.write_image(figure, filePath, format=format.lower(), scale=None, width=width, height=height, validate=True, engine='auto')
+            plotly.io.write_image(figure, path, format=format.lower(), scale=None, width=width, height=height, validate=True, engine='auto')
             returnStatus = True
         except:
             returnStatus = False
