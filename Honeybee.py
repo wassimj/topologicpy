@@ -1,49 +1,54 @@
-import topologic
-import math
 import honeybee_energy.lib.constructionsets as constr_set_lib
 import honeybee.facetype
-from honeybee.face import Face
+from honeybee.face import Face as HBFace
 from ladybug_geometry.geometry3d.face import Face3D
-from honeybee.model import Model
-from honeybee.room import Room
-from honeybee.shade import Shade
-from honeybee.aperture import Aperture
-from honeybee.door import Door
+from honeybee.model import Model as HBModel
+from honeybee.room import Room as HBRoom
+from honeybee.shade import Shade as HBShade
+from honeybee.aperture import Aperture as HBAperture
+from honeybee.door import Door as HBDoor
 from honeybee_energy.schedule.ruleset import ScheduleRuleset
 from honeybee_energy.schedule.day import ScheduleDay
 from honeybee_energy.load.setpoint import Setpoint
 from honeybee_energy.load.hotwater import  ServiceHotWater
 import honeybee_energy.lib.programtypes as prog_type_lib
 import honeybee_energy.lib.scheduletypelimits as schedule_types
+from honeybee_radiance.sensorgrid import SensorGrid
+
 from ladybug.dt import Time
 from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
 import json
-import Dictionary
+from topologicpy.Dictionary import Dictionary
+import topologic
 
-class HB:
+class Honeybee:
     @staticmethod
-    def HBConstructionSetByIdentifier(item):
+    def ConstructionSetByIdentifier(id):
         """
+        Returns the built-in construction set by the input identifying string.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        id : str
+            The construction set identifier.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        HBConstructionSet
+            The found built-in construction set.
 
         """
-        return constr_set_lib.construction_set_by_identifier(item)
+        return constr_set_lib.construction_set_by_identifier(id)
     
     @staticmethod
-    def HBConstructionSets():
+    def ConstructionSets():
         """
+        Returns the list of built-in construction sets
+
         Returns
         -------
         list
-            DESCRIPTION.
+            The list of built-in construction sets.
 
         """
         constrSets = []
@@ -53,222 +58,73 @@ class HB:
         return [constrSets, constrIdentifiers]
     
     @staticmethod
-    def HBJSONByTopology(osModel, weatherFilePath, designDayFilePath, tpBuilding,
-                         tpShadingSurfacesCluster, floorLevels, buildingName,
-                         buildingType, defaultSpaceType, northAxis, glazingRatio, coolingTemp, heatingTemp):
+    def ExportToHBJSON(model, path, overwrite=True):
         """
+        Exports the input HB Model to a file.
+
         Parameters
         ----------
-        osModel : TYPE
-            DESCRIPTION.
-        weatherFilePath : TYPE
-            DESCRIPTION.
-        designDayFilePath : TYPE
-            DESCRIPTION.
-        tpBuilding : TYPE
-            DESCRIPTION.
-        tpShadingSurfacesCluster : TYPE
-            DESCRIPTION.
-        floorLevels : TYPE
-            DESCRIPTION.
-        buildingName : TYPE
-            DESCRIPTION.
-        buildingType : TYPE
-            DESCRIPTION.
-        defaultSpaceType : TYPE
-            DESCRIPTION.
-        northAxis : TYPE
-            DESCRIPTION.
-        glazingRatio : TYPE
-            DESCRIPTION.
-        coolingTemp : TYPE
-            DESCRIPTION.
-        heatingTemp : TYPE
-            DESCRIPTION.
+        model : HBModel
+            The input HB Model.
+        path : str
+            The location of the output file.
+        overwrite : bool , optional
+            If set to True this method overwrites any existing file. Otherwise, it won't. The default is True.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        bool
+            Returns True if the operation is successful. Returns False otherwise.
 
         """
-        # osModel = item[0]
-        # weatherFilePath = item[1]
-        # designDayFilePath = item[2]
-        # tpBuilding = item[3]
-        # tpShadingSurfacesCluster = item[4]
-        # floorLevels = item[5]
-        # buildingName = item[6]
-        # buildingType = item[7]
-        # defaultSpaceType = item[8]
-        # northAxis = item[9]
-        # glazingRatio = item[10]
-        # coolingTemp = item[11]
-        # heatingTemp = item[12]
-        
-        def listAttributeValues(listAttribute):
-            listAttributes = listAttribute.ListValue()
-            returnList = []
-            for attr in listAttributes:
-                if isinstance(attr, topologic.IntAttribute):
-                    returnList.append(attr.IntValue())
-                elif isinstance(attr, topologic.DoubleAttribute):
-                    returnList.append(attr.DoubleValue())
-                elif isinstance(attr, topologic.StringAttribute):
-                    returnList.append(attr.StringValue())
-            return returnList
-
-        def valueAtKey(item, key):
-            try:
-                attr = item.ValueAtKey(key)
-            except:
-                raise Exception("Dictionary.ValueAtKey - Error: Could not retrieve a Value at the specified key ("+key+")")
-            if isinstance(attr, topologic.IntAttribute):
-                return (attr.IntValue())
-            elif isinstance(attr, topologic.DoubleAttribute):
-                return (attr.DoubleValue())
-            elif isinstance(attr, topologic.StringAttribute):
-                return (attr.StringValue())
-            elif isinstance(attr, topologic.ListAttribute):
-                return (listAttributeValues(attr))
+        # hbModel, path = item
+        # Make sure the file extension is .hbjson
+        ext = path[len(path)-7:len(path)]
+        if ext.lower() != ".hbjson":
+            path = path+".hbjson"
+        f = None
+        try:
+            if overwrite == True:
+                f = open(path, "w")
             else:
-                return None
-
-        rooms = []
-        tpCells = []
-        _ = tpBuilding.Cells(None, tpCells)
-        # Sort cells by Z Levels
-        tpCells.sort(key=lambda c: c.CenterOfMass().Z(), reverse=False)
-        for spaceNumber, tpCell in enumerate(tpCells):
-            tpDictionary = tpCell.GetDictionary()
-            tpCellName = None
-            tpCellStory = None
-            if tpDictionary:
-                tpCellName = valueAtKey(tpDictionary,'name')
-                tpCellStory = valueAtKey(tpDictionary,'story')            
-            tpCellFaces = []
-            _ = tpCell.Faces(None, tpCellFaces)
-            if tpCellFaces:
-                hbRoomFaces = []
-                for tpFaceNumber, tpCellFace in enumerate(tpCellFaces):
-                    hbRoomFacePoints = []
-                    tpFaceVertices = []
-                    _ = tpCellFace.ExternalBoundary().Vertices(None, tpFaceVertices)
-                    for tpVertex in tpFaceVertices:
-                        hbRoomFacePoints.append(Point3D(tpVertex.X(), tpVertex.Y(), tpVertex.Z()))
-                    hbRoomFace = Face(tpCellName+'_Face_'+str(tpFaceNumber+1), Face3D(hbRoomFacePoints))
-                    faceNormal = topologic.FaceUtility.NormalAtParameters(tpFace, 0.5, 0.5)
-                    ang = math.degrees(math.acos(faceNormal.dot([0, 0, 1])))
-                    print("HBJSONByTopology: Angle between face normal and UP",ang)
-                    if ang > 175:
-                        hbRoomFace.type = "floor"
-                    tpFaceApertures = []
-                    _ = tpCellFace.Apertures(tpFaceApertures)
-                    if tpFaceApertures:
-                        for tpFaceApertureNumber, tpFaceAperture in enumerate(tpFaceApertures):
-                            apertureTopology = topologic.Aperture.Topology(tpFaceAperture)
-                            tpFaceApertureDictionary = apertureTopology.GetDictionary()
-                            if tpFaceApertureDictionary:
-                                tpFaceApertureType = valueAtKey(tpFaceApertureDictionary,'type')
-                            hbFaceAperturePoints = []
-                            tpFaceApertureVertices = []
-                            _ = apertureTopology.ExternalBoundary().Vertices(None, tpFaceApertureVertices)
-                            for tpFaceApertureVertex in tpFaceApertureVertices:
-                                hbFaceAperturePoints.append(Point3D(tpFaceApertureVertex.X(), tpFaceApertureVertex.Y(), tpFaceApertureVertex.Z()))
-                            if(tpFaceApertureType):
-                                if ("door" in tpFaceApertureType.lower()):
-                                    hbFaceAperture = Door(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Door_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
-                                else:
-                                    hbFaceAperture = Aperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
-                            else:
-                                hbFaceAperture = Aperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
-                            hbRoomFace.add_aperture(hbFaceAperture)
-                    hbRoomFaces.append(hbRoomFace)
-                if tpCellName == None:
-                    tpCellName = "GENERICROOM_"+(str(spaceNumber+1))
-                room = Room(tpCellName, hbRoomFaces, 0.01, 1) #ToDo: Figure out how to add Story number
-                heat_setpt = ScheduleRuleset.from_constant_value('Room Heating', heatingTemp, schedule_types.temperature)
-                cool_setpt = ScheduleRuleset.from_constant_value('Room Cooling', coolingTemp, schedule_types.temperature)
-                humidify_setpt = ScheduleRuleset.from_constant_value('Room Humidifying', 30, schedule_types.humidity) #Todo: Remove hardwired number
-                dehumidify_setpt = ScheduleRuleset.from_constant_value('Room Dehumidifying', 55, schedule_types.humidity) #Todo: Remove hardwired number
-                setpoint = Setpoint('Room Setpoint', heat_setpt, cool_setpt, humidify_setpt, dehumidify_setpt)
-                simple_office = ScheduleDay('Simple Weekday', [0, 1, 0], [Time(0, 0), Time(9, 0), Time(17, 0)])
-                schedule = ScheduleRuleset('Office Water Use', simple_office, None, schedule_types.fractional)
-                shw = ServiceHotWater('Office Hot Water', 0.1, schedule)
-                room.properties.energy.program_type = prog_type_lib.office_program #Default Office Program
-                room.properties.energy.add_default_ideal_air() #Ideal Air Exchange
-                room.properties.energy.setpoint = setpoint #Heating/Cooling/Humidifying/Dehumidifying
-                room.properties.energy.service_hot_water = shw #Service Hot Water
-                if tpCellStory:
-                    room.story = tpCellStory
-                rooms.append(room)
-        Room.solve_adjacency(rooms, 0.01)
-        Room.stories_by_floor_height(rooms, min_difference=2.0)
-
-        hbShades = []
-        shadingFaces = []
-        _ = tpShadingSurfacesCluster.Faces(None, shadingFaces)
-        for faceIndex, shadingFace in enumerate(shadingFaces):
-            faceVertices = []
-            _ = shadingFace.ExternalBoundary().Vertices(None, faceVertices)
-            facePoints = []
-            for aVertex in faceVertices:
-                facePoints.append(Point3D(aVertex.X(), aVertex.Y(), aVertex.Z()))
-            hbShadingFace = Face3D(facePoints, None, [])
-            hbShade = Shade("SHADINGSURFACE_" + str(faceIndex), hbShadingFace)
-            hbShades.append(hbShade)
-        model = Model('TopologicModel', rooms, orphaned_shades=hbShades)
-        return model.to_dict()
+                f = open(path, "x") # Try to create a new File
+        except:
+            raise Exception("Error: Could not create a new file at the following location: "+path)
+        if (f):
+            json.dump(model.to_dict(), f, indent=4)
+            f.close()    
+            return True
+        return False
     
     @staticmethod
-    def HBModelByTopology(tpBuilding, tpShadingFacesCluster,
-                          buildingName, defaultProgramIdentifier, defaultConstructionSetIdentifier,
-                          coolingSetpoint, heatingSetpoint, humidifyingSetpoint, dehumidifyingSetpoint,
-                          roomNameKey, roomTypeKey):
+    def ModelByTopology(tpBuilding,
+                tpShadingFacesCluster=None,
+                buildingName = "Generic_Building",
+                defaultProgramIdentifier = "Generic Office Program",
+                defaultConstructionSetIdentifier = "Default Generic Construction Set",
+                coolingSetpoint = 25.0,
+                heatingSetpoint = 20.0,
+                humidifyingSetpoint = 30.0,
+                dehumidifyingSetpoint = 55.0,
+                roomNameKey = "name",
+                roomTypeKey = "type",
+                apertureTypeKey = "type",
+                addSensorGrid = False):
         """
-        Parameters
-        ----------
-        tpBuilding : TYPE
-            DESCRIPTION.
-        tpShadingFacesCluster : TYPE
-            DESCRIPTION.
-        buildingName : TYPE
-            DESCRIPTION.
-        defaultProgramIdentifier : TYPE
-            DESCRIPTION.
-        defaultConstructionSetIdentifier : TYPE
-            DESCRIPTION.
-        coolingSetpoint : TYPE
-            DESCRIPTION.
-        heatingSetpoint : TYPE
-            DESCRIPTION.
-        humidifyingSetpoint : TYPE
-            DESCRIPTION.
-        dehumidifyingSetpoint : TYPE
-            DESCRIPTION.
-        roomNameKey : TYPE
-            DESCRIPTION.
-        roomTypeKey : TYPE
-            DESCRIPTION.
-
-        Returns
+        Creates an HB Model from the input Topology
         -------
-        model : TYPE
-            DESCRIPTION.
+        HBModel
+            The created HB Model
 
         """
-        # tpBuilding = item[0]
-        # tpShadingFacesCluster = item[1]
-        # buildingName = item[2]
-        # defaultProgramIdentifier = item[3]
-        # defaultConstructionSetIdentifier = item[4]
-        # coolingSetpoint = item[5]
-        # heatingSetpoint = item[6]
-        # humidifyingSetpoint = item[7]
-        # dehumidifyingSetpoint = item[8]
-        # roomNameKey = item[9]
-        # roomTypeKey = item[10]
-        
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Aperture import Aperture
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
         def cellFloor(cell):
             faces = []
             _ = cell.Faces(None, faces)
@@ -287,14 +143,14 @@ class HB:
                     returnList.append("Floor"+str(floorNumber).zfill(2))
                     break
             return returnList
-        
+
         def getKeyName(d, keyName):
-            keys = d.Keys()
+            keys = Dictionary.Keys(d)
             for key in keys:
                 if key.lower() == keyName.lower():
                     return key
             return None
-        
+
         def createUniqueName(name, nameList, number):
             if not (name in nameList):
                 return name
@@ -303,10 +159,8 @@ class HB:
             else:
                 return createUniqueName(name,nameList, number+1)
         
-        if buildingName:
-            buildingName = buildingName.replace(" ","_")
-        else:
-            buildingName = "GENERICBUILDING"
+        if not isinstance(tpBuilding, topologic.Topology):
+            return None
         rooms = []
         tpCells = []
         _ = tpBuilding.Cells(None, tpCells)
@@ -314,8 +168,9 @@ class HB:
         tpCells.sort(key=lambda c: cellFloor(c), reverse=False)
         fl = floorLevels(tpCells, 2)
         spaceNames = []
+        sensorGrids = []
         for spaceNumber, tpCell in enumerate(tpCells):
-            tpDictionary = tpCell.GetDictionary()
+            tpDictionary = Topology.Dictionary(tpCell)
             tpCellName = None
             tpCellStory = None
             tpCellProgramIdentifier = None
@@ -323,38 +178,40 @@ class HB:
             tpCellConditioned = True
             if tpDictionary:
                 keyName = getKeyName(tpDictionary, 'Story')
-                tpCellStory = Dictionary.DictionaryValueAtKey(tpDictionary, keyName)
-                if tpCellStory:
-                    tpCellStory = tpCellStory.replace(" ","_")
-                else:
+                try:
+                    tpCellStory = Dictionary.ValueAtKey(tpDictionary, keyName)
+                    if tpCellStory:
+                        tpCellStory = tpCellStory.replace(" ","_")
+                except:
                     tpCellStory = fl[spaceNumber]
                 if roomNameKey:
                     keyName = getKeyName(tpDictionary, roomNameKey)
                 else:
                     keyName = getKeyName(tpDictionary, 'Name')
-                tpCellName = Dictionary.DictionaryValueAtKey(tpDictionary,keyName)
-                if tpCellName:
-                    tpCellName = createUniqueName(tpCellName.replace(" ","_"), spaceNames, 1)
-                else:
+                try:
+                    tpCellName = Dictionary.ValueAtKey(tpDictionary,keyName)
+                    if tpCellName:
+                        tpCellName = createUniqueName(tpCellName.replace(" ","_"), spaceNames, 1)
+                except:
                     tpCellName = tpCellStory+"_SPACE_"+(str(spaceNumber+1))
                 if roomTypeKey:
                     keyName = getKeyName(tpDictionary, roomTypeKey)
-                else:
-                    keyName = getKeyName(tpDictionary, 'Program')
-                tpCellProgramIdentifier = Dictionary.DictionaryValueAtKey(tpDictionary, keyName)
-                if tpCellProgramIdentifier:
-                    program = prog_type_lib.program_type_by_identifier(tpCellProgramIdentifier)
-                elif defaultProgramIdentifier:
-                    program = prog_type_lib.program_type_by_identifier(defaultProgramIdentifier)
-                else:
+                try:
+                    tpCellProgramIdentifier = Dictionary.ValueAtKey(tpDictionary, keyName)
+                    if tpCellProgramIdentifier:
+                        program = prog_type_lib.program_type_by_identifier(tpCellProgramIdentifier)
+                    elif defaultProgramIdentifier:
+                        program = prog_type_lib.program_type_by_identifier(defaultProgramIdentifier)
+                except:
                     program = prog_type_lib.office_program #Default Office Program as a last resort
                 keyName = getKeyName(tpDictionary, 'construction_set')
-                tpCellConstructionSetIdentifier = Dictionary.DictionaryValueAtKey(tpDictionary, keyName)
-                if tpCellConstructionSetIdentifier:
-                    constr_set = constr_set_lib.construction_set_by_identifier(tpCellConstructionSetIdentifier)
-                elif defaultConstructionSetIdentifier:
-                    constr_set = constr_set_lib.construction_set_by_identifier(defaultConstructionSetIdentifier)
-                else:
+                try:
+                    tpCellConstructionSetIdentifier = Dictionary.ValueAtKey(tpDictionary, keyName)
+                    if tpCellConstructionSetIdentifier:
+                        constr_set = constr_set_lib.construction_set_by_identifier(tpCellConstructionSetIdentifier)
+                    elif defaultConstructionSetIdentifier:
+                        constr_set = constr_set_lib.construction_set_by_identifier(defaultConstructionSetIdentifier)
+                except:
                     constr_set = constr_set_lib.construction_set_by_identifier("Default Generic Construction Set")
             else:
                 tpCellStory = fl[spaceNumber]
@@ -368,44 +225,47 @@ class HB:
             if tpCellFaces:
                 hbRoomFaces = []
                 for tpFaceNumber, tpCellFace in enumerate(tpCellFaces):
-                    tpCellFaceNormal = topologic.FaceUtility.NormalAtParameters(tpCellFace, 0.5, 0.5)
+                    tpCellFaceNormal = Face.NormalAtParameters(tpCellFace, 0.5, 0.5)
                     hbRoomFacePoints = []
-                    tpFaceVertices = []
-                    _ = tpCellFace.ExternalBoundary().Vertices(None, tpFaceVertices)
+                    tpFaceVertices = Wire.Vertices(Face.ExternalBoundary(tpCellFace))
                     for tpVertex in tpFaceVertices:
                         hbRoomFacePoints.append(Point3D(tpVertex.X(), tpVertex.Y(), tpVertex.Z()))
-                    hbRoomFace = Face(tpCellName+'_Face_'+str(tpFaceNumber+1), Face3D(hbRoomFacePoints))
+                    hbRoomFace = HBFace(tpCellName+'_Face_'+str(tpFaceNumber+1), Face3D(hbRoomFacePoints))
                     tpFaceApertures = []
                     _ = tpCellFace.Apertures(tpFaceApertures)
                     if tpFaceApertures:
                         for tpFaceApertureNumber, tpFaceAperture in enumerate(tpFaceApertures):
-                            apertureTopology = topologic.Aperture.Topology(tpFaceAperture)
-                            tpFaceApertureDictionary = apertureTopology.GetDictionary()
+                            apertureTopology = Aperture.Topology(tpFaceAperture)
+                            tpFaceApertureDictionary = Topology.Dictionary(apertureTopology)
                             if tpFaceApertureDictionary:
-                                tpFaceApertureType = Dictionary.DictionaryValueAtKey(tpFaceApertureDictionary,'type')
+                                apertureKeyName = getKeyName(tpFaceApertureDictionary, apertureTypeKey)
+                                tpFaceApertureType = Dictionary.ValueAtKey(tpFaceApertureDictionary,apertureKeyName)
                             hbFaceAperturePoints = []
                             tpFaceApertureVertices = []
-                            _ = apertureTopology.ExternalBoundary().Vertices(None, tpFaceApertureVertices)
+                            tpFaceApertureVertices = Wire.Vertices(Face.ExternalBoundary(apertureTopology))
                             for tpFaceApertureVertex in tpFaceApertureVertices:
                                 hbFaceAperturePoints.append(Point3D(tpFaceApertureVertex.X(), tpFaceApertureVertex.Y(), tpFaceApertureVertex.Z()))
                             if(tpFaceApertureType):
                                 if ("door" in tpFaceApertureType.lower()):
-                                    hbFaceAperture = Door(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Door_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
+                                    hbFaceAperture = HBDoor(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Door_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
                                 else:
-                                    hbFaceAperture = Aperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
+                                    hbFaceAperture = HBAperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
                             else:
-                                hbFaceAperture = Aperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
+                                hbFaceAperture = HBAperture(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Window_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
                             hbRoomFace.add_aperture(hbFaceAperture)
                     else:
-                        tpFaceDictionary = tpCellFace.GetDictionary()
+                        tpFaceDictionary = Topology.Dictionary(tpCellFace)
                         if (abs(tpCellFaceNormal[2]) < 1e-6) and tpFaceDictionary: #It is a mostly vertical wall and has a dictionary
-                            apertureRatio = Dictionary.DictionaryValueAtKey(tpFaceDictionary,'apertureRatio')
+                            apertureRatio = Dictionary.ValueAtKey(tpFaceDictionary,'apertureRatio')
                             if apertureRatio:
                                 hbRoomFace.apertures_by_ratio(apertureRatio, tolerance=0.01)
                     fType = honeybee.facetype.get_type_from_normal(Vector3D(tpCellFaceNormal[0],tpCellFaceNormal[1],tpCellFaceNormal[2]), roof_angle=30, floor_angle=150)
                     hbRoomFace.type = fType
                     hbRoomFaces.append(hbRoomFace)
-                room = Room(tpCellName, hbRoomFaces, 0.01, 1)
+                room = HBRoom(tpCellName, hbRoomFaces, 0.01, 1)
+                if addSensorGrid:
+                    floor_mesh = room.generate_grid(0.5, 0.5, 1)
+                    sensorGrids.append(SensorGrid.from_mesh3d(tpCellName+"_SG", floor_mesh))
                 heat_setpt = ScheduleRuleset.from_constant_value('Room Heating', heatingSetpoint, schedule_types.temperature)
                 cool_setpt = ScheduleRuleset.from_constant_value('Room Cooling', coolingSetpoint, schedule_types.temperature)
                 humidify_setpt = ScheduleRuleset.from_constant_value('Room Humidifying', humidifyingSetpoint, schedule_types.humidity)
@@ -422,108 +282,54 @@ class HB:
                 if tpCellStory:
                     room.story = tpCellStory
                 rooms.append(room)
-        Room.solve_adjacency(rooms, 0.01)
-        #for room in rooms:
-            #room.properties.energy.construction_set = constr_set
-        #Room.stories_by_floor_height(rooms, min_difference=2.0)
+        HBRoom.solve_adjacency(rooms, 0.01)
 
+        hbShades = []
         if(tpShadingFacesCluster):
             hbShades = []
-            tpShadingFaces = []
-            _ = tpShadingFacesCluster.Faces(None, tpShadingFaces)
+            tpShadingFaces = Topology.SubTopologies(tpShadingFacesCluster, subTopologyType="face")
             for faceIndex, tpShadingFace in enumerate(tpShadingFaces):
                 faceVertices = []
-                _ = tpShadingFace.ExternalBoundary().Vertices(None, faceVertices)
+                faceVertices = Wire.Vertices(Face.ExternalBoundary(tpShadingFace))
                 facePoints = []
                 for aVertex in faceVertices:
                     facePoints.append(Point3D(aVertex.X(), aVertex.Y(), aVertex.Z()))
                 hbShadingFace = Face3D(facePoints, None, [])
-                hbShade = Shade("SHADINGSURFACE_" + str(faceIndex+1), hbShadingFace)
+                hbShade = HBShade("SHADINGSURFACE_" + str(faceIndex+1), hbShadingFace)
                 hbShades.append(hbShade)
-        model = Model(buildingName, rooms, orphaned_shades=hbShades)
+        model = HBModel(buildingName, rooms, orphaned_shades=hbShades)
+        if addSensorGrid:
+            model.properties.radiance.sensor_grids = []
+            model.properties.radiance.add_sensor_grids(sensorGrids)
         return model
-
+    
     @staticmethod
-    def HBModelExportToHBJSON(hbModel, filepath, overwrite):
+    def ProgramTypeByIdentifier(id):
         """
+        Returns the program type by the input identifying string.
+
         Parameters
         ----------
-        hbModel : TYPE
-            DESCRIPTION.
-        filepath : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        id : str
+            The identifiying string.
 
         Returns
         -------
-        bool
-            DESCRIPTION.
+        HBProgram
+            The found built-in program.
 
         """
-        # hbModel, filepath = item
-        # Make sure the file extension is .hbjson
-        ext = filepath[len(filepath)-7:len(filepath)]
-        if ext.lower() != ".hbjson":
-            filepath = filepath+".hbjson"
-        f = None
-        try:
-            if overwrite == True:
-                f = open(filepath, "w")
-            else:
-                f = open(filepath, "x") # Try to create a new File
-        except:
-            raise Exception("Error: Could not create a new file at the following location: "+filepath)
-        if (f):
-            json.dump(hbModel.to_dict(), f, indent=4)
-            f.close()    
-            return True
-        return False
+        return prog_type_lib.program_type_by_identifier(id)
     
     @staticmethod
-    def HBModelString(item):
+    def ProgramTypes():
         """
-        Parameters
-        ----------
-        item : TYPE
-            DESCRIPTION.
+        Returns the list of available built-in program types.
 
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        return item.to_dict()
-    
-    @staticmethod
-    def HBProgramTypeByIdentifier(item):
-        """
-        Parameters
-        ----------
-        item : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
-        """
-        return prog_type_lib.program_type_by_identifier(item)
-    
-    @staticmethod
-    def HBProgramTypes():
-        """
         Returns
         -------
         list
-            DESCRIPTION.
+            The list of available built-in program types.
 
         """
         progTypes = []
@@ -531,3 +337,21 @@ class HB:
         for progIdentifier in progIdentifiers: 
             progTypes.append(prog_type_lib.program_type_by_identifier(progIdentifier))
         return [progTypes, progIdentifiers]
+    
+    @staticmethod
+    def String(model):
+        """
+        Returns the string representation of the input model.
+
+        Parameters
+        ----------
+        model : HBModel
+            The input HB Model.
+
+        Returns
+        -------
+        dict
+            A dictionary representing the input HB Model.
+
+        """
+        return model.to_dict()

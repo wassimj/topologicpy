@@ -1243,7 +1243,7 @@ class Topology():
         topologies = []
         if ifc_file:
             settings = ifcopenshell.geom.settings()
-            settings.set(settings.DISABLE_TRIANGULATION, False)
+            settings.set(settings.DISABLE_TRIANGULATION, True)
             settings.set(settings.USE_BREP_DATA, True)
             settings.set(settings.USE_WORLD_COORDS, True)
             settings.set(settings.SEW_SHELLS, True)
@@ -1283,13 +1283,13 @@ class Topology():
 
     '''
     @staticmethod
-    def ByImportedIFC(filePath, typeList):
+    def ByImportedIFC(path, typeList):
         """
         NOT DONE YET
 
         Parameters
         ----------
-        filePath : TYPE
+        path : TYPE
             DESCRIPTION.
         typeList : TYPE
             DESCRIPTION.
@@ -1364,7 +1364,7 @@ class Topology():
         settings.set(settings.SEW_SHELLS,True)
         settings.set(settings.USE_WORLD_COORDS,False)
 
-        ifc_file = ifcopenshell.open(filePath)
+        ifc_file = ifcopenshell.open(path)
         if len(typeList) < 1:
             typeList = ifc_file.types()
         returnList = []
@@ -1443,13 +1443,13 @@ class Topology():
         return topology
     '''
     @staticmethod
-    def ByImportedJSONMK1(filePath, tolerance=0.0001):
+    def ByImportedJSONMK1(path, tolerance=0.0001):
         """
         Imports the topology from a JSON file.
 
         Parameters
         ----------
-        filePath : str
+        path : str
             The file path to the json file.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -1507,7 +1507,7 @@ class Topology():
             return v
 
         topology = None
-        file = open(filePath)
+        file = open(path)
         if file:
             topologies = []
             jsondata = json.load(file)
@@ -1570,13 +1570,13 @@ class Topology():
         return None
 
     @staticmethod
-    def ByImportedJSONMK2(filePath, tolerance=0.0001):
+    def ByImportedJSONMK2(path, tolerance=0.0001):
         """
         Imports the topology from a JSON file.
 
         Parameters
         ----------
-        filePath : str
+        path : str
             The file path to the json file.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -1592,8 +1592,8 @@ class Topology():
             returnApertures = []
             for item in apertureList:
                 brepFileName = item['brep']
-                brepFilePath = os.path.join(folderPath, brepFileName+".brep")
-                brepFile = open(brepFilePath)
+                breppath = os.path.join(folderPath, brepFileName+".brep")
+                brepFile = open(breppath)
                 if brepFile:
                     brepString = brepFile.read()
                     aperture = Topology.ByString(brepString)
@@ -1637,15 +1637,15 @@ class Topology():
             return v
 
         topology = None
-        jsonFile = open(filePath)
-        folderPath = os.path.dirname(filePath)
+        jsonFile = open(path)
+        folderPath = os.path.dirname(path)
         if jsonFile:
             topologies = []
             jsondata = json.load(jsonFile)
             for jsonItem in jsondata:
                 brepFileName = jsonItem['brep']
-                brepFilePath = os.path.join(folderPath, brepFileName+".brep")
-                brepFile = open(brepFilePath)
+                breppath = os.path.join(folderPath, brepFileName+".brep")
+                brepFile = open(breppath)
                 if brepFile:
                     brepString = brepFile.read()
                     topology = Topology.ByString(brepString)
@@ -1707,13 +1707,13 @@ class Topology():
         return None
 
     @staticmethod
-    def ByImportedOBJ(filePath, transposeAxes = True, tolerance=0.0001):
+    def ByImportedOBJ(path, transposeAxes = True, tolerance=0.0001):
         """
         Imports the topology from a Weverfront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
         Parameters
         ----------
-        filePath : str
+        path : str
             The file path to the OBJ file.
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up" 
@@ -1728,7 +1728,7 @@ class Topology():
         """
         vertices = []
         faces = []
-        file = open(filePath)
+        file = open(path)
         if file:
             lines = file.readlines()
             for i in range(len(lines)):
@@ -2308,7 +2308,7 @@ class Topology():
 
     
     @staticmethod
-    def ExportToBRep(topology, filePath, overwrite=True, version=3):
+    def ExportToBRep(topology, path, overwrite=True, version=3):
         """
         Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html.
 
@@ -2316,7 +2316,7 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
-        filePath : str
+        path : str
             The input file path.
         overwrite : bool , optional
             If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
@@ -2331,20 +2331,20 @@ class Topology():
         """
         if not isinstance(topology, topologic.Topology):
             return None
-        if not isinstance(filePath, str):
+        if not isinstance(path, str):
             return None
         # Make sure the file extension is .BREP
-        ext = filePath[len(filePath)-5:len(filePath)]
+        ext = path[len(path)-5:len(path)]
         if ext.lower() != ".brep":
-            filePath = filePath+".brep"
+            path = path+".brep"
         f = None
         try:
             if overwrite == True:
-                f = open(filePath, "w")
+                f = open(path, "w")
             else:
-                f = open(filePath, "x") # Try to create a new File
+                f = open(path, "x") # Try to create a new File
         except:
-            raise Exception("Error: Could not create a new file at the following location: "+filePath)
+            raise Exception("Error: Could not create a new file at the following location: "+path)
         if (f):
             s = topology.String(version)
             f.write(s)
@@ -2379,19 +2379,19 @@ class Topology():
         """
         # topology, url, port, user, password = item
         
-        def exportToBREP(topology, filePath, overwrite):
+        def exportToBREP(topology, path, overwrite):
             # Make sure the file extension is .BREP
-            ext = filePath[len(filePath)-5:len(filePath)]
+            ext = path[len(path)-5:len(path)]
             if ext.lower() != ".brep":
-                filePath = filePath+".brep"
+                path = path+".brep"
             f = None
             try:
                 if overwrite == True:
-                    f = open(filePath, "w")
+                    f = open(path, "w")
                 else:
-                    f = open(filePath, "x") # Try to create a new File
+                    f = open(path, "x") # Try to create a new File
             except:
-                raise Exception("Error: Could not create a new file at the following location: "+filePath)
+                raise Exception("Error: Could not create a new file at the following location: "+path)
             if (f):
                 topString = topology.String()
                 f.write(topString)
@@ -2399,19 +2399,19 @@ class Topology():
                 return True
             return False
         
-        filePath = os.path.expanduser('~')+"/tempFile.brep"
-        if exportToBREP(topology, filePath, True):
+        path = os.path.expanduser('~')+"/tempFile.brep"
+        if exportToBREP(topology, path, True):
             url = url.replace('http://','')
             url = '/dns/'+url+'/tcp/'+port+'/https'
             client = ipfshttpclient.connect(url, auth=(user, password))
-            newfile = client.add(filePath)
-            os.remove(filePath)
+            newfile = client.add(path)
+            os.remove(path)
             return newfile['Hash']
         return ''
     '''
 
     @staticmethod
-    def ExportToJSONMK1(topologies, filePath, overwrite=False, tolerance=0.0001):
+    def ExportToJSONMK1(topologies, path, overwrite=False, tolerance=0.0001):
         """
         Export the input list of topologies to a JSON file
 
@@ -2419,7 +2419,7 @@ class Topology():
         ----------
         topologies : list
             The input list of topologies.
-        filePath : str
+        path : str
             The path to the JSON file.
         overwrite : bool , optional
             If set to True, any existing file will be overwritten. The default is False.
@@ -2557,20 +2557,20 @@ class Topology():
 
         if not (isinstance(topologies,list)):
             topologies = [topologies]
-        # filePath = item[1]
+        # path = item[1]
         # tol = item[2]
         # Make sure the file extension is .json
-        ext = filePath[len(filePath)-5:len(filePath)]
+        ext = path[len(path)-5:len(path)]
         if ext.lower() != ".json":
-            filePath = filePath+".json"
+            path = path+".json"
         f = None
         try:
             if overwrite == True:
-                f = open(filePath, "w")
+                f = open(path, "w")
             else:
-                f = open(filePath, "x") # Try to create a new File
+                f = open(path, "x") # Try to create a new File
         except:
-            raise Exception("Error: Could not create a new file at the following location: "+filePath)
+            raise Exception("Error: Could not create a new file at the following location: "+path)
         if (f):
             jsondata = []
             for topology in topologies:
@@ -2592,7 +2592,7 @@ class Topology():
             The input list of topologies.
         folderPath : list
             The path to the folder containing the json file and brep files.
-        filePath : str
+        path : str
             The path to the JSON file.
         overwrite : bool , optional
             If set to True, any existing file will be overwritten. The default is False.
@@ -2702,8 +2702,8 @@ class Topology():
             apertureDicts = []
             for index, anAperture in enumerate(apertureList):
                 apertureName = brepName+"_aperture_"+str(index+1).zfill(5)
-                brepFilePath = os.path.join(folderPath, apertureName+".brep")
-                brepFile = open(brepFilePath, "w")
+                breppath = os.path.join(folderPath, apertureName+".brep")
+                brepFile = open(breppath, "w")
                 brepFile.write(anAperture.String())
                 brepFile.close()
                 apertureData = {}
@@ -2751,20 +2751,20 @@ class Topology():
         if ext.lower() != ".json":
             fileName = fileName+".json"
         jsonFile = None
-        jsonFilePath = os.path.join(folderPath, fileName)
+        jsonpath = os.path.join(folderPath, fileName)
         try:
             if overwrite == True:
-                jsonFile = open(jsonFilePath, "w")
+                jsonFile = open(jsonpath, "w")
             else:
-                jsonFile = open(jsonFilePath, "x") # Try to create a new File
+                jsonFile = open(jsonpath, "x") # Try to create a new File
         except:
-            raise Exception("Error: Could not create a new file at the following location: "+jsonFilePath)
-        if (jsonFilePath):
+            raise Exception("Error: Could not create a new file at the following location: "+jsonpath)
+        if (jsonpath):
             jsondata = []
             for index, topology in enumerate(topologies):
                 brepName = "topology_"+str(index+1).zfill(5)
-                brepFilePath = os.path.join(folderPath, brepName+".brep")
-                brepFile = open(brepFilePath, "w")
+                breppath = os.path.join(folderPath, brepName+".brep")
+                brepFile = open(breppath, "w")
                 brepFile.write(topology.String())
                 brepFile.close()
                 jsondata.append(getTopologyData(topology, brepName, folderPath, tolerance))
@@ -2774,7 +2774,7 @@ class Topology():
         return False
     
     @staticmethod
-    def ExportToOBJ(topology, filePath, transposeAxes=True, overwrite=True):
+    def ExportToOBJ(topology, path, transposeAxes=True, overwrite=True):
         """
         Exports the input topology to a Wavefront OBJ file. This is very experimental and outputs a simple solid topology.
 
@@ -2782,7 +2782,7 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
-        filePath : str
+        path : str
             The input file path.
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up" 
@@ -2802,13 +2802,13 @@ class Topology():
 
         if not isinstance(topology, topologic.Topology):
             return None
-        if not overwrite and exists(filePath):
+        if not overwrite and exists(path):
             return None
         
         	# Make sure the file extension is .txt
-        ext = filePath[len(filePath)-4:len(filePath)]
+        ext = path[len(path)-4:len(path)]
         if ext.lower() != ".obj":
-            filePath = filePath+".obj"
+            path = path+".obj"
         status = False
         lines = []
         version = Helper.Version()
@@ -2831,7 +2831,7 @@ class Topology():
         finalLines = lines[0]
         for i in range(1,len(lines)):
             finalLines = finalLines+"\n"+lines[i]
-        with open(filePath, "w") as f:
+        with open(path, "w") as f:
             f.writelines(finalLines)
             f.close()
             status = True
@@ -3381,6 +3381,107 @@ class Topology():
 
         """
         return topology.GetOcctShape()
+    
+    def Degree(topology, hostTopology):
+        """
+        Returns the number of immediate super topologies that use the input topology
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        hostTopology : topologic.Topology
+            The input host topology to which the input topology belongs
+        
+        Returns
+        -------
+        int
+            The degree of the topology (the number of immediate super topologies that use the input topology).
+        
+        """
+        if not isinstance(topology, topologic.Topology):
+            return None
+        if not isinstance(hostTopology, topologic.Topology):
+            return None
+        
+        hostTopologyType = Topology.TypeAsString(hostTopology).lower()
+        type = Topology.TypeAsString(topology).lower()
+        superType = ""
+        if type == "vertex" and (hostTopologyType == "cellcomplex" or hostTopologyType == "cell" or hostTopologyType == "shell"):
+            superType = "face"
+        elif type == "vertex" and (hostTopologyType == "wire" or hostTopologyType == "edge"):
+            superType = "edge"
+        elif type == "edge" and (hostTopologyType == "cellcomplex" or hostTopologyType == "cell" or hostTopologyType == "shell"):
+            superType = "face"
+        elif type == "face" and (hostTopologyType == "cellcomplex"):
+            superType = "cell"
+        superTopologies = Topology.SuperTopologies(topology, hostTopology=hostTopology, topologyType=superType)
+        if not superTopologies:
+            return 0
+        return len(superTopologies)
+
+    def OpenFaces(topology):
+        """
+        Returns the faces that border no cells.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        
+        Returns
+        -------
+        list
+            The list of open edges.
+        
+        """
+
+        if not isinstance(topology, topologic.Topology):
+            return None
+        
+        return [f for f in Topology.SubTopologies(topology, subTopologyType="face") if Topology.Degree(f, hostTopology=topology) < 1]
+    
+    def OpenEdges(topology):
+        """
+        Returns the edges that border only one face.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        
+        Returns
+        -------
+        list
+            The list of open edges.
+        
+        """
+
+        if not isinstance(topology, topologic.Topology):
+            return None
+        
+        return [e for e in Topology.SubTopologies(topology, subTopologyType="edge") if Topology.Degree(e, hostTopology=topology) < 2]
+    
+    def OpenVertices(topology):
+        """
+        Returns the vertices that border only one edge.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        
+        Returns
+        -------
+        list
+            The list of open edges.
+        
+        """
+
+        if not isinstance(topology, topologic.Topology):
+            return None
+        
+        return [v for v in Topology.SubTopologies(topology, subTopologyType="vertex") if Topology.Degree(v, hostTopology=topology) < 2]
     
     def Orient(topology, origin=None, dirA=[0,0,1], dirB=[0,0,1], tolerance=0.0001):
         """
