@@ -48,17 +48,10 @@ except:
 
 import topologicpy
 import topologic
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import pandas as pd
-import numpy as np
-from dgl.data import DGLDataset
-from dgl.nn import GraphConv
-from topologicpy import Dictionary
+from topologicpy.Dictionary import Dictionary
 import os
-import plotly.express as px
-from topologicpy import Replication
+
+
 import random
 import time
 from datetime import datetime
