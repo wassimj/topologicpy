@@ -378,7 +378,7 @@ class Cluster(topologic.Cluster):
             return topologic.Vertex.Type()
 
     @staticmethod
-    def MysticRose(wire=None, origin=None, radius=1, sides=16, perimeter=True, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def MysticRose(wire=None, origin=None, radius=1, sides=16, perimeter=True, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates a mystic rose.
 
@@ -389,19 +389,15 @@ class Cluster(topologic.Cluster):
         origin : topologic.Vertex , optional
             The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
         radius : float , optional
-            The radius of the circle. The default is 1.
+            The radius of the mystic rose. The default is 1.
         sides : int, optional
-            The number of sides of the circle. The default is 16.
+            The number of sides of the mystic rose. The default is 16.
         perimeter : bool, optional
             If True, the perimeter edges are included in the output. The default is True.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the circle. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the circle. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the circle. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the mystic rose. The default is [0,0,1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the mystic rose. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -419,7 +415,7 @@ class Cluster(topologic.Cluster):
         from itertools import combinations
 
         if not wire:
-            wire = Wire.Circle(origin=origin, radius=radius, sides=sides, fromAngle=0, toAngle=360, close=True, dirX=dirX,dirY=dirY, dirZ=dirZ, placement=placement, tolerance=tolerance)
+            wire = Wire.Circle(origin=origin, radius=radius, sides=sides, fromAngle=0, toAngle=360, close=True, direction=direction, placement=placement, tolerance=tolerance)
         if not Wire.IsClosed(wire):
             return None
         vertices = Wire.Vertices(wire)

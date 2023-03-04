@@ -1073,13 +1073,13 @@ class Topology():
             if len(faces) == 1:
                 return faces[0]
             if outputMode.lower() == "cell":
-                output = Cell.ByFaces(faces, tolerance)
+                output = Cell.ByFaces(faces, tolerance=tolerance)
                 if output:
                     return output
                 else:
                     return None
             if outputMode.lower() == "cellcomplex":
-                output = CellComplex.ByFaces(faces, tolerance)
+                output = CellComplex.ByFaces(faces, tolerance=tolerance)
                 if output:
                     return output
                 else:
@@ -2010,7 +2010,7 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
-        def convexHull3D(item, tol, option):
+        def convexHull3D(item, tolerance, option):
             if item:
                 vertices = []
                 _ = item.Vertices(None, vertices)
@@ -2038,7 +2038,7 @@ class Topology():
                     edges.append(Edge.ByVertices([sv, ev]))
                     faces.append(Face.ByWire(Wire.ByEdges(edges)))
             try:
-                c = Cell.ByFaces(faces, tol)
+                c = Cell.ByFaces(faces, tolerance=tolerance)
                 return c
             except:
                 returnTopology = Cluster.SelfMerge(Cluster.ByTopologies(faces))
@@ -3420,6 +3420,27 @@ class Topology():
             return 0
         return len(superTopologies)
 
+    def NonPlanarFaces(topology, tolerance=0.0001):
+        """
+        Returns any nonplanar faces in the input topology
+        
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        Returns
+        -------
+        list
+            The list of nonplanar faces.
+        
+        """
+        if not isinstance(topology, topologic.Topology):
+            return None
+        faces = Topology.SubTopologies(topology, subTopologyType="face")
+        return [f for f in faces if not Topology.IsPlanar(f, tolerance=tolerance)]
+    
     def OpenFaces(topology):
         """
         Returns the faces that border no cells.
@@ -3713,7 +3734,7 @@ class Topology():
                 returnTopology = topology
         elif t == 32: # Cell
             try:
-                returnTopology = topologic.Cell.ByFaces(stl_final_faces, tolerance)
+                returnTopology = topologic.Cell.ByFaces(stl_final_faces, tolerance=tolerance)
             except:
                 returnTopology = topology
         elif t == 64: #CellComplex
@@ -3747,7 +3768,7 @@ class Topology():
         return topology.RemoveContents(contents)
     
     @staticmethod
-    def RemoveCoplanarFaces(topology, angTolerance=0.1, tolerance=0.0001):
+    def RemoveCoplanarFaces(topology, planarize=False, angTolerance=0.1, tolerance=0.0001):
         """
         Removes coplanar faces in the input topology
 
@@ -3755,6 +3776,8 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
+        planarize : bool , optional
+            If set to True, the algorithm will attempt to planarize the final merged faces. Otherwise, it will triangulate any final nonplanar faces. The default is False.
         angTolerance : float , optional
             The desired angular tolerance for removing coplanar faces. The default is 0.1.
         tolerance : float , optional
@@ -3769,6 +3792,7 @@ class Topology():
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         t = topology.Type()
@@ -3843,15 +3867,17 @@ class Topology():
             if not returnTopology:
                 returnTopology = topologic.Cluster.ByTopologies(faces, False)
         elif t == 32:
-            returnTopology = topologic.Cell.ByFaces(faces, tolerance)
+            print("Trying to build a Cell")
+            returnTopology = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
             if not returnTopology:
+                print("Failed, trying to build a Shell instead")
                 returnTopology = topologic.Shell.ByFaces(faces, tolerance)
             if not returnTopology:
                 returnTopology = topologic.Cluster.ByTopologies(faces, False)
         elif t == 64:
             returnTopology = topologic.CellComplex.ByFaces(faces, tolerance, False)
             if not returnTopology:
-                returnTopology = topologic.Cell.ByFaces(faces, tolerance)
+                returnTopology = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
             if not returnTopology:
                 returnTopology = topologic.Shell.ByFaces(faces, tolerance)
             if not returnTopology:
@@ -4121,7 +4147,7 @@ class Topology():
         return {"vertices":vOutput, "edges":eOutput, "wires":wOutput, "faces":fOutput}
 
     @staticmethod
-    def Show(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor='white', faceOpacity=0.5, edgeColor='black', edgeWidth=1, vertexColor='black', vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
+    def Show(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor='white', faceOpacity=0.5, edgeColor='black', edgeWidth=1, vertexColor='black', vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
         """
         Shows the input topology on screen.
 
@@ -4227,7 +4253,7 @@ class Topology():
         if not isinstance(topology, topologic.Topology):
             return None
         data = Plotly.DataByTopology(topology=topology, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, vertexGroups=vertexGroups, edgeGroups=edgeGroups, faceGroups=faceGroups, faceColor=faceColor, faceOpacity=faceOpacity, edgeColor=edgeColor, edgeWidth=edgeWidth, vertexColor=vertexColor, vertexSize=vertexSize, showFaces=showFaces, showEdges=showEdges, showVertices=showVertices)
-        figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
+        figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
         Plotly.Show(figure=figure, renderer=renderer, camera=camera, target=target, up=up)
 
     @staticmethod
@@ -4276,7 +4302,7 @@ class Topology():
         return {"sorted":sortedTopologies, "unsorted":unsortedTopologies}
     
     @staticmethod
-    def Spin(topology, origin=None, triangulate=True, dirX=0, dirY=0, dirZ=1, degree=360, sides=16,
+    def Spin(topology, origin=None, triangulate=True, direction=[0,0,1], degree=360, sides=16,
                      tolerance=0.0001):
         """
         Spins the input topology around an axis to create a new topology.See https://en.wikipedia.org/wiki/Solid_of_revolution.
@@ -4289,12 +4315,8 @@ class Topology():
             The origin (center) of the spin.
         triangulate : bool , optional
             If set to True, the result will be triangulated. The default is True.
-        dirX : float , optional
-            The 'x' component of the axis (vector) of spin. The default is 0.
-        dirY : float , optional
-            The 'y' component of the axis (vector) of spin. The default is 0.
-        dirZ : float , optional
-            The 'z' component of the axis (vector) of spin. The default is 1.
+        direction : list , optional
+            The vector representing the direction of the spin axis. The default is [0,0,1].
         degree : float , optional
             The angle in degrees for the spin. The default is 360.
         sides : int , optional
@@ -4323,7 +4345,7 @@ class Topology():
         topologies = []
         unit_degree = degree / float(sides)
         for i in range(sides+1):
-            topologies.append(topologic.TopologyUtility.Rotate(topology, origin, dirX, dirY, dirZ, unit_degree*i))
+            topologies.append(topologic.TopologyUtility.Rotate(topology, origin, direction[0], direction[1], direction[2], unit_degree*i))
         returnTopology = None
         if topology.Type() == topologic.Vertex.Type():
             returnTopology = Wire.ByVertices(topologies, False)
@@ -4487,6 +4509,7 @@ class Topology():
         superTopologies = []
 
         if not topologyType:
+            print("Topology.SuperTopologies 4515 - ", topology)
             typeID = 2*Topology.TypeID(topology)
         else:
             typeID = Topology.TypeID(topologyType)
@@ -4745,6 +4768,34 @@ class Topology():
         if not isinstance(topology, topologic.Topology):
             return None
         return topologic.TopologyUtility.Translate(topology, x, y, z)
+    
+    @staticmethod
+    def TranslateByDirectionDistance(topology, direction, distance):
+        """
+        Translates (moves) the input topology along the input direction by the specified distance.
+
+        Parameters
+        ----------
+        topology : topologic.topology
+            The input topology.
+        x : float , optional
+            The x translation value. The default is 0.
+        y : float , optional
+            The y translation value. The default is 0.
+        z : float , optional
+            The z translation value. The default is 0.
+
+        Returns
+        -------
+        topologic.Topology
+            The translated topology.
+
+        """
+        from topologicpy.Vector import Vector
+        if not isinstance(topology, topologic.Topology):
+            return None
+        v = Vector.SetMagnitude(direction, distance)
+        return topologic.TopologyUtility.Translate(topology, v[0], v[1], v[2])
 
     
     @staticmethod
@@ -4811,7 +4862,7 @@ class Topology():
                 shell = Topology.TransferDictionariesBySelectors(shell, selectors, tranFaces=True)
             return shell
         elif t == 32: # Cell
-            cell = Cell.ByFaces(faceTriangles, tolerance)
+            cell = Cell.ByFaces(faceTriangles, tolerance=tolerance)
             if transferDictionaries:
                 cell = Topology.TransferDictionariesBySelectors(cell, selectors, tranFaces=True)
             return cell

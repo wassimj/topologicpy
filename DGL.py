@@ -717,12 +717,17 @@ class DGL:
         accuracy = round(float(correct) / float(len(predicted)), mantissa)
         return {"accuracy":accuracy, "correct":correct, "mask":mask, "size":size, "wrong":wrong}
     
-    def ConfusionMatrix(actual, predicted, categories, renderer="notebook"):
+    def ConfusionMatrix(actual, predicted, normalize=False):
         from sklearn import metrics
-        return metrics.confusion_matrix(actual, predicted)
+        if normalize:
+            cf = metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true")
+        else:
+            cf = metrics.confusion_matrix(y_true=actual, y_pred=predicted)
+        return cf
+
 
     @staticmethod
-    def ClassifierBypath(path):
+    def ClassifierByFilePath(path):
         """
         Returns the classifier found at the input file path.
         Parameters

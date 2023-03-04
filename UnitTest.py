@@ -24,6 +24,6 @@ assert d == 17.321, "Vertex.Distance. Should be 17.321"
 
 origin = Vertex.ByCoordinates(0,0,0)
 cc = CellComplex.Prism(origin=origin, width=10, length=10, height=10, uSides=2, vSides=2, wSides=2,
-                         dirX=0, dirY=0, dirZ=1, originLocation="Center")
+                         direction=[0,0,1], originLocation="Center")
 assert isinstance(cc, topologic.CellComplex), "Vertex.EnclosingCell. Should be topologic.CellComplex"
-EnclosingCell(vertex, topology, exclusive=True, tolerance=0.0001):
+EnclosingCell(vertex, topology, exclusive=True, tolerance=0.0001)
