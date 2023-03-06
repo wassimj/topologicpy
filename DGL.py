@@ -724,6 +724,45 @@ class DGL:
         else:
             cf = metrics.confusion_matrix(y_true=actual, y_pred=predicted)
         return cf
+        
+    def BalanceDataset(dataset, labels, method="undersampling"):
+        """
+        Returns the balanced DGLDataset
+    
+        Parameters
+        ----------
+        dataset : DGLDataset
+            The input dataset.
+        labels : list
+            The input list of labels.
+        method : str, optional
+            The method of sampling. This can be "undersampling" or "oversampling". The defaul is "undersampling.
+
+        Returns
+        -------
+        DGLDataset
+            The balanced dataset.
+
+        """
+        df = pd.DataFrame({'graph_index': range(len(labels)), 'label': labels})
+        
+        if method == 'undersampling':
+            min_distribution = df['label'].value_counts().min()
+            df = df.groupby('label').sample(n=min_distribution)
+        elif method == 'oversampling':
+            max_distribution = df['label'].value_counts().max()
+            df = df.groupby('label').sample(n=max_distribution, replace=True)
+        else:
+            raise NotImplementedError
+            
+        list_idx = df['graph_index'].tolist()
+        DGLGraphs = []
+        DGLlabels = []
+        for index in list_idx:
+            graph, label = dataset[index]
+            DGLGraphs.append(graph)
+            DGLlabels.append(label)
+        return GraphDGL(DGLGraphs, DGLlabels, "node_attr")
 
 
     @staticmethod
