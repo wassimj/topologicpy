@@ -5,7 +5,7 @@ import math
 class CellComplex(topologic.CellComplex):
     @staticmethod
     def Box(origin=None, width=1, length=1, height=1, uSides=2, vSides=2, wSides=2,
-                         dirX=0, dirY=0, dirZ=1, placement="center"):
+                         direction=[0,0,1], placement="center"):
         """
         Creates a box with internal cells.
 
@@ -25,12 +25,8 @@ class CellComplex(topologic.CellComplex):
             The number of sides along the length. The default is 1.
         wSides : int , optional
             The number of sides along the height. The default is 1.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the box. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the box. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the box. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the box. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
 
@@ -41,7 +37,7 @@ class CellComplex(topologic.CellComplex):
 
         """
         return CellComplex.Prism(origin=origin, width=width, length=length, height=height, uSides=uSides, vSides=vSides, wSides=wSides,
-                         dirX=dirX, dirY=dirY, dirZ=dirZ, placement=placement)
+                         direction=direction, placement=placement)
     @staticmethod
     def ByCells(cells, tolerance=0.0001):
         """
@@ -135,24 +131,30 @@ class CellComplex(topologic.CellComplex):
         faces = [x for x in faces if isinstance(x, topologic.Face)]
         if len(faces) < 1:
             return None
-        cellComplex = topologic.CellComplex.ByFaces(faces, tolerance, False)
+        try:
+            cellComplex = topologic.CellComplex.ByFaces(faces, tolerance, False)
+        except:
+            cellComplex = None
         if not cellComplex:
-            warnings.warn("Warning: Default CellComplex.ByFaces method failed. Attempting to Merge the Faces.", UserWarning)
+            print("Warning: Default CellComplex.ByFaces method failed. Attempting to Merge the Faces.")
             cellComplex = faces[0]
             for i in range(1,len(faces)):
                 newCellComplex = None
                 try:
                     newCellComplex = cellComplex.Merge(faces[i], False)
                 except:
-                    warnings.warn("Warning: Failed to merge Face #"+i+". Skipping.", UserWarning)
+                    print("Warning: Failed to merge Face #"+str(i)+". Skipping.")
                 if newCellComplex:
                     cellComplex = newCellComplex
             if cellComplex.Type() != 64: #64 is the type of a CellComplex
-                warnings.warn("Warning: Input Faces do not form a CellComplex", UserWarning)
+                print("Warning: Input Faces do not form a CellComplex")
                 if cellComplex.Type() > 64:
                     returnCellComplexes = []
                     _ = cellComplex.CellComplexes(None, returnCellComplexes)
-                    return returnCellComplexes[0]
+                    if len(returnCellComplexes) > 0:
+                        return returnCellComplexes[0]
+                    else:
+                        return None
                 else:
                     return None
         else:
@@ -593,7 +595,7 @@ class CellComplex(topologic.CellComplex):
     
     @staticmethod
     def Prism(origin=None, width=1, length=1, height=1, uSides=2, vSides=2, wSides=2,
-                         dirX=0, dirY=0, dirZ=1, placement="center"):
+                         direction=[0,0,1], placement="center"):
         """
         Creates a prismatic cellComplex with internal cells.
 
@@ -613,12 +615,8 @@ class CellComplex(topologic.CellComplex):
             The number of sides along the length. The default is 1.
         wSides : int , optional
             The number of sides along the height. The default is 1.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the prism. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the prism. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the prism. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the prism. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
 
@@ -664,9 +662,9 @@ class CellComplex(topologic.CellComplex):
             x1 = origin.X()
             y1 = origin.Y()
             z1 = origin.Z()
-            x2 = origin.X() + dirX
-            y2 = origin.Y() + dirY
-            z2 = origin.Z() + dirZ
+            x2 = origin.X() + direction[0]
+            y2 = origin.Y() + direction[1]
+            z2 = origin.Z() + direction[2]
             dx = x2 - x1
             dy = y2 - y1
             dz = z2 - z1    

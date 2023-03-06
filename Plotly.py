@@ -92,7 +92,7 @@ class Plotly:
         edgeGroupKey : str , optional
             The dictionary key to use to display the edge group. The default is None.
         edgeColor : str , optional
-            The desired color of the output wires (edges). This can be any plotly color string and may be specified as:
+            The desired color of the output edges. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
             - An rgb/rgba string (e.g. 'rgb(255,0,0)')
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
@@ -250,14 +250,14 @@ class Plotly:
         return data
 
     @staticmethod
-    def DataByTopology(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor="white", faceOpacity=0.5, edgeColor="black", edgeWidth=1, vertexColor="black", vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True):
+    def DataByTopology(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor="white", faceOpacity=0.5, edgeColor="black", edgeWidth=1, vertexColor="black", vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, verticesLabel="Topology Vertices", edgesLabel="Topology Edges", facesLabel="Topology Faces"):
         """
-        Creates plotly face, wire, and vertex data.
+        Creates plotly face, edge, and vertex data.
 
         Parameters
         ----------
         topology : topologic.Topology
-            The input topology. This must contain faces and or wires.
+            The input topology. This must contain faces and or edges.
         vertexLabelKey : str , optional
             The dictionary key to use to display the vertex label. The default is None.
         vertexGroupKey : str , optional
@@ -287,7 +287,7 @@ class Plotly:
         faceOpacity : float , optional
             The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
         edgeColor : str , optional
-            The desired color of the output wires (edges). This can be any plotly color string and may be specified as:
+            The desired color of the output edges. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
             - An rgb/rgba string (e.g. 'rgb(255,0,0)')
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
@@ -312,7 +312,12 @@ class Plotly:
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
-
+        verticesLabel : str , optional
+            The legend label string used to identify vertices. The default is "Topology Vertices".
+        edgesLabel : str , optional
+            The legend label string used to identify edges. The default is "Topology Edges".
+        facesLabel : str , optional
+            The legend label string used to idenitfy edges. The default is "Topology Faces".
         Returns
         -------
         list
@@ -322,7 +327,7 @@ class Plotly:
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
-        def vertexData(vertices, dictionaries=None, vertexColor="black", vertexSize=1.1, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[]):
+        def vertexData(vertices, dictionaries=None, vertexColor="black", vertexSize=1.1, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], verticesLabel="Topology Vertices"):
             x = []
             y = []
             z = []
@@ -368,7 +373,7 @@ class Plotly:
             return go.Scatter3d(x=x,
                                 y=y,
                                 z=z,
-                                name='Topology Vertices',
+                                name=verticesLabel,
                                 showlegend=True,
                                 marker=dict(color=v_groupList,  size=vertexSize),
                                 mode='markers',
@@ -378,7 +383,7 @@ class Plotly:
                                 hoverinfo='text',
                                 hovertext=v_labels)
 
-        def edgeData(vertices, edges, dictionaries=None, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[]):
+        def edgeData(vertices, edges, dictionaries=None, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], edgesLabel="Topology Edges"):
             x = []
             y = []
             z = []
@@ -427,7 +432,7 @@ class Plotly:
             return go.Scatter3d(x=x,
                                 y=y,
                                 z=z,
-                                name="Topology Edges",
+                                name=edgesLabel,
                                 showlegend=True,
                                 marker_size=0,
                                 mode="lines",
@@ -554,7 +559,7 @@ class Plotly:
                 ev = Edge.EndVertex(tp_edge)
                 ei = Vertex.Index(ev, tp_verts)
                 edges.append([si, ei])
-            data.append(edgeData(vertices, edges, dictionaries=[], edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups))
+            data.append(edgeData(vertices, edges, dictionaries=[], edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, edgesLabel=edgesLabel))
         if showFaces and topology.Type() >= topologic.Face.Type():
             tp_faces = Topology.SubTopologies(topology, subTopologyType="face")
             triangles = []
@@ -591,6 +596,7 @@ class Plotly:
              height=500,
              showScale = True,
              colorScale='Viridis',
+             colorSamples=10,
              backgroundColor='rgba(0,0,0,0)',
              marginLeft=0,
              marginRight=0,
@@ -623,6 +629,8 @@ class Plotly:
             If set to True, a color scale is shown on the right side of the figure. The default is True.
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+        colorSamples : int , optional
+            The number of discrete color samples to use for displaying the data. The default is 10.
         backgroundColor : str , optional
             The desired background color. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -643,9 +651,13 @@ class Plotly:
         """
         #import plotly.figure_factory as ff
         import plotly.graph_objects as go
+        import plotly.express as px
 
         annotations = []
-       
+
+        # Transpose the confusion matrix
+        matrix = matrix.T
+        colors = px.colors.sample_colorscale(colorScale, [n/(colorSamples -1) for n in range(colorSamples)])
         if not minValue:
             minValue = 0
         if not maxValue:
@@ -655,10 +667,12 @@ class Plotly:
                 for j, value in enumerate(row):
                     annotations.append(
                         {
-                            "x": categories[i],
-                            "y": categories[j],
-                            "font": {"color": "white"},
-                            "text": str(value),
+                            "x": categories[j],
+                            "y": categories[i],
+                            "font": {"color": "black"},
+                            "bgcolor": "white",
+                            "opacity": 0.5,
+                            "text": str(round(value,2)), 
                             "xref": "x1",
                             "yref": "y1",
                             "showarrow": False
@@ -670,16 +684,18 @@ class Plotly:
                 for j, value in enumerate(row):
                     annotations.append(
                         {
-                            "x": categories[i],
-                            "y": categories[j],
-                            "font": {"color": "white"},
-                            "text": str(value),
+                            "x": categories[j],
+                            "y": categories[i],
+                            "font": {"color": "black"},
+                            "bgcolor": "white",
+                            "opacity": 0.5,
+                            "text": str(round(value,2)),
                             "xref": "x1",
                             "yref": "y1",
                             "showarrow": False
                         }
                     )
-        data = go.Heatmap(z=matrix, y=categories, x=categories, zmin=minValue, zmax=maxValue, showscale=showScale, colorscale=colorScale)
+        data = go.Heatmap(z=matrix, y=categories, x=categories, zmin=minValue, zmax=maxValue, showscale=showScale, colorscale=colors)
         
         layout = {
             "width": width,
@@ -690,7 +706,7 @@ class Plotly:
             "annotations": annotations,
             "paper_bgcolor": backgroundColor,
             "plot_bgcolor": backgroundColor,
-            "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
+            "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
         }
         fig = go.Figure(data=data, layout=layout)
         return fig
@@ -752,7 +768,7 @@ class Plotly:
         return fig
 
     @staticmethod
-    def FigureByData(data, color=None, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0):
+    def FigureByData(data, color=None, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0):
         """
         Creates a plotly figure.
 
@@ -770,6 +786,8 @@ class Plotly:
             If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.
         zAxis : bool , optional
             If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
+        axisSize : float , optional
+            The size of the X,Y,Z, axes. The default is 1.
         backgroundColor : str , optional
             The desired color of the background. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -800,24 +818,24 @@ class Plotly:
             return None
 
         v0 = Vertex.ByCoordinates(0,0,0)
-        v1 = Vertex.ByCoordinates(1,0,0)
-        v2 = Vertex.ByCoordinates(0,1,0)
-        v3 = Vertex.ByCoordinates(0,0,1)
+        v1 = Vertex.ByCoordinates(axisSize,0,0)
+        v2 = Vertex.ByCoordinates(0,axisSize,0)
+        v3 = Vertex.ByCoordinates(0,0,axisSize)
 
         if xAxis:
             xEdge = Edge.ByVertices([v0,v1])
             xWire = Wire.ByEdges([xEdge])
-            xData = Plotly.DataByTopology(xWire, wireColor="red", wireWidth=6, drawFaces=False, drawWires=True, drawVertices=False)
+            xData = Plotly.DataByTopology(xWire, edgeColor="red", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgesLabel="X-Axis")
             data = data + xData
         if yAxis:
             yEdge = Edge.ByVertices([v0,v2])
             yWire = Wire.ByEdges([yEdge])
-            yData = Plotly.DataByTopology(yWire, wireColor="green", wireWidth=6, drawFaces=False, drawWires=True, drawVertices=False)
+            yData = Plotly.DataByTopology(yWire, edgeColor="green", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgesLabel="Y-Axis")
             data = data + yData
         if zAxis:
             zEdge = Edge.ByVertices([v0,v3])
             zWire = Wire.ByEdges([zEdge])
-            zData = Plotly.DataByTopology(zWire, wireColor="blue", wireWidth=6, drawFaces=False, drawWires=True, drawVertices=False)
+            zData = Plotly.DataByTopology(zWire, edgeColor="blue", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgesLabel="Z-Axis")
             data = data + zData
 
         figure = go.Figure(data=data)

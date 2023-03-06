@@ -469,8 +469,7 @@ class Wire(topologic.Wire):
         return Wire.ByVertices(vertices, close)
 
     @staticmethod
-    def Circle(origin=None, radius=0.5, sides=16, fromAngle=0, toAngle=360, close=True, dirX=0,
-                   dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Circle(origin=None, radius=0.5, sides=16, fromAngle=0, toAngle=360, close=True, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates a circle.
 
@@ -488,12 +487,8 @@ class Wire(topologic.Wire):
             The angle in degrees at which to end creating the arc of the circle. The default is 360.
         close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the circle. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the circle. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the circle. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the circle. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the circle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -512,7 +507,8 @@ class Wire(topologic.Wire):
         radius = abs(radius)
         if radius < tolerance:
             return None
-        if (abs(dirX) + abs(dirY) + abs(dirZ)) < tolerance:
+        
+        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) < tolerance:
             return None
         baseV = []
         xList = []
@@ -542,9 +538,9 @@ class Wire(topologic.Wire):
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
-        x2 = origin.X() + dirX
-        y2 = origin.Y() + dirY
-        z2 = origin.Z() + dirZ
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    
@@ -698,7 +694,7 @@ class Wire(topologic.Wire):
         return edges
 
     @staticmethod
-    def Ellipse(origin=None, inputMode=1, width=2.0, length=1.0, focalLength=0.866025, eccentricity=0.866025, majorAxisLength=1.0, minorAxisLength=0.5, sides=32, fromAngle=0, toAngle=360, close=True, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Ellipse(origin=None, inputMode=1, width=2.0, length=1.0, focalLength=0.866025, eccentricity=0.866025, majorAxisLength=1.0, minorAxisLength=0.5, sides=32, fromAngle=0, toAngle=360, close=True, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates an ellipse and returns all its geometry and parameters.
 
@@ -733,12 +729,8 @@ class Wire(topologic.Wire):
             The angle in degrees at which to end creating the arc of the ellipse. The default is 360.
         close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the ellipse. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the ellipse. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the ellipse. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the ellipse. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -750,11 +742,11 @@ class Wire(topologic.Wire):
             The created ellipse
 
         """
-        ellipseAll = Wire.EllipseAll(origin=origin, inputMode=inputMode, width=width, length=length, focalLength=focalLength, eccentricity=eccentricity, majorAxisLength=majorAxisLength, minorAxisLength=minorAxisLength, sides=sides, fromAngle=fromAngle, toAngle=toAngle, close=close, dirX=dirX, dirY=dirY, dirZ=dirZ, placement=placement, tolerance=tolerance)
+        ellipseAll = Wire.EllipseAll(origin=origin, inputMode=inputMode, width=width, length=length, focalLength=focalLength, eccentricity=eccentricity, majorAxisLength=majorAxisLength, minorAxisLength=minorAxisLength, sides=sides, fromAngle=fromAngle, toAngle=toAngle, close=close, direction=direction, placement=placement, tolerance=tolerance)
         return ellipseAll["ellipse"]
 
     @staticmethod
-    def EllipseAll(origin=None, inputMode=1, width=2.0, length=1.0, focalLength= 0.866025, eccentricity=0.866025, majorAxisLength=1.0, minorAxisLength=0.5, sides=32, fromAngle=0, toAngle=360, close=True, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def EllipseAll(origin=None, inputMode=1, width=2.0, length=1.0, focalLength= 0.866025, eccentricity=0.866025, majorAxisLength=1.0, minorAxisLength=0.5, sides=32, fromAngle=0, toAngle=360, close=True, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates an ellipse and returns all its geometry and parameters.
 
@@ -789,12 +781,8 @@ class Wire(topologic.Wire):
             The angle in degrees at which to end creating the arc of the ellipse. The default is 360.
         close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the ellipse. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the ellipse. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the ellipse. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the ellipse. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -822,7 +810,7 @@ class Wire(topologic.Wire):
             return None
         if placement.lower() not in ["center", "lowerleft"]:
             return None
-        if (abs(dirX) + abs(dirY) + abs(dirZ)) < tolerance:
+        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) < tolerance:
             return None
         width = abs(width)
         length = abs(length)
@@ -834,7 +822,6 @@ class Wire(topologic.Wire):
         if width < tolerance or length < tolerance or focalLength < tolerance or eccentricity < tolerance or majorAxisLength < tolerance or minorAxisLength < tolerance or sides < 3:
             return None
         if inputMode == 1:
-            # origin, w, l, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
             w = width
             l = length
             a = width/2
@@ -842,7 +829,6 @@ class Wire(topologic.Wire):
             c = math.sqrt(abs(b**2 - a**2))
             e = c/a
         elif inputMode == 2:
-            # origin, c, e, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
             c = focalLength
             e = eccentricity
             a = c/e
@@ -850,7 +836,6 @@ class Wire(topologic.Wire):
             w = a*2
             l = b*2
         elif inputMode == 3:
-            # origin, c, b, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
             c = focalLength
             b = minorAxisLength
             a = math.sqrt(abs(b**2 + c**2))
@@ -858,7 +843,6 @@ class Wire(topologic.Wire):
             w = a*2
             l = b*2
         elif inputMode == 4:
-            # origin, a, b, sides, fromAngle, toAngle, close, dirX, dirY, dirZ = item
             a = majorAxisLength
             b = minorAxisLength
             c = math.sqrt(abs(b**2 - a**2))
@@ -896,9 +880,9 @@ class Wire(topologic.Wire):
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
-        x2 = origin.X() + dirX
-        y2 = origin.Y() + dirY
-        z2 = origin.Z() + dirZ
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    
@@ -1289,7 +1273,7 @@ class Wire(topologic.Wire):
         return w
 
     @staticmethod
-    def Rectangle(origin=None, width=1.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Rectangle(origin=None, width=1.0, length=1.0, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates a rectangle.
 
@@ -1301,12 +1285,8 @@ class Wire(topologic.Wire):
             The width of the rectangle. The default is 1.0.
         length : float , optional
             The length of the rectangle. The default is 1.0.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the rectangle. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the rectangle. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the rectangle. The default is 1.
+        direction : list , optional
+            The ector representing the up direction of the rectangle. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1330,7 +1310,7 @@ class Wire(topologic.Wire):
         length = abs(length)
         if width < tolerance or length < tolerance:
             return None
-        if (abs(dirX) + abs(dirY) + abs(dirZ)) < tolerance:
+        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) < tolerance:
             return None
         xOffset = 0
         yOffset = 0
@@ -1347,9 +1327,9 @@ class Wire(topologic.Wire):
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
-        x2 = origin.X() + dirX
-        y2 = origin.Y() + dirY
-        z2 = origin.Z() + dirZ
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    
@@ -1521,7 +1501,7 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def Star(origin=None, radiusA=1.0, radiusB=0.4, rays=5, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Star(origin=None, radiusA=1.0, radiusB=0.4, rays=5, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates a star.
 
@@ -1535,12 +1515,8 @@ class Wire(topologic.Wire):
             The outer radius of the star. The default is 0.4.
         rays : int , optional
             The number of star rays. The default is 5.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the star. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the star. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the star. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the star. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the star. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1601,9 +1577,9 @@ class Wire(topologic.Wire):
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
-        x2 = origin.X() + dirX
-        y2 = origin.Y() + dirY
-        z2 = origin.Z() + dirZ
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    
@@ -1619,7 +1595,7 @@ class Wire(topologic.Wire):
 
     
     @staticmethod
-    def Trapezoid(origin=None, widthA=1.0, widthB=0.75, offsetA=0.0, offsetB=0.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Trapezoid(origin=None, widthA=1.0, widthB=0.75, offsetA=0.0, offsetB=0.0, length=1.0, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates a trapezoid.
 
@@ -1637,12 +1613,8 @@ class Wire(topologic.Wire):
             The offset of the top edge of the trapezoid. The default is 0.0.
         length : float , optional
             The length of the trapezoid. The default is 1.0.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the trapezoid. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the trapezoid. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the trapezoid. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the trapezoid. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1683,9 +1655,9 @@ class Wire(topologic.Wire):
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
-        x2 = origin.X() + dirX
-        y2 = origin.Y() + dirY
-        z2 = origin.Z() + dirZ
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    

@@ -187,7 +187,7 @@ class Shell(Topology):
         return Shell.ByWires(wires, triangulate=triangulate, tolerance=tolerance)
 
     @staticmethod
-    def Circle(origin=None, radius=0.5, sides=32, fromAngle=0, toAngle=360, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Circle(origin=None, radius=0.5, sides=32, fromAngle=0, toAngle=360, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates a circle.
 
@@ -203,12 +203,8 @@ class Shell(Topology):
             The angle in degrees from which to start creating the arc of the circle. The default is 0.
         toAngle : float , optional
             The angle in degrees at which to end creating the arc of the circle. The default is 360.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the circle. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the circle. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the circle. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the circle. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -219,7 +215,7 @@ class Shell(Topology):
         topologic.Shell
             The created circle.
         """
-        return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=1, fromAngle=fromAngle, toAngle=toAngle, dirX=dirX, dirY=dirY, dirZ=dirZ, placement=placement, tolerance=tolerance)
+        return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=1, fromAngle=fromAngle, toAngle=toAngle, direction=direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
     def Delaunay(vertices, face=None):
@@ -393,7 +389,7 @@ class Shell(Topology):
         return faces
 
     @staticmethod
-    def HyperbolicParaboloidRectangularDomain(origin=None, llVertex=None, lrVertex=None, ulVertex=None, urVertex=None, u=10, v=10, dirX=0, dirY=0, dirZ=1, placement="bottom"):
+    def HyperbolicParaboloidRectangularDomain(origin=None, llVertex=None, lrVertex=None, ulVertex=None, urVertex=None, u=10, v=10, direction=[0,0,1], placement="bottom"):
         """
         Creates a hyperbolic paraboloid with a rectangular domain.
 
@@ -413,14 +409,10 @@ class Shell(Topology):
             The number of segments along the X axis. The default is 10.
         v : int , optional
             The number of segments along the Y axis. The default is 10.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the circle. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the circle. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the circle. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the hyperbolic parabolid. The default is [0,0,1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the hyperbolic parabolid. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
 
         Returns
         -------
@@ -487,9 +479,9 @@ class Shell(Topology):
         x1 = 0
         y1 = 0
         z1 = 0
-        x2 = 0 + dirX
-        y2 = 0 + dirY
-        z2 = 0 + dirZ
+        x2 = 0 + direction[0]
+        y2 = 0 + direction[1]
+        z2 = 0 + direction[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    
@@ -505,7 +497,7 @@ class Shell(Topology):
         return returnTopology
     
     @staticmethod
-    def HyperbolicParaboloidCircularDomain(origin=None, radius=0.5, sides=36, rings=10, A=1.0, B=-1.0, dirX=0, dirY=0, dirZ=1, placement="bottom"):
+    def HyperbolicParaboloidCircularDomain(origin=None, radius=0.5, sides=36, rings=10, A=1.0, B=-1.0, direction=[0,0,1], placement="bottom"):
         """
         Creates a hyperbolic paraboloid with a circular domain. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
@@ -523,12 +515,8 @@ class Shell(Topology):
             The *A* constant in the equation z = A*x^2^ + B*y^2^. The default is 1.0.
         B : float , optional
             The *B* constant in the equation z = A*x^2^ + B*y^2^. The default is -1.0.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the circle. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the circle. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the circle. The default is 1.
+        direction : list , optional
+            The  vector representing the up direction of the hyperbolic paraboloid. The default is [0,0,1.
         placement : str , optional
             The description of the placement of the origin of the circle. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
 
@@ -663,9 +651,9 @@ class Shell(Topology):
         x1 = 0
         y1 = 0
         z1 = 0
-        x2 = 0 + dirX
-        y2 = 0 + dirY
-        z2 = 0 + dirZ
+        x2 = 0 + direction[0]
+        y2 = 0 + direction[1]
+        z2 = 0 + direction[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    
@@ -727,7 +715,7 @@ class Shell(Topology):
         return shell.IsClosed()
 
     @staticmethod
-    def Pie(origin=None, radiusA=0.5, radiusB=0, sides=32, rings=1, fromAngle=0, toAngle=360, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Pie(origin=None, radiusA=0.5, radiusB=0, sides=32, rings=1, fromAngle=0, toAngle=360, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates a pie shape.
 
@@ -747,12 +735,8 @@ class Shell(Topology):
             The angle in degrees from which to start creating the arc of the pie. The default is 0.
         toAngle : float , optional
             The angle in degrees at which to end creating the arc of the pie. The default is 360.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the pie. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the pie. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the pie. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the pie. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -852,9 +836,9 @@ class Shell(Topology):
         x1 = 0
         y1 = 0
         z1 = 0
-        x2 = 0 + dirX
-        y2 = 0 + dirY
-        z2 = 0 + dirZ
+        x2 = 0 + direction[0]
+        y2 = 0 + direction[1]
+        z2 = 0 + direction[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    
@@ -870,7 +854,7 @@ class Shell(Topology):
         return shell
 
     @staticmethod
-    def Rectangle(origin=None, width=1.0, length=1.0, uSides=2, vSides=2, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Rectangle(origin=None, width=1.0, length=1.0, uSides=2, vSides=2, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates a rectangle.
 
@@ -886,12 +870,8 @@ class Shell(Topology):
             The number of sides along the width. The default is 2.
         vSides : int , optional
             The number of sides along the length. The default is 2.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the rectangle. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the rectangle. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the rectangle. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the rectangle. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -922,16 +902,16 @@ class Shell(Topology):
         for i in range(uSides):
             for j in range(vSides):
                 rOrigin = Vertex.ByCoordinates(i*uOffset - wOffset, j*vOffset - lOffset, 0)
-                w = Wire.Rectangle(origin=rOrigin, width=uOffset, length=vOffset, dirX=0, dirY=0, dirZ=1, placement="lowerleft", tolerance=tolerance)
+                w = Wire.Rectangle(origin=rOrigin, width=uOffset, length=vOffset, placement="lowerleft", tolerance=tolerance)
                 f = Face.ByWire(w)
                 faces.append(f)
         shell = Shell.ByFaces(faces)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
-        x2 = origin.X() + dirX
-        y2 = origin.Y() + dirY
-        z2 = origin.Z() + dirZ
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    

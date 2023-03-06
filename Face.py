@@ -548,8 +548,8 @@ class Face(topologic.Face):
         return Face.ByWires(externalBoundary, internalBoundaries)
     
     @staticmethod
-    def Circle(origin=None, radius=0.5, sides=16, fromAngle=0, toAngle=360, dirX=0,
-                   dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Circle(origin=None, radius=0.5, sides=16, fromAngle=0, toAngle=360, direction=[0,0,1],
+                   placement="center", tolerance=0.0001):
         """
         Creates a circle.
 
@@ -565,12 +565,8 @@ class Face(topologic.Face):
             The angle in degrees from which to start creating the arc of the circle. The default is 0.
         toAngle : float , optional
             The angle in degrees at which to end creating the arc of the circle. The default is 360.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the circle. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the circle. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the circle. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the circle. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the circle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -583,7 +579,7 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Wire import Wire
-        wire = Wire.Circle(origin, radius, sides, fromAngle, toAngle, True, dirX, dirY, dirZ, placement, tolerance)
+        wire = Wire.Circle(origin=origin, radius=radius, sides=sides, fromAngle=fromAngle, toAngle=toAngle, close=True, direction=direction, placement=placement, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
             return None
         return Face.ByWire(wire)
@@ -705,7 +701,7 @@ class Face(topologic.Face):
         return True
     
     @staticmethod
-    def Flatten(face, oldLocation=None, newLocation=None):
+    def Flatten(face, oldLocation=None, newLocation=None, direction=None):
         """
         Flattens the input face such that its center of mass is located at the origin and its normal is pointed in the positive Z axis.
 
@@ -717,6 +713,8 @@ class Face(topologic.Face):
             The old location to use as the origin of the movement. If set to None, the center of mass of the input topology is used. The default is None.
         newLocation : topologic.Vertex , optional
             The new location at which to place the topology. If set to None, the world origin (0,0,0) is used. The default is None.
+        direction : list , optional
+            The direction, expressed as a list of [X,Y,Z] that signifies the direction of the face. If set to None, the normal at *u* 0.5 and *v* 0.5 is considered the direction of the face. The deafult is None.
 
         Returns
         -------
@@ -735,13 +733,14 @@ class Face(topologic.Face):
             newLocation = Vertex.ByCoordinates(0,0,0)
         cm = oldLocation
         world_origin = newLocation
-        coords = Face.NormalAtParameters(face, 0.5, 0.5)
+        if not direction or len(direction) < 3:
+            direction = Face.NormalAtParameters(face, 0.5, 0.5)
         x1 = Vertex.X(cm)
         y1 = Vertex.Y(cm)
         z1 = Vertex.Z(cm)
-        x2 = Vertex.X(cm) + coords[0]
-        y2 = Vertex.Y(cm) + coords[1]
-        z2 = Vertex.Z(cm) + coords[2]
+        x2 = Vertex.X(cm) + direction[0]
+        y2 = Vertex.Y(cm) + direction[1]
+        z2 = Vertex.Z(cm) + direction[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    
@@ -775,6 +774,54 @@ class Face(topologic.Face):
         flatFace = Topology.SetDictionary(flatFace, dictionary)
         return flatFace
     
+    @staticmethod
+    def Planarize(face, origin=None, direction=None):
+        """
+        Planarizes the input face such that its center of mass is located at the input origin and its normal is pointed in the input direction.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        origin : topologic.Vertex , optional
+            The old location to use as the origin of the movement. If set to None, the center of mass of the input face is used. The default is None.
+        direction : list , optional
+            The direction, expressed as a list of [X,Y,Z] that signifies the direction of the face. If set to None, the normal at *u* 0.5 and *v* 0.5 is considered the direction of the face. The deafult is None.
+
+        Returns
+        -------
+        topologic.Face
+            The planarized face.
+
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not isinstance(face, topologic.Face):
+            return None
+        if not isinstance(origin, topologic.Vertex):
+            origin = Topology.CenterOfMass(face)
+        if not isinstance(direction, list):
+            direction = Face.NormalAtParameters(face, 0.5, 0.5)
+        flatFace = Face.Flatten(face, oldLocation=origin, direction=direction)
+
+        world_origin = Vertex.ByCoordinates(0,0,0)
+        # Retrieve the needed transformations
+        dictionary = Topology.Dictionary(flatFace)
+        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+
+        planarizedFace = Topology.Rotate(flatFace, origin=world_origin, x=0, y=1, z=0, degree=theta)
+        planarizedFace = Topology.Rotate(planarizedFace, origin=world_origin, x=0, y=0, z=1, degree=phi)
+        planarizedFace = Topology.Translate(planarizedFace, xTran, yTran, zTran)
+        return planarizedFace
+
     @staticmethod
     def Harmonize(face):
         """
@@ -1207,6 +1254,57 @@ class Face(topologic.Face):
         return returnResult
     
     @staticmethod
+    def NormalEdge(face, length=1):
+        """
+        Returns the normal vector to the input face as an edge with the desired input length. A normal vector of a face is a vector perpendicular to it.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        length : float , optional
+            The desired length of the normal edge. The default is 1.
+
+        Returns
+        -------
+        topologic.Edge
+            The created normal edge to the input face. This is computed at the approximate center of the face.
+
+        """
+        return Face.NormalEdgeAtParameters(face, u=0.5, v=0.5, length=length)
+
+    @staticmethod
+    def NormalEdgeAtParameters(face, u=0.5, v=0.5, length=1):
+        """
+        Returns the normal vector to the input face as an edge with the desired input length. A normal vector of a face is a vector perpendicular to it.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        u : float , optional
+            The *u* parameter at which to compute the normal to the input face. The default is 0.5.
+        v : float , optional
+            The *v* parameter at which to compute the normal to the input face. The default is 0.5.
+        length : float , optional
+            The desired length of the normal edge. The default is 1.
+
+        Returns
+        -------
+        topologic.Edge
+            The created normal edge to the input face. This is computed at the approximate center of the face.
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        if not isinstance(face, topologic.Face):
+            return None
+        sv = Face.VertexByParameters(face=face, u=u, v=v)
+        vec = Face.NormalAtParameters(face, u=u, v=v)
+        ev = Topology.TranslateByDirectionDistance(sv, vec, length)
+        return Edge.ByVertices([sv, ev])
+    
+    @staticmethod
     def Project(faceA, faceB, direction=None, mantissa=4, tolerance=0.0001):
         """
         Creates a projection of the first input face unto the second input face.
@@ -1250,7 +1348,7 @@ class Face(topologic.Face):
         return Face.ByWires(p_eb, p_ib_list)
 
     @staticmethod
-    def Rectangle(origin=None, width=1.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Rectangle(origin=None, width=1.0, length=1.0, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates a rectangle.
 
@@ -1262,12 +1360,8 @@ class Face(topologic.Face):
             The width of the rectangle. The default is 1.0.
         length : float , optional
             The length of the rectangle. The default is 1.0.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the rectangle. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the rectangle. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the rectangle. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the rectangle. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1279,13 +1373,13 @@ class Face(topologic.Face):
             The created face.
 
         """
-        wire = Wire.Rectangle(origin, width, length, dirX, dirY, dirZ, placement, tolerance)
+        wire = Wire.Rectangle(origin=origin, width=width, length=length, direction=direction, placement=placement, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
             return None
         return Face.ByWire(wire)
 
     @staticmethod
-    def Star(origin=None, radiusA=1.0, radiusB=0.4, rays=5, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Star(origin=None, radiusA=1.0, radiusB=0.4, rays=5, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates a star.
 
@@ -1299,12 +1393,8 @@ class Face(topologic.Face):
             The outer radius of the star. The default is 0.4.
         rays : int , optional
             The number of star rays. The default is 5.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the star. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the star. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the star. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the star. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the star. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1316,13 +1406,13 @@ class Face(topologic.Face):
             The created face.
 
         """
-        wire = Wire.Star(origin, radiusA, radiusB, rays, dirX, dirY, dirZ, placement, tolerance)
+        wire = Wire.Star(origin=origin, radiusA=radiusA, radiusB=radiusB, rays=rays, direction=direction, placement=placement, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
             return None
         return Face.ByWire(wire)
 
     @staticmethod
-    def Trapezoid(origin=None, widthA=1.0, widthB=0.75, offsetA=0.0, offsetB=0.0, length=1.0, dirX=0, dirY=0, dirZ=1, placement="center", tolerance=0.0001):
+    def Trapezoid(origin=None, widthA=1.0, widthB=0.75, offsetA=0.0, offsetB=0.0, length=1.0, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
         Creates a trapezoid.
 
@@ -1340,12 +1430,8 @@ class Face(topologic.Face):
             The offset of the top edge of the trapezoid. The default is 0.0.
         length : float , optional
             The length of the trapezoid. The default is 1.0.
-        dirX : float , optional
-            The X component of the vector representing the up direction of the trapezoid. The default is 0.
-        dirY : float , optional
-            The Y component of the vector representing the up direction of the trapezoid. The default is 0.
-        dirZ : float , optional
-            The Z component of the vector representing the up direction of the trapezoid. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the trapezoid. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1357,7 +1443,7 @@ class Face(topologic.Face):
             The created trapezoid.
 
         """
-        wire = Wire.Trapezoid(origin, widthA, widthB, offsetA, offsetB, length, dirX, dirY, dirZ, placement, tolerance)
+        wire = Wire.Trapezoid(origin=origin, widthA=widthA, widthB=widthB, offsetA=offsetA, offsetB=offsetB, length=length, direction=direction, placement=placement, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
             return None
         return Face.ByWire(wire)
