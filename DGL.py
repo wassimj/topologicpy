@@ -717,189 +717,47 @@ class DGL:
         accuracy = round(float(correct) / float(len(predicted)), mantissa)
         return {"accuracy":accuracy, "correct":correct, "mask":mask, "size":size, "wrong":wrong}
     
-    def ConfusionMatrix(actual, predicted, normalize=False):
-        from sklearn import metrics
-        if normalize:
-            cf = metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true")
-        else:
-            cf = metrics.confusion_matrix(y_true=actual, y_pred=predicted)
-        return cf
-
-
     @staticmethod
-    def ClassifierByFilePath(path):
+    def BalanceDataset(dataset, labels, method="undersampling", key="node_attr"):
         """
-        Returns the classifier found at the input file path.
-        Parameters
-        ----------
-        path : str
-            File path for the saved classifier.
-
-        Returns
-        -------
-        DGL Classifier
-            The classifier.
-
-        """
-        return torch.load(path)
+        Balances the input dataset using the specified method.
     
-    @staticmethod
-    def DatasetByDGLGraphs(DGLGraphs, labels, key="node_attr"):
-        """
-        Returns a DGL Dataset from the input DGL graphs.
-
-        Parameters
-        ----------
-        DGLGraphs : list
-            The input list dgl graphs.
-        labels : list
-            The list of labels.
-        key : str
-            THe key used for the node attributes.
-
-        Returns
-        -------
-        DGL.Dataset
-            The creatred DGL dataset.
-
-        """
-        if isinstance(DGLGraphs, list) == False:
-            DGLGraphs = [DGLGraphs]
-        if isinstance(labels, list) == False:
-            labels = [labels]
-        return GraphDGL(DGLGraphs, labels, key)
-    
-    @staticmethod
-    def DatasetByImportedCSV_NC(folderPath):
-        """
-        UNDER CONSTRUCTION. DO NOT USE.
-
-        Parameters
-        ----------
-        folderPath : str
-            The path to folder containing the input CSV files. In that folder there should be graphs.csv, edges.csv, and vertices.csv
-
-        Returns
-        -------
-        DGLDataset
-            The returns DGL dataset.
-
-        """
-        return dgl.data.CSVDataset(folderPath, force_reload=True)
-    
-    @staticmethod
-    def DatasetBySample(name="ENZYMES"):
-        """
-        Returns a dataset from the samples database.
-
-        Parameters
-        ----------
-        name : str
-            The name of the sample dataset. This can be "ENZYMES", "DD", "COLLAB", or "MUTAG". It is case insensitive. The default is "ENZYMES".
-
-        Returns
-        -------
-        GraphDGL
-            The created DGL dataset.
-
-        """
-        name = name.upper()
-        dataset = dgl.data.TUDataset(name)
-        dgl_graphs, dgl_labels = zip(*[dataset[i] for i in range(len(dataset.graph_lists))])
-        if name == 'ENZYMES':
-            node_attr_key = 'node_attr'
-        elif name == 'DD':
-            node_attr_key = 'node_labels'
-        elif name == 'COLLAB':
-            node_attr_key = '_ID'
-        elif name == 'MUTAG':
-            node_attr_key = 'node_labels'
-        else:
-            raise NotImplementedError
-        return GraphDGL(dgl_graphs, dgl_labels, node_attr_key)
-    
-    @staticmethod
-    def DatasetBySample_NC(name="Cora"):
-        """
-        Returns the sample dataset as specified by the input sample name
-
-        Parameters
-        ----------
-        name : str
-            The name of the sample dataset to load. This can be "Cora", "Citeseer", or "Pubmed". It is case insensitive. The default is "Cora".
-
-        Raises
-        ------
-        NotImplementedError
-            DESCRIPTION.
-
-        Returns
-        -------
-        list
-            DESCRIPTION.
-
-        """
-        if name.lower() == 'cora':
-            return [dgl.data.CoraGraphDataset(), 7]
-        elif name.lower() == 'citeseer':
-            return [dgl.data.CiteseerGraphDataset(), 6]
-        elif name.lower() == 'pubmed':
-            return [dgl.data.PubmedGraphDataset(), 3]
-        else:
-            raise NotImplementedError
-    
-    @staticmethod
-    def DatasetGraphs_NC(dataset):
-        """
-        Return the DGL graphs found the in the input dataset.
-
         Parameters
         ----------
         dataset : DGLDataset
             The input dataset.
-
-        Returns
-        -------
-        list
-            The list of DGL graphs found in the input dataset.
-
-        """
-        try:
-            _ = dataset[1]
-        except:
-            dataset = [dataset[0]]
-        graphs = []
-        for aGraph in dataset:
-            if isinstance(aGraph, tuple):
-                aGraph = aGraph[0]
-            graphs.append(aGraph)
-        return graphs
-    
-    @staticmethod
-    def OneHotEncode(item, categories):
-        """
-        One-hot encodes the input item according to the input categories. One-Hot Encoding is a method to encode categorical variables to numerical data that Machine Learning algorithms can deal with. One-Hot encoding is most used during feature engineering for a ML Model. It converts categorical values into a new categorical column and assign a binary value of 1 or 0 to those columns. 
+        labels : list
+            The input list of labels.
+        method : str, optional
+            The method of sampling. This can be "undersampling" or "oversampling". It is case insensitive. The defaul is "undersampling".
+        key : str
+            The key used for the node attributes.
         
-        Parameters
-        ----------
-        item : any
-            The input item.
-        categories : list
-            The input list of categories.
-
         Returns
         -------
-        list
-            A one-hot encoded list of the input item according to the input categories.
-
+        DGLDataset
+            The balanced dataset.
+        
         """
-        returnList = []
-        for i in range(len(categories)):
-            if item == categories[i]:
-                returnList.append(1)
-            else:
-                returnList.append(0)
-        return returnList
+        df = pd.DataFrame({'graph_index': range(len(labels)), 'label': labels})
+
+        if method.lower() == 'undersampling':
+            min_distribution = df['label'].value_counts().min()
+            df = df.groupby('label').sample(n=min_distribution)
+        elif method.lower() == 'oversampling':
+            max_distribution = df['label'].value_counts().max()
+            df = df.groupby('label').sample(n=max_distribution, replace=True)
+        else:
+            raise NotImplementedError
+
+        list_idx = df['graph_index'].tolist()
+        DGLGraphs = []
+        labels = []
+        for index in list_idx:
+            graph, label = dataset[index]
+            DGLGraphs.append(graph)
+            labels.append(label)
+        return DGL.DatasetByDGLGraphs(DGLGraphs=DGLGraphs, labels=labels, key=key)
     
     @staticmethod
     def ByGraph(graph, bidirectional=True, key=None, categories=[], node_attr_key="node_attr", tolerance=0.0001):
@@ -1075,35 +933,6 @@ class DGL:
         return {"graphs":dgl_graphs, "labels":labels}
 
     @staticmethod
-    def CategoryDistribution(labels, categories=None, mantissa=4):
-        """
-        Returns the category distribution in the input list of labels. This is useful to determine if the dataset is balanced or not.
-
-        Parameters
-        ----------
-        labels : list
-            The input list of labels.
-        categories : list , optional
-            The list of node categories expected in the imported DGCNN file. If not specified, the categories are computed directly from the labels. The default is None.
-        mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
-
-        Returns
-        -------
-        dict
-            A dictionary object that contains the categories and their corresponding ratios. The dictionary has the following keys and values:
-            - "categories" (list): The list of categories.
-            - "ratios" (list): The list of ratios of each category as found in the input list of labels.
-
-        """
-        if not categories:
-            categories = list(set(labels))
-        ratios = []
-        for category in categories:
-            ratios.append(round(float(labels.count(category))/float(len(labels)), mantissa))
-        return {"categories":[categories], "ratios":[ratios]}
-
-    @staticmethod
     def ByImportedDGCNN(file_path, categories=[], bidirectional=True):
         """
         Returns the Graphs from the imported DGCNN file.
@@ -1169,6 +998,210 @@ class DGL:
         return {"graphs":graphs, "labels":labels}
     
     @staticmethod
+    def CategoryDistribution(labels, categories=None, mantissa=4):
+        """
+        Returns the category distribution in the input list of labels. This is useful to determine if the dataset is balanced or not.
+
+        Parameters
+        ----------
+        labels : list
+            The input list of labels.
+        categories : list , optional
+            The list of node categories expected in the imported DGCNN file. If not specified, the categories are computed directly from the labels. The default is None.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        dict
+            A dictionary object that contains the categories and their corresponding ratios. The dictionary has the following keys and values:
+            - "categories" (list): The list of categories.
+            - "ratios" (list): The list of ratios of each category as found in the input list of labels.
+
+        """
+        if not categories:
+            categories = list(set(labels))
+        ratios = []
+        for category in categories:
+            ratios.append(round(float(labels.count(category))/float(len(labels)), mantissa))
+        return {"categories":[categories], "ratios":[ratios]}
+    
+    @staticmethod
+    def ClassifierByFilePath(path):
+        """
+        Returns the classifier found at the input file path.
+        Parameters
+        ----------
+        path : str
+            File path for the saved classifier.
+
+        Returns
+        -------
+        DGL Classifier
+            The classifier.
+
+        """
+        return torch.load(path)
+    
+    def ConfusionMatrix(actual, predicted, normalize=False):
+        """
+        Returns the confusion matrix for the input actual and predicted labels.
+
+        Parameters
+        ----------
+        actual : list
+            The input list of actual labels.
+        predicted : list
+            The input list of predicts labels.
+        normalized : bool , optional
+            If set to True, the returned data will be normalized (proportion of 1). Otherwise, actual numbers are returned. The default is False.
+
+        Returns
+        -------
+        list
+            The created confusion matrix.
+
+        """
+        from sklearn import metrics
+        if normalize:
+            cf = metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true")
+        else:
+            cf = metrics.confusion_matrix(y_true=actual, y_pred=predicted)
+        return cf
+    
+    @staticmethod
+    def DatasetByDGLGraphs(DGLGraphs, labels, key="node_attr"):
+        """
+        Returns a DGL Dataset from the input DGL graphs.
+
+        Parameters
+        ----------
+        DGLGraphs : list
+            The input list dgl graphs.
+        labels : list
+            The list of labels.
+        key : str
+            The key used for the node attributes.
+
+        Returns
+        -------
+        DGL.Dataset
+            The creatred DGL dataset.
+
+        """
+        if isinstance(DGLGraphs, list) == False:
+            DGLGraphs = [DGLGraphs]
+        if isinstance(labels, list) == False:
+            labels = [labels]
+        return GraphDGL(DGLGraphs, labels, key)
+    
+    @staticmethod
+    def DatasetByImportedCSV_NC(folderPath):
+        """
+        UNDER CONSTRUCTION. DO NOT USE.
+
+        Parameters
+        ----------
+        folderPath : str
+            The path to folder containing the input CSV files. In that folder there should be graphs.csv, edges.csv, and vertices.csv
+
+        Returns
+        -------
+        DGLDataset
+            The returns DGL dataset.
+
+        """
+        return dgl.data.CSVDataset(folderPath, force_reload=True)
+    
+    @staticmethod
+    def DatasetBySample(name="ENZYMES"):
+        """
+        Returns a dataset from the samples database.
+
+        Parameters
+        ----------
+        name : str
+            The name of the sample dataset. This can be "ENZYMES", "DD", "COLLAB", or "MUTAG". It is case insensitive. The default is "ENZYMES".
+
+        Returns
+        -------
+        GraphDGL
+            The created DGL dataset.
+
+        """
+        name = name.upper()
+        dataset = dgl.data.TUDataset(name)
+        dgl_graphs, dgl_labels = zip(*[dataset[i] for i in range(len(dataset.graph_lists))])
+        if name == 'ENZYMES':
+            node_attr_key = 'node_attr'
+        elif name == 'DD':
+            node_attr_key = 'node_labels'
+        elif name == 'COLLAB':
+            node_attr_key = '_ID'
+        elif name == 'MUTAG':
+            node_attr_key = 'node_labels'
+        else:
+            raise NotImplementedError
+        return GraphDGL(dgl_graphs, dgl_labels, node_attr_key)
+    
+    @staticmethod
+    def DatasetBySample_NC(name="Cora"):
+        """
+        Returns the sample dataset as specified by the input sample name
+
+        Parameters
+        ----------
+        name : str
+            The name of the sample dataset to load. This can be "Cora", "Citeseer", or "Pubmed". It is case insensitive. The default is "Cora".
+
+        Raises
+        ------
+        NotImplementedError
+            DESCRIPTION.
+
+        Returns
+        -------
+        list
+            DESCRIPTION.
+
+        """
+        if name.lower() == 'cora':
+            return [dgl.data.CoraGraphDataset(), 7]
+        elif name.lower() == 'citeseer':
+            return [dgl.data.CiteseerGraphDataset(), 6]
+        elif name.lower() == 'pubmed':
+            return [dgl.data.PubmedGraphDataset(), 3]
+        else:
+            raise NotImplementedError
+    
+    @staticmethod
+    def DatasetGraphs_NC(dataset):
+        """
+        Return the DGL graphs found the in the input dataset.
+
+        Parameters
+        ----------
+        dataset : DGLDataset
+            The input dataset.
+
+        Returns
+        -------
+        list
+            The list of DGL graphs found in the input dataset.
+
+        """
+        try:
+            _ = dataset[1]
+        except:
+            dataset = [dataset[0]]
+        graphs = []
+        for aGraph in dataset:
+            if isinstance(aGraph, tuple):
+                aGraph = aGraph[0]
+            graphs.append(aGraph)
+        return graphs
+    
+    @staticmethod
     def EdgeData_NC(dgl_graph):
         """
         Returns the edge data found in the input DGL graph
@@ -1186,22 +1219,21 @@ class DGL:
         return dgl_graph.edata
     
     @staticmethod
-    def NodeData_NC(dgl_graph):
+    def Graphs(dataset):
         """
-        Returns the node data found in the input dgl_graph
+        Returns the labels of the graphs in the input dataset
 
         Parameters
         ----------
-        dgl_graph : DGL graph
-            The input DGL graph.
-
+        dataset : DGLDataset
+            The input dataset
+        
         Returns
         -------
-        node data
-            The node data.
-
+        list
+            The list of labels.
         """
-        return dgl_graph.ndata
+        return [g[0] for g in dataset]
     
     @staticmethod
     def Hyperparameters(optimizer, cv_type="Holdout", split=0.2, k_folds=5,
@@ -1282,8 +1314,68 @@ class DGL:
                        loss_function,
                        classifier_path,
                        results_path)
+    
+    @staticmethod
+    def OneHotEncode(item, categories):
+        """
+        One-hot encodes the input item according to the input categories. One-Hot Encoding is a method to encode categorical variables to numerical data that Machine Learning algorithms can deal with. One-Hot encoding is most used during feature engineering for a ML Model. It converts categorical values into a new categorical column and assign a binary value of 1 or 0 to those columns. 
+        
+        Parameters
+        ----------
+        item : any
+            The input item.
+        categories : list
+            The input list of categories.
 
+        Returns
+        -------
+        list
+            A one-hot encoded list of the input item according to the input categories.
 
+        """
+        returnList = []
+        for i in range(len(categories)):
+            if item == categories[i]:
+                returnList.append(1)
+            else:
+                returnList.append(0)
+        return returnList
+    
+    @staticmethod
+    def Labels(dataset):
+        """
+        Returns the labels of the graphs in the input dataset
+
+        Parameters
+        ----------
+        dataset : DGLDataset
+            The input dataset
+        
+        Returns
+        -------
+        list
+            The list of labels.
+        """
+        return [int(g[1]) for g in dataset]
+    
+    @staticmethod
+    def NodeData_NC(dgl_graph):
+        """
+        Returns the node data found in the input dgl_graph
+
+        Parameters
+        ----------
+        dgl_graph : DGL graph
+            The input DGL graph.
+
+        Returns
+        -------
+        node data
+            The node data.
+
+        """
+        return dgl_graph.ndata
+    
     @staticmethod
     def Optimizer(name="Adam", amsgrad=True, betas=(0.9,0.999), eps=0.000001, lr=0.001, maximize=False, weightDecay=0.0, rho=0.9, lr_decay=0.0):
         """
@@ -1318,71 +1410,7 @@ class DGL:
 
         """
         return {"name":name, "amsgrad":amsgrad, "betas":betas, "eps":eps, "lr": lr, "maximize":maximize, "weight_decay":weightDecay, "rho":rho, "lr_decay":lr_decay}
-
-    @staticmethod
-    def Show(data,
-             labels,
-             title="Untitled",
-             x_title="X Axis",
-             x_spacing=1.0,
-             y_title="Y Axis",
-             y_spacing=0.1,
-             use_markers=False,
-             chart_type="Line",
-             renderer = "notebook"):
-        """
-        Shows the data in a plolty graph.
-
-        Parameters
-        ----------
-        data : list
-            The data to display.
-        data_labels : list
-            The labels to use for the data.
-        title : str , optional
-            The chart title. The default is "Untitled".
-        x_title : str , optional
-            The X-axis title. The default is "Epochs".
-        x_spacing : float , optional
-            The X-axis spacing. The default is 1.0.
-        y_title : str , optional
-            The Y-axis title. The default is "Accuracy and Loss".
-        y_spacing : float , optional
-            The Y-axis spacing. The default is 0.1.
-        use_markers : bool , optional
-            If set to True, markers will be displayed. The default is False.
-        chart_type : str , optional
-            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. The default is "Line".
-        renderer : str , optional
-            The desired plotly renderer. The default is "notebook".
-
-        Returns
-        -------
-        None.
-
-        """
-        from topologicpy.Plotly import Plotly
-        if isinstance(data[labels[0]][0], int):
-            xAxis_list = list(range(1,data[labels[0]][0]+1))
-        else:
-            xAxis_list = data[labels[0]][0]
-        plot_data = [xAxis_list]
-        for i in range(1,len(labels)):
-            plot_data.append(data[labels[i]][0][:len(xAxis_list)])
-
-        dlist = list(map(list, zip(*plot_data)))
-        df = pd.DataFrame(dlist, columns=labels)
-        fig = Plotly.FigureByDataFrame(df,
-                                       labels=labels,
-                                       title=title,
-                                       x_title=x_title,
-                                       x_spacing=x_spacing,
-                                       y_title=y_title,
-                                       y_spacing=y_spacing,
-                                       use_markers=use_markers,
-                                       chart_type=chart_type)
-        Plotly.Show(fig, renderer=renderer)
-        
+    
     @staticmethod
     def Predict(dataset, classifier, node_attr_key="node_attr"):
         """
@@ -1484,7 +1512,71 @@ class DGL:
             testPredictions.append(test_predictions.tolist())
             
         return [Helper.Flatten(allLabels), Helper.Flatten(allPredictions),Helper.Flatten(trainLabels), Helper.Flatten(trainPredictions), Helper.Flatten(valLabels), Helper.Flatten(valPredictions), Helper.Flatten(testLabels), Helper.Flatten(testPredictions)]
-    
+
+    @staticmethod
+    def Show(data,
+             labels,
+             title="Untitled",
+             x_title="X Axis",
+             x_spacing=1.0,
+             y_title="Y Axis",
+             y_spacing=0.1,
+             use_markers=False,
+             chart_type="Line",
+             renderer = "notebook"):
+        """
+        Shows the data in a plolty graph.
+
+        Parameters
+        ----------
+        data : list
+            The data to display.
+        data_labels : list
+            The labels to use for the data.
+        title : str , optional
+            The chart title. The default is "Untitled".
+        x_title : str , optional
+            The X-axis title. The default is "Epochs".
+        x_spacing : float , optional
+            The X-axis spacing. The default is 1.0.
+        y_title : str , optional
+            The Y-axis title. The default is "Accuracy and Loss".
+        y_spacing : float , optional
+            The Y-axis spacing. The default is 0.1.
+        use_markers : bool , optional
+            If set to True, markers will be displayed. The default is False.
+        chart_type : str , optional
+            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. The default is "Line".
+        renderer : str , optional
+            The desired plotly renderer. The default is "notebook".
+
+        Returns
+        -------
+        None.
+
+        """
+        from topologicpy.Plotly import Plotly
+        if isinstance(data[labels[0]][0], int):
+            xAxis_list = list(range(1,data[labels[0]][0]+1))
+        else:
+            xAxis_list = data[labels[0]][0]
+        plot_data = [xAxis_list]
+        for i in range(1,len(labels)):
+            plot_data.append(data[labels[i]][0][:len(xAxis_list)])
+
+        dlist = list(map(list, zip(*plot_data)))
+        df = pd.DataFrame(dlist, columns=labels)
+        fig = Plotly.FigureByDataFrame(df,
+                                       labels=labels,
+                                       title=title,
+                                       x_title=x_title,
+                                       x_spacing=x_spacing,
+                                       y_title=y_title,
+                                       y_spacing=y_spacing,
+                                       use_markers=use_markers,
+                                       chart_type=chart_type)
+        Plotly.Show(fig, renderer=renderer)
+        
     @staticmethod
     def Train(hparams, trainingDataset, validationDataset=None, overwrite=True):
         """

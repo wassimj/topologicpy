@@ -136,6 +136,34 @@ class Helper:
         return transposed_list
     
     @staticmethod
+    def Trim(l):
+        """
+        Trims the input nested list so that each sublist has the same number of members. All lists are trimmed to match the length of the shortest list.
+        For example Trim([[1,2,3],['m','n','o','p'],['a','b','c','d','e']]) yields [[1, 2, 3], ['m', 'n', 'o'], ['a', 'b', 'c']]
+
+        Parameters
+        ----------
+        l : list
+            The input nested list.
+
+        Returns
+        -------
+        list
+            The repeated list.
+
+        """
+        minLength = len(l[0])
+        returnList = []
+        for aSubList in l:
+            newLength = len(aSubList)
+            if newLength < minLength:
+                minLength = newLength
+        for anItem in l:
+            anItem = anItem[:minLength]
+            returnList.append(anItem)
+        return returnList
+
+    @staticmethod
     def Version():
         """
         Returns the current version of the software.

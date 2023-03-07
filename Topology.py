@@ -2448,7 +2448,7 @@ class Topology():
                 _ = aCell.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     cellApertures.append(anAperture)
-                cellDictionary = Topology.Dictionary(aCell)
+                cellDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aCell))
                 if len(cellDictionary.keys()) > 0:
                     cellDictionaries.append(cellDictionary)
                     iv = topologic.CellUtility.InternalVertex(aCell, tol)
@@ -2469,7 +2469,7 @@ class Topology():
                 _ = aFace.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     faceApertures.append(anAperture)
-                faceDictionary = Topology.Dictionary(aFace)
+                faceDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aFace))
                 if len(faceDictionary.keys()) > 0:
                     faceDictionaries.append(faceDictionary)
                     iv = topologic.FaceUtility.InternalVertex(aFace, tol)
@@ -2490,7 +2490,7 @@ class Topology():
                 _ = anEdge.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     edgeApertures.append(anAperture)
-                edgeDictionary = Topology.Dictionary(anEdge)
+                edgeDictionary = Dictionary.PythonDictionary(Topology.Dictionary(anEdge))
                 if len(edgeDictionary.keys()) > 0:
                     edgeDictionaries.append(edgeDictionary)
                     iv = topologic.EdgeUtility.PointAtParameter(anEdge, 0.5)
@@ -2511,7 +2511,7 @@ class Topology():
                 _ = aVertex.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     vertexApertures.append(anAperture)
-                vertexDictionary = Topology.Dictionary(aVertex)
+                vertexDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aVertex))
                 if len(vertexDictionary.keys()) > 0:
                     vertexDictionaries.append(vertexDictionary)
                     vertexSelectors.append([aVertex.X(), aVertex.Y(), aVertex.Z()])
@@ -2522,7 +2522,7 @@ class Topology():
             for anAperture in apertureList:
                 apertureData = {}
                 apertureData['brep'] = anAperture.String()
-                apertureData['dictionary'] = Topology.Dictionary(anAperture)
+                apertureData['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(anAperture))
                 apertureDicts.append(apertureData)
             return apertureDicts
 
@@ -2537,8 +2537,8 @@ class Topology():
 
         def getTopologyData(topology, tol):
             returnDict = {}
-            brep = topology.String()
-            dictionary = Topology.Dictionary(topology)
+            brep = Topology.String(topology)
+            dictionary = Dictionary.PythonDictionary(Topology.Dictionary(topology))
             returnDict['brep'] = brep
             returnDict['dictionary'] = dictionary
             cellApertures, cellDictionaries, cellSelectors = cellAperturesAndDictionaries(topology, tol)

@@ -416,10 +416,18 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Topology import Topology
+        from topologicpy.Wire import Wire
 
         if not isinstance(vertices, list):
             return None
         vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        if len(vertexList) < 3:
+            return None
+        
+        w = Wire.ByVertices(vertexList)
+        f = Face.ByExternalBoundary(w)
+        return f
+        """
         edges = []
         for i in range(len(vertexList)-1):
             v1 = vertexList[i]
@@ -442,7 +450,7 @@ class Face(topologic.Face):
             return topologic.Face.ByExternalBoundary(Topology.SelfMerge(topologic.Cluster.ByTopologies(edges, False)))
         else:
             return None
-
+        """
     def ByVerticesCluster(cluster):
         """
         Creates a face from the input cluster of vertices.
