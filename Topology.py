@@ -2411,7 +2411,7 @@ class Topology():
     '''
 
     @staticmethod
-    def ExportToJSONMK1(topologies, path, overwrite=False, tolerance=0.0001):
+    def ExportToJSONMK1(topologies, path, version=3, overwrite=False, tolerance=0.0001):
         """
         Export the input list of topologies to a JSON file
 
@@ -2421,6 +2421,8 @@ class Topology():
             The input list of topologies.
         path : str
             The path to the JSON file.
+        version : int , optional
+            The OCCT BRep version to use. Options are 1,2,or 3. The default is 3.
         overwrite : bool , optional
             If set to True, any existing file will be overwritten. The default is False.
         tolerance : float , optional
@@ -2434,7 +2436,8 @@ class Topology():
         """
 
         from topologicpy.Dictionary import Dictionary
-        def cellAperturesAndDictionaries(topology, tol):
+
+        def cellAperturesAndDictionaries(topology, tolerance=0.0001):
             cells = []
             try:
                 _ = topology.Cells(None, cells)
@@ -2451,11 +2454,11 @@ class Topology():
                 cellDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aCell))
                 if len(cellDictionary.keys()) > 0:
                     cellDictionaries.append(cellDictionary)
-                    iv = topologic.CellUtility.InternalVertex(aCell, tol)
+                    iv = topologic.CellUtility.InternalVertex(aCell, tolerance)
                     cellSelectors.append([iv.X(), iv.Y(), iv.Z()])
             return [cellApertures, cellDictionaries, cellSelectors]
 
-        def faceAperturesAndDictionaries(topology, tol):
+        def faceAperturesAndDictionaries(topology, tolerance=0.0001):
             faces = []
             try:
                 _ = topology.Faces(None, faces)
@@ -2472,11 +2475,11 @@ class Topology():
                 faceDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aFace))
                 if len(faceDictionary.keys()) > 0:
                     faceDictionaries.append(faceDictionary)
-                    iv = topologic.FaceUtility.InternalVertex(aFace, tol)
+                    iv = topologic.FaceUtility.InternalVertex(aFace, tolerance)
                     faceSelectors.append([iv.X(), iv.Y(), iv.Z()])
             return [faceApertures, faceDictionaries, faceSelectors]
 
-        def edgeAperturesAndDictionaries(topology, tol):
+        def edgeAperturesAndDictionaries(topology):
             edges = []
             try:
                 _ = topology.Edges(None, edges)
@@ -2497,7 +2500,7 @@ class Topology():
                     edgeSelectors.append([iv.X(), iv.Y(), iv.Z()])
             return [edgeApertures, edgeDictionaries, edgeSelectors]
 
-        def vertexAperturesAndDictionaries(topology, tol):
+        def vertexAperturesAndDictionaries(topology):
             vertices = []
             try:
                 _ = topology.Vertices(None, vertices)
@@ -2535,16 +2538,16 @@ class Topology():
                 returnDicts.append(data)
             return returnDicts
 
-        def getTopologyData(topology, tol):
+        def getTopologyData(topology, version=3, tolerance=0.0001):
             returnDict = {}
-            brep = Topology.String(topology)
+            brep = Topology.String(topology, version=version)
             dictionary = Dictionary.PythonDictionary(Topology.Dictionary(topology))
             returnDict['brep'] = brep
             returnDict['dictionary'] = dictionary
-            cellApertures, cellDictionaries, cellSelectors = cellAperturesAndDictionaries(topology, tol)
-            faceApertures, faceDictionaries, faceSelectors = faceAperturesAndDictionaries(topology, tol)
-            edgeApertures, edgeDictionaries, edgeSelectors = edgeAperturesAndDictionaries(topology, tol)
-            vertexApertures, vertexDictionaries, vertexSelectors = vertexAperturesAndDictionaries(topology, tol)
+            cellApertures, cellDictionaries, cellSelectors = cellAperturesAndDictionaries(topology, tolerance=tolerance)
+            faceApertures, faceDictionaries, faceSelectors = faceAperturesAndDictionaries(topology, tolerance=tolerance)
+            edgeApertures, edgeDictionaries, edgeSelectors = edgeAperturesAndDictionaries(topology)
+            vertexApertures, vertexDictionaries, vertexSelectors = vertexAperturesAndDictionaries(topology)
             returnDict['cellApertures'] = apertureDicts(cellApertures)
             returnDict['faceApertures'] = apertureDicts(faceApertures)
             returnDict['edgeApertures'] = apertureDicts(edgeApertures)
@@ -2557,8 +2560,6 @@ class Topology():
 
         if not (isinstance(topologies,list)):
             topologies = [topologies]
-        # path = item[1]
-        # tol = item[2]
         # Make sure the file extension is .json
         ext = path[len(path)-5:len(path)]
         if ext.lower() != ".json":
@@ -2574,7 +2575,7 @@ class Topology():
         if (f):
             jsondata = []
             for topology in topologies:
-                jsondata.append(getTopologyData(topology, tolerance))
+                jsondata.append(getTopologyData(topology, version=version, tolerance=tolerance))
             json.dump(jsondata, f, indent=4, sort_keys=True)
             f.close()    
             return True
@@ -2582,7 +2583,7 @@ class Topology():
 
     
     @staticmethod
-    def ExportToJSONMK2(topologies, folderPath, fileName, overwrite=False, tolerance=0.0001):
+    def ExportToJSONMK2(topologies, folderPath, fileName, version=3, overwrite=False, tolerance=0.0001):
         """
         Export the input list of topologies to a JSON file
 
@@ -2592,8 +2593,10 @@ class Topology():
             The input list of topologies.
         folderPath : list
             The path to the folder containing the json file and brep files.
-        path : str
-            The path to the JSON file.
+        fileName : str
+            The name of the JSON file.
+        version : int , optional
+            The OCCT BRep version to use. Options are 1,2,or 3. The default is 3.
         overwrite : bool , optional
             If set to True, any existing file will be overwritten. The default is False.
         tolerance : float , optional
@@ -2606,7 +2609,9 @@ class Topology():
 
         """
 
-        def cellAperturesAndDictionaries(topology, tol):
+        from topologicpy.Dictionary import Dictionary
+
+        def cellAperturesAndDictionaries(topology, tolerance=0.0001):
             if topology.Type() <= 32:
                 return [[],[],[]]
             cells = []
@@ -2622,14 +2627,14 @@ class Topology():
                 _ = aCell.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     cellApertures.append(anAperture)
-                cellDictionary = Topology.Dictionary(aCell)
+                cellDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aCell))
                 if len(cellDictionary.keys()) > 0:
                     cellDictionaries.append(cellDictionary)
-                    iv = topologic.CellUtility.InternalVertex(aCell, tol)
+                    iv = topologic.CellUtility.InternalVertex(aCell, tolerance)
                     cellSelectors.append([iv.X(), iv.Y(), iv.Z()])
             return [cellApertures, cellDictionaries, cellSelectors]
 
-        def faceAperturesAndDictionaries(topology, tol):
+        def faceAperturesAndDictionaries(topology, tolerance=0.0001):
             if topology.Type() <= 8:
                 return [[],[],[]]
             faces = []
@@ -2645,14 +2650,14 @@ class Topology():
                 _ = aFace.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     faceApertures.append(anAperture)
-                faceDictionary = Topology.Dictionary(aFace)
+                faceDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aFace))
                 if len(faceDictionary.keys()) > 0:
                     faceDictionaries.append(faceDictionary)
-                    iv = topologic.FaceUtility.InternalVertex(aFace, tol)
+                    iv = topologic.FaceUtility.InternalVertex(aFace, tolerance)
                     faceSelectors.append([iv.X(), iv.Y(), iv.Z()])
             return [faceApertures, faceDictionaries, faceSelectors]
 
-        def edgeAperturesAndDictionaries(topology, tol):
+        def edgeAperturesAndDictionaries(topology):
             if topology.Type() <= 2:
                 return [[],[],[]]
             edges = []
@@ -2668,14 +2673,14 @@ class Topology():
                 _ = anEdge.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     edgeApertures.append(anAperture)
-                edgeDictionary = Topology.Dictionary(anEdge)
+                edgeDictionary = Dictionary.PythonDictionary(Topology.Dictionary(anEdge))
                 if len(edgeDictionary.keys()) > 0:
                     edgeDictionaries.append(edgeDictionary)
                     iv = topologic.EdgeUtility.PointAtParameter(anEdge, 0.5)
                     edgeSelectors.append([iv.X(), iv.Y(), iv.Z()])
             return [edgeApertures, edgeDictionaries, edgeSelectors]
 
-        def vertexAperturesAndDictionaries(topology, tol):
+        def vertexAperturesAndDictionaries(topology):
             if topology.Type() <= 1:
                 return [[],[],[]]
             vertices = []
@@ -2691,24 +2696,24 @@ class Topology():
                 _ = aVertex.Apertures(tempApertures)
                 for anAperture in tempApertures:
                     vertexApertures.append(anAperture)
-                vertexDictionary = Topology.Dictionary(aVertex)
+                vertexDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aVertex))
                 if len(vertexDictionary.keys()) > 0:
                     vertexDictionaries.append(vertexDictionary)
                     vertexSelectors.append([aVertex.X(), aVertex.Y(), aVertex.Z()])
             return [vertexApertures, vertexDictionaries, vertexSelectors]
 
 
-        def apertureDicts(apertureList, brepName, folderPath):
+        def apertureDicts(apertureList, brepName, folderPath, version=3):
             apertureDicts = []
             for index, anAperture in enumerate(apertureList):
                 apertureName = brepName+"_aperture_"+str(index+1).zfill(5)
                 breppath = os.path.join(folderPath, apertureName+".brep")
                 brepFile = open(breppath, "w")
-                brepFile.write(anAperture.String())
+                brepFile.write(Topology.String(anAperture, version=version))
                 brepFile.close()
                 apertureData = {}
                 apertureData['brep'] = apertureName
-                apertureData['dictionary'] = Topology.Dictionary(anAperture)
+                apertureData['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(anAperture))
                 apertureDicts.append(apertureData)
             return apertureDicts
 
@@ -2721,20 +2726,19 @@ class Topology():
                 returnDicts.append(data)
             return returnDicts
 
-        def getTopologyData(topology, brepName, folderPath, tol):
+        def getTopologyData(topology, brepName, folderPath, version=3, tolerance=0.0001):
             returnDict = {}
-            #brep = topology.String()
-            dictionary = Topology.Dictionary(topology)
+            dictionary = Dictionary.PythonDictionary(Topology.Dictionary(topology))
             returnDict['brep'] = brepName
             returnDict['dictionary'] = dictionary
-            cellApertures, cellDictionaries, cellSelectors = cellAperturesAndDictionaries(topology, tol)
-            faceApertures, faceDictionaries, faceSelectors = faceAperturesAndDictionaries(topology, tol)
-            edgeApertures, edgeDictionaries, edgeSelectors = edgeAperturesAndDictionaries(topology, tol)
-            vertexApertures, vertexDictionaries, vertexSelectors = vertexAperturesAndDictionaries(topology, tol)
-            returnDict['cellApertures'] = apertureDicts(cellApertures, brepName, folderPath)
-            returnDict['faceApertures'] = apertureDicts(faceApertures, brepName, folderPath)
-            returnDict['edgeApertures'] = apertureDicts(edgeApertures, brepName, folderPath)
-            returnDict['vertexApertures'] = apertureDicts(vertexApertures, brepName, folderPath)
+            cellApertures, cellDictionaries, cellSelectors = cellAperturesAndDictionaries(topology, tolerance=tolerance)
+            faceApertures, faceDictionaries, faceSelectors = faceAperturesAndDictionaries(topology, tolerance=tolerance)
+            edgeApertures, edgeDictionaries, edgeSelectors = edgeAperturesAndDictionaries(topology)
+            vertexApertures, vertexDictionaries, vertexSelectors = vertexAperturesAndDictionaries(topology)
+            returnDict['cellApertures'] = apertureDicts(cellApertures, brepName, folderPath, version)
+            returnDict['faceApertures'] = apertureDicts(faceApertures, brepName, folderPath, version)
+            returnDict['edgeApertures'] = apertureDicts(edgeApertures, brepName, folderPath, version)
+            returnDict['vertexApertures'] = apertureDicts(vertexApertures, brepName, folderPath, version)
             returnDict['cellDictionaries'] = subTopologyDicts(cellDictionaries, cellSelectors)
             returnDict['faceDictionaries'] = subTopologyDicts(faceDictionaries, faceSelectors)
             returnDict['edgeDictionaries'] = subTopologyDicts(edgeDictionaries, edgeSelectors)
@@ -2743,9 +2747,6 @@ class Topology():
         
         if not (isinstance(topologies,list)):
             topologies = [topologies]
-        # folderPath = item[1]
-        # fileName = item[2]
-        # tol = item[3]
         # Make sure the file extension is .json
         ext = fileName[len(fileName)-5:len(fileName)]
         if ext.lower() != ".json":
@@ -2765,9 +2766,9 @@ class Topology():
                 brepName = "topology_"+str(index+1).zfill(5)
                 breppath = os.path.join(folderPath, brepName+".brep")
                 brepFile = open(breppath, "w")
-                brepFile.write(topology.String())
+                brepFile.write(Topology.String(topology, version=version))
                 brepFile.close()
-                jsondata.append(getTopologyData(topology, brepName, folderPath, tolerance))
+                jsondata.append(getTopologyData(topology, brepName, folderPath, version=version, tolerance=tolerance))
             json.dump(jsondata, jsonFile, indent=4, sort_keys=True)
             jsonFile.close()    
             return True
