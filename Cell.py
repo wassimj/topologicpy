@@ -1181,14 +1181,14 @@ class Cell(Topology):
             shells = []
             _ = cell.Shells(None, shells)
             shell = shells[0]
-            wRect = Wire.Rectangle(origin, width*1.2, length*1.2, 0, 0, 1, "center")
+            wRect = Wire.Rectangle(origin=origin, width=width*1.2, length=length*1.2, direction=[0, 0, 1], placement="center")
             sliceFaces = []
             for i in range(1, wSides):
                 sliceFaces.append(topologic.TopologyUtility.Translate(topologic.Face.ByExternalBoundary(wRect), 0, 0, height/wSides*i - height*0.5))
-            uRect = Wire.Rectangle(origin, height*1.2, length*1.2, 1, 0, 0, "center")
+            uRect = Wire.Rectangle(origin=origin, width=height*1.2, length=length*1.2, direction=[1, 0, 0], placement="center")
             for i in range(1, uSides):
                 sliceFaces.append(topologic.TopologyUtility.Translate(topologic.Face.ByExternalBoundary(uRect), width/uSides*i - width*0.5, 0, 0))
-            vRect = Wire.Rectangle(origin, height*1.2, width*1.2, 0, 1, 0, "center")
+            vRect = Wire.Rectangle(origin=origin, width=height*1.2, length=width*1.2, direction=[0, 1, 0], placement="center")
             for i in range(1, vSides):
                 sliceFaces.append(topologic.TopologyUtility.Translate(topologic.Face.ByExternalBoundary(vRect), 0, length/vSides*i - length*0.5, 0))
             sliceCluster = topologic.Cluster.ByTopologies(sliceFaces)
@@ -1342,7 +1342,7 @@ class Cell(Topology):
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
             return None
-        c = Wire.Circle(origin, radius, vSides, 90, 270, False, 0, 1, 0, "center")
+        c = Wire.Circle(origin=origin, radius=radius, sides=vSides, fromAngle=90, toAngle=270, close=False, direction=[0, 1, 0], placement="center")
         s = Topology.Spin(c, origin=origin, triangulate=False, direction=[0,0,1], degree=360, sides=uSides, tolerance=tolerance)
         if s.Type() == topologic.CellComplex.Type():
             s = s.ExternalBoundary()
@@ -1428,7 +1428,7 @@ class Cell(Topology):
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
             return None
-        c = Wire.Circle(origin, minorRadius, vSides, 0, 360, False, 0, 1, 0, "center")
+        c = Wire.Circle(origin=origin, radius=minorRadius, sides=vSides, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
         c = topologic.TopologyUtility.Translate(c, abs(majorRadius-minorRadius), 0, 0)
         s = Topology.Spin(c, origin=origin, triangulate=False, direction=[0,0,1], degree=360, sides=uSides, tolerance=tolerance)
         if s.Type() == topologic.Shell.Type():

@@ -902,7 +902,7 @@ class Shell(Topology):
         for i in range(uSides):
             for j in range(vSides):
                 rOrigin = Vertex.ByCoordinates(i*uOffset - wOffset, j*vOffset - lOffset, 0)
-                w = Wire.Rectangle(origin=rOrigin, width=uOffset, length=vOffset, placement="lowerleft", tolerance=tolerance)
+                w = Wire.Rectangle(origin=rOrigin, width=uOffset, length=vOffset, direction=[0,0,1], placement="lowerleft", tolerance=tolerance)
                 f = Face.ByWire(w)
                 faces.append(f)
         shell = Shell.ByFaces(faces)

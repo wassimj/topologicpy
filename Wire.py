@@ -915,6 +915,225 @@ class Wire(topologic.Wire):
         return d
 
     @staticmethod
+    def Flatten(wire, oldLocation=None, newLocation=None, direction=None):
+        """
+        Flattens the input wire such that its center of mass is located at the origin and the specified direction is pointed in the positive Z axis.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+        oldLocation : topologic.Vertex , optional
+            The old location to use as the origin of the movement. If set to None, the center of mass of the input topology is used. The default is None.
+        newLocation : topologic.Vertex , optional
+            The new location at which to place the topology. If set to None, the world origin (0,0,0) is used. The default is None.
+        direction : list , optional
+            The direction, expressed as a list of [X,Y,Z] that signifies the direction of the wire. If set to None, the positive ZAxis direction is considered the direction of the wire. The deafult is None.
+
+        Returns
+        -------
+        topologic.Wire
+            The flattened wire.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Vector import Vector
+        if not isinstance(wire, topologic.Wire):
+            return None
+        if direction == None:
+            direction = Vector.ZAxis()
+        if not isinstance(oldLocation, topologic.Vertex):
+            oldLocation = Topology.CenterOfMass(wire)
+        if not isinstance(newLocation, topologic.Vertex):
+            newLocation = Vertex.ByCoordinates(0,0,0)
+        cm = oldLocation
+        world_origin = newLocation
+
+        x1 = Vertex.X(cm)
+        y1 = Vertex.Y(cm)
+        z1 = Vertex.Z(cm)
+        x2 = Vertex.X(cm) + direction[0]
+        y2 = Vertex.Y(cm) + direction[1]
+        z2 = Vertex.Z(cm) + direction[2]
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1    
+        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
+        if dist < 0.0001:
+            theta = 0
+        else:
+            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
+        flatWire = Topology.Translate(wire, -cm.X(), -cm.Y(), -cm.Z())
+        flatWire = Topology.Rotate(flatWire, world_origin, 0, 0, 1, -phi)
+        flatWire = Topology.Rotate(flatWire, world_origin, 0, 1, 0, -theta)
+        # Ensure flatness. Force Z to be zero
+        edges = Wire.Edges(flatWire)
+        flatEdges = []
+        for edge in edges:
+            sv = Edge.StartVertex(edge)
+            ev = Edge.EndVertex(edge)
+            sv1 = Vertex.ByCoordinates(Vertex.X(sv), Vertex.Y(sv), 0)
+            ev1 = Vertex.ByCoordinates(Vertex.X(ev), Vertex.Y(ev), 0)
+            e1 = Edge.ByVertices([sv1, ev1])
+            flatEdges.append(e1)
+        flatWire = Topology.SelfMerge(Cluster.ByTopologies(flatEdges))
+        dictionary = Dictionary.ByKeysValues(["xTran", "yTran", "zTran", "phi", "theta"], [cm.X(), cm.Y(), cm.Z(), phi, theta])
+        flatWire = Topology.SetDictionary(flatWire, dictionary)
+        return flatWire
+    
+    @staticmethod
+    def Interpolate(wires: list, n: int = 5, outputType: str = "default", replication: str = "default"):
+        """
+        Creates *n* number of wires that interpolate between wireA and wireB.
+
+        Parameters
+        ----------
+        wireA : topologic.Wire
+            The first input wire.
+        wireB : topologic.Wire
+            The second input wire.
+        n : int , optional
+            The number of intermediate wires to create. The default is 5.
+        outputType : str , optional
+            The desired type of output. The options are case insensitive. The default is "contour". The options are:
+                - "Default" or "Contours" (wires are not connected)
+                - "Raster or "Zigzag" or "Toolpath" (the wire ends are connected to create a continous path)
+                - "Grid" (the wire ends are connected to create a grid). 
+        replication : str , optiona;
+            The desired type of replication for wires with different number of vertices. It is case insensitive. The default is "default". The options are:
+                - "Default" or "Repeat" which repeats the last vertex of the wire with the least number of vertices
+                - "Nearest" which maps the vertices of one wire to the nearest vertex of the next wire creating a list of equal number of vertices.
+        Returns
+        -------
+        toplogic.Topology
+            The created interpolated wires as well as the input wires. The return type can be a topologic.Cluster or a topologic.Wire based on options.
+
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Helper import Helper
+        
+        outputType = outputType.lower()
+        if outputType not in ["default", "contours", "raster", "zigzag", "toolpath", "grid"]:
+            return None
+        if outputType == "default" or outputType == "contours":
+            outputType = "contours"
+        if outputType == "raster" or outputType == "zigzag" or outputType == "toolpath":
+            outputType = "zigzag"
+        
+        replication = replication.lower()
+        if replication not in ["default", "nearest", "repeat"]:
+            return None
+        
+        def nearestVertex(v, vertices):
+            distances = [Vertex.Distance(v, vertex) for vertex in vertices]
+            return vertices[distances.index(sorted(distances)[0])]
+        
+        def replicate(vertices, replication="default"):
+            vertices = Helper.Repeat(vertices)
+            finalList = vertices
+            if replication == "nearest":
+                finalList = [vertices[0]]
+                for i in range(len(vertices)-1):
+                    loopA = vertices[i]
+                    loopB = vertices[i+1]
+                    nearestVertices = []
+                    for j in range(len(loopA)):
+                        #clusB = Cluster.ByTopologies(loopB)
+                        #nv = Vertex.NearestVertex(loopA[j], clusB, useKDTree=False)
+                        nv = nearestVertex(loopA[j], loopB)
+                        nearestVertices.append(nv)
+                    finalList.append(nearestVertices)
+            return finalList
+        
+        def process(verticesA, verticesB, n=5, outputType="contours", replication="repeat"):
+            #if outputType == "zigzag" and Wire.IsClosed(wireA):
+                #verticesA.append(verticesA[0])
+            #verticesA, verticesB = replicate(verticesA=verticesA, verticesB=verticesB, replication=replication)
+            
+            contours = [verticesA]
+            for i in range(1, n+1):
+                u = float(i)/float(n+1)
+                temp_vertices = []
+                for j in range(len(verticesA)):
+                    temp_v = Edge.VertexByParameter(Edge.ByVertices([verticesA[j], verticesB[j]]), u)
+                    temp_vertices.append(temp_v)
+                contours.append(temp_vertices)
+            return contours
+        
+        if len(wires) < 2:
+            return None
+        
+        vertices = []
+        for wire in wires:
+            vertices.append(Topology.SubTopologies(wire, subTopologyType="vertex"))
+        vertices = replicate(vertices, replication=replication)
+        contours = []
+        
+        finalWires = []
+        for i in range(len(vertices)-1):
+            verticesA = vertices[i]
+            verticesB = vertices[i+1]
+            contour = process(verticesA=verticesA, verticesB=verticesB, n=n, outputType=outputType, replication=replication)
+            contours += contour
+            for c in contour:
+                finalWires.append(Wire.ByVertices(c, Wire.IsClosed(wires[i])))
+
+        #finalWires.append(Wire.ByVertices(contours[-1], Wire.IsClosed(wires[-1])))
+        contours.append(vertices[-1])
+        finalWires.append(wires[-1])
+        #print(finalWires)
+        ridges = []
+        if outputType == "grid" or outputType == "zigzag":
+            for i in range(len(contours)-1):
+                verticesA = contours[i]
+                verticesB = contours[i+1]
+                if outputType == "grid":
+                    for j in range(len(verticesA)):
+                        ridges.append(Edge.ByVertices([verticesA[j], verticesB[j]]))
+                elif outputType == "zigzag":
+                    if i%2 == 0:
+                        sv = verticesA[-1]
+                        ev = verticesB[-1]
+                        ridges.append(Edge.ByVertices([sv, ev]))
+                    else:
+                        sv = verticesA[0]
+                        ev = verticesB[0]
+                        ridges.append(Edge.ByVertices([sv, ev]))
+
+        return Topology.SelfMerge(Cluster.ByTopologies(finalWires+ridges))
+    
+    @staticmethod
+    def Invert(wire):
+        """
+        Creates a wire that is an inverse (mirror) of the input wire.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+
+        Returns
+        -------
+        topologic.Wire
+            The inverted wire.
+
+        """
+        if not isinstance(wire, topologic.Wire):
+            return None
+        vertices = Wire.Vertices(wire)
+        reversed_vertices = vertices[::-1]
+        return Wire.ByVertices(reversed_vertices)
+
+    @staticmethod
     def IsClosed(wire):
         """
         Returns True if the input wire is closed. Returns False otherwise.
