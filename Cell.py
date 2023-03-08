@@ -99,6 +99,7 @@ class Cell(Topology):
             planarizedList = [Face.Planarize(f) for f in faceList]
             enlargedList = [Face.ByOffset(f, offset=-tolerance*10) for f in planarizedList]
             cell = topologic.Cell.ByFaces(enlargedList, tolerance)
+            # Argument variables faces are overwritten.
             faces = Topology.SubTopologies(cell, subTopologyType="face")
             finalFaces = []
             for f in faces:
@@ -352,7 +353,7 @@ class Cell(Topology):
                             faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e3, e2])))
                     elif e4:
                             faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e4, e2])))
-        return Cell.ByFaces(faces, tolerance)
+        return Cell.ByFaces(faces, False, tolerance)
 
     @staticmethod
     def ByWiresCluster(cluster: topologic.Cluster, close: bool = False, triangulate: bool = True, tolerance: float = 0.0001) -> topologic.Cell:
