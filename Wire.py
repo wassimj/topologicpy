@@ -263,7 +263,6 @@ class Wire(topologic.Wire):
                 d = Topology.Dictionary(edges[i])
                 value = Dictionary.ValueAtKey(d, key=offsetKey)
                 c = Topology.Centroid(flatEdge)
-                print(c.X(), c.Y(), c.Z(), ": ", value)
                 if value:
                     finalOffset = value
                 else:
@@ -1087,10 +1086,8 @@ class Wire(topologic.Wire):
             for c in contour:
                 finalWires.append(Wire.ByVertices(c, Wire.IsClosed(wires[i])))
 
-        #finalWires.append(Wire.ByVertices(contours[-1], Wire.IsClosed(wires[-1])))
         contours.append(vertices[-1])
         finalWires.append(wires[-1])
-        #print(finalWires)
         ridges = []
         if outputType == "grid" or outputType == "zigzag":
             for i in range(len(contours)-1):

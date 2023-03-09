@@ -353,7 +353,7 @@ class Cluster(topologic.Cluster):
             The type of the highest dimension subtopology found in the input cluster.
 
         """
-        if not isinstance(topologic.Cluster):
+        if not isinstance(cluster, topologic.Cluster):
             return None
         cellComplexes = Cluster.CellComplexes(cluster)
         if len(cellComplexes) > 0:

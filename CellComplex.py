@@ -514,7 +514,7 @@ class CellComplex(topologic.CellComplex):
     @staticmethod
     def ExternalFaces(cellComplex):
         """
-        Returns the external boundary (cell) of the input cellComplex.
+        Returns the external faces of the input cellComplex.
 
         Parameters
         ----------
@@ -523,8 +523,8 @@ class CellComplex(topologic.CellComplex):
 
         Returns
         -------
-        topologic.Cell
-            The external boundary of the input cellComplex.
+        list
+            The list of external faces.
 
         """
         from topologicpy.Cell import Cell

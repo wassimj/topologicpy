@@ -199,10 +199,32 @@ class Face(topologic.Face):
         return baseFace
 
     @staticmethod
-    def CompassAngle(face, north, mantissa=4):
+    def CompassAngle(face, north: list = None, mantissa: int = 4):
+        """
+        Returns the horizontal compass angle in degrees between the normal vector of the input face and the input vector. The angle is measured in counter-clockwise fashion. Only the first two elements of the vectors are considered.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        north : list , optional
+            The second vector representing the north direction. The default is the positive YAxis ([0,1,0]).
+        mantissa : int, optional
+            The length of the desired mantissa. The default is 4.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        float
+            The horizontal compass angle in degrees between the direction of the face and the second input vector.
+
+        """
         from topologicpy.Vector import Vector
         if not isinstance(face, topologic.Face):
             return None
+        if not north:
+            north = Vector.North()
         dirA = Face.NormalAtParameters(face,mantissa=mantissa)
         return Vector.CompassAngle(vectorA=dirA, vectorB=north, mantissa=mantissa)
 
@@ -360,8 +382,6 @@ class Face(topologic.Face):
                 return topologic.Face.ByExternalBoundary(Wire.RemoveCollinearEdges(ext_boundary, angTolerance))
             except:
                 try:
-                    #w = Wire.RemoveCollinearEdges(ext_boundary, angTolerance)
-                    #print("Step 1 wire", w)
                     w = Wire.Planarize(ext_boundary)
                     f = Face.ByWire(w)
                     return f
@@ -496,7 +516,13 @@ class Face(topologic.Face):
         if not Wire.IsClosed(wire):
             return None
         f = topologic.Face.ByExternalBoundary(wire)
-        return f
+        area = Face.Area(f)
+        if area < 0:
+            wire = Wire.Invert(wire)
+            f = topologic.Face.ByExternalBoundary(wire)
+            return f
+        else:
+            return f
 
     @staticmethod
     def ByWires(externalBoundary, internalBoundaries=[]):
@@ -763,7 +789,8 @@ class Face(topologic.Face):
         flatFace = Topology.Rotate(flatFace, world_origin, 0, 1, 0, -theta)
         # Ensure flatness. Force Z to be zero
         flatExternalBoundary = Face.ExternalBoundary(flatFace)
-        flatFaceVertices = Wire.Vertices(flatExternalBoundary)
+        flatFaceVertices = Topology.SubTopologies(flatExternalBoundary, subTopologyType="vertex")
+    
         tempVertices = []
         for ffv in flatFaceVertices:
             tempVertices.append(Vertex.ByCoordinates(ffv.X(), ffv.Y(), 0))
@@ -937,12 +964,13 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Wire import Wire
+
         if not isinstance(face, topologic.Face):
             return None
         eb = Face.ExternalBoundary(face)
         vertices = Wire.Vertices(eb)
-        reversed_vertices = vertices[::-1]
-        inverted_wire = Wire.ByVertices(reversed_vertices)
+        vertices.reverse()
+        inverted_wire = Wire.ByVertices(vertices)
         internal_boundaries = Face.InternalBoundaries(face)
         if not internal_boundaries:
             inverted_face = Face.ByWire(inverted_wire)
@@ -1473,8 +1501,8 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
-        from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
 
         flatFace = Face.Flatten(face)
@@ -1502,7 +1530,10 @@ class Face(topologic.Face):
             f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
             f = Topology.Translate(f, xTran, yTran, zTran)
             if Face.Angle(face, f) > 90:
-                finalFaces.append(Face.Invert(f))
+                wire = Face.ExternalBoundary(f)
+                wire = Wire.Invert(wire)
+                f = topologic.Face.ByExternalBoundary(wire)
+                finalFaces.append(f)
             else:
                 finalFaces.append(f)
         return finalFaces

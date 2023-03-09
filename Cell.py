@@ -23,11 +23,13 @@ class Cell(Topology):
             The surface area of the input cell.
 
         """
+        from topologicpy.Face import Face
+
         faces = []
         _ = cell.Faces(None, faces)
         area = 0.0
         for aFace in faces:
-            area = area + topologic.FaceUtility.Area(aFace)
+            area = area + Face.Area(aFace)
         return round(area, mantissa)
 
     @staticmethod
@@ -112,7 +114,7 @@ class Cell(Topology):
                 vertices = Face.Vertices(f)
                 w = Wire.Cycles(Face.ExternalBoundary(f), maxVertices=len(vertices))[0]
                 finalFinalFaces.append(Face.ByWire(w))
-            return topologic.Cell.ByFaces(finalFinalFaces)
+            return topologic.Cell.ByFaces(finalFinalFaces, tolerance)
         else:
             return topologic.Cell.ByFaces(faces, tolerance)
 
@@ -144,7 +146,7 @@ class Cell(Topology):
     
     @staticmethod
     def ByThickenedFace(face: topologic.Face, thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
-                            tolerance: float = 0.0001) -> topologic.Cell:
+                            planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a cell by thickening the input face.
 
@@ -158,6 +160,8 @@ class Cell(Topology):
             If True, the cell will be lofted to each side of the face. Otherwise, it will be lofted in the direction of the normal to the input face. The default is True.
         reverse : bool
             If True, the cell will be lofted in the opposite direction of the normal to the face. The default is False.
+        planarize : bool, optional
+            If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -193,11 +197,11 @@ class Cell(Topology):
             sideEdge2 = Edge.ByVertices([bottomEdge.EndVertex(), topEdge.EndVertex()])
             cellWire = Cluster.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
             cellFaces.append(Face.ByWire(cellWire))
-        return Cell.ByFaces(cellFaces, planarize=False, tolerance=tolerance)
+        return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
     def ByThickenedShell(shell: topologic.Shell, direction: list = [0,0,1], thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
-                            tolerance: float = 0.0001) -> topologic.Cell:
+                            planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a cell by thickening the input shell. The shell must be open.
 
@@ -211,6 +215,8 @@ class Cell(Topology):
             If True, the cell will be lofted to each side of the shell. Otherwise, it will be lofted along the input direction. The default is True.
         reverse : bool
             If True, the cell will be lofted along the opposite of the input direction. The default is False.
+        planarize : bool, optional
+            If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -232,7 +238,7 @@ class Cell(Topology):
             thickness = -thickness
         if bothSides:
             bottomShell = Topology.Translate(shell, -direction[0]*0.5*thickness, -direction[1]*0.5*thickness, -direction[2]*0.5*thickness)
-            topShell = topologic.TopologyUtility.Translate(shell, direction[0]*0.5*thickness, direction[1]*0.5*thickness, direction[2]*0.5*thickness)
+            topShell = Topology.Translate(shell, direction[0]*0.5*thickness, direction[1]*0.5*thickness, direction[2]*0.5*thickness)
         else:
             bottomShell = shell
             topShell = Topology.Translate(shell, direction[0]*thickness, direction[1]*thickness, direction[2]*thickness)
@@ -246,10 +252,10 @@ class Cell(Topology):
             cellWire = Cluster.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
             cellFace = Face.ByWire(cellWire)
             cellFaces.append(cellFace)
-        return Cell.ByFaces(cellFaces, palanarize=False, tolerance=tolerance)
+        return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
     
     @staticmethod
-    def ByWires(wires: list, close: bool = False, triangulate: bool = True, tolerance: float = 0.0001) -> topologic.Cell:
+    def ByWires(wires: list, close: bool = False, triangulate: bool = True, planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a cell by lofting through the input list of wires.
 
@@ -275,13 +281,39 @@ class Cell(Topology):
             The created cell.
 
         """
+
+        def cleanup(f):
+            flatFace = Face.Flatten(f)
+            world_origin = Vertex.ByCoordinates(0,0,0)
+            # Retrieve the needed transformations
+            dictionary = Topology.Dictionary(flatFace)
+            xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+            yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+            zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+            phi = Dictionary.ValueAtKey(dictionary,"phi")
+            theta = Dictionary.ValueAtKey(dictionary,"theta")
+
+            if flatFace == None:
+                #Topology.ExportToBRep(f, "C:/Users/wassimj/Desktop/troubleFace.brep")
+                print(Face.Area(f))
+                print(Topology.SubTopologies(f, subTopologyType="vertex"))
+            f = Topology.Rotate(f, origin=world_origin, x=0, y=1, z=0, degree=theta)
+            f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
+            f = Topology.Translate(f, xTran, yTran, zTran)
+            return f
+        
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
-        faces = [topologic.Face.ByExternalBoundary(wires[0]), topologic.Face.ByExternalBoundary(wires[-1])]
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        faces = [Face.ByWire(wires[0]), Face.ByWire(wires[-1])]
         if close == True:
-            faces.append(topologic.Face.ByExternalBoundary(wires[0]))
+            faces.append(Face.ByWire(wires[0]))
         if triangulate == True:
             triangles = []
             for face in faces:
@@ -290,7 +322,6 @@ class Cell(Topology):
         for i in range(len(wires)-1):
             wire1 = wires[i]
             wire2 = wires[i+1]
-            #faces.append(topologic.Face.ByExternalBoundary(wire2))
             w1_edges = []
             _ = wire1.Edges(None, w1_edges)
             w2_edges = []
@@ -304,25 +335,25 @@ class Cell(Topology):
                     e3 = None
                     e4 = None
                     try:
-                        e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
                     except:
                         try:
-                            e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e4])))
+                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4])))
                         except:
                             pass
                     try:
-                        e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
                     except:
                         try:
-                            e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e3])))
+                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3])))
                         except:
                             pass
                     if e3 and e4:
-                        e5 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex())
-                        faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e5, e4])))
-                        faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e2, e5, e3])))
+                        e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()])
+                        faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4])))
+                        faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3])))
             else:
                 for j in range (len(w1_edges)):
                     e1 = w1_edges[j]
@@ -330,32 +361,44 @@ class Cell(Topology):
                     e3 = None
                     e4 = None
                     try:
-                        e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
                     except:
                         try:
-                            e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
+                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
                         except:
                             pass
                     try:
-                        e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
                     except:
                         try:
-                            e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
+                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
                         except:
                             pass
                     if e3 and e4:
                         try:
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e4, e2, e3])))
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2, e3])))
                         except:
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e3, e2, e4])))
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2, e4])))
                     elif e3:
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e3, e2])))
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2])))
                     elif e4:
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e4, e2])))
-        return Cell.ByFaces(faces, tolerance)
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2])))
+        #for f in faces:
+            #cleanup(f)
+        cell = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
+        if not cell:
+            cell = Shell.ByFaces(faces)
+            if cell:
+                geom = Topology.Geometry(cell)
+                cell = Topology.ByGeometry(geom['vertices'], geom['edges'], geom['faces'])
+            elif not isinstance(cell, topologic.Cell):
+                cell = Shell.ByFaces(faces)
+                if not cell:
+                    cell = Cluster.ByTopologies(faces)
+        return cell
 
     @staticmethod
-    def ByWiresCluster(cluster: topologic.Cluster, close: bool = False, triangulate: bool = True, tolerance: float = 0.0001) -> topologic.Cell:
+    def ByWiresCluster(cluster: topologic.Cluster, close: bool = False, triangulate: bool = True, planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a cell by lofting through the input cluster of wires.
 
@@ -385,7 +428,7 @@ class Cell(Topology):
             return None
         wires = []
         _ = cluster.Wires(None, wires)
-        return Cell.ByWires(wires, close=close, tolerance=tolerance)
+        return Cell.ByWires(wires, close=close, triangulate=triangulate, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
     def Compactness(cell: topologic.Cell, mantissa: int = 4) -> float:
@@ -461,7 +504,7 @@ class Cell(Topology):
         from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        def createCone(baseWire, topWire, baseVertex, topVertex, tol):
+        def createCone(baseWire, topWire, baseVertex, topVertex, tolerance):
             if baseWire == None and topWire == None:
                 raise Exception("Cell.Cone - Error: Both radii of the cone cannot be zero at the same time")
             elif baseWire == None:
@@ -474,15 +517,15 @@ class Cell(Topology):
                 return topologic.CellUtility.ByLoft([baseWire, topWire])
             vertices = []
             _ = wire.Vertices(None,vertices)
-            faces = [topologic.Face.ByExternalBoundary(wire)]
+            faces = [Face.ByWire(wire)]
             for i in range(0, len(vertices)-1):
                 w = Wire.ByVertices([apex, vertices[i], vertices[i+1]])
-                f = topologic.Face.ByExternalBoundary(w)
+                f = Face.ByWire(w)
                 faces.append(f)
             w = Wire.ByVertices([apex, vertices[-1], vertices[0]])
-            f = topologic.Face.ByExternalBoundary(w)
+            f = Face.ByWire(w)
             faces.append(f)
-            return topologic.Cell.ByFaces(faces, tol)
+            return Cell.ByFaces(faces, tolerance=tolerance)
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
@@ -509,11 +552,11 @@ class Cell(Topology):
                 baseX = math.sin(angle)*baseRadius + origin.X() + xOffset
                 baseY = math.cos(angle)*baseRadius + origin.Y() + yOffset
                 baseZ = origin.Z() + zOffset
-                baseV.append(topologic.Vertex.ByCoordinates(baseX,baseY,baseZ))
+                baseV.append(Vertex.ByCoordinates(baseX,baseY,baseZ))
             if topRadius > 0:
                 topX = math.sin(angle)*topRadius + origin.X() + xOffset
                 topY = math.cos(angle)*topRadius + origin.Y() + yOffset
-                topV.append(topologic.Vertex.ByCoordinates(topX,topY,topZ))
+                topV.append(Vertex.ByCoordinates(topX,topY,topZ))
         if baseRadius > 0:
             baseWire = Wire.ByVertices(baseV)
         else:
@@ -522,11 +565,11 @@ class Cell(Topology):
             topWire = Wire.ByVertices(topV)
         else:
             topWire = None
-        baseVertex = topologic.Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset)
-        topVertex = topologic.Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset+height)
+        baseVertex = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset)
+        topVertex = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset+height)
         cone = createCone(baseWire, topWire, baseVertex, topVertex, tolerance)
         if cone == None:
-            raise Exception("Cell.Cone - Error: Could not create cone")
+            return None
         
         if vSides > 1:
             cutting_planes = []
@@ -556,8 +599,8 @@ class Cell(Topology):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        cone = topologic.TopologyUtility.Rotate(cone, origin, 0, 1, 0, theta)
-        cone = topologic.TopologyUtility.Rotate(cone, origin, 0, 0, 1, phi)
+        cone = Topology.Rotate(cone, origin, 0, 1, 0, theta)
+        cone = Topology.Rotate(cone, origin, 0, 0, 1, phi)
         return cone
     
     @staticmethod
@@ -855,25 +898,25 @@ class Cell(Topology):
             The created hyperboloid.
 
         """
-        
+
         def createHyperboloid(baseVertices, topVertices, tolerance):
             baseWire = Wire.ByVertices(baseVertices, close=True)
             topWire = Wire.ByVertices(topVertices, close=True)
-            baseFace = topologic.Face.ByExternalBoundary(baseWire)
-            topFace = topologic.Face.ByExternalBoundary(topWire)
+            baseFace = Face.ByWire(baseWire)
+            topFace = Face.ByWire(topWire)
             faces = [baseFace, topFace]
             for i in range(0, len(baseVertices)-1):
                 w = Wire.ByVertices([baseVertices[i], topVertices[i], topVertices[i+1]], close=True)
-                f = topologic.Face.ByExternalBoundary(w)
+                f = Face.ByWire(w)
                 faces.append(f)
                 w = Wire.ByVertices([baseVertices[i+1], baseVertices[i], topVertices[i+1]], close=True)
-                f = topologic.Face.ByExternalBoundary(w)
+                f = Face.ByWire(w)
                 faces.append(f)
             w = Wire.ByVertices([baseVertices[-1], topVertices[-1], topVertices[0]], close=True)
-            f = topologic.Face.ByExternalBoundary(w)
+            f = Face.ByWire(w)
             faces.append(f)
             w = Wire.ByVertices([baseVertices[0], baseVertices[-1], topVertices[0]], close=True)
-            f = topologic.Face.ByExternalBoundary(w)
+            f = Face.ByWire(w)
             faces.append(f)
             returnTopology = topologic.Cell.ByFaces(faces, tolerance)
             if returnTopology == None:
@@ -881,6 +924,8 @@ class Cell(Topology):
             return returnTopology
         
         from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
 
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
@@ -904,11 +949,11 @@ class Cell(Topology):
                 baseX = math.sin(angle+math.radians(twist))*baseRadius + origin.X() + xOffset
                 baseY = math.cos(angle+math.radians(twist))*baseRadius + origin.Y() + yOffset
                 baseZ = origin.Z() + zOffset
-                baseV.append(topologic.Vertex.ByCoordinates(baseX,baseY,baseZ))
+                baseV.append(Vertex.ByCoordinates(baseX,baseY,baseZ))
             if topRadius > 0:
                 topX = math.sin(angle-math.radians(twist))*topRadius + origin.X() + xOffset
                 topY = math.cos(angle-math.radians(twist))*topRadius + origin.Y() + yOffset
-                topV.append(topologic.Vertex.ByCoordinates(topX,topY,topZ))
+                topV.append(Vertex.ByCoordinates(topX,topY,topZ))
 
         hyperboloid = createHyperboloid(baseV, topV, tolerance)
         if hyperboloid == None:
@@ -928,8 +973,8 @@ class Cell(Topology):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        hyperboloid = topologic.TopologyUtility.Rotate(hyperboloid, origin, 0, 1, 0, theta)
-        hyperboloid = topologic.TopologyUtility.Rotate(hyperboloid, origin, 0, 0, 1, phi)
+        hyperboloid = Topology.Rotate(hyperboloid, origin, 0, 1, 0, theta)
+        hyperboloid = Topology.Rotate(hyperboloid, origin, 0, 0, 1, phi)
         return hyperboloid
     
     @staticmethod
@@ -1043,19 +1088,21 @@ class Cell(Topology):
             'endcapB'
 
         """
-        from topologicpy.Topology import Topology
-        from topologicpy.Edge import Edge
+
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
         if not edge:
             return None
         if not isinstance(edge, topologic.Edge):
             return None
-        length = topologic.EdgeUtility.Length(edge)
-        origin = edge.StartVertex()
+        length = Edge.Length(edge)
+        origin = Edge.StartVertex(edge)
         startU = startOffset / length
         endU = 1.0 - (endOffset / length)
-        sv = topologic.EdgeUtility.PointAtParameter(edge, startU)
-        ev = topologic.EdgeUtility.PointAtParameter(edge, endU)
+        sv = Edge.VertexByParameter(edge, startU)
+        ev = Edge.VertexByParameter(edge, endU)
         x1 = sv.X()
         y1 = sv.Y()
         z1 = sv.Z()
@@ -1078,8 +1125,8 @@ class Cell(Topology):
                 x = math.sin(angle)*radius + sv.X()
                 y = math.cos(angle)*radius + sv.Y()
                 z = sv.Z()
-                baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
-                topV.append(topologic.Vertex.ByCoordinates(x,y,z+dist))
+                baseV.append(Vertex.ByCoordinates(x,y,z))
+                topV.append(Vertex.ByCoordinates(x,y,z+dist))
 
             baseWire = Wire.ByVertices(baseV)
             topWire = Wire.ByVertices(topV)
@@ -1090,11 +1137,11 @@ class Cell(Topology):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        pipe = topologic.TopologyUtility.Rotate(pipe, sv, 0, 1, 0, theta)
-        pipe = topologic.TopologyUtility.Rotate(pipe, sv, 0, 0, 1, phi)
-        zzz = topologic.Vertex.ByCoordinates(0,0,0)
-        returnList = [pipe]
+        pipe = Topology.Rotate(pipe, sv, 0, 1, 0, theta)
+        pipe = Topology.Rotate(pipe, sv, 0, 0, 1, phi)
+        zzz = Vertex.ByCoordinates(0,0,0)
         if endcapA:
+            print("Endcap A", endcapA)
             origin = edge.StartVertex()
             x1 = origin.X()
             y1 = origin.Y()
@@ -1111,11 +1158,10 @@ class Cell(Topology):
                 theta = 0
             else:
                 theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-            endcapA = topologic.Topology.DeepCopy(endcapA)
-            endcapA = topologic.TopologyUtility.Rotate(endcapA, zzz, 0, 1, 0, theta)
-            endcapA = topologic.TopologyUtility.Rotate(endcapA, zzz, 0, 0, 1, phi + 180)
-            endcapA = topologic.TopologyUtility.Translate(endcapA, origin.X(), origin.Y(), origin.Z())
-            returnList.append(endcapA)
+            endcapA = Topology.DeepCopy(endcapA)
+            endcapA = Topology.Rotate(endcapA, zzz, 0, 1, 0, theta)
+            endcapA = Topology.Rotate(endcapA, zzz, 0, 0, 1, phi + 180)
+            endcapA = Topology.Translate(endcapA, origin.X(), origin.Y(), origin.Z())
         if endcapB:
             origin = edge.EndVertex()
             x1 = origin.X()
@@ -1133,12 +1179,11 @@ class Cell(Topology):
                 theta = 0
             else:
                 theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-            endcapB = topologic.Topology.DeepCopy(endcapB)
-            endcapB = topologic.TopologyUtility.Rotate(endcapB, zzz, 0, 1, 0, theta)
-            endcapB = topologic.TopologyUtility.Rotate(endcapB, zzz, 0, 0, 1, phi + 180)
-            endcapB = topologic.TopologyUtility.Translate(endcapB, origin.X(), origin.Y(), origin.Z())
-            returnList.append(endcapB)
-        return {'pipe': returnList[0], 'endcapA': returnList[1], 'endcapB': returnList[2]}
+            endcapB = Topology.DeepCopy(endcapB)
+            endcapB = Topology.Rotate(endcapB, zzz, 0, 1, 0, theta)
+            endcapB = Topology.Rotate(endcapB, zzz, 0, 0, 1, phi + 180)
+            endcapB = Topology.Translate(endcapB, origin.X(), origin.Y(), origin.Z())
+        return {'pipe': pipe, 'endcapA': endcapA, 'endcapB': endcapB}
     
     @staticmethod
     def Prism(origin: topologic.Vertex = None, width: float = 1, length: float = 1, height: float = 1, uSides: int = 1, vSides: int = 1, wSides: int = 1,
@@ -1175,7 +1220,6 @@ class Cell(Topology):
             The created prism.
 
         """
-        
         def sliceCell(cell, width, length, height, uSides, vSides, wSides):
             origin = cell.Centroid()
             shells = []
@@ -1184,18 +1228,22 @@ class Cell(Topology):
             wRect = Wire.Rectangle(origin=origin, width=width*1.2, length=length*1.2, direction=[0, 0, 1], placement="center")
             sliceFaces = []
             for i in range(1, wSides):
-                sliceFaces.append(topologic.TopologyUtility.Translate(topologic.Face.ByExternalBoundary(wRect), 0, 0, height/wSides*i - height*0.5))
+                sliceFaces.append(Topology.Translate(Face.ByWire(wRect), 0, 0, height/wSides*i - height*0.5))
             uRect = Wire.Rectangle(origin=origin, width=height*1.2, length=length*1.2, direction=[1, 0, 0], placement="center")
             for i in range(1, uSides):
-                sliceFaces.append(topologic.TopologyUtility.Translate(topologic.Face.ByExternalBoundary(uRect), width/uSides*i - width*0.5, 0, 0))
+                sliceFaces.append(Topology.Translate(Face.ByWire(uRect), width/uSides*i - width*0.5, 0, 0))
             vRect = Wire.Rectangle(origin=origin, width=height*1.2, length=width*1.2, direction=[0, 1, 0], placement="center")
             for i in range(1, vSides):
-                sliceFaces.append(topologic.TopologyUtility.Translate(topologic.Face.ByExternalBoundary(vRect), 0, length/vSides*i - length*0.5, 0))
-            sliceCluster = topologic.Cluster.ByTopologies(sliceFaces)
-            shell = shell.Slice(sliceCluster, False)
-            return topologic.Cell.ByShell(shell)
+                sliceFaces.append(Topology.Translate(Face.ByWire(vRect), 0, length/vSides*i - length*0.5, 0))
+            if len(sliceFaces) > 0:
+                sliceCluster = topologic.Cluster.ByTopologies(sliceFaces)
+                shell = Topology.Slice(topologyA=shell, topologyB=sliceCluster, tranDict=False)
+                return Cell.ByShell(shell)
+            return cell
         
         from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
 
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
@@ -1209,20 +1257,18 @@ class Cell(Topology):
         elif placement.lower() == "lowerleft":
             xOffset = width*0.5
             yOffset = length*0.5
-        vb1 = topologic.Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z()+zOffset)
-        vb2 = topologic.Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z()+zOffset)
-        vb3 = topologic.Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z()+zOffset)
-        vb4 = topologic.Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z()+zOffset)
+        vb1 = Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z()+zOffset)
+        vb2 = Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z()+zOffset)
+        vb3 = Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z()+zOffset)
+        vb4 = Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z()+zOffset)
 
-        vt1 = topologic.Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z()+height+zOffset)
-        vt2 = topologic.Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z()+height+zOffset)
-        vt3 = topologic.Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z()+height+zOffset)
-        vt4 = topologic.Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z()+height+zOffset)
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
-        topWire = Wire.ByVertices([vt1, vt2, vt3, vt4], close=True)
-        wires = [baseWire, topWire]
-        prism =  Cell.ByWires(wires, triangulate=False)
-        prism = sliceCell(prism, width, length, height, uSides, vSides, wSides)
+        baseFace = Face.ByWire(baseWire)
+
+        prism = Cell.ByThickenedFace(baseFace, thickness=height, bothSides = False)
+
+        if uSides > 1 or vSides > 1 or wSides > 1:
+            prism = sliceCell(prism, width, length, height, uSides, vSides, wSides)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -1238,8 +1284,8 @@ class Cell(Topology):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        prism = topologic.TopologyUtility.Rotate(prism, origin, 0, 1, 0, theta)
-        prism = topologic.TopologyUtility.Rotate(prism, origin, 0, 0, 1, phi)
+        prism = Topology.Rotate(prism, origin, 0, 1, 0, theta)
+        prism = Topology.Rotate(prism, origin, 0, 0, 1, phi)
         return prism
     
     @staticmethod
@@ -1336,7 +1382,9 @@ class Cell(Topology):
             The created sphere.
 
         """
+
         from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
 
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
@@ -1349,9 +1397,9 @@ class Cell(Topology):
         if s.Type() == topologic.Shell.Type():
             s = topologic.Cell.ByShell(s)
         if placement.lower() == "bottom":
-            s = topologic.TopologyUtility.Translate(s, 0, 0, radius)
+            s = Topology.Translate(s, 0, 0, radius)
         elif placement.lower() == "lowerleft":
-            s = topologic.TopologyUtility.Translate(s, radius, radius, radius)
+            s = Topology.Translate(s, radius, radius, radius)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -1367,8 +1415,8 @@ class Cell(Topology):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        s = topologic.TopologyUtility.Rotate(s, origin, 0, 1, 0, theta)
-        s = topologic.TopologyUtility.Rotate(s, origin, 0, 0, 1, phi)
+        s = Topology.Rotate(s, origin, 0, 1, 0, theta)
+        s = Topology.Rotate(s, origin, 0, 0, 1, phi)
         return s
     
     @staticmethod
@@ -1421,23 +1469,23 @@ class Cell(Topology):
             The created torus.
 
         """
-        from topologicpy.Topology import Topology
+        
         from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
         
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
             return None
         c = Wire.Circle(origin=origin, radius=minorRadius, sides=vSides, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
-        c = topologic.TopologyUtility.Translate(c, abs(majorRadius-minorRadius), 0, 0)
+        c = Topology.Translate(c, abs(majorRadius-minorRadius), 0, 0)
         s = Topology.Spin(c, origin=origin, triangulate=False, direction=[0,0,1], degree=360, sides=uSides, tolerance=tolerance)
         if s.Type() == topologic.Shell.Type():
             s = topologic.Cell.ByShell(s)
-        #s = Topology.RemoveCoplanarFaces(s, angTol=0.1, tolerance=tolerance)
         if placement.lower() == "bottom":
-            s = topologic.TopologyUtility.Translate(s, 0, 0, majorRadius)
+            s = Topology.Translate(s, 0, 0, majorRadius)
         elif placement.lower() == "lowerleft":
-            s = topologic.TopologyUtility.Translate(s, majorRadius, majorRadius, minorRadius)
+            s = Topology.Translate(s, majorRadius, majorRadius, minorRadius)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -1453,8 +1501,8 @@ class Cell(Topology):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        s = topologic.TopologyUtility.Rotate(s, origin, 0, 1, 0, theta)
-        s = topologic.TopologyUtility.Rotate(s, origin, 0, 0, 1, phi)
+        s = Topology.Rotate(s, origin, 0, 1, 0, theta)
+        s = Topology.Rotate(s, origin, 0, 0, 1, phi)
         return s
     
     @staticmethod

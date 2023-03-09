@@ -1025,10 +1025,7 @@ class Topology():
         vt4 = topologic.Vertex.ByCoordinates(minX, maxY, maxZ)
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
         baseFace = Face.ByWire(baseWire)
-        box = Cell.ByThickenedFace(baseFace, thickness=abs(maxZ-minZ), bothSides=False)
-        #topWire = Wire.ByVertices([vt1, vt2, vt3, vt4], close=True)
-        #wires = [baseWire, topWire]
-        #box = Cell.ByWires(wires)
+        box = Cell.ByThickenedFace(baseFace, planarize=False, thickness=abs(maxZ-minZ), bothSides=False)
         box = Topology.Rotate(box, origin=origin, x=1,y=0,z=0, degree=-best_x)
         box = Topology.Rotate(box, origin=origin, x=0,y=1,z=0, degree=-best_y)
         box = Topology.Rotate(box, origin=origin, x=0,y=0,z=1, degree=-best_z)
@@ -1104,6 +1101,8 @@ class Topology():
             output = Cluster.SelfMerge(output)
             return output
         def edgesByVertices(vertices, topVerts):
+            if len(vertices) < 2:
+                return []
             edges = []
             for i in range(len(vertices)-1):
                 v1 = vertices[i]
@@ -1139,19 +1138,23 @@ class Topology():
             for anEdge in edges:
                 topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]])
                 topEdges.append(topEdge)
-            returnTopology = topologyByEdges(topEdges)
+            if len(topEdges) > 0:
+                returnTopology = topologyByEdges(topEdges)
         elif len(faces) > 0:
             for aFace in faces:
                 faceEdges = edgesByVertices(aFace, topVerts)
-                faceWire = Wire.ByEdges(faceEdges)
-                topFace = Face.ByExternalBoundary(faceWire)
-                topFaces.append(topFace)
-            returnTopology = topologyByFaces(topFaces, outputMode=outputMode, tolerance=tolerance)
+                if len(faceEdges) > 2:
+                    faceWire = Wire.ByEdges(faceEdges)
+                    topFace = Face.ByExternalBoundary(faceWire)
+                    topFaces.append(topFace)
+            if len(topFaces) > 0:
+                returnTopology = topologyByFaces(topFaces, outputMode=outputMode, tolerance=tolerance)
         elif len(edges) > 0:
             for anEdge in edges:
                 topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]])
                 topEdges.append(topEdge)
-            returnTopology = topologyByEdges(topEdges)
+            if len(topEdges) > 0:
+                returnTopology = topologyByEdges(topEdges)
         else:
             returnTopology = Cluster.ByTopologies(topVerts)
         if returnTopology:
@@ -3341,30 +3344,18 @@ class Topology():
 
         Returns
         -------
-        sets : list
-            The sets of merged topologies.
+        topologic.Topology
+            The resulting merged Topology
 
         """
-        resultTopology = topologies[0]
-        for i in range(1, len(topologies)):
-            resultTopology = resultTopology.Union(topologies[i])
-        cells = []
-        _ = resultTopology.Cells(None, cells)
-        unused = []
-        for i in range(len(topologies)):
-            unused.append(True)
-        sets = []
-        for i in range(len(cells)):
-            sets.append([])
-        for i in range(len(topologies)):
-            if unused[i]:
-                iv = topologic.CellUtility.InternalVertex(topologies[i], 0.0001)
-                for j in range(len(cells)):
-                    if (topologic.CellUtility.Contains(cells[j], iv, 0.0001) == 0):
-                        sets[j].append(topologies[i])
-                        unused[i] = False
-        return sets
-    
+
+        from topologicpy.Cluster import Cluster
+        if not isinstance(topologies, list):
+            return None
+        
+        topologyList = [t for t in topologies if isinstance(t, topologic.Topology)]
+        return Topology.SelfMerge(Cluster.ByTopologies(topologyList))
+            
     @staticmethod
     def OCCTShape(topology):
         """
@@ -3868,10 +3859,8 @@ class Topology():
             if not returnTopology:
                 returnTopology = topologic.Cluster.ByTopologies(faces, False)
         elif t == 32:
-            print("Trying to build a Cell")
             returnTopology = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
             if not returnTopology:
-                print("Failed, trying to build a Shell instead")
                 returnTopology = topologic.Shell.ByFaces(faces, tolerance)
             if not returnTopology:
                 returnTopology = topologic.Cluster.ByTopologies(faces, False)
@@ -3986,19 +3975,19 @@ class Topology():
         if not isinstance(selector, topologic.Vertex):
             return None
         t = 1
-        if topologyType.lower() == "vertex":
+        if subTopologyType.lower() == "vertex":
             t = 1
-        elif topologyType.lower() == "edge":
+        elif subTopologyType.lower() == "edge":
             t = 2
-        elif topologyType.lower() == "wire":
+        elif subTopologyType.lower() == "wire":
             t = 4
-        elif topologyType.lower() == "face":
+        elif subTopologyType.lower() == "face":
             t = 8
-        elif topologyType.lower() == "shell":
+        elif subTopologyType.lower() == "shell":
             t = 16
-        elif topologyType.lower() == "cell":
+        elif subTopologyType.lower() == "cell":
             t = 32
-        elif topologyType.lower() == "cellcomplex":
+        elif subTopologyType.lower() == "cellcomplex":
             t = 64
         return topology.SelectSubtopology(selector, t)
 
@@ -4108,7 +4097,7 @@ class Topology():
         return topology
     
     @staticmethod
-    def SharedTopologies(topologyA, topologyB, vertices=True, edges=False, wires=False, faces=False):
+    def SharedTopologies(topologyA, topologyB):
         """
         Returns the shared topologies between the two input topologies
 
@@ -4118,14 +4107,6 @@ class Topology():
             The first input topology.
         topologyB : topologic.Topology
             The second input topology.
-        vertices : bool , optional
-            If set to True, shared vertices will be returned. The default is True.
-        edges : bool , optional
-            If set to True, shared edges will be returned. The default is False.
-        wires : bool , optional
-            If set to True, shared wires will be returned. The default is False.
-        faces : bool , optional
-            If set to True, shared faces will be returned. The default is False.
 
         Returns
         -------
@@ -4133,20 +4114,130 @@ class Topology():
             A dictionary with the list of vertices, edges, wires, and faces. The keys are "vertices", "edges", "wires", and "faces".
 
         """
+
+        if not isinstance(topologyA, topologic.Topology) or not isinstance(topologyB, topologic.Topology):
+            return None
         vOutput = []
         eOutput = []
         wOutput = []
         fOutput = []
-        if vertices:
-            _ = topologyA.SharedTopologies(topologyB, 1, vOutput)
-        if edges:
-            _ = topologyA.SharedTopologies(topologyB, 2, eOutput)
-        if wires:
-            _ = topologyA.SharedTopologies(topologyB, 4, wOutput)
-        if faces:
-            _ = topologyA.SharedTopologies(topologyB, 8, fOutput)
+        _ = topologyA.SharedTopologies(topologyB, 1, vOutput)
+        _ = topologyA.SharedTopologies(topologyB, 2, eOutput)
+        _ = topologyA.SharedTopologies(topologyB, 4, wOutput)
+        _ = topologyA.SharedTopologies(topologyB, 8, fOutput)
         return {"vertices":vOutput, "edges":eOutput, "wires":wOutput, "faces":fOutput}
 
+    @staticmethod
+    def SharedVertices(topologyA, topologyB):
+        """
+        Returns the shared vertices between the two input topologies
+
+        Parameters
+        ----------
+        topologyA : topologic.Topology
+            The first input topology.
+        topologyB : topologic.Topology
+            The second input topology.
+
+        Returns
+        -------
+        list
+            The list of shared vertices.
+
+        """
+        d = Topology.SharedTopologies(topologyA, topologyB)
+        l = None
+        if isinstance(d, dict):
+            try:
+                l = d['vertices']
+            except:
+                l = None
+        return l
+    
+    
+    @staticmethod
+    def SharedEdges(topologyA, topologyB):
+        """
+        Returns the shared edges between the two input topologies
+
+        Parameters
+        ----------
+        topologyA : topologic.Topology
+            The first input topology.
+        topologyB : topologic.Topology
+            The second input topology.
+
+        Returns
+        -------
+        list
+            The list of shared edges.
+
+        """
+        d = Topology.SharedTopologies(topologyA, topologyB)
+        l = None
+        if isinstance(d, dict):
+            try:
+                l = d['edges']
+            except:
+                l = None
+        return l
+    
+    @staticmethod
+    def SharedWires(topologyA, topologyB):
+        """
+        Returns the shared wires between the two input topologies
+
+        Parameters
+        ----------
+        topologyA : topologic.Topology
+            The first input topology.
+        topologyB : topologic.Topology
+            The second input topology.
+
+        Returns
+        -------
+        list
+            The list of shared wires.
+
+        """
+        d = Topology.SharedTopologies(topologyA, topologyB)
+        l = None
+        if isinstance(d, dict):
+            try:
+                l = d['wires']
+            except:
+                l = None
+        return l
+    
+    
+    @staticmethod
+    def SharedFaces(topologyA, topologyB):
+        """
+        Returns the shared faces between the two input topologies
+
+        Parameters
+        ----------
+        topologyA : topologic.Topology
+            The first input topology.
+        topologyB : topologic.Topology
+            The second input topology.
+
+        Returns
+        -------
+        list
+            The list of shared faces.
+
+        """
+        d = Topology.SharedTopologies(topologyA, topologyB)
+        l = None
+        if isinstance(d, dict):
+            try:
+                l = d['faces']
+            except:
+                l = None
+        return l
+    
+    
     @staticmethod
     def Show(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor='white', faceOpacity=0.5, edgeColor='black', edgeWidth=1, vertexColor='black', vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
         """
@@ -4405,6 +4496,8 @@ class Topology():
                         returnTopology = None
         else:
             returnTopology = Topology.SelfMerge(topologic.Cluster.ByTopologies(topologies))
+        if not returnTopology:
+            return topologic.Cluster.ByTopologies(topologies)
         if returnTopology.Type() == topologic.Shell.Type():
             try:
                 new_t = topologic.Cell.ByShell(returnTopology)
@@ -4510,7 +4603,6 @@ class Topology():
         superTopologies = []
 
         if not topologyType:
-            print("Topology.SuperTopologies 4515 - ", topology)
             typeID = 2*Topology.TypeID(topology)
         else:
             typeID = Topology.TypeID(topologyType)

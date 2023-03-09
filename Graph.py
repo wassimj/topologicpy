@@ -451,8 +451,7 @@ class Graph:
                         if (i != j) and cellmat[i][j] == 0:
                             cellmat[i][j] = 1
                             cellmat[j][i] = 1
-                            sharedt = []
-                            cells[i].SharedTopologies(cells[j], 8, sharedt)
+                            sharedt = Topology.SharedFaces(cells[i], cells[j])
                             if len(sharedt) > 0:
                                 if useInternalVertex == True:
                                     v1 = topologic.CellUtility.InternalVertex(cells[i], tolerance)
@@ -483,8 +482,7 @@ class Graph:
                         if (i != j) and cellmat[i][j] == 0:
                             cellmat[i][j] = 1
                             cellmat[j][i] = 1
-                            sharedt = []
-                            cells[i].SharedTopologies(cells[j], 8, sharedt)
+                            sharedt = Topology.SharedFaces(cells[i], cells[j])
                             if len(sharedt) > 0:
                                 apertureExists = False
                                 for x in sharedt:
@@ -834,8 +832,7 @@ class Graph:
                         if (i != j) and facemat[i][j] == 0:
                             facemat[i][j] = 1
                             facemat[j][i] = 1
-                            sharedt = []
-                            topFaces[i].SharedTopologies(topFaces[j], 2, sharedt)
+                            sharedt = Topology.SharedEdges(topFaces[i], topFaces[j])
                             if len(sharedt) > 0:
                                 if useInternalVertex == True:
                                     v1 = topologic.FaceUtility.InternalVertex(topFaces[i], tolerance)
@@ -863,8 +860,7 @@ class Graph:
                         if (i != j) and facemat[i][j] == 0:
                             facemat[i][j] = 1
                             facemat[j][i] = 1
-                            sharedt = []
-                            topFaces[i].SharedTopologies(topFaces[j], 2, sharedt)
+                            sharedt = Topology.SharedEdges(topFaces[i], topFaces[j])
                             if len(sharedt) > 0:
                                 apertureExists = False
                                 for x in sharedt:
@@ -1207,8 +1203,7 @@ class Graph:
                         if (i != j) and edgemat[i][j] == 0:
                             edgemat[i][j] = 1
                             edgemat[j][i] = 1
-                            sharedt = []
-                            topEdges[i].SharedTopologies(topEdges[j], 1, sharedt)
+                            sharedt = Topology.SharedVertices(topEdges[i], topEdges[j])
                             if len(sharedt) > 0:
                                 try:
                                     v1 = topologic.EdgeUtility.PointAtParameter(topEdges[i], 0.5)
@@ -1238,8 +1233,7 @@ class Graph:
                         if (i != j) and edgemat[i][j] == 0:
                             edgemat[i][j] = 1
                             edgemat[j][i] = 1
-                            sharedt = []
-                            topEdges[i].SharedTopologies(topEdges[j], 1, sharedt)
+                            sharedt = Topology.SharedVertices(topEdges[i], topEdges[j])
                             if len(sharedt) > 0:
                                 apertureExists = False
                                 for x in sharedt:
@@ -2292,7 +2286,7 @@ class Graph:
         return graph
     
     @staticmethod
-    def ShortestPath(graph, vertexA, vertexB, vertexKey=None, edgeKey="Length"):
+    def ShortestPath(graph, vertexA, vertexB, vertexKey="", edgeKey="Length"):
         """
         Returns the shortest path that connects the input vertices.
 
@@ -2327,7 +2321,7 @@ class Graph:
         return graph.ShortestPath(vertexA, vertexB, vertexKey, edgeKey)
     
     @staticmethod
-    def ShortestPaths(graph, vertexA, vertexB, vertexKey=None, edgeKey="length", timeLimit=10,
+    def ShortestPaths(graph, vertexA, vertexB, vertexKey="", edgeKey="length", timeLimit=10,
                            pathLimit=10, tolerance=0.0001):
         """
         Returns the shortest path that connects the input vertices.

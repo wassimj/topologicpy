@@ -67,7 +67,6 @@ class Shell(Topology):
     def ByWires(wires, triangulate=True, tolerance=0.0001):
         """
         Creates a shell by lofting through the input wires
-
         Parameters
         ----------
         wires : list
@@ -76,12 +75,10 @@ class Shell(Topology):
             If set to True, the faces will be triangulated. The default is True.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
-
         Returns
         -------
         topologic.Shell
             The creates shell.
-
         """
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
@@ -134,28 +131,28 @@ class Shell(Topology):
                     e3 = None
                     e4 = None
                     try:
-                        e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
                     except:
                         try:
-                            e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
+                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
                         except:
                             pass
                     try:
-                        e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
                     except:
                         try:
-                            e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
+                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
                         except:
                             pass
                     if e3 and e4:
                         try:
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e4, e2, e3])))
+                            faces.append(Face.ByWire(topologic.Wire.ByEdges([e1, e4, e2, e3])))
                         except:
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e3, e2, e4])))
+                            faces.append(Face.ByWire(topologic.Wire.ByEdges([e1, e3, e2, e4])))
                     elif e3:
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e3, e2])))
+                            faces.append(Face.ByWire(topologic.Wire.ByEdges([e1, e3, e2])))
                     elif e4:
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e4, e2])))
+                            faces.append(Face.ByWire(topologic.Wire.ByEdges([e1, e4, e2])))
         return Shell.ByFaces(faces, tolerance)
 
     @staticmethod
@@ -178,12 +175,12 @@ class Shell(Topology):
             The creates shell.
 
         """
+        from topologicpy.Cluster import Cluster
         if not cluster:
             return None
         if not isinstance(cluster, topologic.Cluster):
             return None
-        wires = []
-        _ = cluster.Wires(None, wires)
+        wires = Cluster.Wires(cluster)
         return Shell.ByWires(wires, triangulate=triangulate, tolerance=tolerance)
 
     @staticmethod
@@ -299,7 +296,6 @@ class Shell(Topology):
             faces.append(Face.ByWire(Wire.ByVertices(tempTriangleVertices)))
 
         shell = Shell.ByFaces(faces)
-        print(shell)
         if isinstance(face, topologic.Face):
             edges = Shell.Edges(shell)
             edgesCluster = Cluster.ByTopologies(edges)
