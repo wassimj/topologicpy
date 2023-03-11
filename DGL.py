@@ -175,6 +175,19 @@ class GCN_Classic(nn.Module):
         g.ndata['h'] = h
         return dgl.mean_nodes(g, 'h')
 
+class GCN_Raban(nn.Module):
+    def __init__(self, in_feats, h_feats, num_classes):
+        super(GCN_Raban, self).__init__()
+        self.conv1 = GraphConv(in_feats, h_feats[0])
+        self.conv2 = GraphConv(h_feats[0], num_classes)
+
+    def forward(self, g, in_feat):
+        h = self.conv1(g, in_feat)
+        h = F.relu(h)
+        h = self.conv2(g, h)
+        g.ndata['h'] = h
+        return dgl.mean_nodes(g, 'h')
+
 class GCN_GINConv(nn.Module):
     def __init__(self, in_feats, h_feats, num_classes, pooling):
         super(GCN_GINConv, self).__init__()
@@ -361,6 +374,9 @@ class ClassifierSplit:
                             trainingDataset.gclasses, hparams.pooling).to(device)
         elif hparams.conv_layer_type.lower() == 'gcn':
             self.model = GCN_Classic(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            trainingDataset.gclasses).to(device)
+        elif hparams.conv_layer_type.lower() == 'raban':
+            self.model = GCN_Raban(trainingDataset.dim_nfeats, hparams.hl_widths, 
                             trainingDataset.gclasses).to(device)
         else:
             raise NotImplementedError
