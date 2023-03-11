@@ -504,25 +504,68 @@ class Face(topologic.Face):
 
         Returns
         -------
-        topologic.Face
-            The created face.
+        topologic.Face or list
+            The created face. If the wire is non-planar, the method will attempt to triangulate the wire and return a list of faces.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
+        from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
         import random
+
+        def triangulateWire(wire):
+            wire = Wire.RemoveCollinearEdges(wire)
+            vertices = Wire.Vertices(wire)
+            shell = Shell.Delaunay(vertices)
+            if isinstance(shell, topologic.Shell):
+                return Shell.Faces(shell)
+            else:
+                return []
         if not isinstance(wire, topologic.Wire):
             return None
         if not Wire.IsClosed(wire):
             return None
-        f = topologic.Face.ByExternalBoundary(wire)
-        area = Face.Area(f)
-        if area < 0:
-            wire = Wire.Invert(wire)
-            f = topologic.Face.ByExternalBoundary(wire)
-            return f
+        
+        edges = Wire.Edges(wire)
+        wire = Topology.SelfMerge(Cluster.ByTopologies(edges))
+        vertices = Wire.Vertices(wire)
+        #print("This wire has:", len(vertices), "vertices.")
+        try:
+            #print(Topology.IsPlanar(wire))
+            fList = topologic.Face.ByExternalBoundary(wire)
+        except:
+            if len(vertices) > 3:
+                print("This wire has:", len(vertices), "vertices.")
+                print("Non planar wire, triangulating")
+                fList = triangulateWire(wire)
+                print("After triangulation", fList)
+            else:
+                fList = []
+        
+        if not isinstance(fList, list):
+            fList = [fList]
+
+        returnList = []
+        for f in fList:
+            if Face.Area(f) < 0:
+                wire = Face.ExternalBoundary(f)
+                wire = Wire.Invert(wire)
+                try:
+                    f = topologic.Face.ByExternalBoundary(wire)
+                    returnList.append(f)
+                except:
+                    pass
+            else:
+                returnList.append(f)
+        if len(returnList) == 0:
+            return None
+        elif len(returnList) == 1:
+            return returnList[0]
         else:
-            return f
+            return returnList
 
     @staticmethod
     def ByWires(externalBoundary, internalBoundaries=[]):

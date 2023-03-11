@@ -504,14 +504,39 @@ class ClassifierKFold:
         self.testing_accuracy_list = []
         self.node_attr_key = trainingDataset.node_attr_key
 
+    
     def reset_weights(self):
         '''
         Try resetting model weights to avoid
         weight leakage.
         '''
-        for layer in self.children():
-            if hasattr(layer, 'reset_parameters'):
-                layer.reset_parameters()
+        device = torch.device("cpu")
+        if self.hparams.conv_layer_type.lower() == 'classic':
+            self.model = GCN_Classic(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, 
+                            self.trainingDataset.gclasses).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'ginconv':
+            self.model = GCN_GINConv(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, 
+                            self.trainingDataset.gclasses, self.hparams.pooling).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'graphconv':
+            self.model = GCN_GraphConv(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, 
+                            self.trainingDataset.gclasses, self.hparams.pooling).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'sageconv':
+            self.model = GCN_SAGEConv(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, 
+                            self.trainingDataset.gclasses, self.hparams.pooling).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'tagconv':
+            self.model = GCN_TAGConv(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, 
+                            self.trainingDataset.gclasses, self.hparams.pooling).to(device)
+        else:
+            raise NotImplementedError
+        if self.hparams.optimizer_str.lower() == "adadelta":
+            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=self.hparams.eps, 
+                                            lr=self.hparams.lr, rho=self.hparams.rho, weight_decay=self.hparams.weight_decay)
+        elif self.hparams.optimizer_str.lower() == "adagrad":
+            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=self.hparams.eps, 
+                                            lr=self.hparams.lr, lr_decay=self.hparams.lr_decay, weight_decay=self.hparams.weight_decay)
+        elif self.hparams.optimizer_str.lower() == "adam":
+            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=self.hparams.amsgrad, betas=self.hparams.betas, eps=self.hparams.eps, 
+                                            lr=self.hparams.lr, maximize=self.hparams.maximize, weight_decay=self.hparams.weight_decay)
 
     def train(self):
         # The number of folds (This should come from the hparams)
@@ -547,7 +572,7 @@ class ClassifierKFold:
                                                 batch_size=self.hparams.batch_size,
                                                 drop_last=False)
             # Init the neural network
-            self.model.apply(self.reset_weights())
+            self.reset_weights()
 
             # Run the training loop for defined number of epochs
             for _ in range(self.hparams.epochs):

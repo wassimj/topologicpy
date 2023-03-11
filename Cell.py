@@ -1054,6 +1054,99 @@ class Cell(Topology):
             return None
     
     @staticmethod
+    def IsOutside(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is outisde the input cell. Returns False otherwise.
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The input cell.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            Returns True if the input vertex is inside the input cell. Returns False otherwise.
+
+        """
+        if not cell:
+            return None
+        if not isinstance(cell, topologic.Cell):
+            return None
+        try:
+            return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 2)
+        except:
+            return None
+    
+    @staticmethod
+    def IsOnBoundary(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is on the boundary of the input cell. Returns False otherwise.
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The input cell.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            Returns True if the input vertex is inside the input cell. Returns False otherwise.
+
+        """
+        if not cell:
+            return None
+        if not isinstance(cell, topologic.Cell):
+            return None
+        try:
+            return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 1)
+        except:
+            return None
+    
+    @staticmethod
+    def ContainmentStatus(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> int:
+        """
+        Returns the containment status of the input vertex in relationship to the input cell
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The input cell.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        int
+            Returns 0 if the vertex is inside, 1 if it is on the boundary of, and 2 if it is outside the input cell.
+
+        """
+        if not cell:
+            return None
+        if not isinstance(cell, topologic.Cell):
+            return None
+        try:
+            status = topologic.CellUtility.Contains(cell, vertex, tolerance)
+            if status == 0:
+                return 0
+            elif status == 1:
+                return 1
+            else:
+                return 2
+        except:
+            return None
+    
+    @staticmethod
     def Pipe(edge: topologic.Edge, profile: topologic.Wire = None, radius: float = 0.5, sides: int = 16, startOffset: float = 0, endOffset: float = 0, endcapA: topologic.Topology = None, endcapB: topologic.Topology = None) -> dict:
         """
         Description

@@ -1153,6 +1153,40 @@ class Wire(topologic.Wire):
         return status
     
     @staticmethod
+    def IsInside(wire, vertex, tolerance=0.0001):
+        """
+        Returns True if the input vertex is inside the input wire. Returns False otherwise.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+        vertex : topologic.Vertex
+            The input Vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the input vertex is inside the input wire. False otherwise.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        
+        if not isinstance(wire, topologic.Wire):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        is_inside = False
+        edges = Wire.Edges(wire)
+        for edge in edges:
+            if (Vertex.Distance(vertex, edge) <= tolerance):
+                return True
+        return False
+    
+    @staticmethod
     def Isovist(viewPoint, externalBoundary, obstaclesCluster, tolerance=0.0001):
         """
         Returns a list of faces representing the isovist projection from the input viewpoint.

@@ -266,6 +266,9 @@ class Shell(Topology):
         phi = Dictionary.ValueAtKey(dictionary,"phi")
         theta = Dictionary.ValueAtKey(dictionary,"theta")
 
+        print("Delaunay", len(vertices))
+        print("Dealunay", Dictionary.Keys(dictionary))
+        print("Delaunay", Dictionary.Values(dictionary))
         # Create a Vertex at the world's origin (0,0,0)
         world_origin = Vertex.ByCoordinates(0,0,0)
 
@@ -383,7 +386,96 @@ class Shell(Topology):
         faces = []
         _ = shell.Faces(None, faces)
         return faces
+    
+    @staticmethod
+    def IsInside(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is inside the input shell. Returns False otherwise. Inside is defined as being inside one of the shell's faces
 
+        Parameters
+        ----------
+        shell : topologic.Shell
+            The input shell.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            Returns True if the input vertex is inside the input shell. Returns False otherwise.
+
+        """
+
+        from topologicpy.Face import Face
+        if not isinstance(shell, topologic.Shell):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        faces = Shell.Faces(shell)
+        for f in faces:
+            if Face.IsInside(fface=f, vertex=vertex, tolerance=tolerance):
+                return True
+        return False
+    
+    @staticmethod
+    def IsOnBoundary(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is inside the input shell. Returns False otherwise. Inside is defined as being inside one of the shell's faces
+
+        Parameters
+        ----------
+        shell : topologic.Shell
+            The input shell.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            Returns True if the input vertex is inside the input shell. Returns False otherwise.
+
+        """
+
+        from topologicpy.Wire import Wire
+
+        if not isinstance(shell, topologic.Shell):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        boundary = Shell.ExternalBoundary(shell)
+        return Wire.IsInside(wire=boundary, vertex=vertex, tolerance=tolerance)
+    
+    @staticmethod
+    def IsOutside(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is inside the input shell. Returns False otherwise. Inside is defined as being inside one of the shell's faces
+
+        Parameters
+        ----------
+        shell : topologic.Shell
+            The input shell.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            Returns True if the input vertex is inside the input shell. Returns False otherwise.
+
+        """
+
+        if not isinstance(shell, topologic.Shell):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        return not Wire.IsInside(shell=shell, vertex=vertex, tolerance=tolerance)
+    
     @staticmethod
     def HyperbolicParaboloidRectangularDomain(origin=None, llVertex=None, lrVertex=None, ulVertex=None, urVertex=None, u=10, v=10, direction=[0,0,1], placement="bottom"):
         """

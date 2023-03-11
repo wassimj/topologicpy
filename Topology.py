@@ -34,7 +34,7 @@ class Topology():
         exclusive : bool , optional
             If set to True, one (sub)topology will accept only one aperture. Otherwise, one (sub)topology can accept multiple apertures. The default is False.
         subTopologyType : string , optional
-            The subtopology type to which to add the apertures. This can be "cell", "face", "edge", or "vertex". It is case insensitive. If set to None, the apertures will be added to the input topology. The defaul is None.
+            The subtopology type to which to add the apertures. This can be "cell", "face", "edge", or "vertex". It is case insensitive. If set to None, the apertures will be added to the input topology. The default is None.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -98,7 +98,7 @@ class Topology():
         conntents : list
             The input list of contents.
         subTopologyType : string , optional
-            The subtopology type to which to add the contents. This can be "cellcomplex", "cell", "shell", "face", "wire", "edge", or "vertex". It is case insensitive. If set to None, the contents will be added to the input topology. The defaul is None.
+            The subtopology type to which to add the contents. This can be "cellcomplex", "cell", "shell", "face", "wire", "edge", or "vertex". It is case insensitive. If set to None, the contents will be added to the input topology. The default is None.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -594,7 +594,7 @@ class Topology():
         return topologic.Topology.Analyze(topology)
     
     @staticmethod
-    def Apertures(topology):
+    def Apertures(topology, subTopologyType=None):
         """
         Returns the apertures of the input topology.
         
@@ -602,21 +602,45 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
-
+        subTopologyType : string , optional
+            The subtopology type from which to retrieve the apertures. This can be "cell", "face", "edge", or "vertex" or "all". It is case insensitive. If set to "all", then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. The default is None.
+        
         Returns
         -------
         list
-            The list of apertures beloning to the input topology.
+            The list of apertures belonging to the input topology.
 
         """
         if not isinstance(topology, topologic.Topology):
             return None
+        
         apertures = []
-        _ = topology.Apertures(apertures)
+        subTopologies = []
+        if not subTopologyType:
+            _ = topology.Apertures(apertures)
+        elif subTopologyType.lower() == "vertex":
+            subTopologies = Topology.Vertices(topology)
+        elif subTopologyType.lower() == "edge":
+            subTopologies = Topology.Edges(topology)
+        elif subTopologyType.lower() == "face":
+            subTopologies = Topology.Faces(topology)
+        elif subTopologyType.lower() == "cell":
+            subTopologies = Topology.Cells(topology)
+        elif subTopologyType.lower() == "all":
+            _ = topology.Apertures(apertures)
+            subTopologies = Topology.Vertices(topology)
+            subTopologies += Topology.Edges(topology)
+            subTopologies += Topology.Faces(topology)
+            subTopologies += Topology.Cells(topology)
+        else:
+            return None
+        for subTopology in subTopologies:
+            apertures += Topology.Apertures(subTopology, subTopologyType=None)
         return apertures
 
+
     @staticmethod
-    def ApertureTopologies(topology):
+    def ApertureTopologies(topology, subTopologyType=None):
         """
         Returns the aperture topologies of the input topology.
 
@@ -624,7 +648,9 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
-
+        subTopologyType : string , optional
+            The subtopology type from which to retrieve the apertures. This can be "cell", "face", "edge", or "vertex" or "all". It is case insensitive. If set to "all", then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. The default is None.
+       
         Returns
         -------
         list
@@ -634,7 +660,7 @@ class Topology():
         from topologicpy.Aperture import Aperture
         if not isinstance(topology, topologic.Topology):
             return None
-        apertures = Topology.Apertures(topology)
+        apertures = Topology.Apertures(topology=topology, subTopologyType=subTopologyType)
         apTopologies = []
         for aperture in apertures:
             apTopologies.append(Aperture.ApertureTopology(aperture))
@@ -1055,7 +1081,7 @@ class Topology():
         lengthUnit : str , optional
             The length unit used for the object. The default is "METERS"
         outputMode : str , optional
-            The desired otuput mode of the object. This can be "Shell", "Cell", "CellComplex", or "Default". It is case insensitive. The default is "default".
+            The desired otuput mode of the object. This can be "wire", "shell", "cell", "cellcomplex", or "default". It is case insensitive. The default is "default".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1088,17 +1114,21 @@ class Topology():
                 else:
                     return None
             if outputMode.lower() == "default":
-                output = Topology.SelfMerge(Cluster.ByTopologies(faces))
-            if output:
+                output = Cluster.ByTopologies(faces)
                 if output:
                     return output
             return output
-        def topologyByEdges(edges):
+        def topologyByEdges(edges, outputMode):
             output = None
             if len(edges) == 1:
                 return edges[0]
             output = Cluster.ByTopologies(edges)
-            output = Cluster.SelfMerge(output)
+            if outputMode.lower() == "wire":
+                output = Cluster.SelfMerge(output)
+                if isinstance(output, topologic.Wire):
+                    return output
+                else:
+                    return None
             return output
         def edgesByVertices(vertices, topVerts):
             if len(vertices) < 2:
@@ -1121,6 +1151,7 @@ class Topology():
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
         import uuid
@@ -1145,8 +1176,11 @@ class Topology():
                 faceEdges = edgesByVertices(aFace, topVerts)
                 if len(faceEdges) > 2:
                     faceWire = Wire.ByEdges(faceEdges)
-                    topFace = Face.ByExternalBoundary(faceWire)
-                    topFaces.append(topFace)
+                    try:
+                        topFace = Face.ByWire(faceWire)
+                        topFaces.append(topFace)
+                    except:
+                        pass
             if len(topFaces) > 0:
                 returnTopology = topologyByFaces(topFaces, outputMode=outputMode, tolerance=tolerance)
         elif len(edges) > 0:
@@ -1710,7 +1744,7 @@ class Topology():
         return None
 
     @staticmethod
-    def ByImportedOBJ(path, transposeAxes = True, tolerance=0.0001):
+    def ByImportedOBJ(path, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
         """
         Imports the topology from a Weverfront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
@@ -1729,26 +1763,62 @@ class Topology():
             The imported topology.
 
         """
-        vertices = []
-        faces = []
+        def parse(lines):
+            vertices = []
+            faces = []
+            for i in range(len(lines)):
+                s = lines[i].split()
+                if isinstance(s, list):
+                    if len(s) > 3:
+                        if s[0].lower() == "v":
+                            if transposeAxes:
+                                vertices.append([float(s[1]), float(s[3]), float(s[2])])
+                            else:
+                                vertices.append([float(s[1]), float(s[2]), float(s[3])])
+                        elif s[0].lower() == "f":
+                            temp_faces = []
+                            for j in range(1,len(s)):
+                                f = s[j].split("/")[0]
+                                temp_faces.append(int(f)-1)
+                            faces.append(temp_faces)
+            return [vertices, faces]
+        
+        def parsetqdm(lines):
+            vertices = []
+            faces = []
+            for i in tqdm(range(len(lines))):
+                s = lines[i].split()
+                if isinstance(s, list):
+                    if len(s) > 3:
+                        if s[0].lower() == "v":
+                            if transposeAxes:
+                                vertices.append([float(s[1]), float(s[3]), float(s[2])])
+                            else:
+                                vertices.append([float(s[1]), float(s[2]), float(s[3])])
+                        elif s[0].lower() == "f":
+                            temp_faces = []
+                            for j in range(1,len(s)):
+                                f = s[j].split("/")[0]
+                                temp_faces.append(int(f)-1)
+                            faces.append(temp_faces)
+            return [vertices, faces]
+        
         file = open(path)
         if file:
             lines = file.readlines()
-            for i in range(len(lines)):
-                s = lines[i].split()
-                if s[0].lower() == "v":
-                    if transposeAxes:
-                        vertices.append([float(s[1]), float(s[3]), float(s[2])])
+            if lines:
+                if progressBar:
+                    if renderer.lower() == "notebook":
+                        from tqdm.notebook import tqdm
                     else:
-                        vertices.append([float(s[1]), float(s[2]), float(s[3])])
-                elif s[0].lower() == "f":
-                    temp_faces = []
-                    for j in range(1,len(s)):
-                        f = s[j].split("/")[0]
-                        temp_faces.append(int(f)-1)
-                    faces.append(temp_faces)
+                        from tqdm import tqdm
+                    vertices, faces = parsetqdm(lines)
+                else:
+                    vertices, faces = parse(lines)
             file.close()
-        return Topology.ByGeometry(vertices = vertices, faces = faces, outputMode="default", tolerance=tolerance)
+        if vertices or faces:
+            return Topology.ByGeometry(vertices = vertices, faces = faces, outputMode="default", tolerance=tolerance)
+        return None
 
     @staticmethod
     def ByOCCTShape(occtShape):
@@ -2204,7 +2274,7 @@ class Topology():
         topology : topologic.Topology
             The input topology.
         origin : topologic.Vertex , optional
-            The origin of the explosion. If set to None, the centroid of the input topology will be used. The defaul is None.
+            The origin of the explosion. If set to None, the centroid of the input topology will be used. The default is None.
         scale : float , optional
             The scale factor of the explosion. The default is 1.25.
         typeFilter : str , optional
@@ -4529,6 +4599,152 @@ class Topology():
         if not isinstance(topology, topologic.Topology):
             return None
         return topologic.Topology.String(topology, version)
+    
+    @staticmethod
+    def Vertices(topology):
+        """
+        Returns the vertices of the input topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+
+        Returns
+        -------
+        list
+            The list of vertices.
+
+        """
+        return Topology.SubTopologies(topology=topology, subTopologyType="vertex")
+    
+    @staticmethod
+    def Edges(topology):
+        """
+        Returns the edges of the input topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+
+        Returns
+        -------
+        list
+            The list of edges.
+
+        """
+        return Topology.SubTopologies(topology=topology, subTopologyType="edge")
+    
+    @staticmethod
+    def Wires(topology):
+        """
+        Returns the wires of the input topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+
+        Returns
+        -------
+        list
+            The list of wires.
+
+        """
+        return Topology.SubTopologies(topology=topology, subTopologyType="wire")
+    
+    @staticmethod
+    def Faces(topology):
+        """
+        Returns the faces of the input topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+
+        Returns
+        -------
+        list
+            The list of faces.
+
+        """
+        return Topology.SubTopologies(topology=topology, subTopologyType="face")
+    
+    @staticmethod
+    def Shells(topology):
+        """
+        Returns the shells of the input topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+
+        Returns
+        -------
+        list
+            The list of shells.
+
+        """
+        return Topology.SubTopologies(topology=topology, subTopologyType="shell")
+    
+    @staticmethod
+    def Cells(topology):
+        """
+        Returns the cells of the input topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+
+        Returns
+        -------
+        list
+            The list of cells.
+
+        """
+        return Topology.SubTopologies(topology=topology, subTopologyType="cell")
+    
+    @staticmethod
+    def CellComplexes(topology):
+        """
+        Returns the cellcomplexes of the input topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+
+        Returns
+        -------
+        list
+            The list of cellcomplexes.
+
+        """
+        return Topology.SubTopologies(topology=topology, subTopologyType="cellcomplex")
+    
+    @staticmethod
+    def Clusters(topology):
+        """
+        Returns the clusters of the input topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+
+        Returns
+        -------
+        list
+            The list of clusters.
+
+        """
+        if not isinstance(topology, topologic.Cluster):
+            return []
+        return Topology.SubTopologies(topology=topology, subTopologyType="cluster")
     
     @staticmethod
     def SubTopologies(topology, subTopologyType="vertex"):
