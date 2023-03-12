@@ -250,7 +250,7 @@ class Plotly:
         return data
 
     @staticmethod
-    def DataByTopology(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor="white", faceOpacity=0.5, edgeColor="black", edgeWidth=1, vertexColor="black", vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, verticesLabel="Topology Vertices", edgesLabel="Topology Edges", facesLabel="Topology Faces"):
+    def DataByTopology(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor="white", faceOpacity=0.5, edgeColor="black", edgeWidth=1, vertexColor="black", vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, vertexLabel="Topology Vertices", edgeLabel="Topology Edges", faceLabel="Topology Faces", vertexLegendGroup=1, edgeLegendGroup=2, faceLegendGroup=3, vertexLegendRank=1, edgeLegendRank=2, faceLegendRank=3, showVertexLegend=True, showEdgeLegend=True, showFaceLegend=True):
         """
         Creates plotly face, edge, and vertex data.
 
@@ -262,18 +262,60 @@ class Plotly:
             The dictionary key to use to display the vertex label. The default is None.
         vertexGroupKey : str , optional
             The dictionary key to use to display the vertex group. The default is None.
-        edgeLabelKey : str , optional
-            The dictionary key to use to display the edge label. The default is None.
+        vertexGroups : list , optional
+            The list of vertex groups against which to index the color of the vertex. The default is [].
+        vertexColor : str , optional
+            The desired color of the output vertices. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        vertexSize : float , optional
+            The desired size of the vertices. The default is 1.1.
+        showVertices : bool , optional
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+        vertexLabel : str , optional
+            The legend label string used to identify vertices. The default is "Topology Vertices".
+        vertexLegendGroup : int , optional
+            The number of the vertex legend group to which the vertices of this topology belong. The default is 1.
+        vertexLegendRank : int , optional
+            The legend rank order of the vertices of this topology. The default is 1.
+        showVertexLegend : bool, optional
+            If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. The default is True.
+        
         edgeGroupKey : str , optional
             The dictionary key to use to display the edge group. The default is None.
+        edgeGroups : list , optional
+            The list of edge groups against which to index the color of the edge. The default is [].
+        edgeColor : str , optional
+            The desired color of the output edges. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        edgeWidth : float , optional
+            The desired thickness of the output edges. The default is 1.
+        
+        edgeLabel : str , optional
+            The legend label string used to identify edges. The default is "Topology Edges".
+        edgeLabelKey : str , optional
+            The dictionary key to use to display the edge label. The default is None.
+        edgeLegendGroup : int , optional
+            The number of the edge legend group to which the edges of this topology belong. The default is 2.
+        edgeLegendRank : int , optional
+            The legend rank order of the edges of this topology. The default is 2.
+        showEdgeLegend : bool, optional
+            If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. The default is True.
+        showEdges : bool , optional
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
         faceLabelKey : str , optional
             The dictionary key to use to display the face label. The default is None.
         faceGroupKey : str , optional
             The dictionary key to use to display the face group. The default is None.
-        vertexGroups : list , optional
-            The list of vertex groups against which to index the color of the vertex. The default is [].
-        edgeGroups : list , optional
-            The list of edge groups against which to index the color of the edge. The default is [].
         faceGroups : list , optional
             The list of face groups against which to index the color of the face. The default is [].
         faceColor : str , optional
@@ -286,38 +328,17 @@ class Plotly:
             The default is "white".
         faceOpacity : float , optional
             The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
-        edgeColor : str , optional
-            The desired color of the output edges. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is "black".
-        edgeWidth : float , optional
-            The desired thickness of the output edges. The default is 1.
-        vertexColor : str , optional
-            The desired color of the output vertices. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is "black".
-        vertexSize : float , optional
-            The desired size of the vertices. The default is 1.1.
         showFaces : bool , optional
             If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
-        showEdges : bool , optional
-            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
-        showVertices : bool , optional
-            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
-        verticesLabel : str , optional
-            The legend label string used to identify vertices. The default is "Topology Vertices".
-        edgesLabel : str , optional
-            The legend label string used to identify edges. The default is "Topology Edges".
-        facesLabel : str , optional
+        faceLabel : str , optional
             The legend label string used to idenitfy edges. The default is "Topology Faces".
+        faceLegendGroup : int , optional
+            The number of the face legend group to which the faces of this topology belong. The default is 3.
+        faceLegendRank : int , optional
+            The legend rank order of the faces of this topology. The default is 3.
+        showFaceLegend : bool, optional
+            If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. The default is True.
+        
         Returns
         -------
         list
@@ -327,7 +348,7 @@ class Plotly:
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
-        def vertexData(vertices, dictionaries=None, vertexColor="black", vertexSize=1.1, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], verticesLabel="Topology Vertices"):
+        def vertexData(vertices, dictionaries=None, vertexColor="black", vertexSize=1.1, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], vertexLabel="Topology Vertices", legendGroup=1, legendRank=1, showLegend=True):
             x = []
             y = []
             z = []
@@ -373,17 +394,18 @@ class Plotly:
             return go.Scatter3d(x=x,
                                 y=y,
                                 z=z,
-                                name=verticesLabel,
-                                showlegend=True,
+                                name=vertexLabel,
+                                showlegend=showLegend,
                                 marker=dict(color=v_groupList,  size=vertexSize),
                                 mode='markers',
-                                legendgroup=1,
-                                legendrank=1,
+                                legendgroup=legendGroup,
+                                legendrank=legendRank,
                                 text=v_labels,
                                 hoverinfo='text',
-                                hovertext=v_labels)
+                                hovertext=v_labels
+                                )
 
-        def edgeData(vertices, edges, dictionaries=None, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], edgesLabel="Topology Edges"):
+        def edgeData(vertices, edges, dictionaries=None, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], edgeLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True):
             x = []
             y = []
             z = []
@@ -432,18 +454,18 @@ class Plotly:
             return go.Scatter3d(x=x,
                                 y=y,
                                 z=z,
-                                name=edgesLabel,
-                                showlegend=True,
+                                name=edgeLabel,
+                                showlegend=showLegend,
                                 marker_size=0,
                                 mode="lines",
                                 line=dict(color=e_groupList, width=edgeWidth),
-                                legendgroup=2,
-                                legendrank=2,
+                                legendgroup=legendGroup,
+                                legendrank=legendRank,
                                 text=e_labels,
                                 hoverinfo='text')
 
 
-        def faceData(vertices, faces, dictionaries=None, faceColor="white", faceOpacity=0.5, faceLabelKey=None, faceGroupKey=None, faceGroups=[]):
+        def faceData(vertices, faces, dictionaries=None, faceColor="white", faceOpacity=0.5, faceLabelKey=None, faceGroupKey=None, faceGroups=[], faceLabel="Topology Faces", legendGroup=3, legendRank=3, showLegend=True):
             x = []
             y = []
             z = []
@@ -502,11 +524,11 @@ class Plotly:
                     i=i,
                     j=j,
                     k=k,
-                    name='Topology Faces',
+                    name=faceLabel,
                     showscale=False,
-                    showlegend = True,
-                    legendgroup=3,
-                    legendrank=3,
+                    showlegend = showLegend,
+                    legendgroup=legendGroup,
+                    legendrank=legendRank,
                     color = f_groupList,
                     opacity = faceOpacity,
                     hoverinfo = 'text',
@@ -549,7 +571,7 @@ class Plotly:
             if vertexLabelKey or vertexGroupKey:
                 v_dictionaries.append(Topology.Dictionary(tp_v))
         if showVertices:
-            data.append(vertexData(vertices, dictionaries=v_dictionaries, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups))
+            data.append(vertexData(vertices, dictionaries=v_dictionaries, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, vertexLabel=vertexLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend))
         if showEdges and topology.Type() > topologic.Vertex.Type():
             tp_edges = Topology.SubTopologies(topology, subTopologyType="edge")
             edges = []
@@ -559,7 +581,7 @@ class Plotly:
                 ev = Edge.EndVertex(tp_edge)
                 ei = Vertex.Index(ev, tp_verts)
                 edges.append([si, ei])
-            data.append(edgeData(vertices, edges, dictionaries=[], edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, edgesLabel=edgesLabel))
+            data.append(edgeData(vertices, edges, dictionaries=[], edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, edgeLabel=edgeLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend))
         if showFaces and topology.Type() >= topologic.Face.Type():
             tp_faces = Topology.SubTopologies(topology, subTopologyType="face")
             triangles = []
@@ -580,7 +602,7 @@ class Plotly:
                     i = Vertex.Index(vertex=w_v, vertices=tp_verts, tolerance=0.01)
                     temp_f.append(i)
                 faces.append(temp_f)
-            data.append(faceData(vertices, faces, dictionaries=f_dictionaries, faceColor=faceColor, faceOpacity=faceOpacity, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups))
+            data.append(faceData(vertices, faces, dictionaries=f_dictionaries, faceColor=faceColor, faceOpacity=faceOpacity, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, faceLabel=faceLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend))
             #data.append(vertexData(vertices, dictionaries=[], vertexColor=vertexColor, vertexSize=5, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups))
         return data
 
@@ -825,17 +847,17 @@ class Plotly:
         if xAxis:
             xEdge = Edge.ByVertices([v0,v1])
             xWire = Wire.ByEdges([xEdge])
-            xData = Plotly.DataByTopology(xWire, edgeColor="red", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgesLabel="X-Axis")
+            xData = Plotly.DataByTopology(xWire, edgeColor="red", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLabel="X-Axis")
             data = data + xData
         if yAxis:
             yEdge = Edge.ByVertices([v0,v2])
             yWire = Wire.ByEdges([yEdge])
-            yData = Plotly.DataByTopology(yWire, edgeColor="green", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgesLabel="Y-Axis")
+            yData = Plotly.DataByTopology(yWire, edgeColor="green", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLabel="Y-Axis")
             data = data + yData
         if zAxis:
             zEdge = Edge.ByVertices([v0,v3])
             zWire = Wire.ByEdges([zEdge])
-            zData = Plotly.DataByTopology(zWire, edgeColor="blue", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgesLabel="Z-Axis")
+            zData = Plotly.DataByTopology(zWire, edgeColor="blue", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLabel="Z-Axis")
             data = data + zData
 
         figure = go.Figure(data=data)

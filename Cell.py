@@ -1044,8 +1044,6 @@ class Cell(Topology):
             Returns True if the input vertex is inside the input cell. Returns False otherwise.
 
         """
-        if not cell:
-            return None
         if not isinstance(cell, topologic.Cell):
             return None
         try:

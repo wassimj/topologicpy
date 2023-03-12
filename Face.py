@@ -799,6 +799,45 @@ class Face(topologic.Face):
             The flattened face.
 
         """
+
+        def leftMost(vertices, tolerance = 0.0001):
+            xCoords = []
+            for v in vertices:
+                xCoords.append(Vertex.Coordinates(vertices[0])[0])
+            minX = min(xCoords)
+            lmVertices = []
+            for v in vertices:
+                if abs(Vertex.Coordinates(vertices[0])[0] - minX) <= tolerance:
+                    lmVertices.append(v)
+            return lmVertices
+        
+        def bottomMost(vertices, tolerance = 0.0001):
+            yCoords = []
+            for v in vertices:
+                yCoords.append(Vertex.Coordinates(vertices[0])[1])
+            minY = min(yCoords)
+            bmVertices = []
+            for v in vertices:
+                if abs(Vertex.Coordinates(vertices[0])[1] - minY) <= tolerance:
+                    bmVertices.append(v)
+            return bmVertices
+
+        def vIndex(v, vList, tolerance):
+            for i in range(len(vList)):
+                if topologic.VertexUtility.Distance(v, vList[i]) < tolerance:
+                    return i+1
+            return None
+        
+        #  rotate cycle path such that it begins with the smallest node
+        def rotate_to_smallest(path):
+            n = path.index(min(path))
+            return path[n:]+path[:n]
+        
+        #  rotate vertices list so that it begins with the input vertex
+        def rotate_vertices(vertices, vertex):
+            n = vertices.index(vertex)
+            return vertices[n:]+vertices[:n]
+        
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -837,6 +876,9 @@ class Face(topologic.Face):
         tempVertices = []
         for ffv in flatFaceVertices:
             tempVertices.append(Vertex.ByCoordinates(ffv.X(), ffv.Y(), 0))
+        
+        temp_v = bottomMost(leftMost(tempVertices))[0]
+        tempVertices = rotate_vertices(tempVertices, temp_v)
         flatExternalBoundary = Wire.ByVertices(tempVertices)
 
         internalBoundaries = Face.InternalBoundaries(flatFace)
@@ -846,6 +888,8 @@ class Face(topologic.Face):
             tempVertices = []
             for ibVertex in ibVertices:
                 tempVertices.append(Vertex.ByCoordinates(ibVertex.X(), ibVertex.Y(), 0))
+            temp_v = bottomMost(leftMost(tempVertices))[0]
+            tempVertices = rotate_vertices(tempVertices, temp_v)
             flatInternalBoundaries.append(Wire.ByVertices(tempVertices))
         flatFace = Face.ByWires(flatExternalBoundary, flatInternalBoundaries)
         dictionary = Dictionary.ByKeysValues(["xTran", "yTran", "zTran", "phi", "theta"], [cm.X(), cm.Y(), cm.Z(), phi, theta])

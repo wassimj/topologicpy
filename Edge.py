@@ -467,7 +467,7 @@ class Edge():
     @staticmethod
     def IsParallel(edgeA, edgeB, mantissa=4, angTolerance=0.1):
         """
-        Tests if the two input edges are collinear.
+        Tests if the two input edges are parallel.
 
         Parameters
         ----------
