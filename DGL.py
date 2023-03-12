@@ -1556,7 +1556,7 @@ class DGL:
         ----------
         data : list
             The data to display.
-        data_labels : list
+        labels : list
             The labels to use for the data.
         title : str , optional
             The chart title. The default is "Untitled".
@@ -1581,16 +1581,8 @@ class DGL:
 
         """
         from topologicpy.Plotly import Plotly
-        if isinstance(data[labels[0]][0], int):
-            xAxis_list = list(range(1,data[labels[0]][0]+1))
-        else:
-            xAxis_list = data[labels[0]][0]
-        plot_data = [xAxis_list]
-        for i in range(1,len(labels)):
-            plot_data.append(data[labels[i]][0][:len(xAxis_list)])
 
-        dlist = list(map(list, zip(*plot_data)))
-        df = pd.DataFrame(dlist, columns=labels)
+        df = Plotly.DataByDGL(data, labels)
         fig = Plotly.FigureByDataFrame(df,
                                        labels=labels,
                                        title=title,

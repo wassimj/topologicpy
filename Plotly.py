@@ -75,6 +75,37 @@ class Plotly:
 
 
     @staticmethod
+    def DataByDGL(data, labels):
+        """
+        Shows the data in a plolty graph.
+
+        Parameters
+        ----------
+        data : list
+            The data to display.
+        labels : list
+            The labels to use for the data.
+
+        Returns
+        -------
+        None.
+
+        """
+        import pandas as pd
+        from topologicpy.Plotly import Plotly
+        if isinstance(data[labels[0]][0], int):
+            xAxis_list = list(range(1,data[labels[0]][0]+1))
+        else:
+            xAxis_list = data[labels[0]][0]
+        plot_data = [xAxis_list]
+        for i in range(1,len(labels)):
+            plot_data.append(data[labels[i]][0][:len(xAxis_list)])
+
+        dlist = list(map(list, zip(*plot_data)))
+        df = pd.DataFrame(dlist, columns=labels)
+        return df
+
+    @staticmethod
     def DataByGraph(graph, vertexColor="white", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True):
         """
         Creates plotly vertex and edge data from the input graph.
