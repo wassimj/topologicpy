@@ -160,7 +160,7 @@ class GCN_Classic(nn.Module):
         assert isinstance(h_feats, list), "h_feats must be a list"
         h_feats = [x for x in h_feats if x is not None]
         assert len(h_feats) !=0, "h_feats is empty. unable to add hidden layers"
-        self.list_of_layers = []
+        self.list_of_layers = nn.ModuleList()
         dim = [in_feats] + h_feats
         for i in range(1, len(dim)):
             self.list_of_layers.append(GraphConv(dim[i-1], dim[i]))
@@ -175,26 +175,13 @@ class GCN_Classic(nn.Module):
         g.ndata['h'] = h
         return dgl.mean_nodes(g, 'h')
 
-class GCN_Raban(nn.Module):
-    def __init__(self, in_feats, h_feats, num_classes):
-        super(GCN_Raban, self).__init__()
-        self.conv1 = GraphConv(in_feats, h_feats[0])
-        self.conv2 = GraphConv(h_feats[0], num_classes)
-
-    def forward(self, g, in_feat):
-        h = self.conv1(g, in_feat)
-        h = F.relu(h)
-        h = self.conv2(g, h)
-        g.ndata['h'] = h
-        return dgl.mean_nodes(g, 'h')
-
 class GCN_GINConv(nn.Module):
     def __init__(self, in_feats, h_feats, num_classes, pooling):
         super(GCN_GINConv, self).__init__()
         assert isinstance(h_feats, list), "h_feats must be a list"
         h_feats = [x for x in h_feats if x is not None]
         assert len(h_feats) !=0, "h_feats is empty. unable to add hidden layers"
-        self.list_of_layers = []
+        self.list_of_layers = nn.ModuleList()
         dim = [in_feats] + h_feats
 
         # Convolution (Hidden) Layers
@@ -235,7 +222,7 @@ class GCN_GraphConv(nn.Module):
         assert isinstance(h_feats, list), "h_feats must be a list"
         h_feats = [x for x in h_feats if x is not None]
         assert len(h_feats) !=0, "h_feats is empty. unable to add hidden layers"
-        self.list_of_layers = []
+        self.list_of_layers = nn.ModuleList()
         dim = [in_feats] + h_feats
 
         # Convolution (Hidden) Layers
@@ -276,7 +263,7 @@ class GCN_SAGEConv(nn.Module):
         assert isinstance(h_feats, list), "h_feats must be a list"
         h_feats = [x for x in h_feats if x is not None]
         assert len(h_feats) !=0, "h_feats is empty. unable to add hidden layers"
-        self.list_of_layers = []
+        self.list_of_layers = nn.ModuleList()
         dim = [in_feats] + h_feats
 
         # Convolution (Hidden) Layers
@@ -316,7 +303,7 @@ class GCN_TAGConv(nn.Module):
         assert isinstance(h_feats, list), "h_feats must be a list"
         h_feats = [x for x in h_feats if x is not None]
         assert len(h_feats) !=0, "h_feats is empty. unable to add hidden layers"
-        self.list_of_layers = []
+        self.list_of_layers = nn.ModuleList()
         dim = [in_feats] + h_feats
 
         # Convolution (Hidden) Layers
@@ -374,9 +361,6 @@ class ClassifierSplit:
                             trainingDataset.gclasses, hparams.pooling).to(device)
         elif hparams.conv_layer_type.lower() == 'gcn':
             self.model = GCN_Classic(trainingDataset.dim_nfeats, hparams.hl_widths, 
-                            trainingDataset.gclasses).to(device)
-        elif hparams.conv_layer_type.lower() == 'raban':
-            self.model = GCN_Raban(trainingDataset.dim_nfeats, hparams.hl_widths, 
                             trainingDataset.gclasses).to(device)
         else:
             raise NotImplementedError
