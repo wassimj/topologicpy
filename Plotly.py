@@ -84,12 +84,12 @@ class Plotly:
         data : list
             The data to display.
         labels : list
-            The labels to use for the data.
+            The labels to use for the data. The data with the labels in this list will be extracted and used in the returned dataFrame.
 
         Returns
         -------
         pd.DataFrame
-            A pandas dataframe
+            A pandas dataFrame
 
         """
         import pandas as pd
