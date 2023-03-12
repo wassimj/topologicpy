@@ -77,7 +77,7 @@ class Plotly:
     @staticmethod
     def DataByDGL(data, labels):
         """
-        Shows the data in a plolty graph.
+        Returns a data frame from the DGL data.
 
         Parameters
         ----------
@@ -88,7 +88,8 @@ class Plotly:
 
         Returns
         -------
-        None.
+        pd.DataFrame
+            A pandas dataframe
 
         """
         import pandas as pd
