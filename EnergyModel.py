@@ -2,6 +2,7 @@ import topologicpy
 import topologic
 from topologicpy.Topology import Topology
 from topologicpy.Dictionary import Dictionary
+import openstudio
 import math
 from collections import OrderedDict
 import os
@@ -675,19 +676,19 @@ class EnergyModel:
         osmPath = outputFolder + "/" + model.getBuilding().name().get() + ".osm"
         model.save(openstudio.openstudioutilitiescore.toPath(osmPath), True)
         oswPath = os.path.join(outputFolder, model.getBuilding().name().get() + ".osw")
-        print("oswPath = "+oswPath)
+        #print("oswPath = "+oswPath)
         workflow = model.workflowJSON()
         workflow.setSeedFile(openstudio.openstudioutilitiescore.toPath(osmPath))
-        print("Seed File Set")
+        #print("Seed File Set")
         workflow.setWeatherFile(openstudio.openstudioutilitiescore.toPath(weatherFile))
-        print("Weather File Set")
+        #print("Weather File Set")
         workflow.saveAs(openstudio.openstudioutilitiescore.toPath(oswPath))
-        print("OSW File Saved")
+        #print("OSW File Saved")
         cmd = osBinaryPath+" run -w " + "\"" + oswPath + "\""
         os.system(cmd)
-        print("Simulation DONE")
+        #print("Simulation DONE")
         sqlPath = os.path.join(os.path.join(outputFolder,"run"), "eplusout.sql")
-        print("sqlPath = "+sqlPath)
+        #print("sqlPath = "+sqlPath)
         osSqlFile = openstudio.SqlFile(openstudio.openstudioutilitiescore.toPath(sqlPath))
         model.setSqlFile(osSqlFile)
         return model
