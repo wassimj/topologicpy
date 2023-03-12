@@ -3,6 +3,7 @@ import topologic
 from topologicpy.Topology import Topology
 from topologicpy.Dictionary import Dictionary
 import openstudio
+openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
 import math
 from collections import OrderedDict
 import os
