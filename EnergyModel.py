@@ -1,7 +1,9 @@
+import topologicpy
 import topologic
+from topologicpy.Topology import Topology
+from topologicpy.Dictionary import Dictionary
 import openstudio
-import Topology
-import Dictionary
+openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
 import math
 from collections import OrderedDict
 import os
@@ -167,7 +169,7 @@ class EnergyModel:
         osBuildingStorys.sort(key=lambda x: x.nominalZCoordinate().get())
         osSpaces = []
         spaceNames = []
-        for spaceNumber, buildingCell in enumerate(Topology.TopologySubTopologies(buildingTopology, "Cell")):
+        for spaceNumber, buildingCell in enumerate(Topology.SubTopologies(buildingTopology, "Cell")):
             osSpace = openstudio.model.Space(osModel)
             osSpaceZ = buildingCell.CenterOfMass().Z()
             osBuildingStory = osBuildingStorys[0]
@@ -185,7 +187,7 @@ class EnergyModel:
                     keyType = getKeyName(cellDictionary, roomTypeKey)
                 else:
                     keyType = getKeyName(cellDictionary, 'type')
-                osSpaceTypeName = Dictionary.DictionaryValueAtKey(cellDictionary,keyType)
+                osSpaceTypeName = Dictionary.ValueAtKey(cellDictionary,keyType)
                 if osSpaceTypeName:
                     sp_ = osModel.getSpaceTypeByName(osSpaceTypeName)
                     if sp_.is_initialized():
@@ -197,7 +199,7 @@ class EnergyModel:
                     keyName = getKeyName(cellDictionary, 'name')
                 osSpaceName = None
                 if keyName:
-                    osSpaceName = createUniqueName(Dictionary.DictionaryValueAtKey(cellDictionary,keyName),spaceNames, 1)
+                    osSpaceName = createUniqueName(Dictionary.ValueAtKey(cellDictionary,keyName),spaceNames, 1)
                 if osSpaceName:
                     osSpace.setName(osSpaceName)
             else:
@@ -207,11 +209,11 @@ class EnergyModel:
                 if sp_.is_initialized():
                     osSpace.setSpaceType(sp_.get())
             spaceNames.append(osSpaceName)
-            cellFaces = Topology.TopologySubTopologies(buildingCell, "Face")
+            cellFaces = Topology.SubTopologies(buildingCell, "Face")
             if cellFaces:
                 for faceNumber, buildingFace in enumerate(cellFaces):
                     osFacePoints = []
-                    for vertex in Topology.TopologySubTopologies(buildingFace.ExternalBoundary(), "Vertex"):
+                    for vertex in Topology.SubTopologies(buildingFace.ExternalBoundary(), "Vertex"):
                         osFacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
                     osSurface = openstudio.model.Surface(osFacePoints, osModel)
                     faceNormal = topologic.FaceUtility.NormalAtParameters(buildingFace, 0.5, 0.5)
@@ -228,7 +230,7 @@ class EnergyModel:
                             osSurface.setSurfaceType("RoofCeiling")
                             osSurface.setOutsideBoundaryCondition("Outdoors")
                             osSurface.setName(osSpace.name().get() + "_TopHorizontalSlab_" + str(faceNumber))
-                            if max(list(map(lambda vertex: vertex.Z(), Topology.TopologySubTopologies(buildingFace, "Vertex")))) < 1e-6:
+                            if max(list(map(lambda vertex: vertex.Z(), Topology.SubTopologies(buildingFace, "Vertex")))) < 1e-6:
                                 osSurface.setSurfaceType("Floor")
                                 osSurface.setOutsideBoundaryCondition("Ground")
                                 osSurface.setName(osSpace.name().get() + "_BottomHorizontalSlab_" + str(faceNumber))
@@ -245,7 +247,7 @@ class EnergyModel:
                                     osSubSurfacePoints = []
                                     #apertureFace = TopologySubTopologies.processItem([aperture, topologic.Face])[0]
                                     apertureFace = topologic.Aperture.Topology(aperture)
-                                    for vertex in Topology.TopologySubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
+                                    for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
                                         osSubSurfacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
                                     osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
                                     apertureFaceNormal = topologic.FaceUtility.NormalAtParameters(apertureFace, 0.5, 0.5)
@@ -259,7 +261,7 @@ class EnergyModel:
                                     # Get the dictionary keys
                                     keys = faceDictionary.Keys()
                                     if ('TOPOLOGIC_glazing_ratio' in keys):
-                                        faceGlazingRatio = Dictionary.DictionaryValueAtKey(faceDictionary,'TOPOLOGIC_glazing_ratio')
+                                        faceGlazingRatio = Dictionary.ValueAtKey(faceDictionary,'TOPOLOGIC_glazing_ratio')
                                         if faceGlazingRatio and faceGlazingRatio >= 0.01:
                                             osSurface.setWindowToWallRatio(faceGlazingRatio)
                                     else:
@@ -284,7 +286,7 @@ class EnergyModel:
                                 osSubSurfacePoints = []
                                 #apertureFace = TopologySubTopologies.processItem([aperture, "Face"])[0]
                                 apertureFace = topologic.Aperture.Topology(aperture)
-                                for vertex in Topology.TopologySubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
+                                for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
                                     osSubSurfacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
                                 osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
                                 apertureFaceNormal = topologic.FaceUtility.NormalAtParameters(apertureFace, 0.5, 0.5)
@@ -310,9 +312,9 @@ class EnergyModel:
 
         osShadingGroup = openstudio.model.ShadingSurfaceGroup(osModel)
         if not isinstance(shadingSurfaces,int):
-            for faceIndex, shadingFace in enumerate(Topology.TopologySubTopologies(shadingSurfaces, "Face")):
+            for faceIndex, shadingFace in enumerate(Topology.SubTopologies(shadingSurfaces, "Face")):
                 facePoints = []
-                for aVertex in Topology.TopologySubTopologies(shadingFace.ExternalBoundary(), "Vertex"):
+                for aVertex in Topology.SubTopologies(shadingFace.ExternalBoundary(), "Vertex"):
                     facePoints.append(openstudio.Point3d(aVertex.X(), aVertex.Y(), aVertex.Z()))
                 aShadingSurface = openstudio.model.ShadingSurface(facePoints, osModel)
                 faceNormal = topologic.FaceUtility.NormalAtParameters(shadingFace, 0.5, 0.5)
@@ -675,19 +677,19 @@ class EnergyModel:
         osmPath = outputFolder + "/" + model.getBuilding().name().get() + ".osm"
         model.save(openstudio.openstudioutilitiescore.toPath(osmPath), True)
         oswPath = os.path.join(outputFolder, model.getBuilding().name().get() + ".osw")
-        print("oswPath = "+oswPath)
+        #print("oswPath = "+oswPath)
         workflow = model.workflowJSON()
         workflow.setSeedFile(openstudio.openstudioutilitiescore.toPath(osmPath))
-        print("Seed File Set")
+        #print("Seed File Set")
         workflow.setWeatherFile(openstudio.openstudioutilitiescore.toPath(weatherFile))
-        print("Weather File Set")
+        #print("Weather File Set")
         workflow.saveAs(openstudio.openstudioutilitiescore.toPath(oswPath))
-        print("OSW File Saved")
+        #print("OSW File Saved")
         cmd = osBinaryPath+" run -w " + "\"" + oswPath + "\""
         os.system(cmd)
-        print("Simulation DONE")
+        #print("Simulation DONE")
         sqlPath = os.path.join(os.path.join(outputFolder,"run"), "eplusout.sql")
-        print("sqlPath = "+sqlPath)
+        #print("sqlPath = "+sqlPath)
         osSqlFile = openstudio.SqlFile(openstudio.openstudioutilitiescore.toPath(sqlPath))
         model.setSqlFile(osSqlFile)
         return model
