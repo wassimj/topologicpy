@@ -1541,13 +1541,21 @@ class DGL:
     @staticmethod
     def Show(data,
              labels,
-             title="Untitled",
-             x_title="X Axis",
-             x_spacing=1.0,
-             y_title="Y Axis",
-             y_spacing=0.1,
-             use_markers=False,
-             chart_type="Line",
+             title="Training and Testing Results",
+             xTitle="Epochs",
+             xSpacing=1,
+             yTitle="Accuracy and Loss",
+             ySpacing=0.1,
+             useMarkers=False,
+             chartType="Line",
+             width=950,
+             height=500,
+             backgroundColor='rgba(0,0,0,0)',
+             gridColor='lightgray',
+             marginLeft=0,
+             marginRight=0,
+             marginTop=40,
+             marginBottom=0,
              renderer = "notebook"):
         """
         Shows the data in a plolty graph.
@@ -1558,20 +1566,48 @@ class DGL:
             The data to display.
         labels : list
             The labels to use for the data.
+        width : int , optional
+            The desired width of the figure. The default is 950.
+        height : int , optional
+            The desired height of the figure. The default is 500.
         title : str , optional
-            The chart title. The default is "Untitled".
-        x_title : str , optional
+            The chart title. The default is "Training and Testing Results".
+        xTitle : str , optional
             The X-axis title. The default is "Epochs".
-        x_spacing : float , optional
+        xSpacing : float , optional
             The X-axis spacing. The default is 1.0.
-        y_title : str , optional
+        yTitle : str , optional
             The Y-axis title. The default is "Accuracy and Loss".
-        y_spacing : float , optional
-            The Y-axis spacing. The default is 0.1.
-        use_markers : bool , optional
+        ySpacing : float , optional
+            THe Y-axis spacing. The default is 0.1.
+        useMarkers : bool , optional
             If set to True, markers will be displayed. The default is False.
-        chart_type : str , optional
+        chartType : str , optional
             The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. The default is "Line".
+        backgroundColor : str , optional
+            The desired background color. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'rgba(0,0,0,0)' (transparent).
+        gridColor : str , optional
+            The desired grid color. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'lightgray'.
+        marginLeft : int , optional
+            The desired left margin in pixels. The default is 0.
+        marginRight : int , optional
+            The desired right margin in pixels. The default is 0.
+        marginTop : int , optional
+            The desired top margin in pixels. The default is 40.
+        marginBottom : int , optional
+            The desired bottom margin in pixels. The default is 0.
         renderer : str , optional
             The desired plotly renderer. The default is "notebook".
 
@@ -1582,16 +1618,25 @@ class DGL:
         """
         from topologicpy.Plotly import Plotly
 
-        df = Plotly.DataByDGL(data, labels)
-        fig = Plotly.FigureByDataFrame(df,
+        dataFrame = Plotly.DataByDGL(data, labels)
+        fig = Plotly.FigureByDataFrame(dataFrame,
                                        labels=labels,
                                        title=title,
-                                       x_title=x_title,
-                                       x_spacing=x_spacing,
-                                       y_title=y_title,
-                                       y_spacing=y_spacing,
-                                       use_markers=use_markers,
-                                       chart_type=chart_type)
+                                       xTitle=xTitle,
+                                       xSpacing=xSpacing,
+                                       yTitle=yTitle,
+                                       ySpacing=ySpacing,
+                                       useMarkers=useMarkers,
+                                       chartType=chartType,
+                                       width=width,
+                                       height=height,
+                                       backgroundColor=backgroundColor,
+                                       gridColor=gridColor,
+                                       marginRight=marginRight,
+                                       marginLeft=marginLeft,
+                                       marginTop=marginTop,
+                                       marginBottom=marginBottom
+                                       )
         Plotly.Show(fig, renderer=renderer)
         
     @staticmethod

@@ -766,15 +766,24 @@ class Plotly:
         return fig
         
     @staticmethod
-    def FigureByDataFrame(df,
+    def FigureByDataFrame(dataFrame,
              labels=[],
+             width=950,
+             height=500,
              title="Untitled",
-             x_title="X Axis",
-             x_spacing=1.0,
-             y_title="Y Axis",
-             y_spacing=1,
-             use_markers=False,
-             chart_type="Line"):
+             xTitle="X Axis",
+             xSpacing=1,
+             yTitle="Y Axis",
+             ySpacing=1.0,
+             useMarkers=False,
+             chartType="Line",
+             backgroundColor='rgba(0,0,0,0)',
+             gridColor = 'lightgray',
+             marginLeft=0,
+             marginRight=0,
+             marginTop=40,
+             marginBottom=0):
+        
         """
         Returns a Plotly Figure of the input dataframe
 
@@ -784,22 +793,48 @@ class Plotly:
             The p[andas dataframe to display.
         data_labels : list
             The labels to use for the data.
+        width : int , optional
+            The desired width of the figure. The default is 950.
+        height : int , optional
+            The desired height of the figure. The default is 500.
         title : str , optional
-            The chart title. The default is "Untitled".
-        x_title : str , optional
+            The chart title. The default is "Training and Testing Results".
+        xTitle : str , optional
             The X-axis title. The default is "Epochs".
-        x_spacing : float , optional
+        xSpacing : float , optional
             The X-axis spacing. The default is 1.0.
-        y_title : str , optional
+        yTitle : str , optional
             The Y-axis title. The default is "Accuracy and Loss".
-        y_spacing : float , optional
+        ySpacing : float , optional
             THe Y-axis spacing. The default is 0.1.
-        use_markers : bool , optional
+        useMarkers : bool , optional
             If set to True, markers will be displayed. The default is False.
-        chart_type : str , optional
+        chartType : str , optional
             The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. The default is "Line".
-        renderer : str , optional
-            The desired plotly renderer. The default is "notebook".
+        backgroundColor : str , optional
+            The desired background color. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'rgba(0,0,0,0)' (transparent).
+        grid : str , optional
+            The desired background color. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'lightgray'
+        marginLeft : int , optional
+            The desired left margin in pixels. The default is 0.
+        marginRight : int , optional
+            The desired right margin in pixels. The default is 0.
+        marginTop : int , optional
+            The desired top margin in pixels. The default is 40.
+        marginBottom : int , optional
+            The desired bottom margin in pixels. The default is 0.
 
         Returns
         -------
@@ -807,19 +842,29 @@ class Plotly:
 
         """
         import plotly.express as px
-        if chart_type.lower() == "line":
-            fig = px.line(df, x=labels[0], y=labels[1:], title=title, markers=use_markers)
-        elif chart_type.lower() == "bar":
-            fig = px.bar(df, x=labels[0], y=labels[1:], title=title)
-        elif chart_type.lower() == "scatter":
-            fig = px.scatter(df, x=labels[0], y=labels[1:], title=title)
+        
+        if chartType.lower() == "line":
+            fig = px.line(dataFrame, x=labels[0], y=labels[1:], title=title, markers=useMarkers)
+        elif chartType.lower() == "bar":
+            fig = px.bar(dataFrame, x=labels[0], y=labels[1:], title=title)
+        elif chartType.lower() == "scatter":
+            fig = px.scatter(dataFrame, x=labels[0], y=labels[1:], title=title)
         else:
             raise NotImplementedError
-        fig.layout.xaxis.title=x_title
-        fig.layout.xaxis.dtick=x_spacing
-        fig.layout.yaxis.title=y_title
-        fig.layout.yaxis.dtick= y_spacing
+        
+        layout = {
+            "width": width,
+            "height": height,
+            "title": title,
+            "xaxis": {"title": xTitle, "dtick": xSpacing, 'gridcolor': gridColor},
+            "yaxis": {"title": yTitle, "dtick": ySpacing, 'gridcolor': gridColor},
+            "paper_bgcolor": backgroundColor,
+            "plot_bgcolor": backgroundColor,
+            "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
+        }
+        fig.update_layout(layout)
         return fig
+
 
     @staticmethod
     def FigureByData(data, color=None, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0):
@@ -990,8 +1035,10 @@ class Plotly:
             
         """
         if not isinstance(figure, plotly.graph_objs._figure.Figure):
+            print("Not a figure, returning None")
             return None
         if not renderer.lower() in Plotly.Renderers():
+            print("Not a valid renderer, returning None")
             return None
         figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
         figure.show(renderer=renderer)
