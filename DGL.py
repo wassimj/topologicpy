@@ -44,6 +44,12 @@ except:
     subprocess.run(call)
     import sklearn
     from sklearn.model_selection import KFold
+try:
+    from tqdm.auto import tqdm
+except:
+    call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
+    subprocess.run(call)
+    from tqdm.auto import tqdm
 
 
 import topologicpy
@@ -403,12 +409,12 @@ class ClassifierSplit:
         self.testing_loss_list = []
 
         # Run the training loop for defined number of epochs
-        for _ in range(self.hparams.epochs):
+        for _ in tqdm(range(self.hparams.epochs), desc='training'):
             num_correct = 0
             num_tests = 0
             temp_loss_list = []
             # Iterate over the DataLoader for training data
-            for batched_graph, labels in self.train_dataloader:
+            for batched_graph, labels in tqdm(self.train_dataloader, desc='passes', leave=False):
                 # Zero the gradients
                 self.optimizer.zero_grad()
 
@@ -448,7 +454,7 @@ class ClassifierSplit:
         num_correct = 0
         num_tests = 0
         temp_testing_loss = []
-        for batched_graph, labels in self.test_dataloader:
+        for batched_graph, labels in tqdm(self.test_dataloader, desc='testing', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
             if self.hparams.loss_function.lower() == "negative log likelihood":
                 logp = F.log_softmax(pred, 1)
@@ -555,7 +561,7 @@ class ClassifierKFold:
         kfold = KFold(n_splits=k_folds, shuffle=True)
 
         # K-fold Cross-validation model evaluation
-        for fold, (train_ids, test_ids) in enumerate(kfold.split(self.trainingDataset)):
+        for fold, (train_ids, test_ids) in enumerate(tqdm(kfold.split(self.trainingDataset), desc='folds')):
             epoch_training_loss_list = []
             epoch_training_accuracy_list = []
             epoch_testing_loss_list = []
@@ -575,13 +581,13 @@ class ClassifierKFold:
             self.reset_weights()
 
             # Run the training loop for defined number of epochs
-            for _ in range(self.hparams.epochs):
+            for _ in tqdm(range(self.hparams.epochs), desc='training', leave=False):
                 num_correct = 0
                 num_tests = 0
                 training_temp_loss_list = []
 
                 # Iterate over the DataLoader for training data
-                for batched_graph, labels in self.train_dataloader:
+                for batched_graph, labels in tqdm(self.train_dataloader, desc='passes', leave=False):
                     
                     # Zero the gradients
                     self.optimizer.zero_grad()
@@ -625,7 +631,7 @@ class ClassifierKFold:
         num_correct = 0
         num_tests = 0
         temp_testing_loss = []
-        for batched_graph, labels in self.test_dataloader:
+        for batched_graph, labels in tqdm(self.test_dataloader, desc='testing', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float())
             if self.hparams.loss_function.lower() == "negative log likelihood":
                 logp = F.log_softmax(pred, 1)
@@ -678,7 +684,7 @@ class ClassifierKFold:
                                                 batch_size=self.hparams.batch_size,
                                                 drop_last=False)
         # Once a model is chosen, train on all the data and save
-        for e in range(self.hparams.epochs):
+        for e in tqdm(range(self.hparams.epochs), desc='validating', leave=False):
             num_correct = 0
             num_tests = 0
             for batched_graph, labels in dataloader:
@@ -1460,7 +1466,7 @@ class DGL:
         """
         labels = []
         probabilities = []
-        for item in dataset:
+        for item in tqdm(dataset, desc='predicting'):
             graph = item[0]
             pred = classifier(graph, graph.ndata[node_attr_key].float())
             labels.append(pred.argmax(1).item())
