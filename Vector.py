@@ -32,7 +32,7 @@ class Vector(list):
         cosang = np.dot(vectorA, vectorB)
         sinang = la.norm(np.cross(vectorA, vectorB))
         return round(math.degrees(np.arctan2(sinang, cosang)), mantissa)
-    
+
     @staticmethod
     def ByCoordinates(x, y, z):
         """
@@ -55,6 +55,40 @@ class Vector(list):
         """
         return [x,y,z]
     
+    @staticmethod
+    def ByVertices(vertices, normalize=True):
+        """
+        Creates a vector by the specified input list of vertices.
+
+        Parameters
+        ----------
+        vertices : list
+            The the input list of topologic vertices. The first element in the list is considered the start vertex. The last element in the list is considered the end vertex.
+        normalize : bool , optional
+            If set to True, the resulting vector is normalized (i.e. its length is set to 1)
+
+        Returns
+        -------
+        list
+            The created vector.
+
+        """
+
+        from topologicpy.Vertex import Vertex
+        if not isinstance(vertices, list):
+            return None
+        if not isinstance(normalize, bool):
+            return None
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) < 2:
+            return None
+        v1 = vertices[0]
+        v2 = vertices[-1]
+        vector = [Vertex.X(v2)-Vertex.X(v1), Vertex.Y(v2)-Vertex.Y(v1), Vertex.Z(v2)-Vertex.Z(v1)]
+        if normalize:
+            vector = Vector.Normalize(vector)
+        return vector
+
     @staticmethod
     def CompassAngle(vectorA, vectorB, mantissa=4, tolerance=0.0001):
         """
