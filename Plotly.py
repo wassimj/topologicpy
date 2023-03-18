@@ -93,7 +93,7 @@ class Plotly:
 
         """
         import pandas as pd
-        from topologicpy.Plotly import Plotly
+
         if isinstance(data[labels[0]][0], int):
             xAxis_list = list(range(1,data[labels[0]][0]+1))
         else:
@@ -763,6 +763,7 @@ class Plotly:
             "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
         }
         fig = go.Figure(data=data, layout=layout)
+        fig.update_xaxes( tickvals=categories)
         return fig
         
     @staticmethod
