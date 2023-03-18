@@ -628,7 +628,7 @@ class _ClassifierHoldout:
                                                     drop_last=False)
         else:
             self.test_dataloader = GraphDataLoader(trainingDataset, sampler=test_sampler,
-                                                    batch_size=num_test,
+                                                    batch_size=hparams.batch_size,
                                                     drop_last=False)
     def train(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -683,6 +683,10 @@ class _ClassifierHoldout:
             self.test()
             self.testing_accuracy_list.append(self.testing_accuracy)
             self.testing_loss_list.append(self.testing_loss)
+        if self.hparams.checkpoint_path is not None:
+            # Save the best model
+            self.model.eval()
+            torch.save(self.model, self.hparams.checkpoint_path)
         
     def validate(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -739,6 +743,7 @@ class _ClassifierHoldout:
         if self.hparams.checkpoint_path is not None:
             # Save the entire model
             try:
+                self.model.eval()
                 torch.save(self.model, self.hparams.checkpoint_path)
                 return True
             except:
