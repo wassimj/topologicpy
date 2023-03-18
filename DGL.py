@@ -523,7 +523,6 @@ class _RegressorHoldout:
             # Save the best model
             self.model.load_state_dict(best_weights)
             self.model.eval()
-            self.model.hparams.split = [1,0,0]
             torch.save(self.model, self.hparams.checkpoint_path)
 
     def validate(self):
@@ -1507,10 +1506,10 @@ class DGL:
         """
         from sklearn import metrics
         if normalize:
-            cf = metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true")
+            cm = metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true")
         else:
-            cf = metrics.confusion_matrix(y_true=actual, y_pred=predicted)
-        return cf
+            cm = metrics.confusion_matrix(y_true=actual, y_pred=predicted)
+        return cm
     
     @staticmethod
     def DatasetByDGLGraphs(DGLGraphs, labels, key="node_attr"):

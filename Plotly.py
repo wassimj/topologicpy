@@ -764,6 +764,7 @@ class Plotly:
         }
         fig = go.Figure(data=data, layout=layout)
         fig.update_xaxes( tickvals=categories)
+        fig.update_yaxes( tickvals=categories)
         return fig
         
     @staticmethod
