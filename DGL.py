@@ -2252,7 +2252,7 @@ class DGL:
         utcnow = datetime.datetime.utcnow()
         timestamp_str = "UTC-"+str(utcnow.year)+"-"+str(utcnow.month)+"-"+str(utcnow.day)+"-"+str(utcnow.hour)+"-"+str(utcnow.minute)+"-"+str(utcnow.second)
         epoch_list = list(range(1,classifier.hparams.epochs+1))
-        d2 = [[timestamp_str], [duration], [classifier.hparams.optimizer_str], [classifier.hparams.cv_type], [classifier.hparams.split], [classifier.hparams.k_folds], [classifier.hparams.hl_widths], [classifier.hparams.conv_layer_type], [classifier.hparams.pooling], [classifier.hparams.lr], [classifier.hparams.batch_size], epoch_list, classifier.training_accuracy_list, classifier.validation_accuracy_list, classifier.testing_accuracy_list, classifier.training_loss_list, classifier.validation_loss_list]
+        d2 = [[timestamp_str], [duration], [classifier.hparams.optimizer_str], [classifier.hparams.cv_type], [classifier.hparams.split], [classifier.hparams.k_folds], [classifier.hparams.hl_widths], [classifier.hparams.conv_layer_type], [classifier.hparams.pooling], [classifier.hparams.lr], [classifier.hparams.batch_size], epoch_list, classifier.training_accuracy_list, classifier.validation_accuracy_list, classifier.testing_accuracy_list, classifier.training_loss_list, classifier.validation_loss_list, classifier.testing_loss_list]
         d2 = Helper.Iterate(d2)
         d2 = Helper.Transpose(d2)
     
@@ -2273,9 +2273,10 @@ class DGL:
                 'Testing Accuracy': [classifier.testing_accuracy_list],
                 'Training Loss': [classifier.training_loss_list],
                 'Validation Loss': [classifier.validation_loss_list],
+                'Testing Loss': [classifier.testing_loss_list]
             }
 
-        df = pd.DataFrame(d2, columns= ['TimeStamp', 'Duration', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Validation Accuracy', 'Testing Accuracy', 'Training Loss', 'Validation Loss'])
+        df = pd.DataFrame(d2, columns= ['TimeStamp', 'Duration', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Validation Accuracy', 'Testing Accuracy', 'Training Loss', 'Validation Loss', 'Testing Loss'])
         if classifier.hparams.results_path:
             if overwrite:
                 df.to_csv(classifier.hparams.results_path, mode='w+', index = False, header=True)
