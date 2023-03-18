@@ -182,6 +182,27 @@ class _Classic(nn.Module):
         g.ndata['h'] = h
         return dgl.mean_nodes(g, 'h')
 
+class _ClassicReg(nn.Module):
+    def __init__(self, in_feats, h_feats):
+        super(GCN_Classic_reg, self).__init__()
+        assert isinstance(h_feats, list), "h_feats must be a list"
+        h_feats = [x for x in h_feats if x is not None]
+        assert len(h_feats) !=0, "h_feats is empty. unable to add hidden layers"
+        self.list_of_layers = nn.ModuleList()
+        dim = [in_feats] + h_feats
+        for i in range(1, len(dim)):
+            self.list_of_layers.append(GraphConv(dim[i-1], dim[i]))
+        self.final = nn.Linear(dim[-1], 1)
+
+    def forward(self, g, in_feat):
+        h = in_feat
+        for i in range(len(self.list_of_layers)):
+            h = self.list_of_layers[i](g, h)
+            h = F.relu(h)
+        h = self.final(h)
+        g.ndata['h'] = h
+        return dgl.mean_nodes(g, 'h')
+    
 class _GINConv(nn.Module):
     def __init__(self, in_feats, h_feats, num_classes, pooling):
         super(_GINConv, self).__init__()
@@ -345,9 +366,9 @@ class _TAGConv(nn.Module):
         return h
 
 
-class GCN_GraphConv_reg(nn.Module):
+class _GraphConvReg(nn.Module):
     def __init__(self, in_feats, h_feats, pooling):
-        super(GCN_GraphConv_reg, self).__init__()
+        super(_GraphConvReg, self).__init__()
         assert isinstance(h_feats, list), "h_feats must be a list"
         h_feats = [x for x in h_feats if x is not None]
         assert len(h_feats) !=0, "h_feats is empty. unable to add hidden layers"
@@ -395,20 +416,11 @@ class _RegressorHoldout:
         self.testingDataset = testingDataset
         self.hparams = hparams
         if hparams.conv_layer_type.lower() == 'classic':
-            self.model = GCN_Classic_reg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
-        elif hparams.conv_layer_type.lower() == 'ginconv':
-            self.model = GCN_GINConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
-                            1, hparams.pooling).to(device)
+            self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
         elif hparams.conv_layer_type.lower() == 'graphconv':
-            self.model = GCN_GraphConv_reg(trainingDataset.dim_nfeats, hparams.hl_widths, hparams.pooling).to(device)
-        elif hparams.conv_layer_type.lower() == 'sageconv':
-            self.model = GCN_SAGEConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
-                            1, hparams.pooling).to(device)
-        elif hparams.conv_layer_type.lower() == 'tagconv':
-            self.model = GCN_TAGConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
-                            1, hparams.pooling).to(device)
+            self.model = _GraphConvReg(trainingDataset.dim_nfeats, hparams.hl_widths, hparams.pooling).to(device)
         elif hparams.conv_layer_type.lower() == 'gcn':
-            self.model = GCN_Classic_reg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
+            self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
         else:
             raise NotImplementedError
 
@@ -473,6 +485,7 @@ class _RegressorHoldout:
         self.validation_loss_list = []
         self.testing_accuracy_list = []
         
+        
         best_rmse = np.inf
         # Run the training loop for defined number of epochs
         for _ in tqdm(range(self.hparams.epochs), desc='Epochs'):
@@ -481,6 +494,8 @@ class _RegressorHoldout:
             temp_loss_list = []
             # Iterate over the DataLoader for training data
             for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
+                # Make sure the model is in training mode
+                self.model.train()
                 # Zero the gradients
                 self.optimizer.zero_grad()
 
@@ -502,6 +517,8 @@ class _RegressorHoldout:
             if self.validation_accuracy < best_rmse:
                 best_rmse = self.validation_accuracy
                 best_weights = copy.deepcopy(self.model.state_dict())
+            self.test()
+            self.testing_accuracy_list.append(torch.sqrt(self.testing_accuracy).item())
         if self.hparams.checkpoint_path is not None:
             # Save the best model
             self.model.load_state_dict(best_weights)
@@ -519,6 +536,16 @@ class _RegressorHoldout:
         self.validation_accuracy = loss
         return self.validation_accuracy
     
+    def test(self):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        temp_validation_loss = []
+        self.model.eval()
+        for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
+            pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+            loss = F.mse_loss(torch.flatten(pred), labels.float())
+        self.testing_accuracy = loss
+        return self.testing_accuracy
 
 
 
@@ -619,6 +646,9 @@ class _ClassifierHoldout:
             temp_loss_list = []
             # Iterate over the DataLoader for training data
             for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
+                # Make sure the model is in training mode
+                self.model.train()
+
                 # Zero the gradients
                 self.optimizer.zero_grad()
 
@@ -904,6 +934,7 @@ class _ClassifierKFold:
         num_correct = 0
         num_tests = 0
         temp_validation_loss = []
+        self.model.eval()
         for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float())
             if self.hparams.loss_function.lower() == "negative log likelihood":
@@ -1041,7 +1072,7 @@ class DGL:
     @staticmethod
     def Accuracy(actual, predicted, mantissa=4):
         """
-        Computes the accuracy of the input predictions based on the input labels
+        Computes the accuracy of the input predictions based on the input labels. This is to be used only with classification not with regression.
 
         Parameters
         ----------
@@ -1081,7 +1112,7 @@ class DGL:
     @staticmethod
     def RMSE(actual, predicted, mantissa=4):
         """
-        Computes the accuracy based on the mean squared error of the input predictions based on the input actual values
+        Computes the accuracy based on the mean squared error of the input predictions based on the input actual values. This is to be used only with regression not with classification.
 
         Parameters
         ----------
@@ -1434,7 +1465,7 @@ class DGL:
     
     def ConfusionMatrix(actual, predicted, normalize=False):
         """
-        Returns the confusion matrix for the input actual and predicted labels.
+        Returns the confusion matrix for the input actual and predicted labels. This is to be used with classification tasks only not regression.
 
         Parameters
         ----------
