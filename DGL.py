@@ -595,6 +595,7 @@ class _ClassifierHoldout:
         self.training_accuracy_list = []
         self.validation_accuracy_list = []
         self.testing_accuracy_list = []
+        self.testing_loss_list = []
         self.node_attr_key = trainingDataset.node_attr_key
 
         # train, validate, test split
@@ -638,6 +639,7 @@ class _ClassifierHoldout:
         self.validation_accuracy_list = []
         self.validation_loss_list = []
         self.testing_accuracy_list = []
+        self.testing_loss_list = []
 
         # Run the training loop for defined number of epochs
         for _ in tqdm(range(self.hparams.epochs), desc='Epochs', leave=False):
@@ -678,15 +680,17 @@ class _ClassifierHoldout:
             self.validate()
             self.validation_accuracy_list.append(self.validation_accuracy)
             self.validation_loss_list.append(self.validation_loss)
-            self.testing_accuracy_list.append(self.accuracy(self.test()))
+            self.test()
+            self.testing_accuracy_list.append(self.testing_accuracy)
+            self.testing_loss_list.append(self.testing_loss)
         
-
     def validate(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
         num_correct = 0
         num_tests = 0
         temp_validation_loss = []
+        self.model.eval()
         for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
             if self.hparams.loss_function.lower() == "negative log likelihood":
@@ -711,26 +715,25 @@ class _ClassifierHoldout:
         return (num_correct / len(predictions))
     
     def test(self):
-        labels = []
-        predictions = []
-        probabilities = []
-        if self.testingDataset:
-            dataset = self.testingDataset
-        else:
-            dataset = self.test_dataloader
-        for item in tqdm(dataset, desc="Testing", leave=False):
-            graph, label = item
-            labels.append(label)
-            pred = self.model(graph, graph.ndata[self.node_attr_key].float())
-            prediction = pred.argmax(1).item()
-            predictions.append(prediction)
-            probability = (torch.nn.functional.softmax(pred, dim=1).tolist())
-            probability = probability[0]
-            temp_probability = []
-            for p in probability:
-                temp_probability.append(round(p, 3))
-            probabilities.append(temp_probability)
-        return {"labels": labels, "predictions":predictions, "probabilities":probabilities}
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        num_correct = 0
+        num_tests = 0
+        temp_testing_loss = []
+        self.model.eval()
+        for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
+            pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+            if self.hparams.loss_function.lower() == "negative log likelihood":
+                logp = F.log_softmax(pred, 1)
+                loss = F.nll_loss(logp, labels)
+            elif self.hparams.loss_function.lower() == "cross entropy":
+                loss = F.cross_entropy(pred, labels)
+            temp_testing_loss.append(loss.item())
+            num_correct += (pred.argmax(1) == labels).sum().item()
+            num_tests += len(labels)
+        self.testing_loss = (sum(temp_testing_loss) / len(temp_testing_loss))
+        self.testing_accuracy = num_correct / num_tests
+        return self.testing_accuracy
     
     def save(self):
         if self.hparams.checkpoint_path is not None:
@@ -784,6 +787,7 @@ class _ClassifierKFold:
         self.training_accuracy_list = []
         self.validation_accuracy_list = []
         self.testing_accuracy_list = []
+        self.testing_loss_list = []
         self.node_attr_key = trainingDataset.node_attr_key
 
     
@@ -830,6 +834,7 @@ class _ClassifierKFold:
         self.validation_accuracy_list = []
         self.validation_loss_list = []
         self.testing_accuracy_list = []
+        self.testing_loss_list = []
 
         # Set fixed random number seed
         torch.manual_seed(42)
@@ -852,6 +857,7 @@ class _ClassifierKFold:
             epoch_validation_loss_list = []
             epoch_validation_accuracy_list = []
             epoch_testing_accuracy_list = []
+            epoch_testing_loss_list = []
             # Sample elements randomly from a given list of ids, no replacement.
             train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
             validate_subsampler = torch.utils.data.SubsetRandomSampler(validate_ids)
@@ -877,6 +883,9 @@ class _ClassifierKFold:
 
                 # Iterate over the DataLoader for training data
                 for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
+
+                    # Make sure the model is in training mode
+                    self.model.train()
                     
                     # Zero the gradients
                     self.optimizer.zero_grad()
@@ -908,7 +917,9 @@ class _ClassifierKFold:
                 self.validate()
                 epoch_validation_accuracy_list.append(self.validation_accuracy)
                 epoch_validation_loss_list.append(self.validation_loss)
-                epoch_testing_accuracy_list.append(self.accuracy(self.test()))
+                self.test()
+                epoch_testing_accuracy_list.append(self.testing_accuracy)
+                epoch_testing_loss_list.append(self.testing_loss)
             if self.hparams.checkpoint_path is not None:
                 # Save the entire model
                 torch.save(self.model, self.hparams.checkpoint_path+"-fold_"+str(fold))
@@ -920,6 +931,8 @@ class _ClassifierKFold:
             self.training_loss_list.append(epoch_training_loss_list)
             self.validation_accuracy_list.append(epoch_validation_accuracy_list)
             self.validation_loss_list.append(epoch_validation_loss_list)
+            self.testing_accuracy_list.append(epoch_testing_accuracy_list)
+            self.testing_loss_list.append(epoch_testing_loss_list)
             t_folds.update()
         max_accuracy = max(accuracies)
         ind = accuracies.index(max_accuracy)
@@ -959,26 +972,23 @@ class _ClassifierKFold:
         return (num_correct / len(predictions))
     
     def test(self):
-        labels = []
-        predictions = []
-        probabilities = []
-        if self.testingDataset:
-            dataset = self.testingDataset
-        else:
-            dataset = self.test_dataloader
-        for item in tqdm(dataset, desc="Testing", leave=False):
-            graph, label = item
-            labels.append(label)
-            pred = self.model(graph, graph.ndata[self.node_attr_key].float())
-            prediction = pred.argmax(1).item()
-            predictions.append(prediction)
-            probability = (torch.nn.functional.softmax(pred, dim=1).tolist())
-            probability = probability[0]
-            temp_probability = []
-            for p in probability:
-                temp_probability.append(round(p, 3))
-            probabilities.append(temp_probability)
-        return {"labels": labels, "predictions":predictions, "probabilities":probabilities}
+        num_correct = 0
+        num_tests = 0
+        temp_testing_loss = []
+        self.model.eval()
+        for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
+            pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float())
+            if self.hparams.loss_function.lower() == "negative log likelihood":
+                logp = F.log_softmax(pred, 1)
+                loss = F.nll_loss(logp, labels)
+            elif self.hparams.loss_function.lower() == "cross entropy":
+                loss = F.cross_entropy(pred, labels)
+            temp_testing_loss.append(loss.item())
+            num_correct += (pred.argmax(1) == labels).sum().item()
+            num_tests += len(labels)
+        self.testing_loss = (sum(temp_testing_loss) / len(temp_testing_loss))
+        self.testing_accuracy = num_correct / num_tests
+        return self.testing_accuracy
     
     def predict(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -1008,6 +1018,7 @@ class _ClassifierKFold:
         self.validation_accuracy_list = []
         self.validation_loss_list = []
         self.testing_accuracy_list = []
+        self.testing_lost_list = []
 
         
         # Set training to 100% of the data, validate, and save a final model
@@ -1025,6 +1036,9 @@ class _ClassifierKFold:
 
             # Iterate over the DataLoader for training data
             for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
+
+                # Make sure the model is in training mode
+                self.model.train()
                 
                 # Zero the gradients
                 self.optimizer.zero_grad()
@@ -1056,7 +1070,9 @@ class _ClassifierKFold:
             self.validate()
             self.validation_accuracy_list.append(self.validation_accuracy)
             self.validation_loss_list.append(self.validation_loss)
-            self.testing_accuracy_list.append(self.accuracy(self.test()))
+            self.test()
+            self.testing_accuracy_list.append(self.testing_accuracy)
+            self.testing_loss_list.append(self.testing_loss)
     
     def save(self):
         if self.hparams.checkpoint_path is not None:
