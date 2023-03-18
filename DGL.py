@@ -1963,7 +1963,7 @@ class DGL:
         """
         labels = []
         probabilities = []
-        for item in tqdm(dataset, desc='Predicting', leave=False):
+        for item in tqdm(dataset, desc='Classifying', leave=False):
             graph = item[0]
             pred = classifier(graph, graph.ndata[node_attr_key].float())
             labels.append(pred.argmax(1).item())
