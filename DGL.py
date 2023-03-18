@@ -61,6 +61,7 @@ import os
 import random
 import time
 from datetime import datetime
+import copy
 
 checkpoint_path = os.path.join(os.path.expanduser('~'), "dgl_classifier.pt")
 results_path = os.path.join(os.path.expanduser('~'), "dgl_results.csv")
@@ -344,6 +345,185 @@ class _TAGConv(nn.Module):
         return h
 
 
+class GCN_GraphConv_reg(nn.Module):
+    def __init__(self, in_feats, h_feats, pooling):
+        super(GCN_GraphConv_reg, self).__init__()
+        assert isinstance(h_feats, list), "h_feats must be a list"
+        h_feats = [x for x in h_feats if x is not None]
+        assert len(h_feats) !=0, "h_feats is empty. unable to add hidden layers"
+        self.list_of_layers = nn.ModuleList()
+        dim = [in_feats] + h_feats
+
+        # Convolution (Hidden) Layers
+        for i in range(1, len(dim)):
+            self.list_of_layers.append(GraphConv(dim[i-1], dim[i]))
+
+        # Final Layer
+        self.final = nn.Linear(dim[-1], 1)
+
+        # Pooling layer
+        if pooling.lower() == "avgpooling":
+            self.pooling_layer = dgl.nn.AvgPooling()
+        elif pooling.lower() == "maxpooling":
+            self.pooling_layer = dgl.nn.MaxPooling()
+        elif pooling.lower() == "sumpooling":
+            self.pooling_layer = dgl.nn.SumPooling()
+        else:
+            raise NotImplementedError
+
+    def forward(self, g, in_feat):
+        h = in_feat
+        # Generate node features
+        for i in range(len(self.list_of_layers)): # Aim for 2 about 3 layers
+            h = self.list_of_layers[i](g, h)
+            h = F.relu(h)
+        # h will now be matrix of dimension num_nodes by h_feats[-1]
+        h = self.final(h)
+        g.ndata['h'] = h
+        # Go from node level features to graph level features by pooling
+        h = self.pooling_layer(g, h)
+        # h will now be vector of dimension num_classes
+        return h
+
+
+class _RegressorHoldout:
+    def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        self.trainingDataset = trainingDataset
+        self.validationDataset = validationDataset
+        self.testingDataset = testingDataset
+        self.hparams = hparams
+        if hparams.conv_layer_type.lower() == 'classic':
+            self.model = GCN_Classic_reg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
+        elif hparams.conv_layer_type.lower() == 'ginconv':
+            self.model = GCN_GINConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'graphconv':
+            self.model = GCN_GraphConv_reg(trainingDataset.dim_nfeats, hparams.hl_widths, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'sageconv':
+            self.model = GCN_SAGEConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'tagconv':
+            self.model = GCN_TAGConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'gcn':
+            self.model = GCN_Classic_reg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
+        else:
+            raise NotImplementedError
+
+        if hparams.optimizer_str.lower() == "adadelta":
+            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adagrad":
+            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adam":
+            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
+                                            lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
+        self.use_gpu = hparams.use_gpu
+
+        self.training_loss_list = []
+        self.validation_loss_list = []
+        self.training_accuracy_list = []
+        self.validation_accuracy_list = []
+        self.testing_accuracy_list = []
+        self.node_attr_key = trainingDataset.node_attr_key
+
+        # train, validate, test split
+        num_train = int(len(trainingDataset) * (hparams.split[0]))
+        num_validate = int(len(trainingDataset) * (hparams.split[1]))
+        num_test = len(trainingDataset) - num_train - num_validate
+        idx = torch.randperm(len(trainingDataset))
+        train_sampler = SubsetRandomSampler(idx[:num_train])
+        validate_sampler = SubsetRandomSampler(idx[num_train:num_train+num_validate])
+        test_sampler = SubsetRandomSampler(idx[num_train+num_validate:num_train+num_validate+num_test])
+        
+        if validationDataset:
+            self.train_dataloader = GraphDataLoader(trainingDataset, 
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+            self.validate_dataloader = GraphDataLoader(validationDataset,
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+        else:
+            self.train_dataloader = GraphDataLoader(trainingDataset, sampler=train_sampler, 
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+            self.validate_dataloader = GraphDataLoader(trainingDataset, sampler=validate_sampler,
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+        
+        if testingDataset:
+            self.test_dataloader = GraphDataLoader(testingDataset,
+                                                    batch_size=len(testingDataset),
+                                                    drop_last=False)
+        else:
+            self.test_dataloader = GraphDataLoader(trainingDataset, sampler=test_sampler,
+                                                    batch_size=num_test,
+                                                    drop_last=False)
+
+    def train(self):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        # Init the loss and accuracy reporting lists
+        self.training_accuracy_list = []
+        self.training_loss_list = []
+        self.validation_accuracy_list = []
+        self.validation_loss_list = []
+        self.testing_accuracy_list = []
+        
+        best_rmse = np.inf
+        # Run the training loop for defined number of epochs
+        for _ in tqdm(range(self.hparams.epochs), desc='Epochs'):
+            num_correct = 0
+            num_tests = 0
+            temp_loss_list = []
+            # Iterate over the DataLoader for training data
+            for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
+                # Zero the gradients
+                self.optimizer.zero_grad()
+
+                # Perform forward pass
+                pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+                # Compute loss
+                loss = F.mse_loss(torch.flatten(pred), labels.float())
+
+                # Perform backward pass
+                loss.backward()
+
+                # Perform optimization
+                self.optimizer.step()
+
+            self.training_accuracy = torch.sqrt(loss).item()
+            self.training_accuracy_list.append(self.training_accuracy)
+            self.validate()
+            self.validation_accuracy_list.append(torch.sqrt(self.validation_accuracy).item())
+            if self.validation_accuracy < best_rmse:
+                best_rmse = self.validation_accuracy
+                best_weights = copy.deepcopy(self.model.state_dict())
+        if self.hparams.checkpoint_path is not None:
+            # Save the best model
+            self.model.load_state_dict(best_weights)
+            self.model.eval()
+            torch.save(self.model, self.hparams.checkpoint_path)
+
+    def validate(self):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        temp_validation_loss = []
+        self.model.eval()
+        for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
+            pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+            loss = F.mse_loss(torch.flatten(pred), labels.float())
+        self.validation_accuracy = loss
+        return self.validation_accuracy
+    
+
+
+
+
+
 class _ClassifierHoldout:
     def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -389,6 +569,8 @@ class _ClassifierHoldout:
         self.validation_accuracy_list = []
         self.testing_accuracy_list = []
         self.node_attr_key = trainingDataset.node_attr_key
+
+        # train, validate, test split
         num_train = int(len(trainingDataset) * (hparams.split[0]))
         num_validate = int(len(trainingDataset) * (hparams.split[1]))
         num_test = len(trainingDataset) - num_train - num_validate
@@ -860,12 +1042,13 @@ class DGL:
     def Accuracy(actual, predicted, mantissa=4):
         """
         Computes the accuracy of the input predictions based on the input labels
+
         Parameters
         ----------
-        predictions : list
-            The input list of predictions.
-        labels : list
-            The input list of labels.
+        actual : list
+            The input list of actual values.
+        predicted : list
+            The input list of predicted values.
         mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
@@ -894,6 +1077,34 @@ class DGL:
         wrong = len(predicted)- correct
         accuracy = round(float(correct) / float(len(predicted)), mantissa)
         return {"accuracy":accuracy, "correct":correct, "mask":mask, "size":size, "wrong":wrong}
+    
+    @staticmethod
+    def RMSE(actual, predicted, mantissa=4):
+        """
+        Computes the accuracy based on the mean squared error of the input predictions based on the input actual values
+
+        Parameters
+        ----------
+        actual : list
+            The input list of actual values.
+        predicted : list
+            The input list of predicted values.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
+        
+        Returns
+        -------
+        dict
+            A dictionary returning the accuracy information. This contains the following keys and values:
+            - "rmse" (float): Root Mean Square Error.
+            - "size" (int): The size of the predictions list
+        """
+        if len(predicted) < 1 or len(actual) < 1 or not len(predicted) == len(actual):
+            return None
+        size = len(predicted)
+        mse = F.mse_loss(torch.tensor(predicted), torch.tensor(actual))
+        rmse = round(torch.sqrt(mse).item(), mantissa)
+        return {"rmse":rmse, "size":size}
     
     @staticmethod
     def BalanceDataset(dataset, labels, method="undersampling", key="node_attr"):
@@ -1677,9 +1888,9 @@ class DGL:
         return {"name":name, "amsgrad":amsgrad, "betas":betas, "eps":eps, "lr": lr, "maximize":maximize, "weight_decay":weightDecay, "rho":rho, "lr_decay":lr_decay}
     
     @staticmethod
-    def Predict(dataset, classifier, node_attr_key="node_attr"):
+    def Classify(dataset, classifier, node_attr_key="node_attr"):
         """
-        Predicts the label of the input dataset.
+        Predicts the classification the labels of the input dataset.
 
         Parameters
         ----------
@@ -1713,9 +1924,35 @@ class DGL:
         return {"predictions":labels, "probabilities":probabilities}
     
     @staticmethod
-    def Predict_NC(dataset, classifier):
+    def Predict(dataset, regressor, node_attr_key="node_attr"):
         """
-        Predicts the node labels found in the input dataset using the input classifier.
+        Predicts the label of the input dataset.
+
+        Parameters
+        ----------
+        dataset : DGLDataset
+            The input DGL dataset.
+        regressor : Classifier
+            The input trained regressor.
+        node_attr_key : str , optional
+            The key used for node attributes. The default is "node_attr".
+    
+        Returns
+        -------
+        list
+            The list of predictions
+        """
+        values = []
+        for item in tqdm(dataset, desc='Predicting'):
+            graph = item[0]
+            pred = regressor(graph, graph.ndata[node_attr_key].float())
+            values.append(round(pred.item(), 3))
+        return values
+    
+    @staticmethod
+    def ClassifyNode(dataset, classifier):
+        """
+        Predicts the calssification of the node labels found in the input dataset using the input classifier.
 
         Parameters
         ----------
@@ -1898,7 +2135,7 @@ class DGL:
         Plotly.Show(fig, renderer=renderer)
         
     @staticmethod
-    def Train(hparams, trainingDataset, validationDataset=None, testingDataset=None, overwrite=True):
+    def TrainClassifier(hparams, trainingDataset, validationDataset=None, testingDataset=None, overwrite=True):
         """
         Trains a neural network classifier.
 
@@ -1912,10 +2149,9 @@ class DGL:
             The input validation dataset. If not specified, a portion of the trainingDataset will be used for validation according the to the split list as specified in the hyper-parameters.
         testingDataset : DGLDataset
             The input testing dataset. If not specified, a portion of the trainingDataset will be used for testing according the to the split list as specified in the hyper-parameters.
+        overwrite : bool , optional
+            If set to True, previous saved results files are overwritten. Otherwise, the new results are appended to the previously saved files. The default is True.
 
-        classifier : Classifier
-            The input classifier.
-        
         Returns
         -------
         dict
@@ -1995,6 +2231,78 @@ class DGL:
                 df.to_csv(classifier.hparams.results_path, mode='a', index = False, header=False)
         return data
 
+
+
+    @staticmethod
+    def TrainRegressor(hparams, trainingDataset, validationDataset=None, testingDataset=None, overwrite=True):
+        """
+        Trains a neural network regressor.
+
+        Parameters
+        ----------
+        hparams : HParams
+            The input hyperparameters 
+        trainingDataset : DGLDataset
+            The input training dataset.
+        validationDataset : DGLDataset
+            The input validation dataset. If not specified, a portion of the trainingDataset will be used for validation according the to the split list as specified in the hyper-parameters.
+        testingDataset : DGLDataset
+            The input testing dataset. If not specified, a portion of the trainingDataset will be used for testing according the to the split list as specified in the hyper-parameters.
+        overwrite : bool , optional
+            If set to True, previous saved results files are overwritten. Otherwise, the new results are appended to the previously saved files. The default is True.
+
+        Returns
+        -------
+        dict
+            A dictionary containing all the results.
+
+        """
+
+        from topologicpy.Helper import Helper
+        import time
+        import datetime
+        start = time.time()
+        regressor = _RegressorHoldout(hparams, trainingDataset, validationDataset, testingDataset)
+        regressor.train()
+        accuracy = regressor.validate()
+    
+        end = time.time()
+        duration = round(end - start,3)
+        utcnow = datetime.datetime.utcnow()
+        timestamp_str = "UTC-"+str(utcnow.year)+"-"+str(utcnow.month)+"-"+str(utcnow.day)+"-"+str(utcnow.hour)+"-"+str(utcnow.minute)+"-"+str(utcnow.second)
+        epoch_list = list(range(1,regressor.hparams.epochs+1))
+        d2 = [[timestamp_str], [duration], [regressor.hparams.optimizer_str], [regressor.hparams.cv_type], [regressor.hparams.split], [regressor.hparams.k_folds], regressor.hparams.hl_widths, [regressor.hparams.conv_layer_type], [regressor.hparams.pooling], [regressor.hparams.lr], [regressor.hparams.batch_size], epoch_list, regressor.training_accuracy_list, regressor.validation_accuracy_list]
+        d2 = Helper.Iterate(d2)
+        d2 = Helper.Transpose(d2)
+    
+        data = {'TimeStamp': "UTC-"+str(utcnow.year)+"-"+str(utcnow.month)+"-"+str(utcnow.day)+"-"+str(utcnow.hour)+"-"+str(utcnow.minute)+"-"+str(utcnow.second),
+                'Duration': [duration],
+                'Optimizer': [regressor.hparams.optimizer_str],
+                'CV Type': [regressor.hparams.cv_type],
+                'Split': [regressor.hparams.split],
+                'K-Folds': [regressor.hparams.k_folds],
+                'HL Widths': [regressor.hparams.hl_widths],
+                'Conv Layer Type': [regressor.hparams.conv_layer_type],
+                'Pooling': [regressor.hparams.pooling],
+                'Learning Rate': [regressor.hparams.lr],
+                'Batch Size': [regressor.hparams.batch_size],
+                'Epochs': [regressor.hparams.epochs],
+                'Training Accuracy': [regressor.training_accuracy_list],
+                'Validation Accuracy': [regressor.validation_accuracy_list]
+            }
+
+        df = pd.DataFrame(d2, columns= ['TimeStamp', 'Duration', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Testing Accuracy'])
+        if regressor.hparams.results_path:
+            if overwrite:
+                df.to_csv(regressor.hparams.results_path, mode='w+', index = False, header=True)
+            else:
+                df.to_csv(regressor.hparams.results_path, mode='a', index = False, header=False)
+        return data
+
+
+
+
+
     @staticmethod
     def _TrainClassifier_NC(graphs, model, hparams):
         """
@@ -2072,7 +2380,7 @@ class DGL:
         return [model, pred]
 
     @staticmethod
-    def Train_NC(hparams, dataset, numLabels, sample):
+    def TrainNodeClassifier(hparams, dataset, numLabels, sample):
         """
         Parameters
         ----------
@@ -2105,7 +2413,7 @@ class DGL:
         else: # There are no gaphs in the dataset, return None
             return None
         model = _Classic(graphs[i].ndata['feat'].shape[1], hparams.hl_widths, numLabels)
-        final_model, predictions = DGL._TrainClassifier_NC(graphs, model, hparams)
+        final_model, predictions = DGL._TrainNodeClassifier(graphs, model, hparams)
         # Save the entire model
         if hparams.checkpoint_path is not None:
             torch.save(final_model, hparams.checkpoint_path)
