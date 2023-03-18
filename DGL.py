@@ -472,7 +472,7 @@ class _RegressorHoldout:
                                                     drop_last=False)
         else:
             self.test_dataloader = GraphDataLoader(trainingDataset, sampler=test_sampler,
-                                                    batch_size=num_test,
+                                                    batch_size=hparams.batch_size,
                                                     drop_last=False)
 
     def train(self):
@@ -523,6 +523,7 @@ class _RegressorHoldout:
             # Save the best model
             self.model.load_state_dict(best_weights)
             self.model.eval()
+            self.model.hparams.split = [1,0,0]
             torch.save(self.model, self.hparams.checkpoint_path)
 
     def validate(self):
@@ -686,6 +687,7 @@ class _ClassifierHoldout:
         if self.hparams.checkpoint_path is not None:
             # Save the best model
             self.model.eval()
+            self.hparams.split = [1, 0, 0]
             torch.save(self.model, self.hparams.checkpoint_path)
         
     def validate(self):
