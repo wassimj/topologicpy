@@ -61,7 +61,6 @@ import os
 import random
 import time
 from datetime import datetime
-import copy
 
 checkpoint_path = os.path.join(os.path.expanduser('~'), "dgl_classifier.pt")
 results_path = os.path.join(os.path.expanduser('~'), "dgl_results.csv")
@@ -417,8 +416,17 @@ class _RegressorHoldout:
         self.hparams = hparams
         if hparams.conv_layer_type.lower() == 'classic':
             self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
+        elif hparams.conv_layer_type.lower() == 'ginconv':
+            self.model = _GINConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
         elif hparams.conv_layer_type.lower() == 'graphconv':
             self.model = _GraphConvReg(trainingDataset.dim_nfeats, hparams.hl_widths, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'sageconv':
+            self.model = _SAGEConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'tagconv':
+            self.model = _TAGConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
         elif hparams.conv_layer_type.lower() == 'gcn':
             self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
         else:
@@ -437,9 +445,6 @@ class _RegressorHoldout:
 
         self.training_loss_list = []
         self.validation_loss_list = []
-        self.training_accuracy_list = []
-        self.validation_accuracy_list = []
-        self.testing_accuracy_list = []
         self.node_attr_key = trainingDataset.node_attr_key
 
         # train, validate, test split
@@ -479,19 +484,12 @@ class _RegressorHoldout:
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
         # Init the loss and accuracy reporting lists
-        self.training_accuracy_list = []
         self.training_loss_list = []
-        self.validation_accuracy_list = []
         self.validation_loss_list = []
-        self.testing_accuracy_list = []
         
-        
-        best_rmse = np.inf
         # Run the training loop for defined number of epochs
         for _ in tqdm(range(self.hparams.epochs), desc='Epochs'):
-            num_correct = 0
-            num_tests = 0
-            temp_loss_list = []
+
             # Iterate over the DataLoader for training data
             for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
                 # Make sure the model is in training mode
@@ -510,46 +508,39 @@ class _RegressorHoldout:
                 # Perform optimization
                 self.optimizer.step()
 
-            self.training_accuracy = torch.sqrt(loss).item()
-            self.training_accuracy_list.append(self.training_accuracy)
+            self.training_loss_list.append(torch.sqrt(loss).item())
             self.validate()
-            self.validation_accuracy_list.append(torch.sqrt(self.validation_accuracy).item())
-            if self.validation_accuracy < best_rmse:
-                best_rmse = self.validation_accuracy
-                best_weights = copy.deepcopy(self.model.state_dict())
-            self.test()
-            self.testing_accuracy_list.append(torch.sqrt(self.testing_accuracy).item())
-        if self.hparams.checkpoint_path is not None:
-            # Save the best model
-            self.model.load_state_dict(best_weights)
-            self.model.eval()
-            torch.save(self.model, self.hparams.checkpoint_path)
+            self.validation_loss_list.append(torch.sqrt(self.validation_loss).item())
 
     def validate(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
-        temp_validation_loss = []
         self.model.eval()
         for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
             loss = F.mse_loss(torch.flatten(pred), labels.float())
-        self.validation_accuracy = loss
-        return self.validation_accuracy
+        self.validation_loss = loss
     
     def test(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
-        temp_validation_loss = []
         self.model.eval()
-        for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
+        for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
             loss = F.mse_loss(torch.flatten(pred), labels.float())
-        self.testing_accuracy = loss
-        return self.testing_accuracy
-
-
-
-
+        self.testing_loss = torch.sqrt(loss).item()
+        return self.testing_loss
+        
+    def save(self):
+        if self.hparams.checkpoint_path is not None:
+            # Save the entire model
+            try:
+                self.model.eval()
+                torch.save(self.model, self.hparams.checkpoint_path)
+                return True
+            except:
+                return False
+        return False
 
 class _ClassifierHoldout:
     def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
@@ -594,8 +585,6 @@ class _ClassifierHoldout:
         self.validation_loss_list = []
         self.training_accuracy_list = []
         self.validation_accuracy_list = []
-        self.testing_accuracy_list = []
-        self.testing_loss_list = []
         self.node_attr_key = trainingDataset.node_attr_key
 
         # train, validate, test split
@@ -638,8 +627,6 @@ class _ClassifierHoldout:
         self.training_loss_list = []
         self.validation_accuracy_list = []
         self.validation_loss_list = []
-        self.testing_accuracy_list = []
-        self.testing_loss_list = []
 
         # Run the training loop for defined number of epochs
         for _ in tqdm(range(self.hparams.epochs), desc='Epochs', leave=False):
@@ -680,14 +667,6 @@ class _ClassifierHoldout:
             self.validate()
             self.validation_accuracy_list.append(self.validation_accuracy)
             self.validation_loss_list.append(self.validation_loss)
-            self.test()
-            self.testing_accuracy_list.append(self.testing_accuracy)
-            self.testing_loss_list.append(self.testing_loss)
-        if self.hparams.checkpoint_path is not None:
-            # Save the best model
-            self.model.eval()
-            self.hparams.split = [1, 0, 0]
-            torch.save(self.model, self.hparams.checkpoint_path)
         
     def validate(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -724,7 +703,6 @@ class _ClassifierHoldout:
         device = torch.device("cpu")
         num_correct = 0
         num_tests = 0
-        temp_testing_loss = []
         self.model.eval()
         for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
@@ -733,10 +711,8 @@ class _ClassifierHoldout:
                 loss = F.nll_loss(logp, labels)
             elif self.hparams.loss_function.lower() == "cross entropy":
                 loss = F.cross_entropy(pred, labels)
-            temp_testing_loss.append(loss.item())
             num_correct += (pred.argmax(1) == labels).sum().item()
             num_tests += len(labels)
-        self.testing_loss = (sum(temp_testing_loss) / len(temp_testing_loss))
         self.testing_accuracy = num_correct / num_tests
         return self.testing_accuracy
     
@@ -2218,6 +2194,7 @@ class DGL:
         if hparams.cv_type.lower() == "holdout":
             classifier = _ClassifierHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
             classifier.train()
+            accuracy = classifier.test()
             classifier.save()
         elif hparams.cv_type.lower() == "k-fold":
             classifier = _ClassifierKFold(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
@@ -2253,7 +2230,8 @@ class DGL:
         utcnow = datetime.datetime.utcnow()
         timestamp_str = "UTC-"+str(utcnow.year)+"-"+str(utcnow.month)+"-"+str(utcnow.day)+"-"+str(utcnow.hour)+"-"+str(utcnow.minute)+"-"+str(utcnow.second)
         epoch_list = list(range(1,classifier.hparams.epochs+1))
-        d2 = [[timestamp_str], [duration], [classifier.hparams.optimizer_str], [classifier.hparams.cv_type], [classifier.hparams.split], [classifier.hparams.k_folds], [classifier.hparams.hl_widths], [classifier.hparams.conv_layer_type], [classifier.hparams.pooling], [classifier.hparams.lr], [classifier.hparams.batch_size], epoch_list, classifier.training_accuracy_list, classifier.validation_accuracy_list, classifier.testing_accuracy_list, classifier.training_loss_list, classifier.validation_loss_list, classifier.testing_loss_list]
+        testing_accuracy_list = [accuracy] * classifier.hparams.epochs
+        d2 = [[timestamp_str], [duration], [classifier.hparams.optimizer_str], [classifier.hparams.cv_type], [classifier.hparams.split], [classifier.hparams.k_folds], [classifier.hparams.hl_widths], [classifier.hparams.conv_layer_type], [classifier.hparams.pooling], [classifier.hparams.lr], [classifier.hparams.batch_size], epoch_list, classifier.training_accuracy_list, classifier.validation_accuracy_list, testing_accuracy_list, classifier.training_loss_list, classifier.validation_loss_list]
         d2 = Helper.Iterate(d2)
         d2 = Helper.Transpose(d2)
     
@@ -2271,21 +2249,18 @@ class DGL:
                 'Epochs': [classifier.hparams.epochs],
                 'Training Accuracy': [classifier.training_accuracy_list],
                 'Validation Accuracy': [classifier.validation_accuracy_list],
-                'Testing Accuracy': [classifier.testing_accuracy_list],
+                'Testing Accuracy': [testing_accuracy_list],
                 'Training Loss': [classifier.training_loss_list],
-                'Validation Loss': [classifier.validation_loss_list],
-                'Testing Loss': [classifier.testing_loss_list]
+                'Validation Loss': [classifier.validation_loss_list]
             }
 
-        df = pd.DataFrame(d2, columns= ['TimeStamp', 'Duration', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Validation Accuracy', 'Testing Accuracy', 'Training Loss', 'Validation Loss', 'Testing Loss'])
+        df = pd.DataFrame(d2, columns= ['TimeStamp', 'Duration', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Validation Accuracy', 'Testing Accuracy', 'Training Loss', 'Validation Loss'])
         if classifier.hparams.results_path:
             if overwrite:
                 df.to_csv(classifier.hparams.results_path, mode='w+', index = False, header=True)
             else:
                 df.to_csv(classifier.hparams.results_path, mode='a', index = False, header=False)
         return data
-
-
 
     @staticmethod
     def TrainRegressor(hparams, trainingDataset, validationDataset=None, testingDataset=None, overwrite=True):
@@ -2318,14 +2293,16 @@ class DGL:
         start = time.time()
         regressor = _RegressorHoldout(hparams, trainingDataset, validationDataset, testingDataset)
         regressor.train()
-        accuracy = regressor.validate()
+        loss = regressor.test()
+        regressor.save()
     
         end = time.time()
         duration = round(end - start,3)
         utcnow = datetime.datetime.utcnow()
         timestamp_str = "UTC-"+str(utcnow.year)+"-"+str(utcnow.month)+"-"+str(utcnow.day)+"-"+str(utcnow.hour)+"-"+str(utcnow.minute)+"-"+str(utcnow.second)
         epoch_list = list(range(1,regressor.hparams.epochs+1))
-        d2 = [[timestamp_str], [duration], [regressor.hparams.optimizer_str], [regressor.hparams.cv_type], [regressor.hparams.split], [regressor.hparams.k_folds], regressor.hparams.hl_widths, [regressor.hparams.conv_layer_type], [regressor.hparams.pooling], [regressor.hparams.lr], [regressor.hparams.batch_size], epoch_list, regressor.training_accuracy_list, regressor.validation_accuracy_list]
+        testing_loss_list = [loss] * regressor.hparams.epochs
+        d2 = [[timestamp_str], [duration], [regressor.hparams.optimizer_str], [regressor.hparams.cv_type], [regressor.hparams.split], [regressor.hparams.k_folds], regressor.hparams.hl_widths, [regressor.hparams.conv_layer_type], [regressor.hparams.pooling], [regressor.hparams.lr], [regressor.hparams.batch_size], epoch_list, regressor.training_loss_list, regressor.validation_loss_list, testing_loss_list]
         d2 = Helper.Iterate(d2)
         d2 = Helper.Transpose(d2)
     
@@ -2341,21 +2318,18 @@ class DGL:
                 'Learning Rate': [regressor.hparams.lr],
                 'Batch Size': [regressor.hparams.batch_size],
                 'Epochs': [regressor.hparams.epochs],
-                'Training Accuracy': [regressor.training_accuracy_list],
-                'Validation Accuracy': [regressor.validation_accuracy_list]
+                'Training Loss': [regressor.training_loss_list],
+                'Validation Loss': [regressor.validation_loss_list],
+                'Testing Loss': [testing_loss_list]
             }
 
-        df = pd.DataFrame(d2, columns= ['TimeStamp', 'Duration', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Testing Accuracy'])
+        df = pd.DataFrame(d2, columns= ['TimeStamp', 'Duration', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Loss', 'Validation Loss', 'Testing Loss'])
         if regressor.hparams.results_path:
             if overwrite:
                 df.to_csv(regressor.hparams.results_path, mode='w+', index = False, header=True)
             else:
                 df.to_csv(regressor.hparams.results_path, mode='a', index = False, header=False)
         return data
-
-
-
-
 
     @staticmethod
     def _TrainClassifier_NC(graphs, model, hparams):
