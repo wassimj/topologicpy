@@ -39,11 +39,13 @@ except:
 try:
     import sklearn
     from sklearn.model_selection import KFold
+    from sklearn.metrics import accuracy_score
 except:
     call = [sys.executable, '-m', 'pip', 'install', 'scikit-learn', '-t', sys.path[0]]
     subprocess.run(call)
     import sklearn
     from sklearn.model_selection import KFold
+    from sklearn.metrics import accuracy_score
 try:
     from tqdm.auto import tqdm
 except:
@@ -630,9 +632,9 @@ class _ClassifierHoldout:
 
         # Run the training loop for defined number of epochs
         for _ in tqdm(range(self.hparams.epochs), desc='Epochs', leave=False):
-            num_correct = 0
-            num_tests = 0
             temp_loss_list = []
+            temp_acc_list = []
+            
             # Iterate over the DataLoader for training data
             for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
                 # Make sure the model is in training mode
@@ -652,8 +654,7 @@ class _ClassifierHoldout:
 
                 # Save loss information for reporting
                 temp_loss_list.append(loss.item())
-                num_correct += (pred.argmax(1) == labels).sum().item()
-                num_tests += len(labels)
+                temp_acc_list.append(accuracy_score(labels, pred.argmax(1)))
 
                 # Perform backward pass
                 loss.backward()
@@ -661,9 +662,8 @@ class _ClassifierHoldout:
                 # Perform optimization
                 self.optimizer.step()
 
-            self.training_accuracy = num_correct / num_tests
-            self.training_accuracy_list.append(self.training_accuracy)
-            self.training_loss_list.append(sum(temp_loss_list) / len(temp_loss_list))
+            self.training_accuracy_list.append(np.mean(temp_acc_list).item())
+            self.training_loss_list.append(np.mean(temp_loss_list).item())
             self.validate()
             self.validation_accuracy_list.append(self.validation_accuracy)
             self.validation_loss_list.append(self.validation_loss)
@@ -671,9 +671,8 @@ class _ClassifierHoldout:
     def validate(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
-        num_correct = 0
-        num_tests = 0
-        temp_validation_loss = []
+        temp_loss_list = []
+        temp_acc_list = []
         self.model.eval()
         for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
@@ -682,12 +681,10 @@ class _ClassifierHoldout:
                 loss = F.nll_loss(logp, labels)
             elif self.hparams.loss_function.lower() == "cross entropy":
                 loss = F.cross_entropy(pred, labels)
-            temp_validation_loss.append(loss.item())
-            num_correct += (pred.argmax(1) == labels).sum().item()
-            num_tests += len(labels)
-        self.validation_loss = (sum(temp_validation_loss) / len(temp_validation_loss))
-        self.validation_accuracy = num_correct / num_tests
-        return self.validation_accuracy
+            temp_loss_list.append(loss.item())
+            temp_acc_list.append(accuracy_score(labels, pred.argmax(1)))
+        self.validation_accuracy = np.mean(temp_acc_list).item()
+        self.validation_loss = np.mean(temp_loss_list).item()
     
     def accuracy(self, dictionary):
         labels = dictionary['labels']
@@ -701,8 +698,8 @@ class _ClassifierHoldout:
     def test(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
-        num_correct = 0
-        num_tests = 0
+        temp_loss_list = []
+        temp_acc_list = []
         self.model.eval()
         for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
@@ -711,10 +708,11 @@ class _ClassifierHoldout:
                 loss = F.nll_loss(logp, labels)
             elif self.hparams.loss_function.lower() == "cross entropy":
                 loss = F.cross_entropy(pred, labels)
-            num_correct += (pred.argmax(1) == labels).sum().item()
-            num_tests += len(labels)
-        self.testing_accuracy = num_correct / num_tests
-        return self.testing_accuracy
+            temp_loss_list.append(loss.item())
+            temp_acc_list.append(accuracy_score(labels, pred.argmax(1)))
+        self.testing_accuracy = np.mean(temp_acc_list).item()
+        self.testing_loss = np.mean(temp_loss_list).item()
+        return self.testing_accuracy, self.testing_loss
     
     def save(self):
         if self.hparams.checkpoint_path is not None:
@@ -2194,7 +2192,7 @@ class DGL:
         if hparams.cv_type.lower() == "holdout":
             classifier = _ClassifierHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
             classifier.train()
-            accuracy = classifier.test()
+            accuracy, loss = classifier.test()
             classifier.save()
         elif hparams.cv_type.lower() == "k-fold":
             classifier = _ClassifierKFold(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
@@ -2231,7 +2229,8 @@ class DGL:
         timestamp_str = "UTC-"+str(utcnow.year)+"-"+str(utcnow.month)+"-"+str(utcnow.day)+"-"+str(utcnow.hour)+"-"+str(utcnow.minute)+"-"+str(utcnow.second)
         epoch_list = list(range(1,classifier.hparams.epochs+1))
         testing_accuracy_list = [accuracy] * classifier.hparams.epochs
-        d2 = [[timestamp_str], [duration], [classifier.hparams.optimizer_str], [classifier.hparams.cv_type], [classifier.hparams.split], [classifier.hparams.k_folds], [classifier.hparams.hl_widths], [classifier.hparams.conv_layer_type], [classifier.hparams.pooling], [classifier.hparams.lr], [classifier.hparams.batch_size], epoch_list, classifier.training_accuracy_list, classifier.validation_accuracy_list, testing_accuracy_list, classifier.training_loss_list, classifier.validation_loss_list]
+        testing_loss_list = [loss] * classifier.hparams.epochs
+        d2 = [[timestamp_str], [duration], [classifier.hparams.optimizer_str], [classifier.hparams.cv_type], [classifier.hparams.split], [classifier.hparams.k_folds], [classifier.hparams.hl_widths], [classifier.hparams.conv_layer_type], [classifier.hparams.pooling], [classifier.hparams.lr], [classifier.hparams.batch_size], epoch_list, classifier.training_accuracy_list, classifier.validation_accuracy_list, testing_accuracy_list, classifier.training_loss_list, classifier.validation_loss_list, testing_loss_list]
         d2 = Helper.Iterate(d2)
         d2 = Helper.Transpose(d2)
     
@@ -2251,10 +2250,11 @@ class DGL:
                 'Validation Accuracy': [classifier.validation_accuracy_list],
                 'Testing Accuracy': [testing_accuracy_list],
                 'Training Loss': [classifier.training_loss_list],
-                'Validation Loss': [classifier.validation_loss_list]
+                'Validation Loss': [classifier.validation_loss_list],
+                'Testing Loss': [testing_loss_list]
             }
 
-        df = pd.DataFrame(d2, columns= ['TimeStamp', 'Duration', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Validation Accuracy', 'Testing Accuracy', 'Training Loss', 'Validation Loss'])
+        df = pd.DataFrame(d2, columns= ['TimeStamp', 'Duration', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Validation Accuracy', 'Testing Accuracy', 'Training Loss', 'Validation Loss', 'Testing Loss'])
         if classifier.hparams.results_path:
             if overwrite:
                 df.to_csv(classifier.hparams.results_path, mode='w+', index = False, header=True)
