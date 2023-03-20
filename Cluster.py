@@ -146,7 +146,10 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allCellsCluster, cellComplexesCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Cell):
             return [resultingCluster]
-        return Topology.SubTopologies(resultingCluster, subTopologyType="cell")
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="cell")
+        if not result:
+            return [] #Make sure you return an empty list instead of None
+        return result
     
     @staticmethod
     def FreeShells(cluster):
@@ -184,7 +187,10 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allShellsCluster, cellsCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Shell):
             return [resultingCluster]
-        return Topology.SubTopologies(resultingCluster, subTopologyType="shell")
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="shell")
+        if not result:
+            return [] #Make sure you return an empty list instead of None
+        return result
     
     @staticmethod
     def FreeFaces(cluster):
@@ -221,7 +227,10 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allFacesCluster, shellCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Face):
             return [resultingCluster]
-        return Topology.SubTopologies(resultingCluster, subTopologyType="face")
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="face")
+        if not result:
+            return [] #Make sure you return an empty list instead of None
+        return result
 
     @staticmethod
     def FreeWires(cluster):
@@ -259,7 +268,10 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allWiresCluster, facesCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Wire):
             return [resultingCluster]
-        return Topology.SubTopologies(resultingCluster, subTopologyType="wire")
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="wire")
+        if not result:
+            return [] #Make sure you return an empty list instead of None
+        return result
     
     @staticmethod
     def FreeEdges(cluster):
@@ -297,7 +309,10 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allEdgesCluster, wireCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Edge):
             return [resultingCluster]
-        return Topology.SubTopologies(resultingCluster, subTopologyType="edge")
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="edge")
+        if not result:
+            return [] #Make sure you return an empty list instead of None
+        return result
     
     @staticmethod
     def FreeVertices(cluster):
@@ -335,7 +350,10 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allVerticesCluster, edgesCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Vertex):
             return [resultingCluster]
-        return Topology.SubTopologies(resultingCluster, subTopologyType="vertex")
+        result = Topology.SubTopologies(resultingCluster, subTopologyType="vertex")
+        if not result:
+            return [] #Make sure you return an empty list instead of None
+        return result
     
     @staticmethod
     def HighestType(cluster):

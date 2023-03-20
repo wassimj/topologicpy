@@ -10,6 +10,7 @@ from topologicpy.Cell import Cell
 from topologicpy.CellComplex import CellComplex
 from topologicpy.Cluster import Cluster
 from topologicpy.Topology import Topology
+import numpy as np
 
 class Plotly:
     @staticmethod
@@ -638,6 +639,7 @@ class Plotly:
             #data.append(vertexData(vertices, dictionaries=[], vertexColor=vertexColor, vertexSize=5, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups))
         return data
 
+
     @staticmethod
     def FigureByConfusionMatrix(matrix,
              categories=[],
@@ -661,7 +663,92 @@ class Plotly:
 
         Parameters
         ----------
-        matrix : list
+        matrix : list or numpy.array
+            The matrix to display.
+        categories : list
+            The list of categories to use on the X and Y axes.
+        minValue : float , optional
+            The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. The default is None.
+        maxValue : float , optional
+            The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. The default is None.
+        title : str , optional
+            The desired title to display. The default is "Confusion Matrix".
+        xTitle : str , optional
+            The desired X-axis title to display. The default is "Actual".
+        yTitle : str , optional
+            The desired Y-axis title to display. The default is "Predicted".
+        width : int , optional
+            The desired width of the figure. The default is 950.
+        height : int , optional
+            The desired height of the figure. The default is 500.
+        showScale : bool , optional
+            If set to True, a color scale is shown on the right side of the figure. The default is True.
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+        colorSamples : int , optional
+            The number of discrete color samples to use for displaying the data. The default is 10.
+        backgroundColor : str , optional
+            The desired background color. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'rgba(0,0,0,0)' (transparent).
+        marginLeft : int , optional
+            The desired left margin in pixels. The default is 0.
+        marginRight : int , optional
+            The desired right margin in pixels. The default is 0.
+        marginTop : int , optional
+            The desired top margin in pixels. The default is 40.
+        marginBottom : int , optional
+            The desired bottom margin in pixels. The default is 0.
+
+        """
+
+        return Plotly.FigureByMatrix(matrix,
+             xCategories=categories,
+             minValue=minValue,
+             maxValue=maxValue,
+             title=title,
+             xTitle=xTitle,
+             yTitle=yTitle,
+             width=width,
+             height=height,
+             showScale=showScale,
+             colorScale=colorScale,
+             colorSamples=colorSamples,
+             backgroundColor=backgroundColor,
+             marginLeft=marginLeft,
+             marginRight=marginRight,
+             marginTop=marginTop,
+             marginBottom=marginBottom)
+    
+    @staticmethod
+    def FigureByMatrix(matrix,
+             xCategories=[],
+             yCategories=[],
+             minValue=None,
+             maxValue=None,
+             title="Matrix",
+             xTitle = "X Axis",
+             yTitle = "Y Axis",
+             width=950,
+             height=950,
+             showScale = False,
+             colorScale='gray',
+             colorSamples=10,
+             backgroundColor='rgba(0,0,0,0)',
+             marginLeft=0,
+             marginRight=0,
+             marginTop=40,
+             marginBottom=0):
+        """
+        Returns a Plotly Figure of the input matrix.
+
+        Parameters
+        ----------
+        matrix : list or numpy.array
             The matrix to display.
         categories : list
             The list of categories to use on the X and Y axes.
@@ -709,20 +796,27 @@ class Plotly:
 
         annotations = []
 
-        # Transpose the confusion matrix
-        matrix = matrix.T
+        if isinstance(matrix, list):
+            matrix = np.array(matrix)
         colors = px.colors.sample_colorscale(colorScale, [n/(colorSamples -1) for n in range(colorSamples)])
-        if not minValue:
-            minValue = 0
-        if not maxValue:
+
+        if not xCategories:
+            xCategories = [x for x in range(len(matrix[0]))]
+        if not yCategories:
+            yCategories = [y for y in range(len(matrix))]
+        
+        if not maxValue or not minValue:
             max_values = []
-            for i, row in enumerate(matrix):
+            min_values = []
+            for i in range(len(matrix)):
+                row = matrix[i]
                 max_values.append(max(row))
+                min_values.append(min(row))
                 for j, value in enumerate(row):
                     annotations.append(
                         {
-                            "x": categories[j],
-                            "y": categories[i],
+                            "x": xCategories[j],
+                            "y": yCategories[i],
                             "font": {"color": "black"},
                             "bgcolor": "white",
                             "opacity": 0.5,
@@ -732,14 +826,18 @@ class Plotly:
                             "showarrow": False
                         }
                     )
-            maxValue = max(max_values)
+            if not minValue:
+                minValueB = min(min_values)
+            if not maxValue:
+                maxValue = max(max_values)
         else:
-            for i, row in enumerate(matrix):
+            for i in range(len(matrix)):
+                row = matrix[i]
                 for j, value in enumerate(row):
                     annotations.append(
                         {
-                            "x": categories[j],
-                            "y": categories[i],
+                            "x": xCategories[j],
+                            "y": yCategories[i],
                             "font": {"color": "black"},
                             "bgcolor": "white",
                             "opacity": 0.5,
@@ -749,7 +847,15 @@ class Plotly:
                             "showarrow": False
                         }
                     )
-        data = go.Heatmap(z=matrix, y=categories, x=categories, zmin=minValue, zmax=maxValue, showscale=showScale, colorscale=colors)
+        new_matrix = []
+        for i in range(len(matrix)):
+            row = matrix[i]
+            new_row = []
+            maxRow = sum(row)
+            for j in range(len(row)):
+                new_row.append(round(float(row[j])/float(maxRow), 3))
+            new_matrix.append(new_row)
+        data = go.Heatmap(z=new_matrix, y=yCategories, x=xCategories, zmin=minValue, zmax=maxValue, showscale=showScale, colorscale=colors)
         
         layout = {
             "width": width,
@@ -763,8 +869,8 @@ class Plotly:
             "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
         }
         fig = go.Figure(data=data, layout=layout)
-        fig.update_xaxes( tickvals=categories)
-        fig.update_yaxes( tickvals=categories)
+        fig.update_xaxes( tickvals=xCategories)
+        fig.update_yaxes( tickvals=yCategories)
         return fig
         
     @staticmethod

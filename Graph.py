@@ -4,6 +4,7 @@ from topologicpy.Dictionary import Dictionary
 from topologicpy.Topology import Topology
 import random
 import time
+import networkx as nx
 
 class Graph:
     @staticmethod
@@ -28,9 +29,8 @@ class Graph:
         from topologicpy.Topology import Topology
         if not isinstance(graph, topologic.Graph):
             return None
-        topology = Graph.Topology(graph)
-        topology = Topology.SelfMerge(topology)
-        vertices = Topology.SubTopologies(topology, "vertex")
+        
+        vertices = Graph.Vertices(graph)
         order = len(vertices)
         matrix = []
         for i in range(order):
@@ -39,13 +39,11 @@ class Graph:
                 tempRow.append(0)
             matrix.append(tempRow)
         for i in range(order):
-            v = Graph.NearestVertex(graph, vertices[i])
-            adjVertices = Graph.AdjacentVertices(graph, v)
+            adjVertices = Graph.AdjacentVertices(graph, vertices[i])
             for adjVertex in adjVertices:
-                adjIndex = Vertex.Index(vertex=adjVertex, vertices=vertices, strict=None, tolerance=tolerance)
-                if adjIndex:
-                    if 0 <= adjIndex < order:
-                        matrix[i][adjIndex] = 1
+                adjIndex = Vertex.Index(vertex=adjVertex, vertices=vertices, strict=True, tolerance=0.01)
+                if not adjIndex == None:
+                    matrix[i][adjIndex] = 1
         return matrix
     @staticmethod
     def AdjacencyList(graph, tolerance=0.0001):
@@ -68,9 +66,7 @@ class Graph:
         from topologicpy.Topology import Topology
         if not isinstance(graph, topologic.Graph):
             return None
-        topology = Graph.Topology(graph)
-        topology = Topology.SelfMerge(topology)
-        vertices = Topology.SubTopologies(topology, "vertex")
+        vertices = Graph.Vertices(graph)
         order = len(vertices)
         adjList = []
         for i in range(order):
@@ -78,7 +74,7 @@ class Graph:
             v = Graph.NearestVertex(graph, vertices[i])
             adjVertices = Graph.AdjacentVertices(graph, v)
             for adjVertex in adjVertices:
-                adjIndex = Vertex.Index(vertex=adjVertex, vertices=vertices, strict=None, tolerance=tolerance)
+                adjIndex = Vertex.Index(vertex=adjVertex, vertices=vertices, strict=True, tolerance=tolerance)
                 if not adjIndex == None:
                     tempRow.append(adjIndex)
             tempRow.sort()
@@ -320,7 +316,7 @@ class Graph:
         return [graphs, labels]
     '''
     @staticmethod
-    def ByTopology(topology, direct=True, directApertures=False, viaSharedTopologies=False, viaSharedApertures=False, toExteriorTopologies=False, toExteriorApertures=False, toContents=False, useInternalVertex=True, storeBRep=False, tolerance=0.0001):
+    def ByTopology(topology, direct=True, directApertures=False, viaSharedTopologies=False, viaSharedApertures=False, toExteriorTopologies=False, toExteriorApertures=False, toContents=False, toOutposts=False, idKey="TOPOLOGIC_ID", outpostsKey="outposts", useInternalVertex=True, storeBRep=False, tolerance=0.0001):
         """
         Creates a graph.See https://en.wikipedia.org/wiki/Graph_(discrete_mathematics).
 
@@ -342,6 +338,12 @@ class Graph:
             If set to True, connect the subtopologies to their exterior apertures. The default is False.
         toContents : bool , optional
             If set to True, connect the subtopologies to their contents. The default is False.
+        toOutposts : bool , optional
+            If set to True, connect the topology to the list specified in its outposts. The default is False.
+        idKey : str , optional
+            The key to use to find outpost by ID. It is case insensitive. The default is "TOPOLOGIC_ID".
+        outpostsKey : str , optional
+            The key to use to find the list of outposts. It is case insensitive. The default is "outposts".
         useInternalVertex : bool , optional
             If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. The default is False.
         storeBRep : bool , optional
@@ -356,6 +358,7 @@ class Graph:
 
         """
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
         def mergeDictionaries(sources):
@@ -431,9 +434,33 @@ class Graph:
             if len(sinkKeys) > 0 and len(sinkValues) > 0:
                 return Dictionary.ByKeysValues(sinkKeys, sinkValues)
             return None
-
+        
+        def outpostsByID(topologies, ids, idKey="TOPOLOGIC_ID"):
+            returnList = []
+            idList = []
+            for t in topologies:
+                d = Topology.Dictionary(t)
+                keys = Dictionary.Keys(d)
+                k = None
+                for key in keys:
+                    if key.lower() == idKey.lower():
+                        k = key
+                if k:
+                    id = Dictionary.ValueAtKey(d, k)
+                else:
+                    id = ""
+                idList.append(id)
+            for id in ids:
+                try:
+                    index = idList.index(id)
+                except:
+                    index = None
+                if index:
+                    returnList.append(topologies[index])
+            return returnList
+                
         def processCellComplex(item):
-            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance = item
             edges = []
             vertices = []
             cellmat = []
@@ -506,6 +533,37 @@ class Graph:
                                     if mDict:
                                         e.SetDictionary(mDict)
                                     edges.append(e)
+            if toOutposts and others:
+                d = Topology.Dictionary(topology)
+                keys = Dictionary.Keys(d)
+                k = None
+                for key in keys:
+                    if key.lower() == outpostsKey.lower():
+                        k = key
+                if k:
+                    ids = Dictionary.ValueAtKey(k)
+                    outposts = outpostsByID(others, ids, idKey)
+                for outpost in outposts:
+                    if useInternalVertex == True:
+                        vop = Topology.InternalVertex(outpost, tolerance)
+                        vcc = Topology.InternalVertex(topology, tolerance)
+                    else:
+                        vop = Topology.CenterOfMass(outpost)
+                        vcc = Topology.CenterOfMass(topology)
+                    d1 = Topology.Dictionary(vcc)
+                    if storeBRep:
+                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [topology.String(), topology.Type(), topology.GetTypeAsString()])
+                        d3 = mergeDictionaries2([d1, d2])
+                        _ = vcc.SetDictionary(d3)
+                    else:
+                        _ = vcc.SetDictionary(d1)
+                    vertices.append(vcc)
+                    tempe = topologic.Edge.ByStartVertexEndVertex(vcc, vop)
+                    tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
+                    _ = tempe.SetDictionary(tempd)
+                    edges.append(tempe)
+
+
             cells = []
             _ = topology.Cells(None, cells)
             if (viaSharedTopologies == True) or (viaSharedApertures == True) or (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
@@ -698,10 +756,10 @@ class Graph:
                 else:
                     _ = vCell.SetDictionary(d1)
                 vertices.append(vCell)
-            return topologic.Graph.ByVerticesEdges(vertices,edges)
+            return [vertices,edges]
 
         def processCell(item):
-            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance = item
             vertices = []
             edges = []
 
@@ -718,6 +776,25 @@ class Graph:
                 _ = vCell.SetDictionary(d1)
             vertices.append(vCell)
 
+            if toOutposts and others:
+                d = Topology.Dictionary(topology)
+                keys = Dictionary.Keys(d)
+                k = None
+                for key in keys:
+                    if key.lower() == outpostsKey.lower():
+                        k = key
+                if k:
+                    ids = Dictionary.ValueAtKey(d, k)
+                    outposts = outpostsByID(others, ids, idKey)
+                for outpost in outposts:
+                    if useInternalVertex == True:
+                        vop = Topology.InternalVertex(outpost, tolerance)
+                    else:
+                        vop = Topology.CenterOfMass(outpost)
+                    tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vop)
+                    tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
+                    _ = tempe.SetDictionary(tempd)
+                    edges.append(tempe)
             if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
                 faces = []
                 _ = topology.Faces(None, faces)
@@ -809,11 +886,10 @@ class Graph:
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
-
-            return topologic.Graph.ByVerticesEdges(vertices, edges)
+            return [vertices, edges]
 
         def processShell(item):
-            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance = item
             graph = None
             edges = []
             vertices = []
@@ -1068,11 +1144,39 @@ class Graph:
                 else:
                     _ = vFace.SetDictionary(d1)
                 vertices.append(vFace)
-            return topologic.Graph.ByVerticesEdges(vertices, edges)
+            if toOutposts and others:
+                d = Topology.Dictionary(topology)
+                keys = Dictionary.Keys(d)
+                k = None
+                for key in keys:
+                    if key.lower() == outpostsKey.lower():
+                        k = key
+                if k:
+                    ids = Dictionary.ValueAtKey(k)
+                    outposts = outpostsByID(others, ids, idKey)
+                for outpost in outposts:
+                    if useInternalVertex == True:
+                        vop = Topology.InternalVertex(outpost, tolerance)
+                        vcc = Topology.InternalVertex(topology, tolerance)
+                    else:
+                        vop = Topology.CenterOfMass(outpost)
+                        vcc = Topology.CenterOfMass(topology)
+                    d1 = Topology.Dictionary(vcc)
+                    if storeBRep:
+                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [topology.String(), topology.Type(), topology.GetTypeAsString()])
+                        d3 = mergeDictionaries2([d1, d2])
+                        _ = vcc.SetDictionary(d3)
+                    else:
+                        _ = vcc.SetDictionary(d1)
+                    vertices.append(vcc)
+                    tempe = topologic.Edge.ByStartVertexEndVertex(vcc, vop)
+                    tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
+                    _ = tempe.SetDictionary(tempd)
+                    edges.append(tempe)
+            return [vertices, edges]
 
         def processFace(item):
-            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
-
+            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance = item
             graph = None
             vertices = []
             edges = []
@@ -1089,6 +1193,25 @@ class Graph:
             else:
                 _ = vFace.SetDictionary(d1)
             vertices.append(vFace)
+            if toOutposts and others:
+                d = Topology.Dictionary(topology)
+                keys = Dictionary.Keys(d)
+                k = None
+                for key in keys:
+                    if key.lower() == outpostsKey.lower():
+                        k = key
+                if k:
+                    ids = Dictionary.ValueAtKey(d, k)
+                    outposts = outpostsByID(others, ids, idKey)
+                for outpost in outposts:
+                    if useInternalVertex == True:
+                        vop = Topology.InternalVertex(outpost, tolerance)
+                    else:
+                        vop = Topology.CenterOfMass(outpost)
+                    tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vop)
+                    tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
+                    _ = tempe.SetDictionary(tempd)
+                    edges.append(tempe)
             if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
                 fEdges = []
                 _ = topology.Edges(None, fEdges)
@@ -1181,10 +1304,10 @@ class Graph:
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
-            return topologic.Graph.ByVertices(vertices, edges)
+            return [vertices, edges]
 
         def processWire(item):
-            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance = item
             graph = None
             edges = []
             vertices = []
@@ -1438,10 +1561,41 @@ class Graph:
                 else:
                     _ = vEdge.SetDictionary(d1)
                 vertices.append(vEdge)
-            return topologic.Graph.ByVerticesEdges(vertices, edges)
+            
+            if toOutposts and others:
+                d = Topology.Dictionary(topology)
+                keys = Dictionary.Keys(d)
+                k = None
+                for key in keys:
+                    if key.lower() == outpostsKey.lower():
+                        k = key
+                if k:
+                    ids = Dictionary.ValueAtKey(k)
+                    outposts = outpostsByID(others, ids, idKey)
+                for outpost in outposts:
+                    if useInternalVertex == True:
+                        vop = Topology.InternalVertex(outpost, tolerance)
+                        vcc = Topology.InternalVertex(topology, tolerance)
+                    else:
+                        vop = Topology.CenterOfMass(outpost)
+                        vcc = Topology.CenterOfMass(topology)
+                    d1 = Topology.Dictionary(vcc)
+                    if storeBRep:
+                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [topology.String(), topology.Type(), topology.GetTypeAsString()])
+                        d3 = mergeDictionaries2([d1, d2])
+                        _ = vcc.SetDictionary(d3)
+                    else:
+                        _ = vcc.SetDictionary(d1)
+                    vertices.append(vcc)
+                    tempe = topologic.Edge.ByStartVertexEndVertex(vcc, vop)
+                    tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
+                    _ = tempe.SetDictionary(tempd)
+                    edges.append(tempe)
+            
+            return [vertices, edges]
 
         def processEdge(item):
-            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance = item
             graph = None
             vertices = []
             edges = []
@@ -1465,6 +1619,26 @@ class Graph:
 
             vertices.append(vEdge)
 
+            if toOutposts and others:
+                d = Topology.Dictionary(topology)
+                keys = Dictionary.Keys(d)
+                k = None
+                for key in keys:
+                    if key.lower() == outpostsKey.lower():
+                        k = key
+                if k:
+                    ids = Dictionary.ValueAtKey(d, k)
+                    outposts = outpostsByID(others, ids, idKey)
+                for outpost in outposts:
+                    if useInternalVertex == True:
+                        vop = Topology.InternalVertex(outpost, tolerance)
+                    else:
+                        vop = Topology.CenterOfMass(outpost)
+                    tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vop)
+                    tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
+                    _ = tempe.SetDictionary(tempd)
+                    edges.append(tempe)
+            
             if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
                 eVertices = []
                 _ = topology.Vertices(None, eVertices)
@@ -1536,34 +1710,14 @@ class Graph:
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
-                    if toContents:
-                        contents = []
-                        _ = topology.Contents(contents)
-                        for content in contents:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(content, tolerance)
-                            else:
-                                vst = content.CenterOfMass()
-                            d1 = content.GetDictionary()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
-                            if storeBRep:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [content.String(), content.Type(), content.GetTypeAsString()])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
-            graph = topologic.Graph.ByVerticesEdges(vertices, edges)
-            return graph
+                    
+            return [vertices, edges]
 
         def processVertex(item):
-            topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance = item
+            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance = item
             vertices = [topology]
             edges = []
+
             if toContents:
                 contents = []
                 _ = topology.Contents(contents)
@@ -1585,32 +1739,92 @@ class Graph:
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
-            return topologic.Graph.VerticesEdges(vertices, edges)
+            
+            if toOutposts and others:
+                d = Topology.Dictionary(topology)
+                keys = Dictionary.Keys(d)
+                k = None
+                for key in keys:
+                    if key.lower() == outpostsKey.lower():
+                        k = key
+                if k:
+                    ids = Dictionary.ValueAtKey(d, k)
+                    outposts = outpostsByID(others, ids, idKey)
+                for outpost in outposts:
+                    if useInternalVertex == True:
+                        vop = Topology.InternalVertex(outpost, tolerance)
+                    else:
+                        vop = Topology.CenterOfMass(outpost)
+                    tempe = topologic.Edge.ByStartVertexEndVertex(topology, vop)
+                    tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
+                    _ = tempe.SetDictionary(tempd)
+                    edges.append(tempe)
+            
+            return [vertices, edges]
 
         
         if not isinstance(topology, topologic.Topology):
             return None
         graph = None
-        item = [topology, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, useInternalVertex, storeBRep, tolerance]
+        item = [topology, None, None, None, None, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, None, useInternalVertex, storeBRep, tolerance]
+        vertices = []
+        edges = []
         if isinstance(topology, topologic.CellComplex):
-            graph = processCellComplex(item)
+            vertices, edges = processCellComplex(item)
         elif isinstance(topology, topologic.Cell):
-            graph = processCell(item)
+            vertices, edges = processCell(item)
         elif isinstance(topology, topologic.Shell):
-            graph = processShell(item)
+            vertices, edges = processShell(item)
         elif isinstance(topology, topologic.Face):
-            graph = processFace(item)
+            vertices, edges = processFace(item)
         elif isinstance(topology, topologic.Wire):
-            graph = processWire(item)
+            vertices, edges = processWire(item)
         elif isinstance(topology, topologic.Edge):
-            graph = processEdge(item)
+            vertices, edges = processEdge(item)
         elif isinstance(topology, topologic.Vertex):
-            graph = processVertex(item)
+            vertices, edges = processVertex(item)
         elif isinstance(topology, topologic.Cluster):
-            graph = None
+            c_cellComplexes = Topology.CellComplexes(topology)
+            c_cells = Cluster.FreeCells(topology)
+            c_shells = Cluster.FreeShells(topology)
+            c_faces = Cluster.FreeFaces(topology)
+            c_wires = Cluster.FreeWires(topology)
+            c_edges = Cluster.FreeEdges(topology)
+            c_vertices = Cluster.FreeVertices(topology)
+            others = c_cellComplexes+c_cells+c_shells+c_faces+c_wires+c_edges+c_vertices
+            parameters = [others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance]
+
+            for t in c_cellComplexes:
+                v, e = processCellComplex([t]+parameters)
+                vertices += v
+                edges += e
+            for t in c_cells:
+                v, e = processCell([t]+parameters)
+                vertices += v
+                edges += e
+            for t in c_shells:
+                v, e = processShell([t]+parameters)
+                vertices += v
+                edges += e
+            for t in c_faces:
+                v, e = processFace([t]+parameters)
+                vertices += v
+                edges += e
+            for t in c_wires:
+                v, e = processWire([t]+parameters)
+                vertices += v
+                edges += e
+            for t in c_edges:
+                v, e = processEdge([t]+parameters)
+                vertices += v
+                edges += e
+            for t in c_vertices:
+                v, e = processVertex([t]+parameters)
+                vertices += v
+                edges += e
         else:
-            graph = None
-        return graph
+            return None
+        return topologic.Graph.ByVerticesEdges(vertices, edges)
     
     @staticmethod
     def ByVerticesEdges(vertices, edges):
@@ -2187,6 +2401,66 @@ class Graph:
                 nearestDistance = newDistance
                 nearestVertex = aGraphVertex
         return nearestVertex
+
+    @staticmethod
+    def NetworkXGraph(graph, tolerance=0.0001):
+        """
+        converts the input graph into a NetworkX Graph. See http://networkx.org
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+
+        Returns
+        -------
+        networkX Graph
+            The created networkX Graph
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import random
+
+        if not isinstance(graph, topologic.Graph):
+            return None
+        
+        nxGraph = nx.Graph()
+        vertices = Graph.Vertices(graph)
+        order = len(vertices)
+        nodes = []
+        for i in range(order):
+            v = vertices[i]
+            d = Topology.Dictionary(vertices[i])
+            if d:
+                keys = Dictionary.Keys(d)
+                if not keys:
+                    keys = []
+                values = Dictionary.Values(d)
+                if not values:
+                    values = []
+                keys += ["x","y","z"]
+                import random
+                values += [Vertex.X(v), Vertex.Y(v), Vertex.Z(v)]
+                d = Dictionary.ByKeysValues(keys,values)
+                pythonD = Dictionary.PythonDictionary(d)
+                nodes.append((i, pythonD))
+            else:
+                nodes.append((i, {"name": str(i)}))
+        nxGraph.add_nodes_from(nodes)
+        for i in range(order):
+            v = vertices[i]
+            adjVertices = Graph.AdjacentVertices(graph, vertices[i])
+            for adjVertex in adjVertices:
+                adjIndex = Vertex.Index(vertex=adjVertex, vertices=vertices, strict=True, tolerance=tolerance)
+                if not adjIndex == None:
+                    nxGraph.add_edge(i,adjIndex, length=(Vertex.Distance(v, adjVertex)))
+
+        pos=nx.spring_layout(nxGraph, k=0.2)
+        nx.set_node_attributes(nxGraph, pos, "pos")
+        return nxGraph
 
     @staticmethod
     def Order(graph):

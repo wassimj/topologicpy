@@ -291,7 +291,8 @@ class Vertex(Topology):
                 if Topology.IsSame(vertex, vertices[i]):
                     return i
             else:
-                if Vertex.Distance(vertex, vertices[i]) < tolerance:
+                d = Vertex.Distance(vertex, vertices[i])
+                if d < tolerance:
                     return i
         return None
 

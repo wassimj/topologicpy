@@ -4787,6 +4787,8 @@ class Topology():
             _ = topology.Clusters(None, subTopologies)
         elif subTopologyType.lower() == "aperture":
             _ = topology.Apertures(subTopologies)
+        if not subTopologies:
+            return [] # Make sure to return an empty list instead of None
         return subTopologies
 
     
@@ -4840,6 +4842,8 @@ class Topology():
             topology.Cluster(hostTopology, superTopologies)
         else:
             return None
+        if not superTopologies:
+            return [] # Make sure you return an empty list instead of None
         return superTopologies
     
     @staticmethod
@@ -5079,7 +5083,7 @@ class Topology():
         return topologic.TopologyUtility.Translate(topology, x, y, z)
     
     @staticmethod
-    def TranslateByDirectionDistance(topology, direction, distance):
+    def TranslateByDirectionDistance(topology, direction=[0,0,0], distance=0):
         """
         Translates (moves) the input topology along the input direction by the specified distance.
 
@@ -5087,12 +5091,10 @@ class Topology():
         ----------
         topology : topologic.topology
             The input topology.
-        x : float , optional
-            The x translation value. The default is 0.
-        y : float , optional
-            The y translation value. The default is 0.
-        z : float , optional
-            The z translation value. The default is 0.
+        direction : list , optional
+            The direction vector in which the topology should be moved. The default is [0,0,0]
+        distance : float , optional
+            The distance by which the toplogy should be moved. The default is 0.
 
         Returns
         -------
@@ -5104,7 +5106,7 @@ class Topology():
         if not isinstance(topology, topologic.Topology):
             return None
         v = Vector.SetMagnitude(direction, distance)
-        return topologic.TopologyUtility.Translate(topology, v[0], v[1], v[2])
+        return Topology.Translate(topology, v[0], v[1], v[2])
 
     
     @staticmethod
