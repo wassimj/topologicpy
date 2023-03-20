@@ -1728,15 +1728,15 @@ class DGL:
             return None
         datasets = dgl.data.utils.split_dataset(dataset, frac_list=fracList, shuffle=shuffle, random_state=randomState)
         if fracList[0] > 0:
-            train_ds = DGL.DatasetByGraphs(graphs=DGL.DatasetGraphs(datasets[0]), labels=DGL.DatasetLabels(datasets[0]), key=key)
+            train_ds = DGL.DatasetByGraphs({'graphs': DGL.DatasetGraphs(datasets[0]), 'labels' :DGL.DatasetLabels(datasets[0])}, key=key)
         else:
             train_ds = None
         if fracList[1] > 0:
-            validate_ds = DGL.DatasetByGraphs(graphs=DGL.DatasetGraphs(datasets[1]), labels=DGL.DatasetLabels(datasets[1]), key=key)
+            validate_ds = DGL.DatasetByGraphs({'graphs': DGL.DatasetGraphs(datasets[1]), 'labels' :DGL.DatasetLabels(datasets[1])}, key=key)
         else:
             validate_ds = None
         if fracList[2] > 0:
-            test_ds = DGL.DatasetByGraphs(graphs=DGL.DatasetGraphs(datasets[2]), labels=DGL.DatasetLabels(datasets[2]), key=key)
+            test_ds = DGL.DatasetByGraphs({'graphs': DGL.DatasetGraphs(datasets[2]), 'labels' :DGL.DatasetLabels(datasets[2])}, key=key)
         else:
             test_ds = None
 
@@ -2164,7 +2164,7 @@ class DGL:
         return data
 
     @staticmethod
-    def GraphsByFilePath(path, labelKey="label", key='node_attr'):
+    def GraphsByFilePath(path, labelKey="value", key='node_attr'):
         graphs, label_dict = load_graphs(path)
         labels = label_dict[labelKey].tolist()
         return {"graphs" : graphs, "labels": labels}
