@@ -41,11 +41,13 @@ except:
 try:
     import sklearn
     from sklearn.model_selection import KFold
+    from sklearn.metrics import accuracy_score
 except:
     call = [sys.executable, '-m', 'pip', 'install', 'scikit-learn', '-t', sys.path[0]]
     subprocess.run(call)
     import sklearn
     from sklearn.model_selection import KFold
+    from sklearn.metrics import accuracy_score
 try:
     from tqdm.auto import tqdm
 except:
@@ -62,7 +64,6 @@ import os
 import random
 import time
 from datetime import datetime
-import copy
 
 class _Dataset(DGLDataset):
     def __init__(self, graphs, labels, node_attr_key):
@@ -409,9 +410,6 @@ class _RegressorHoldout:
         self.validationDataset = validationDataset
         self.testingDataset = testingDataset
         self.hparams = hparams
-        self.bestWeights = []
-        self.bestRMSE = 0
-        self.testing_accuracy = 0
         if hparams.conv_layer_type.lower() == 'classic':
             self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
         elif hparams.conv_layer_type.lower() == 'ginconv':
@@ -441,14 +439,8 @@ class _RegressorHoldout:
                                             lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
         
         self.use_gpu = hparams.use_gpu
-
-
-
         self.training_loss_list = []
         self.validation_loss_list = []
-        self.training_accuracy_list = []
-        self.validation_accuracy_list = []
-        self.testing_accuracy_list = []
         self.node_attr_key = trainingDataset.node_attr_key
 
         # train, validate, test split
@@ -488,14 +480,10 @@ class _RegressorHoldout:
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
         # Init the loss and accuracy reporting lists
-        self.training_accuracy_list = []
         self.training_loss_list = []
-        self.validation_accuracy_list = []
         self.validation_loss_list = []
-        self.testing_accuracy_list = []
         
-        
-        best_rmse = np.inf
+
         # Run the training loop for defined number of epochs
         for _ in tqdm(range(self.hparams.epochs), desc='Epochs', total=self.hparams.epochs, leave=False):
             # Iterate over the DataLoader for training data
@@ -516,19 +504,10 @@ class _RegressorHoldout:
                 # Perform optimization
                 self.optimizer.step()
 
-            self.training_accuracy = torch.sqrt(loss).item()
-            self.training_accuracy_list.append(self.training_accuracy)
+            self.training_loss_list.append(torch.sqrt(loss).item())
             self.validate()
-            self.validation_accuracy_list.append(torch.sqrt(self.validation_accuracy).item())
-            if self.validation_accuracy < best_rmse:
-                best_rmse = self.validation_accuracy
-                best_weights = copy.deepcopy(self.model.state_dict())
-    
-        #if self.hparams.checkpoint_path is not None:
-            # Save the best model
-            #self.model.load_state_dict(best_weights)
-            #self.model.eval()
-            #torch.save(self.model, self.hparams.checkpoint_path)
+            self.validation_loss_list.append(torch.sqrt(self.validation_loss).item())
+
 
     def validate(self):
         device = torch.device("cpu")
@@ -536,27 +515,20 @@ class _RegressorHoldout:
         for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
             loss = F.mse_loss(torch.flatten(pred), labels.float())
-        self.validation_accuracy = loss
-        return self.validation_accuracy
+        self.validation_loss = loss
     
     def test(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
-        temp_validation_loss = []
         self.model.eval()
         for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
             loss = F.mse_loss(torch.flatten(pred), labels.float())
-        self.testing_accuracy = loss
-        return self.testing_accuracy
+        self.testing_loss = torch.sqrt(loss).item()
     
     def save(self, path):
         if path:
-        #self.model.load_state_dict(best_weights)
-            #self.model.eval()
             torch.save(self.model, path)
-
-
 
 
 class _RegressorKFold:
@@ -599,9 +571,6 @@ class _RegressorKFold:
         self.use_gpu = hparams.use_gpu
         self.training_loss_list = []
         self.validation_loss_list = []
-        self.training_accuracy_list = []
-        self.validation_accuracy_list = []
-        self.testing_accuracy_list = []
         self.testing_loss_list = []
         self.node_attr_key = trainingDataset.node_attr_key
 
@@ -610,8 +579,6 @@ class _RegressorKFold:
         num_validate = int(len(trainingDataset) * (hparams.split[1]))
         num_test = len(trainingDataset) - num_train - num_validate
         idx = torch.randperm(len(trainingDataset))
-        train_sampler = SubsetRandomSampler(idx[:num_train])
-        validate_sampler = SubsetRandomSampler(idx[num_train:num_train+num_validate])
         test_sampler = SubsetRandomSampler(idx[num_train+num_validate:num_train+num_validate+num_test])
         
         if testingDataset:
@@ -657,9 +624,6 @@ class _RegressorKFold:
             self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=self.hparams.amsgrad, betas=self.hparams.betas, eps=self.hparams.eps, 
                                             lr=self.hparams.lr, maximize=self.hparams.maximize, weight_decay=self.hparams.weight_decay)
 
-    
-    
-    
     def train(self):
         device = torch.device("cpu")
 
@@ -686,9 +650,7 @@ class _RegressorKFold:
         # K-fold Cross-validation model evaluation
         for fold, (train_ids, validate_ids) in tqdm(enumerate(kfold.split(self.trainingDataset)), desc="Fold", initial=1, total=k_folds, leave=False):
             epoch_training_loss_list = []
-            epoch_training_accuracy_list = []
             epoch_validation_loss_list = []
-            epoch_validation_accuracy_list = []
             # Sample elements randomly from a given list of ids, no replacement.
             train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
             validate_subsampler = torch.utils.data.SubsetRandomSampler(validate_ids)
@@ -728,7 +690,7 @@ class _RegressorKFold:
                 self.training_accuracy = torch.sqrt(loss).item()
                 self.training_accuracy_list.append(self.training_accuracy)
                 self.validate()
-                self.validation_accuracy_list.append(torch.sqrt(self.validation_accuracy).item())
+                self.validation_accuracy_list.append(torch.sqrt(self.validation_accuracy))
                 if self.validation_accuracy < best_rmse:
                     best_rmse = self.validation_accuracy
                     best_weights = copy.deepcopy(self.model.state_dict())
@@ -736,12 +698,10 @@ class _RegressorKFold:
             accuracies.append(self.validation_accuracy)
             train_dataloaders.append(self.train_dataloader)
             validate_dataloaders.append(self.validate_dataloader)
-            self.training_accuracy_list.append(epoch_training_accuracy_list)
             self.training_loss_list.append(epoch_training_loss_list)
-            self.validation_accuracy_list.append(epoch_validation_accuracy_list)
             self.validation_loss_list.append(epoch_validation_loss_list)
-        print("K-fold Accuracies", accuracies)
-        max_accuracy = max(accuracies)
+        print("K-fold Accuracies", self.validation_accuracy_list)
+        max_accuracy = max(self.validation_accuracy_list)
         print("K-fold Max Accuracy", max_accuracy)
         ind = accuracies.index(max_accuracy)
         print("Choosing Best K-fold Model. Index:", ind)
@@ -753,64 +713,14 @@ class _RegressorKFold:
         self.validation_accuracy_list = self.validation_accuracy_list[ind]
         self.validation_loss_list = self.validation_loss_list[ind]
         self.model = model
-    
-    
-    
-    
-    '''
-    def train(self):
-        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        device = torch.device("cpu")
-        # Init the loss and accuracy reporting lists
-        self.training_accuracy_list = []
-        self.training_loss_list = []
-        self.validation_accuracy_list = []
-        self.validation_loss_list = []
-        self.testing_accuracy_list = []
-        
-        
-        best_rmse = np.inf
-        # Run the training loop for defined number of epochs
-        for _ in tqdm(range(self.hparams.epochs), desc='Epochs', total=self.hparams.epochs, leave=False):
-            # Iterate over the DataLoader for training data
-            for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
-                # Make sure the model is in training mode
-                self.model.train()
-                # Zero the gradients
-                self.optimizer.zero_grad()
 
-                # Perform forward pass
-                pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
-                # Compute loss
-                loss = F.mse_loss(torch.flatten(pred), labels.float())
-
-                # Perform backward pass
-                loss.backward()
-
-                # Perform optimization
-                self.optimizer.step()
-
-            self.training_accuracy = torch.sqrt(loss).item()
-            self.training_accuracy_list.append(self.training_accuracy)
-            self.validate()
-            self.validation_accuracy_list.append(torch.sqrt(self.validation_accuracy).item())
-            if self.validation_accuracy < best_rmse:
-                best_rmse = self.validation_accuracy
-                best_weights = copy.deepcopy(self.model.state_dict())
-    
-        #if self.hparams.checkpoint_path is not None:
-            # Save the best model
-            #self.model.load_state_dict(best_weights)
-            #self.model.eval()
-            #torch.save(self.model, self.hparams.checkpoint_path)
-    '''
     def validate(self):
         device = torch.device("cpu")
         self.model.eval()
         for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
             loss = F.mse_loss(torch.flatten(pred), labels.float())
-        self.validation_accuracy = loss
+        self.validation_accuracy = loss.item()
         return self.validation_accuracy
     
     def test(self):
@@ -821,7 +731,7 @@ class _RegressorKFold:
         for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
             loss = F.mse_loss(torch.flatten(pred), labels.float())
-        self.testing_accuracy = loss
+        self.testing_accuracy = loss.item()
         return self.testing_accuracy
     
     def save(self, path):
@@ -829,14 +739,6 @@ class _RegressorKFold:
         #self.model.load_state_dict(best_weights)
             #self.model.eval()
             torch.save(self.model, path)
-
-
-
-
-
-
-
-
 
 class _ClassifierHoldout:
     def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
@@ -846,7 +748,6 @@ class _ClassifierHoldout:
         self.validationDataset = validationDataset
         self.testingDataset = testingDataset
         self.hparams = hparams
-        self.testing_accuracy = 0
         if hparams.conv_layer_type.lower() == 'classic':
             self.model = _Classic(trainingDataset.dim_nfeats, hparams.hl_widths, 
                             trainingDataset.gclasses).to(device)
@@ -882,8 +783,6 @@ class _ClassifierHoldout:
         self.validation_loss_list = []
         self.training_accuracy_list = []
         self.validation_accuracy_list = []
-        self.testing_accuracy_list = []
-        self.testing_loss_list = []
         self.node_attr_key = trainingDataset.node_attr_key
 
         # train, validate, test split
@@ -929,9 +828,8 @@ class _ClassifierHoldout:
 
         # Run the training loop for defined number of epochs
         for _ in tqdm(range(self.hparams.epochs), desc='Epochs', initial=1, leave=False):
-            num_correct = 0
-            num_tests = 0
             temp_loss_list = []
+            temp_acc_list = []
             # Iterate over the DataLoader for training data
             for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
                 # Make sure the model is in training mode
@@ -951,8 +849,7 @@ class _ClassifierHoldout:
 
                 # Save loss information for reporting
                 temp_loss_list.append(loss.item())
-                num_correct += (pred.argmax(1) == labels).sum().item()
-                num_tests += len(labels)
+                temp_acc_list.append(accuracy_score(labels, pred.argmax(1)))
 
                 # Perform backward pass
                 loss.backward()
@@ -960,9 +857,8 @@ class _ClassifierHoldout:
                 # Perform optimization
                 self.optimizer.step()
 
-            self.training_accuracy = num_correct / num_tests
-            self.training_accuracy_list.append(self.training_accuracy)
-            self.training_loss_list.append(sum(temp_loss_list) / len(temp_loss_list))
+            self.training_accuracy_list.append(np.mean(temp_acc_list).item())
+            self.training_loss_list.append(np.mean(temp_loss_list).item())
             self.validate()
             self.validation_accuracy_list.append(self.validation_accuracy)
             self.validation_loss_list.append(self.validation_loss)
@@ -970,9 +866,8 @@ class _ClassifierHoldout:
     def validate(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
-        num_correct = 0
-        num_tests = 0
-        temp_validation_loss = []
+        temp_loss_list = []
+        temp_acc_list = []
         self.model.eval()
         for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
@@ -981,18 +876,15 @@ class _ClassifierHoldout:
                 loss = F.nll_loss(logp, labels)
             elif self.hparams.loss_function.lower() == "cross entropy":
                 loss = F.cross_entropy(pred, labels)
-            temp_validation_loss.append(loss.item())
-            num_correct += (pred.argmax(1) == labels).sum().item()
-            num_tests += len(labels)
-        self.validation_loss = (sum(temp_validation_loss) / len(temp_validation_loss))
-        self.validation_accuracy = num_correct / num_tests
-        return self.validation_accuracy
+            temp_loss_list.append(loss.item())
+            temp_acc_list.append(accuracy_score(labels, pred.argmax(1)))
+        self.validation_accuracy = np.mean(temp_acc_list).item()
+        self.validation_loss = np.mean(temp_loss_list).item()
     
     def test(self):
         if self.test_dataloader:
-            num_correct = 0
-            num_tests = 0
-            temp_testing_loss = []
+            temp_loss_list = []
+            temp_acc_list = []
             self.model.eval()
             for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
                 pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float())
@@ -1001,13 +893,16 @@ class _ClassifierHoldout:
                     loss = F.nll_loss(logp, labels)
                 elif self.hparams.loss_function.lower() == "cross entropy":
                     loss = F.cross_entropy(pred, labels)
-                temp_testing_loss.append(loss.item())
-                num_correct += (pred.argmax(1) == labels).sum().item()
-                num_tests += len(labels)
-            self.testing_loss = (sum(temp_testing_loss) / len(temp_testing_loss))
-            self.testing_accuracy = num_correct / num_tests
-            return self.testing_accuracy
-        return None
+                temp_loss_list.append(loss.item())
+                temp_acc_list.append(accuracy_score(labels, pred.argmax(1)))
+            self.testing_accuracy = np.mean(temp_acc_list).item()
+            self.testing_loss = np.mean(temp_loss_list).item()
+            
+    def save(self, path):
+        if path:
+        #self.model.load_state_dict(best_weights)
+            #self.model.eval()
+            torch.save(self.model, path)
 
 class _ClassifierKFold:
     def __init__(self, hparams, trainingDataset, testingDataset=None):
@@ -2439,6 +2334,7 @@ class DGL:
         from topologicpy.Helper import Helper
         
         data = {'Model Type': [model.hparams.model_type],
+                'Optimizer': [model.hparams.optimizer_str],
                 'CV Type': [model.hparams.cv_type],
                 'Split': model.hparams.split,
                 'K-Folds': [model.hparams.k_folds],
@@ -2447,13 +2343,31 @@ class DGL:
                 'Pooling': [model.hparams.pooling],
                 'Learning Rate': [model.hparams.lr],
                 'Batch Size': [model.hparams.batch_size],
-                'Epochs': [model.hparams.epochs],
+                'Epochs': [model.hparams.epochs]
+            }
+        
+        if model.hparams.model_type.lower() == "classifier":
+            testing_accuracy_list = [model.testing_accuracy] * model.hparams.epochs
+            testing_loss_list = [model.testing_loss] * model.hparams.epochs
+            metrics_data = {
                 'Training Accuracy': [model.training_accuracy_list],
                 'Validation Accuracy': [model.validation_accuracy_list],
+                'Testing Accuracy' : [testing_accuracy_list],
                 'Training Loss': [model.training_loss_list],
                 'Validation Loss': [model.validation_loss_list],
-                'Testing Accuracy' : [model.testing_accuracy]
+                'Testing Loss' : [testing_loss_list]
             }
+            data.update(metrics_data)
+        
+        elif model.hparams.model_type.lower() == "regressor":
+            testing_loss_list = [model.testing_loss] * model.hparams.epochs
+            metrics_data = {
+                'Training Loss': [model.training_loss_list],
+                'Validation Loss': [model.validation_loss_list],
+                'Testing Loss' : [testing_loss_list]
+            }
+            data.update(metrics_data)
+        
         return data
 
     @staticmethod
@@ -2481,11 +2395,20 @@ class DGL:
 
         """
         from topologicpy.Helper import Helper
-
-        d = [[data['Optimizer']], [data['CV Type']], [data['Split']], [data['K-Folds']], [data['HL Widths']], [data['Conv Layer Type']], [data['Pooling']], [data['Learning Rate']], [data['Batch Size']], [data['Epochs']], data['Training Accuracy'], data['Validation Accuracy'], data['Training Loss'], data['Validation Loss'], [data['Accuracy']]]
-        d = Helper.Iterate(d)
-        d = Helper.Transpose(d)
-        df = pd.DataFrame(d, columns= ['Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Validation Accuracy', 'Training Loss', 'Validation Loss', 'Accuracy'])
+        
+        epoch_list = list(range(1, data['Epochs'][0]+1))
+        
+        if data['Model Type'][0].lower() == "classifier":
+            d = [data['Model Type'], data['Optimizer'], data['CV Type'], data['Split'], data['K-Folds'], data['HL Widths'], data['Conv Layer Type'], data['Pooling'], data['Learning Rate'], data['Batch Size'], epoch_list, data['Training Accuracy'][0], data['Validation Accuracy'][0], data['Testing Accuracy'][0], data['Training Loss'][0], data['Validation Loss'][0], data['Testing Loss'][0]]
+            d = Helper.Iterate(d)
+            d = Helper.Transpose(d)
+            df = pd.DataFrame(d, columns= ['Model Type', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Validation Accuracy', 'Testing Accuracy', 'Training Loss', 'Validation Loss', 'Testing Loss'])
+        elif data['Model Type'][0].lower() == "regressor":
+            d = [data['Model Type'], data['Optimizer'], data['CV Type'], data['Split'], data['K-Folds'], data['HL Widths'], data['Conv Layer Type'], data['Pooling'], data['Learning Rate'], data['Batch Size'], epoch_list, data['Training Loss'][0], data['Validation Loss'][0], data['Testing Loss'][0]]
+            d = Helper.Iterate(d)
+            d = Helper.Transpose(d)
+            df = pd.DataFrame(d, columns= ['Model Type', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Loss', 'Validation Loss', 'Testing Loss'])
+        
         status = False
         if path:
             if overwrite:
@@ -2499,7 +2422,7 @@ class DGL:
                 status = False
         return status
 
-
+    '''
     @staticmethod
     def TrainRegressor(hparams, trainingDataset, validationDataset=None, testingDataset=None, overwrite=True):
         """
@@ -2565,6 +2488,7 @@ class DGL:
             else:
                 df.to_csv(regressor.hparams.results_path, mode='a', index = False, header=False)
         return data
+    '''
 
     @staticmethod
     def _TrainClassifier_NC(graphs, model, hparams):
