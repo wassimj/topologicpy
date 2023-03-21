@@ -429,7 +429,20 @@ class _RegressorHoldout:
             self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
         else:
             raise NotImplementedError
+        
+        if hparams.optimizer_str.lower() == "adadelta":
+            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adagrad":
+            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adam":
+            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
+                                            lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
+        
         self.use_gpu = hparams.use_gpu
+
+
 
         self.training_loss_list = []
         self.validation_loss_list = []
