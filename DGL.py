@@ -537,6 +537,8 @@ class _RegressorKFold:
         self.trainingDataset = trainingDataset
         self.testingDataset = testingDataset
         self.hparams = hparams
+        self.losses = []
+        self.min_loss = 0
         # at beginning of the script
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
@@ -702,16 +704,13 @@ class _RegressorKFold:
             validate_dataloaders.append(self.validate_dataloader)
             self.training_loss_list.append(epoch_training_loss_list)
             self.validation_loss_list.append(epoch_validation_loss_list)
-        print("K-fold Losses", losses)
+        self.losses = losses
         min_loss = min(losses)
-        print("K-fold Min Loss", min_loss)
+        self.min_loss = min_loss
         ind = losses.index(min_loss)
-        print("Choosing Best K-fold Model. Index:", ind)
         self.model = models[ind]
         self.model.load_state_dict(weights[ind])
         self.model.eval()
-        #model.train_dataloader = train_dataloaders[ind]
-        #model.validate_dataloader = validate_dataloaders[ind]
         self.training_loss_list = self.training_loss_list[ind]
         self.validation_loss_list = self.validation_loss_list[ind]
 
@@ -904,6 +903,8 @@ class _ClassifierKFold:
         self.testingDataset = testingDataset
         self.hparams = hparams
         self.testing_accuracy = 0
+        self.accuracies = []
+        self.max_accuracy = 0
         # at beginning of the script
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
@@ -1065,16 +1066,13 @@ class _ClassifierKFold:
             self.training_loss_list.append(epoch_training_loss_list)
             self.validation_accuracy_list.append(epoch_validation_accuracy_list)
             self.validation_loss_list.append(epoch_validation_loss_list)
-        print("K-fold Accuracies", accuracies)
+        self.accuracies = accuracies
         max_accuracy = max(accuracies)
-        print("K-fold Max Accuracy", max_accuracy)
+        self.max_accuracy = max_accuracy
         ind = accuracies.index(max_accuracy)
-        print("Choosing Best K-fold Model. Index:", ind)
         self.model = models[ind]
         self.model.load_state_dict(weights[ind])
         self.model.eval()
-        #model.train_dataloader = train_dataloaders[ind]
-        #model.validate_dataloader = validate_dataloaders[ind]
         self.training_accuracy_list = self.training_accuracy_list[ind]
         self.training_loss_list = self.training_loss_list[ind]
         self.validation_accuracy_list = self.validation_accuracy_list[ind]
@@ -1998,7 +1996,7 @@ class DGL:
     @staticmethod
     def ModelPredict(model, dataset, node_attr_key="node_attr"):
         """
-        Predicts the label of the input dataset.
+        Predicts the value of the input dataset.
 
         Parameters
         ----------
@@ -2232,12 +2230,12 @@ class DGL:
         if hparams.model_type.lower() == "classifier":
             if hparams.cv_type.lower() == "holdout":
                 model = _ClassifierHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
-            elif hparams.cv_type.lower() == "k-fold":
+            elif hparams.cv_type.lower() == "k-fold" or hparams.cv_type.lower() == "kfold":
                 model = _ClassifierKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
         elif hparams.model_type.lower() == "regressor":
             if hparams.cv_type.lower() == "holdout":
                 model = _RegressorHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
-            elif hparams.cv_type.lower() == "k-fold":
+            elif hparams.cv_type.lower() == "k-fold" or hparams.cv_type.lower() == "kfold":
                 model = _RegressorKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
         else:
             raise NotImplementedError
@@ -2348,6 +2346,12 @@ class DGL:
                 'Validation Loss': [model.validation_loss_list],
                 'Testing Loss' : [testing_loss_list]
             }
+            if model.hparams.cv_type.lower() == "k-fold":
+                accuracy_data = {
+                    'Accuracies' : [model.accuracies],
+                    'Max Accuracy' : [model.max_accuracy]
+                }
+                metrics_data.update(accuracy_data)
             data.update(metrics_data)
         
         elif model.hparams.model_type.lower() == "regressor":
@@ -2357,6 +2361,12 @@ class DGL:
                 'Validation Loss': [model.validation_loss_list],
                 'Testing Loss' : [testing_loss_list]
             }
+            if model.hparams.cv_type.lower() == "k-fold":
+                loss_data = {
+                    'Losses' : [model.losses],
+                    'Min Loss' : [model.min_loss]
+                }
+                metrics_data.update(loss_data)
             data.update(metrics_data)
         
         return data
