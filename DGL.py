@@ -414,22 +414,21 @@ class _RegressorHoldout:
         self.testing_accuracy = 0
         if hparams.conv_layer_type.lower() == 'classic':
             self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
+        elif hparams.conv_layer_type.lower() == 'ginconv':
+            self.model = _GINConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
         elif hparams.conv_layer_type.lower() == 'graphconv':
             self.model = _GraphConvReg(trainingDataset.dim_nfeats, hparams.hl_widths, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'sageconv':
+            self.model = _SAGEConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'tagconv':
+            self.model = _TAGConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
         elif hparams.conv_layer_type.lower() == 'gcn':
             self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
         else:
             raise NotImplementedError
-
-        if hparams.optimizer_str.lower() == "adadelta":
-            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
-                                            lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adagrad":
-            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
-                                            lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adam":
-            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
-                                            lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
         self.use_gpu = hparams.use_gpu
 
         self.training_loss_list = []
@@ -543,7 +542,288 @@ class _RegressorHoldout:
         #self.model.load_state_dict(best_weights)
             #self.model.eval()
             torch.save(self.model, path)
+
+
+
+
+class _RegressorKFold:
+    def __init__(self, hparams, trainingDataset, testingDataset=None):
+        self.trainingDataset = trainingDataset
+        self.testingDataset = testingDataset
+        self.hparams = hparams
+        self.testing_accuracy = 0
+        # at beginning of the script
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        if hparams.conv_layer_type.lower() == 'classic':
+            self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
+        elif hparams.conv_layer_type.lower() == 'ginconv':
+            self.model = _GINConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'graphconv':
+            self.model = _GraphConvReg(trainingDataset.dim_nfeats, hparams.hl_widths, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'sageconv':
+            self.model = _SAGEConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'tagconv':
+            self.model = _TAGConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'gcn':
+            self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
+        else:
+            raise NotImplementedError
+
+        if hparams.optimizer_str.lower() == "adadelta":
+            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adagrad":
+            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adam":
+            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
+                                            lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
         
+        self.use_gpu = hparams.use_gpu
+        self.training_loss_list = []
+        self.validation_loss_list = []
+        self.training_accuracy_list = []
+        self.validation_accuracy_list = []
+        self.testing_accuracy_list = []
+        self.testing_loss_list = []
+        self.node_attr_key = trainingDataset.node_attr_key
+
+        # train, validate, test split
+        num_train = int(len(trainingDataset) * (hparams.split[0]))
+        num_validate = int(len(trainingDataset) * (hparams.split[1]))
+        num_test = len(trainingDataset) - num_train - num_validate
+        idx = torch.randperm(len(trainingDataset))
+        train_sampler = SubsetRandomSampler(idx[:num_train])
+        validate_sampler = SubsetRandomSampler(idx[num_train:num_train+num_validate])
+        test_sampler = SubsetRandomSampler(idx[num_train+num_validate:num_train+num_validate+num_test])
+        
+        if testingDataset:
+            self.test_dataloader = GraphDataLoader(testingDataset,
+                                                    batch_size=len(testingDataset),
+                                                    drop_last=False)
+        else:
+            self.test_dataloader = GraphDataLoader(trainingDataset, sampler=test_sampler,
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+    
+    def reset_weights(self):
+        '''
+        Try resetting model weights to avoid
+        weight leakage.
+        '''
+        device = torch.device("cpu")
+        if self.hparams.conv_layer_type.lower() == 'classic':
+            self.model = _ClassicReg(self.trainingDataset.dim_nfeats, self.hparams.hl_widths).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'ginconv':
+            self.model = _GINConv(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, 
+                            1, self.hparams.pooling).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'graphconv':
+            self.model = _GraphConvReg(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, self.hparams.pooling).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'sageconv':
+            self.model = _SAGEConv(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, 
+                            1, self.hparams.pooling).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'tagconv':
+            self.model = _TAGConv(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, 
+                            1, self.hparams.pooling).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'gcn':
+            self.model = _ClassicReg(self.trainingDataset.dim_nfeats, self.hparams.hl_widths).to(device)
+        else:
+            raise NotImplementedError
+
+        if self.hparams.optimizer_str.lower() == "adadelta":
+            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=self.hparams.eps, 
+                                            lr=self.hparams.lr, rho=self.hparams.rho, weight_decay=self.hparams.weight_decay)
+        elif self.hparams.optimizer_str.lower() == "adagrad":
+            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=self.hparams.eps, 
+                                            lr=self.hparams.lr, lr_decay=self.hparams.lr_decay, weight_decay=self.hparams.weight_decay)
+        elif self.hparams.optimizer_str.lower() == "adam":
+            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=self.hparams.amsgrad, betas=self.hparams.betas, eps=self.hparams.eps, 
+                                            lr=self.hparams.lr, maximize=self.hparams.maximize, weight_decay=self.hparams.weight_decay)
+
+    
+    
+    
+    def train(self):
+        device = torch.device("cpu")
+
+        # The number of folds (This should come from the hparams)
+        k_folds = self.hparams.k_folds
+
+        # Init the loss and accuracy reporting lists
+        self.training_accuracy_list = []
+        self.training_loss_list = []
+        self.validation_accuracy_list = []
+        self.validation_loss_list = []
+
+        # Set fixed random number seed
+        torch.manual_seed(42)
+        
+        # Define the K-fold Cross Validator
+        kfold = KFold(n_splits=k_folds, shuffle=True)
+
+        models = []
+        accuracies = []
+        train_dataloaders = []
+        validate_dataloaders = []
+
+        # K-fold Cross-validation model evaluation
+        for fold, (train_ids, validate_ids) in tqdm(enumerate(kfold.split(self.trainingDataset)), desc="Fold", initial=1, total=k_folds, leave=False):
+            epoch_training_loss_list = []
+            epoch_training_accuracy_list = []
+            epoch_validation_loss_list = []
+            epoch_validation_accuracy_list = []
+            # Sample elements randomly from a given list of ids, no replacement.
+            train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
+            validate_subsampler = torch.utils.data.SubsetRandomSampler(validate_ids)
+
+            # Define data loaders for training and testing data in this fold
+            self.train_dataloader = GraphDataLoader(self.trainingDataset, sampler=train_subsampler, 
+                                                batch_size=self.hparams.batch_size,
+                                                drop_last=False)
+            self.validate_dataloader = GraphDataLoader(self.trainingDataset, sampler=validate_subsampler,
+                                                batch_size=self.hparams.batch_size,
+                                                drop_last=False)
+            # Init the neural network
+            self.reset_weights()
+
+            # Run the training loop for defined number of epochs
+            best_rmse = np.inf
+            # Run the training loop for defined number of epochs
+            for _ in tqdm(range(self.hparams.epochs), desc='Epochs', total=self.hparams.epochs, initial=1, leave=False):
+                # Iterate over the DataLoader for training data
+                for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
+                    # Make sure the model is in training mode
+                    self.model.train()
+                    # Zero the gradients
+                    self.optimizer.zero_grad()
+
+                    # Perform forward pass
+                    pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+                    # Compute loss
+                    loss = F.mse_loss(torch.flatten(pred), labels.float())
+
+                    # Perform backward pass
+                    loss.backward()
+
+                    # Perform optimization
+                    self.optimizer.step()
+
+                self.training_accuracy = torch.sqrt(loss).item()
+                self.training_accuracy_list.append(self.training_accuracy)
+                self.validate()
+                self.validation_accuracy_list.append(torch.sqrt(self.validation_accuracy).item())
+                if self.validation_accuracy < best_rmse:
+                    best_rmse = self.validation_accuracy
+                    best_weights = copy.deepcopy(self.model.state_dict())
+            models.append(self.model)
+            accuracies.append(self.validation_accuracy)
+            train_dataloaders.append(self.train_dataloader)
+            validate_dataloaders.append(self.validate_dataloader)
+            self.training_accuracy_list.append(epoch_training_accuracy_list)
+            self.training_loss_list.append(epoch_training_loss_list)
+            self.validation_accuracy_list.append(epoch_validation_accuracy_list)
+            self.validation_loss_list.append(epoch_validation_loss_list)
+        print("K-fold Accuracies", accuracies)
+        max_accuracy = max(accuracies)
+        print("K-fold Max Accuracy", max_accuracy)
+        ind = accuracies.index(max_accuracy)
+        print("Choosing Best K-fold Model. Index:", ind)
+        model = models[ind]
+        model.train_dataloader = train_dataloaders[ind]
+        model.validate_dataloader = validate_dataloaders[ind]
+        self.training_accuracy_list = self.training_accuracy_list[ind]
+        self.training_loss_list = self.training_loss_list[ind]
+        self.validation_accuracy_list = self.validation_accuracy_list[ind]
+        self.validation_loss_list = self.validation_loss_list[ind]
+        self.model = model
+    
+    
+    
+    
+    '''
+    def train(self):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        # Init the loss and accuracy reporting lists
+        self.training_accuracy_list = []
+        self.training_loss_list = []
+        self.validation_accuracy_list = []
+        self.validation_loss_list = []
+        self.testing_accuracy_list = []
+        
+        
+        best_rmse = np.inf
+        # Run the training loop for defined number of epochs
+        for _ in tqdm(range(self.hparams.epochs), desc='Epochs', total=self.hparams.epochs, leave=False):
+            # Iterate over the DataLoader for training data
+            for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
+                # Make sure the model is in training mode
+                self.model.train()
+                # Zero the gradients
+                self.optimizer.zero_grad()
+
+                # Perform forward pass
+                pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+                # Compute loss
+                loss = F.mse_loss(torch.flatten(pred), labels.float())
+
+                # Perform backward pass
+                loss.backward()
+
+                # Perform optimization
+                self.optimizer.step()
+
+            self.training_accuracy = torch.sqrt(loss).item()
+            self.training_accuracy_list.append(self.training_accuracy)
+            self.validate()
+            self.validation_accuracy_list.append(torch.sqrt(self.validation_accuracy).item())
+            if self.validation_accuracy < best_rmse:
+                best_rmse = self.validation_accuracy
+                best_weights = copy.deepcopy(self.model.state_dict())
+    
+        #if self.hparams.checkpoint_path is not None:
+            # Save the best model
+            #self.model.load_state_dict(best_weights)
+            #self.model.eval()
+            #torch.save(self.model, self.hparams.checkpoint_path)
+    '''
+    def validate(self):
+        device = torch.device("cpu")
+        self.model.eval()
+        for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
+            pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+            loss = F.mse_loss(torch.flatten(pred), labels.float())
+        self.validation_accuracy = loss
+        return self.validation_accuracy
+    
+    def test(self):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        temp_validation_loss = []
+        self.model.eval()
+        for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
+            pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+            loss = F.mse_loss(torch.flatten(pred), labels.float())
+        self.testing_accuracy = loss
+        return self.testing_accuracy
+    
+    def save(self, path):
+        if path:
+        #self.model.load_state_dict(best_weights)
+            #self.model.eval()
+            torch.save(self.model, path)
+
+
+
+
+
+
+
+
 
 class _ClassifierHoldout:
     def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
@@ -1825,8 +2105,8 @@ class DGL:
         ----------
         dataset : DGLDataset
             The input DGL dataset.
-        regressor : Classifier
-            The input trained regressor.
+        model : Model
+            The input trained model.
         node_attr_key : str , optional
             The key used for node attributes. The default is "node_attr".
     
@@ -2059,7 +2339,7 @@ class DGL:
             if hparams.cv_type.lower() == "holdout":
                 model = _RegressorHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
             elif hparams.cv_type.lower() == "k-fold":
-                model = _RegressorHoldout(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset) # Regressor K-Fold is not implemented yet
+                model = _RegressorKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
         else:
             raise NotImplementedError
         return model
