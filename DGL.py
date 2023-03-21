@@ -64,6 +64,7 @@ import os
 import random
 import time
 from datetime import datetime
+import copy
 
 class _Dataset(DGLDataset):
     def __init__(self, graphs, labels, node_attr_key):
@@ -401,6 +402,340 @@ class _GraphConvReg(nn.Module):
         # h will now be vector of dimension num_classes
         return h
 
+
+class _RegressorHoldout:
+    def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        self.trainingDataset = trainingDataset
+        self.validationDataset = validationDataset
+        self.testingDataset = testingDataset
+        self.hparams = hparams
+        if hparams.conv_layer_type.lower() == 'classic':
+            self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
+        elif hparams.conv_layer_type.lower() == 'ginconv':
+            self.model = _GINConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'graphconv':
+            self.model = _GraphConvReg(trainingDataset.dim_nfeats, hparams.hl_widths, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'sageconv':
+            self.model = _SAGEConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'tagconv':
+            self.model = _TAGConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'gcn':
+            self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
+        else:
+            raise NotImplementedError
+        
+        if hparams.optimizer_str.lower() == "adadelta":
+            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adagrad":
+            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adam":
+            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
+                                            lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
+        
+        self.use_gpu = hparams.use_gpu
+        self.training_loss_list = []
+        self.validation_loss_list = []
+        self.node_attr_key = trainingDataset.node_attr_key
+
+        # train, validate, test split
+        num_train = int(len(trainingDataset) * (hparams.split[0]))
+        num_validate = int(len(trainingDataset) * (hparams.split[1]))
+        num_test = len(trainingDataset) - num_train - num_validate
+        idx = torch.randperm(len(trainingDataset))
+        train_sampler = SubsetRandomSampler(idx[:num_train])
+        validate_sampler = SubsetRandomSampler(idx[num_train:num_train+num_validate])
+        test_sampler = SubsetRandomSampler(idx[num_train+num_validate:num_train+num_validate+num_test])
+        
+        if validationDataset:
+            self.train_dataloader = GraphDataLoader(trainingDataset, 
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+            self.validate_dataloader = GraphDataLoader(validationDataset,
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+        else:
+            self.train_dataloader = GraphDataLoader(trainingDataset, sampler=train_sampler, 
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+            self.validate_dataloader = GraphDataLoader(trainingDataset, sampler=validate_sampler,
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+        
+        if testingDataset:
+            self.test_dataloader = GraphDataLoader(testingDataset,
+                                                    batch_size=len(testingDataset),
+                                                    drop_last=False)
+        else:
+            self.test_dataloader = GraphDataLoader(trainingDataset, sampler=test_sampler,
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+
+    def train(self):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        # Init the loss and accuracy reporting lists
+        self.training_loss_list = []
+        self.validation_loss_list = []
+        
+
+        # Run the training loop for defined number of epochs
+        for _ in tqdm(range(self.hparams.epochs), desc='Epochs', total=self.hparams.epochs, leave=False):
+            # Iterate over the DataLoader for training data
+            for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
+                # Make sure the model is in training mode
+                self.model.train()
+                # Zero the gradients
+                self.optimizer.zero_grad()
+
+                # Perform forward pass
+                pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+                # Compute loss
+                loss = F.mse_loss(torch.flatten(pred), labels.float())
+
+                # Perform backward pass
+                loss.backward()
+
+                # Perform optimization
+                self.optimizer.step()
+
+            self.training_loss_list.append(torch.sqrt(loss).item())
+            self.validate()
+            self.validation_loss_list.append(torch.sqrt(self.validation_loss).item())
+
+
+    def validate(self):
+        device = torch.device("cpu")
+        self.model.eval()
+        for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
+            pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+            loss = F.mse_loss(torch.flatten(pred), labels.float())
+        self.validation_loss = loss
+    
+    def test(self):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        self.model.eval()
+        for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
+            pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+            loss = F.mse_loss(torch.flatten(pred), labels.float())
+        self.testing_loss = torch.sqrt(loss).item()
+    
+    def save(self, path):
+        if path:
+            torch.save(self.model, path)
+
+
+class _RegressorKFold:
+    def __init__(self, hparams, trainingDataset, testingDataset=None):
+        self.trainingDataset = trainingDataset
+        self.testingDataset = testingDataset
+        self.hparams = hparams
+        # at beginning of the script
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        if hparams.conv_layer_type.lower() == 'classic':
+            self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
+        elif hparams.conv_layer_type.lower() == 'ginconv':
+            self.model = _GINConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'graphconv':
+            self.model = _GraphConvReg(trainingDataset.dim_nfeats, hparams.hl_widths, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'sageconv':
+            self.model = _SAGEConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'tagconv':
+            self.model = _TAGConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
+                            1, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'gcn':
+            self.model = _ClassicReg(trainingDataset.dim_nfeats, hparams.hl_widths).to(device)
+        else:
+            raise NotImplementedError
+
+        if hparams.optimizer_str.lower() == "adadelta":
+            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adagrad":
+            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adam":
+            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
+                                            lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
+        
+        self.use_gpu = hparams.use_gpu
+        self.training_loss_list = []
+        self.validation_loss_list = []
+        self.node_attr_key = trainingDataset.node_attr_key
+
+        # train, validate, test split
+        num_train = int(len(trainingDataset) * (hparams.split[0]))
+        num_validate = int(len(trainingDataset) * (hparams.split[1]))
+        num_test = len(trainingDataset) - num_train - num_validate
+        idx = torch.randperm(len(trainingDataset))
+        train_sampler = SubsetRandomSampler(idx[:num_train])
+        validate_sampler = SubsetRandomSampler(idx[num_train:num_train+num_validate])
+        test_sampler = SubsetRandomSampler(idx[num_train+num_validate:num_train+num_validate+num_test])
+        
+        if testingDataset:
+            self.test_dataloader = GraphDataLoader(testingDataset,
+                                                    batch_size=len(testingDataset),
+                                                    drop_last=False)
+        else:
+            self.test_dataloader = GraphDataLoader(trainingDataset, sampler=test_sampler,
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+    
+    def reset_weights(self):
+        '''
+        Try resetting model weights to avoid
+        weight leakage.
+        '''
+        device = torch.device("cpu")
+        if self.hparams.conv_layer_type.lower() == 'classic':
+            self.model = _ClassicReg(self.trainingDataset.dim_nfeats, self.hparams.hl_widths).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'ginconv':
+            self.model = _GINConv(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, 
+                            1, self.hparams.pooling).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'graphconv':
+            self.model = _GraphConvReg(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, self.hparams.pooling).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'sageconv':
+            self.model = _SAGEConv(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, 
+                            1, self.hparams.pooling).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'tagconv':
+            self.model = _TAGConv(self.trainingDataset.dim_nfeats, self.hparams.hl_widths, 
+                            1, self.hparams.pooling).to(device)
+        elif self.hparams.conv_layer_type.lower() == 'gcn':
+            self.model = _ClassicReg(self.trainingDataset.dim_nfeats, self.hparams.hl_widths).to(device)
+        else:
+            raise NotImplementedError
+
+        if self.hparams.optimizer_str.lower() == "adadelta":
+            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=self.hparams.eps, 
+                                            lr=self.hparams.lr, rho=self.hparams.rho, weight_decay=self.hparams.weight_decay)
+        elif self.hparams.optimizer_str.lower() == "adagrad":
+            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=self.hparams.eps, 
+                                            lr=self.hparams.lr, lr_decay=self.hparams.lr_decay, weight_decay=self.hparams.weight_decay)
+        elif self.hparams.optimizer_str.lower() == "adam":
+            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=self.hparams.amsgrad, betas=self.hparams.betas, eps=self.hparams.eps, 
+                                            lr=self.hparams.lr, maximize=self.hparams.maximize, weight_decay=self.hparams.weight_decay)
+
+    
+    
+    
+    def train(self):
+        device = torch.device("cpu")
+
+        # The number of folds (This should come from the hparams)
+        k_folds = self.hparams.k_folds
+
+        # Init the loss and accuracy reporting lists
+        self.training_loss_list = []
+        self.validation_loss_list = []
+
+        # Set fixed random number seed
+        torch.manual_seed(42)
+        
+        # Define the K-fold Cross Validator
+        kfold = KFold(n_splits=k_folds, shuffle=True)
+
+        models = []
+        weights = []
+        losses = []
+        train_dataloaders = []
+        validate_dataloaders = []
+
+        # K-fold Cross-validation model evaluation
+        for fold, (train_ids, validate_ids) in tqdm(enumerate(kfold.split(self.trainingDataset)), desc="Fold", initial=1, total=k_folds, leave=False):
+            epoch_training_loss_list = []
+            epoch_validation_loss_list = []
+            # Sample elements randomly from a given list of ids, no replacement.
+            train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
+            validate_subsampler = torch.utils.data.SubsetRandomSampler(validate_ids)
+
+            # Define data loaders for training and testing data in this fold
+            self.train_dataloader = GraphDataLoader(self.trainingDataset, sampler=train_subsampler, 
+                                                batch_size=self.hparams.batch_size,
+                                                drop_last=False)
+            self.validate_dataloader = GraphDataLoader(self.trainingDataset, sampler=validate_subsampler,
+                                                batch_size=self.hparams.batch_size,
+                                                drop_last=False)
+            # Init the neural network
+            self.reset_weights()
+
+            # Run the training loop for defined number of epochs
+            best_rmse = np.inf
+            # Run the training loop for defined number of epochs
+            for _ in tqdm(range(self.hparams.epochs), desc='Epochs', total=self.hparams.epochs, initial=1, leave=False):
+                # Iterate over the DataLoader for training data
+                for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
+                    # Make sure the model is in training mode
+                    self.model.train()
+                    # Zero the gradients
+                    self.optimizer.zero_grad()
+
+                    # Perform forward pass
+                    pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+                    # Compute loss
+                    loss = F.mse_loss(torch.flatten(pred), labels.float())
+
+                    # Perform backward pass
+                    loss.backward()
+
+                    # Perform optimization
+                    self.optimizer.step()
+
+
+                epoch_training_loss_list.append(torch.sqrt(loss).item())
+                self.validate()
+                epoch_validation_loss_list.append(torch.sqrt(self.validation_loss).item())
+
+            models.append(self.model)
+            weights.append(copy.deepcopy(self.model.state_dict()))
+            losses.append(torch.sqrt(self.validation_loss).item())
+            train_dataloaders.append(self.train_dataloader)
+            validate_dataloaders.append(self.validate_dataloader)
+            self.training_loss_list.append(epoch_training_loss_list)
+            self.validation_loss_list.append(epoch_validation_loss_list)
+        print("K-fold Losses", losses)
+        min_loss = min(losses)
+        print("K-fold Min Loss", min_loss)
+        ind = losses.index(min_loss)
+        print("Choosing Best K-fold Model. Index:", ind)
+        self.model = models[ind]
+        self.model.load_state_dict(weights[ind])
+        self.model.eval()
+        #model.train_dataloader = train_dataloaders[ind]
+        #model.validate_dataloader = validate_dataloaders[ind]
+        self.training_loss_list = self.training_loss_list[ind]
+        self.validation_loss_list = self.validation_loss_list[ind]
+
+    def validate(self):
+        device = torch.device("cpu")
+        self.model.eval()
+        for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
+            pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+            loss = F.mse_loss(torch.flatten(pred), labels.float())
+        self.validation_loss = loss
+    
+    def test(self):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        #self.model.eval()
+        for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
+            pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+            loss = F.mse_loss(torch.flatten(pred), labels.float())
+        self.testing_loss = torch.sqrt(loss).item()
+    
+    def save(self, path):
+        if path:
+            torch.save(self.model, path)
+
 class _ClassifierHoldout:
     def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -561,8 +896,6 @@ class _ClassifierHoldout:
             
     def save(self, path):
         if path:
-        #self.model.load_state_dict(best_weights)
-            #self.model.eval()
             torch.save(self.model, path)
 
 class _ClassifierKFold:
@@ -659,6 +992,7 @@ class _ClassifierKFold:
         kfold = KFold(n_splits=k_folds, shuffle=True)
 
         models = []
+        weights = []
         accuracies = []
         train_dataloaders = []
         validate_dataloaders = []
@@ -685,9 +1019,8 @@ class _ClassifierKFold:
 
             # Run the training loop for defined number of epochs
             for _ in tqdm(range(0,self.hparams.epochs), desc='Epochs', initial=1, total=self.hparams.epochs, leave=False):
-                num_correct = 0
-                num_tests = 0
                 temp_loss_list = []
+                temp_acc_list = []
 
                 # Iterate over the DataLoader for training data
                 for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
@@ -710,8 +1043,7 @@ class _ClassifierKFold:
 
                     # Save loss information for reporting
                     temp_loss_list.append(loss.item())
-                    num_correct += (pred.argmax(1) == labels).sum().item()
-                    num_tests += len(labels)
+                    temp_acc_list.append(accuracy_score(labels, pred.argmax(1)))
 
                     # Perform backward pass
                     loss.backward()
@@ -719,13 +1051,13 @@ class _ClassifierKFold:
                     # Perform optimization
                     self.optimizer.step()
 
-                self.training_accuracy = num_correct / num_tests
-                epoch_training_accuracy_list.append(self.training_accuracy)
-                epoch_training_loss_list.append(sum(temp_loss_list) / len(temp_loss_list))
+                epoch_training_accuracy_list.append(np.mean(temp_acc_list).item())
+                epoch_training_loss_list.append(np.mean(temp_loss_list).item())
                 self.validate()
                 epoch_validation_accuracy_list.append(self.validation_accuracy)
                 epoch_validation_loss_list.append(self.validation_loss)
             models.append(self.model)
+            weights.append(copy.deepcopy(self.model.state_dict()))
             accuracies.append(self.validation_accuracy)
             train_dataloaders.append(self.train_dataloader)
             validate_dataloaders.append(self.validate_dataloader)
@@ -738,19 +1070,19 @@ class _ClassifierKFold:
         print("K-fold Max Accuracy", max_accuracy)
         ind = accuracies.index(max_accuracy)
         print("Choosing Best K-fold Model. Index:", ind)
-        model = models[ind]
-        model.train_dataloader = train_dataloaders[ind]
-        model.validate_dataloader = validate_dataloaders[ind]
+        self.model = models[ind]
+        self.model.load_state_dict(weights[ind])
+        self.model.eval()
+        #model.train_dataloader = train_dataloaders[ind]
+        #model.validate_dataloader = validate_dataloaders[ind]
         self.training_accuracy_list = self.training_accuracy_list[ind]
         self.training_loss_list = self.training_loss_list[ind]
         self.validation_accuracy_list = self.validation_accuracy_list[ind]
         self.validation_loss_list = self.validation_loss_list[ind]
-        self.model = model
         
     def validate(self):
-        num_correct = 0
-        num_tests = 0
-        temp_validation_loss = []
+        temp_loss_list = []
+        temp_acc_list = []
         self.model.eval()
         for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float())
@@ -759,21 +1091,18 @@ class _ClassifierKFold:
                 loss = F.nll_loss(logp, labels)
             elif self.hparams.loss_function.lower() == "cross entropy":
                 loss = F.cross_entropy(pred, labels)
-            temp_validation_loss.append(loss.item())
-            num_correct += (pred.argmax(1) == labels).sum().item()
-            num_tests += len(labels)
-        self.validation_loss = (sum(temp_validation_loss) / len(temp_validation_loss))
-        self.validation_accuracy = num_correct / num_tests
-        return self.validation_accuracy
+            temp_loss_list.append(loss.item())
+            temp_acc_list.append(accuracy_score(labels, pred.argmax(1)))
+        self.validation_accuracy = np.mean(temp_acc_list).item()
+        self.validation_loss = np.mean(temp_loss_list).item()
     
     def test(self):
         if self.testingDataset:
             self.test_dataloader = GraphDataLoader(self.testingDataset,
                                                     batch_size=len(self.testingDataset),
                                                     drop_last=False)
-            num_correct = 0
-            num_tests = 0
-            temp_testing_loss = []
+            temp_loss_list = []
+            temp_acc_list = []
             self.model.eval()
             for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
                 pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float())
@@ -782,13 +1111,14 @@ class _ClassifierKFold:
                     loss = F.nll_loss(logp, labels)
                 elif self.hparams.loss_function.lower() == "cross entropy":
                     loss = F.cross_entropy(pred, labels)
-                temp_testing_loss.append(loss.item())
-                num_correct += (pred.argmax(1) == labels).sum().item()
-                num_tests += len(labels)
-            self.testing_loss = (sum(temp_testing_loss) / len(temp_testing_loss))
-            self.testing_accuracy = num_correct / num_tests
-            return self.testing_accuracy
-        return None
+                temp_loss_list.append(loss.item())
+                temp_acc_list.append(accuracy_score(labels, pred.argmax(1)))
+            self.testing_accuracy = np.mean(temp_acc_list).item()
+            self.testing_loss = np.mean(temp_loss_list).item()
+        
+    def save(self, path):
+        if path:
+            torch.save(self.model, path)
     
 class DGL:
     @staticmethod
@@ -2060,12 +2390,12 @@ class DGL:
         epoch_list = list(range(1, data['Epochs'][0]+1))
         
         if data['Model Type'][0].lower() == "classifier":
-            d = [data['Model Type'], data['Optimizer'], data['CV Type'], data['Split'], data['K-Folds'], data['HL Widths'], data['Conv Layer Type'], data['Pooling'], data['Learning Rate'], data['Batch Size'], epoch_list, data['Training Accuracy'][0], data['Validation Accuracy'][0], data['Testing Accuracy'][0], data['Training Loss'][0], data['Validation Loss'][0], data['Testing Loss'][0]]
+            d = [data['Model Type'], data['Optimizer'], data['CV Type'], [data['Split']], data['K-Folds'], data['HL Widths'], data['Conv Layer Type'], data['Pooling'], data['Learning Rate'], data['Batch Size'], epoch_list, data['Training Accuracy'][0], data['Validation Accuracy'][0], data['Testing Accuracy'][0], data['Training Loss'][0], data['Validation Loss'][0], data['Testing Loss'][0]]
             d = Helper.Iterate(d)
             d = Helper.Transpose(d)
             df = pd.DataFrame(d, columns= ['Model Type', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Validation Accuracy', 'Testing Accuracy', 'Training Loss', 'Validation Loss', 'Testing Loss'])
         elif data['Model Type'][0].lower() == "regressor":
-            d = [data['Model Type'], data['Optimizer'], data['CV Type'], data['Split'], data['K-Folds'], data['HL Widths'], data['Conv Layer Type'], data['Pooling'], data['Learning Rate'], data['Batch Size'], epoch_list, data['Training Loss'][0], data['Validation Loss'][0], data['Testing Loss'][0]]
+            d = [data['Model Type'], data['Optimizer'], data['CV Type'], [data['Split']], data['K-Folds'], data['HL Widths'], data['Conv Layer Type'], data['Pooling'], data['Learning Rate'], data['Batch Size'], epoch_list, data['Training Loss'][0], data['Validation Loss'][0], data['Testing Loss'][0]]
             d = Helper.Iterate(d)
             d = Helper.Transpose(d)
             df = pd.DataFrame(d, columns= ['Model Type', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Loss', 'Validation Loss', 'Testing Loss'])
