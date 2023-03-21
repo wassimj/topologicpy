@@ -480,10 +480,12 @@ class _RegressorHoldout:
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
         # Init the loss and accuracy reporting lists
+        self.training_accuracy_list = []
         self.training_loss_list = []
+        self.validation_accuracy_list = []
         self.validation_loss_list = []
         
-
+        best_rmse = np.inf
         # Run the training loop for defined number of epochs
         for _ in tqdm(range(self.hparams.epochs), desc='Epochs', total=self.hparams.epochs, leave=False):
             # Iterate over the DataLoader for training data
@@ -503,10 +505,12 @@ class _RegressorHoldout:
 
                 # Perform optimization
                 self.optimizer.step()
-
-            self.training_loss_list.append(torch.sqrt(loss).item())
+            self.training_loss_list.append(loss.item())
+            self.training_accuracy = torch.sqrt(loss).item()
+            self.training_accuracy_list.append(self.training_accuracy)
             self.validate()
-            self.validation_loss_list.append(torch.sqrt(self.validation_loss).item())
+            self.validation_loss_list.append(self.validation_loss)
+            self.validation_accuracy_list.append(self.validation_accuracy)
 
 
     def validate(self):
@@ -515,7 +519,8 @@ class _RegressorHoldout:
         for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
             loss = F.mse_loss(torch.flatten(pred), labels.float())
-        self.validation_loss = loss
+        self.validation_loss = loss.item()
+        self.validation_accuracy = torch.sqrt(self.validation_loss).item()
     
     def test(self):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -720,7 +725,8 @@ class _RegressorKFold:
         for batched_graph, labels in tqdm(self.validate_dataloader, desc='Validating', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
             loss = F.mse_loss(torch.flatten(pred), labels.float())
-        self.validation_accuracy = loss.item()
+        self.validation_loss = loss.item()
+        self.validation_accuracy = torch.sqrt(self.validation_loss).item()
         return self.validation_accuracy
     
     def test(self):
@@ -731,7 +737,8 @@ class _RegressorKFold:
         for batched_graph, labels in tqdm(self.test_dataloader, desc='Testing', leave=False):
             pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
             loss = F.mse_loss(torch.flatten(pred), labels.float())
-        self.testing_accuracy = loss.item()
+        self.testing_loss = loss.item()
+        self.testing_accuracy = torch.sqrt(self.testing_loss).item()
         return self.testing_accuracy
     
     def save(self, path):
