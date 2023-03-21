@@ -529,6 +529,10 @@ class _RegressorHoldout:
     
     def save(self, path):
         if path:
+            # Make sure the file extension is .pt
+            ext = path[len(path)-3:len(path)]
+            if ext.lower() != ".pt":
+                path = path+".pt"
             torch.save(self.model, path)
 
 
@@ -731,6 +735,10 @@ class _RegressorKFold:
     
     def save(self, path):
         if path:
+            # Make sure the file extension is .pt
+            ext = path[len(path)-3:len(path)]
+            if ext.lower() != ".pt":
+                path = path+".pt"
             torch.save(self.model, path)
 
 class _ClassifierHoldout:
@@ -893,6 +901,10 @@ class _ClassifierHoldout:
             
     def save(self, path):
         if path:
+            # Make sure the file extension is .pt
+            ext = path[len(path)-3:len(path)]
+            if ext.lower() != ".pt":
+                path = path+".pt"
             torch.save(self.model, path)
 
 class _ClassifierKFold:
@@ -1114,6 +1126,10 @@ class _ClassifierKFold:
         
     def save(self, path):
         if path:
+            # Make sure the file extension is .pt
+            ext = path[len(path)-3:len(path)]
+            if ext.lower() != ".pt":
+                path = path+".pt"
             torch.save(self.model, path)
     
 class DGL:
@@ -2300,6 +2316,10 @@ class DGL:
         if not model:
             return None
         if path:
+            # Make sure the file extension is .pt
+            ext = path[len(path)-3:len(path)]
+            if ext.lower() != ".pt":
+                path = path+".pt"
             return model.save(path)
     
     @staticmethod
@@ -2394,6 +2414,11 @@ class DGL:
 
         """
         from topologicpy.Helper import Helper
+        
+        # Make sure the file extension is .csv
+        ext = path[len(path)-4:len(path)]
+        if ext.lower() != ".csv":
+            path = path+".csv"
         
         epoch_list = list(range(1, data['Epochs'][0]+1))
         
