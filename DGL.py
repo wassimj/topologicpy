@@ -580,8 +580,6 @@ class _RegressorKFold:
         num_validate = int(len(trainingDataset) * (hparams.split[1]))
         num_test = len(trainingDataset) - num_train - num_validate
         idx = torch.randperm(len(trainingDataset))
-        train_sampler = SubsetRandomSampler(idx[:num_train])
-        validate_sampler = SubsetRandomSampler(idx[num_train:num_train+num_validate])
         test_sampler = SubsetRandomSampler(idx[num_train+num_validate:num_train+num_validate+num_test])
         
         if testingDataset:
