@@ -2422,16 +2422,26 @@ class DGL:
         
         epoch_list = list(range(1, data['Epochs'][0]+1))
         
+        d = [data['Model Type'], data['Optimizer'], data['CV Type'], [data['Split']], data['K-Folds'], data['HL Widths'], data['Conv Layer Type'], data['Pooling'], data['Learning Rate'], data['Batch Size'], epoch_list]
+        columns = ['Model Type', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs']
+
         if data['Model Type'][0].lower() == "classifier":
-            d = [data['Model Type'], data['Optimizer'], data['CV Type'], [data['Split']], data['K-Folds'], data['HL Widths'], data['Conv Layer Type'], data['Pooling'], data['Learning Rate'], data['Batch Size'], epoch_list, data['Training Accuracy'][0], data['Validation Accuracy'][0], data['Testing Accuracy'][0], data['Training Loss'][0], data['Validation Loss'][0], data['Testing Loss'][0]]
-            d = Helper.Iterate(d)
-            d = Helper.Transpose(d)
-            df = pd.DataFrame(d, columns= ['Model Type', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Accuracy', 'Validation Accuracy', 'Testing Accuracy', 'Training Loss', 'Validation Loss', 'Testing Loss'])
+            d.extend([data['Training Accuracy'][0], data['Validation Accuracy'][0], data['Testing Accuracy'][0], data['Training Loss'][0], data['Validation Loss'][0], data['Testing Loss'][0]])
+            columns.extend(['Training Accuracy', 'Validation Accuracy', 'Testing Accuracy', 'Training Loss', 'Validation Loss', 'Testing Loss'])
+            if data['CV Type'][0].lower() == "k-fold":
+                d.extend([data['Accuracies'], data['Max Accuracy']])
+                columns.extend(['Accuracies', 'Max Accuracy'])
+            
         elif data['Model Type'][0].lower() == "regressor":
-            d = [data['Model Type'], data['Optimizer'], data['CV Type'], [data['Split']], data['K-Folds'], data['HL Widths'], data['Conv Layer Type'], data['Pooling'], data['Learning Rate'], data['Batch Size'], epoch_list, data['Training Loss'][0], data['Validation Loss'][0], data['Testing Loss'][0]]
-            d = Helper.Iterate(d)
-            d = Helper.Transpose(d)
-            df = pd.DataFrame(d, columns= ['Model Type', 'Optimizer', 'CV Type', 'Split', 'K-Folds', 'HL Widths', 'Conv Layer Type', 'Pooling', 'Learning Rate', 'Batch Size', 'Epochs', 'Training Loss', 'Validation Loss', 'Testing Loss'])
+            d.extend([data['Training Loss'][0], data['Validation Loss'][0], data['Testing Loss'][0]])
+            columns.extend(['Training Loss', 'Validation Loss', 'Testing Loss'])
+            if data['CV Type'][0].lower() == "k-fold":
+                d.extend([data['Losses'], data['Min Loss']])
+                columns.extend(['Losses', 'Min Loss'])
+
+        d = Helper.Iterate(d)
+        d = Helper.Transpose(d)
+        df = pd.DataFrame(d, columns=columns)
         
         status = False
         if path:
