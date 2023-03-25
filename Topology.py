@@ -3605,19 +3605,20 @@ class Topology():
         dy = y2 - y1
         dz = z2 - z1    
         dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        world_origin = Vertex.ByCoordinates(0,0,0)
+
         phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < tolerance:
+        if dist < 0.0001:
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        world_origin = Vertex.ByCoordinates(0,0,0)
-        returnTopology = Topology.Rotate(topology, world_origin, 0, 0, 1, -phi)
-        returnTopology = Topology.Rotate(returnTopology, world_origin, 0, 1, 0, -theta)
+        returnTopology = Topology.Rotate(topology, world_origin, 0, 1, 0, theta)
+        returnTopology = Topology.Rotate(returnTopology, world_origin, 0, 0, 1, phi)
         returnTopology = Topology.Place(returnTopology, world_origin, origin)
         return returnTopology
 
     @staticmethod
-    def Place(topology, oldLocation=None, newLocation=None):
+    def Place(topology, originA=None, originB=None):
         """
         Places the input topology at the specified location.
 
@@ -3625,9 +3626,9 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
-        oldLocation : topologic.Vertex , optional
+        originA : topologic.Vertex , optional
             The old location to use as the origin of the movement. If set to None, the centroid of the input topology is used. The default is None.
-        newLocation : topologic.Vertex , optional
+        originB : topologic.Vertex , optional
             The new location at which to place the topology. If set to None, the world origin (0,0,0) is used. The default is None.
 
         Returns
@@ -3639,14 +3640,14 @@ class Topology():
         from topologicpy.Vertex import Vertex
         if not isinstance(topology, topologic.Topology):
             return None
-        if not isinstance(oldLocation, topologic.Vertex):
-            oldLocation = Topology.Centroid(topology)
-        if not isinstance(newLocation, topologic.Vertex):
-            newLocation = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(originA, topologic.Vertex):
+            originA = Topology.Centroid(topology)
+        if not isinstance(originA, topologic.Vertex):
+            originA = Vertex.ByCoordinates(0,0,0)
 
-        x = newLocation.X() - oldLocation.X()
-        y = newLocation.Y() - oldLocation.Y()
-        z = newLocation.Z() - oldLocation.Z()
+        x = originB.X() - originA.X()
+        y = originB.Y() - originA.Y()
+        z = originB.Z() - originA.Z()
         newTopology = None
         try:
             newTopology = Topology.Translate(topology, x, y, z)

@@ -6,7 +6,7 @@ import collections
 
 class Vertex(Topology):
     @staticmethod
-    def AreIpsilateral(vertices, face):
+    def AreIpsilateral(vertices: list, face: topologic.Face) -> bool:
         """
         Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
 
@@ -62,7 +62,7 @@ class Vertex(Topology):
         return True
     
     @staticmethod
-    def AreOnSameSide(vertices, face):
+    def AreOnSameSide(vertices: list, face: topologicpy.Face.Face) -> bool:
         """
         Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
 
@@ -82,7 +82,7 @@ class Vertex(Topology):
         return IsIpsileteral(vertices, face)
 
     @staticmethod
-    def AreOnSameSideCluster(cluster, face):
+    def AreOnSameSideCluster(cluster: topologic.Cluster, face: topologic.Face) -> bool:
         """
         Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
 
@@ -106,18 +106,18 @@ class Vertex(Topology):
         return AreIpsilateral(vertices, face)
 
     @staticmethod
-    def ByCoordinates(x, y, z):
+    def ByCoordinates(x: float = 0, y: float = 0, z: float = 0) -> topologic.Vertex:
         """
         Creates a vertex at the coordinates specified by the x, y, z inputs.
 
         Parameters
         ----------
-        x : float
-            The X coordinate.
-        y : float
-            The Y coordinate.
-        z : float
-            The Z coodinate.
+        x : float , optional
+            The X coordinate. The default is 0.
+        y : float , optional
+            The Y coordinate. The default is 0.
+        z : float , optional
+            The Z coordinate. The defaults is 0.
 
         Returns
         -------
@@ -133,7 +133,7 @@ class Vertex(Topology):
         return vertex
     
     @staticmethod
-    def Coordinates(vertex, outputType="xyz", mantissa=4):
+    def Coordinates(vertex: topologic.Vertex, outputType: str = "xyz", mantissa: int = 4) -> list:
         """
         Returns the coordinates of the input vertex.
 
@@ -176,9 +176,8 @@ class Vertex(Topology):
                     output.append(z)
         return output
 
-    
     @staticmethod
-    def Distance(vertex, topology, mantissa=4):
+    def Distance(vertex: topologic.Vertex, topology: topologic.Topology, mantissa: int = 4) -> float:
         """
         Returns the distance between the input vertex and the input topology.
 
@@ -202,7 +201,7 @@ class Vertex(Topology):
         return round(topologic.VertexUtility.Distance(vertex, topology), mantissa)
     
     @staticmethod
-    def EnclosingCell(vertex, topology, exclusive=True, tolerance=0.0001):
+    def EnclosingCell(vertex: topologic.Vertex, topology: topologic.Topology, exclusive: bool = True, tolerance: float = 0.0001) -> list:
         """
         Returns the list of Cells found in the input topology that enclose the input vertex.
 
@@ -257,7 +256,7 @@ class Vertex(Topology):
         return enclosingCells
 
     @staticmethod
-    def Index(vertex, vertices, strict=False, tolerance=0.0001):
+    def Index(vertex: topologic.Vertex, vertices: list, strict: bool = False, tolerance: float = 0.0001) -> int:
         """
         Returns index of the input vertex in the input list of vertices
 
@@ -297,7 +296,7 @@ class Vertex(Topology):
         return None
 
     @staticmethod
-    def IsInside(vertex, topology, tolerance=0.0001):
+    def IsInside(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input vertex is inside the input topology. Returns False otherwise.
 
@@ -373,7 +372,7 @@ class Vertex(Topology):
         return False
     
     @staticmethod
-    def NearestVertex(vertex, topology, useKDTree=True):
+    def NearestVertex(vertex: topologic.Vertex, topology: topologic.Topology, useKDTree: bool = True) -> topologic.Vertex:
         """
         Returns the vertex found in the input topology that is the nearest to the input vertex.
 
@@ -515,9 +514,22 @@ class Vertex(Topology):
             sorted_indices = [x for _, x in sorted(zip(distances, indices))]
         return vertices[sorted_indices[0]]
 
+    @staticmethod
+    def Origin() -> topologic.Vertex:
+        """
+        Returns a vertex with coordinates (0,0,0)
+
+        Parameters
+        -----------
+
+        Return
+        -----------
+        topologic.Vertex
+        """
+        return Vertex.ByCoordinates(0,0,0)
     
     @staticmethod
-    def Project(vertex, face, direction=None, mantissa=4, tolerance=0.0001):
+    def Project(vertex: topologic.Vertex, face: topologic.Face, direction: bool = None, mantissa: int = 4, tolerance: float = 0.0001) -> topologic.Vertex:
         """
         Returns a vertex that is the projection of the input vertex unto the input face.
 
@@ -568,7 +580,7 @@ class Vertex(Topology):
             return None
 
     @staticmethod
-    def X(vertex, mantissa=4):
+    def X(vertex: topologic.Vertex, mantissa: int = 4) -> float:
         """
         Returns the X coordinate of the input vertex.
 
@@ -590,7 +602,7 @@ class Vertex(Topology):
         return round(vertex.X(), mantissa)
 
     @staticmethod
-    def Y(vertex, mantissa=4):
+    def Y(vertex: topologic.Vertex, mantissa: int = 4) -> float:
         """
         Returns the Y coordinate of the input vertex.
 
@@ -612,7 +624,7 @@ class Vertex(Topology):
         return round(vertex.Y(), mantissa)
 
     @staticmethod
-    def Z(vertex, mantissa=4):
+    def Z(vertex: topologic.Vertex, mantissa: int = 4) -> float:
         """
         Returns the Z coordinate of the input vertex.
 

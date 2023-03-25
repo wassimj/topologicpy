@@ -5,14 +5,14 @@ class Aperture(topologic.Aperture):
     @staticmethod
     def ByTopologyContext(topology, context):
         """
-        Creates an aperture.
+        Creates an aperture object represented by the input topology and one that belongs to the input context.
 
         Parameters
         ----------
         topology : topologic.Topology
-            The input topology to which the aperture will belong
+            The input topology that represents the aperture.
         context : topologic.Context
-            The context of the aperture.
+            The context of the aperture. See Context class.
 
         Returns
         -------

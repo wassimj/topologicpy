@@ -5,7 +5,7 @@ from topologicpy.Vector import Vector
 
 class Edge():
     @staticmethod
-    def Angle(edgeA, edgeB, mantissa=4, bracket=False):
+    def Angle(edgeA: topologic.Edge, edgeB: topologic.Edge, mantissa: int = 4, bracket: bool = False) -> float:
         """
         Returns the angle in degrees between the two input edges.
 
@@ -38,7 +38,7 @@ class Edge():
         return round(ang, mantissa)
 
     @staticmethod
-    def Bisect(edgeA, edgeB, length=1.0, placement=0, tolerance=0.0001):
+    def Bisect(edgeA: topologic.Edge, edgeB: topologic.Edge, length: float = 1.0, placement: int = 0, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Creates a bisecting edge between edgeA and edgeB.
 
@@ -91,7 +91,7 @@ class Edge():
         return bisectingEdge
 
     @staticmethod
-    def ByFaceNormal(face, origin=None, length=1):
+    def ByFaceNormal(face: topologic.Face, origin: topologic.Vertex = None, length: float = 1.0) -> topologic.Edge:
         """
         Creates a straight edge representing the normal to the input face.
 
@@ -126,7 +126,7 @@ class Edge():
         return edge
 
     @staticmethod
-    def ByOffset(edge, offset=1, tolerance=0.0001):
+    def ByOffset(edge: topologic.Edge, offset: float = 1.0, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Creates and edge offset from the input edge
 
@@ -154,7 +154,7 @@ class Edge():
 
 
     @staticmethod
-    def ByStartVertexEndVertex(vertexA, vertexB, tolerance=0.0001):
+    def ByStartVertexEndVertex(vertexA: topologic.Vertex, vertexB: topologic.Vertex, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Creates a straight edge that connects the input vertices.
 
@@ -189,7 +189,7 @@ class Edge():
         return edge
     
     @staticmethod
-    def ByVertices(vertices, tolerance=0.0001):
+    def ByVertices(vertices: list, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Creates a straight edge that connects the input list of vertices.
 
@@ -214,7 +214,7 @@ class Edge():
         return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance)
     
     @staticmethod
-    def ByVerticesCluster(cluster, tolerance=0.0001):
+    def ByVerticesCluster(cluster: topologic.Cluster, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Creates a straight edge that connects the input cluster of vertices.
 
@@ -241,9 +241,9 @@ class Edge():
         return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance)
 
     @staticmethod
-    def Direction(edge, mantissa=4):
+    def Direction(edge: topologic.Edge, mantissa: int = 4) -> list:
         """
-        Returns the direction of the input edge.
+        Returns the direction of the input edge expressed as a list of three numbers.
 
         Parameters
         ----------
@@ -258,6 +258,9 @@ class Edge():
             The direction of the input edge.
 
         """
+
+        from topologic.Vector import Vector
+
         if not isinstance(edge, topologic.Edge):
             return None
         ev = edge.EndVertex()
@@ -272,7 +275,7 @@ class Edge():
         return [x, y, z]
     
     @staticmethod
-    def EndVertex(edge):
+    def EndVertex(edge: topologic.Edge) -> topologic.Vertex:
         """
         Returns the end vertex of the input edge.
 
@@ -297,7 +300,7 @@ class Edge():
         return vert
     
     @staticmethod
-    def Extend(edge, distance=1, bothSides=True, reverse=False, tolerance=0.0001):
+    def Extend(edge: topologic.Edge, distance: float = 1.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Extends the input edge by the input distance.
 
@@ -339,7 +342,7 @@ class Edge():
         return Edge.ByVertices([sve, eve])
 
     @staticmethod
-    def ExtendToEdge2D(edgeA, edgeB):
+    def ExtendToEdge2D(edgeA: topologic.Edge, edgeB: topologic.Edge) -> topologic.Edge:
         """
         Extends the first input edge to meet the second input edge. This works only in the XY plane. Z coordinates are ignored.
 
@@ -376,9 +379,9 @@ class Edge():
         return None
 
     @staticmethod
-    def Intersect2D(edgeA, edgeB):
+    def Intersect2D(edgeA: topologic.Edge, edgeB: topologic.Edge) -> topologic.Vertex:
         """
-        Returns the intersection of the two input edges. This works only in the XY plane. Z coordinates are ignored.
+        Returns the intersection of the two input edges as a topologic.Vertex. This works only in the XY plane. Z coordinates are ignored.
 
         Parameters
         ----------
@@ -426,9 +429,9 @@ class Edge():
 
 
     @staticmethod
-    def IsCollinear(edgeA, edgeB, mantissa=4, angTolerance=0.1, tolerance=0.0001):
+    def IsCollinear(edgeA: topologic.Edge, edgeB: topologic.Edge, mantissa: int = 4, angTolerance: float = 0.1, tolerance: float = 0.0001) -> bool:
         """
-        Tests if the two input edges are collinear.
+        Return True if the two input edges are collinear. Returns False otherwise.
 
         Parameters
         ----------
@@ -465,9 +468,9 @@ class Edge():
         return False
     
     @staticmethod
-    def IsParallel(edgeA, edgeB, mantissa=4, angTolerance=0.1):
+    def IsParallel(edgeA: topologic.Edge, edgeB: topologic.Edge, mantissa: int = 4, angTolerance: float = 0.1) -> bool:
         """
-        Tests if the two input edges are parallel.
+        Return True if the two input edges are parallel. Returns False otherwise.
 
         Parameters
         ----------
@@ -494,7 +497,7 @@ class Edge():
         return False
 
     @staticmethod
-    def Length(edge, mantissa=4):
+    def Length(edge: topologic.Edge, mantissa: int = 4) -> float:
         """
         Returns the length of the input edge.
 
@@ -521,7 +524,7 @@ class Edge():
         return length
 
     @staticmethod
-    def Normal(edge):
+    def Normal(edge: topologic.Edge) -> list:
         """
         Returns the normal (perpendicular) vector to the input edge. This method is intended for edges that are in the XY plane. Z is assumed to be zero and ignored.
 
@@ -536,7 +539,9 @@ class Edge():
             The normal (perpendicular ) vector to the input edge.
 
         """
+        
         from topologicpy.Vector import Vector
+
         sv = Edge.StartVertex(edge)
         ev = Edge.EndVertex(edge)
         x1 = Vertex.X(sv)
@@ -550,7 +555,7 @@ class Edge():
         return Vector.Normalize([-dy, dx, 0])
 
     @staticmethod
-    def Normalize(edge, useEndVertex=False):
+    def Normalize(edge: topologic.Edge, useEndVertex: bool = False) -> topologic.Edge:
         """
         Creates a normalized edge that has the same direction as the input edge, but a length of 1.
 
@@ -578,7 +583,7 @@ class Edge():
         return Edge.ByVertices([sv, ev])
 
     @staticmethod
-    def ParameterAtVertex(edge, vertex, mantissa=4):
+    def ParameterAtVertex(edge: topologic.Edge, vertex: topologic.Vertex, mantissa: int = 4) -> float:
         """
         Returns the *u* parameter along the input edge based on the location of the input vertex.
 
@@ -607,7 +612,7 @@ class Edge():
         return round(parameter, mantissa)
 
     @staticmethod
-    def Reverse(edge):
+    def Reverse(edge: topologic.Edge) -> topologic.Edge:
         """
         Creates an edge that has the reverse direction of the input edge.
 
@@ -627,7 +632,7 @@ class Edge():
         return Edge.ByVertices([edge.EndVertex(), edge.StartVertex()])
     
     @staticmethod
-    def SetLength(edge , length=1.0, bothSides=True, reverse=False, tolerance=0.0001):
+    def SetLength(edge: topologic.Edge , length: float = 1.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Returns an edge with the new length in the same direction as the input edge.
 
@@ -658,7 +663,7 @@ class Edge():
         return Edge.Trim(edge=edge, distance=distance, bothSides=bothSides, reverse=reverse, tolerance=tolerance)
 
     @staticmethod
-    def StartVertex(edge):
+    def StartVertex(edge: topologic.Edge) -> topologic.Vertex:
         """
         Returns the start vertex of the input edge.
 
@@ -683,7 +688,7 @@ class Edge():
         return vert
 
     @staticmethod
-    def Trim(edge, distance=0, bothSides=True, reverse=False, tolerance=0.0001):
+    def Trim(edge: topologic.Edge, distance: float = 0.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Trims the input edge by the input distance.
 
@@ -725,7 +730,7 @@ class Edge():
         return Edge.ByVertices([sve, eve])
 
     @staticmethod
-    def TrimByEdge2D(edgeA, edgeB, reverse=False):
+    def TrimByEdge2D(edgeA: topologic.Edge, edgeB: topologic.Edge, reverse: bool = False) -> topologic.Edge:
         """
         Trims the first input edge by the second input edge. This works only in the XY plane. Z coordinates are ignored.
 
@@ -758,7 +763,7 @@ class Edge():
         return edgeA
 
     @staticmethod
-    def VertexByDistance(edge, distance=0, origin=None, tolerance=0.0001):
+    def VertexByDistance(edge: topologic.Edge, distance: float = 0.0, origin: topologic.Vertex = None, tolerance: float = 0.0001) -> topologic.Vertex:
         """
         Creates a vertex along the input edge offset by the input distance from the input origin.
 
@@ -796,7 +801,7 @@ class Edge():
         return topologic.Vertex.ByCoordinates(origin.X()+vector[0], origin.Y()+vector[1], origin.Z()+vector[2])
     
     @staticmethod
-    def VertexByParameter(edge, parameter=0):
+    def VertexByParameter(edge: topologic.Vertex, parameter: float = 0.0) -> topologic.Vertex:
         """
         Creates a vertex along the input edge offset by the input *u* parameter.
 
@@ -828,9 +833,9 @@ class Edge():
         return vertex
 
     @staticmethod
-    def Vertices(edge):
+    def Vertices(edge: topologic.Edge) -> list:
         """
-        Returns the vertices of the input edge.
+        Returns the list of vertices of the input edge.
 
         Parameters
         ----------

@@ -3,29 +3,28 @@ import topologic
 
 class Context:
     @staticmethod
-    def ByTopologyParameters(topology, u, v, w):
+    def ByTopologyParameters(topology, u = 0.5, v = 0.5, w = 0.5):
         """
+        Creates a context object represented by the input topology.
+
         Parameters
         ----------
-        topology : TYPE
-            DESCRIPTION.
-        u : TYPE
-            DESCRIPTION.
+        topology : topologic.Topology
+            The input topology.
+        u : float , optional
+            The input *u* parameter. This defines the relative parameteric location of the content object along the *u* axis.
         v : TYPE
-            DESCRIPTION.
+            The input *v* parameter. This defines the relative parameteric location of the content object along the *v* axis..
         w : TYPE
-            DESCRIPTION.
+            The input *w* parameter. This defines the relative parameteric location of the content object along the *w* axis.
 
         Returns
         -------
-        context : TYPE
-            DESCRIPTION.
+        topologic.Context
+            The created context object. See Aperture.ByObjectContext.
 
         """
-        # topology = item[0]
-        # u = item[1]
-        # v = item[2]
-        # w = item[3]
+
         context = None
         try:
             context = topologic.Context.ByTopologyParameters(topology, u, v, w)
@@ -34,20 +33,21 @@ class Context:
         return context
     
     @staticmethod
-    def Topology(item):
+    def Topology(context):
         """
+        Returns the topology of the input context.
+        
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        context : topologic.Context
+            The input context.
 
         Returns
         -------
-        topology : TYPE
-            DESCRIPTION.
+        topologic.Topology
+            The topology of the input context.
 
         """
-        context = item
         topology = None
         try:
             topology = context.Topology()

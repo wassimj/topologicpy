@@ -6,7 +6,7 @@ import math
 
 class Face(topologic.Face):
     @staticmethod
-    def AddInternalBoundaries(face, wires):
+    def AddInternalBoundaries(face: topologic.Face, wires: list) -> topologic.Face:
         """
         Adds internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
 
@@ -42,7 +42,7 @@ class Face(topologic.Face):
         return topologic.Face.ByExternalInternalBoundaries(faceeb, faceibList)
 
     @staticmethod
-    def AddInternalBoundariesCluster(face, cluster):
+    def AddInternalBoundariesCluster(face: topologic.Face, cluster: topologic.Cluster) -> topologic.Face:
         """
         Adds the input cluster of internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
 
@@ -72,7 +72,7 @@ class Face(topologic.Face):
         return Face.AddInternalBoundaries(face, wires)
     
     @staticmethod
-    def Angle(faceA, faceB, mantissa=4):
+    def Angle(faceA: topologic.Face, faceB: topologic.Face, mantissa: int = 4) -> float:
         """
         Returns the angle in degrees between the two input faces.
 
@@ -101,7 +101,34 @@ class Face(topologic.Face):
         return round((Vector.Angle(dirA, dirB)), mantissa)
 
     @staticmethod
-    def BoundingRectangle(topology, optimize=0):
+    def Area(face: topologic.Face, mantissa, int = 4) -> float:
+        """
+        Returns the area of the input face.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        float
+            The area of the input face.
+
+        """
+        if not isinstance(face, topologic.Face):
+            return None
+        area = None
+        try:
+            area = round(topologic.FaceUtility.Area(face), mantissa)
+        except:
+            area = None
+        return area
+
+    @staticmethod
+    def BoundingRectangle(topology: topologic.Topology, optimize: int = 0) -> topologic.Face:
         """
         Returns a face representing a bounding rectangle of the input topology. The returned face contains a dictionary with key "zrot" that represents rotations around the Z axis. If applied the resulting face will become axis-aligned.
 
@@ -199,7 +226,7 @@ class Face(topologic.Face):
         return baseFace
 
     @staticmethod
-    def CompassAngle(face, north: list = None, mantissa: int = 4):
+    def CompassAngle(face: topologic.Face, north: list = None, mantissa: int = 4) -> float:
         """
         Returns the horizontal compass angle in degrees between the normal vector of the input face and the input vector. The angle is measured in counter-clockwise fashion. Only the first two elements of the vectors are considered.
 
@@ -227,65 +254,9 @@ class Face(topologic.Face):
             north = Vector.North()
         dirA = Face.NormalAtParameters(face,mantissa=mantissa)
         return Vector.CompassAngle(vectorA=dirA, vectorB=north, mantissa=mantissa)
-
-    @staticmethod
-    def Area(face, mantissa=4):
-        """
-        Returns the area of the input face.
-
-        Parameters
-        ----------
-        face : topologic.Face
-            The input face.
-        mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
-
-        Returns
-        -------
-        float
-            The area of the input face.
-
-        """
-        if not isinstance(face, topologic.Face):
-            return None
-        area = None
-        try:
-            area = round(topologic.FaceUtility.Area(face), mantissa)
-        except:
-            area = None
-        return area
-
-    @staticmethod
-    def BoundingFace(face):
-        """
-        Returns the bounding face of the input face.
-
-        Parameters
-        ----------
-        face : topologic.Face
-            The input face.
-
-        Returns
-        -------
-        topologic.Face
-            The bounding face of the input face.
-
-        """
-        if not isinstance(face, topologic.Face):
-            return None
-        bfv1 = topologic.FaceUtility.VertexAtParameters(face,0,0)
-        bfv2 = topologic.FaceUtility.VertexAtParameters(face,1,0)
-        bfv3 = topologic.FaceUtility.VertexAtParameters(face,1,1)
-        bfv4 = topologic.FaceUtility.VertexAtParameters(face,0,1)
-        bfe1 = topologic.Edge.ByStartVertexEndVertex(bfv1,bfv2)
-        bfe2 = topologic.Edge.ByStartVertexEndVertex(bfv2,bfv3)
-        bfe3 = topologic.Edge.ByStartVertexEndVertex(bfv3,bfv4)
-        bfe4 = topologic.Edge.ByStartVertexEndVertex(bfv4,bfv1)
-        bfw1 = topologic.Wire.ByEdges([bfe1,bfe2,bfe3,bfe4])
-        return topologic.Face.ByExternalBoundary(bfw1)
     
     @staticmethod
-    def ByEdges(edges):
+    def ByEdges(edges: list) -> topologic.Face:
         """
         Creates a face from the input list of edges.
 
@@ -309,7 +280,7 @@ class Face(topologic.Face):
         return Face.ByWire(wire)
 
     @staticmethod
-    def ByEdgesCluster(cluster):
+    def ByEdgesCluster(cluster: topologic.Cluster) -> topologic.Face:
         """
         Creates a face from the input cluster of edges.
 
@@ -331,20 +302,45 @@ class Face(topologic.Face):
         return Face.ByEdges(edges)
 
     @staticmethod
-    def ByOffset(face, offset=1, miter=False, miterThreshold=None):
+    def ByOffset(face: topologic.Face, offset: float = 1.0, miter: bool = False, miterThreshold: float = None, offsetKey: str = None, miterThresholdKey: str = None, step: bool = True) -> topologic.Face:
+        """
+        Creates an offset wire from the input wire.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+        offset : float , optional
+            The desired offset distance. The default is 1.0.
+        miter : bool , optional
+            if set to True, the corners will be mitered. The default is False.
+        miterThreshold : float , optional
+            The distance beyond which a miter should be added. The default is None which means the miter threshold is set to the offset distance multiplied by the square root of 2.
+        offsetKey : str , optional
+            If specified, the dictionary of the edges will be queried for this key to sepcify the desired offset. The default is None.
+        miterThresholdKey : str , optional
+            If specified, the dictionary of the vertices will be queried for this key to sepcify the desired miter threshold distance. The default is None.
+        step : bool , optional
+            If set to True, The transition between collinear edges with different offsets will be a step. Otherwise, it will be a continous edge. The default is True.
+
+        Returns
+        -------
+        topologic.Wire
+            The created wire.
+
+        """
         from topologicpy.Wire import Wire
 
-        external_boundary = face.ExternalBoundary()
-        internal_boundaries = []
-        _ = face.InternalBoundaries(internal_boundaries)
-        offset_external_boundary = Wire.ByOffset(external_boundary, offset=offset, miter=miter, miterThreshold=miterThreshold)
+        eb = Face.Wire(face)
+        internal_boundaries = Face.InternalBoundaries(face)
+        offset_external_boundary = Wire.ByOffset(wire=eb, offset=offset, miter=miter, miterThreshold=miterThreshold, offsetKey=offsetKey, miterThresholdKey=miterThresholdKey, step=step)
         offset_internal_boundaries = []
         for internal_boundary in internal_boundaries:
-            offset_internal_boundaries.append(Wire.ByOffset(internal_boundary, -offset, miter=miter, miterThreshold=miterThreshold))
+            offset_internal_boundaries.append(Wire.ByOffset(wire=internal_boundary, offset=offset, miter=miter, miterThreshold=miterThreshold, offsetKey=offsetKey, miterThresholdKey=miterThresholdKey, step=step))
         return Face.ByWires(offset_external_boundary, offset_internal_boundaries)
     
     @staticmethod
-    def ByShell(shell, angTolerance=0.1):
+    def ByShell(shell: topologic.Shell, angTolerance: float = 0.1)-> topologic.Face:
         """
         Creates a face by merging the faces of the input shell.
 
@@ -420,7 +416,8 @@ class Face(topologic.Face):
             return None
     
     @staticmethod
-    def ByVertices(vertices):
+    def ByVertices(vertices: list) -> topologic.Face:
+        
         """
         Creates a face from the input list of vertices.
 
@@ -471,7 +468,7 @@ class Face(topologic.Face):
         else:
             return None
         """
-    def ByVerticesCluster(cluster):
+    def ByVerticesCluster(cluster: topologic.Cluster) -> topologic.Face:
         """
         Creates a face from the input cluster of vertices.
 
@@ -718,6 +715,30 @@ class Face(topologic.Face):
         _ = face.Edges(None, edges)
         return edges
 
+    @staticmethod
+    def Einstein(origin: topologic.Vertex = None, radius: float = 0.5, direction: list = [0,0,1], placement: str = "center") -> topologic.Face:
+        """
+        Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physist). See https://arxiv.org/abs/2303.10798
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The location of the origin of the tile. The default is None which results in the tiles first vertex being placed at (0,0,0).
+        radius : float , optional
+            The radius of the hexagon determining the size of the tile. The default is 0.5.
+        direction : list , optional
+            The vector representing the up direction of the ellipse. The default is [0,0,1].
+        placement : str , optional
+            The description of the placement of the origin of the hexagon determining the location of the tile. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        
+        """
+        from topologicpy.Wire import Wire
+        wire = Wire.Einstein(origin=origin, radius=radius, direction=direction, placement=placement)
+        if not isinstance(wire, topologic.Wire):
+            return None
+        return Face.ByWire(wire)
+    
+    @staticmethod
     def ExternalBoundary(face):
         """
         Returns the external boundary (closed wire) of the input face.
@@ -1471,7 +1492,7 @@ class Face(topologic.Face):
         return Face.ByWires(p_eb, p_ib_list)
 
     @staticmethod
-    def Rectangle(origin=None, width=1.0, length=1.0, direction=[0,0,1], placement="center", tolerance=0.0001):
+    def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a rectangle.
 
@@ -1501,6 +1522,32 @@ class Face(topologic.Face):
             return None
         return Face.ByWire(wire)
 
+    @staticmethod
+    def Square(origin: topologic.Vertex = None, size: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+        """
+        Creates a square.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The location of the origin of the square. The default is None which results in the square being placed at (0,0,0).
+        size : float , optional
+            The size of the square. The default is 1.0.
+        direction : list , optional
+            The vector representing the up direction of the square. The default is [0,0,1].
+        placement : str , optional
+            The description of the placement of the origin of the square. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Wire
+            The created square.
+
+        """
+        return Face.Rectangle(origin = origin, width = size, length = size, direction = direction, placement = placement, tolerance = tolerance)
+    
     @staticmethod
     def Star(origin=None, radiusA=1.0, radiusB=0.4, rays=5, direction=[0,0,1], placement="center", tolerance=0.0001):
         """
