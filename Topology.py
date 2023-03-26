@@ -2,6 +2,7 @@
 #from tkinter import N
 import topologicpy
 import topologic
+from topologicpy.Aperture import Aperture
 
 import uuid
 import json
@@ -2597,7 +2598,7 @@ class Topology():
             apertureDicts = []
             for anAperture in apertureList:
                 apertureData = {}
-                apertureData['brep'] = anAperture.String()
+                apertureData['brep'] = Topology.String(Aperture.Topology(anAperture))
                 apertureData['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(anAperture))
                 apertureDicts.append(apertureData)
             return apertureDicts
