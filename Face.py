@@ -101,7 +101,7 @@ class Face(topologic.Face):
         return round((Vector.Angle(dirA, dirB)), mantissa)
 
     @staticmethod
-    def Area(face: topologic.Face, mantissa, int = 4) -> float:
+    def Area(face: topologic.Face, mantissa: int = 4) -> float:
         """
         Returns the area of the input face.
 
@@ -224,36 +224,6 @@ class Face(topologic.Face):
         dictionary = Dictionary.ByKeysValues(["zrot"], [best_z])
         baseFace = Topology.SetDictionary(baseFace, dictionary)
         return baseFace
-
-    @staticmethod
-    def CompassAngle(face: topologic.Face, north: list = None, mantissa: int = 4) -> float:
-        """
-        Returns the horizontal compass angle in degrees between the normal vector of the input face and the input vector. The angle is measured in counter-clockwise fashion. Only the first two elements of the vectors are considered.
-
-        Parameters
-        ----------
-        face : topologic.Face
-            The input face.
-        north : list , optional
-            The second vector representing the north direction. The default is the positive YAxis ([0,1,0]).
-        mantissa : int, optional
-            The length of the desired mantissa. The default is 4.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        float
-            The horizontal compass angle in degrees between the direction of the face and the second input vector.
-
-        """
-        from topologicpy.Vector import Vector
-        if not isinstance(face, topologic.Face):
-            return None
-        if not north:
-            north = Vector.North()
-        dirA = Face.NormalAtParameters(face,mantissa=mantissa)
-        return Vector.CompassAngle(vectorA=dirA, vectorB=north, mantissa=mantissa)
     
     @staticmethod
     def ByEdges(edges: list) -> topologic.Face:
@@ -444,30 +414,8 @@ class Face(topologic.Face):
         w = Wire.ByVertices(vertexList)
         f = Face.ByExternalBoundary(w)
         return f
-        """
-        edges = []
-        for i in range(len(vertexList)-1):
-            v1 = vertexList[i]
-            v2 = vertexList[i+1]
-            try:
-                e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
-                if e:
-                    edges.append(e)
-            except:
-                continue
-        v1 = vertices[-1]
-        v2 = vertices[0]
-        try:
-            e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
-            if e:
-                edges.append(e)
-        except:
-            pass
-        if len(edges) > 0:
-            return topologic.Face.ByExternalBoundary(Topology.SelfMerge(topologic.Cluster.ByTopologies(edges, False)))
-        else:
-            return None
-        """
+
+    @staticmethod
     def ByVerticesCluster(cluster: topologic.Cluster) -> topologic.Face:
         """
         Creates a face from the input cluster of vertices.
@@ -490,7 +438,7 @@ class Face(topologic.Face):
         return Face.ByVertices(vertices)
 
     @staticmethod
-    def ByWire(wire):
+    def ByWire(wire: topologic.Wire) -> topologic.Face:
         """
         Creates a face from the input closed wire.
 
@@ -565,7 +513,7 @@ class Face(topologic.Face):
             return returnList
 
     @staticmethod
-    def ByWires(externalBoundary, internalBoundaries=[]):
+    def ByWires(externalBoundary: topologic.Wire, internalBoundaries: list = []) -> topologic.Face:
         """
         Creates a face from the input external boundary (closed wire) and the input list of internal boundaries (closed wires).
 
@@ -590,7 +538,7 @@ class Face(topologic.Face):
         return topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList)
 
     @staticmethod
-    def ByWiresCluster(externalBoundary, internalBoundariesCluster=None):
+    def ByWiresCluster(externalBoundary: topologic.Wire, internalBoundariesCluster: topologic.Cluster = None) -> topologic.Face:
         """
         Creates a face from the input external boundary (closed wire) and the input cluster of internal boundaries (closed wires).
 
@@ -622,8 +570,8 @@ class Face(topologic.Face):
         return Face.ByWires(externalBoundary, internalBoundaries)
     
     @staticmethod
-    def Circle(origin=None, radius=0.5, sides=16, fromAngle=0, toAngle=360, direction=[0,0,1],
-                   placement="center", tolerance=0.0001):
+    def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0,0,1],
+                   placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a circle.
 
@@ -659,7 +607,7 @@ class Face(topologic.Face):
         return Face.ByWire(wire)
 
     @staticmethod
-    def Compactness(face, mantissa=4):
+    def Compactness(face: topologic.Face, mantissa: int = 4) -> float:
         """
         Returns the compactness measure of the input face. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
@@ -694,7 +642,37 @@ class Face(topologic.Face):
         return round(compactness, mantissa)
 
     @staticmethod
-    def Edges(face):
+    def CompassAngle(face: topologic.Face, north: list = None, mantissa: int = 4) -> float:
+        """
+        Returns the horizontal compass angle in degrees between the normal vector of the input face and the input vector. The angle is measured in counter-clockwise fashion. Only the first two elements of the vectors are considered.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        north : list , optional
+            The second vector representing the north direction. The default is the positive YAxis ([0,1,0]).
+        mantissa : int, optional
+            The length of the desired mantissa. The default is 4.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        float
+            The horizontal compass angle in degrees between the direction of the face and the second input vector.
+
+        """
+        from topologicpy.Vector import Vector
+        if not isinstance(face, topologic.Face):
+            return None
+        if not north:
+            north = Vector.North()
+        dirA = Face.NormalAtParameters(face,mantissa=mantissa)
+        return Vector.CompassAngle(vectorA=dirA, vectorB=north, mantissa=mantissa)
+
+    @staticmethod
+    def Edges(face: topologic.Face) -> list:
         """
         Returns the edges of the input face.
 
@@ -739,7 +717,7 @@ class Face(topologic.Face):
         return Face.ByWire(wire)
     
     @staticmethod
-    def ExternalBoundary(face):
+    def ExternalBoundary(face: topologic.Face) -> topologic.Wire:
         """
         Returns the external boundary (closed wire) of the input face.
 
@@ -757,7 +735,7 @@ class Face(topologic.Face):
         return face.ExternalBoundary()
     
     @staticmethod
-    def FacingToward(face, direction=[0,0,-1], asVertex=False, tolerance=0.0001):
+    def FacingToward(face: topologic.Face, direction: list = [0,0,-1], asVertex: bool = False, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input face is facing toward the input direction.
 
@@ -799,7 +777,7 @@ class Face(topologic.Face):
         return True
     
     @staticmethod
-    def Flatten(face, oldLocation=None, newLocation=None, direction=None):
+    def Flatten(face: topologic.Face, originA: topologic.Vertex = None, originB: topologic.Vertex = None, direction: list = None) -> topologic.Face:
         """
         Flattens the input face such that its center of mass is located at the origin and its normal is pointed in the positive Z axis.
 
@@ -807,9 +785,9 @@ class Face(topologic.Face):
         ----------
         face : topologic.Face
             The input face.
-        oldLocation : topologic.Vertex , optional
+        originA : topologic.Vertex , optional
             The old location to use as the origin of the movement. If set to None, the center of mass of the input topology is used. The default is None.
-        newLocation : topologic.Vertex , optional
+        originB : topologic.Vertex , optional
             The new location at which to place the topology. If set to None, the world origin (0,0,0) is used. The default is None.
         direction : list , optional
             The direction, expressed as a list of [X,Y,Z] that signifies the direction of the face. If set to None, the normal at *u* 0.5 and *v* 0.5 is considered the direction of the face. The deafult is None.
@@ -864,12 +842,12 @@ class Face(topologic.Face):
         from topologicpy.Dictionary import Dictionary
         if not isinstance(face, topologic.Face):
             return None
-        if not isinstance(oldLocation, topologic.Vertex):
-            oldLocation = Topology.CenterOfMass(face)
-        if not isinstance(newLocation, topologic.Vertex):
-            newLocation = Vertex.ByCoordinates(0,0,0)
-        cm = oldLocation
-        world_origin = newLocation
+        if not isinstance(originA, topologic.Vertex):
+            originA = Topology.CenterOfMass(face)
+        if not isinstance(originB, topologic.Vertex):
+            originB = Vertex.ByCoordinates(0,0,0)
+        cm = originA
+        world_origin = originB
         if not direction or len(direction) < 3:
             direction = Face.NormalAtParameters(face, 0.5, 0.5)
         x1 = Vertex.X(cm)
@@ -916,57 +894,9 @@ class Face(topologic.Face):
         dictionary = Dictionary.ByKeysValues(["xTran", "yTran", "zTran", "phi", "theta"], [cm.X(), cm.Y(), cm.Z(), phi, theta])
         flatFace = Topology.SetDictionary(flatFace, dictionary)
         return flatFace
-    
-    @staticmethod
-    def Planarize(face, origin=None, direction=None):
-        """
-        Planarizes the input face such that its center of mass is located at the input origin and its normal is pointed in the input direction.
-
-        Parameters
-        ----------
-        face : topologic.Face
-            The input face.
-        origin : topologic.Vertex , optional
-            The old location to use as the origin of the movement. If set to None, the center of mass of the input face is used. The default is None.
-        direction : list , optional
-            The direction, expressed as a list of [X,Y,Z] that signifies the direction of the face. If set to None, the normal at *u* 0.5 and *v* 0.5 is considered the direction of the face. The deafult is None.
-
-        Returns
-        -------
-        topologic.Face
-            The planarized face.
-
-        """
-
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-
-        if not isinstance(face, topologic.Face):
-            return None
-        if not isinstance(origin, topologic.Vertex):
-            origin = Topology.CenterOfMass(face)
-        if not isinstance(direction, list):
-            direction = Face.NormalAtParameters(face, 0.5, 0.5)
-        flatFace = Face.Flatten(face, oldLocation=origin, direction=direction)
-
-        world_origin = Vertex.ByCoordinates(0,0,0)
-        # Retrieve the needed transformations
-        dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
-        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
-        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
-        phi = Dictionary.ValueAtKey(dictionary,"phi")
-        theta = Dictionary.ValueAtKey(dictionary,"theta")
-
-        planarizedFace = Topology.Rotate(flatFace, origin=world_origin, x=0, y=1, z=0, degree=theta)
-        planarizedFace = Topology.Rotate(planarizedFace, origin=world_origin, x=0, y=0, z=1, degree=phi)
-        planarizedFace = Topology.Translate(planarizedFace, xTran, yTran, zTran)
-        return planarizedFace
 
     @staticmethod
-    def Harmonize(face):
+    def Harmonize(face: topologic.Face) -> topologic.Face:
         """
         Returns a harmonized version of the input face such that the *u* and *v* origins are always in the upperleft corner.
 
@@ -1011,7 +941,7 @@ class Face(topologic.Face):
         return harmonizedFace
 
     @staticmethod
-    def InternalBoundaries(face):
+    def InternalBoundaries(face: topologic.Face) -> list:
         """
         Returns the internal boundaries (closed wires) of the input face.
 
@@ -1033,7 +963,7 @@ class Face(topologic.Face):
         return list(wires)
 
     @staticmethod
-    def InternalVertex(face, tolerance=0.0001):
+    def InternalVertex(face: topologic.Face, tolerance: float = 0.0001) -> topologic.Vertex:
         """
         Creates a vertex guaranteed to be inside the input face.
 
@@ -1056,7 +986,7 @@ class Face(topologic.Face):
         return v
 
     @staticmethod
-    def Invert(face):
+    def Invert(face: topologic.Face) -> topologic.Face:
         """
         Creates a face that is an inverse (mirror) of the input face.
 
@@ -1087,7 +1017,7 @@ class Face(topologic.Face):
         return inverted_face
 
     @staticmethod
-    def IsCoplanar(faceA, faceB, tolerance=0.0001):
+    def IsCoplanar(faceA: topologic.Face, faceB: topologic.Face, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the two input faces are coplanar. Returns False otherwise.
 
@@ -1117,9 +1047,8 @@ class Face(topologic.Face):
         dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
         return Vector.IsCollinear(dirA, dirB, tolerance)
     
-
     @staticmethod
-    def IsInside(face, vertex, tolerance=0.0001):
+    def IsInside(face: topologic.Face, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input vertex is inside the input face. Returns False otherwise.
 
@@ -1215,7 +1144,7 @@ class Face(topologic.Face):
         return status
 
     @staticmethod
-    def MedialAxis(face, resolution=0, externalVertices=False, internalVertices=False, toLeavesOnly=False, tolerance=0.0001, angTolerance=0.1):
+    def MedialAxis(face: topologic.Face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
         """
         Returns a wire representing an approximation of the medial axis of the input topology. See https://en.wikipedia.org/wiki/Medial_axis.
 
@@ -1231,10 +1160,10 @@ class Face(topologic.Face):
             If set to True, the internal vertices of the face will be connected to the nearest vertex on the medial axis. The default is False.
         toLeavesOnly : bool , optional
             If set to True, the vertices of the face will be connected to the nearest vertex on the medial axis only if this vertex is a leaf (end point). Otherwise, it will connect to any nearest vertex. The default is False.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
         angTolerance : float , optional
             The desired angular tolerance in degrees for removing collinear edges. The default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         
         Returns
         -------
@@ -1334,7 +1263,7 @@ class Face(topologic.Face):
         return medialAxis
 
     @staticmethod
-    def Normal(face, outputType="xyz", mantissa=4):
+    def Normal(face: topologic.Face, outputType: str = "xyz", mantissa: int = 4) -> list:
         """
         Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
 
@@ -1356,7 +1285,7 @@ class Face(topologic.Face):
         return Face.NormalAtParameters(face, u=0.5, v=0.5, outputType=outputType, mantissa=mantissa)
 
     @staticmethod
-    def NormalAtParameters(face, u=0.5, v=0.5, outputType="xyz", mantissa=4):
+    def NormalAtParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5, outputType: str = "xyz", mantissa: int = 4) -> list:
         """
         Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
 
@@ -1398,7 +1327,7 @@ class Face(topologic.Face):
         return returnResult
     
     @staticmethod
-    def NormalEdge(face, length=1):
+    def NormalEdge(face: topologic.Face, length: float = 1.0) -> topologic.Edge:
         """
         Returns the normal vector to the input face as an edge with the desired input length. A normal vector of a face is a vector perpendicular to it.
 
@@ -1418,7 +1347,7 @@ class Face(topologic.Face):
         return Face.NormalEdgeAtParameters(face, u=0.5, v=0.5, length=length)
 
     @staticmethod
-    def NormalEdgeAtParameters(face, u=0.5, v=0.5, length=1):
+    def NormalEdgeAtParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5, length: float = 1.0) -> topologic.Edge:
         """
         Returns the normal vector to the input face as an edge with the desired input length. A normal vector of a face is a vector perpendicular to it.
 
@@ -1447,9 +1376,57 @@ class Face(topologic.Face):
         vec = Face.NormalAtParameters(face, u=u, v=v)
         ev = Topology.TranslateByDirectionDistance(sv, vec, length)
         return Edge.ByVertices([sv, ev])
-    
+
     @staticmethod
-    def Project(faceA, faceB, direction=None, mantissa=4, tolerance=0.0001):
+    def Planarize(face: topologic.Face, origin: topologic.Vertex = None, direction: list = None) -> topologic.Face:
+        """
+        Planarizes the input face such that its center of mass is located at the input origin and its normal is pointed in the input direction.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        origin : topologic.Vertex , optional
+            The old location to use as the origin of the movement. If set to None, the center of mass of the input face is used. The default is None.
+        direction : list , optional
+            The direction, expressed as a list of [X,Y,Z] that signifies the direction of the face. If set to None, the normal at *u* 0.5 and *v* 0.5 is considered the direction of the face. The deafult is None.
+
+        Returns
+        -------
+        topologic.Face
+            The planarized face.
+
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not isinstance(face, topologic.Face):
+            return None
+        if not isinstance(origin, topologic.Vertex):
+            origin = Topology.CenterOfMass(face)
+        if not isinstance(direction, list):
+            direction = Face.NormalAtParameters(face, 0.5, 0.5)
+        flatFace = Face.Flatten(face, oldLocation=origin, direction=direction)
+
+        world_origin = Vertex.ByCoordinates(0,0,0)
+        # Retrieve the needed transformations
+        dictionary = Topology.Dictionary(flatFace)
+        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+
+        planarizedFace = Topology.Rotate(flatFace, origin=world_origin, x=0, y=1, z=0, degree=theta)
+        planarizedFace = Topology.Rotate(planarizedFace, origin=world_origin, x=0, y=0, z=1, degree=phi)
+        planarizedFace = Topology.Translate(planarizedFace, xTran, yTran, zTran)
+        return planarizedFace
+
+    @staticmethod
+    def Project(faceA: topologic.Face, faceB: topologic.Face, direction : list = None, mantissa: int = 4, tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a projection of the first input face unto the second input face.
 
@@ -1470,6 +1447,8 @@ class Face(topologic.Face):
             The projected Face.
 
         """
+
+        from topologicpy.Wire import Wire
 
         if not faceA:
             return None
@@ -1549,7 +1528,7 @@ class Face(topologic.Face):
         return Face.Rectangle(origin = origin, width = size, length = size, direction = direction, placement = placement, tolerance = tolerance)
     
     @staticmethod
-    def Star(origin=None, radiusA=1.0, radiusB=0.4, rays=5, direction=[0,0,1], placement="center", tolerance=0.0001):
+    def Star(origin: topologic.Vertex = None, radiusA: float = 1.0, radiusB: float = 0.4, rays: int = 5, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a star.
 
@@ -1582,7 +1561,7 @@ class Face(topologic.Face):
         return Face.ByWire(wire)
 
     @staticmethod
-    def Trapezoid(origin=None, widthA=1.0, widthB=0.75, offsetA=0.0, offsetB=0.0, length=1.0, direction=[0,0,1], placement="center", tolerance=0.0001):
+    def Trapezoid(origin: topologic.Vertex = None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a trapezoid.
 
@@ -1619,7 +1598,7 @@ class Face(topologic.Face):
         return Face.ByWire(wire)
 
     @staticmethod
-    def Triangulate(face):
+    def Triangulate(face:topologic.Face) -> list:
         """
         Triangulates the input face and returns a list of faces.
 
@@ -1673,7 +1652,7 @@ class Face(topologic.Face):
         return finalFaces
 
     @staticmethod
-    def TrimByWire(face, wire, reverse = False):
+    def TrimByWire(face: topologic.Face, wire: topologic.Wire, reverse: bool = False) -> topologic.Face:
         """
         Trims the input face by the input wire.
 
@@ -1702,7 +1681,7 @@ class Face(topologic.Face):
         return trimmed_face
     
     @staticmethod
-    def VertexByParameters(face, u=0.5, v=0.5):
+    def VertexByParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5) -> topologic.Vertex:
         """
         Creates a vertex at the *u* and *v* parameters of the input face.
 
@@ -1726,7 +1705,7 @@ class Face(topologic.Face):
         return topologic.FaceUtility.VertexAtParameters(face, u, v)
     
     @staticmethod
-    def VertexParameters(face, vertex, outputType="uv", mantissa=4):
+    def VertexParameters(face: topologic.Face, vertex: topologic.Vertex, outputType: str = "uv", mantissa: int = 4) -> list:
         """
         Returns the *u* and *v* parameters of the input face at the location of the input vertex.
 
@@ -1764,7 +1743,7 @@ class Face(topologic.Face):
         return returnResult
 
     @staticmethod
-    def Vertices(face):
+    def Vertices(face: topologic.Face) -> list:
         """
         Returns the vertices of the input face.
 
@@ -1786,7 +1765,7 @@ class Face(topologic.Face):
         return vertices
 
     @staticmethod
-    def Wires(face):
+    def Wires(face: topologic.Face) -> list:
         """
         Returns the wires of the input face.
 

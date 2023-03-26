@@ -4,8 +4,8 @@ import math
 
 class CellComplex(topologic.CellComplex):
     @staticmethod
-    def Box(origin=None, width=1, length=1, height=1, uSides=2, vSides=2, wSides=2,
-                         direction=[0,0,1], placement="center"):
+    def Box(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, height: float = 1.0, uSides: int = 2, vSides: int = 2, wSides: int = 2,
+                         direction: list = [0,0,1], placement: str = "center") -> topologic.CellComplex:
         """
         Creates a box with internal cells.
 
@@ -38,8 +38,9 @@ class CellComplex(topologic.CellComplex):
         """
         return CellComplex.Prism(origin=origin, width=width, length=length, height=height, uSides=uSides, vSides=vSides, wSides=wSides,
                          direction=direction, placement=placement)
+    
     @staticmethod
-    def ByCells(cells, tolerance=0.0001):
+    def ByCells(cells: list, tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Creates a cellcomplex by merging the input cells.
 
@@ -80,8 +81,9 @@ class CellComplex(topologic.CellComplex):
                     return None
         else:
             return cellComplex
+    
     @staticmethod
-    def ByCellsCluster(cluster, tolerance=0.0001):
+    def ByCellsCluster(cluster: topologic.Cluster, tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Creates a cellcomplex by merging the cells within the input cluster.
 
@@ -107,7 +109,7 @@ class CellComplex(topologic.CellComplex):
         return CellComplex.ByCells(cells, tolerance)
 
     @staticmethod
-    def ByFaces(faces, tolerance=0.0001):
+    def ByFaces(faces: list, tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Creates a cellcomplex by merging the input faces.
 
@@ -161,7 +163,7 @@ class CellComplex(topologic.CellComplex):
             return cellComplex
     
     @staticmethod
-    def ByFacesCluster(cluster, tolerance=0.0001):
+    def ByFacesCluster(cluster: topologic.Cluster, tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Creates a cellcomplex by merging the faces within the input cluster.
 
@@ -187,7 +189,7 @@ class CellComplex(topologic.CellComplex):
         return CellComplex.ByFaces(faces, tolerance)
 
     @staticmethod
-    def ByWires(wires, triangulate=True, tolerance=0.0001):
+    def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Creates a cellcomplex by lofting through the input wires.
 
@@ -277,7 +279,7 @@ class CellComplex(topologic.CellComplex):
         return CellComplex.ByFaces(faces, tolerance)
 
     @staticmethod
-    def ByWiresCluster(cluster, triangulate=True, tolerance=0.0001):
+    def ByWiresCluster(cluster: topologic.Cluster, triangulate: bool = True, tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Creates a cellcomplex by lofting through the wires in the input cluster.
 
@@ -305,7 +307,7 @@ class CellComplex(topologic.CellComplex):
         return CellComplex.ByWires(wires, triangulate=triangulate, tolerance=tolerance)
 
     @staticmethod
-    def Cells(cellComplex):
+    def Cells(cellComplex: topologic.CellComplex) -> list:
         """
         Returns the cells of the input cellComplex.
 
@@ -327,7 +329,7 @@ class CellComplex(topologic.CellComplex):
         return cells
 
     @staticmethod
-    def Decompose(cellComplex, tiltAngle=10, tolerance=0.0001):
+    def Decompose(cellComplex: topologic.CellComplex, tiltAngle: float = 10.0, tolerance: float = 0.0001) -> dict:
         """
         Decomposes the input cellComplex into its logical components. This method assumes that the positive Z direction is UP.
 
@@ -472,7 +474,7 @@ class CellComplex(topologic.CellComplex):
         return d
     
     @staticmethod
-    def Edges(cellComplex):
+    def Edges(cellComplex: topologic.CellComplex) -> list:
         """
         Returns the edges of the input cellComplex.
 
@@ -494,7 +496,7 @@ class CellComplex(topologic.CellComplex):
         return edges
 
     @staticmethod
-    def ExternalBoundary(cellComplex):
+    def ExternalBoundary(cellComplex: topologic.CellComplex) -> topologic.Cell:
         """
         Returns the external boundary (cell) of the input cellComplex.
 
@@ -512,7 +514,7 @@ class CellComplex(topologic.CellComplex):
         return cellComplex.ExternalBoundary()
 
     @staticmethod
-    def ExternalFaces(cellComplex):
+    def ExternalFaces(cellComplex: topologic.CellComplex) -> list:
         """
         Returns the external faces of the input cellComplex.
 
@@ -532,7 +534,7 @@ class CellComplex(topologic.CellComplex):
         return Cell.Faces(cell)
 
     @staticmethod
-    def Faces(cellComplex):
+    def Faces(cellComplex: topologic.CellComplex) -> list:
         """
         Returns the faces of the input cellComplex.
 
@@ -554,7 +556,7 @@ class CellComplex(topologic.CellComplex):
         return faces
 
     @staticmethod
-    def InternalFaces(cellComplex):
+    def InternalFaces(cellComplex: topologic.CellComplex) -> list:
         """
         Returns the internal boundaries (faces) of the input cellComplex.
 
@@ -574,7 +576,7 @@ class CellComplex(topologic.CellComplex):
         return faces
     
     @staticmethod
-    def NonManifoldFaces(cellComplex):
+    def NonManifoldFaces(cellComplex: topologic.CellComplex) -> list:
         """
         Returns the non-manifold faces of the input cellComplex.
 
@@ -594,8 +596,8 @@ class CellComplex(topologic.CellComplex):
         return faces
     
     @staticmethod
-    def Prism(origin=None, width=1, length=1, height=1, uSides=2, vSides=2, wSides=2,
-                         direction=[0,0,1], placement="center"):
+    def Prism(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, height: float = 1.0, uSides: int = 2, vSides: int = 2, wSides: int = 2,
+                         direction: list = [0,0,1], placement: str = "center") -> topologic.CellComplex:
         """
         Creates a prismatic cellComplex with internal cells.
 
@@ -681,7 +683,7 @@ class CellComplex(topologic.CellComplex):
             return None
 
     @staticmethod
-    def Shells(cellComplex):
+    def Shells(cellComplex: topologic.CellComplex) -> list:
         """
         Returns the shells of the input cellComplex.
 
@@ -703,7 +705,7 @@ class CellComplex(topologic.CellComplex):
         return shells
 
     @staticmethod
-    def Vertices(cellComplex):
+    def Vertices(cellComplex: topologic.CellComplex) -> list:
         """
         Returns the vertices of the input cellComplex.
 
@@ -725,7 +727,7 @@ class CellComplex(topologic.CellComplex):
         return vertices
 
     @staticmethod
-    def Volume(cellComplex, mantissa=4):
+    def Volume(cellComplex: topologic.CellComplex, mantissa: int = 4) -> float:
         """
         Returns the volume of the input cellComplex.
 
@@ -752,7 +754,7 @@ class CellComplex(topologic.CellComplex):
         return round(volume, mantissa)
 
     @staticmethod
-    def Wires(cellComplex):
+    def Wires(cellComplex: topologic.CellComplex) -> list:
         """
         Returns the wires of the input cellComplex.
 

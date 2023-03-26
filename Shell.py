@@ -6,7 +6,7 @@ import math
 
 class Shell(Topology):
     @staticmethod
-    def ByFaces(faces, tolerance=0.0001):
+    def ByFaces(faces: list, tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a shell from the input list of faces.
 
@@ -42,7 +42,7 @@ class Shell(Topology):
             return shell
 
     @staticmethod
-    def ByFacesCluster(cluster):
+    def ByFacesCluster(cluster: topologic.Cluster, tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a shell from the input cluster of faces.
 
@@ -50,7 +50,9 @@ class Shell(Topology):
         ----------
         cluster : topologic.Cluster
             The input cluster of faces.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Shell
@@ -61,10 +63,10 @@ class Shell(Topology):
             return None
         faces = []
         _ = cluster.Faces(None, faces)
-        return Shell.ByFaces(faces)
+        return Shell.ByFaces(faces, tolerance=tolerance)
 
     @staticmethod
-    def ByWires(wires, triangulate=True, tolerance=0.0001):
+    def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a shell by lofting through the input wires
         Parameters
@@ -156,7 +158,7 @@ class Shell(Topology):
         return Shell.ByFaces(faces, tolerance)
 
     @staticmethod
-    def ByWiresCluster(cluster, triangulate=True, tolerance=0.0001):
+    def ByWiresCluster(cluster: topologic.Cluster, triangulate: bool = True, tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a shell by lofting through the input cluster of wires
 
@@ -184,7 +186,7 @@ class Shell(Topology):
         return Shell.ByWires(wires, triangulate=triangulate, tolerance=tolerance)
 
     @staticmethod
-    def Circle(origin=None, radius=0.5, sides=32, fromAngle=0, toAngle=360, direction=[0,0,1], placement="center", tolerance=0.0001):
+    def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 32, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a circle.
 
@@ -215,7 +217,7 @@ class Shell(Topology):
         return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=1, fromAngle=fromAngle, toAngle=toAngle, direction=direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
-    def Delaunay(vertices, face=None):
+    def Delaunay(vertices: list, face: topologic.Face = None) -> topologic.Shell:
         """
         Returns a delaunay partitioning of the input vertices. The vertices must be coplanar. See https://en.wikipedia.org/wiki/Delaunay_triangulation.
 
@@ -308,9 +310,8 @@ class Shell(Topology):
         shell = Topology.Translate(shell, xTran, yTran, zTran)
         return shell
 
-
     @staticmethod
-    def Edges(shell):
+    def Edges(shell: topologic.Shell) -> list:
         """
         Returns the edges of the input shell.
 
@@ -332,7 +333,7 @@ class Shell(Topology):
         return edges
 
     @staticmethod
-    def ExternalBoundary(shell):
+    def ExternalBoundary(shell: topologic.Shell) -> topologic.Wire:
         """
         Returns the external boundary (closed wire) of the input shell.
 
@@ -366,7 +367,7 @@ class Shell(Topology):
         return returnTopology
 
     @staticmethod
-    def Faces(shell):
+    def Faces(shell: topologic.Shell) -> list:
         """
         Returns the faces of the input shell.
 
@@ -477,7 +478,8 @@ class Shell(Topology):
         return not Wire.IsInside(shell=shell, vertex=vertex, tolerance=tolerance)
     
     @staticmethod
-    def HyperbolicParaboloidRectangularDomain(origin=None, llVertex=None, lrVertex=None, ulVertex=None, urVertex=None, u=10, v=10, direction=[0,0,1], placement="bottom"):
+    def HyperbolicParaboloidRectangularDomain(origin: topologic.Vertex = None, llVertex: topologic.Vertex = None, lrVertex: topologic.Vertex =None, ulVertex: topologic.Vertex =None, urVertex: topologic.Vertex = None,
+                                              uSides: int = 10, vSides: int = 10, direction: list = [0,0,1], placement: str = "bottom") -> topologic.Shell:
         """
         Creates a hyperbolic paraboloid with a rectangular domain.
 
@@ -493,9 +495,9 @@ class Shell(Topology):
             The upper left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5,0.5,0.5).
         urVertex : topologic.Vertex , optional
             The upper right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5,0.5,-0.5).
-        u : int , optional
+        uSides : int , optional
             The number of segments along the X axis. The default is 10.
-        v : int , optional
+        vSides : int , optional
             The number of segments along the Y axis. The default is 10.
         direction : list , optional
             The vector representing the up direction of the hyperbolic parabolid. The default is [0,0,1].
@@ -511,7 +513,6 @@ class Shell(Topology):
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         if not isinstance(origin, topologic.Vertex):
             origin = Vertex.ByCoordinates(0,0,0)
@@ -526,17 +527,17 @@ class Shell(Topology):
         e1 = Edge.ByVertices([llVertex, lrVertex])
         e3 = Edge.ByVertices([urVertex, ulVertex])
         edges = []
-        for i in range(u+1):
-            v1 = Edge.VertexByParameter(e1, float(i)/float(u))
-            v2 = Edge.VertexByParameter(e3, 1.0 - float(i)/float(u))
+        for i in range(uSides+1):
+            v1 = Edge.VertexByParameter(e1, float(i)/float(uSides))
+            v2 = Edge.VertexByParameter(e3, 1.0 - float(i)/float(uSides))
             edges.append(Edge.ByVertices([v1, v2]))
         faces = []
-        for i in range(u):
-            for j in range(v):
-                v1 = Edge.VertexByParameter(edges[i], float(j)/float(v))
-                v2 = Edge.VertexByParameter(edges[i], float(j+1)/float(v))
-                v3 = Edge.VertexByParameter(edges[i+1], float(j+1)/float(v))
-                v4 = Edge.VertexByParameter(edges[i+1], float(j)/float(v))
+        for i in range(uSides):
+            for j in range(vSides):
+                v1 = Edge.VertexByParameter(edges[i], float(j)/float(vSides))
+                v2 = Edge.VertexByParameter(edges[i], float(j+1)/float(vSides))
+                v3 = Edge.VertexByParameter(edges[i+1], float(j+1)/float(vSides))
+                v4 = Edge.VertexByParameter(edges[i+1], float(j)/float(vSides))
                 faces.append(Face.ByVertices([v1, v2, v4]))
                 faces.append(Face.ByVertices([v4, v2, v3]))
         returnTopology = Shell.ByFaces(faces)
@@ -585,7 +586,7 @@ class Shell(Topology):
         return returnTopology
     
     @staticmethod
-    def HyperbolicParaboloidCircularDomain(origin=None, radius=0.5, sides=36, rings=10, A=1.0, B=-1.0, direction=[0,0,1], placement="bottom"):
+    def HyperbolicParaboloidCircularDomain(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 36, rings: int = 10, A: float = 1.0, B: float = -1.0, direction: list = [0,0,1], placement: str = "bottom") -> topologic.Shell:
         """
         Creates a hyperbolic paraboloid with a circular domain. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
@@ -758,7 +759,7 @@ class Shell(Topology):
         return returnTopology
     
     @staticmethod
-    def InternalBoundaries(shell):
+    def InternalBoundaries(shell: topologic.Shell) -> topologic.Topology:
         """
         Returns the internal boundaries (closed wires) of the input shell. Internal boundaries are considered holes.
 
@@ -785,7 +786,7 @@ class Shell(Topology):
         return Cluster.SelfMerge(Cluster.ByTopologies(ibEdges))
     
     @staticmethod
-    def IsClosed(shell):
+    def IsClosed(shell: topologic.Shell) -> bool:
         """
         Returns True if the input shell is closed. Returns False otherwise.
 
@@ -803,7 +804,7 @@ class Shell(Topology):
         return shell.IsClosed()
 
     @staticmethod
-    def Pie(origin=None, radiusA=0.5, radiusB=0, sides=32, rings=1, fromAngle=0, toAngle=360, direction=[0,0,1], placement="center", tolerance=0.0001):
+    def Pie(origin: topologic.Vertex = None, radiusA: float = 0.5, radiusB: float = 0.0, sides: int = 32, rings: int = 1, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a pie shape.
 
@@ -942,7 +943,7 @@ class Shell(Topology):
         return shell
 
     @staticmethod
-    def Rectangle(origin=None, width=1.0, length=1.0, uSides=2, vSides=2, direction=[0,0,1], placement="center", tolerance=0.0001):
+    def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, uSides: int = 2, vSides: int = 2, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a rectangle.
 
@@ -1013,10 +1014,8 @@ class Shell(Topology):
         shell = Topology.Rotate(shell, origin, 0, 0, 1, phi)
         return shell
 
-
-        
     @staticmethod
-    def SelfMerge(shell, angTolerance=0.1):
+    def SelfMerge(shell: topologic.Shell, angTolerance: float = 0.1) -> topologic.Face:
         """
         Creates a face by merging the faces of the input shell. The shell must be planar within the input angular tolerance.
 
@@ -1086,7 +1085,7 @@ class Shell(Topology):
             return None
 
     @staticmethod
-    def Vertices(shell):
+    def Vertices(shell: topologic.Shell) -> list:
         """
         Returns the vertices of the input shell.
 
@@ -1108,7 +1107,7 @@ class Shell(Topology):
         return vertices
 
     @staticmethod
-    def Voronoi(vertices, face=None):
+    def Voronoi(vertices: list, face: topologic.Face = None) -> topologic.Shell:
         """
         Returns a voronoi partitioning of the input face based on the input vertices. The vertices must be coplanar and within the face. See https://en.wikipedia.org/wiki/Voronoi_diagram.
 
@@ -1212,7 +1211,7 @@ class Shell(Topology):
         return shell
 
     @staticmethod
-    def Wires(shell):
+    def Wires(shell: topologic.Shell) -> list:
         """
         Returns the wires of the input shell.
 

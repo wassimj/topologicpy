@@ -2,7 +2,7 @@ import topologicpy
 import topologic
 class Cluster(topologic.Cluster):
     @staticmethod
-    def ByTopologies(topologies):
+    def ByTopologies(topologies: list) -> topologic.Cluster:
         """
         Creates a topologic Cluster from the input list of topologies.
 
@@ -22,7 +22,7 @@ class Cluster(topologic.Cluster):
         return topologic.Cluster.ByTopologies(topologyList, False)
 
     @staticmethod
-    def CellComplexes(cluster):
+    def CellComplexes(cluster: topologic.Cluster) -> list:
         """
         Returns the cellComplexes of the input cluster.
 
@@ -44,7 +44,7 @@ class Cluster(topologic.Cluster):
         return cellComplexes
 
     @staticmethod
-    def Cells(cluster):
+    def Cells(cluster: topologic.Cluster) -> list:
         """
         Returns the cells of the input cluster.
 
@@ -66,7 +66,7 @@ class Cluster(topologic.Cluster):
         return cells
 
     @staticmethod
-    def Edges(cluster):
+    def Edges(cluster: topologic.Cluster) -> list:
         """
         Returns the edges of the input cluster.
 
@@ -88,7 +88,7 @@ class Cluster(topologic.Cluster):
         return edges
 
     @staticmethod
-    def Faces(cluster):
+    def Faces(cluster: topologic.Cluster) -> list:
         """
         Returns the faces of the input cluster.
 
@@ -110,7 +110,7 @@ class Cluster(topologic.Cluster):
         return faces
 
     @staticmethod
-    def FreeCells(cluster):
+    def FreeCells(cluster: topologic.Cluster) -> list:
         """
         Returns the free cells of the input cluster that are not part of a higher topology.
 
@@ -152,7 +152,7 @@ class Cluster(topologic.Cluster):
         return result
     
     @staticmethod
-    def FreeShells(cluster):
+    def FreeShells(cluster: topologic.Cluster) -> list:
         """
         Returns the free shells of the input cluster that are not part of a higher topology.
 
@@ -193,7 +193,7 @@ class Cluster(topologic.Cluster):
         return result
     
     @staticmethod
-    def FreeFaces(cluster):
+    def FreeFaces(cluster: topologic.Cluster) -> list:
         """
         Returns the free faces of the input cluster that are not part of a higher topology.
 
@@ -233,7 +233,7 @@ class Cluster(topologic.Cluster):
         return result
 
     @staticmethod
-    def FreeWires(cluster):
+    def FreeWires(cluster: topologic.Cluster) -> list:
         """
         Returns the free wires of the input cluster that are not part of a higher topology.
 
@@ -274,7 +274,7 @@ class Cluster(topologic.Cluster):
         return result
     
     @staticmethod
-    def FreeEdges(cluster):
+    def FreeEdges(cluster: topologic.Cluster) -> list:
         """
         Returns the free edges of the input cluster that are not part of a higher topology.
 
@@ -315,7 +315,7 @@ class Cluster(topologic.Cluster):
         return result
     
     @staticmethod
-    def FreeVertices(cluster):
+    def FreeVertices(cluster: topologic.Cluster) -> list:
         """
         Returns the free vertices of the input cluster that are not part of a higher topology.
 
@@ -356,7 +356,7 @@ class Cluster(topologic.Cluster):
         return result
     
     @staticmethod
-    def HighestType(cluster):
+    def HighestType(cluster: topologic.Cluster) -> int:
         """
         Returns the type of the highest dimension subtopology found in the input cluster.
 
@@ -396,7 +396,7 @@ class Cluster(topologic.Cluster):
             return topologic.Vertex.Type()
 
     @staticmethod
-    def MysticRose(wire=None, origin=None, radius=1, sides=16, perimeter=True, direction=[0,0,1], placement="center", tolerance=0.0001):
+    def MysticRose(wire: topologic.Wire = None, origin: topologic.Vertex = None, radius: float = 1.0, sides: int = 16, perimeter: bool = True, direction: list = [0,0,1], placement:str = "center", tolerance: float = 0.0001) -> topologic.Cluster:
         """
         Creates a mystic rose.
 
@@ -447,7 +447,7 @@ class Cluster(topologic.Cluster):
         return Cluster.ByTopologies(edges)
 
     @staticmethod
-    def Shells(cluster):
+    def Shells(cluster: topologic.Cluster) -> list:
         """
         Returns the shells of the input cluster.
 
@@ -469,7 +469,7 @@ class Cluster(topologic.Cluster):
         return shells
 
     @staticmethod
-    def Simplify(cluster):
+    def Simplify(cluster: topologic.Cluster):
         """
         Simplifies the input cluster if possible. For example, if the cluster contains only one cell, that cell is returned.
 
@@ -545,7 +545,7 @@ class Cluster(topologic.Cluster):
         return cluster
 
     @staticmethod
-    def Vertices(cluster):
+    def Vertices(cluster: topologic.Cluster) -> list:
         """
         Returns the vertices of the input cluster.
 
@@ -567,7 +567,7 @@ class Cluster(topologic.Cluster):
         return vertices
 
     @staticmethod
-    def Wires(cluster):
+    def Wires(cluster: topologic.Cluster) -> list:
         """
         Returns the wires of the input cluster.
 
