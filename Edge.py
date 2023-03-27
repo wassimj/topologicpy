@@ -259,7 +259,7 @@ class Edge():
 
         """
 
-        from topologic.Vector import Vector
+        from topologicpy.Vector import Vector
 
         if not isinstance(edge, topologic.Edge):
             return None

@@ -195,10 +195,10 @@ obW5 = Wire.ByVertices([obV6, obV9, obV1])      # create wire
 ObsW_C1 = Cluster.ByTopologies([obW1, obW2])                      # create cluster
 ObsW_C2 = Cluster.ByTopologies([obW3, obW4, obW5])          # create cluster
 # test 1
-isoV1 = Wire.Isovist(v1, bRec, ObsW_C1)                                    # without optional inputs
+isoV1 = Wire.Isovist(bRec, v1, ObsW_C1)                                    # without optional inputs
 assert isinstance(isoV1, list), "Wire.Isovist. Should be list"
 # test 2
-isoV2 = Wire.Isovist(v1, bRec, ObsW_C2, 0.002)                          # with optional inputs
+isoV2 = Wire.Isovist(bRec, v1, ObsW_C2, 0.002)                          # with optional inputs
 assert isinstance(isoV2, list), "Wire.Isovist. Should be list"
 
 # Case 15 - Length
@@ -293,3 +293,8 @@ assert isinstance(wv1, list), "Wire.Vertices. Should be list"
 # test 2
 wv2 = Wire.Vertices(w6)
 assert isinstance(wv2, list), "Wire.Vertices. Should be list"
+
+# Case 24 - Einstein
+# test 1
+ein = Wire.Einstein()
+assert isinstance(ein, topologic.Wire), "Wire.Einstein. Should be a wire"

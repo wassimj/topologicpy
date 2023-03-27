@@ -65,10 +65,10 @@ assert isinstance(shell_w, topologic.Shell), "Shell.ByFaces. Should be topologic
 shell_wc = Shell.ByWiresCluster(w_cluster)               # without optional inputs
 assert isinstance(shell_wc, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
 # test 2
-shell_wc = Shell.ByWiresCluster(w_clustertriangulate=True, tolerance=0.001)   # with optional inputs
+shell_wc = Shell.ByWiresCluster(w_cluster, triangulate=True, tolerance=0.001)   # with optional inputs
 assert isinstance(shell_wc, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
 # test 3
-shell_wc = Shell.ByWiresCluster(w_clustertriangulate=False, tolerance=0.001)   # with optional inputs
+shell_wc = Shell.ByWiresCluster(w_cluster, triangulate=False, tolerance=0.001)   # with optional inputs
 assert isinstance(shell_wc, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
 
 # Case 5 - Circle
@@ -124,8 +124,8 @@ assert isinstance(shell_hpcd, topologic.Shell), "Shell.HyperbolicParaboloidCircu
 shell_hprd = Shell.HyperbolicParaboloidRectangularDomain()                                                      # without optional inputs
 assert isinstance(shell_hprd, topologic.Shell), "Shell.HyperbolicParaboloidRectangularDomain. Should be topologic.Shell"
 # test 2
-shell_hprd = Shell.HyperbolicParaboloidRectangularDomain(v3, llVertex=None, lrVertex=None, ulVertex=None, urVertex=None, u=20,
-                                                        v=20, direction = [0,0,1], placement='lowerleft')    # with optional inputs
+shell_hprd = Shell.HyperbolicParaboloidRectangularDomain(v3, llVertex=None, lrVertex=None, ulVertex=None, urVertex=None, uSides=20,
+                                                        vSides=20, direction = [0,0,1], placement='lowerleft')    # with optional inputs
 assert isinstance(shell_hprd, topologic.Shell), "Shell.HyperbolicParaboloidRectangularDomain. Should be topologic.Shell"
 
 # Case 11 - InternalBoundaries

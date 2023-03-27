@@ -96,23 +96,23 @@ assert isinstance(areaS, float), "Face.Area. Should be float"
 areaC = Face.Area(c1, 6)                                               # with optional inputs 
 assert isinstance(areaC, float), "Face.Area. Should be float"
  
-# Case 5 - BoundingFace
+# Case 5 - BoundingRectangle
 # test 1
-bF1 = Face.BoundingFace(f1)
-assert isinstance(bF1, topologic.Face), "Face.BoundingFace. Should be topologic.Face"
+bF1 = Face.BoundingRectangle(f1)
+assert isinstance(bF1, topologic.Face), "Face.BoundingRectangle. Should be topologic.Face"
 # test 2
-bF2 = Face.BoundingFace(c1)
-assert isinstance(bF1, topologic.Face), "Face.BoundingFace. Should be topologic.Face"
+bF2 = Face.BoundingRectangle(c1)
+assert isinstance(bF1, topologic.Face), "Face.BoundingRectangle. Should be topologic.Face"
 
 # Case 6 - BoundingRectangle
 starF = Face.Star(v10, 5.0, 2.0, 5)                     # create face
 starF0 = Face.Star(v10, 6.0, 2.5, 6)                   # create face                                          
 # test 1
 bR1 = Face.BoundingRectangle(starF, 5)
-assert isinstance(bR1, topologic.Face), "Face.BoundingRectanlge. Should be topologic.Face"
+assert isinstance(bR1, topologic.Face), "Face.BoundingRectangle. Should be topologic.Face"
 # test 2
 bR2 = Face.BoundingRectangle(starF0, 10)
-assert isinstance(bR2, topologic.Face), "Face.BoundingRectanlge. Should be topologic.Face"
+assert isinstance(bR2, topologic.Face), "Face.BoundingRectangle. Should be topologic.Face"
 
 # Case 7 - ByEdges
 # test 1
@@ -362,7 +362,7 @@ r1 = Face.Rectangle((Vertex.ByCoordinates(3.7,2.5,5)), 10, 10, direction= [0, 0,
 pf1 = Face.Project(c4, r1)                                                              # without optional inputs
 assert isinstance(pf1, topologic.Face), "Face.Project. Should be topologic.Face"
 # test 2
-pf2 = Face.Project(c5, r1, [0,0,-1], 2, 0.001)                                   # with optional inputs
+pf2 = Face.Project(c5, r1, [0,0,-1], 2)                                   # with optional inputs
 assert isinstance(pf2, topologic.Face), "Face.Project. Should be topologic.Face"
 # plot geometry
 # geo1 = Plotly.DataByTopology(pf2)                                          # create plotly data
@@ -469,3 +469,8 @@ assert isinstance(fcV1, topologic.Face), "Face.ByVerticesCluster. Should be topo
 # test 2
 fcV2 = Face.ByVerticesCluster(Clu8)
 assert isinstance(fcV2, topologic.Face), "Face.ByVerticesCluster. Should be topologic.Face"
+
+# Case 39 - Einstein
+# test 1
+ein = Face.Einstein()
+assert isinstance(ein, topologic.Face), "Wire.Einstein. Should be a face"

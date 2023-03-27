@@ -259,11 +259,9 @@ assert isinstance(graph_edges, list), "Graph.Edges. Should be list"
 assert graph_edges_numE == 3, "Graph.Edges. Should be 3"
 # test 2
 graph_edges1 = Graph.Edges(graph_ve2, list_v2, tolerance=0.001)  # with optional inputs, multiplied by 2?
-graph_edges1_numE = len(Graph.Edges(graph_ve, list_v2, tolerance=0.001))
-print("Line 263, check this!", graph_edges1_numE)
-"""The number of edges is double"""
+graph_edges1_numE = len(graph_edges1)
 assert isinstance(graph_edges1, list), "Graph.Edges. Should be list"
-#assert graph_edges1_numE == 3, "Graph.Edges. Should be 3"
+assert graph_edges1_numE == 2, "Graph.Edges. Should be 2"
 
 # Case 20 - IsBipartite
 

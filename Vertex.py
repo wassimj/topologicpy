@@ -62,6 +62,30 @@ class Vertex(Topology):
         return True
     
     @staticmethod
+    def AreIpsilateralCluster(cluster: topologic.Cluster, face: topologic.Face) -> bool:
+        """
+        Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input list of vertices.
+        face : topologic.Face
+            The input face
+
+        Returns
+        -------
+        bool
+            True if the input vertices are on the same side of the face. False otherwise. If at least one of the vertices is on the face, this method return True.
+
+        """
+        from topologicpy.Topology import Topology
+        if not isinstance(cluster, topologic.Topology):
+            return None
+        vertices = Topology.SubTopologies(cluster, subTopologyType="vertex")
+        return Vertex.AreIpsilateral(vertices, face)
+    
+    @staticmethod
     def AreOnSameSide(vertices: list, face: topologicpy.Face.Face) -> bool:
         """
         Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
@@ -79,7 +103,7 @@ class Vertex(Topology):
             True if the input vertices are on the same side of the face. False otherwise. If at least one of the vertices is on the face, this method return True.
 
         """
-        return IsIpsileteral(vertices, face)
+        return Vertex.AreIpsilateral(vertices, face)
 
     @staticmethod
     def AreOnSameSideCluster(cluster: topologic.Cluster, face: topologic.Face) -> bool:
@@ -103,7 +127,7 @@ class Vertex(Topology):
         if not isinstance(cluster, topologic.Topology):
             return None
         vertices = Topology.SubTopologies(cluster, subTopologyType="vertex")
-        return AreIpsilateral(vertices, face)
+        return Vertex.AreIpsilateral(vertices, face)
 
     @staticmethod
     def ByCoordinates(x: float = 0, y: float = 0, z: float = 0) -> topologic.Vertex:

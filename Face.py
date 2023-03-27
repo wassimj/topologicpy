@@ -1426,7 +1426,7 @@ class Face(topologic.Face):
         return planarizedFace
 
     @staticmethod
-    def Project(faceA: topologic.Face, faceB: topologic.Face, direction : list = None, mantissa: int = 4, tolerance: float = 0.0001) -> topologic.Face:
+    def Project(faceA: topologic.Face, faceB: topologic.Face, direction : list = None, mantissa: int = 4) -> topologic.Face:
         """
         Creates a projection of the first input face unto the second input face.
 
@@ -1462,10 +1462,10 @@ class Face(topologic.Face):
         eb = faceA.ExternalBoundary()
         ib_list = []
         _ = faceA.InternalBoundaries(ib_list)
-        p_eb = Wire.Project(eb, faceB, direction, mantissa, tolerance)
+        p_eb = Wire.Project(wire=eb, face = faceB, direction=direction, mantissa=mantissa)
         p_ib_list = []
         for ib in ib_list:
-            temp_ib = Wire.Project(ib, faceB, direction, mantissa, tolerance)
+            temp_ib = Wire.Project(wire=ib, face = faceB, direction=direction, mantissa=mantissa)
             if temp_ib:
                 p_ib_list.append(temp_ib)
         return Face.ByWires(p_eb, p_ib_list)
@@ -1763,7 +1763,25 @@ class Face(topologic.Face):
         vertices = []
         _ = face.Vertices(None, vertices)
         return vertices
+    
+    @staticmethod
+    def Wire(face: topologic.Face) -> topologic.Wire:
+        """
+        Returns the external boundary (closed wire) of the input face.
 
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+
+        Returns
+        -------
+        topologic.Wire
+            The external boundary of the input face.
+
+        """
+        return face.ExternalBoundary()
+    
     @staticmethod
     def Wires(face: topologic.Face) -> list:
         """

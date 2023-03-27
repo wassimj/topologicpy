@@ -621,12 +621,10 @@ assert isinstance(topology_sbs, dict), "Topology.SortBySelectors. Should be dict
 
 # Case 51 - Spin
 """Takes really long time to run"""
-print("Cell_cy", cell_cy)
 # test 1
 topology_spin = Topology.Spin(cell_cy, origin=v00, triangulate=False,
                                 direction = [0,1,0], degree=90, sides=2, tolerance=0.001)
 assert isinstance(topology_spin, topologic.Topology), "Topology.Spin. Should be topologic.Topology"
-print("Spun Topology", topology_spin)
 # plot geometry
 #data_top_spin = Plotly.DataByTopology(topology_spin)
 #figure_top_spin = Plotly.FigureByData(data_top_spin) 
