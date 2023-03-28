@@ -1768,7 +1768,8 @@ class Topology():
             vertices = []
             faces = []
             for i in range(len(lines)):
-                s = lines[i].split()
+                l = lines[i].replace(",", " ")
+                s = l.split()
                 if isinstance(s, list):
                     if len(s) > 3:
                         if s[0].lower() == "v":
@@ -4311,7 +4312,7 @@ class Topology():
     
     
     @staticmethod
-    def Show(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor='white', faceOpacity=0.5, edgeColor='black', edgeWidth=1, vertexColor='black', vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
+    def Show(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor='white', faceOpacity=0.5, edgeColor='black', edgeWidth=1, vertexColor='black', vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", intensityKey=None, colorScale="Viridis", showScale=True):
         """
         Shows the input topology on screen.
 
@@ -4407,6 +4408,10 @@ class Topology():
             The desired up vector. The default is [0,0,1].
         renderer : str , optional
             The desired renderer. See Plotly.Renderers(). The default is "notebook".
+        intensityKey: str, optional
+            If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
 
         Returns
         -------
@@ -4416,7 +4421,7 @@ class Topology():
         from topologicpy.Plotly import Plotly
         if not isinstance(topology, topologic.Topology):
             return None
-        data = Plotly.DataByTopology(topology=topology, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, vertexGroups=vertexGroups, edgeGroups=edgeGroups, faceGroups=faceGroups, faceColor=faceColor, faceOpacity=faceOpacity, edgeColor=edgeColor, edgeWidth=edgeWidth, vertexColor=vertexColor, vertexSize=vertexSize, showFaces=showFaces, showEdges=showEdges, showVertices=showVertices)
+        data = Plotly.DataByTopology(topology=topology, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, vertexGroups=vertexGroups, edgeGroups=edgeGroups, faceGroups=faceGroups, faceColor=faceColor, faceOpacity=faceOpacity, edgeColor=edgeColor, edgeWidth=edgeWidth, vertexColor=vertexColor, vertexSize=vertexSize, showFaces=showFaces, showEdges=showEdges, showVertices=showVertices, intensityKey=intensityKey, colorScale=colorScale, showScale=showScale)
         figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
         Plotly.Show(figure=figure, renderer=renderer, camera=camera, target=target, up=up)
 

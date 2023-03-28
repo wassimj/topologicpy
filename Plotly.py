@@ -283,7 +283,7 @@ class Plotly:
         return data
 
     @staticmethod
-    def DataByTopology(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor="white", faceOpacity=0.5, edgeColor="black", edgeWidth=1, vertexColor="black", vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, vertexLabel="Topology Vertices", edgeLabel="Topology Edges", faceLabel="Topology Faces", vertexLegendGroup=1, edgeLegendGroup=2, faceLegendGroup=3, vertexLegendRank=1, edgeLegendRank=2, faceLegendRank=3, showVertexLegend=True, showEdgeLegend=True, showFaceLegend=True):
+    def DataByTopology(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor="white", faceOpacity=0.5, edgeColor="black", edgeWidth=1, vertexColor="black", vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, vertexLabel="Topology Vertices", edgeLabel="Topology Edges", faceLabel="Topology Faces", vertexLegendGroup=1, edgeLegendGroup=2, faceLegendGroup=3, vertexLegendRank=1, edgeLegendRank=2, faceLegendRank=3, showVertexLegend=True, showEdgeLegend=True, showFaceLegend=True, intensityKey=None, colorScale="Viridis", showScale=True):
         """
         Creates plotly face, edge, and vertex data.
 
@@ -371,6 +371,12 @@ class Plotly:
             The legend rank order of the faces of this topology. The default is 3.
         showFaceLegend : bool, optional
             If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. The default is True.
+        intensityKey: str, optional
+            If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+        showScale : bool , optional
+            If set to True, the color scale will be shown. The default is True.
         
         Returns
         -------
@@ -498,16 +504,14 @@ class Plotly:
                                 hoverinfo='text')
 
 
-        def faceData(vertices, faces, dictionaries=None, faceColor="white", faceOpacity=0.5, faceLabelKey=None, faceGroupKey=None, faceGroups=[], faceLabel="Topology Faces", legendGroup=3, legendRank=3, showLegend=True):
+        def faceData(vertices, faces, dictionaries=None, faceColor="white", faceOpacity=0.5, faceLabelKey=None, faceGroupKey=None, faceGroups=[], faceLabel="Topology Faces", legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="Viridis", showScale="False", colorBarTitle=" "):
             x = []
             y = []
             z = []
-            intensities = []
             for v in vertices:
                 x.append(v[0])
                 y.append(v[1])
                 z.append(v[2])
-                intensities.append(0)
             i = []
             j = []
             k = []
@@ -548,26 +552,29 @@ class Plotly:
                     f_groupList = faceColor
             if len(f_labels) < 1:
                 f_labels = ""
+            if not colorBarTitle:
+                colorBarTitle = " "
             return go.Mesh3d(
                     x=x,
                     y=y,
                     z=z,
-                    # i, j and k give the vertices of triangles
-                    # here we represent the 4 triangles of the tetrahedron surface
                     i=i,
                     j=j,
                     k=k,
-                    name=faceLabel,
-                    showscale=False,
+                    name = faceLabel,
                     showlegend = showLegend,
-                    legendgroup=legendGroup,
-                    legendrank=legendRank,
+                    legendgroup = legendGroup,
+                    legendrank = legendRank,
                     color = f_groupList,
+                    colorscale = colorScale,
+                    colorbar = {"x":-0.15, "title": "<b>"+colorBarTitle+"</b>"},
+                    intensity = intensities,
                     opacity = faceOpacity,
                     hoverinfo = 'text',
                     text=f_labels,
                     hovertext = f_labels,
                     flatshading = True,
+                    showscale = showScale,
                     lighting = {"facenormalsepsilon": 0},
                 )
         from topologicpy.Cluster import Cluster
@@ -591,18 +598,29 @@ class Plotly:
         else:
            f_dictionaries = None
         
-        #geometry = Topology.Geometry(topology)
-        #vertices = geometry['vertices']
-        #edges = geometry['edges']
-        #faces = geometry['faces']
         data = []
         tp_verts = Topology.SubTopologies(topology, subTopologyType="vertex")
         vertices = []
         v_dictionaries = []
-        for tp_v in tp_verts:
+        intensities = []
+        for i, tp_v in enumerate(tp_verts):
             vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
+            d = Topology.Dictionary(tp_v)
+            if intensityKey:
+                if d:
+                    v = Dictionary.ValueAtKey(d, key=intensityKey)
+                    if not v == None:
+                        intensities.append(v)
+                    else:
+                        intensities.append(0)
+                else:
+                    intensities.append(0)
+            else:
+                intensities = None            
             if vertexLabelKey or vertexGroupKey:
-                v_dictionaries.append(Topology.Dictionary(tp_v))
+                v_dictionaries.append(d)
+        #if intensities:
+            #intensities = [float(m)/max(intensities) for m in intensities]
         if showVertices:
             data.append(vertexData(vertices, dictionaries=v_dictionaries, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, vertexLabel=vertexLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend))
         if showEdges and topology.Type() > topologic.Vertex.Type():
@@ -621,7 +639,6 @@ class Plotly:
             f_dictionaries = []
             for tp_face in tp_faces:
                 temp_faces = Face.Triangulate(tp_face)
-                #temp_faces = [tp_face]
                 for tri in temp_faces:
                     triangles.append(tri)
                     if faceLabelKey or faceGroupKey:
@@ -635,8 +652,7 @@ class Plotly:
                     i = Vertex.Index(vertex=w_v, vertices=tp_verts, tolerance=0.01)
                     temp_f.append(i)
                 faces.append(temp_f)
-            data.append(faceData(vertices, faces, dictionaries=f_dictionaries, faceColor=faceColor, faceOpacity=faceOpacity, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, faceLabel=faceLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend))
-            #data.append(vertexData(vertices, dictionaries=[], vertexColor=vertexColor, vertexSize=5, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups))
+            data.append(faceData(vertices, faces, dictionaries=f_dictionaries, faceColor=faceColor, faceOpacity=faceOpacity, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, faceLabel=faceLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensities, colorScale=colorScale, showScale=showScale, colorBarTitle=intensityKey))
         return data
 
 
@@ -1060,6 +1076,7 @@ class Plotly:
             plot_bgcolor=backgroundColor,
             margin=dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
             )
+        #figure.data[2].colorbar.x=-0.1
         return figure
 
     @staticmethod

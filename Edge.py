@@ -126,9 +126,9 @@ class Edge():
         return edge
 
     @staticmethod
-    def ByOffset(edge: topologic.Edge, offset: float = 1.0, tolerance: float = 0.0001) -> topologic.Edge:
+    def ByOffset2D(edge: topologic.Edge, offset: float = 1.0, tolerance: float = 0.0001) -> topologic.Edge:
         """
-        Creates and edge offset from the input edge
+        Creates and edge offset from the input edge. This method is intended for edges that are in the XY plane.
 
         Parameters
         ----------
@@ -146,7 +146,7 @@ class Edge():
 
         """
         from topologicpy.Topology import Topology
-        n = Edge.Normal(edge)
+        n = Edge.Normal2D(edge)
         n = Vector.Normalize(n)
         n = Vector.Multiply(n, offset, tolerance)
         edge2 = Topology.Translate(edge, n[0], n[1], n[2])
@@ -524,7 +524,7 @@ class Edge():
         return length
 
     @staticmethod
-    def Normal(edge: topologic.Edge) -> list:
+    def Normal2D(edge: topologic.Edge) -> list:
         """
         Returns the normal (perpendicular) vector to the input edge. This method is intended for edges that are in the XY plane. Z is assumed to be zero and ignored.
 

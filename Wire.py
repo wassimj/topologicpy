@@ -269,7 +269,7 @@ class Wire(topologic.Wire):
                     finalOffset = offset
             else:
                 finalOffset = offset
-            e1 = Edge.ByOffset(flatEdge,finalOffset)
+            e1 = Edge.ByOffset2D(flatEdge,finalOffset)
             newEdges.append(e1)
         edges = flatEdges
         newVertices = []
@@ -352,7 +352,7 @@ class Wire(topologic.Wire):
                             e1 = Edge.Reverse(e1)
                             bisector = Edge.ByVertices([vertices[i], newVertices[i]])
                             nv = Edge.VertexByDistance(bisector, distance=finalMiterThreshold, origin=Edge.StartVertex(bisector), tolerance=0.0001)
-                            vec = Edge.Normal(bisector)
+                            vec = Edge.Normal2D(bisector)
                             nv2 = Topology.Translate(nv, vec[0], vec[1], 0)
                             nv3 = Topology.Translate(nv, -vec[0], -vec[1], 0)
                             miterEdge = Edge.ByVertices([nv2,nv3])

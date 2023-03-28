@@ -224,3 +224,54 @@ assert isinstance(v_e5, list), "Edge.Vertices. Should be list"
 # test 2
 v_e6 = Edge.Vertices(e6)
 assert isinstance(v_e6, list), "Edge.Vertices. Should be list"
+
+#Case 21 - ByFaceNormal
+# test 1
+from topologicpy.Face import Face
+face = Face.Rectangle()
+edge = Edge.ByFaceNormal(face)
+assert isinstance(edge, topologic.Edge), "Edge.ByFaceNormal. Should be topologic.Edge"
+# test 2
+face = Face.Rectangle()
+edge = Edge.ByFaceNormal(face, length=3)
+assert Edge.Length(edge) == 3, "Edge.ByFaceNormal. Length should be 3"
+
+#Case 22 - ByOffset2D
+# test 1
+from topologicpy.Topology import Topology
+v1 = Vertex.ByCoordinates(0,0,0)
+v2 = Vertex.ByCoordinates(10,0,0)
+edge = Edge.ByVertices([v1, v2])
+edge2 = Edge.ByOffset2D(edge, offset=1)
+assert isinstance(edge2, topologic.Edge), "Edge.ByOffset2D. Should be topologic.Edge"
+centroid = Topology.Centroid(edge2)
+assert Vertex.X(centroid) == 5, "Edge.ByOffset2D. X Should be 5"
+assert Vertex.Y(centroid) == 1, "Edge.ByOffset2D. Y Should be 1"
+
+#Case 23 - ExtendToEdge2D
+# test 1
+v1 = Vertex.ByCoordinates(0,0,0)
+v2 = Vertex.ByCoordinates(10,0,0)
+edge = Edge.ByVertices([v1, v2])
+v1 = Vertex.ByCoordinates(20,-10,0)
+v2 = Vertex.ByCoordinates(20,10,0)
+edge2 = Edge.ByVertices([v1, v2])
+edge3 = Edge.ExtendToEdge2D(edge, edge2)
+assert isinstance(edge3, topologic.Edge), "Edge.ExtendToEdge2D. Should be topologic.Edge"
+assert Edge.Length(edge3) == 20, "Edge.ExtendToEdge2D. Length should be 3"
+centroid = Topology.Centroid(edge3)
+assert Vertex.X(centroid) == 10, "Edge.ExtendToEdge2D. X Should be 5"
+assert Vertex.Y(centroid) == 0, "Edge.ExtendToEdge2D. Y Should be 1"
+
+#Case 24 - Intersect2D
+# test 1
+v1 = Vertex.ByCoordinates(0,0,0)
+v2 = Vertex.ByCoordinates(10,0,0)
+edge = Edge.ByVertices([v1, v2])
+v1 = Vertex.ByCoordinates(5,-10,0)
+v2 = Vertex.ByCoordinates(5,10,0)
+edge2 = Edge.ByVertices([v1, v2])
+v3 = Edge.Intersect2D(edge, edge2)
+assert isinstance(v3, topologic.Vertex), "Edge.Intersect2D. Should be topologic.Edge"
+assert Vertex.X(v3) == 5, "Edge.Intersect2D. X Should be 5"
+assert Vertex.Y(v3) == 0, "Edge.Intersect2D. Y Should be 0"
