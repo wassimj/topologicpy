@@ -3947,6 +3947,208 @@ class Topology():
                 returnTopology = topologic.Cluster.ByTopologies(faces, False)
         return returnTopology
 
+    @staticmethod
+    def RemoveEdges(topology, edges=[]):
+        """
+        Removes the input list of faces from the input topology
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        edges : list
+            The input list of edges.
+
+        Returns
+        -------
+        topologic.Topology
+            The input topology with the input list of edges removed.
+
+        """
+
+        from topologicpy.Cluster import Cluster
+        if not isinstance(topology, topologic.Topology):
+            return None
+        edges = [e for e in edges if isinstance(e, topologic.Edge)]
+        if len(edges) < 1:
+            return topology
+        t_edges = Topology.Edges(topology)
+        t_faces = Topology.Faces(topology)
+        if len(t_edges) < 1:
+            return topology
+        if len(t_faces) > 0:
+            remove_faces = []
+            for t_e in t_edges:
+                remove = False
+                for i, e in enumerate(edges):
+                    if Topology.IsSame(t_e, e):
+                        remove = True
+                        remove_faces += Topology.SuperTopologies(e, hostTopology=topology, topologyType="face")
+                        edges = edges[:i]+ edges[i:]
+                        break
+            if len(remove_faces) > 0:
+                return Topology.RemoveFaces(topology, remove_faces)
+        else:
+            remaining_edges = []
+            for t_e in t_edges:
+                remove = False
+                for i, e in enumerate(edges):
+                    if Topology.IsSame(t_e, e):
+                        remove = True
+                        edges = edges[:i]+ edges[i:]
+                        break
+                if not remove:
+                    remaining_edges.append(t_e)
+            if len(remaining_edges) < 1:
+                return None
+            elif len(remaining_edges) == 1:
+                return remaining_edges[0]
+            return Topology.SelfMerge(Cluster.ByTopologies(remaining_edges))
+
+    @staticmethod
+    def RemoveFaces(topology, faces=[]):
+        """
+        Removes the input list of faces from the input topology
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        faces : list
+            The input list of faces.
+
+        Returns
+        -------
+        topologic.Topology
+            The input topology with the input list of faces removed.
+
+        """
+
+        from topologicpy.Cluster import Cluster
+        if not isinstance(topology, topologic.Topology):
+            return None
+        faces = [f for f in faces if isinstance(f, topologic.Face)]
+        if len(faces) < 1:
+            return topology
+        t_faces = Topology.Faces(topology)
+        if len(t_faces) < 1:
+            return topology
+        remaining_faces = []
+        for t_f in t_faces:
+            remove = False
+            for i, f in enumerate(faces):
+                if Topology.IsSame(t_f, f):
+                    remove = True
+                    faces = faces[:i]+ faces[i:]
+                    break
+            if not remove:
+                remaining_faces.append(t_f)
+        if len(remaining_faces) < 1:
+            return None
+        elif len(remaining_faces) == 1:
+            return remaining_faces[0]
+        return Topology.SelfMerge(Cluster.ByTopologies(remaining_faces))
+    
+    @staticmethod
+    def RemoveFacesBySelectors(topology, selectors=[], tolerance = 0.0001):
+        """
+        Removes faces that contain the input list of selectors (vertices) from the input topology
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        selectors : list
+            The input list of selectors (vertices).
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Topology
+            The input topology with the identified faces removed.
+
+        """
+
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        if not isinstance(topology, topologic.Topology):
+            return None
+        selectors = [v for v in selectors if isinstance(v, topologic.Vertex)]
+        if len(selectors) < 1:
+            return topology
+        t_faces = Topology.Faces(topology)
+        to_remove = []
+        for t_f in t_faces:
+            remove = False
+            for i, v in enumerate(selectors):
+                if Face.IsInside(face=t_f, vertex=v, tolerance=tolerance):
+                    remove = True
+                    selectors = selectors[:i]+ selectors[i:]
+                    break
+            if remove:
+                to_remove.append(t_f)
+        if len(to_remove) < 1:
+            return topology
+        return Topology.RemoveFaces(topology, faces = to_remove)
+
+    @staticmethod
+    def RemoveVertices(topology, vertices=[]):
+        """
+        Removes the input list of vertices from the input topology
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        vertices : list
+            The input list of vertices.
+
+        Returns
+        -------
+        topologic.Topology
+            The input topology with the input list of vertices removed.
+
+        """
+
+        from topologicpy.Cluster import Cluster
+        if not isinstance(topology, topologic.Topology):
+            return None
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) < 1:
+            return topology
+        t_vertices = Topology.Vertices(topology)
+        t_edges = Topology.Edges(topology)
+        if len(t_vertices) < 1:
+            return topology
+        if len(t_edges) > 0:
+            remove_edges = []
+            for t_v in t_vertices:
+                remove = False
+                for i, v in enumerate(vertices):
+                    if Topology.IsSame(t_v, v):
+                        remove = True
+                        remove_edges += Topology.SuperTopologies(v, hostTopology=topology, topologyType="edge")
+                        vertices = vertices[:i]+ vertices[i:]
+                        break
+            if len(remove_edges) > 0:
+                return Topology.RemoveEdges(topology, remove_edges)
+        else:
+            remaining_vertices = []
+            for t_v in t_vertices:
+                remove = False
+                for i, e in enumerate(vertices):
+                    if Topology.IsSame(t_v, v):
+                        remove = True
+                        vertices = vertices[:i]+ vertices[i:]
+                        break
+                if not remove:
+                    remaining_vertices.append(t_v)
+            if len(remaining_vertices) < 1:
+                return None
+            elif len(remaining_vertices) == 1:
+                return remaining_vertices[0]
+            return Topology.SelfMerge(Cluster.ByTopologies(remaining_vertices))
     
     @staticmethod
     def ReplaceVertices(topology, verticesA=[], verticesB=[], tolerance=0.0001):
@@ -4682,6 +4884,8 @@ class Topology():
             The list of edges.
 
         """
+        if isinstance(topology, topologic.Edge) or isinstance(topology, topologic.Vertex):
+            return []
         return Topology.SubTopologies(topology=topology, subTopologyType="edge")
     
     @staticmethod
@@ -4700,6 +4904,8 @@ class Topology():
             The list of wires.
 
         """
+        if isinstance(topology, topologic.Wire) or isinstance(topology, topologic.Edge) or isinstance(topology, topologic.Vertex):
+            return []
         return Topology.SubTopologies(topology=topology, subTopologyType="wire")
     
     @staticmethod
@@ -4718,6 +4924,8 @@ class Topology():
             The list of faces.
 
         """
+        if isinstance(topology, topologic.Face) or isinstance(topology, topologic.Wire) or isinstance(topology, topologic.Edge) or isinstance(topology, topologic.Vertex):
+            return []
         return Topology.SubTopologies(topology=topology, subTopologyType="face")
     
     @staticmethod
@@ -4736,6 +4944,8 @@ class Topology():
             The list of shells.
 
         """
+        if isinstance(topology, topologic.Shell) or isinstance(topology, topologic.Face) or isinstance(topology, topologic.Wire) or isinstance(topology, topologic.Edge) or isinstance(topology, topologic.Vertex):
+            return []
         return Topology.SubTopologies(topology=topology, subTopologyType="shell")
     
     @staticmethod
@@ -4754,6 +4964,9 @@ class Topology():
             The list of cells.
 
         """
+        if isinstance(topology, topologic.Cell) or isinstance(topology, topologic.Shell) or isinstance(topology, topologic.Face) or isinstance(topology, topologic.Wire) or isinstance(topology, topologic.Edge) or isinstance(topology, topologic.Vertex):
+            return []
+        return Topology.SubTopologies(topology=topology, subTopologyType="shell")
         return Topology.SubTopologies(topology=topology, subTopologyType="cell")
     
     @staticmethod
@@ -4772,6 +4985,8 @@ class Topology():
             The list of cellcomplexes.
 
         """
+        if isinstance(topology, topologic.CellComplex) or isinstance(topology, topologic.Cell) or isinstance(topology, topologic.Shell) or isinstance(topology, topologic.Face) or isinstance(topology, topologic.Wire) or isinstance(topology, topologic.Edge) or isinstance(topology, topologic.Vertex):
+            return []
         return Topology.SubTopologies(topology=topology, subTopologyType="cellcomplex")
     
     @staticmethod
