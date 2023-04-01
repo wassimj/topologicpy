@@ -3949,9 +3949,50 @@ class Topology():
 
     
     @staticmethod
+    def ReplaceVertices(topology, verticesA=[], verticesB=[], tolerance=0.0001):
+        """
+        Replaces the vertices in the first input list with the vertices in the second input list and rebuilds the input topology. The two lists must be of the same length.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        verticesA : list
+            The first input list of vertices.
+        verticesB : list
+            The second input list of vertices.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Topology
+            The new topology.
+
+        """
+        if not len(verticesA) == len(verticesB):
+            print("Error - Topology.ReplaceVertices: VerticesA and VerticesB must be the same length")
+            return None
+        from topologicpy.Vertex import Vertex
+        geom = Topology.Geometry(topology)
+        g_verts = geom['vertices']
+        g_edges = geom['edges']
+        g_faces = geom['faces']
+        verts = [Topology.Vertices(Topology.ByGeometry(vertices=[g_v]))[0] for g_v in g_verts]
+        for i, v in enumerate(verticesA):
+            n = Vertex.Index(v, verts, tolerance=tolerance)
+            if not n == None:
+                verts[n] = verticesB[i]
+        new_g_verts = []
+        for v in verts:
+            new_g_verts.append([Vertex.X(v),Vertex.Y(v),Vertex.Z(v)])
+        new_topology = Topology.ByGeometry(vertices=new_g_verts, edges=g_edges, faces=g_faces)
+        return new_topology
+
+    @staticmethod
     def Rotate(topology, origin=None, x=0, y=0, z=1, degree=0):
         """
-        Rototates the input topology
+        Rotates the input topology
 
         Parameters
         ----------
