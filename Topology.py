@@ -4555,7 +4555,16 @@ class Topology():
     
     
     @staticmethod
-    def Show(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor='white', faceOpacity=0.5, edgeColor='black', edgeWidth=1, vertexColor='black', vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", intensityKey=None, colorScale="Viridis", showScale=True):
+    def Show(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None,
+             edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[],
+             edgeGroups=[], faceGroups=[], faceColor='white', faceOpacity=0.5,
+             edgeColor='black', edgeWidth=1, vertexColor='black', vertexSize=1.1,
+             showFaces=True, showEdges=True, showVertices=True, width=950, height=500,
+             xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)',
+             marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25],
+             target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", intensityKey=None, showScale=False,
+             values=[], nTicks=5, xPosition=-0.15, colorbarWidth=15, outlineWidth=0, title="",
+             subTitle="", units="", colorScale="viridis", mantissa=4):
         """
         Shows the input topology on screen.
 
@@ -4651,10 +4660,30 @@ class Topology():
             The desired up vector. The default is [0,0,1].
         renderer : str , optional
             The desired renderer. See Plotly.Renderers(). The default is "notebook".
-        intensityKey: str, optional
+        intensityKey : str , optional
             If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
+        showScale : bool , optional
+            If set to True, the colorbar is shown. The default is False.
+        values : list , optional
+            The input list of values to use for the colorbar. The default is [].
+        nTicks : int , optional
+            The number of ticks to use on the colorbar. The default is 5.
+        xPosition : float , optional
+            The x location of the colorbar. The default is -0.15.
+        colorbarWidth : int , optional
+            The width in pixels of the colorbar. The default is 15
+        outlineWidth : int , optional
+            The width in pixels of the outline of the colorbar. The default is 0.
+        title : str , optional
+            The title of the colorbar. The default is "".
+        subTitle : str , optional
+            The subtitle of the colorbar. The default is "".
+        units: str , optional
+            The units used in the colorbar. The default is ""
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+        mantissa : int , optional
+            The desired length of the mantissa for the values listed on the colorbar. The default is 4.
 
         Returns
         -------
@@ -4666,6 +4695,8 @@ class Topology():
             return None
         data = Plotly.DataByTopology(topology=topology, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, vertexGroups=vertexGroups, edgeGroups=edgeGroups, faceGroups=faceGroups, faceColor=faceColor, faceOpacity=faceOpacity, edgeColor=edgeColor, edgeWidth=edgeWidth, vertexColor=vertexColor, vertexSize=vertexSize, showFaces=showFaces, showEdges=showEdges, showVertices=showVertices, intensityKey=intensityKey, colorScale=colorScale, showScale=showScale)
         figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
+        if showScale:
+            figure = Plotly.AddColorBar(figure, values=values, nTicks=nTicks, xPosition=xPosition, width=colorbarWidth, outlineWidth=outlineWidth, title=title, subTitle=subTitle, units=units, colorScale=colorScale, mantissa=mantissa)
         Plotly.Show(figure=figure, renderer=renderer, camera=camera, target=target, up=up)
 
     @staticmethod

@@ -98,7 +98,7 @@ class Honeybee:
     
     @staticmethod
     def ModelByTopology(tpBuilding,
-                tpShadingFacesCluster=None,
+                tpShadingFacesCluster = None,
                 buildingName = "Generic_Building",
                 defaultProgramIdentifier = "Generic Office Program",
                 defaultConstructionSetIdentifier = "Default Generic Construction Set",
@@ -106,12 +106,18 @@ class Honeybee:
                 heatingSetpoint = 20.0,
                 humidifyingSetpoint = 30.0,
                 dehumidifyingSetpoint = 55.0,
-                roomNameKey = "name",
-                roomTypeKey = "type",
-                apertureTypeKey = "type",
+                roomNameKey = "TOPOLOGIC_name",
+                roomTypeKey = "TOPOLOGIC_type",
+                apertureTypeKey = "TOPOLOGIC_type",
                 addSensorGrid = False):
         """
-        Creates an HB Model from the input Topology
+        Creates an HB Model from the input Topology.
+
+        Parameters
+        ----------
+
+
+        Returns
         -------
         HBModel
             The created HB Model

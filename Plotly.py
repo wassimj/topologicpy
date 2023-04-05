@@ -14,6 +14,81 @@ import numpy as np
 
 class Plotly:
     @staticmethod
+    def AddColorBar(figure, values=[], nTicks=5, xPosition=-0.15, width=15, outlineWidth=0, title="", subTitle="", units="", colorScale="viridis", mantissa=4):
+        """
+        Adds a color bar to the input figure
+
+        Parameters
+        ----------
+        figure : plotly.graph_objs._figure.Figure
+            The input plotly figure.
+        values : list , optional
+            The input list of values to use for the color bar. The default is [].
+        nTicks : int , optional
+            The number of ticks to use on the color bar. The default is 5.
+        xPosition : float , optional
+            The x location of the color bar. The default is -0.15.
+        width : int , optional
+            The width in pixels of the color bar. The default is 15
+        outlineWidth : int , optional
+            The width in pixels of the outline of the color bar. The default is 0.
+        title : str , optional
+            The title of the color bar. The default is "".
+        subTitle : str , optional
+            The subtitle of the color bar. The default is "".
+        units: str , optional
+            The units used in the color bar. The default is ""
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+        mantissa : int , optional
+            The desired length of the mantissa for the values listed on the color bar. The default is 4.
+        Returns
+        -------
+        plotly.graph_objs._figure.Figure
+            The input figure with the color bar added.
+
+        """
+        if not isinstance(figure, plotly.graph_objs._figure.Figure):
+            return None
+        if units:
+            units = "Units: "+units
+        minValue = min(values)
+        maxValue = max(values)
+        step = (maxValue - minValue)/float(nTicks-1)
+        r = [round(minValue+i*step, mantissa) for i in range(nTicks)]
+        r[-1] = round(maxValue, mantissa)
+                # Define the minimum and maximum range of the colorbar
+        rs = [str(x) for x in r]
+
+        # Define the colorbar as a trace with no data, x or y coordinates
+        colorbar_trace = go.Scatter(
+            x=[0],
+            y=[0],
+            mode="markers",
+            showlegend=False,
+            marker=dict(
+                size=0,
+                colorscale=colorScale, # choose the colorscale
+                cmin=minValue,
+                cmax=maxValue,
+                color=['rgba(0,0,0,0)'],
+                colorbar=dict(
+                    x=xPosition,
+                    title="<b>"+title+"</b><br>"+subTitle+"<br>"+units, # title of the colorbar
+                    ticks="outside", # position of the ticks
+                    tickvals=r, # values of the ticks
+                    ticktext=rs, # text of the ticks
+                    tickmode="array",
+                    thickness=width,
+                    outlinewidth=outlineWidth,
+
+                )
+            )
+        )
+        figure.add_trace(colorbar_trace)
+        return figure
+    
+    @staticmethod
     def Colors():
         """
         Returns the list of named CSS colors that plotly can use.
@@ -283,7 +358,7 @@ class Plotly:
         return data
 
     @staticmethod
-    def DataByTopology(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor="white", faceOpacity=0.5, edgeColor="black", edgeWidth=1, vertexColor="black", vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, vertexLabel="Topology Vertices", edgeLabel="Topology Edges", faceLabel="Topology Faces", vertexLegendGroup=1, edgeLegendGroup=2, faceLegendGroup=3, vertexLegendRank=1, edgeLegendRank=2, faceLegendRank=3, showVertexLegend=True, showEdgeLegend=True, showFaceLegend=True, intensityKey=None, colorScale="Viridis", showScale=True):
+    def DataByTopology(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None, edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[], edgeGroups=[], faceGroups=[], faceColor="white", faceOpacity=0.5, edgeColor="black", edgeWidth=1, vertexColor="black", vertexSize=1.1, showFaces=True, showEdges=True, showVertices=True, vertexLabel="Topology Vertices", edgeLabel="Topology Edges", faceLabel="Topology Faces", vertexLegendGroup=1, edgeLegendGroup=2, faceLegendGroup=3, vertexLegendRank=1, edgeLegendRank=2, faceLegendRank=3, showVertexLegend=False, showEdgeLegend=False, showFaceLegend=False, intensityKey=None, colorScale="Viridis", showScale=True, scaleTitle="Untitled"):
         """
         Creates plotly face, edge, and vertex data.
 
@@ -316,8 +391,7 @@ class Plotly:
         vertexLegendRank : int , optional
             The legend rank order of the vertices of this topology. The default is 1.
         showVertexLegend : bool, optional
-            If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. The default is True.
-        
+            If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. The default is False.
         edgeGroupKey : str , optional
             The dictionary key to use to display the edge group. The default is None.
         edgeGroups : list , optional
@@ -332,7 +406,6 @@ class Plotly:
             The default is "black".
         edgeWidth : float , optional
             The desired thickness of the output edges. The default is 1.
-        
         edgeLabel : str , optional
             The legend label string used to identify edges. The default is "Topology Edges".
         edgeLabelKey : str , optional
@@ -342,7 +415,7 @@ class Plotly:
         edgeLegendRank : int , optional
             The legend rank order of the edges of this topology. The default is 2.
         showEdgeLegend : bool, optional
-            If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. The default is True.
+            If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. The default is False.
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
         faceLabelKey : str , optional
@@ -370,7 +443,7 @@ class Plotly:
         faceLegendRank : int , optional
             The legend rank order of the faces of this topology. The default is 3.
         showFaceLegend : bool, optional
-            If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. The default is True.
+            If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. The default is False.
         intensityKey: str, optional
             If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
         colorScale : str , optional
@@ -504,7 +577,8 @@ class Plotly:
                                 hoverinfo='text')
 
 
-        def faceData(vertices, faces, dictionaries=None, faceColor="white", faceOpacity=0.5, faceLabelKey=None, faceGroupKey=None, faceGroups=[], faceLabel="Topology Faces", legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="Viridis", showScale="False", colorBarTitle=" "):
+        def faceData(vertices, faces, dictionaries=None, faceColor="white", faceOpacity=0.5, faceLabelKey=None, faceGroupKey=None, faceGroups=[], faceLabel="Topology Faces", legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="Viridis", showScale="False", scaleTitle="Untitled"):
+            from topologicpy.Color import Color
             x = []
             y = []
             z = []
@@ -517,7 +591,15 @@ class Plotly:
             k = []
             f_labels = []
             f_groupList = []
+            minGroup = 0
+            maxGroup = 100
             if faceLabelKey or faceGroupKey:
+                if faceGroups:
+                    minGroup = min(faceGroups)
+                    maxGroup = max(faceGroups)
+                else:
+                    minGroup = 0
+                    maxGroup = 1
                 for m, f in enumerate(faces):
                     i.append(f[0])
                     j.append(f[1])
@@ -532,11 +614,13 @@ class Plotly:
                             except:
                                 f_label = ""
                             try:
-                                f_group = str(Dictionary.ValueAtKey(d, key=faceGroupKey)) or ""
+                                f_group = Dictionary.ValueAtKey(d, key=faceGroupKey) or None
                             except:
-                                f_group = ""
+                                f_group = None
                         try:
-                            f_groupList.append(faceGroups.index(f_group))
+                            f_color = Color.ByValueInRange(f_group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                            colorString = "rgb("+str(f_color[0])+","+str(f_color[1])+","+str(f_color[2])+")"
+                            f_groupList.append(colorString)
                         except:
                             f_groupList.append(len(faceGroups))
                         if not f_label == "" and not f_group == "":
@@ -549,12 +633,10 @@ class Plotly:
                     k.append(f[2])
                 
             if len(list(set(f_groupList))) < 2:
-                    f_groupList = faceColor
+                f_groupList = None
             if len(f_labels) < 1:
                 f_labels = ""
-            if not colorBarTitle:
-                colorBarTitle = " "
-            return go.Mesh3d(
+            trace = go.Mesh3d(
                     x=x,
                     y=y,
                     z=z,
@@ -565,18 +647,22 @@ class Plotly:
                     showlegend = showLegend,
                     legendgroup = legendGroup,
                     legendrank = legendRank,
-                    color = f_groupList,
+                    color = faceColor,
+                    facecolor = f_groupList,
                     colorscale = colorScale,
-                    colorbar = {"x":-0.15, "title": "<b>"+colorBarTitle+"</b>"},
+                    #colorbar=dict(x=-0.15, thickness=15, outlinewidth=0, title= "<b>"+scaleTitle+"</b>"),
+                    #colorbar = {"x":-0.15, "title": "<b>"+scaleTitle+"</b>"},
                     intensity = intensities,
                     opacity = faceOpacity,
                     hoverinfo = 'text',
                     text=f_labels,
                     hovertext = f_labels,
                     flatshading = True,
-                    showscale = showScale,
+                    showscale = False,
                     lighting = {"facenormalsepsilon": 0},
                 )
+            return trace
+        
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -652,7 +738,7 @@ class Plotly:
                     i = Vertex.Index(vertex=w_v, vertices=tp_verts, tolerance=0.01)
                     temp_f.append(i)
                 faces.append(temp_f)
-            data.append(faceData(vertices, faces, dictionaries=f_dictionaries, faceColor=faceColor, faceOpacity=faceOpacity, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, faceLabel=faceLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensities, colorScale=colorScale, showScale=showScale, colorBarTitle=intensityKey))
+            data.append(faceData(vertices, faces, dictionaries=f_dictionaries, faceColor=faceColor, faceOpacity=faceOpacity, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, faceLabel=faceLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensities, colorScale=colorScale, showScale=showScale, scaleTitle=scaleTitle))
         return data
 
 
@@ -968,11 +1054,11 @@ class Plotly:
         import plotly.express as px
         
         if chartType.lower() == "line":
-            fig = px.line(dataFrame, x=labels[0], y=labels[1:], title=title, markers=useMarkers)
+            figure = px.line(dataFrame, x=labels[0], y=labels[1:], title=title, markers=useMarkers)
         elif chartType.lower() == "bar":
-            fig = px.bar(dataFrame, x=labels[0], y=labels[1:], title=title)
+            figure = px.bar(dataFrame, x=labels[0], y=labels[1:], title=title)
         elif chartType.lower() == "scatter":
-            fig = px.scatter(dataFrame, x=labels[0], y=labels[1:], title=title)
+            figure = px.scatter(dataFrame, x=labels[0], y=labels[1:], title=title)
         else:
             raise NotImplementedError
         
@@ -986,8 +1072,8 @@ class Plotly:
             "plot_bgcolor": backgroundColor,
             "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
         }
-        fig.update_layout(layout)
-        return fig
+        figure.update_layout(layout)
+        return figure
 
 
     @staticmethod
@@ -1076,7 +1162,8 @@ class Plotly:
             plot_bgcolor=backgroundColor,
             margin=dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
             )
-        #figure.data[2].colorbar.x=-0.1
+        figure.update_xaxes(showgrid=False, zeroline=False, visible=False)
+        figure.update_yaxes(showgrid=False, zeroline=False, visible=False)
         return figure
 
     @staticmethod

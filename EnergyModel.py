@@ -10,104 +10,101 @@ import os
 from os.path import exists
 import json
 from datetime import datetime
+try:
+    from tqdm.auto import tqdm
+except:
+    import sys, subprocess
+    call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
+    subprocess.run(call)
+    from tqdm.auto import tqdm
 
 class EnergyModel:
     @staticmethod
-    def EnergyModelByImportedOSM(item):
+    def ByImportedOSM(path: str):
         """
+            Creates an EnergyModel from the input OSM file path.
+        
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        path : string
+            The path to the input .OSM file.
 
         Returns
         -------
-        model : TYPE
-            DESCRIPTION.
+        openstudio.openstudiomodelcore.Model
+            The OSM model.
 
         """
+        if not path:
+            return None
         translator = openstudio.osversion.VersionTranslator()
-        osmFile = openstudio.openstudioutilitiescore.toPath(item)
-        model = translator.loadModel(osmFile)
-        if model.isNull():
-            raise Exception("File Path is not a valid path to an OpenStudio Model")
+        osmPath = openstudio.openstudioutilitiescore.toPath(path)
+        osModel = translator.loadModel(osmPath)
+        if osModel.isNull():
             return None
         else:
-            model = model.get()
-        return model
+            osModel = osModel.get()
+        return osModel
     
     @staticmethod
-    def EnergyModelByTopology(osModelPath, weatherFilePath, designDayFilePath,
-                              buildingTopology, shadingSurfaces, floorLevels,
-                              buildingName, buildingType, defaultSpaceType,
-                              northAxis, glazingRatio, coolingTemp,
-                              heatingTemp, roomNameKey, roomTypeKey):
+    def ByTopology(building : topologic.CellComplex,
+                   shadingSurfaces : topologic.Topology = None,
+                   osModelPath : str = None,
+                   weatherFilePath : str = None,
+                   designDayFilePath  : str = None,
+                   floorLevels : list = None,
+                   buildingName : str = "TopologicBuilding",
+                   buildingType : str = "Commercial",
+                   northAxis : float = 0.0,
+                   glazingRatio : float = 0.0,
+                   coolingTemp : float = 25.0,
+                   heatingTemp : float = 20.0,
+                   defaultSpaceType : str = "189.1-2009 - Office - WholeBuilding - Lg Office - CZ4-8",
+                   spaceNameKey : str = "TOPOLOGIC_name",
+                   spaceTypeKey : str = "TOPOLOGIC_type"):
         """
+            Creates an EnergyModel from the input topology and parameters.
+
         Parameters
         ----------
-        osModelPath : TYPE
-            DESCRIPTION.
-        weatherFilePath : TYPE
-            DESCRIPTION.
-        designDayFilePath : TYPE
-            DESCRIPTION.
-        buildingTopology : TYPE
-            DESCRIPTION.
-        shadingSurfaces : TYPE
-            DESCRIPTION.
-        floorLevels : TYPE
-            DESCRIPTION.
-        buildingName : TYPE
-            DESCRIPTION.
-        buildingType : TYPE
-            DESCRIPTION.
-        defaultSpaceType : TYPE
-            DESCRIPTION.
-        northAxis : TYPE
-            DESCRIPTION.
-        glazingRatio : TYPE
-            DESCRIPTION.
-        coolingTemp : TYPE
-            DESCRIPTION.
-        heatingTemp : TYPE
-            DESCRIPTION.
-        roomNameKey : TYPE
-            DESCRIPTION.
-        roomTypeKey : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        building : topologic.CellComplex
+            The input building topology.
+        shadingSurfaces : topologic.Topology , optional
+            The input topology for shading surfaces. The default is None.
+        osModelPath : str , optional
+            The path to the template OSM file. The default is "./assets/EnergyModel/OSMTemplate-OfficeBuilding-3.5.0.osm".
+        weatherFilePath : str , optional
+            The input energy plus weather (epw) file. The default is "./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.epw".
+        designDayFilePath : str , optional
+            The input design day (ddy) file path. The default is "./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.ddy",
+        floorLevels : list , optional
+            The list of floor level Z heights including the lowest most and the highest most levels. If set to None, this method will attempt to
+            find the floor levels from the horizontal faces of the input topology
+        buildingName : str , optional
+            The desired name of the building. The default is "TopologicBuilding".
+        buildingType : str , optional
+            The building type. The default is "Commercial".
+        defaultSpaceType : str , optional
+            The default space type to apply to spaces that do not have a type assigned in their dictionary. The default is "189.1-2009 - Office - WholeBuilding - Lg Office - CZ4-8".
+        northAxis : float , optional
+            The counter-clockwise angle in degrees from the positive Y-axis representing the direction of the north axis. The default is 0.0.
+        glazingRatio : float , optional
+            The glazing ratio (ratio of windows to wall) to use for exterior vertical walls that do not have apertures. If you do not wish to use a glazing ratio, set it to 0. The default is 0.
+        coolingTemp : float , optional
+            The desired temperature in degrees at which the cooling system should activate. The default is 25.0.
+        heatingTemp : float , optional
+            The desired temperature in degrees at which the heating system should activate. The default is 25.0..
+        spaceNameKey : str , optional
+            The dictionary key to use to find the space name value. The default is "Name".
+        spaceTypeKey : str , optional
+            The dictionary key to use to find the space type value. The default is "Type".
 
         Returns
         -------
-        osModel : TYPE
-            DESCRIPTION.
+        openstudio.openstudiomodelcore.Model
+            The created OSM model.
 
         """
-        
-        # osModelPath = item[0]
-        # weatherFilePath = item[1]
-        # designDayFilePath = item[2]
-        # buildingTopology = item[3]
-        # shadingSurfaces = item[4]
-        # floorLevels = item[5]
-        # buildingName = item[6]
-        # buildingType = item[7]
-        # defaultSpaceType = item[8]
-        # northAxis = item[9]
-        # glazingRatio = item[10]
-        # coolingTemp = item[11]
-        # heatingTemp = item[12]
-        # roomNameKey = item[13]
-        # roomTypeKey = item[14]
         
         def getKeyName(d, keyName):
             keys = d.Keys()
@@ -124,11 +121,32 @@ class EnergyModel:
             else:
                 return createUniqueName(name,nameList, number+1)
         
+        def getFloorLevels(building):
+            from topologicpy.Vertex import Vertex
+            from topologicpy.CellComplex import CellComplex
+            from topologicpy.Dictionary import Dictionary
+
+            d = CellComplex.Decompose(building)
+            bhf = d['bottomHorizontalFaces']
+            ihf = d['internalHorizontalFaces']
+            thf = d ['topHorizontalFaces']
+            hf = bhf+ihf+thf
+            floorLevels = [Vertex.Z(Topology.Centroid(f)) for f in hf]
+            floorLevels = list(set(floorLevels))
+            floorLevels.sort()
+            return floorLevels
+        
+        if not osModelPath:
+            import os
+            osModelPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "OSMTemplate-OfficeBuilding-3.5.0.osm")
+        if not weatherFilePath or not designDayFilePath:
+            import os
+            weatherFilePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "GBR_London.Gatwick.037760_IWEC.epw")
+            designDayFilePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "GBR_London.Gatwick.037760_IWEC.ddy")
         translator = openstudio.osversion.VersionTranslator()
         osmFile = openstudio.openstudioutilitiescore.toPath(osModelPath)
         osModel = translator.loadModel(osmFile)
         if osModel.isNull():
-            raise Exception("File Path is not a valid path to an OpenStudio Model")
             return None
         else:
             osModel = osModel.get()
@@ -141,8 +159,13 @@ class EnergyModel:
             ddyModel = ddyModel.get()
             for ddy in ddyModel.getObjectsByType(openstudio.IddObjectType("OS:SizingPeriod:DesignDay")):
                 osModel.addObject(ddy.clone())
+        else:
+            print("Could not load the DesignDay file")
+            return None
 
         osBuilding = osModel.getBuilding()
+        if not floorLevels:
+            floorLevels = getFloorLevels(building)
         osBuilding.setStandardsNumberOfStories(len(floorLevels) - 1)
         osBuilding.setNominalFloortoFloorHeight(max(floorLevels) / osBuilding.standardsNumberOfStories().get())
         osBuilding.setDefaultConstructionSet(osModel.getDefaultConstructionSets()[0])
@@ -169,7 +192,7 @@ class EnergyModel:
         osBuildingStorys.sort(key=lambda x: x.nominalZCoordinate().get())
         osSpaces = []
         spaceNames = []
-        for spaceNumber, buildingCell in enumerate(Topology.SubTopologies(buildingTopology, "Cell")):
+        for spaceNumber, buildingCell in enumerate(Topology.SubTopologies(building, "Cell")):
             osSpace = openstudio.model.Space(osModel)
             osSpaceZ = buildingCell.CenterOfMass().Z()
             osBuildingStory = osBuildingStorys[0]
@@ -183,17 +206,20 @@ class EnergyModel:
             osSpace.setBuildingStory(osBuildingStory)
             cellDictionary = buildingCell.GetDictionary()
             if cellDictionary:
-                if roomTypeKey:
-                    keyType = getKeyName(cellDictionary, roomTypeKey)
+                if spaceTypeKey:
+                    keyType = getKeyName(cellDictionary, spaceTypeKey)
                 else:
                     keyType = getKeyName(cellDictionary, 'type')
-                osSpaceTypeName = Dictionary.ValueAtKey(cellDictionary,keyType)
+                if keyType:
+                    osSpaceTypeName = Dictionary.ValueAtKey(cellDictionary,keyType)
+                else:
+                    osSpaceTypeName = defaultSpaceType
                 if osSpaceTypeName:
                     sp_ = osModel.getSpaceTypeByName(osSpaceTypeName)
                     if sp_.is_initialized():
                         osSpace.setSpaceType(sp_.get())
-                if roomNameKey:
-                    keyName = getKeyName(cellDictionary, roomNameKey)
+                if spaceNameKey:
+                    keyName = getKeyName(cellDictionary, spaceNameKey)
 
                 else:
                     keyName = getKeyName(cellDictionary, 'name')
@@ -223,7 +249,7 @@ class EnergyModel:
                         osSurface.setVertices(list(reversed(osFacePoints)))
                     osSurface.setSpace(osSpace)
                     faceCells = []
-                    _ = topologic.FaceUtility.AdjacentCells(buildingFace, buildingTopology, faceCells)
+                    _ = topologic.FaceUtility.AdjacentCells(buildingFace, building, faceCells)
                     if len(faceCells) == 1: #Exterior Surfaces
                         osSurface.setOutsideBoundaryCondition("Outdoors")
                         if (math.degrees(math.acos(osSurface.outwardNormal().dot(openstudio.Vector3d(0, 0, 1)))) > 135) or (math.degrees(math.acos(osSurface.outwardNormal().dot(openstudio.Vector3d(0, 0, 1)))) < 45):
@@ -310,8 +336,9 @@ class EnergyModel:
                     osSpace.matchSurfaces(x)
             osSpaces.append(osSpace)
 
-        osShadingGroup = openstudio.model.ShadingSurfaceGroup(osModel)
-        if not isinstance(shadingSurfaces,int):
+        
+        if shadingSurfaces:
+            osShadingGroup = openstudio.model.ShadingSurfaceGroup(osModel)
             for faceIndex, shadingFace in enumerate(Topology.SubTopologies(shadingSurfaces, "Face")):
                 facePoints = []
                 for aVertex in Topology.SubTopologies(shadingFace.ExternalBoundary(), "Vertex"):
@@ -329,386 +356,329 @@ class EnergyModel:
         return osModel
     
     @staticmethod
-    def EnergyModelColumnNames(model, reportName, tableName):
+    def ColumnNames(model, reportName, tableName):
         """
+            Returns the list of column names given an OSM model, report name, and table name.
+
         Parameters
         ----------
-        model : TYPE
-            DESCRIPTION.
-        reportName : TYPE
-            DESCRIPTION.
-        tableName : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+        reportName : str
+            The input report name.
+        tableName : str
+            The input table name.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        list
+            the list of column names.
 
         """
-        # model = item[0]
-        # reportName = item[1]
-        # tableName = item[2]
         sql = model.sqlFile().get()
         query = "SELECT ColumnName FROM tabulardatawithstrings WHERE ReportName = '"+reportName+"' AND TableName = '"+tableName+"'"
         columnNames = sql.execAndReturnVectorOfString(query).get()
         return list(OrderedDict( (x,1) for x in columnNames ).keys()) #Making a unique list and keeping its order
 
     @staticmethod
-    def EnergyModelDefaultConstructionSets(item):
+    def DefaultConstructionSets(model):
         """
+            Returns the default construction sets in the input OSM model.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
 
         Returns
         -------
         list
-            DESCRIPTION.
+            The default construction sets.
 
         """
-        sets = item.getDefaultConstructionSets()
+        sets = model.getDefaultConstructionSets()
         names = []
         for aSet in sets:
             names.append(aSet.name().get())
         return [sets, names]
     
     @staticmethod
-    def EnergyModelDefaultScheduleSets(item):
+    def DefaultScheduleSets(model):
         """
+            Returns the default schedule sets found in the input OSM model.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
 
         Returns
         -------
         list
-            DESCRIPTION.
+            The list of default schedule sets.
 
         """
-        sets = item.getDefaultScheduleSets()
+        sets = model.getDefaultScheduleSets()
         names = []
         for aSet in sets:
             names.append(aSet.name().get())
         return [sets, names]
     
     @staticmethod
-    def EnergyModelExportToGbXML(osModel, filepath, overwrite):
+    def ExportToGbXML(model, path, overwrite=False):
         """
+            Exports the input OSM model to a gbxml file.
+
         Parameters
         ----------
-        osModel : TYPE
-            DESCRIPTION.
-        filepath : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+        path : str
+            The path for saving the file.
+        overwrite : bool, optional
+            If set to True any file with the same name is over-written. The default is False.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        bool
+            True if the file is written successfully. False otherwise.
 
         """
         # osModel = item[0]
         # filepath = item[1]
         # Make sure the file extension is .xml
-        ext = filepath[len(filepath)-4:len(filepath)]
+        ext = path[len(path)-4:len(path)]
         if ext.lower() != ".xml":
-            filepath = filepath+".xml"
-        if(exists(filepath) and (overwrite == False)):
-            raise Exception("Error: Could not create a new file at the following location: "+filepath)
-        return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(osModel, openstudio.openstudioutilitiescore.toPath(filepath))
+            path = path+".xml"
+        if(exists(path) and (overwrite == False)):
+            return None
+        return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, openstudio.openstudioutilitiescore.toPath(path))
 
+    
     @staticmethod
-    def EnergyModelExportToHBJSON(hbjson, filepath, overwrite):
+    def ExportToOSM(model, path, overwrite=False):
         """
+            Exports the input OSM model to an OSM file.
+        
         Parameters
         ----------
-        hbjson : TYPE
-            DESCRIPTION.
-        filepath : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+        path : str
+            The path for saving the file.
+        overwrite : bool, optional
+            If set to True any file with the same name is over-written. The default is False.
 
         Returns
         -------
         bool
-            DESCRIPTION.
+            True if the file is written successfully. False otherwise.
 
         """
-        # hbjson = item[0]
-        # filepath = item[1]
-        # Make sure the file extension is .BREP
-        ext = filepath[len(filepath)-7:len(filepath)]
-        if ext.lower() != ".hbjson":
-            filepath = filepath+".hbjson"
-        f = None
-        try:
-            if overwrite == True:
-                f = open(filepath, "w")
-            else:
-                f = open(filepath, "x") # Try to create a new File
-        except:
-            raise Exception("Error: Could not create a new file at the following location: "+filepath)
-        if (f):
-            json.dump(hbjson[0], f, indent=4)
-            f.close()    
-            return True
-        return False
-    
-    @staticmethod
-    def EnergyModelExportToOSM(model, filePath, overwrite):
-        """
-        Parameters
-        ----------
-        model : TYPE
-            DESCRIPTION.
-        filePath : TYPE
-            DESCRIPTION.
-        overwrite : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        osCondition : TYPE
-            DESCRIPTION.
-
-        """
-        # model = item[0]
-        # filePath = item[1]
-        # Make sure the file extension is .OSM
-        ext = filePath[len(filePath)-4:len(filePath)]
+        ext = path[len(path)-4:len(path)]
         if ext.lower() != ".osm":
-            filePath = filePath+".osm"
+            path = path+".osm"
         osCondition = False
-        osPath = openstudio.openstudioutilitiescore.toPath(filePath)
+        osPath = openstudio.openstudioutilitiescore.toPath(path)
         osCondition = model.save(osPath, overwrite)
         return osCondition
 
     @staticmethod
-    def EnergyModelGbXMLString(item):
+    def GbXMLString(model):
         """
+            Returns the gbxml string of the input OSM model.
+
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        str
+            The gbxml string.
 
         """
-        return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXMLString(item)
+        return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXMLString(model)
     
     @staticmethod
-    def EnergyModelIFCToOSM(model, filePath):
+    def Query(model,
+              reportName : str = "HVACSizingSummary",
+              reportForString : str = "Entire Facility",
+              tableName : str = "Zone Sensible Cooling",
+              columnName : str = "Calculated Design Load",
+              rowNames : list = [],
+              units : str = "W"):
         """
+            Queries the model for values.
+
         Parameters
         ----------
-        model : TYPE
-            DESCRIPTION.
-        filepath : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+        reportName : str , optional
+            The input report name. The default is "HVACSizingSummary".
+        reportForString : str, optional
+            The input report for string. The default is "Entire Facility".
+        tableName : str , optional
+            The input table name. The default is "Zone Sensible Cooling".
+        columnName : str , optional
+            The input column name. The default is "Calculated Design Load".
+        rowNames : list , optional
+            The input list of row names. The default is [].
+        units : str , optional
+            The input units. The default is "W".
 
         Returns
         -------
-        osCondition : TYPE
-            DESCRIPTION.
+        list
+            The list of values.
 
         """
-        # model = item[0]
-        # filePath = item[1]
-        # Make sure the file extension is .OSM
-        ext = filePath[len(filePath)-4:len(filePath)]
-        if ext.lower() != ".osm":
-            filePath = filePath+".osm"
-        osCondition = False
-        osPath = openstudio.openstudioutilitiescore.toPath(filePath)
-        osCondition = model.save(osPath, True)
-        return osCondition
-    
-    @staticmethod
-    def EnergyModelQuery(model, EPReportName, EPReportForString, EPTableName,
-                         EPColumnName, EPRowName, EPUnits):
-        """
-        Parameters
-        ----------
-        model : TYPE
-            DESCRIPTION.
-        EPReportName : TYPE
-            DESCRIPTION.
-        EPReportForString : TYPE
-            DESCRIPTION.
-        EPTableName : TYPE
-            DESCRIPTION.
-        EPColumnName : TYPE
-            DESCRIPTION.
-        EPRowName : TYPE
-            DESCRIPTION.
-        EpUnits : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        doubleValue : TYPE
-            DESCRIPTION.
-
-        """
-        # model = item[0]
-        # EPReportName = item[1]
-        # EPReportForString = item[2]
-        # EPTableName = item[3]
-        # EPColumnName = item[4]
-        # EPRowName = item[5]
-        # EPUnits = item[6]
         
-        def doubleValueFromQuery(sqlFile, EPReportName, EPReportForString,
-                                 EPTableName, EPColumnName, EPRowName,
-                                 EPUnits):
-            doubleValue = 0.0
-            query = "SELECT Value FROM tabulardatawithstrings WHERE ReportName='" + EPReportName + "' AND ReportForString='" + EPReportForString + "' AND TableName = '" + EPTableName + "' AND RowName = '" + EPRowName + "' AND ColumnName= '" + EPColumnName + "' AND Units='" + EPUnits + "'";
+        def doubleValueFromQuery(sqlFile, reportName, reportForString,
+                                 tableName, columnName, rowName,
+                                 units):
+            query = "SELECT Value FROM tabulardatawithstrings WHERE ReportName='" + reportName + "' AND ReportForString='" + reportForString + "' AND TableName = '" + tableName + "' AND RowName = '" + rowName + "' AND ColumnName= '" + columnName + "' AND Units='" + units + "'";
             osOptionalDoubleValue = sqlFile.execAndReturnFirstDouble(query)
             if (osOptionalDoubleValue.is_initialized()):
-                doubleValue = osOptionalDoubleValue.get()
+                return osOptionalDoubleValue.get()
             else:
-                raise Exception("Failed to get a double value from the SQL file.")
-            return doubleValue
+                return None
         
         sqlFile = model.sqlFile().get()
-        doubleValue = doubleValueFromQuery(sqlFile, EPReportName,
-                                           EPReportForString, EPTableName,
-                                           EPColumnName, EPRowName, EPUnits)
-        return doubleValue
+        returnValues = []
+        for rowName in rowNames:
+            returnValues.append(doubleValueFromQuery(sqlFile, reportName, reportForString, tableName, columnName, rowName, units))
+        return returnValues
     
     @staticmethod
-    def EnergyModelReportNames(model):
+    def ReportNames(model):
         """
+            Returns the report names found in the input OSM model.
+
         Parameters
         ----------
-        model : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        list
+            The list of report names found in the input OSM model.
 
         """
-        # model = item[0]
         sql = model.sqlFile().get()
         reportNames = sql.execAndReturnVectorOfString("SELECT ReportName FROM tabulardatawithstrings").get()
         return list(OrderedDict( (x,1) for x in reportNames ).keys()) #Making a unique list and keeping its order
 
     @staticmethod
-    def EnergyModelRowNames(model, reportName, tableName):
+    def RowNames(model, reportName, tableName):
         """
+            Returns the list of row names given an OSM model, report name, and table name.
+
         Parameters
         ----------
-        model : TYPE
-            DESCRIPTION.
-        reportName : TYPE
-            DESCRIPTION.
-        tableName : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+        reportName : str
+            The input name of the report.
+        tableName : str
+            The input name of the table.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        list
+            The list of row names.
 
         """
-        # model = item[0]
-        # reportName = item[1]
-        # tableName = item[2]
         sql = model.sqlFile().get()
         query = "SELECT RowName FROM tabulardatawithstrings WHERE ReportName = '"+reportName+"' AND TableName = '"+tableName+"'"
         columnNames = sql.execAndReturnVectorOfString(query).get()
         return list(OrderedDict( (x,1) for x in columnNames ).keys()) #Making a unique list and keeping its order
 
     @staticmethod
-    def EnergyModelRunSimulation(model, weatherFile, osBinaryPath,
-                                 outputFolder, run):
+    def Run(model, weatherFilePath: str = None, osBinaryPath : str = None, outputFolder : str = None):
         """
+            Run an energy simulation.
+        
         Parameters
         ----------
-        model : TYPE
-            DESCRIPTION.
-        weatherFile : TYPE
-            DESCRIPTION.
-        osBinaryPath : TYPE
-            DESCRIPTION.
-        outputFolder : TYPE
-            DESCRIPTION.
-        run : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+        weatherFilePath : str
+            The path to the epw weather file.
+        osBinaryPath : str
+            The path to the openstudio binary.
+        outputFolder : str
+            The path to the output folder.
 
         Returns
         -------
-        model : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The simulated OSM model.
 
         """
-        # model = item[0]
-        # weatherFile = item[1]
-        # osBinaryPath = item[2]
-        # outputFolder = item[3]
-        # run = item[4]
-        if not run:
-            return None
+        import os
+        if not weatherFilePath:
+            weatherFilePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "GBR_London.Gatwick.037760_IWEC.epw")
+        pbar = tqdm(desc='Running Simulation', total=100, leave=False)
         utcnow = datetime.utcnow()
         timestamp = utcnow.strftime("UTC-%Y-%m-%d-%H-%M-%S")
-        outputFolder = os.path.join(outputFolder, timestamp)
+        if not outputFolder:
+            home = os.path.expanduser('~')
+            outputFolder = os.path.join(home, "EnergyModels", timestamp)
+        else:
+            outputFolder = os.path.join(outputFolder, timestamp)
         os.mkdir(outputFolder)
-        osmPath = outputFolder + "/" + model.getBuilding().name().get() + ".osm"
+        pbar.update(10)
+        osmPath = os.path.join(outputFolder, model.getBuilding().name().get() + ".osm")
         model.save(openstudio.openstudioutilitiescore.toPath(osmPath), True)
         oswPath = os.path.join(outputFolder, model.getBuilding().name().get() + ".osw")
+        pbar.update(20)
         #print("oswPath = "+oswPath)
         workflow = model.workflowJSON()
         workflow.setSeedFile(openstudio.openstudioutilitiescore.toPath(osmPath))
+        pbar.update(30)
         #print("Seed File Set")
-        workflow.setWeatherFile(openstudio.openstudioutilitiescore.toPath(weatherFile))
+        workflow.setWeatherFile(openstudio.openstudioutilitiescore.toPath(weatherFilePath))
+        pbar.update(40)
         #print("Weather File Set")
         workflow.saveAs(openstudio.openstudioutilitiescore.toPath(oswPath))
+        pbar.update(50)
         #print("OSW File Saved")
         cmd = osBinaryPath+" run -w " + "\"" + oswPath + "\""
+        pbar.update(60)
         os.system(cmd)
         #print("Simulation DONE")
         sqlPath = os.path.join(os.path.join(outputFolder,"run"), "eplusout.sql")
+        pbar.update(100)
         #print("sqlPath = "+sqlPath)
         osSqlFile = openstudio.SqlFile(openstudio.openstudioutilitiescore.toPath(sqlPath))
         model.setSqlFile(osSqlFile)
+        pbar.close()
         return model
     
     @staticmethod
-    def EnergyModelSpaceTypes(item):
+    def SpaceDictionaries(model):
         """
+            Return the space dictionaries found in the input OSM model.
+        
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        dict
+            The dictionary of space types, names, and colors found in the input OSM model. The dictionary has the following keys:
+            - "types"
+            - "names"
+            - "colors"
 
         """
-        types = item.getSpaceTypes()
+        types = model.getSpaceTypes()
         names = []
         colors = []
         for aType in types:
@@ -717,58 +687,129 @@ class EnergyModel:
             green = aType.renderingColor().get().renderingGreenValue()
             blue = aType.renderingColor().get().renderingBlueValue()
             colors.append([red,green,blue])
-        return [types, names, colors]
+        return {'types': types, 'names': names, 'colors': colors}
     
     @staticmethod
-    def EnergyModelSqlFile(item):
+    def SpaceTypes(model):
         """
+            Return the space types found in the input OSM model.
+        
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        list
+            The list of space types
 
         """
-        return item.sqlFile().get()
+        return model.getSpaceTypes()
     
     @staticmethod
-    def EnergyModelTableNames(model, reportName):
+    def SpaceTypeNames(model):
         """
+            Return the space type names found in the input OSM model.
+        
         Parameters
         ----------
-        model : TYPE
-            DESCRIPTION.
-        reportName : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        list
+            The list of space type names
 
         """
-        # model = item[0]
-        # reportName = item[1]
+        types = model.getSpaceTypes()
+        names = []
+        colors = []
+        for aType in types:
+            names.append(aType.name().get())
+        return names
+    
+    @staticmethod
+    def SpaceColors(model):
+        """
+            Return the space colors found in the input OSM model.
+        
+        Parameters
+        ----------
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+
+        Returns
+        -------
+        list
+            The list of space colors. Each item is a three-item list representing the red, green, and blue values of the color.
+
+        """
+        types = model.getSpaceTypes()
+        colors = []
+        for aType in types:
+            red = aType.renderingColor().get().renderingRedValue()
+            green = aType.renderingColor().get().renderingGreenValue()
+            blue = aType.renderingColor().get().renderingBlueValue()
+            colors.append([red,green,blue])
+        return colors
+    
+    @staticmethod
+    def SqlFile(model):
+        """
+            Returns the SQL file found in the input OSM model.
+        
+        Parameters
+        ----------
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+
+        Returns
+        -------
+        SQL file
+            The SQL file found in the input OSM model.
+
+        """
+        return model.sqlFile().get()
+    
+    @staticmethod
+    def TableNames(model, reportName):
+        """
+            Returns the table names found in the input OSM model and report name.
+        
+        Parameters
+        ----------
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+        reportName : str
+            The input report name.
+
+        Returns
+        -------
+        list
+            The list of table names found in the input OSM model and report name.
+
+        """
         sql = model.sqlFile().get()
         tableNames = sql.execAndReturnVectorOfString("SELECT TableName FROM tabulardatawithstrings WHERE ReportName='"+reportName+"'").get()
         return list(OrderedDict( (x,1) for x in tableNames ).keys()) #Making a unique list and keeping its order
 
     @staticmethod
-    def EnergyModelTopologies(item):
+    def Topologies(model):
         """
         Parameters
         ----------
-        item : TYPE
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        dict
+            The dictionary of topologies found in the input OSM model. The keys of the dictionary are:
+            - "cells"
+            - "apertures"
+            - "shadingFaces"
 
         """
         def surfaceToFace(surface):
@@ -805,12 +846,12 @@ class EnergyModel:
                 _ = topologic.Aperture.ByTopologyContext(aperture, context)
             return face
         
-        spaces = item.getSpaces()
+        spaces = model.getSpaces()
         vertexIndex = 0
         cells = []
         apertures = []
         shadingFaces = []
-        shadingSurfaces = item.getShadingSurfaces()
+        shadingSurfaces = model.getShadingSurfaces()
         for aShadingSurface in shadingSurfaces:
             shadingFaces.append(surfaceToFace(aShadingSurface))
         for count, aSpace in enumerate(spaces):
@@ -841,7 +882,6 @@ class EnergyModel:
                 addApertures(aFace, apertures)
                 spaceFaces.append(aFace)
             spaceCell = topologic.Cell.ByFaces(spaceFaces)
-            print(count, spaceCell)
             if not spaceCell:
                 spaceCell = topologic.Shell.ByFaces(spaceFaces)
             if not spaceCell:
@@ -877,31 +917,26 @@ class EnergyModel:
                 dict = topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
                 _ = spaceCell.SetDictionary(dict)
                 cells.append(spaceCell)
-        return [cells, apertures, shadingFaces]
+        return {'cells':cells, 'apertures':apertures, 'shadingFaces': shadingFaces}
     
     @staticmethod
-    def EnergyModelUnits(model, reportName, tableName, columnName):
+    def Units(model, reportName, tableName, columnName):
         """
         Parameters
         ----------
-        model : TYPE
-            DESCRIPTION.
-        reportName : TYPE
-            DESCRIPTION.
-        tableName : TYPE
-            DESCRIPTION.
-        columnName : TYPE
-            DESCRIPTION.
-
-        Raises
-        ------
-        Exception
-            DESCRIPTION.
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+        reportName : str
+            The input report name.
+        tableName : str
+            The input table name.
+        columnName : str
+            The input column name.
 
         Returns
         -------
-        units : TYPE
-            DESCRIPTION.
+        str
+            The units string found in the input OSM model, report name, table name, and column name.
 
         """
         # model = item[0]
@@ -914,6 +949,6 @@ class EnergyModel:
         if (units.is_initialized()):
             units = units.get()
         else:
-            raise Exception("Failed to get units from the SQL file.")
+            return None
         return units
     
