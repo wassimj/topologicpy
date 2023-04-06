@@ -544,6 +544,8 @@ class Graph:
                 if k:
                     ids = Dictionary.ValueAtKey(k)
                     outposts = outpostsByID(others, ids, idKey)
+                else:
+                    outposts = []
                 for outpost in outposts:
                     if useInternalVertex == True:
                         vop = Topology.InternalVertex(outpost, tolerance)
@@ -787,6 +789,8 @@ class Graph:
                 if k:
                     ids = Dictionary.ValueAtKey(d, k)
                     outposts = outpostsByID(others, ids, idKey)
+                else:
+                    outposts = []
                 for outpost in outposts:
                     if useInternalVertex == True:
                         vop = Topology.InternalVertex(outpost, tolerance)
@@ -1155,6 +1159,8 @@ class Graph:
                 if k:
                     ids = Dictionary.ValueAtKey(k)
                     outposts = outpostsByID(others, ids, idKey)
+                else:
+                    outposts = []
                 for outpost in outposts:
                     if useInternalVertex == True:
                         vop = Topology.InternalVertex(outpost, tolerance)
@@ -1204,6 +1210,8 @@ class Graph:
                 if k:
                     ids = Dictionary.ValueAtKey(d, k)
                     outposts = outpostsByID(others, ids, idKey)
+                else:
+                    outposts = []
                 for outpost in outposts:
                     if useInternalVertex == True:
                         vop = Topology.InternalVertex(outpost, tolerance)
@@ -1573,6 +1581,8 @@ class Graph:
                 if k:
                     ids = Dictionary.ValueAtKey(k)
                     outposts = outpostsByID(others, ids, idKey)
+                else:
+                    outposts = []
                 for outpost in outposts:
                     if useInternalVertex == True:
                         vop = Topology.InternalVertex(outpost, tolerance)
@@ -1629,6 +1639,8 @@ class Graph:
                 if k:
                     ids = Dictionary.ValueAtKey(d, k)
                     outposts = outpostsByID(others, ids, idKey)
+                else:
+                    outposts = []
                 for outpost in outposts:
                     if useInternalVertex == True:
                         vop = Topology.InternalVertex(outpost, tolerance)
@@ -1750,6 +1762,8 @@ class Graph:
                 if k:
                     ids = Dictionary.ValueAtKey(d, k)
                     outposts = outpostsByID(others, ids, idKey)
+                else:
+                    outposts = []
                 for outpost in outposts:
                     if useInternalVertex == True:
                         vop = Topology.InternalVertex(outpost, tolerance)

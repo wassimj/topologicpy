@@ -444,9 +444,6 @@ class EnergyModel:
             True if the file is written successfully. False otherwise.
 
         """
-        # osModel = item[0]
-        # filepath = item[1]
-        # Make sure the file extension is .xml
         ext = path[len(path)-4:len(path)]
         if ext.lower() != ".xml":
             path = path+".xml"
@@ -600,7 +597,7 @@ class EnergyModel:
     @staticmethod
     def Run(model, weatherFilePath: str = None, osBinaryPath : str = None, outputFolder : str = None):
         """
-            Run an energy simulation.
+            Runs an energy simulation.
         
         Parameters
         ----------

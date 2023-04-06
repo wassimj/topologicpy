@@ -4555,61 +4555,45 @@ class Topology():
     
     
     @staticmethod
-    def Show(topology, vertexLabelKey=None, vertexGroupKey=None, edgeLabelKey=None,
-             edgeGroupKey=None, faceLabelKey=None, faceGroupKey=None, vertexGroups=[],
-             edgeGroups=[], faceGroups=[], faceColor='white', faceOpacity=0.5,
-             edgeColor='black', edgeWidth=1, vertexColor='black', vertexSize=1.1,
-             showFaces=True, showEdges=True, showVertices=True, width=950, height=500,
+    def Show(topology,
+             showVertices=True, vertexSize=1.1, vertexColor="black", 
+             vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], 
+             vertexMinGroup=None, vertexMaxGroup=None, 
+             showVertexLegend=False, vertexLegendLabel="Topology Vertices", vertexLegendRank=1, 
+             vertexLegendGroup=1, 
+
+             showEdges=True, edgeWidth=1, edgeColor="black", 
+             edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], 
+             edgeMinGroup=None, edgeMaxGroup=None, 
+             showEdgeLegend=False, edgeLegendLabel="Topology Edges", edgeLegendRank=2, 
+             edgeLegendGroup=2, 
+
+             showFaces=True, faceOpacity=0.5, faceColor="white",
+             faceLabelKey=None, faceGroupKey=None, faceGroups=[], 
+             faceMinGroup=None, faceMaxGroup=None, 
+             showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
+             faceLegendGroup=3, 
+             intensityKey=None,
+             
+             width=950, height=500,
              xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)',
              marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25],
-             target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", intensityKey=None, showScale=False,
-             values=[], nTicks=5, xPosition=-0.15, colorbarWidth=15, outlineWidth=0, title="",
-             subTitle="", units="", colorScale="viridis", mantissa=4):
+             target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", showScale=False,
+             
+             cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
+             cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=4):
         """
-        Shows the input topology on screen.
+            Shows the input topology on screen.
 
         Parameters
         ----------
         topology : topologic.Topology
-            The input topology. This must contain faces and or wires.
-        vertexLabelKey : str , optional
-            The dictionary key to use to display the vertex label. The default is None.
-        vertexGroupKey : str , optional
-            The dictionary key to use to display the vertex group. The default is None.
-        edgeLabelKey : str , optional
-            The dictionary key to use to display the edge label. The default is None.
-        edgeGroupKey : str , optional
-            The dictionary key to use to display the edge group. The default is None.
-        faceLabelKey : str , optional
-            The dictionary key to use to display the face label. The default is None.
-        faceGroupKey : str , optional
-            The dictionary key to use to display the face group. The default is None.
-        vertexGroups : list , optional
-            The list of vertex groups against which to index the color of the vertex. The default is [].
-        edgeGroups : list , optional
-            The list of edge groups against which to index the color of the edge. The default is [].
-        faceGroups : list , optional
-            The list of face groups against which to index the color of the face. The default is [].
-        faceColor : str , optional
-            The desired color of the output faces. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is "lightblue".
-        faceOpacity : float , optional
-            The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
-        edgeolor : str , optional
-            The desired color of the output edges. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is "black".
-        edgeWidth : float , optional
-            The desired thickness of the output edges. The default is 1.
+            The input topology. This must contain faces and or edges.
+
+        showVertices : bool , optional
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+        vertexSize : float , optional
+            The desired size of the vertices. The default is 1.1.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -4618,14 +4602,86 @@ class Topology():
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
-        vertexSize : float , optional
-            The desired size of the vertices. The default is 1.1.
-        showFaces : bool , optional
-            If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
+        vertexLabelKey : str , optional
+            The dictionary key to use to display the vertex label. The default is None.
+        vertexGroupKey : str , optional
+            The dictionary key to use to display the vertex group. The default is None.
+        vertexGroups : list , optional
+            The list of vertex groups against which to index the color of the vertex. The default is [].
+        vertexMinGroup : int or float , optional
+            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.
+        edgeMaxGroup : int or float , optional
+            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.
+        showVertexLegend : bool, optional
+            If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. The default is False.
+        vertexLegendLabel : str , optional
+            The legend label string used to identify vertices. The default is "Topology Vertices".
+        vertexLegendRank : int , optional
+            The legend rank order of the vertices of this topology. The default is 1.
+        vertexLegendGroup : int , optional
+            The number of the vertex legend group to which the vertices of this topology belong. The default is 1.
+        
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
-        showVertices : bool , optional
-            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+        edgeWidth : float , optional
+            The desired thickness of the output edges. The default is 1.
+        edgeColor : str , optional
+            The desired color of the output edges. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        edgeLabelKey : str , optional
+            The dictionary key to use to display the edge label. The default is None.
+        edgeGroupKey : str , optional
+            The dictionary key to use to display the edge group. The default is None.
+        edgeGroups : list , optional
+            The list of edge groups against which to index the color of the edge. The default is [].
+        edgeMinGroup : int or float , optional
+            For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. The default is None.
+        edgeMaxGroup : int or float , optional
+            For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. The default is None.
+        showEdgeLegend : bool, optional
+            If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. The default is False.
+        edgeLegendLabel : str , optional
+            The legend label string used to identify edges. The default is "Topology Edges".
+        edgeLegendRank : int , optional
+            The legend rank order of the edges of this topology. The default is 2.
+        edgeLegendGroup : int , optional
+            The number of the edge legend group to which the edges of this topology belong. The default is 2.
+        
+        showFaces : bool , optional
+            If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
+        faceOpacity : float , optional
+            The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
+        faceColor : str , optional
+            The desired color of the output faces. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "white".
+        faceLabelKey : str , optional
+            The dictionary key to use to display the face label. The default is None.
+        faceGroupKey : str , optional
+            The dictionary key to use to display the face group. The default is None.
+        faceGroups : list , optional
+            The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. The default is [].
+        faceMinGroup : int or float , optional
+            For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. The default is None.
+        faceMaxGroup : int or float , optional
+            For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. The default is None.
+        showFaceLegend : bool, optional
+            If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. The default is False.
+        faceLegendLabel : str , optional
+            The legend label string used to idenitfy edges. The default is "Topology Faces".
+        faceLegendRank : int , optional
+            The legend rank order of the faces of this topology. The default is 3.
+        faceLegendGroup : int , optional
+            The number of the face legend group to which the faces of this topology belong. The default is 3.
         width : int , optional
             The width in pixels of the figure. The default value is 950.
         height : int , optional
@@ -4664,21 +4720,21 @@ class Topology():
             If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
         showScale : bool , optional
             If set to True, the colorbar is shown. The default is False.
-        values : list , optional
+        cbValues : list , optional
             The input list of values to use for the colorbar. The default is [].
-        nTicks : int , optional
+        cbTicks : int , optional
             The number of ticks to use on the colorbar. The default is 5.
-        xPosition : float , optional
+        cbX : float , optional
             The x location of the colorbar. The default is -0.15.
-        colorbarWidth : int , optional
+        cbWidth : int , optional
             The width in pixels of the colorbar. The default is 15
-        outlineWidth : int , optional
+        cbOutlineWidth : int , optional
             The width in pixels of the outline of the colorbar. The default is 0.
-        title : str , optional
+        cbTitle : str , optional
             The title of the colorbar. The default is "".
-        subTitle : str , optional
+        cbSubTitle : str , optional
             The subtitle of the colorbar. The default is "".
-        units: str , optional
+        cbUnits: str , optional
             The units used in the colorbar. The default is ""
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
@@ -4693,10 +4749,27 @@ class Topology():
         from topologicpy.Plotly import Plotly
         if not isinstance(topology, topologic.Topology):
             return None
-        data = Plotly.DataByTopology(topology=topology, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, vertexGroups=vertexGroups, edgeGroups=edgeGroups, faceGroups=faceGroups, faceColor=faceColor, faceOpacity=faceOpacity, edgeColor=edgeColor, edgeWidth=edgeWidth, vertexColor=vertexColor, vertexSize=vertexSize, showFaces=showFaces, showEdges=showEdges, showVertices=showVertices, intensityKey=intensityKey, colorScale=colorScale, showScale=showScale)
+        #data = Plotly.DataByTopology(topology=topology, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, vertexGroups=vertexGroups, edgeGroups=edgeGroups, faceGroups=faceGroups, faceColor=faceColor, faceOpacity=faceOpacity, edgeColor=edgeColor, edgeWidth=edgeWidth, vertexColor=vertexColor, vertexSize=vertexSize, showFaces=showFaces, showEdges=showEdges, showVertices=showVertices, intensityKey=intensityKey, colorScale=colorScale, showScale=showScale)
+        data = Plotly.DataByTopology(topology=topology,
+                       showVertices=showVertices, vertexSize=vertexSize, vertexColor=vertexColor, 
+                       vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, 
+                       vertexMinGroup=vertexMinGroup, vertexMaxGroup=vertexMaxGroup, 
+                       showVertexLegend=showVertexLegend, vertexLegendLabel=vertexLegendLabel, vertexLegendRank=vertexLegendRank,
+                       vertexLegendGroup=vertexLegendGroup,
+                       showEdges=showEdges, edgeWidth=edgeWidth, edgeColor=edgeColor, 
+                       edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, 
+                       edgeMinGroup=edgeMinGroup, edgeMaxGroup=edgeMaxGroup, 
+                       showEdgeLegend=showEdgeLegend, edgeLegendLabel=edgeLegendLabel, edgeLegendRank=edgeLegendRank, 
+                       edgeLegendGroup=edgeLegendGroup,
+                       showFaces=showFaces, faceOpacity=faceOpacity, faceColor=faceColor,
+                       faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, 
+                       faceMinGroup=faceMinGroup, faceMaxGroup=faceMaxGroup, 
+                       showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel, faceLegendRank=faceLegendRank,
+                       faceLegendGroup=faceLegendGroup, 
+                       intensityKey=intensityKey, colorScale=colorScale)
         figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
         if showScale:
-            figure = Plotly.AddColorBar(figure, values=values, nTicks=nTicks, xPosition=xPosition, width=colorbarWidth, outlineWidth=outlineWidth, title=title, subTitle=subTitle, units=units, colorScale=colorScale, mantissa=mantissa)
+            figure = Plotly.AddColorBar(figure, values=cbValues, nTicks=cbTicks, xPosition=cbX, width=cbWidth, outlineWidth=cbOutlineWidth, title=cbTitle, subTitle=cbSubTitle, units=cbUnits, colorScale=colorScale, mantissa=mantissa)
         Plotly.Show(figure=figure, renderer=renderer, camera=camera, target=target, up=up)
 
     @staticmethod
@@ -4997,7 +5070,6 @@ class Topology():
         """
         if isinstance(topology, topologic.Cell) or isinstance(topology, topologic.Shell) or isinstance(topology, topologic.Face) or isinstance(topology, topologic.Wire) or isinstance(topology, topologic.Edge) or isinstance(topology, topologic.Vertex):
             return []
-        return Topology.SubTopologies(topology=topology, subTopologyType="shell")
         return Topology.SubTopologies(topology=topology, subTopologyType="cell")
     
     @staticmethod
@@ -5374,7 +5446,10 @@ class Topology():
         """
         if not isinstance(topology, topologic.Topology):
             return None
-        return topologic.TopologyUtility.Translate(topology, x, y, z)
+        try:
+            return topologic.TopologyUtility.Translate(topology, x, y, z)
+        except:
+            return topology
     
     @staticmethod
     def TranslateByDirectionDistance(topology, direction=[0,0,0], distance=0):
