@@ -702,8 +702,8 @@ class Plotly:
                                 color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
                             else:
                                 color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            colorString = "rgb("+str(color[0])+","+str(color[1])+","+str(color[2])+")"
-                            groupList.append(colorString)
+                            color = "rgb("+str(color[0])+","+str(color[1])+","+str(color[2])+")"
+                            groupList.append(color)
                         except:
                             groupList.append(len(groups))
                         labels.append(label)
@@ -728,7 +728,7 @@ class Plotly:
                     showlegend = showLegend,
                     legendgroup = legendGroup,
                     legendrank = legendRank,
-                    color = colorString,
+                    color = color,
                     facecolor = groupList,
                     colorscale = colorScale,
                     intensity = intensities,
