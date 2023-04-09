@@ -292,10 +292,6 @@ class Cell(Topology):
             phi = Dictionary.ValueAtKey(dictionary,"phi")
             theta = Dictionary.ValueAtKey(dictionary,"theta")
 
-            if flatFace == None:
-                #Topology.ExportToBRep(f, "C:/Users/wassimj/Desktop/troubleFace.brep")
-                print(Face.Area(f))
-                print(Topology.SubTopologies(f, subTopologyType="vertex"))
             f = Topology.Rotate(f, origin=world_origin, x=0, y=1, z=0, degree=theta)
             f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
             f = Topology.Translate(f, xTran, yTran, zTran)
@@ -1231,7 +1227,6 @@ class Cell(Topology):
         pipe = Topology.Rotate(pipe, sv, 0, 0, 1, phi)
         zzz = Vertex.ByCoordinates(0,0,0)
         if endcapA:
-            print("Endcap A", endcapA)
             origin = edge.StartVertex()
             x1 = origin.X()
             y1 = origin.Y()
@@ -1446,8 +1441,6 @@ class Cell(Topology):
             return edges
         
         def face_to_skeleton(face, degree=0):
-            #normal = Face.Normal(face)
-            #print(normal[2])
             eb_wire = Face.ExternalBoundary(face)
             ib_wires = Face.InternalBoundaries(face)
             eb_vertices = Topology.Vertices(eb_wire)
@@ -1528,15 +1521,11 @@ class Cell(Topology):
 
 
         xFinalFaces = finalfinalfaces+[external_face]
-        print("X Final Faces", finalfinalfaces)
         cell = Cell.ByFaces(xFinalFaces, tolerance=tolerance)
-        print("Cell", cell)
         if not cell:
             cell = Shell.ByFaces(xFinalFaces, tolerance=tolerance)
-            print("Shell", cell)
             if not cell:
                 cell = Cluster.ByTopologies(xFinalFaces)
-                print("Cluster", cell)
         cell = Topology.RemoveCoplanarFaces(cell, angTolerance=2)
         xTran = Dictionary.ValueAtKey(d,"xTran")
         yTran = Dictionary.ValueAtKey(d,"yTran")
