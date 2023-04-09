@@ -157,6 +157,24 @@ class Vertex(Topology):
         return vertex
     
     @staticmethod
+    def Clockwise2D(vertices):
+        """
+        Sorts the input list of vertices in a clockwise fashion. This method assumes that the vertices are on the XY plane. The Z coordinate is ignored.
+
+        Parameters
+        -----------
+        vertices : list
+            The input list of vertices
+
+        Return
+        -----------
+        list
+            The input list of vertices sorted in a counter clockwise fashion
+        
+        """
+        return list(reversed(Vertex.CounterClockwise2D(vertices)))
+    
+    @staticmethod
     def Coordinates(vertex: topologic.Vertex, outputType: str = "xyz", mantissa: int = 4) -> list:
         """
         Returns the coordinates of the input vertex.
@@ -200,6 +218,31 @@ class Vertex(Topology):
                     output.append(z)
         return output
 
+    @staticmethod
+    def CounterClockwise2D(vertices):
+        """
+        Sorts the input list of vertices in a counterclockwise fashion. This method assumes that the vertices are on the XY plane. The Z coordinate is ignored.
+
+        Parameters
+        -----------
+        vertices : list
+            The input list of vertices
+
+        Return
+        -----------
+        list
+            The input list of vertices sorted in a counter clockwise fashion
+        
+        """
+        import math
+        # find the centroid of the points
+        cx = sum(Vertex.X(v) for v in vertices) / len(vertices)
+        cy = sum(Vertex.Y(v) for v in vertices) / len(vertices)
+
+        # sort the points based on their angle with respect to the centroid
+        vertices.sort(key=lambda v: (math.atan2(Vertex.Y(v) - cy, Vertex.X(v) - cx) + 2 * math.pi) % (2 * math.pi))
+        return vertices
+    
     @staticmethod
     def Distance(vertex: topologic.Vertex, topology: topologic.Topology, mantissa: int = 4) -> float:
         """
@@ -551,7 +594,7 @@ class Vertex(Topology):
         topologic.Vertex
         """
         return Vertex.ByCoordinates(0,0,0)
-    
+
     @staticmethod
     def Project(vertex: topologic.Vertex, face: topologic.Face, direction: bool = None, mantissa: int = 4, tolerance: float = 0.0001) -> topologic.Vertex:
         """

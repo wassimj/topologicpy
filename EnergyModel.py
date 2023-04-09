@@ -809,21 +809,32 @@ class EnergyModel:
             - "shadingFaces"
 
         """
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
         def surfaceToFace(surface):
             surfaceEdges = []
             surfaceVertices = surface.vertices()
             for i in range(len(surfaceVertices)-1):
                 sv = topologic.Vertex.ByCoordinates(surfaceVertices[i].x(), surfaceVertices[i].y(), surfaceVertices[i].z())
                 ev = topologic.Vertex.ByCoordinates(surfaceVertices[i+1].x(), surfaceVertices[i+1].y(), surfaceVertices[i+1].z())
-                edge = topologic.Edge.ByStartVertexEndVertex(sv, ev)
+                edge = Edge.ByStartVertexEndVertex(sv, ev)
+                if not edge:
+                    continue
                 surfaceEdges.append(edge)
             sv = topologic.Vertex.ByCoordinates(surfaceVertices[len(surfaceVertices)-1].x(), surfaceVertices[len(surfaceVertices)-1].y(), surfaceVertices[len(surfaceVertices)-1].z())
             ev = topologic.Vertex.ByCoordinates(surfaceVertices[0].x(), surfaceVertices[0].y(), surfaceVertices[0].z())
-            edge = topologic.Edge.ByStartVertexEndVertex(sv, ev)
+            edge = Edge.ByStartVertexEndVertex(sv, ev)
             surfaceEdges.append(edge)
-            surfaceWire = topologic.Wire.ByEdges(surfaceEdges)
+            surfaceWire = Wire.ByEdges(surfaceEdges)
             internalBoundaries = []
-            surfaceFace = topologic.Face.ByExternalInternalBoundaries(surfaceWire, internalBoundaries)
+            surfaceFace = Face.ByWires(surfaceWire, internalBoundaries)
             return surfaceFace
         
         def addApertures(face, apertures):
@@ -842,15 +853,35 @@ class EnergyModel:
                 context = topologic.Context.ByTopologyParameters(face, u, v, w)
                 _ = topologic.Aperture.ByTopologyContext(aperture, context)
             return face
+        spaces = list(model.getSpaces())
         
-        spaces = model.getSpaces()
         vertexIndex = 0
         cells = []
         apertures = []
         shadingFaces = []
-        shadingSurfaces = model.getShadingSurfaces()
+        shadingSurfaces = list(model.getShadingSurfaces())
+        
         for aShadingSurface in shadingSurfaces:
-            shadingFaces.append(surfaceToFace(aShadingSurface))
+            shadingFace = surfaceToFace(aShadingSurface)
+            if aShadingSurface.shadingSurfaceGroup().is_initialized():
+                shadingGroup = aShadingSurface.shadingSurfaceGroup().get()
+                if shadingGroup.space().is_initialized():
+                    space = shadingGroup.space().get()
+                    osTransformation = space.transformation()
+                    osTranslation = osTransformation.translation()
+                    osMatrix = osTransformation.rotationMatrix()
+                    rotation11 = osMatrix[0, 0]
+                    rotation12 = osMatrix[0, 1]
+                    rotation13 = osMatrix[0, 2]
+                    rotation21 = osMatrix[1, 0]
+                    rotation22 = osMatrix[1, 1]
+                    rotation23 = osMatrix[1, 2]
+                    rotation31 = osMatrix[2, 0]
+                    rotation32 = osMatrix[2, 1]
+                    rotation33 = osMatrix[2, 2]
+                    shadingFace = topologic.TopologyUtility.Transform(shadingFace, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33)
+            shadingFaces.append(shadingFace)
+        
         for count, aSpace in enumerate(spaces):
             osTransformation = aSpace.transformation()
             osTranslation = osTransformation.translation()
@@ -866,6 +897,7 @@ class EnergyModel:
             rotation33 = osMatrix[2, 2]
             spaceFaces = []
             surfaces = aSpace.surfaces()
+
             for aSurface in surfaces:
                 aFace = surfaceToFace(aSurface)
                 aFace = topologic.TopologyUtility.Transform(aFace, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33)
@@ -878,44 +910,43 @@ class EnergyModel:
                     apertures.append(aperture)
                 addApertures(aFace, apertures)
                 spaceFaces.append(aFace)
-            spaceCell = topologic.Cell.ByFaces(spaceFaces)
+            spaceFaces = [x for x in spaceFaces if isinstance(x, topologic.Face)]
+            spaceCell = Cell.ByFaces(spaceFaces)
             if not spaceCell:
-                spaceCell = topologic.Shell.ByFaces(spaceFaces)
+                spaceCell = Shell.ByFaces(spaceFaces)
             if not spaceCell:
-                spaceCell = topologic.Cluster.ByTopologies(spaceFaces)
-            if spaceCell:
+                spaceCell = Cluster.ByTopologies(spaceFaces)
+            if spaceCell: #debugging
                 # Set Dictionary for Cell
-                stl_keys = []
-                stl_keys.append("TOPOLOGIC_id")
-                stl_keys.append("TOPOLOGIC_name")
-                stl_keys.append("TOPOLOGIC_type")
-                stl_keys.append("TOPOLOGIC_color")
-                stl_values = []
+                keys = []
+                values = []
+
+                keys.append("TOPOLOGIC_id")
+                keys.append("TOPOLOGIC_name")
+                keys.append("TOPOLOGIC_type")
+                keys.append("TOPOLOGIC_color")
                 spaceID = str(aSpace.handle()).replace('{','').replace('}','')
-                stl_values.append(topologic.StringAttribute(spaceID))
-                stl_values.append(topologic.StringAttribute(aSpace.name().get()))
+                values.append(spaceID)
+                values.append(aSpace.name().get())
                 spaceTypeName = "Unknown"
                 red = 255
                 green = 255
                 blue = 255
+                
                 if (aSpace.spaceType().is_initialized()):
                     if(aSpace.spaceType().get().name().is_initialized()):
                         spaceTypeName = aSpace.spaceType().get().name().get()
-                    if(aSpace.spaceType().get().renderingColor()):
+                    if(aSpace.spaceType().get().renderingColor().is_initialized()):
                         red = aSpace.spaceType().get().renderingColor().get().renderingRedValue()
                         green = aSpace.spaceType().get().renderingColor().get().renderingGreenValue()
                         blue = aSpace.spaceType().get().renderingColor().get().renderingBlueValue()
-                stl_values.append(topologic.StringAttribute(spaceTypeName))
-                l = []
-                l.append(topologic.IntAttribute(red))
-                l.append(topologic.IntAttribute(green))
-                l.append(topologic.IntAttribute(blue))
-                stl_values.append(topologic.ListAttribute(l))
-                dict = topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
-                _ = spaceCell.SetDictionary(dict)
+                values.append(spaceTypeName)
+                values.append([red, green, blue])
+                d = Dictionary.ByKeysValues(keys, values)
+                spaceCell = Topology.SetDictionary(spaceCell, d)
                 cells.append(spaceCell)
         return {'cells':cells, 'apertures':apertures, 'shadingFaces': shadingFaces}
-    
+
     @staticmethod
     def Units(model, reportName, tableName, columnName):
         """

@@ -89,7 +89,6 @@ class Cell(Topology):
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-        from topologicpy.Cluster import Cluster
         if not isinstance(faces, list):
             return None
         faceList = [x for x in faces if isinstance(x, topologic.Face)]
@@ -1379,10 +1378,180 @@ class Cell(Topology):
         prism = Topology.Rotate(prism, origin, 0, 0, 1, phi)
         return prism
     
+    def Roof(face, degree=45, tolerance=0.001):
+        """
+            Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        degree : float , optioal
+            The desired angle in degrees of the roof. The default is 45.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+
+        Returns
+        -------
+        cell
+            The created roof.
+
+        """
+        from topologicpy import Polyskel
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import topologic
+        import math
+
+        def subtrees_to_edges(subtrees, polygon, slope):
+            polygon_z = {}
+            for x, y, z in polygon:
+                polygon_z[(x, y)] = z
+
+            edges = []
+            for subtree in subtrees:
+                source = subtree.source
+                height = subtree.height
+                z = slope * height
+                source_vertex = Vertex.ByCoordinates(source.x, source.y, z)
+
+                for sink in subtree.sinks:
+                    if (sink.x, sink.y) in polygon_z:
+                        z = 0
+                    else:
+                        z = None
+                        for st in subtrees:
+                            if st.source.x == sink.x and st.source.y == sink.y:
+                                z = slope * st.height
+                                break
+                            for sk in st.sinks:
+                                if sk.x == sink.x and sk.y == sink.y:
+                                    z = slope * st.height
+                                    break
+                        if z is None:
+                            height = subtree.height
+                            z = slope * height
+                    sink_vertex = Vertex.ByCoordinates(sink.x, sink.y, z)
+                    if (source.x, source.y) == (sink.x, sink.y):
+                        continue
+                    if Edge.ByStartVertexEndVertex(source_vertex, sink_vertex) not in edges:
+                        edges.append(Edge.ByStartVertexEndVertex(source_vertex, sink_vertex))
+            return edges
+        
+        def face_to_skeleton(face, degree=0):
+            #normal = Face.Normal(face)
+            #print(normal[2])
+            eb_wire = Face.ExternalBoundary(face)
+            ib_wires = Face.InternalBoundaries(face)
+            eb_vertices = Topology.Vertices(eb_wire)
+            eb_vertices = Vertex.Clockwise2D(eb_vertices)
+            eb_polygon_coordinates = [(v.X(), v.Y(), v.Z()) for v in eb_vertices]
+            eb_polygonxy = [(x[0], x[1]) for x in eb_polygon_coordinates]
+
+            ib_polygonsxy = []
+            zero_coordinates = eb_polygon_coordinates
+            for ib_wire in ib_wires:
+                ib_vertices = Topology.Vertices(ib_wire)
+                ib_vertices = Vertex.CounterClockwise2D(ib_vertices)
+                ib_polygon_coordinates = [(v.X(), v.Y(), v.Z()) for v in ib_vertices]
+                ib_polygonxy = [(x[0], x[1]) for x in ib_polygon_coordinates]
+                ib_polygonsxy.append(ib_polygonxy)
+                zero_coordinates += ib_polygon_coordinates
+            skeleton = Polyskel.skeletonize(eb_polygonxy, ib_polygonsxy)
+            slope = math.tan(math.radians(degree))
+            roofEdges = subtrees_to_edges(skeleton, zero_coordinates, slope)
+            roofWire = Wire.ByEdges(roofEdges)
+            #if normal[2] < 0:
+                #roofWire = Topology.Scale(roofWire, Topology.Centroid(face), 1, 1, -1)
+            #allEdges = Topology.Edges(face)+roofEdges
+            #roofWire = Topology.SelfMerge(Cluster.ByTopologies(allEdges))
+            return roofWire
+        
+        if not isinstance(face, topologic.Face):
+            return None
+        degree = abs(degree)
+        if degree > 90:
+            return None
+        flat_face = Face.Flatten(face)
+        d = Topology.Dictionary(flat_face)
+        roof = face_to_skeleton(flat_face, 0)
+        if not roof:
+            return None
+        roof2 = face_to_skeleton(flat_face, degree)
+        if not roof2:
+            return None
+        br = Wire.BoundingRectangle(roof)
+        br = Topology.Scale(br, Topology.Centroid(br), 1.5, 1.5, 1)
+        bf = Face.ByWire(br)
+        edges = Topology.Edges(roof)
+        cluster = Cluster.ByTopologies(edges+Topology.Edges(flat_face))
+        shell = Topology.Boolean(bf, cluster, operation="slice")
+        if not shell:
+            return None
+        faces = Shell.Faces(shell)
+        if not faces:
+            return None
+        finalFaces = []
+        for face in faces:
+            internalBoundaries = Face.InternalBoundaries(face)
+            if len(internalBoundaries) == 0:
+                finalFaces.append(face)
+
+        roof_vertices = Topology.Vertices(roof2)
+        external_boundary = Shell.ExternalBoundary(shell)
+        external_face = Face.ByWire(external_boundary)
+        flat_vertices = []
+        for rv in roof_vertices:
+            flat_vertices.append(Vertex.ByCoordinates(Vertex.X(rv), Vertex.Y(rv), 0))
+
+        final_triangles = []
+        for face in finalFaces:
+            triangles = Face.Triangulate(face)
+            final_triangles += triangles
+
+        finalfinalfaces = []
+        for face in final_triangles:
+            face_vertices = Topology.Vertices(face)
+            top_vertices = []
+            for sv in face_vertices:
+                index = Vertex.Index(sv, flat_vertices, tolerance=0.001)
+                top_vertices.append(roof_vertices[index])
+            finalfinalface = Topology.ReplaceVertices(face, face_vertices, top_vertices)
+            finalfinalfaces.append(finalfinalface)
+
+
+        xFinalFaces = finalfinalfaces+[external_face]
+        print("X Final Faces", finalfinalfaces)
+        cell = Cell.ByFaces(xFinalFaces, tolerance=tolerance)
+        print("Cell", cell)
+        if not cell:
+            cell = Shell.ByFaces(xFinalFaces, tolerance=tolerance)
+            print("Shell", cell)
+            if not cell:
+                cell = Cluster.ByTopologies(xFinalFaces)
+                print("Cluster", cell)
+        cell = Topology.RemoveCoplanarFaces(cell, angTolerance=2)
+        xTran = Dictionary.ValueAtKey(d,"xTran")
+        yTran = Dictionary.ValueAtKey(d,"yTran")
+        zTran = Dictionary.ValueAtKey(d,"zTran")
+        phi = Dictionary.ValueAtKey(d,"phi")
+        theta = Dictionary.ValueAtKey(d,"theta")
+        cell = Topology.Rotate(cell, origin=Vertex.Origin(), x=0, y=1, z=0, degree=theta)
+        cell = Topology.Rotate(cell, origin=Vertex.Origin(), x=0, y=0, z=1, degree=phi)
+        cell = Topology.Translate(cell, xTran, yTran, zTran)
+        return cell
+
     @staticmethod
     def Sets(inputCells: list, superCells: list, tolerance: float = 0.0001) -> list:
         """
-        Classifies the input cells into sets based on their enclosure within the input list of super cells. The order of the sets follows the order of the input list of super cells.
+            Classifies the input cells into sets based on their enclosure within the input list of super cells. The order of the sets follows the order of the input list of super cells.
 
         Parameters
         ----------

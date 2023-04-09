@@ -26,6 +26,8 @@ class Shell(Topology):
         if not isinstance(faces, list):
             return None
         faceList = [x for x in faces if isinstance(x, topologic.Face)]
+        if len(faceList) < 1:
+            return None
         shell = topologic.Shell.ByFaces(faceList, tolerance)
         if not shell:
             result = faceList[0]
@@ -268,9 +270,6 @@ class Shell(Topology):
         phi = Dictionary.ValueAtKey(dictionary,"phi")
         theta = Dictionary.ValueAtKey(dictionary,"theta")
 
-        print("Delaunay", len(vertices))
-        print("Dealunay", Dictionary.Keys(dictionary))
-        print("Delaunay", Dictionary.Values(dictionary))
         # Create a Vertex at the world's origin (0,0,0)
         world_origin = Vertex.ByCoordinates(0,0,0)
 

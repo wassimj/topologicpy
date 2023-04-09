@@ -3370,8 +3370,7 @@ class Topology():
 
         if not isinstance(topology, topologic.Topology):
             return None
-        vertices = []
-        _ = topology.Vertices(None, vertices)
+        vertices = Topology.Vertices(topology)
 
         result = True
         if len(vertices) <= 3:
@@ -3860,6 +3859,8 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        if not isinstance(topology, topologic.Topology):
+            return None
         t = topology.Type()
         if (t == 1) or (t == 2) or (t == 4) or (t == 8) or (t == 128):
             return topology

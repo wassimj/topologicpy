@@ -54,20 +54,22 @@ class Wire(topologic.Wire):
 
         world_origin = Vertex.ByCoordinates(0,0,0)
 
+        xTran = None
         # Create a sample face
-        vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
-        v = sample(vertices, 3)
-        w = Wire.ByVertices(v)
-        f = Face.ByWire(w)
-        f = Face.Flatten(f)
-        dictionary = Topology.Dictionary(f)
-        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        while not xTran:
+            vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
+            v = sample(vertices, 3)
+            w = Wire.ByVertices(v)
+            f = Face.ByWire(w)
+            f = Face.Flatten(f)
+            dictionary = Topology.Dictionary(f)
+            xTran = Dictionary.ValueAtKey(dictionary,"xTran")
         yTran = Dictionary.ValueAtKey(dictionary,"yTran")
         zTran = Dictionary.ValueAtKey(dictionary,"zTran")
         phi = Dictionary.ValueAtKey(dictionary,"phi")
         theta = Dictionary.ValueAtKey(dictionary,"theta")
         
-        topology = Topology.Translate(topology, -xTran, -yTran, -zTran)
+        topology = Topology.Translate(topology, xTran*-1, yTran*-1, zTran*-1)
         topology = Topology.Rotate(topology, origin=world_origin, x=0, y=0, z=1, degree=-phi)
         topology = Topology.Rotate(topology, origin=world_origin, x=0, y=1, z=0, degree=-theta)
         
