@@ -554,6 +554,153 @@ class Wire(topologic.Wire):
         return baseWire
 
     @staticmethod
+    def ConvexHull(topology):
+        """
+        Returns a wire representing the 2D convex hull of the input topology. The vertices of the topology are assumed to be coplanar.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+                
+        Returns
+        -------
+        topologic.Wire
+            The convex hull of the input topology.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from random import sample
+
+
+        def Left_index(points):
+            
+            '''
+            Finding the left most point
+            '''
+            minn = 0
+            for i in range(1,len(points)):
+                if points[i][0] < points[minn][0]:
+                    minn = i
+                elif points[i][0] == points[minn][0]:
+                    if points[i][1] > points[minn][1]:
+                        minn = i
+            return minn
+
+        def orientation(p, q, r):
+            '''
+            To find orientation of ordered triplet (p, q, r). 
+            The function returns following values 
+            0 --> p, q and r are collinear 
+            1 --> Clockwise 
+            2 --> Counterclockwise 
+            '''
+            val = (q[1] - p[1]) * (r[0] - q[0]) - \
+                (q[0] - p[0]) * (r[1] - q[1])
+        
+            if val == 0:
+                return 0
+            elif val > 0:
+                return 1
+            else:
+                return 2
+        
+        def convex_hull(points, n):
+            
+            # There must be at least 3 points 
+            if n < 3:
+                return
+        
+            # Find the leftmost point
+            l = Left_index(points)
+        
+            hull = []
+            
+            '''
+            Start from leftmost point, keep moving counterclockwise 
+            until reach the start point again. This loop runs O(h) 
+            times where h is number of points in result or output. 
+            '''
+            p = l
+            q = 0
+            while(True):
+                
+                # Add current point to result 
+                hull.append(p)
+        
+                '''
+                Search for a point 'q' such that orientation(p, q, 
+                x) is counterclockwise for all points 'x'. The idea 
+                is to keep track of last visited most counterclock- 
+                wise point in q. If any point 'i' is more counterclock- 
+                wise than q, then update q. 
+                '''
+                q = (p + 1) % n
+        
+                for i in range(n):
+                    
+                    # If i is more counterclockwise 
+                    # than current q, then update q 
+                    if(orientation(points[p], 
+                                points[i], points[q]) == 2):
+                        q = i
+        
+                '''
+                Now q is the most counterclockwise with respect to p 
+                Set p as q for next iteration, so that q is added to 
+                result 'hull' 
+                '''
+                p = q
+        
+                # While we don't come to first point
+                if(p == l):
+                    break
+        
+            # Print Result 
+            return hull
+
+
+        xTran = None
+        # Create a sample face and flatten
+        while not xTran:
+            vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
+            v = sample(vertices, 3)
+            w = Wire.ByVertices(v)
+            f = Face.ByWire(w)
+            f = Face.Flatten(f)
+            dictionary = Topology.Dictionary(f)
+            xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+        
+        world_origin = Vertex.Origin()
+        topology = Topology.Translate(topology, xTran*-1, yTran*-1, zTran*-1)
+        topology = Topology.Rotate(topology, origin=world_origin, x=0, y=0, z=1, degree=-phi)
+        topology = Topology.Rotate(topology, origin=world_origin, x=0, y=1, z=0, degree=-theta)
+
+        vertices = Topology.Vertices(topology)
+
+        points = []
+        for v in vertices:
+            points.append((Vertex.X(v), Vertex.Y(v)))
+        hull = convex_hull(points, len(points))
+
+        hull_vertices = []
+        for p in hull:
+            hull_vertices.append(Vertex.ByCoordinates(points[p][0], points[p][1], 0))
+
+        ch = Wire.ByVertices(hull_vertices)
+        ch = Topology.Rotate(ch, origin=world_origin, x=0, y=1, z=0, degree=theta)
+        ch = Topology.Rotate(ch, origin=world_origin, x=0, y=0, z=1, degree=phi)
+        ch = Topology.Translate(ch, xTran, yTran, zTran)
+        return ch
+
+    @staticmethod
     def Cycles(wire: topologic.Wire, maxVertices: int = 4, tolerance: float = 0.0001) -> list:
         """
         Returns the closed circuits of wires found within the input wire.

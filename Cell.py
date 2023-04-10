@@ -1402,6 +1402,7 @@ class Cell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
         import topologic
         import math
 
@@ -1441,10 +1442,13 @@ class Cell(Topology):
             return edges
         
         def face_to_skeleton(face, degree=0):
+            normal = Face.Normal(face)
             eb_wire = Face.ExternalBoundary(face)
             ib_wires = Face.InternalBoundaries(face)
             eb_vertices = Topology.Vertices(eb_wire)
-            eb_vertices = Vertex.Clockwise2D(eb_vertices)
+            if normal[2] > 0:
+                eb_vertices = list(reversed(eb_vertices))
+            #eb_vertices = Vertex.Clockwise2D(eb_vertices)
             eb_polygon_coordinates = [(v.X(), v.Y(), v.Z()) for v in eb_vertices]
             eb_polygonxy = [(x[0], x[1]) for x in eb_polygon_coordinates]
 
@@ -1452,7 +1456,9 @@ class Cell(Topology):
             zero_coordinates = eb_polygon_coordinates
             for ib_wire in ib_wires:
                 ib_vertices = Topology.Vertices(ib_wire)
-                ib_vertices = Vertex.CounterClockwise2D(ib_vertices)
+                if normal[2] > 0:
+                    ib_vertices = list(reversed(ib_vertices))
+                #ib_vertices = Vertex.CounterClockwise2D(ib_vertices)
                 ib_polygon_coordinates = [(v.X(), v.Y(), v.Z()) for v in ib_vertices]
                 ib_polygonxy = [(x[0], x[1]) for x in ib_polygon_coordinates]
                 ib_polygonsxy.append(ib_polygonxy)
@@ -1460,12 +1466,9 @@ class Cell(Topology):
             skeleton = Polyskel.skeletonize(eb_polygonxy, ib_polygonsxy)
             slope = math.tan(math.radians(degree))
             roofEdges = subtrees_to_edges(skeleton, zero_coordinates, slope)
-            roofWire = Wire.ByEdges(roofEdges)
-            #if normal[2] < 0:
-                #roofWire = Topology.Scale(roofWire, Topology.Centroid(face), 1, 1, -1)
-            #allEdges = Topology.Edges(face)+roofEdges
-            #roofWire = Topology.SelfMerge(Cluster.ByTopologies(allEdges))
-            return roofWire
+            roofEdges = Helper.Flatten(roofEdges)+Topology.Edges(face)
+            roofTopology = Cluster.ByTopologies(roofEdges)
+            return roofTopology
         
         if not isinstance(face, topologic.Face):
             return None
@@ -1480,12 +1483,10 @@ class Cell(Topology):
         roof2 = face_to_skeleton(flat_face, degree)
         if not roof2:
             return None
-        br = Wire.BoundingRectangle(roof)
+        br = Wire.BoundingRectangle(roof) #This works even if it is a Cluster not a Wire
         br = Topology.Scale(br, Topology.Centroid(br), 1.5, 1.5, 1)
         bf = Face.ByWire(br)
-        edges = Topology.Edges(roof)
-        cluster = Cluster.ByTopologies(edges+Topology.Edges(flat_face))
-        shell = Topology.Boolean(bf, cluster, operation="slice")
+        shell = Topology.Boolean(bf, roof, operation="slice")
         if not shell:
             return None
         faces = Shell.Faces(shell)
@@ -1514,7 +1515,7 @@ class Cell(Topology):
             face_vertices = Topology.Vertices(face)
             top_vertices = []
             for sv in face_vertices:
-                index = Vertex.Index(sv, flat_vertices, tolerance=0.001)
+                index = Vertex.Index(sv, flat_vertices, tolerance=tolerance)
                 top_vertices.append(roof_vertices[index])
             finalfinalface = Topology.ReplaceVertices(face, face_vertices, top_vertices)
             finalfinalfaces.append(finalfinalface)

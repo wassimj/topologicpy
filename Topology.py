@@ -2914,7 +2914,7 @@ class Topology():
         return status
 
     @staticmethod
-    def Filter(topologies, topologyType="vertex", searchType="any", key=None, value=None):
+    def Filter(topologies, topologyType="any", searchType="any", key=None, value=None):
         """
         Filters the input list of topologies based on the input parameters.
 
@@ -2923,7 +2923,7 @@ class Topology():
         topologies : list
             The input list of topologies.
         topologyType : str , optional
-            The type of topology to filter by. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", or "cluster". It is case insensitive. The default is "vertex".
+            The type of topology to filter by. This can be one of "any", "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", or "cluster". It is case insensitive. The default is "any".
         searchType : str , optional
             The type of search query to conduct in the topology's dictionary. This can be one of "any", "equal to", "contains", "starts with", "ends with", "not equal to", "does not contain". The default is "any".
         key : str , optional
@@ -2933,8 +2933,10 @@ class Topology():
 
         Returns
         -------
-        list
-            The list of filtered topologies.
+        dict
+            A dictionary of filtered and other elements. The dictionary has two keys:
+            - "filtered" The filtered topologies.
+            - "other" The other topologies that did not meet the filter criteria.
 
         """
         from topologicpy.Dictionary import Dictionary
@@ -2990,7 +2992,7 @@ class Topology():
                         otherTopologies.append(aTopology)
             else:
                 otherTopologies.append(aTopology)
-        return [filteredTopologies, otherTopologies]
+        return {"filtered": filteredTopologies, "other": otherTopologies}
 
     def Flatten(topology, origin=None, vector=[0,0,1]):
         """
