@@ -1944,6 +1944,140 @@ class Wire(topologic.Wire):
             return [wire]
         return wires
 
+    def Roof(face, degree=45, tolerance=0.001):
+        """
+            Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        degree : float , optioal
+            The desired angle in degrees of the roof. The default is 45.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+
+        Returns
+        -------
+        topologic.Wire
+            The created roof. This method returns the roof as a set of edges. No faces are created.
+
+        """
+        from topologicpy import Polyskel
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+        import topologic
+        import math
+
+        def subtrees_to_edges(subtrees, polygon, slope):
+            polygon_z = {}
+            for x, y, z in polygon:
+                polygon_z[(x, y)] = z
+
+            edges = []
+            for subtree in subtrees:
+                source = subtree.source
+                height = subtree.height
+                z = slope * height
+                source_vertex = Vertex.ByCoordinates(source.x, source.y, z)
+
+                for sink in subtree.sinks:
+                    if (sink.x, sink.y) in polygon_z:
+                        z = 0
+                    else:
+                        z = None
+                        for st in subtrees:
+                            if st.source.x == sink.x and st.source.y == sink.y:
+                                z = slope * st.height
+                                break
+                            for sk in st.sinks:
+                                if sk.x == sink.x and sk.y == sink.y:
+                                    z = slope * st.height
+                                    break
+                        if z is None:
+                            height = subtree.height
+                            z = slope * height
+                    sink_vertex = Vertex.ByCoordinates(sink.x, sink.y, z)
+                    if (source.x, source.y) == (sink.x, sink.y):
+                        continue
+                    if Edge.ByStartVertexEndVertex(source_vertex, sink_vertex) not in edges:
+                        edges.append(Edge.ByStartVertexEndVertex(source_vertex, sink_vertex))
+            return edges
+        
+        def face_to_skeleton(face, degree=0):
+            normal = Face.Normal(face)
+            eb_wire = Face.ExternalBoundary(face)
+            ib_wires = Face.InternalBoundaries(face)
+            eb_vertices = Topology.Vertices(eb_wire)
+            if normal[2] > 0:
+                eb_vertices = list(reversed(eb_vertices))
+            eb_polygon_coordinates = [(v.X(), v.Y(), v.Z()) for v in eb_vertices]
+            eb_polygonxy = [(x[0], x[1]) for x in eb_polygon_coordinates]
+
+            ib_polygonsxy = []
+            zero_coordinates = eb_polygon_coordinates
+            for ib_wire in ib_wires:
+                ib_vertices = Topology.Vertices(ib_wire)
+                if normal[2] > 0:
+                    ib_vertices = list(reversed(ib_vertices))
+                ib_polygon_coordinates = [(v.X(), v.Y(), v.Z()) for v in ib_vertices]
+                ib_polygonxy = [(x[0], x[1]) for x in ib_polygon_coordinates]
+                ib_polygonsxy.append(ib_polygonxy)
+                zero_coordinates += ib_polygon_coordinates
+            skeleton = Polyskel.skeletonize(eb_polygonxy, ib_polygonsxy)
+            slope = math.tan(math.radians(degree))
+            roofEdges = subtrees_to_edges(skeleton, zero_coordinates, slope)
+            roofEdges = Helper.Flatten(roofEdges)+Topology.Edges(face)
+            roofTopology = Topology.SelfMerge(Cluster.ByTopologies(roofEdges))
+            return roofTopology
+        
+        if not isinstance(face, topologic.Face):
+            return None
+        degree = abs(degree)
+        if degree >= 90-tolerance:
+            return None
+        flat_face = Face.Flatten(face)
+        d = Topology.Dictionary(flat_face)
+        roof = face_to_skeleton(flat_face, degree)
+        if not roof:
+            return None
+        xTran = Dictionary.ValueAtKey(d,"xTran")
+        yTran = Dictionary.ValueAtKey(d,"yTran")
+        zTran = Dictionary.ValueAtKey(d,"zTran")
+        phi = Dictionary.ValueAtKey(d,"phi")
+        theta = Dictionary.ValueAtKey(d,"theta")
+        roof = Topology.Rotate(roof, origin=Vertex.Origin(), x=0, y=1, z=0, degree=theta)
+        roof = Topology.Rotate(roof, origin=Vertex.Origin(), x=0, y=0, z=1, degree=phi)
+        roof = Topology.Translate(roof, xTran, yTran, zTran)
+        return roof
+    
+    def Skeleton(face, tolerance=0.001):
+        """
+            Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+       
+        tolerance : float , optional
+            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+
+        Returns
+        -------
+        topologic.Wire
+            The created straight skeleton.
+
+        """
+        if not isinstance(face, topologic.Face):
+            return None
+        return Wire.Roof(face, degree=0, tolerance=tolerance)
+    
     @staticmethod
     def Square(origin: topologic.Vertex = None, size: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
         """

@@ -1618,6 +1618,8 @@ class Face(topologic.Face):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
+        if not isinstance(face, topologic.Face):
+            return None
         flatFace = Face.Flatten(face)
         world_origin = Vertex.ByCoordinates(0,0,0)
         # Retrieve the needed transformations

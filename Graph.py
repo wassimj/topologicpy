@@ -2606,7 +2606,10 @@ class Graph:
         if edgeKey:
             if edgeKey.lower() == "length":
                 edgeKey = "Length"
-        return graph.ShortestPath(vertexA, vertexB, vertexKey, edgeKey)
+        try:
+            return graph.ShortestPath(vertexA, vertexB, vertexKey, edgeKey)
+        except:
+            return None
     
     @staticmethod
     def ShortestPaths(graph, vertexA, vertexB, vertexKey="", edgeKey="length", timeLimit=10,

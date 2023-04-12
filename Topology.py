@@ -5534,7 +5534,10 @@ class Topology():
         faceTriangles = []
         selectors = []
         for aFace in topologyFaces:
-            triFaces = Face.Triangulate(aFace)
+            if len(Topology.Vertices(aFace)) > 3:
+                triFaces = Face.Triangulate(aFace)
+            else:
+                triFaces = [aFace]
             for triFace in triFaces:
                 if transferDictionaries:
                     selectors.append(Topology.SetDictionary(Face.Centroid(triFace), Topology.Dictionary(aFace)))

@@ -349,8 +349,8 @@ class Vertex(Topology):
             return None
         if not isinstance(vertices, list):
             return None
-        new_vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
-        if not len(new_vertices) == len(vertices):
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) == 0:
             return None
         for i in range(len(vertices)):
             if strict:

@@ -312,7 +312,10 @@ class Cell(Topology):
         if triangulate == True:
             triangles = []
             for face in faces:
-                triangles += Face.Triangulate(face)
+                if len(Topology.Vertices(face)) > 3:
+                    triangles += Face.Triangulate(face)
+                else:
+                    triangles += [face]
             faces = triangles
         for i in range(len(wires)-1):
             wire1 = wires[i]
@@ -1406,81 +1409,29 @@ class Cell(Topology):
         import topologic
         import math
 
-        def subtrees_to_edges(subtrees, polygon, slope):
-            polygon_z = {}
-            for x, y, z in polygon:
-                polygon_z[(x, y)] = z
-
-            edges = []
-            for subtree in subtrees:
-                source = subtree.source
-                height = subtree.height
-                z = slope * height
-                source_vertex = Vertex.ByCoordinates(source.x, source.y, z)
-
-                for sink in subtree.sinks:
-                    if (sink.x, sink.y) in polygon_z:
-                        z = 0
-                    else:
-                        z = None
-                        for st in subtrees:
-                            if st.source.x == sink.x and st.source.y == sink.y:
-                                z = slope * st.height
-                                break
-                            for sk in st.sinks:
-                                if sk.x == sink.x and sk.y == sink.y:
-                                    z = slope * st.height
-                                    break
-                        if z is None:
-                            height = subtree.height
-                            z = slope * height
-                    sink_vertex = Vertex.ByCoordinates(sink.x, sink.y, z)
-                    if (source.x, source.y) == (sink.x, sink.y):
-                        continue
-                    if Edge.ByStartVertexEndVertex(source_vertex, sink_vertex) not in edges:
-                        edges.append(Edge.ByStartVertexEndVertex(source_vertex, sink_vertex))
-            return edges
-        
-        def face_to_skeleton(face, degree=0):
-            normal = Face.Normal(face)
-            eb_wire = Face.ExternalBoundary(face)
-            ib_wires = Face.InternalBoundaries(face)
-            eb_vertices = Topology.Vertices(eb_wire)
-            if normal[2] > 0:
-                eb_vertices = list(reversed(eb_vertices))
-            #eb_vertices = Vertex.Clockwise2D(eb_vertices)
-            eb_polygon_coordinates = [(v.X(), v.Y(), v.Z()) for v in eb_vertices]
-            eb_polygonxy = [(x[0], x[1]) for x in eb_polygon_coordinates]
-
-            ib_polygonsxy = []
-            zero_coordinates = eb_polygon_coordinates
-            for ib_wire in ib_wires:
-                ib_vertices = Topology.Vertices(ib_wire)
-                if normal[2] > 0:
-                    ib_vertices = list(reversed(ib_vertices))
-                #ib_vertices = Vertex.CounterClockwise2D(ib_vertices)
-                ib_polygon_coordinates = [(v.X(), v.Y(), v.Z()) for v in ib_vertices]
-                ib_polygonxy = [(x[0], x[1]) for x in ib_polygon_coordinates]
-                ib_polygonsxy.append(ib_polygonxy)
-                zero_coordinates += ib_polygon_coordinates
-            skeleton = Polyskel.skeletonize(eb_polygonxy, ib_polygonsxy)
-            slope = math.tan(math.radians(degree))
-            roofEdges = subtrees_to_edges(skeleton, zero_coordinates, slope)
-            roofEdges = Helper.Flatten(roofEdges)+Topology.Edges(face)
-            roofTopology = Cluster.ByTopologies(roofEdges)
-            return roofTopology
+        def nearest_vertex_2d(v, vertices, tolerance=0.001):
+            for vertex in vertices:
+                x2 = Vertex.X(vertex)
+                y2 = Vertex.Y(vertex)
+                temp_v = Vertex.ByCoordinates(x2, y2, Vertex.Z(v))
+                if Vertex.Distance(v, temp_v) <= tolerance:
+                    return vertex
+            print("Returning None")
+            return None
         
         if not isinstance(face, topologic.Face):
             return None
         degree = abs(degree)
-        if degree > 90:
+        if degree >= 90-tolerance:
+            return None
+        if degree < tolerance:
             return None
         flat_face = Face.Flatten(face)
         d = Topology.Dictionary(flat_face)
-        roof = face_to_skeleton(flat_face, 0)
+        roof = Wire.Roof(flat_face, 0)
         if not roof:
             return None
-        roof2 = face_to_skeleton(flat_face, degree)
+        roof2 = Wire.Roof(flat_face, degree)
         if not roof2:
             return None
         br = Wire.BoundingRectangle(roof) #This works even if it is a Cluster not a Wire
@@ -1489,44 +1440,53 @@ class Cell(Topology):
         shell = Topology.Boolean(bf, roof, operation="slice")
         if not shell:
             return None
+        shell = Topology.SelfMerge(shell)
         faces = Shell.Faces(shell)
+        
         if not faces:
             return None
-        finalFaces = []
+        triangles = []
         for face in faces:
             internalBoundaries = Face.InternalBoundaries(face)
             if len(internalBoundaries) == 0:
-                finalFaces.append(face)
+                if len(Topology.Vertices(face)) > 3:
+                    triangles += Face.Triangulate(face)
+                else:
+                    triangles += [face]
 
         roof_vertices = Topology.Vertices(roof2)
-        external_boundary = Shell.ExternalBoundary(shell)
-        external_face = Face.ByWire(external_boundary)
         flat_vertices = []
         for rv in roof_vertices:
             flat_vertices.append(Vertex.ByCoordinates(Vertex.X(rv), Vertex.Y(rv), 0))
 
         final_triangles = []
-        for face in finalFaces:
-            triangles = Face.Triangulate(face)
+        for triangle in triangles:
+            if len(Topology.Vertices(triangle)) > 3:
+                triangles = Face.Triangulate(triangle)
+            else:
+                triangles = [triangle]
             final_triangles += triangles
 
-        finalfinalfaces = []
-        for face in final_triangles:
-            face_vertices = Topology.Vertices(face)
+        print("Length of Final Triangles", len(final_triangles))
+        final_faces = []
+        for triangle in final_triangles:
+            face_vertices = Topology.Vertices(triangle)
             top_vertices = []
             for sv in face_vertices:
-                index = Vertex.Index(sv, flat_vertices, tolerance=tolerance)
-                top_vertices.append(roof_vertices[index])
-            finalfinalface = Topology.ReplaceVertices(face, face_vertices, top_vertices)
-            finalfinalfaces.append(finalfinalface)
+                temp = nearest_vertex_2d(sv, roof_vertices, tolerance=tolerance)
+                if temp:
+                    top_vertices.append(temp)
+                else:
+                    top_vertices.append(sv)
+            tri_face = Face.ByVertices(top_vertices)
+            final_faces.append(tri_face)
+        final_faces.append(flat_face)
 
-
-        xFinalFaces = finalfinalfaces+[external_face]
-        cell = Cell.ByFaces(xFinalFaces, tolerance=tolerance)
+        cell = Cell.ByFaces(final_faces, tolerance=tolerance)
         if not cell:
-            cell = Shell.ByFaces(xFinalFaces, tolerance=tolerance)
+            cell = Shell.ByFaces(final_faces, tolerance=tolerance)
             if not cell:
-                cell = Cluster.ByTopologies(xFinalFaces)
+                cell = Cluster.ByTopologies(final_faces)
         cell = Topology.RemoveCoplanarFaces(cell, angTolerance=2)
         xTran = Dictionary.ValueAtKey(d,"xTran")
         yTran = Dictionary.ValueAtKey(d,"yTran")

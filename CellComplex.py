@@ -210,18 +210,26 @@ class CellComplex(topologic.CellComplex):
         """
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
         faces = [topologic.Face.ByExternalBoundary(wires[0]), topologic.Face.ByExternalBoundary(wires[-1])]
         if triangulate == True:
             triangles = []
             for face in faces:
-                triangles += Face.Triangulate(face)
+                if len(Topology.Vertices(face)) > 3:
+                    triangles += Face.Triangulate(face)
+                else:
+                    triangles += [face]
             faces = triangles
         for i in range(len(wires)-1):
             wire1 = wires[i]
             wire2 = wires[i+1]
             f = topologic.Face.ByExternalBoundary(wire2)
             if triangulate == True:
-                triangles = Face.Triangulate(face)
+                if len(Topology.Vertices(face)) > 3:
+                    triangles = Face.Triangulate(face)
+                else:
+                    triangles = [face]
                 faces += triangles
             else:
                 faces.append(f)
@@ -243,7 +251,10 @@ class CellComplex(topologic.CellComplex):
                         e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
                         f = topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e4]))
                         if triangulate == True:
-                            triangles = Face.Triangulate(face)
+                            if len(Topology.Vertices(face)) > 3:
+                                triangles = Face.Triangulate(face)
+                            else:
+                                triangles = [face]
                             faces += triangles
                         else:
                             faces.append(f)
@@ -256,7 +267,10 @@ class CellComplex(topologic.CellComplex):
                         e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
                         f = topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e3]))
                         if triangulate == True:
-                            triangles = Face.Triangulate(face)
+                            if len(Topology.Vertices(face)) > 3:
+                                triangles = Face.Triangulate(face)
+                            else:
+                                triangles = [face]
                             faces += triangles
                         else:
                             faces.append(f)
