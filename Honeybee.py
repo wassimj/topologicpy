@@ -1,22 +1,83 @@
-import honeybee_energy.lib.constructionsets as constr_set_lib
-import honeybee.facetype
-from honeybee.face import Face as HBFace
-from ladybug_geometry.geometry3d.face import Face3D
-from honeybee.model import Model as HBModel
-from honeybee.room import Room as HBRoom
-from honeybee.shade import Shade as HBShade
-from honeybee.aperture import Aperture as HBAperture
-from honeybee.door import Door as HBDoor
-from honeybee_energy.schedule.ruleset import ScheduleRuleset
-from honeybee_energy.schedule.day import ScheduleDay
-from honeybee_energy.load.setpoint import Setpoint
-from honeybee_energy.load.hotwater import  ServiceHotWater
-import honeybee_energy.lib.programtypes as prog_type_lib
-import honeybee_energy.lib.scheduletypelimits as schedule_types
-from honeybee_radiance.sensorgrid import SensorGrid
+import sys
+import subprocess
 
-from ladybug.dt import Time
-from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
+try:
+    import honeybee.facetype
+    from honeybee.face import Face as HBFace
+    from honeybee.model import Model as HBModel
+    from honeybee.room import Room as HBRoom
+    from honeybee.shade import Shade as HBShade
+    from honeybee.aperture import Aperture as HBAperture
+    from honeybee.door import Door as HBDoor
+except:
+    call = [sys.executable, '-m', 'pip', 'install', 'honeybee', '-t', sys.path[0]]
+    subprocess.run(call)
+    try:
+        import honeybee.facetype
+        from honeybee.face import Face as HBFace
+        from honeybee.model import Model as HBModel
+        from honeybee.room import Room as HBRoom
+        from honeybee.shade import Shade as HBShade
+        from honeybee.aperture import Aperture as HBAperture
+        from honeybee.door import Door as HBDoor
+    except:
+        print("Honeybee - ERROR: Could not import honeybee")
+
+
+try:
+    import honeybee_energy.lib.constructionsets as constr_set_lib
+    import honeybee_energy.lib.programtypes as prog_type_lib
+    import honeybee_energy.lib.scheduletypelimits as schedule_types
+    from honeybee_energy.schedule.ruleset import ScheduleRuleset
+    from honeybee_energy.schedule.day import ScheduleDay
+    from honeybee_energy.load.setpoint import Setpoint
+    from honeybee_energy.load.hotwater import  ServiceHotWater
+except:
+    call = [sys.executable, '-m', 'pip', 'install', '-U', 'honeybee-energy[standards]', '-t', sys.path[0]]
+    subprocess.run(call)
+    try:
+        import honeybee_energy.lib.constructionsets as constr_set_lib
+        import honeybee_energy.lib.programtypes as prog_type_lib
+        import honeybee_energy.lib.scheduletypelimits as schedule_types
+        from honeybee_energy.schedule.ruleset import ScheduleRuleset
+        from honeybee_energy.schedule.day import ScheduleDay
+        from honeybee_energy.load.setpoint import Setpoint
+        from honeybee_energy.load.hotwater import  ServiceHotWater
+    except:
+        print("Honeybee - ERROR: Could not import honeybee-energy")
+
+try:
+    from honeybee_radiance.sensorgrid import SensorGrid
+except:
+    call = [sys.executable, '-m', 'pip', 'install', '-U', 'honeybee-radiance', '-t', sys.path[0]]
+    subprocess.run(call)
+    try:
+        from honeybee_radiance.sensorgrid import SensorGrid
+    except:
+        print("Honeybee - ERROR: Could not import honeybee-radiance")
+
+try:
+    from ladybug.dt import Time
+except:
+    call = [sys.executable, '-m', 'pip', 'install', '-U', 'ladybug', '-t', sys.path[0]]
+    subprocess.run(call)
+    try:
+        from ladybug.dt import Time
+    except:
+        print("Honeybee - ERROR: Could not import ladybug")
+
+try:
+    from ladybug_geometry.geometry3d.face import Face3D
+    from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
+except:
+    call = [sys.executable, '-m', 'pip', 'install', '-U', 'ladybug-geometry', '-t', sys.path[0]]
+    subprocess.run(call)
+    try:
+        from ladybug_geometry.geometry3d.face import Face3D
+        from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
+    except:
+        print("Honeybee - ERROR: Could not import ladybug-geometry")
+
 import json
 from topologicpy.Dictionary import Dictionary
 import topologic

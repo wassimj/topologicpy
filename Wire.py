@@ -1866,87 +1866,10 @@ class Wire(topologic.Wire):
         else:
             return None
 
-    @staticmethod
-    def Split(wire: topologic.Wire) -> list:
-        """
-        Splits the input wire into segments at its intersections (i.e. at any vertex where more than two edges meet).
-
-        Parameters
-        ----------
-        wire : topologic.Wire
-            The input wire.
-
-        Returns
-        -------
-        list
-            The list of split wire segments.
-
-        """
-        
-        def vertexDegree(v, wire):
-            edges = []
-            _ = v.Edges(wire, edges)
-            return len(edges)
-        
-        def vertexOtherEdge(vertex, edge, wire):
-            edges = []
-            _ = vertex.Edges(wire, edges)
-            if topologic.Topology.IsSame(edges[0], edge):
-                return edges[-1]
-            else:
-                return edges[0]
-        
-        def edgeOtherVertex(edge, vertex):
-            vertices = []
-            _ = edge.Vertices(None, vertices)
-            if topologic.Topology.IsSame(vertex, vertices[0]):
-                return vertices[-1]
-            else:
-                return vertices[0]
-        
-        def edgeInList(edge, edgeList):
-            for anEdge in edgeList:
-                if topologic.Topology.IsSame(anEdge, edge):
-                    return True
-            return False
-        
-        vertices = []
-        _ = wire.Vertices(None, vertices)
-        hubs = []
-        for aVertex in vertices:
-            if vertexDegree(aVertex, wire) > 2:
-                hubs.append(aVertex)
-        wires = []
-        global_edges = []
-        for aVertex in hubs:
-            hub_edges = []
-            _ = aVertex.Edges(wire, hub_edges)
-            wire_edges = []
-            for hub_edge in hub_edges:
-                if not edgeInList(hub_edge, global_edges):
-                    current_edge = hub_edge
-                    oe = edgeOtherVertex(current_edge, aVertex)
-                    while vertexDegree(oe, wire) == 2:
-                        if not edgeInList(current_edge, global_edges):
-                            global_edges.append(current_edge)
-                            wire_edges.append(current_edge)
-                        current_edge = vertexOtherEdge(oe, current_edge, wire)
-                        oe = edgeOtherVertex(current_edge, oe)
-                    if not edgeInList(current_edge, global_edges):
-                        global_edges.append(current_edge)
-                        wire_edges.append(current_edge)
-                    if len(wire_edges) > 1:
-                        wires.append(topologic.Cluster.ByTopologies(wire_edges).SelfMerge())
-                    else:
-                        wires.append(wire_edges[0])
-                    wire_edges = []
-        if len(wires) < 1:
-            return [wire]
-        return wires
-
     def Roof(face, degree=45, tolerance=0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+            This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
 
         Parameters
         ----------
@@ -2059,6 +1982,8 @@ class Wire(topologic.Wire):
     def Skeleton(face, tolerance=0.001):
         """
             Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+            This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
+
 
         Parameters
         ----------
@@ -2077,6 +2002,84 @@ class Wire(topologic.Wire):
         if not isinstance(face, topologic.Face):
             return None
         return Wire.Roof(face, degree=0, tolerance=tolerance)
+    
+    @staticmethod
+    def Split(wire: topologic.Wire) -> list:
+        """
+        Splits the input wire into segments at its intersections (i.e. at any vertex where more than two edges meet).
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+
+        Returns
+        -------
+        list
+            The list of split wire segments.
+
+        """
+        
+        def vertexDegree(v, wire):
+            edges = []
+            _ = v.Edges(wire, edges)
+            return len(edges)
+        
+        def vertexOtherEdge(vertex, edge, wire):
+            edges = []
+            _ = vertex.Edges(wire, edges)
+            if topologic.Topology.IsSame(edges[0], edge):
+                return edges[-1]
+            else:
+                return edges[0]
+        
+        def edgeOtherVertex(edge, vertex):
+            vertices = []
+            _ = edge.Vertices(None, vertices)
+            if topologic.Topology.IsSame(vertex, vertices[0]):
+                return vertices[-1]
+            else:
+                return vertices[0]
+        
+        def edgeInList(edge, edgeList):
+            for anEdge in edgeList:
+                if topologic.Topology.IsSame(anEdge, edge):
+                    return True
+            return False
+        
+        vertices = []
+        _ = wire.Vertices(None, vertices)
+        hubs = []
+        for aVertex in vertices:
+            if vertexDegree(aVertex, wire) > 2:
+                hubs.append(aVertex)
+        wires = []
+        global_edges = []
+        for aVertex in hubs:
+            hub_edges = []
+            _ = aVertex.Edges(wire, hub_edges)
+            wire_edges = []
+            for hub_edge in hub_edges:
+                if not edgeInList(hub_edge, global_edges):
+                    current_edge = hub_edge
+                    oe = edgeOtherVertex(current_edge, aVertex)
+                    while vertexDegree(oe, wire) == 2:
+                        if not edgeInList(current_edge, global_edges):
+                            global_edges.append(current_edge)
+                            wire_edges.append(current_edge)
+                        current_edge = vertexOtherEdge(oe, current_edge, wire)
+                        oe = edgeOtherVertex(current_edge, oe)
+                    if not edgeInList(current_edge, global_edges):
+                        global_edges.append(current_edge)
+                        wire_edges.append(current_edge)
+                    if len(wire_edges) > 1:
+                        wires.append(topologic.Cluster.ByTopologies(wire_edges).SelfMerge())
+                    else:
+                        wires.append(wire_edges[0])
+                    wire_edges = []
+        if len(wires) < 1:
+            return [wire]
+        return wires
     
     @staticmethod
     def Square(origin: topologic.Vertex = None, size: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:

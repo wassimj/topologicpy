@@ -11,14 +11,6 @@ import numpy as np
 from numpy import arctan, pi, signbit
 from numpy.linalg import norm
 import math
-from scipy.spatial import ConvexHull
-'''
-try:
-    import ifcopenshell
-    import ifcopenshell.geom
-except:
-    raise Exception("Error: TopologyByImportedIFC: ifcopenshell is not present on your system. Install BlenderBIM or ifcopenshell to resolve.")
-'''
 
 class Topology():
     @staticmethod
@@ -1266,13 +1258,25 @@ class Topology():
             The created list of topologies.
         
         """
-        import ifcopenshell
-        import ifcopenshell.geom
         import multiprocessing
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
         import uuid
+        import sys
+        import subprocess
 
+        try:
+            import ifcopenshell
+            import ifcopenshell.geom
+        except:
+            call = [sys.executable, '-m', 'pip', 'install', 'ifcopenshell', '-t', sys.path[0]]
+            subprocess.run(call)
+            try:
+                import ifcopenshell
+                import ifcopenshell.geom
+            except:
+                print("Topology.ByImportedIFC - ERROR: Could not import ifcopenshell")
+        
         ifc_file = None
         try:
             ifc_file = ifcopenshell.open(path)
@@ -2085,6 +2089,20 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
+        import sys
+        import subprocess
+
+        try:
+            from scipy.spatial import ConvexHull
+        except:
+            call = [sys.executable, '-m', 'pip', 'install', 'scipy', '-t', sys.path[0]]
+            subprocess.run(call)
+            try:
+                from scipy.spatial import ConvexHull
+            except:
+                print("Topology.ConvexHull - ERROR: Could not import scipy. Returning None.")
+                return None
+        
         def convexHull3D(item, tolerance, option):
             if item:
                 vertices = []

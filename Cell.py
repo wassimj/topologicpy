@@ -1376,9 +1376,10 @@ class Cell(Topology):
         prism = Topology.Rotate(prism, origin, 0, 0, 1, phi)
         return prism
     
-    def Roof(face, degree=45, tolerance=0.001):
+    def Roof(face, degree=45, angTolerance=2, tolerance=0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+            This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
 
         Parameters
         ----------
@@ -1386,6 +1387,8 @@ class Cell(Topology):
             The input face.
         degree : float , optioal
             The desired angle in degrees of the roof. The default is 45.
+        angTolerance : float , optional
+            The desired angular tolerance. The default is 2. (This is set to a larger number as it was found to work better)
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
 
@@ -1408,7 +1411,7 @@ class Cell(Topology):
         from topologicpy.Helper import Helper
         import topologic
         import math
-
+        '''
         def nearest_vertex_2d(v, vertices, tolerance=0.001):
             for vertex in vertices:
                 x2 = Vertex.X(vertex)
@@ -1416,7 +1419,6 @@ class Cell(Topology):
                 temp_v = Vertex.ByCoordinates(x2, y2, Vertex.Z(v))
                 if Vertex.Distance(v, temp_v) <= tolerance:
                     return vertex
-            print("Returning None")
             return None
         
         if not isinstance(face, topologic.Face):
@@ -1428,19 +1430,10 @@ class Cell(Topology):
             return None
         flat_face = Face.Flatten(face)
         d = Topology.Dictionary(flat_face)
-        roof = Wire.Roof(flat_face, 0)
+        roof = Wire.Roof(flat_face, degree)
         if not roof:
             return None
-        roof2 = Wire.Roof(flat_face, degree)
-        if not roof2:
-            return None
-        br = Wire.BoundingRectangle(roof) #This works even if it is a Cluster not a Wire
-        br = Topology.Scale(br, Topology.Centroid(br), 1.5, 1.5, 1)
-        bf = Face.ByWire(br)
-        shell = Topology.Boolean(bf, roof, operation="slice")
-        if not shell:
-            return None
-        shell = Topology.SelfMerge(shell)
+        shell = Shell.Skeleton(flat_face)
         faces = Shell.Faces(shell)
         
         if not faces:
@@ -1454,7 +1447,7 @@ class Cell(Topology):
                 else:
                     triangles += [face]
 
-        roof_vertices = Topology.Vertices(roof2)
+        roof_vertices = Topology.Vertices(roof)
         flat_vertices = []
         for rv in roof_vertices:
             flat_vertices.append(Vertex.ByCoordinates(Vertex.X(rv), Vertex.Y(rv), 0))
@@ -1467,7 +1460,6 @@ class Cell(Topology):
                 triangles = [triangle]
             final_triangles += triangles
 
-        print("Length of Final Triangles", len(final_triangles))
         final_faces = []
         for triangle in final_triangles:
             face_vertices = Topology.Vertices(triangle)
@@ -1480,14 +1472,19 @@ class Cell(Topology):
                     top_vertices.append(sv)
             tri_face = Face.ByVertices(top_vertices)
             final_faces.append(tri_face)
-        final_faces.append(flat_face)
-
-        cell = Cell.ByFaces(final_faces, tolerance=tolerance)
+        '''
+        shell = Shell.Roof(face=face, degree=degree, angTolerance=angTolerance, tolerance=tolerance)
+        faces = Topology.Faces(shell) + [face]
+        cell = Cell.ByFaces(faces, tolerance=tolerance)
+        if not cell:
+            return None
+        return cell
+        '''
         if not cell:
             cell = Shell.ByFaces(final_faces, tolerance=tolerance)
             if not cell:
                 cell = Cluster.ByTopologies(final_faces)
-        cell = Topology.RemoveCoplanarFaces(cell, angTolerance=2)
+        cell = Topology.RemoveCoplanarFaces(cell, angTolerance=angTolerance)
         xTran = Dictionary.ValueAtKey(d,"xTran")
         yTran = Dictionary.ValueAtKey(d,"yTran")
         zTran = Dictionary.ValueAtKey(d,"zTran")
@@ -1497,7 +1494,7 @@ class Cell(Topology):
         cell = Topology.Rotate(cell, origin=Vertex.Origin(), x=0, y=0, z=1, degree=phi)
         cell = Topology.Translate(cell, xTran, yTran, zTran)
         return cell
-
+        '''
     @staticmethod
     def Sets(inputCells: list, superCells: list, tolerance: float = 0.0001) -> list:
         """

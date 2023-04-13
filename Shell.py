@@ -236,8 +236,6 @@ class Shell(Topology):
             A shell representing the delaunay triangulation of the input vertices.
 
         """
-        import scipy
-        from scipy.spatial import Delaunay
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
@@ -246,7 +244,20 @@ class Shell(Topology):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from random import sample
+        import sys
+        import subprocess
 
+        try:
+            from scipy.spatial import Delaunay
+        except:
+            call = [sys.executable, '-m', 'pip', 'install', 'scipy', '-t', sys.path[0]]
+            subprocess.run(call)
+            try:
+                from scipy.spatial import Delaunay
+            except:
+                print("Shell.Delaunay - ERROR: Could not import scipy. Returning None.")
+                return None
+        
         if not isinstance(vertices, list):
             return None
         vertices = [x for x in vertices if isinstance(x, topologic.Vertex)]
@@ -1013,6 +1024,117 @@ class Shell(Topology):
         shell = Topology.Rotate(shell, origin, 0, 0, 1, phi)
         return shell
 
+    def Roof(face, degree=45, angTolerance=2, tolerance=0.001):
+        """
+            Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+            This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        degree : float , optioal
+            The desired angle in degrees of the roof. The default is 45.
+        angTolerance : float , optional
+            The desired angular tolerance. The default is 2. (This is set to a larger number as it was found to work better)
+        tolerance : float , optional
+            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+
+        Returns
+        -------
+        topologic.Shell
+            The created roof.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import topologic
+        import math
+
+        def nearest_vertex_2d(v, vertices, tolerance=0.001):
+            for vertex in vertices:
+                x2 = Vertex.X(vertex)
+                y2 = Vertex.Y(vertex)
+                temp_v = Vertex.ByCoordinates(x2, y2, Vertex.Z(v))
+                if Vertex.Distance(v, temp_v) <= tolerance:
+                    return vertex
+            return None
+        
+        if not isinstance(face, topologic.Face):
+            return None
+        degree = abs(degree)
+        if degree >= 90-tolerance:
+            return None
+        if degree < tolerance:
+            return None
+        flat_face = Face.Flatten(face)
+        d = Topology.Dictionary(flat_face)
+        roof = Wire.Roof(flat_face, degree)
+        if not roof:
+            return None
+        shell = Shell.Skeleton(flat_face)
+        faces = Shell.Faces(shell)
+        
+        if not faces:
+            return None
+        triangles = []
+        for face in faces:
+            internalBoundaries = Face.InternalBoundaries(face)
+            if len(internalBoundaries) == 0:
+                if len(Topology.Vertices(face)) > 3:
+                    triangles += Face.Triangulate(face)
+                else:
+                    triangles += [face]
+
+        roof_vertices = Topology.Vertices(roof)
+        flat_vertices = []
+        for rv in roof_vertices:
+            flat_vertices.append(Vertex.ByCoordinates(Vertex.X(rv), Vertex.Y(rv), 0))
+
+        final_triangles = []
+        for triangle in triangles:
+            if len(Topology.Vertices(triangle)) > 3:
+                triangles = Face.Triangulate(triangle)
+            else:
+                triangles = [triangle]
+            final_triangles += triangles
+
+        final_faces = []
+        for triangle in final_triangles:
+            face_vertices = Topology.Vertices(triangle)
+            top_vertices = []
+            for sv in face_vertices:
+                temp = nearest_vertex_2d(sv, roof_vertices, tolerance=tolerance)
+                if temp:
+                    top_vertices.append(temp)
+                else:
+                    top_vertices.append(sv)
+            tri_face = Face.ByVertices(top_vertices)
+            final_faces.append(tri_face)
+
+        shell = Shell.ByFaces(final_faces, tolerance=tolerance)
+        if not shell:
+            shell = Cluster.ByTopologies(final_faces)
+        try:
+            shell = Topology.RemoveCoplanarFaces(shell, angTolerance=angTolerance)
+        except:
+            pass
+        xTran = Dictionary.ValueAtKey(d,"xTran")
+        yTran = Dictionary.ValueAtKey(d,"yTran")
+        zTran = Dictionary.ValueAtKey(d,"zTran")
+        phi = Dictionary.ValueAtKey(d,"phi")
+        theta = Dictionary.ValueAtKey(d,"theta")
+        shell = Topology.Rotate(shell, origin=Vertex.Origin(), x=0, y=1, z=0, degree=theta)
+        shell = Topology.Rotate(shell, origin=Vertex.Origin(), x=0, y=0, z=1, degree=phi)
+        shell = Topology.Translate(shell, xTran, yTran, zTran)
+        return shell
+    
     @staticmethod
     def SelfMerge(shell: topologic.Shell, angTolerance: float = 0.1) -> topologic.Face:
         """
@@ -1083,6 +1205,52 @@ class Shell(Topology):
         else:
             return None
 
+    def Skeleton(face, tolerance=0.001):
+        """
+            Creates a shell through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+            This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+
+        Returns
+        -------
+        topologic.Shell
+            The created straight skeleton.
+
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        import topologic
+        import math
+
+        if not isinstance(face, topologic.Face):
+            return None
+        roof = Wire.Skeleton(face)
+        if not roof:
+            return None
+        br = Wire.BoundingRectangle(roof) #This works even if it is a Cluster not a Wire
+        br = Topology.Scale(br, Topology.Centroid(br), 1.5, 1.5, 1)
+        bf = Face.ByWire(br)
+        large_shell = Topology.Boolean(bf, roof, operation="slice")
+        if not large_shell:
+            return None
+        faces = Topology.Faces(large_shell)
+        if not faces:
+            return None
+        final_faces = []
+        for f in faces:
+            internalBoundaries = Face.InternalBoundaries(f)
+            if len(internalBoundaries) == 0:
+                final_faces.append(f)
+        shell = Shell.ByFaces(final_faces)
+        return shell
+    
     @staticmethod
     def Vertices(shell: topologic.Shell) -> list:
         """
@@ -1123,7 +1291,6 @@ class Shell(Topology):
             A shell representing the voronoi partitioning of the input face.
 
         """
-        from scipy.spatial import Voronoi
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
@@ -1131,7 +1298,20 @@ class Shell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        import sys
+        import subprocess
 
+        try:
+            from scipy.spatial import Voronoi
+        except:
+            call = [sys.executable, '-m', 'pip', 'install', 'scipy', '-t', sys.path[0]]
+            subprocess.run(call)
+            try:
+                from scipy.spatial import Voronoi
+            except:
+                print("Shell.Voronoi - ERROR: Could not import scipy. Returning None.")
+                return None
+        
         if not isinstance(face, topologic.Face):
             cluster = Cluster.ByTopologies(vertices)
             br = Wire.BoundingRectangle(cluster, optimize=5)

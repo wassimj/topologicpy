@@ -1,16 +1,33 @@
-import sys, subprocess
+
+import topologicpy
+import topologic
+from topologicpy.Dictionary import Dictionary
+import os
+import random
+import time
+from datetime import datetime
+import copy
+import sys
+import subprocess
+
 try:
     import numpy as np
 except:
     call = [sys.executable, '-m', 'pip', 'install', 'numpy', '-t', sys.path[0]]
     subprocess.run(call)
-    import numpy as np
+    try:
+        import numpy as np
+    except:
+        print("DGL - Error: Could not import numpy.")
 try:
     import pandas as pd
 except:
     call = [sys.executable, '-m', 'pip', 'install', 'pandas', '-t', sys.path[0]]
     subprocess.run(call)
-    import pandas as pd
+    try:
+        import pandas as pd
+    except:
+        print("DGL - Error: Could not import pandas")
 try:
     import torch
     import torch.nn as nn
@@ -20,11 +37,14 @@ try:
 except:
     call = [sys.executable, '-m', 'pip', 'install', 'torch', '-t', sys.path[0]]
     subprocess.run(call)
-    import torch
-    import torch.nn as nn
-    import torch.nn.functional as F
-    from torch.utils.data.sampler import SubsetRandomSampler
-    from torch.utils.data import DataLoader, ConcatDataset
+    try:
+        import torch
+        import torch.nn as nn
+        import torch.nn.functional as F
+        from torch.utils.data.sampler import SubsetRandomSampler
+        from torch.utils.data import DataLoader, ConcatDataset
+    except:
+        print("DGL - Error: Could not import torch")
 try:
     import dgl
     from dgl.data import DGLDataset
@@ -34,10 +54,13 @@ try:
 except:
     call = [sys.executable, '-m', 'pip', 'install', 'dgl', 'dglgo', '-f', 'https://data.dgl.ai/wheels/repo.html', '--upgrade', '-t', sys.path[0]]
     subprocess.run(call)
-    import dgl
-    from dgl.data import DGLDataset
-    from dgl.nn import GraphConv
-    from dgl import save_graphs, load_graphs
+    try:
+        import dgl
+        from dgl.data import DGLDataset
+        from dgl.nn import GraphConv
+        from dgl import save_graphs, load_graphs
+    except:
+        print("DGL - Error: Could not import dgl")
 try:
     import sklearn
     from sklearn.model_selection import KFold
@@ -45,26 +68,21 @@ try:
 except:
     call = [sys.executable, '-m', 'pip', 'install', 'scikit-learn', '-t', sys.path[0]]
     subprocess.run(call)
-    import sklearn
-    from sklearn.model_selection import KFold
-    from sklearn.metrics import accuracy_score
+    try:
+        import sklearn
+        from sklearn.model_selection import KFold
+        from sklearn.metrics import accuracy_score
+    except:
+        print("DGL - Error: Could not import sklearn")
 try:
     from tqdm.auto import tqdm
 except:
     call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
     subprocess.run(call)
-    from tqdm.auto import tqdm
-
-
-import topologicpy
-import topologic
-from topologicpy.Dictionary import Dictionary
-import os
-
-import random
-import time
-from datetime import datetime
-import copy
+    try:
+        from tqdm.auto import tqdm
+    except:
+        print("DGL - Error: Could not import tqdm")
 
 class _Dataset(DGLDataset):
     def __init__(self, graphs, labels, node_attr_key):

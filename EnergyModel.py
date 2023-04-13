@@ -2,21 +2,37 @@ import topologicpy
 import topologic
 from topologicpy.Topology import Topology
 from topologicpy.Dictionary import Dictionary
-import openstudio
-openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+
 import math
 from collections import OrderedDict
 import os
 from os.path import exists
 import json
 from datetime import datetime
+import sys
+import subprocess
 try:
     from tqdm.auto import tqdm
 except:
     import sys, subprocess
     call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
     subprocess.run(call)
-    from tqdm.auto import tqdm
+    try:
+        from tqdm.auto import tqdm
+    except:
+        print("EnergyModel - ERROR: Could not import tqdm")
+
+try:
+    import openstudio
+    openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+except:
+    call = [sys.executable, '-m', 'pip', 'install', 'openstudio', '-t', sys.path[0]]
+    subprocess.run(call)
+    try:
+        import openstudio
+        openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+    except:
+        print("EnergyModel - ERROR: Could not import openstudio")
 
 class EnergyModel:
     @staticmethod

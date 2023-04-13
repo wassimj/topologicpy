@@ -5,7 +5,6 @@ from topologicpy.Topology import Topology
 from topologicpy.Aperture import Aperture
 import random
 import time
-import networkx as nx
 
 class Graph:
     @staticmethod
@@ -2437,10 +2436,21 @@ class Graph:
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         import random
-
+        import sys
+        import subprocess
         if not isinstance(graph, topologic.Graph):
             return None
-        
+        try:
+            import networkx as nx
+        except:
+            call = [sys.executable, '-m', 'pip', 'install', 'networkx', '-t', sys.path[0]]
+            subprocess.run(call)
+            try:
+                import networkx as nx
+            except:
+                print("Graph.NetworkXGraph - ERROR: Could not import networkx. Returning None.")
+                return None
+
         nxGraph = nx.Graph()
         vertices = Graph.Vertices(graph)
         order = len(vertices)

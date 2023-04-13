@@ -6,9 +6,20 @@ Implementation of the straight skeleton algorithm as described by Felkel and Obd
 
 import logging
 import heapq
-from euclid3 import *
 from itertools import *
 from collections import namedtuple
+import sys
+import subprocess
+
+try:
+	from euclid3 import *
+except:
+	call = [sys.executable, '-m', 'pip', 'install', 'euclid3', '-t', sys.path[0]]
+	subprocess.run(call)
+	try:
+		from euclid3 import *
+	except:
+		print("Polyskel - ERROR: Could not import euclid3.")
 
 log = logging.getLogger("__name__")
 
