@@ -34,6 +34,39 @@ class Vector(list):
         return round(math.degrees(np.arctan2(sinang, cosang)), mantissa)
 
     @staticmethod
+    def ByAzimuthAltitude(azimuth, altitude, north=0, reverse=False):
+        """
+        Returns the vector specified by the input azimuth and altitude angles.
+
+        Parameters
+        ----------
+        azimuth : float
+            The input azimuth angle in degrees. The angle is computed in an anti-clockwise fashion. 0 is considered North, 90 East, 180 is South, 270 is West
+        altitude : float
+            The input altitude angle in degrees from the XY plane. Positive is above the XY plane. Negative is below the XY plane
+        north : float , optional
+            The angle of the north direction in degrees measured from positive Y-axis. The angle is added in anti-clockwise fashion. 0 is considered along the positive Y-axis,
+            90 is along the positive X-axis, 180 is along the negative Y-axis, and 270 along the negative Y-axis.
+        reverse : bool , optional
+            If set to True the direction of the vector is computed from the end point towards the origin. Otherwise, it is computed from the origin towards the end point.
+
+        Returns
+        -------
+        list
+            The resulting vector.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        e = Edge.ByVertices([Vertex.Origin(), Vertex.ByCoordinates(0,1,0)])
+        e = Topology.Rotate(e, Vertex.Origin(), 1, 0, 0, altitude)
+        e = Topology.Rotate(e, Vertex.Origin(), 0, 0, 1, -azimuth-north)
+        if reverse:
+            return Vector.Reverse(Edge.Direction(e))
+        return Edge.Direction(e)
+    
+    @staticmethod
     def ByCoordinates(x, y, z):
         """
         Creates a vector by the specified x, y, z inputs.

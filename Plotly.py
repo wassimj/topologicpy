@@ -1211,17 +1211,17 @@ class Plotly:
         if xAxis:
             xEdge = Edge.ByVertices([v0,v1])
             xWire = Wire.ByEdges([xEdge])
-            xData = Plotly.DataByTopology(xWire, edgeColor="red", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLabel="X-Axis")
+            xData = Plotly.DataByTopology(xWire, edgeColor="red", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="X-Axis")
             data = data + xData
         if yAxis:
             yEdge = Edge.ByVertices([v0,v2])
             yWire = Wire.ByEdges([yEdge])
-            yData = Plotly.DataByTopology(yWire, edgeColor="green", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLabel="Y-Axis")
+            yData = Plotly.DataByTopology(yWire, edgeColor="green", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="Y-Axis")
             data = data + yData
         if zAxis:
             zEdge = Edge.ByVertices([v0,v3])
             zWire = Wire.ByEdges([zEdge])
-            zData = Plotly.DataByTopology(zWire, edgeColor="blue", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLabel="Z-Axis")
+            zData = Plotly.DataByTopology(zWire, edgeColor="blue", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="Z-Axis")
             data = data + zData
 
         figure = go.Figure(data=data)
