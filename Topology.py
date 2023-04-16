@@ -60,10 +60,12 @@ class Topology():
             return None
 
         if not isinstance(topology, topologic.Topology):
+            print("Topology.AddApertures - Error: the input topology is not a topologic.Topology. Returning None.")
             return None
         if not apertures:
             return topology
         if not isinstance(apertures, list):
+            print("Topology.AddApertures - Error: the input apertures is not a list. Returning None.")
             return None
         apertures = [x for x in apertures if isinstance(x , topologic.Topology)]
         if len(apertures) < 1:
@@ -71,6 +73,7 @@ class Topology():
         if not subTopologyType:
             subTopologyType = "self"
         if not subTopologyType.lower() in ["self", "cell", "face", "edge", "vertex"]:
+            print("Topology.AddApertures - Error: the input subtopology type is not a recognized type. Returning None.")
             return None
         if subTopologyType.lower() == "self":
             subTopologies = [topology]

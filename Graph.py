@@ -253,6 +253,104 @@ class Graph:
         _ = graph.AllPaths(vertexA, vertexB, True, timeLimit, paths)
         return paths
 
+    @staticmethod
+    def BetweenessCentrality(graph, vertices=None, sources=None, destinations=None, tolerance=0.001):
+        """
+            Returns the betweeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Centrality.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertices : list , optional
+            The input list of vertices. The default is None which means all vertices in the input graph are considered.
+        sources : list , optional
+            The input list of source vertices. The default is None which means all vertices in the input graph are considered.
+        destinations : list , optional
+            The input list of destination vertices. The default is None which means all vertices in the input graph are considered.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The betweeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
+
+        """
+        from topologicpy.Vertex import Vertex
+        import sys
+        import subprocess
+
+        def betweeness(vertices, topologies, tolerance=0.001):
+            returnList = [0] * len(vertices)
+            for topology in topologies:
+                t_vertices = Topology.Vertices(topology)
+                for t_v in t_vertices:
+                    index = Vertex.Index(t_v, vertices, strict=False, tolerance=tolerance)
+                    if not index == None:
+                        returnList[index] = returnList[index]+1
+            return returnList
+
+        try:
+            from tqdm.auto import tqdm
+        except:
+            call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
+            subprocess.run(call)
+            try:
+                from tqdm.auto import tqdm
+            except:
+                print("DGL - Error: Could not import tqdm")
+
+        if not isinstance(graph, topologic.Graph):
+            return None
+        graphVertices = Graph.Vertices(graph)
+        if not isinstance(vertices, list):
+            vertices = graphVertices
+        else:
+            vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) < 1:
+            return None
+        if not isinstance(sources, list):
+            sources = graphVertices
+        else:
+            sources = [v for v in sources if isinstance(v, topologic.Vertex)]
+        if len(sources) < 1:
+            return None
+        if not isinstance(destinations, list):
+            destinations = graphVertices
+        else:
+            destinations = [v for v in destinations if isinstance(v, topologic.Vertex)]
+        if len(destinations) < 1:
+            return None
+        
+        paths = []
+        try:
+            for so in tqdm(sources, desc="Computing Shortest Paths", leave=False):
+                v1 = Graph.NearestVertex(graph, so)
+                for si in destinations:
+                    v2 = Graph.NearestVertex(graph, si)
+                    if not v1 == v2:
+                        path = Graph.ShortestPath(graph, v1, v2)
+                        if path:
+                            paths.append(path)
+        except:
+            for so in sources:
+                v1 = Graph.NearestVertex(graph, so)
+                for si in destinations:
+                    v2 = Graph.NearestVertex(graph, si)
+                    if not v1 == v2:
+                        path = Graph.ShortestPath(graph, v1, v2)
+                        if path:
+                            paths.append(path)
+
+        #Topology.Show(cluster)
+        values = betweeness(vertices, paths, tolerance=tolerance)
+        minValue = min(values)
+        maxValue = max(values)
+        size = maxValue - minValue
+        values = [(v-minValue)/size for v in values]
+        return values
+
     '''
     @staticmethod
     def ByImportedDGCNN(file_path, key):
@@ -1867,6 +1965,80 @@ class Graph:
         return topologic.Graph.ByVerticesEdges(vertices, edges)
     
     @staticmethod
+    def ClosenessCentrality(graph, vertices=None, tolerance = 0.0001):
+        """
+        Return the closeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the closeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Centrality.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertices : list , optional
+            The input list of vertices. The default is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The closeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
+
+        """
+        import sys
+        import subprocess
+
+        try:
+            from tqdm.auto import tqdm
+        except:
+            call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
+            subprocess.run(call)
+            try:
+                from tqdm.auto import tqdm
+            except:
+                print("DGL - Error: Could not import tqdm")
+
+        if not isinstance(graph, topologic.Graph):
+            return None
+        graphVertices = Graph.Vertices(graph)
+        if not isinstance(vertices, list):
+            vertices = graphVertices
+        else:
+            vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) < 1:
+            return None
+        n = len(graphVertices)
+
+        returnList = []
+        try:
+            for va in tqdm(vertices, desc="Computing Closeness Centrality", leave=False):
+                top_dist = 0
+                for vb in graphVertices:
+                    if topologic.Topology.IsSame(va, vb):
+                        d = 0
+                    else:
+                        d = Graph.TopologicalDistance(graph, va, vb, tolerance)
+                    top_dist += d
+                if top_dist == 0:
+                    returnList.append(0)
+                else:
+                    returnList.append((n-1)/top_dist)
+        except:
+            print("Could not use tqdm")
+            for va in vertices:
+                top_dist = 0
+                for vb in graphVertices:
+                    if topologic.Topology.IsSame(va, vb):
+                        d = 0
+                    else:
+                        d = Graph.TopologicalDistance(graph, va, vb, tolerance)
+                    top_dist += d
+                if top_dist == 0:
+                    returnList.append(0)
+                else:
+                    returnList.append((n-1)/top_dist)
+        return returnList
+
+    @staticmethod
     def Connect(graph, verticesA, verticesB, tolerance=0.0001):
         """
         Connects the two lists of input vertices.
@@ -2146,6 +2318,353 @@ class Graph:
             return list(dict.fromkeys(edges)) # remove duplicates
         return []
 
+    @staticmethod
+    def ExportToCSV_GC(graphs, graphLabels, graphsPath, edgesPath, nodesPath, graphIDHeader="graph_id", graphLabelHeader="label",graphNumNodesHeader="num_nodes",edgeSRCHeader="src", edgeDSTHeader="dst", edgeLabelHeader="label", edgeLabelKey="label", defaultEdgeLabel=0, nodeLabelHeader="label", nodeLabelKey="label", defaultNodeLabel=0, overwrite=False):
+        """
+        Exports the input list of graphs into a set of CSV files compatible with DGL for Graph Classification.
+
+        Parameters
+        ----------
+        graphs : list
+            The input list of graphs.
+        graphLabels : list
+            The input list of graph labels. This must be list of ints where the minimum must be 0 and the maximum must be n where n is the number of graph categories.
+        graphsPaths : str
+            The desired path to the output graphs CSV file.
+        edgesPath : str
+            The desired path to the output edges CSV file.
+        nodesPath : str
+            The desired path to the output nodes CSV file.
+        graphIDHeader : str , optional
+            The desired graph ID column header. The default is "graph_id".
+        graphLabelHeader : str , optional
+            The desired graph label column header. The default is "label".
+        graphNumNodesHeader : str , optional
+            The desired graph number of nodes column header. The default is "num_nodes".
+        edgeSRCHeader : str , optional
+            The desired edge source column header. The default is "src".
+        edgeDSTHeader : str , optional
+            The desired edge destination column header. The default is "dst".
+        nodeLabelHeader : str , optional
+            The desired node label column header. The default is "label".
+        nodeLabelKey : str , optional
+            The node label dictionary key saved in each graph vertex. The default is "label".
+        defaultNodeLabel : int , optional
+            The default node label to use if no node label is found. The default is 0.
+        overwrite : bool , optional
+            If set to True, any existing files are overwritten. Otherwise, the input list of graphs is appended to the end of each file. The default is False.
+
+        Returns
+        -------
+        bool
+            True if the graphs have been successfully exported. False otherwise.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+        import random
+        import pandas as pd
+
+        if not isinstance(graphs, list):
+            print("Graph.ExportToCSV - Error: The input list of graphs is not a list. Returning None.")
+            return None
+        
+        for graph_index, graph in enumerate(graphs):
+            graph_label = graphLabels[graph_index]
+            # Export Graph Properties
+            vertices = Graph.Vertices(graph)
+            # Shuffle the vertices
+            vertices = random.sample(vertices, len(vertices))
+            graph_num_nodes = len(vertices)
+            if overwrite == False:
+                graphs = pd.read_csv(graphsPath)
+                max_id = max(list(graphs[graphIDHeader]))
+                graph_id = max_id + graph_index + 1
+            else:
+                graph_id = graph_index
+            data = [[graph_id], [graph_label], [graph_num_nodes]]
+            data = Helper.Iterate(data)
+            data = Helper.Transpose(data)
+            df = pd.DataFrame(data, columns= [graphIDHeader, graphLabelHeader, graphNumNodesHeader])
+            if overwrite == False:
+                df.to_csv(graphsPath, mode='a', index = False, header=False)
+            else:
+                if graph_index == 0:
+                    df.to_csv(graphsPath, mode='w+', index = False, header=True)
+                else:
+                    df.to_csv(graphsPath, mode='a', index = False, header=False)
+
+            # Export Edge Properties
+            edge_src = []
+            edge_dst = []
+            edge_graph_id = [] #Repetitive list of graph_id for each edge
+            node_data = []
+            node_columns = [graphIDHeader, nodeLabelHeader, "X", "Y", "Z"]
+            # All keys should be the same for all vertices, so we can get them from the first vertex
+            d = Topology.Dictionary(vertices[0])
+            keys = Dictionary.Keys(d)
+            for key in keys:
+                if key != nodeLabelKey: #We have already saved that in its own column
+                    node_columns.append(key)
+            for i, v in enumerate(vertices):
+                # Might as well get the node labels since we are iterating through the vertices
+                d = Topology.Dictionary(v)
+                vLabel = Dictionary.ValueAtKey(d, nodeLabelKey)
+                if not(vLabel):
+                    vLabel = defaultNodeLabel		
+                single_node_data = [graph_id, vLabel, round(float(v.X()),5), round(float(v.Y()),5), round(float(v.Z()),5)]
+                keys = d.Keys()
+                for key in keys:
+                    if key != nodeLabelKey and (key in node_columns):
+                        value = Dictionary.ValueAtKey(d, key)
+                        if not value:
+                            value = 'None'
+                        single_node_data.append(value)
+                node_data.append(single_node_data)
+                av = Graph.AdjacentVertices(graph, v)
+                for k in range(len(av)):
+                    vi = Vertex.Index(av[k], vertices)
+                    edge_graph_id.append(graph_id)
+                    edge_src.append(i)
+                    edge_dst.append(vi)
+            data = [edge_graph_id, edge_src, edge_dst]
+            data = Helper.Iterate(data)
+            data = Helper.Transpose(data)
+            df = pd.DataFrame(data, columns= [graphIDHeader, edgeSRCHeader, edgeDSTHeader])
+            if overwrite == False:
+                df.to_csv(edgesPath, mode='a', index = False, header=False)
+            else:
+                if graph_index == 0:
+                    df.to_csv(edgesPath, mode='w+', index = False, header=True)
+                else:
+                    df.to_csv(edgesPath, mode='a', index = False, header=False)
+
+            # Export Node Properties
+            df = pd.DataFrame(node_data, columns= node_columns)
+
+            if overwrite == False:
+                df.to_csv(nodesPath, mode='a', index = False, header=False)
+            else:
+                if graph_index == 0:
+                    df.to_csv(nodesPath, mode='w+', index = False, header=True)
+                else:
+                    df.to_csv(nodesPath, mode='a', index = False, header=False)
+        return True
+    
+    @staticmethod
+    def ExportToCSV_NC(graphs, graphLabels, path, edgeFeaturesKeys=[], nodeFeaturesKeys=[], graphIDHeader="graph_id", graphLabelHeader="label",graphNumNodesHeader="num_nodes", edgeLabelKey="label", defaultEdgeLabel=0, edgeSRCHeader="src_id", edgeDSTHeader="dst_id", edgeLabelHeader="label", edgeFeaturesHeader="feat", nodeLabelKey="label", defaultNodeLabel=0, nodeIDHeader="node_id", nodeLabelHeader="label", nodeFeaturesHeader="feat", trainRatio=0.8, validateRatio=0.1, testRatio=0.1, overwrite=False):
+        """
+        Exports the input list of graphs into a set of CSV files compatible with DGL for Graph Classification.
+
+        Parameters
+        ----------
+        graphs : list
+            The input list of graphs.
+        graphLabels : list
+            The input list of graph labels. This must be list of ints where the minimum must be 0 and the maximum must be n where n is the number of graph categories.
+        path : str
+            The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
+        edgeFeaturesKeys : list , optional
+            The list of features keys saved in the dicitonaries of edges. The default is [].
+        nodesFeaturesKeys : list , optional
+            The list of features keys saved in the dicitonaries of nodes. The default is [].
+        graphIDHeader : str , optional
+            The desired graph ID column header. The default is "graph_id".
+        graphLabelHeader : str , optional
+            The desired graph label column header. The default is "label".
+        graphNumNodesHeader : str , optional
+            The desired graph number of nodes column header. The default is "num_nodes".
+        edgeLabelKey : str , optional
+            The edge label dictionary key saved in each graph vertex. The default is "label".
+        defaultEdgeLabel : int , optional
+            The default nodedge label to use if no edge label is found. The default is 0.
+        edgeSRCHeader : str , optional
+            The desired edge source column header. The default is "src".
+        edgeDSTHeader : str , optional
+            The desired edge destination column header. The default is "dst".
+        edgeFeaturesHeader : str , optional
+            The desired edge features column header. The default is "feat".
+        nodeLabelKey : str , optional
+            The node label dictionary key saved in each graph vertex. The default is "label".
+        defaultNodeLabel : int , optional
+            The default node label to use if no node label is found. The default is 0.
+        nodeIDHeader : str , optional
+            The desired node ID column header. The default is "node_id".
+        nodeLabelHeader : str , optional
+            The desired node label column header. The default is "label".
+        nodeFeaturesHeader : str , optional
+            The desired node features column header. The default is "feat".
+        trainRatio : float , optional
+            The desired ratio of the data to use for training. The number must be between 0 and 1. The default is 0.8 which means 80% of the data will be used for training.
+        validateRatio : float , optional
+            The desired ratio of the data to use for validation. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for validation.
+        testRatio : float , optional
+            The desired ratio of the data to use for testing. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for testing.
+        overwrite : bool , optional
+            If set to True, any existing files are overwritten. Otherwise, the input list of graphs is appended to the end of each file. The default is False.
+
+        Returns
+        -------
+        bool
+            True if the graphs have been successfully exported. False otherwise.
+        
+        """
+
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+        import os
+        import math
+        import random
+        import pandas as pd
+
+        if not isinstance(graphs, list):
+            print("Graph.ExportToCSV - Error: The input list of graphs is not a list. Returning None.")
+            return None
+        if abs(trainRatio  + validateRatio + testRatio - 1) > 0.001:
+            print("Graph.ExportToCSV - Error: The train, validate, test ratios do not add up to 1. Returning None")
+            return None
+        for graph_index, graph in enumerate(graphs):
+            graph_label = graphLabels[graph_index]
+            # Export Graph Properties
+            vertices = Graph.Vertices(graph)
+            # Shuffle the vertices
+            vertices = random.sample(vertices, len(vertices))
+            train_max = math.floor(float(len(vertices))*trainRatio)
+            validate_max = math.floor(float(len(vertices))*validateRatio)
+            test_max = len(vertices) - train_max - validate_max
+            graph_num_nodes = len(vertices)
+            if overwrite == False:
+                graphs = pd.read_csv(os.path.join(path,"graphs.csv"))
+                max_id = max(list(graphs[graphIDHeader]))
+                graph_id = max_id + graph_index + 1
+            else:
+                graph_id = graph_index
+            data = [[graph_id], [graph_label], [graph_num_nodes]]
+            data = Helper.Iterate(data)
+            data = Helper.Transpose(data)
+            df = pd.DataFrame(data, columns= [graphIDHeader, graphLabelHeader, graphNumNodesHeader])
+            if overwrite == False:
+                df.to_csv(os.path.join(path, "graphs.csv"), mode='a', index = False, header=False)
+            else:
+                if graph_index == 0:
+                    df.to_csv(os.path.join(path, "graphs.csv"), mode='w+', index = False, header=True)
+                else:
+                    df.to_csv(os.path.join(path, "graphs.csv"), mode='a', index = False, header=False)
+
+            # Export Edge Properties
+            edge_graph_id = [] #Repetitive list of graph_id for each edge
+            edge_src = []
+            edge_dst = []
+            edge_lab = []
+            edge_feat = []
+            node_graph_id = [] #Repetitive list of graph_id for each vertex/node
+            node_labels = []
+            x_list = []
+            y_list = []
+            z_list = []
+            node_data = []
+            node_columns = [graphIDHeader, nodeIDHeader, nodeLabelHeader, "train_mask", "val_mask", "test_mask", nodeFeaturesHeader, "X", "Y", "Z"]
+            # All keys should be the same for all vertices, so we can get them from the first vertex
+            d = Topology.Dictionary(vertices[0])
+            '''
+            keys = d.Keys()
+            for key in keys:
+                if key != node_label_key: #We have already saved that in its own column
+                    node_columns.append(key)
+            '''
+            train = 0
+            test = 0
+            validate = 0
+            
+            for i, v in enumerate(vertices):
+                if train < train_max:
+                    train_mask = True
+                    validate_mask = False
+                    test_mask = False
+                    train = train + 1
+                elif validate < validate_max:
+                    train_mask = False
+                    validate_mask = True
+                    test_mask = False
+                    validate = validate + 1
+                elif test < test_max:
+                    train_mask = False
+                    validate_mask = False
+                    test_mask = True
+                    test = test + 1
+                else:
+                    train_mask = True
+                    validate_mask = False
+                    test_mask = False
+                    train = train + 1
+                # Might as well get the node labels since we are iterating through the vertices
+                d = Topology.Dictionary(v)
+                vLabel = Dictionary.ValueAtKey(d, nodeLabelKey)
+                if vLabel == None:
+                    vLabel = defaultNodeLabel
+                # Might as well get the features since we are iterating through the vertices
+                features = ""
+                node_features_keys = Helper.Flatten(nodeFeaturesKeys)
+                for node_feature_key in node_features_keys:
+                    if len(features) > 0:
+                        features = features + ","+ str(round(float(Dictionary.ValueAtKey(d, node_feature_key)),5))
+                    else:
+                        features = str(round(float(Dictionary.ValueAtKey(d, node_feature_key)),5))
+                single_node_data = [graph_id, i, vLabel, train_mask, validate_mask, test_mask, features, round(float(Vertex.X(v)),5), round(float(Vertex.Y(v)),5), round(float(Vertex.Z(v)),5)]
+                node_data.append(single_node_data)
+                av = Graph.AdjacentVertices(graph, v)
+                for k in range(len(av)):
+                    vi = Vertex.Index(av[k], vertices)
+                    edge_graph_id.append(graph_id)
+                    edge_src.append(i)
+                    edge_dst.append(vi)
+                    edge = graph.Edge(v, av[k], 0.0001)
+                    ed = Topology.Dictionary(edge)
+                    edge_label = Dictionary.ValueAtKey(d, edgeLabelKey)
+                    if edge_label == None:
+                        edge_label = defaultEdgeLabel
+                    edge_lab.append(edge_label)
+                    edge_features = ""
+                    edge_features_keys = Helper.Flatten(edgeFeaturesKeys)
+                    for edge_feature_key in edge_features_keys:
+                        if len(edge_features) > 0:
+                            edge_features = edge_features + ","+ str(round(float(Dictionary.ValueAtKey(ed, edge_feature_key)),5))
+                        else:
+                            edge_features = str(round(float(Dictionary.ValueAtKey(ed, edge_feature_key)),5))
+                    edge_feat.append(edge_features)
+            data = [edge_graph_id, edge_src, edge_dst, edge_lab, edge_feat]
+            data = Helper.Iterate(data)
+            data = Helper.Transpose(data)
+            df = pd.DataFrame(data, columns= [graphIDHeader, edgeSRCHeader, edgeDSTHeader, edgeLabelHeader, edgeFeaturesHeader])
+            if overwrite == False:
+                df.to_csv(os.path.join(path, "edges.csv"), mode='a', index = False, header=False)
+            else:
+                if graph_index == 0:
+                    df.to_csv(os.path.join(path, "edges.csv"), mode='w+', index = False, header=True)
+                else:
+                    df.to_csv(os.path.join(path, "edges.csv"), mode='a', index = False, header=False)
+
+            # Export Node Properties
+            df = pd.DataFrame(node_data, columns= node_columns)
+
+            if overwrite == False:
+                df.to_csv(os.path.join(path, "nodes.csv"), mode='a', index = False, header=False)
+            else:
+                if graph_index == 0:
+                    df.to_csv(os.path.join(path, "nodes.csv"), mode='w+', index = False, header=True)
+                else:
+                    df.to_csv(os.path.join(path, "nodes.csv"), mode='a', index = False, header=False)
+        # Write out the meta.yaml file
+        yaml_file = open(os.path.join(path,"meta.yaml"), "w")
+        yaml_file.write('dataset_name: topologic_dataset\nedge_data:\n- file_name: edges.csv\nnode_data:\n- file_name: nodes.csv\ngraph_data:\n  file_name: graphs.csv')
+        yaml_file.close()
+        return True
+    
     @staticmethod
     def IsBipartite(graph, tolerance=0.0001):
         """
@@ -2918,7 +3437,18 @@ class Graph:
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-
+        import sys
+        import subprocess
+        try:
+            from tqdm.auto import tqdm
+        except:
+            call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
+            subprocess.run(call)
+            try:
+                from tqdm.auto import tqdm
+            except:
+                print("Graph.VisibilityGraph - Error: Could not import tqdm")
+        
         def addEdge(edge, edges, viewpointsA, viewpointsB, tolerance=0.0001):
             # Add edge to edges only if its end points are in vertices
             sv = Edge.StartVertex(edge)
@@ -2960,21 +3490,38 @@ class Graph:
             for j in range(max(len(viewpointsA), len(viewpointsB))):
                 tempRow.append(0)
             matrix.append(tempRow)
-        for i in range(len(viewpointsA)):
-            for j in range(len(viewpointsB)):
-                if not Topology.IsSame(viewpointsA[i], viewpointsB[j]) and matrix[i][j] == 0:
-                    matrix[i][j] = 1
-                    matrix[j][i] = 1
-                    e = Edge.ByVertices([viewpointsA[i], viewpointsB[j]])
-                    if e:
-                        e = Topology.Boolean(e, boundaryFace, "intersect", False)
-                        if isinstance(e, topologic.Edge):
-                            edges = addEdge(e, edges, viewpointsA, viewpointsB, 0.0001)
-                        elif isinstance(e, topologic.Cluster):
-                            tempEdges = Cluster.Edges(e)
-                            if tempEdges:
-                                for tempEdge in tempEdges:
-                                    edges = addEdge(tempEdge, edges, viewpointsA, viewpointsB, 0.0001)
+        try:
+            for i in tqdm(range(len(viewpointsA)), desc="Computing Visibility Graph", leave=False):
+                for j in range(len(viewpointsB)):
+                    if not Topology.IsSame(viewpointsA[i], viewpointsB[j]) and matrix[i][j] == 0:
+                        matrix[i][j] = 1
+                        matrix[j][i] = 1
+                        e = Edge.ByVertices([viewpointsA[i], viewpointsB[j]])
+                        if e:
+                            e = Topology.Boolean(e, boundaryFace, "intersect", False)
+                            if isinstance(e, topologic.Edge):
+                                edges = addEdge(e, edges, viewpointsA, viewpointsB, 0.0001)
+                            elif isinstance(e, topologic.Cluster):
+                                tempEdges = Cluster.Edges(e)
+                                if tempEdges:
+                                    for tempEdge in tempEdges:
+                                        edges = addEdge(tempEdge, edges, viewpointsA, viewpointsB, 0.0001)
+        except:
+            for i in range(len(viewpointsA)):
+                for j in range(len(viewpointsB)):
+                    if not Topology.IsSame(viewpointsA[i], viewpointsB[j]) and matrix[i][j] == 0:
+                        matrix[i][j] = 1
+                        matrix[j][i] = 1
+                        e = Edge.ByVertices([viewpointsA[i], viewpointsB[j]])
+                        if e:
+                            e = Topology.Boolean(e, boundaryFace, "intersect", False)
+                            if isinstance(e, topologic.Edge):
+                                edges = addEdge(e, edges, viewpointsA, viewpointsB, 0.0001)
+                            elif isinstance(e, topologic.Cluster):
+                                tempEdges = Cluster.Edges(e)
+                                if tempEdges:
+                                    for tempEdge in tempEdges:
+                                        edges = addEdge(tempEdge, edges, viewpointsA, viewpointsB, 0.0001)
         cluster = Cluster.ByTopologies(viewpointsA+viewpointsB)
         cluster = Cluster.SelfMerge(cluster)
         viewpoints = Cluster.Vertices(cluster)

@@ -52,11 +52,13 @@ class EnergyModel:
 
         """
         if not path:
+            print("EnergyModel.ByImportedOSM - Error: The input path is not valid. Returning None.")
             return None
         translator = openstudio.osversion.VersionTranslator()
         osmPath = openstudio.openstudioutilitiescore.toPath(path)
         osModel = translator.loadModel(osmPath)
         if osModel.isNull():
+            print("EnergyModel.ByImportedOSM - Error: The openstudio model is null. Returning None.")
             return None
         else:
             osModel = osModel.get()
@@ -163,6 +165,7 @@ class EnergyModel:
         osmFile = openstudio.openstudioutilitiescore.toPath(osModelPath)
         osModel = translator.loadModel(osmFile)
         if osModel.isNull():
+            print("EnergyModel.ByTopology - Error: The openstudio model is null. Returning None.")
             return None
         else:
             osModel = osModel.get()
@@ -176,7 +179,7 @@ class EnergyModel:
             for ddy in ddyModel.getObjectsByType(openstudio.IddObjectType("OS:SizingPeriod:DesignDay")):
                 osModel.addObject(ddy.clone())
         else:
-            print("Could not load the DesignDay file")
+            print("EnergyModel.ByTopology - Error: The ddy file is not initialized. Returning None.")
             return None
 
         osBuilding = osModel.getBuilding()
@@ -464,6 +467,7 @@ class EnergyModel:
         if ext.lower() != ".xml":
             path = path+".xml"
         if(exists(path) and (overwrite == False)):
+            print("EnergyModel.ExportToGbXML - Error: Could not export the file because it already exists and overwrite is set to False. Returning None.")
             return None
         return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, openstudio.openstudioutilitiescore.toPath(path))
 
@@ -993,6 +997,7 @@ class EnergyModel:
         if (units.is_initialized()):
             units = units.get()
         else:
+            print("EnergyModel.Units - Error: Could not retrieve the units. Returning None.")
             return None
         return units
     

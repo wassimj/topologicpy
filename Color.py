@@ -44,7 +44,6 @@ class Color:
             cv = ColorscaleValidator("colorscale", "")
             # colorscale will be a list of lists: [[loc1, "rgb1"], [loc2, "rgb2"], ...] 
             colorscale = cv.validate_coerce(colorscale_name)
-            
             if hasattr(loc, "__iter__"):
                 return [get_continuous_color(colorscale, x) for x in loc]
             color = get_continuous_color(colorscale, loc)
@@ -77,6 +76,7 @@ class Color:
             :return: color in rgb string format
             :rtype: str
             """
+
             if len(colorscale) < 1:
                 raise ValueError("colorscale must have at least one color")
             if intermed <= 0 or len(colorscale) == 1:
