@@ -351,68 +351,66 @@ class Graph:
         values = [(v-minValue)/size for v in values]
         return values
 
-    '''
+
     @staticmethod
-    def ByImportedDGCNN(file_path, key):
+    def ByDGCNNFile(file, key):
         """
-        Insert description here.
+        Creates a graph from a DGCNN File.
 
         Parameters
         ----------
-        file_path : TYPE
-            DESCRIPTION.
-        key : TYPE
-            DESCRIPTION.
+        file : file object
+            The input file.
+        key : str
+            The desired key for storing the node label.
 
         Returns
         -------
-        list
-            DESCRIPTION.
+        dict
+            A dictionary with the graphs and labels. The keys are 'graphs' and 'labels'.
 
-        """
-        # file_path, key = item
-        
+        """        
         def verticesByCoordinates(x_coords, y_coords):
             vertices = []
             for i in range(len(x_coords)):
                 vertices.append(topologic.Vertex.ByCoordinates(x_coords[i], y_coords[i], 0))
             return vertices
         
+        if not file:
+            return None
         graphs = []
         labels = []
-        file = open(file_path)
-        if file:
-            lines = file.readlines()
-            n_graphs = int(lines[0])
-            index = 1
-            for i in range(n_graphs):
-                edges = []
-                line = lines[index].split()
-                n_nodes = int(line[0])
-                graph_label = int(line[1])
-                labels.append(graph_label)
-                index+=1
-                x_coordinates = random.sample(range(0, n_nodes), n_nodes)
-                y_coordinates = random.sample(range(0, n_nodes), n_nodes)
-                vertices = verticesByCoordinates(x_coordinates, y_coordinates)
-                for j in range(n_nodes):
-                    line = lines[index+j].split()
-                    node_label = int(line[0])
-                    node_dict = Dictionary.DictionaryByKeysValues([key], [node_label])
-                    Topology.TopologySetDictionary(vertices[j], node_dict)
-                for j in range(n_nodes):
-                    line = lines[index+j].split()
-                    sv = vertices[j]
-                    adj_vertices = line[2:]
-                    for adj_vertex in adj_vertices:
-                        ev = vertices[int(adj_vertex)]
-                        e = topologic.Edge.ByStartVertexEndVertex(sv, ev)
-                        edges.append(e)
-                index+=n_nodes
-                graphs.append(topologic.Graph.ByVerticesEdges(vertices, edges))
-            file.close()
-        return [graphs, labels]
-    '''
+        lines = file.readlines()
+        n_graphs = int(lines[0])
+        index = 1
+        for i in range(n_graphs):
+            edges = []
+            line = lines[index].split()
+            n_nodes = int(line[0])
+            graph_label = int(line[1])
+            labels.append(graph_label)
+            index+=1
+            x_coordinates = random.sample(range(0, n_nodes), n_nodes)
+            y_coordinates = random.sample(range(0, n_nodes), n_nodes)
+            vertices = verticesByCoordinates(x_coordinates, y_coordinates)
+            for j in range(n_nodes):
+                line = lines[index+j].split()
+                node_label = int(line[0])
+                node_dict = Dictionary.DictionaryByKeysValues([key], [node_label])
+                Topology.TopologySetDictionary(vertices[j], node_dict)
+            for j in range(n_nodes):
+                line = lines[index+j].split()
+                sv = vertices[j]
+                adj_vertices = line[2:]
+                for adj_vertex in adj_vertices:
+                    ev = vertices[int(adj_vertex)]
+                    e = topologic.Edge.ByStartVertexEndVertex(sv, ev)
+                    edges.append(e)
+            index+=n_nodes
+            graphs.append(topologic.Graph.ByVerticesEdges(vertices, edges))
+        file.close()
+        return {'graphs':graphs, 'labels':labels}
+
     @staticmethod
     def ByTopology(topology, direct=True, directApertures=False, viaSharedTopologies=False, viaSharedApertures=False, toExteriorTopologies=False, toExteriorApertures=False, toContents=False, toOutposts=False, idKey="TOPOLOGIC_ID", outpostsKey="outposts", useInternalVertex=True, storeBRep=False, tolerance=0.0001):
         """

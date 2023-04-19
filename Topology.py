@@ -1219,7 +1219,31 @@ class Topology():
         return returnTopology
 
     @staticmethod
-    def ByImportedBRep(path):
+    def ByBREPFile(file):
+        """
+        Create a topology by importing it from a BREP file.
+
+        Parameters
+        ----------
+        path : str
+            The path to the BRep file.
+
+        Returns
+        -------
+        topology : topologic.Topology
+            The created topology.
+
+        """
+        topology = None
+        if not file:
+            return None
+        brep_string = file.read()
+        topology = Topology.ByString(brep_string)
+        file.close()
+        return topology
+    
+    staticmethod
+    def ByBREPPath(path):
         """
         Create a topology by importing it from a BRep file path.
 
@@ -1234,24 +1258,42 @@ class Topology():
             The created topology.
 
         """
-        topology = None
-        brep_file = open(path)
-        if not brep_file:
+        if not path:
             return None
-        brep_string = brep_file.read()
-        topology = Topology.ByString(brep_string)
-        brep_file.close()
-        return topology
+        file = open(path)
+        if not file:
+            return None
+        return Topology.ByBREPFile(file)
     
     @staticmethod
-    def ByImportedIFC(path, transferDictionaries=False):
+    def ByImportedBRep(path):
         """
-        Create a topology by importing it from an IFC file path.
+        DEPRECATED. DO NOT USE. Instead use Topology.ByBREPPath or Topology.ByBREPFile
+        Create a topology by importing it from a BRep file path.
 
         Parameters
         ----------
         path : str
-            The path to the IFC file.
+            The path to the BRep file.
+
+        Returns
+        -------
+        topology : topologic.Topology
+            The created topology.
+
+        """
+        print("Topology.ByImportedBRep - WARNING: This method is DEPRECATED. DO NOT USE. Instead use Topology.ByBREPPath or Topology.ByBREPFile")
+        return Topology.ByBREPPath(path=path)
+    
+    @staticmethod
+    def ByIFCFile(file, transferDictionaries=False):
+        """
+        Create a topology by importing it from an IFC file.
+
+        Parameters
+        ----------
+        file : file object
+            The input IFC file.
         transferDictionaries : bool , optional
             If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won't. The default is False.
         
@@ -1278,187 +1320,114 @@ class Topology():
                 import ifcopenshell
                 import ifcopenshell.geom
             except:
-                print("Topology.ByImportedIFC - ERROR: Could not import ifcopenshell")
-        
-        ifc_file = None
-        try:
-            ifc_file = ifcopenshell.open(path)
-        except:
+                print("Topology.ByIFCFile - ERROR: Could not import ifcopenshell")
+        if not file:
             return None
         topologies = []
-        if ifc_file:
-            settings = ifcopenshell.geom.settings()
-            settings.set(settings.DISABLE_TRIANGULATION, True)
-            settings.set(settings.USE_BREP_DATA, True)
-            settings.set(settings.USE_WORLD_COORDS, True)
-            settings.set(settings.SEW_SHELLS, True)
-            iterator = ifcopenshell.geom.iterator(settings, ifc_file, multiprocessing.cpu_count())
-            if iterator.initialize():
-                while True:
-                    shape = iterator.get()
-                    brep = shape.geometry.brep_data
-                    topology = Topology.ByString(brep)
-                    if transferDictionaries:
-                            keys = []
-                            values = []
-                            keys.append("TOPOLOGIC_color")
-                            values.append([1.0,1.0,1.0,1.0])
-                            keys.append("TOPOLOGIC_id")
-                            values.append(str(uuid.uuid4()))
-                            keys.append("TOPOLOGIC_name")
-                            values.append(shape.name)
-                            keys.append("TOPOLOGIC_type")
-                            values.append(Topology.TypeAsString(topology))
-                            keys.append("IFC_id")
-                            values.append(str(shape.id))
-                            keys.append("IFC_guid")
-                            values.append(str(shape.guid))
-                            keys.append("IFC_unique_id")
-                            values.append(str(shape.unique_id))
-                            keys.append("IFC_name")
-                            values.append(shape.name)
-                            keys.append("IFC_type")
-                            values.append(shape.type)
-                            d = Dictionary.ByKeysValues(keys, values)
-                            topology = Topology.SetDictionary(topology, d)
-                    topologies.append(topology)
-                    if not iterator.next():
-                        break
+        settings = ifcopenshell.geom.settings()
+        settings.set(settings.DISABLE_TRIANGULATION, True)
+        settings.set(settings.USE_BREP_DATA, True)
+        settings.set(settings.USE_WORLD_COORDS, True)
+        settings.set(settings.SEW_SHELLS, True)
+        iterator = ifcopenshell.geom.iterator(settings, file, multiprocessing.cpu_count())
+        if iterator.initialize():
+            while True:
+                shape = iterator.get()
+                brep = shape.geometry.brep_data
+                topology = Topology.ByString(brep)
+                if transferDictionaries:
+                        keys = []
+                        values = []
+                        keys.append("TOPOLOGIC_color")
+                        values.append([1.0,1.0,1.0,1.0])
+                        keys.append("TOPOLOGIC_id")
+                        values.append(str(uuid.uuid4()))
+                        keys.append("TOPOLOGIC_name")
+                        values.append(shape.name)
+                        keys.append("TOPOLOGIC_type")
+                        values.append(Topology.TypeAsString(topology))
+                        keys.append("IFC_id")
+                        values.append(str(shape.id))
+                        keys.append("IFC_guid")
+                        values.append(str(shape.guid))
+                        keys.append("IFC_unique_id")
+                        values.append(str(shape.unique_id))
+                        keys.append("IFC_name")
+                        values.append(shape.name)
+                        keys.append("IFC_type")
+                        values.append(shape.type)
+                        d = Dictionary.ByKeysValues(keys, values)
+                        topology = Topology.SetDictionary(topology, d)
+                topologies.append(topology)
+                if not iterator.next():
+                    break
+        file.close()
         return topologies
 
-    '''
     @staticmethod
-    def ByImportedIFC(path, typeList):
+    def ByIFCPath(path, transferDictionaries=False):
         """
-        NOT DONE YET
+        Create a topology by importing it from an IFC file path.
 
         Parameters
         ----------
-        path : TYPE
-            DESCRIPTION.
-        typeList : TYPE
-            DESCRIPTION.
-
+        path : str
+            The path to the IFC file.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won't. The default is False.
+        
         Returns
         -------
-        returnList : TYPE
-            DESCRIPTION.
-
+        list
+            The created list of topologies.
+        
         """
+        import sys, subprocess
+        try:
+            import ifcopenshell
+            import ifcopenshell.geom
+        except:
+            call = [sys.executable, '-m', 'pip', 'install', 'ifcopenshell', '-t', sys.path[0]]
+            subprocess.run(call)
+            try:
+                import ifcopenshell
+                import ifcopenshell.geom
+            except:
+                print("Topology.ByIFCPath - ERROR: Could not import ifcopenshell")
+
+        if not path:
+            return None
+        try:
+            file = ifcopenshell.open(path)
+        except:
+            file = None
+        if not file:
+            return None
+        return Topology.ByIFCFile(file, transferDictionaries=transferDictionaries)
         
-        def processKeysValues(keys, values):
-            if len(keys) != len(values):
-                raise Exception("DictionaryByKeysValues - Keys and Values do not have the same length")
-            stl_keys = []
-            stl_values = []
-            for i in range(len(keys)):
-                if isinstance(keys[i], str):
-                    stl_keys.append(keys[i])
-                else:
-                    stl_keys.append(str(keys[i]))
-                if isinstance(values[i], list) and len(values[i]) == 1:
-                    value = values[i][0]
-                else:
-                    value = values[i]
-                if isinstance(value, bool):
-                    if value == False:
-                        stl_values.append(topologic.IntAttribute(0))
-                    else:
-                        stl_values.append(topologic.IntAttribute(1))
-                elif isinstance(value, int):
-                    stl_values.append(topologic.IntAttribute(value))
-                elif isinstance(value, float):
-                    stl_values.append(topologic.DoubleAttribute(value))
-                elif isinstance(value, str):
-                    stl_values.append(topologic.StringAttribute(value))
-                elif isinstance(value, list):
-                    l = []
-                    for v in value:
-                        if isinstance(v, bool):
-                            l.append(topologic.IntAttribute(v))
-                        elif isinstance(v, int):
-                            l.append(topologic.IntAttribute(v))
-                        elif isinstance(v, float):
-                            l.append(topologic.DoubleAttribute(v))
-                        elif isinstance(v, str):
-                            l.append(topologic.StringAttribute(v))
-                    stl_values.append(topologic.ListAttribute(l))
-                else:
-                    raise Exception("Error: Value type is not supported. Supported types are: Boolean, Integer, Double, String, or List.")
-            myDict = topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
-            return myDict
+    @staticmethod
+    def ByImportedIFC(path, transferDictionaries=False):
+        """
+        DEPRECATED. DO NOT USE. Instead use Topology.ByIFCPath or Topology.ByIFCFile
+        Create a topology by importing it from an IFC file path.
 
-        def triangulate(faces):
-            triangles = []
-            for aFace in faces:
-                ib = []
-                _ = aFace.InternalBoundaries(ib)
-                if len(ib) != 0:
-                    print("Found Internal Boundaries")
-                    faceTriangles = []
-                    topologic.FaceUtility.Triangulate(aFace, 0.0, faceTriangles)
-                    print("Length of Face Triangles:", len(faceTriangles))
-                    for aFaceTriangle in faceTriangles:
-                        triangles.append(aFaceTriangle)
-                else:
-                    triangles.append(aFace)
-            return triangles
+        Parameters
+        ----------
+        path : str
+            The path to the IFC file.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won't. The default is False.
         
-        settings = ifcopenshell.geom.settings()
-        settings.set(settings.USE_BREP_DATA,True)
-        settings.set(settings.SEW_SHELLS,True)
-        settings.set(settings.USE_WORLD_COORDS,False)
-
-        ifc_file = ifcopenshell.open(path)
-        if len(typeList) < 1:
-            typeList = ifc_file.types()
-        returnList = []
-        for aType in typeList:
-            products = ifc_file.by_type(aType)
-            for p in products:
-                try:
-                    cr = ifcopenshell.geom.create_shape(settings, p)
-                    brepString = cr.geometry.brep_data
-                    topology = topologic.Topology.ByString(brepString)
-                    if topology.Type() == 8:
-                        triangles = triangulate([topology])
-                        topology = topologic.Cluster.ByTopologies(triangles)
-                    elif topology.Type() > 8:
-                        faces = []
-                        _ = topology.Faces(None, faces)
-                        triangles = triangulate(faces)
-                        topology = topologic.Cluster.ByTopologies(triangles)
-                    keys = []
-                    values = []
-                    keys.append("TOPOLOGIC_color")
-                    values.append([1.0,1.0,1.0,1.0])
-                    keys.append("TOPOLOGIC_id")
-                    values.append(str(uuid.uuid4()))
-                    keys.append("TOPOLOGIC_name")
-                    values.append(p.Name)
-                    keys.append("TOPOLOGIC_type")
-                    values.append(Topology.TypeAsString(topology))
-                    keys.append("IFC_id")
-                    values.append(str(p.GlobalId))
-                    keys.append("IFC_name")
-                    values.append(p.Name)
-                    keys.append("IFC_type")
-                    values.append(p.is_a())
-                    for definition in p.IsDefinedBy:
-                        # To support IFC2X3, we need to filter our results.
-                        if definition.is_a('IfcRelDefinesByProperties'):
-                            property_set = definition.RelatingPropertyDefinition
-                            for property in property_set.HasProperties:
-                                if property.is_a('IfcPropertySingleValue'):
-                                    keys.append(property.Name)
-                                    values.append(property.NominalValue.wrappedValue)
-                    topDict = processKeysValues(keys, values)
-                    _ = topology.SetDictionary(topDict)
-                except:
-                    continue
-                returnList.append(topology)
-        return returnList
-
+        Returns
+        -------
+        list
+            The created list of topologies.
+        
+        """
+        print("Topology.ByImportedIFC - WARNING: This method is DEPRECATED. DO NOT USE. Instead use Topology.ByIFCPath or Topology.ByIFCFile")
+        return Topology.ByIFCPath(path=path, transferDictionaries=transferDictionaries)
+    
+    '''
     @staticmethod
     def ByImportedIPFS(hash_, url, port):
         """
@@ -1488,14 +1457,14 @@ class Topology():
         return topology
     '''
     @staticmethod
-    def ByImportedJSONMK1(path, tolerance=0.0001):
+    def ByJSONFileMK1(file, tolerance=0.0001):
         """
         Imports the topology from a JSON file.
 
         Parameters
         ----------
-        path : str
-            The file path to the json file.
+        file : file object
+            The input JSON file.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1506,8 +1475,6 @@ class Topology():
 
         """
         from topologicpy.Dictionary import Dictionary
-
-        
 
         def processApertures(subTopologies, apertures, exclusive, tolerance):
             usedTopologies = []
@@ -1552,67 +1519,113 @@ class Topology():
             return v
 
         topology = None
+        if not file:
+            return None
+        topologies = []
+        jsondata = json.load(file)
+        for jsonItem in jsondata:
+            brep = jsonItem['brep']
+            topology = Topology.ByString(brep)
+            dictionary = jsonItem['dictionary']
+            topDictionary = Dictionary.ByPythonDictionary(dictionary)
+            topology = Topology.SetDictionary(topology, topDictionary)
+            cellApertures = getApertures(jsonItem['cellApertures'])
+            cells = []
+            try:
+                _ = topology.Cells(None, cells)
+            except:
+                pass
+            processApertures(cells, cellApertures, False, 0.001)
+            faceApertures = getApertures(jsonItem['faceApertures'])
+            faces = []
+            try:
+                _ = topology.Faces(None, faces)
+            except:
+                pass
+            processApertures(faces, faceApertures, False, 0.001)
+            edgeApertures = getApertures(jsonItem['edgeApertures'])
+            edges = []
+            try:
+                _ = topology.Edges(None, edges)
+            except:
+                pass
+            processApertures(edges, edgeApertures, False, 0.001)
+            vertexApertures = getApertures(jsonItem['vertexApertures'])
+            vertices = []
+            try:
+                _ = topology.Vertices(None, vertices)
+            except:
+                pass
+            processApertures(vertices, vertexApertures, False, 0.001)
+            cellDataList = jsonItem['cellDictionaries']
+            cellSelectors = []
+            for cellDataItem in cellDataList:
+                cellSelectors.append(assignDictionary(cellDataItem))
+            Topology.TransferDictionariesBySelectors(topology=topology, selectors=cellSelectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=True, tolerance=0.0001)
+            faceDataList = jsonItem['faceDictionaries']
+            faceSelectors = []
+            for faceDataItem in faceDataList:
+                faceSelectors.append(assignDictionary(faceDataItem))
+            Topology.TransferDictionariesBySelectors(topology=topology, selectors=faceSelectors, tranVertices=False, tranEdges=False, tranFaces=True, tranCells=False, tolerance=0.0001)
+            edgeDataList = jsonItem['edgeDictionaries']
+            edgeSelectors = []
+            for edgeDataItem in edgeDataList:
+                edgeSelectors.append(assignDictionary(edgeDataItem))
+            Topology.TransferDictionariesBySelectors(topology=topology, selectors=edgeSelectors, tranVertices=False, tranEdges=True, tranFaces=False, tranCells=False, tolerance=0.0001)
+            vertexDataList = jsonItem['vertexDictionaries']
+            vertexSelectors = []
+            for vertexDataItem in vertexDataList:
+                vertexSelectors.append(assignDictionary(vertexDataItem))
+            Topology.TransferDictionariesBySelectors(topology=topology, selectors=vertexSelectors, tranVertices=True, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001)
+            topologies.append(topology)
+        return topologies
+    
+    @staticmethod
+    def ByJSONPathMK1(path, tolerance=0.0001):
+        """
+        Imports the topology from a JSON file.
+
+        Parameters
+        ----------
+        path : str
+            The file path to the json file.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of imported topologies.
+
+        """
+        if not path:
+            return None
         file = open(path)
-        if file:
-            topologies = []
-            jsondata = json.load(file)
-            for jsonItem in jsondata:
-                brep = jsonItem['brep']
-                topology = Topology.ByString(brep)
-                dictionary = jsonItem['dictionary']
-                topDictionary = Dictionary.ByPythonDictionary(dictionary)
-                topology = Topology.SetDictionary(topology, topDictionary)
-                cellApertures = getApertures(jsonItem['cellApertures'])
-                cells = []
-                try:
-                    _ = topology.Cells(None, cells)
-                except:
-                    pass
-                processApertures(cells, cellApertures, False, 0.001)
-                faceApertures = getApertures(jsonItem['faceApertures'])
-                faces = []
-                try:
-                    _ = topology.Faces(None, faces)
-                except:
-                    pass
-                processApertures(faces, faceApertures, False, 0.001)
-                edgeApertures = getApertures(jsonItem['edgeApertures'])
-                edges = []
-                try:
-                    _ = topology.Edges(None, edges)
-                except:
-                    pass
-                processApertures(edges, edgeApertures, False, 0.001)
-                vertexApertures = getApertures(jsonItem['vertexApertures'])
-                vertices = []
-                try:
-                    _ = topology.Vertices(None, vertices)
-                except:
-                    pass
-                processApertures(vertices, vertexApertures, False, 0.001)
-                cellDataList = jsonItem['cellDictionaries']
-                cellSelectors = []
-                for cellDataItem in cellDataList:
-                    cellSelectors.append(assignDictionary(cellDataItem))
-                Topology.TransferDictionariesBySelectors(topology=topology, selectors=cellSelectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=True, tolerance=0.0001)
-                faceDataList = jsonItem['faceDictionaries']
-                faceSelectors = []
-                for faceDataItem in faceDataList:
-                    faceSelectors.append(assignDictionary(faceDataItem))
-                Topology.TransferDictionariesBySelectors(topology=topology, selectors=faceSelectors, tranVertices=False, tranEdges=False, tranFaces=True, tranCells=False, tolerance=0.0001)
-                edgeDataList = jsonItem['edgeDictionaries']
-                edgeSelectors = []
-                for edgeDataItem in edgeDataList:
-                    edgeSelectors.append(assignDictionary(edgeDataItem))
-                Topology.TransferDictionariesBySelectors(topology=topology, selectors=edgeSelectors, tranVertices=False, tranEdges=True, tranFaces=False, tranCells=False, tolerance=0.0001)
-                vertexDataList = jsonItem['vertexDictionaries']
-                vertexSelectors = []
-                for vertexDataItem in vertexDataList:
-                    vertexSelectors.append(assignDictionary(vertexDataItem))
-                Topology.TransferDictionariesBySelectors(topology=topology, selectors=vertexSelectors, tranVertices=True, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001)
-                topologies.append(topology)
-            return topologies
-        return None
+        if not file:
+            return None
+        return Topology.ByJSONFileMK1(file=file, tolerance=tolerance)
+
+    @staticmethod
+    def ByImportedJSONMK1(path, tolerance=0.0001):
+        """
+        DEPRECATED. DO NOT USE. Instead use Topology.ByJSONPathMK1 or Topology.ByJSONFileMK1
+        Imports the topology from a JSON file.
+
+        Parameters
+        ----------
+        path : str
+            The file path to the json file.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of imported topologies.
+
+        """
+        print("Topology.ByImportedJSONMK1 - WARNING: This method is DEPRECATED. DO NOT USE. Instead use Topology.ByJSONPathMK1 or Topology.ByJSONFileMK1")
+        return ByJSONPathMK1(path=path, tolerance=tolerance)
 
     @staticmethod
     def ByImportedJSONMK2(path, tolerance=0.0001):
@@ -1752,7 +1765,7 @@ class Topology():
         return None
 
     @staticmethod
-    def ByImportedOBJ(path, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
+    def ByOBJFile(file, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
         """
         Imports the topology from a Weverfront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
@@ -1812,22 +1825,71 @@ class Topology():
                             faces.append(temp_faces)
             return [vertices, faces]
         
-        file = open(path)
-        if file:
-            lines = file.readlines()
-            if lines:
-                if progressBar:
-                    if renderer.lower() == "notebook":
-                        from tqdm.notebook import tqdm
-                    else:
-                        from tqdm import tqdm
-                    vertices, faces = parsetqdm(lines)
+        if not file:
+            return None
+        lines = file.readlines()
+        if lines:
+            if progressBar:
+                if renderer.lower() == "notebook":
+                    from tqdm.notebook import tqdm
                 else:
-                    vertices, faces = parse(lines)
-            file.close()
+                    from tqdm import tqdm
+                vertices, faces = parsetqdm(lines)
+            else:
+                vertices, faces = parse(lines)
+        file.close()
         if vertices or faces:
             return Topology.ByGeometry(vertices = vertices, faces = faces, outputMode="default", tolerance=tolerance)
         return None
+    
+    @staticmethod
+    def ByOBJPath(path, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
+        """
+        Imports the topology from a Weverfront OBJ file path. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+
+        Parameters
+        ----------
+        path : str
+            The file path to the OBJ file.
+        transposeAxes : bool , optional
+            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topology
+            The imported topology.
+
+        """
+        if not path:
+            return None
+        file = open(path)
+        return Topology.ByOBJFile(file, transposeAxes=transposeAxes, progressBar=progressBar, renderer=renderer, tolerance=tolerance)
+    
+    @staticmethod
+    def ByImportedOBJ(path, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
+        """
+        DEPRECATED. DO NOT USE. Instead use Topology.ByOBJPath or Topology.ByOBJFile
+        Imports the topology from a Weverfront OBJ file path. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+
+        Parameters
+        ----------
+        path : str
+            The file path to the OBJ file.
+        transposeAxes : bool , optional
+            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topology
+            The imported topology.
+
+        """
+        print("Topology.ByImportedOBJ - WARNING: This method is DEPRECATED. DO NOT USE. Instead use Topology.ByOBJPath or Topology.ByOBJFile")
+        return Topology.ByOBJPath(path, transposeAxes=transposeAxes, progressBar=progressBar, renderer=renderer, tolerance=tolerance)
 
     @staticmethod
     def ByOCCTShape(occtShape):

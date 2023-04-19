@@ -1581,7 +1581,7 @@ class DGL:
         Parameters
         ----------
         dictionary : dict
-            The input dictionary
+            The input dictionary of graphs and labels. This dictionary must have the keys "graphs" and "labels"
         key : str
             The key used for the node attributes.
 

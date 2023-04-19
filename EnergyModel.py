@@ -35,10 +35,39 @@ except:
         print("EnergyModel - ERROR: Could not import openstudio")
 
 class EnergyModel:
+    '''
     @staticmethod
-    def ByImportedOSM(path: str):
+    def ByOSMFile(file):
         """
-            Creates an EnergyModel from the input OSM file path.
+        Creates an EnergyModel from the input OSM file path.
+
+        Parameters
+        ----------
+        path : string
+            The path to the input .OSM file.
+
+        Returns
+        -------
+        openstudio.openstudiomodelcore.Model
+            The OSM model.
+
+        """
+        if not file:
+            print("EnergyModel.ByOSMFile - Error: The input path is not valid. Returning None.")
+            return None
+        osModel = file.read()
+        if osModel.isNull():
+            print("EnergyModel.ByOSMFile - Error: The openstudio model is null. Returning None.")
+            return None
+        else:
+            osModel = osModel.get()
+        return osModel
+    '''
+
+    @staticmethod
+    def ByOSMPath(path: str):
+        """
+        Creates an EnergyModel from the input OSM file path.
         
         Parameters
         ----------
@@ -63,6 +92,26 @@ class EnergyModel:
         else:
             osModel = osModel.get()
         return osModel
+
+    @staticmethod
+    def ByImportedOSM(path: str):
+        """
+        DEPRECATED. DO NOT USE. Instead use Topology.ByOSMPath or Topology.ByOSMFile
+        Creates an EnergyModel from the input OSM file path.
+        
+        Parameters
+        ----------
+        path : string
+            The path to the input .OSM file.
+
+        Returns
+        -------
+        openstudio.openstudiomodelcore.Model
+            The OSM model.
+
+        """
+        print("Topology.ByImportedOSM - WARNING: This method is DEPRECATED. DO NOT USE. Instead use Topology.ByOSMPath")
+        return EnergyModel.ByOSMPath(path=path)
     
     @staticmethod
     def ByTopology(building : topologic.CellComplex,
