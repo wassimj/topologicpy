@@ -590,7 +590,7 @@ class Face(topologic.Face):
         direction : list , optional
             The vector representing the up direction of the circle. The default is [0,0,1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1486,7 +1486,7 @@ class Face(topologic.Face):
         direction : list , optional
             The vector representing the up direction of the rectangle. The default is [0,0,1].
         placement : str , optional
-            The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1496,6 +1496,7 @@ class Face(topologic.Face):
             The created face.
 
         """
+        from topologicpy.Wire import Wire
         wire = Wire.Rectangle(origin=origin, width=width, length=length, direction=direction, placement=placement, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
             return None
@@ -1515,13 +1516,13 @@ class Face(topologic.Face):
         direction : list , optional
             The vector representing the up direction of the square. The default is [0,0,1].
         placement : str , optional
-            The description of the placement of the origin of the square. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the square. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Wire
+        topologic.Face
             The created square.
 
         """
@@ -1545,7 +1546,7 @@ class Face(topologic.Face):
         direction : list , optional
             The vector representing the up direction of the star. The default is [0,0,1].
         placement : str , optional
-            The description of the placement of the origin of the star. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the star. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1555,6 +1556,7 @@ class Face(topologic.Face):
             The created face.
 
         """
+        from topologicpy.Wire import Wire
         wire = Wire.Star(origin=origin, radiusA=radiusA, radiusB=radiusB, rays=rays, direction=direction, placement=placement, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
             return None
@@ -1592,6 +1594,7 @@ class Face(topologic.Face):
             The created trapezoid.
 
         """
+        from topologicpy.Wire import Wire
         wire = Wire.Trapezoid(origin=origin, widthA=widthA, widthB=widthB, offsetA=offsetA, offsetB=offsetB, length=length, direction=direction, placement=placement, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
             return None

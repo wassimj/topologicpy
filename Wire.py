@@ -489,7 +489,7 @@ class Wire(topologic.Wire):
         direction : list , optional
             The vector representing the up direction of the circle. The default is [0,0,1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -502,6 +502,8 @@ class Wire(topologic.Wire):
         if not origin:
             origin = topologic.Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
+            return None
+        if not placement.lower() in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
             return None
         radius = abs(radius)
         if radius < tolerance:
@@ -534,6 +536,12 @@ class Wire(topologic.Wire):
 
         if placement.lower() == "lowerleft":
             baseWire = topologic.TopologyUtility.Translate(baseWire, radius, radius, 0)
+        elif placement.lower() == "upperleft":
+            baseWire = topologic.TopologyUtility.Translate(baseWire, radius, -radius, 0)
+        elif placement.lower() == "lowerright":
+            baseWire = topologic.TopologyUtility.Translate(baseWire, -radius, radius, 0)
+        elif placement.lower() == "upperright":
+            baseWire = topologic.TopologyUtility.Translate(baseWire, -radius, -radius, 0)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -1734,7 +1742,7 @@ class Wire(topologic.Wire):
         direction : list , optional
             The vector representing the up direction of the rectangle. The default is [0,0,1].
         placement : str , optional
-            The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1749,20 +1757,33 @@ class Wire(topologic.Wire):
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
+            print("Wire.Rectangle - Error: specified origin is not a topologic vertex. Retruning None.")
             return None
-        if not placement.lower() in ["center", "lowerleft"]:
+        if not placement.lower() in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
+            print("Wire.Rectangle - Error: Could not find placement in the list of placements. Retruning None.")
             return None
         width = abs(width)
         length = abs(length)
         if width < tolerance or length < tolerance:
+            print("Wire.Rectangle - Error: One or more of the specified dimensions is below the tolerance value. Retruning None.")
             return None
         if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) < tolerance:
+            print("Wire.Rectangle - Error: The direction vector magnitude is below the tolerance value. Retruning None.")
             return None
         xOffset = 0
         yOffset = 0
         if placement.lower() == "lowerleft":
             xOffset = width*0.5
             yOffset = length*0.5
+        elif placement.lower() == "upperleft":
+            xOffset = width*0.5
+            yOffset = -length*0.5
+        elif placement.lower() == "lowerright":
+            xOffset = -width*0.5
+            yOffset = length*0.5
+        elif placement.lower() == "upperright":
+            xOffset = -width*0.5
+            yOffset = -length*0.5
 
         vb1 = Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())
         vb2 = Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())
@@ -2095,7 +2116,7 @@ class Wire(topologic.Wire):
         direction : list , optional
             The vector representing the up direction of the square. The default is [0,0,1].
         placement : str , optional
-            The description of the placement of the origin of the square. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the square. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -2108,7 +2129,7 @@ class Wire(topologic.Wire):
         return Wire.Rectangle(origin = origin, width = size, length = size, direction = direction, placement = placement, tolerance = tolerance)
     
     @staticmethod
-    def Star(origin: topologic.Wire = None, radiusA: float = 1.0, radiusB: float = 0.4, rays: int = 5, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
+    def Star(origin: topologic.Wire = None, radiusA: float = 0.5, radiusB: float = 0.2, rays: int = 8, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
         """
         Creates a star.
 
@@ -2121,11 +2142,11 @@ class Wire(topologic.Wire):
         radiusB : float , optional
             The outer radius of the star. The default is 0.4.
         rays : int , optional
-            The number of star rays. The default is 5.
+            The number of star rays. The default is 8.
         direction : list , optional
             The vector representing the up direction of the star. The default is [0,0,1].
         placement : str , optional
-            The description of the placement of the origin of the star. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the star. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -2147,7 +2168,7 @@ class Wire(topologic.Wire):
         rays = abs(rays)
         if rays < 3:
             return None
-        if not placement.lower() in ["center", "lowerleft"]:
+        if not placement.lower() in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
             return None
         sides = rays*2 # Sides is double the number of rays
         baseV = []
@@ -2172,6 +2193,21 @@ class Wire(topologic.Wire):
             ymin = min(yList)
             xOffset = origin.X() - xmin
             yOffset = origin.Y() - ymin
+        elif placement.lower() == "upperleft":
+            xmin = min(xList)
+            ymax = max(yList)
+            xOffset = origin.X() - xmin
+            yOffset = origin.Y() - ymax
+        elif placement.lower() == "lowerright":
+            xmax = max(xList)
+            ymin = min(yList)
+            xOffset = origin.X() - xmax
+            yOffset = origin.Y() - ymin
+        elif placement.lower() == "upperright":
+            xmax = max(xList)
+            ymax = max(yList)
+            xOffset = origin.X() - xmax
+            yOffset = origin.Y() - ymax
         else:
             xOffset = 0
             yOffset = 0
@@ -2241,7 +2277,7 @@ class Wire(topologic.Wire):
         length = abs(length)
         if widthA < tolerance or widthB < tolerance or length < tolerance:
             return None
-        if not placement.lower() in ["center", "lowerleft"]:
+        if not placement.lower() in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
             return None
         xOffset = 0
         yOffset = 0
@@ -2251,6 +2287,15 @@ class Wire(topologic.Wire):
         elif placement.lower() == "lowerleft":
             xOffset = -(min((-widthA*0.5 + offsetA), (-widthB*0.5 + offsetB)))
             yOffset = length*0.5
+        elif placement.lower() == "upperleft":
+            xOffset = -(min((-widthA*0.5 + offsetA), (-widthB*0.5 + offsetB)))
+            yOffset = -length*0.5
+        elif placement.lower() == "lowerright":
+            xOffset = -(max((widthA*0.5 + offsetA), (widthB*0.5 + offsetB)))
+            yOffset = length*0.5
+        elif placement.lower() == "upperright":
+            xOffset = -(max((widthA*0.5 + offsetA), (widthB*0.5 + offsetB)))
+            yOffset = -length*0.5
 
         vb1 = topologic.Vertex.ByCoordinates(origin.X()-widthA*0.5+offsetA+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())
         vb2 = topologic.Vertex.ByCoordinates(origin.X()+widthA*0.5+offsetA+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())

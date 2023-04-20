@@ -108,6 +108,7 @@ class Vector(list):
         """
 
         from topologicpy.Vertex import Vertex
+        import topologic
         if not isinstance(vertices, list):
             return None
         if not isinstance(normalize, bool):
