@@ -1032,7 +1032,10 @@ class Plotly:
             new_row = []
             maxRow = sum(row)
             for j in range(len(row)):
-                new_row.append(round(float(row[j])/float(maxRow), 3))
+                if maxRow == 0:
+                    new_row.append(round(0, 3))
+                else:
+                    new_row.append(round(float(row[j])/float(maxRow), 3))
             new_matrix.append(new_row)
         data = go.Heatmap(z=new_matrix, y=yCategories, x=xCategories, zmin=minValue, zmax=maxValue, showscale=showScale, colorscale=colors)
         

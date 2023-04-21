@@ -32,7 +32,46 @@ class Vector(list):
         cosang = np.dot(vectorA, vectorB)
         sinang = la.norm(np.cross(vectorA, vectorB))
         return round(math.degrees(np.arctan2(sinang, cosang)), mantissa)
+    
+    @staticmethod
+    def AzimuthAltitude(vector, mantissa=4):
+        """
+        Returns a dictionary of azimuth and altitude angles in degrees for the input vector. North is assumed to be the positive Y axis [0,1,0]. Up is assumed to be the positive Z axis [0,0,1].
+        Azimuth is calculated in a counter-clockwise fashion from North where 0 is North, 90 is East, 180 is South, and 270 is West. Altitude is calculated in a counter-clockwise fashing where -90 is straight down (negative Z axis), 0 is in the XY plane, and 90 is straight up (positive Z axis).
+        If the altitude is -90 or 90, the azimuth is assumed to be 0.
 
+        Parameters
+        ----------
+        vectorA : list
+            The input vector.
+        mantissa : int, optional
+            The length of the desired mantissa. The default is 4.
+
+        Returns
+        -------
+        dict
+            The dictionary containing the azimuth and altitude angles in degrees. The keys in the dictionary are 'azimuth' and 'altitude'. 
+
+        """
+        x, y, z = vector
+        if x == 0 and y == 0:
+            if z > 0:
+                return {"azimuth":0, "altitude":90}
+            elif z < 0:
+                return {"azimuth":0, "altitude":-90}
+            else:
+                # undefined
+                return None
+        else:
+            azimuth = math.degrees(math.atan2(y, x))
+            if azimuth > 90:
+                azimuth -= 360
+            azimuth = round(90-azimuth, mantissa)
+            xy_distance = math.sqrt(x**2 + y**2)
+            altitude = math.degrees(math.atan2(z, xy_distance))
+            altitude = round(altitude, mantissa)
+            return {"azimuth":azimuth, "altitude":altitude}
+    
     @staticmethod
     def ByAzimuthAltitude(azimuth, altitude, north=0, reverse=False):
         """

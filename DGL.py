@@ -1567,10 +1567,11 @@ class DGL:
 
         """
         from sklearn import metrics
+        import numpy
         if normalize:
-            cm = metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true")
+            cm = numpy.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true"))
         else:
-            cm = metrics.confusion_matrix(y_true=actual, y_pred=predicted)
+            cm = numpy.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted))
         return cm
     
     @staticmethod
@@ -2048,6 +2049,7 @@ class DGL:
         for item in tqdm(dataset, desc='Predicting', leave=False):
             graph = item[0]
             pred = model(graph, graph.ndata[node_attr_key].float())
+            print(pred)
             values.append(round(pred.item(), 3))
         return values
     

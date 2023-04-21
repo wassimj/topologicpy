@@ -1771,8 +1771,8 @@ class Topology():
 
         Parameters
         ----------
-        path : str
-            The file path to the OBJ file.
+        file : file object
+            The input OBJ file.
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up" 
         tolerance : float , optional
@@ -1827,7 +1827,9 @@ class Topology():
         
         if not file:
             return None
-        lines = file.readlines()
+        lines = []
+        for lineo, line in enumerate(file):
+                lines.append(line)
         if lines:
             if progressBar:
                 if renderer.lower() == "notebook":
@@ -1933,6 +1935,134 @@ class Topology():
         except:
             returnTopology = None
         return returnTopology
+    
+    @staticmethod
+    def ByXYZFile(file, frameIdKey="id", vertexIdKey="id"):
+        """
+        Imports the topology from an XYZ file path. This is a very experimental method. While variants of the format exist, topologicpy reads XYZ files that conform to the following:
+        An XYZ file can be made out of one or more frames. Each frame will be stored in a sepatate topologic cluster.
+        First line: total number of vertices in the frame. This must be an integer. No other words or characters are allowed on this line.
+        Second line: frame label. This is free text and will be stored in the dictionary of each frame (topologic.Cluster)
+        All other lines: vertex_label, x, y, and z coordinates, separated by spaces, tabs, or commas. The vertex label must be one word with no spaces. It is stored in the dictionary of each vertex.
+
+        Example:
+        3
+        Frame 1
+        A 5.67 -3.45 2.61
+        B 3.91 -1.91 4
+        A 3.2 1.2 -12.3
+        4
+        Frame 2
+        B 5.47 -3.45 2.61
+        B 3.91 -1.93 3.1
+        A 3.2 1.2 -22.4
+        A 3.2 1.2 -12.3
+        3
+        Frame 3
+        A 5.67 -3.45 2.61
+        B 3.91 -1.91 4
+        C 3.2 1.2 -12.3
+
+        Parameters
+        ----------
+        file : file object
+            The input XYZ file.
+        frameIdKey : str , optional
+            The desired id key to use to store the ID of each frame in its dictionary. The default is "id".
+        vertexIdKey : str , optional
+            The desired id key to use to store the ID of each point in its dictionary. The default is "id".
+
+        Returns
+        -------
+        list
+            The list of frames (topologic.Cluster).
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+
+        def parse(lines):
+            frames = []
+            line_index = 0
+            while line_index < len(lines):
+                try:
+                    n_vertices = int(lines[line_index])
+                except:
+                    return frames
+                frame_label = lines[line_index+1][:-1]
+                vertices = []
+                for i in range(n_vertices):
+                    one_line = lines[line_index+2+i]
+                    s = one_line.split()
+                    vertex_label = s[0]
+                    v = Vertex.ByCoordinates(float(s[1]), float(s[2]), float(s[3]))
+                    vertex_dict = Dictionary.ByKeysValues([vertexIdKey], [vertex_label])
+                    v = Topology.SetDictionary(v, vertex_dict)
+                    vertices.append(v)
+                frame = Cluster.ByTopologies(vertices)
+                frame_dict = Dictionary.ByKeysValues([frameIdKey], [frame_label])
+                frame = Topology.SetDictionary(frame, frame_dict)
+                frames.append(frame)
+                line_index = line_index + 2 + n_vertices
+            return frames
+        
+        if not file:
+            return None
+        lines = []
+        for lineo, line in enumerate(file):
+                lines.append(line)
+        if len(lines) > 0:
+            frames = parse(lines)
+        file.close()
+        return frames
+    
+    @staticmethod
+    def ByXYZPath(path, frameIdKey="id", vertexIdKey="id"):
+        """
+        Imports the topology from an XYZ file path. This is a very experimental method. While variants of the format exist, topologicpy reads XYZ files that conform to the following:
+        An XYZ file can be made out of one or more frames. Each frame will be stored in a sepatate topologic cluster.
+        First line: total number of vertices in the frame. This must be an integer. No other words or characters are allowed on this line.
+        Second line: frame label. This is free text and will be stored in the dictionary of each frame (topologic.Cluster)
+        All other lines: vertex_label, x, y, and z coordinates, separated by spaces, tabs, or commas. The vertex label must be one word with no spaces. It is stored in the dictionary of each vertex.
+
+        Example:
+        3
+        Frame 1
+        A 5.67 -3.45 2.61
+        B 3.91 -1.91 4
+        A 3.2 1.2 -12.3
+        4
+        Frame 2
+        B 5.47 -3.45 2.61
+        B 3.91 -1.93 3.1
+        A 3.2 1.2 -22.4
+        A 3.2 1.2 -12.3
+        3
+        Frame 3
+        A 5.67 -3.45 2.61
+        B 3.91 -1.91 4
+        C 3.2 1.2 -12.3
+
+        Parameters
+        ----------
+        path : str
+            The input XYZ file path.
+        frameIdKey : str , optional
+            The desired id key to use to store the ID of each frame in its dictionary. The default is "id".
+        vertexIdKey : str , optional
+            The desired id key to use to store the ID of each point in its dictionary. The default is "id".
+
+        Returns
+        -------
+        list
+            The list of frames (topologic.Cluster).
+
+        """
+        if not path:
+            return None
+        file = open(path)
+        return Topology.ByXYZFile(file, frameIdKey=frameIdKey, vertexIdKey=frameIdKey)
     
     @staticmethod
     def CenterOfMass(topology):
