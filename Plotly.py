@@ -884,8 +884,10 @@ class Plotly:
             The desired bottom margin in pixels. The default is 0.
 
         """
-
-        return Plotly.FigureByMatrix(matrix,
+        if not isinstance(matrix, list) and not isinstance(matrix, np.ndarray):
+            print("Plotly.FigureByConfusionMatrix - Error: The input matrix is not of the correct type. Returning None.")
+            return None
+        figure = Plotly.FigureByMatrix(matrix,
              xCategories=categories,
              minValue=minValue,
              maxValue=maxValue,
@@ -902,6 +904,11 @@ class Plotly:
              marginRight=marginRight,
              marginTop=marginTop,
              marginBottom=marginBottom)
+        layout = {
+            "yaxis": {"autorange": "reversed"},
+        }
+        figure.update_layout(layout)
+        return figure
     
     @staticmethod
     def FigureByMatrix(matrix,
@@ -972,6 +979,10 @@ class Plotly:
         #import plotly.figure_factory as ff
         import plotly.graph_objects as go
         import plotly.express as px
+
+        if not isinstance(matrix, list) and not isinstance(matrix, np.ndarray):
+            print("Plotly.FigureByMatrix - Error: The input matrix is not of the correct type. Returning None.")
+            return None
 
         annotations = []
 
@@ -1044,7 +1055,7 @@ class Plotly:
             "height": height,
             "title": title,
             "xaxis": {"title": xTitle},
-            "yaxis": {"title": yTitle},
+            "yaxis": {"title": yTitle, "autorange": "reversed"},
             "annotations": annotations,
             "paper_bgcolor": backgroundColor,
             "plot_bgcolor": backgroundColor,
@@ -1326,11 +1337,14 @@ class Plotly:
         None
             
         """
+        if figure == None:
+            print("Plotly.Show - Error: The input is NULL. Returning None.")
+            return None
         if not isinstance(figure, plotly.graph_objs._figure.Figure):
-            print("Not a figure, returning None")
+            print("Plotly.Show - Error: The input is not a figure. Returning None.")
             return None
         if not renderer.lower() in Plotly.Renderers():
-            print("Not a valid renderer, returning None")
+            print("Plotly.Show - Error: The input renderer is not in the approved list of renderers. Returning None.")
             return None
         figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
         figure.show(renderer=renderer)

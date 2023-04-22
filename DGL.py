@@ -1568,6 +1568,15 @@ class DGL:
         """
         from sklearn import metrics
         import numpy
+        if not isinstance(actual, list):
+            print("DGL.CondfusionMatrix - ERROR: The actual input is not a list. Returning None")
+            return None
+        if not isinstance(predicted, list):
+            print("DGL.CondfusionMatrix - ERROR: The predicted input is not a list. Returning None")
+            return None
+        if len(actual) != len(predicted):
+            print("DGL.CondfusionMatrix - ERROR: The two input lists do not have the same length. Returning None")
+            return None
         if normalize:
             cm = numpy.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true"))
         else:
