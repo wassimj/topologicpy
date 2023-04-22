@@ -1348,6 +1348,7 @@ class DGL:
                               dst_header="dst", node_label_header="label", node_attr_key="node_attr",
                               categories=[], bidirectional=True):
         """
+        DEPRECATED. DO NOT USE. PLEASE USE GraphsByCSVPath
         Returns DGL graphs according to the input CSV file paths.
 
         Parameters
@@ -1379,8 +1380,57 @@ class DGL:
 
         Returns
         -------
-        list
-            The list of DGL graphs found in the input CSV files.
+        dict
+            The dicitonary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
+
+        """
+        print("DGL.ByImportedCSV - WARNING: This method is deprecated. Please do not use. Instead use DGL.ByCSVPath.")
+        return DGL.GraphsByCSVPath(graphs_file_path=graphs_file_path, edges_file_path=edges_file_path,
+                              nodes_file_path=nodes_file_path, graph_id_header=graph_id_header,
+                              graph_label_header=graph_label_header, num_nodes_header=num_nodes_header, src_header=src_header,
+                              dst_header=dst_header, node_label_header=node_label_header, node_attr_key=node_attr_key,
+                              categories=categories, bidirectional=bidirectional)
+
+    @staticmethod
+    def GraphsByCSVPath(graphs_file_path, edges_file_path,
+                              nodes_file_path, graph_id_header="graph_id",
+                              graph_label_header="label", num_nodes_header="num_nodes", src_header="src",
+                              dst_header="dst", node_label_header="label", node_attr_key="node_attr",
+                              categories=[], bidirectional=True):
+        """
+        Returns DGL graphs according to the input CSV file paths.
+
+        Parameters
+        ----------
+        graphs_file_path : str
+            The file path to the grpahs CSV file.
+        edges_file_path : str
+            The file path to the edges CSV file.
+        nodes_file_path : str
+            The file path to the nodes CSV file.
+        graph_id_header : str , optional
+            The header string used to specify the graph id. The default is "graph_id".
+        graph_label_header : str , optional
+            The header string used to specify the graph label. The default is "label".
+        num_nodes_header : str , optional
+            The header string used to specify the number of nodes. The default is "num_nodes".
+        src_header : str , optional
+            The header string used to specify the source of edges. The default is "src".
+        dst_header : str , optional
+            The header string used to specify the destination of edges. The default is "dst".
+        node_label_header : str , optional
+            The header string used to specify the node label. The default is "label".
+        node_attr_key : str , optional
+            The key string used to specify the node attributes. The default is "node_attr".
+        categories : list
+            The list of categories.
+        bidirectional : bool , optional
+            If set to True, the output DGL graph is forced to be bi-directional. The default is True.
+
+        Returns
+        -------
+        dict
+            The dicitonary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
 
         """
 
@@ -1435,8 +1485,9 @@ class DGL:
         return {"graphs":dgl_graphs, "labels":labels}
 
     @staticmethod
-    def GraphsByImportedDGCNN(file_path, categories=[], bidirectional=True):
+    def GraphsByImportedDGCNN(path, categories=[], bidirectional=True):
         """
+        DEPRECATED. DO NOT USE. PLEASE USE GraphsByCSVPath
         Returns the Graphs from the imported DGCNN file.
 
         Parameters
@@ -1456,47 +1507,104 @@ class DGL:
             - "labels" (list): The list of graph labels
 
         """
+        print("DGL.ByImportedDGCNN - WARNING: This method is deprecated. Please do not use. Instead use DGL.ByDGCNNPath.")
+        return DGL.GraphsByDGCNNPath(path=path, categories=categories, bidirectional=bidirectional)
+
+    @staticmethod
+    def GraphsByDGCNNPath(path, categories=[], bidirectional=True):
+        """
+        Returns the Graphs from the input DGCNN file path.
+
+        Parameters
+        ----------
+        file : file object
+            The input DGCNN text file.
+        categories : list
+            The list of node categories expected in the imported DGCNN file. This is used to one-hot-encode the node features.
+        bidirectional : bool , optional
+            If set to True, the output DGL graph is forced to be bi-directional. The defaults is True.
+
+        Returns
+        -------
+        dict
+            A dictionary object that contains the imported graphs and their corresponding labels. The dictionary has the following keys and values:
+            - "graphs" (list): The list of DGL graphs
+            - "labels" (list): The list of graph labels
+
+        """
+        if not path:
+            return None
+        file = open(path)
+        if not file:
+            return None
+        return DGL.GraphsByDGCNNFile(file=file, categories=categories, bidirectional=bidirectional)
+
+    @staticmethod
+    def GraphsByDGCNNFile(file, categories=[], bidirectional=True):
+        """
+        Returns the Graphs from the input DGCNN file.
+
+        Parameters
+        ----------
+        file : file object
+            The input DGCNN text file.
+        categories : list
+            The list of node categories expected in the imported DGCNN file. This is used to one-hot-encode the node features.
+        bidirectional : bool , optional
+            If set to True, the output DGL graph is forced to be bi-directional. The defaults is True.
+
+        Returns
+        -------
+        dict
+            A dictionary object that contains the imported graphs and their corresponding labels. The dictionary has the following keys and values:
+            - "graphs" (list): The list of DGL graphs
+            - "labels" (list): The list of graph labels
+
+        """
+
+        if not file:
+            return None
         graphs = []
         labels = []
-        file = open(file_path)
-        if file:
-            lines = file.readlines()
-            n_graphs = int(lines[0])
-            index = 1
-            for i in range(n_graphs):
-                graph_dict = {}
-                graph_dict["src"] = []
-                graph_dict["dst"] = []
-                graph_dict["node_labels"] = {}
-                graph_dict["node_features"] = []
-                line = lines[index].split()
-                n_nodes = int(line[0])
-                graph_dict["num_nodes"] = n_nodes
-                graph_label = int(line[1])
-                labels.append(graph_label)
-                index+=1
-                for j in range(n_nodes):
-                    line = lines[index+j].split()
-                    node_label = int(line[0])
-                    graph_dict["node_labels"][j] = node_label
-                    graph_dict["node_features"].append(torch.tensor(DGL.OneHotEncode(node_label, categories)))
-                    adj_vertices = line[2:]
-                    for adj_vertex in adj_vertices:
-                        graph_dict["src"].append(j)
-                        graph_dict["dst"].append(int(adj_vertex))
+        lines = []
+        for lineo, line in enumerate(file):
+            lines.append(line)
+        n_graphs = int(lines[0])
+        index = 1
+        for i in range(n_graphs):
+            graph_dict = {}
+            graph_dict["src"] = []
+            graph_dict["dst"] = []
+            graph_dict["node_labels"] = {}
+            graph_dict["node_features"] = []
+            line = lines[index].split()
+            n_nodes = int(line[0])
+            graph_dict["num_nodes"] = n_nodes
+            graph_label = int(line[1])
+            labels.append(graph_label)
+            index+=1
+            for j in range(n_nodes):
+                line = lines[index+j].split()
+                node_label = int(line[0])
+                graph_dict["node_labels"][j] = node_label
+                graph_dict["node_features"].append(torch.tensor(DGL.OneHotEncode(node_label, categories)))
+                adj_vertices = line[2:]
+                for adj_vertex in adj_vertices:
+                    graph_dict["src"].append(j)
+                    graph_dict["dst"].append(int(adj_vertex))
 
-                # Create DDGL graph
-                src = np.array(graph_dict["src"])
-                dst = np.array(graph_dict["dst"])
-                # Create a graph
-                dgl_graph = dgl.graph((src, dst), num_nodes=graph_dict["num_nodes"])
-                # Setting the node features as 'node_attr' using onehotencoding of vlabel
-                dgl_graph.ndata['node_attr'] = torch.stack(graph_dict["node_features"])
-                if bidirectional:
-                    dgl_graph = dgl.add_reverse_edges(dgl_graph)        
-                graphs.append(dgl_graph)
-                index+=n_nodes
-            file.close()
+            # Create DDGL graph
+            src = np.array(graph_dict["src"])
+            dst = np.array(graph_dict["dst"])
+            # Create a graph
+            dgl_graph = dgl.graph((src, dst), num_nodes=graph_dict["num_nodes"])
+            # Setting the node features as 'node_attr' using onehotencoding of vlabel
+            dgl_graph.ndata['node_attr'] = torch.stack(graph_dict["node_features"])
+            if bidirectional:
+                dgl_graph = dgl.add_reverse_edges(dgl_graph)        
+            graphs.append(dgl_graph)
+            index+=n_nodes
+        file.close()
         return {"graphs":graphs, "labels":labels}
     
     @staticmethod
@@ -1531,7 +1639,29 @@ class DGL:
     @staticmethod
     def ModelByFilePath(path):
         """
+        DEPRECATED. DO NOT USE. INSTEAD USE ModeLoad.
+        Returns the model found at the input PT file path.
+        Parameters
+        ----------
+        path : str
+            File path for the saved classifier.
+
+        Returns
+        -------
+        DGL Classifier
+            The classifier.
+
+        """
+        print("DGL.ModelByFilePath - WARNING: DEPRECTAED. DO NOT USE. INSTEAD USE DGL.ModelLoad.")
+        if not path:
+            return None
+        return torch.load(path)
+    
+    @staticmethod
+    def ModelLoad(path):
+        """
         Returns the model found at the input file path.
+
         Parameters
         ----------
         path : str
@@ -1607,6 +1737,24 @@ class DGL:
     
     @staticmethod
     def DatasetByImportedCSV_NC(folderPath):
+        """
+        UNDER CONSTRUCTION. DO NOT USE.
+
+        Parameters
+        ----------
+        folderPath : str
+            The path to folder containing the input CSV files. In that folder there should be graphs.csv, edges.csv, and vertices.csv
+
+        Returns
+        -------
+        DGLDataset
+            The returns DGL dataset.
+
+        """
+        return dgl.data.CSVDataset(folderPath, force_reload=True)
+    
+    @staticmethod
+    def DatasetByCSVPath_NC(folderPath):
         """
         UNDER CONSTRUCTION. DO NOT USE.
 
@@ -2419,7 +2567,27 @@ class DGL:
         return data
 
     @staticmethod
-    def GraphsByFilePath(path, labelKey="value", key='node_attr'):
+    def GraphsByBINPath(path, labelKey="value", key='node_attr'):
+        """
+        Returns the Graphs from the input BIN file path.
+
+        Parameters
+        ----------
+        path : str
+            The input BIN file path.
+        labelKey : str , optional
+            The label key to use. The default is "value".
+        key : str , optional
+            The node attributes key. THe default is 'node_attr'.
+
+        Returns
+        -------
+        dict
+            A dictionary object that contains the imported graphs and their corresponding labels. The dictionary has the following keys and values:
+            - "graphs" (list): The list of DGL graphs
+            - "labels" (list): The list of graph labels
+
+        """
         graphs, label_dict = load_graphs(path)
         labels = label_dict[labelKey].tolist()
         return {"graphs" : graphs, "labels": labels}
