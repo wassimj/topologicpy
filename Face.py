@@ -477,16 +477,11 @@ class Face(topologic.Face):
         edges = Wire.Edges(wire)
         wire = Topology.SelfMerge(Cluster.ByTopologies(edges))
         vertices = Wire.Vertices(wire)
-        #print("This wire has:", len(vertices), "vertices.")
         try:
-            #print(Topology.IsPlanar(wire))
             fList = topologic.Face.ByExternalBoundary(wire)
         except:
             if len(vertices) > 3:
-                print("This wire has:", len(vertices), "vertices.")
-                print("Non planar wire, triangulating")
                 fList = triangulateWire(wire)
-                print("After triangulation", fList)
             else:
                 fList = []
         

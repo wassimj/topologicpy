@@ -363,6 +363,116 @@ class Vertex(Topology):
         return None
 
     @staticmethod
+    def InterpolateValue(vertex, vertices, n=3, key="intensity", tolerance=0.0001):
+        """
+        Interpolates the value of the input vertex based on the values of the *n* nearest vertices.
+
+        Parameters
+        ----------
+        vertex : topologic.Vertex
+            The input vertex.
+        vertices : list
+            The input list of vertices.
+        n : int , optional
+            The maximum number of nearest vertices to consider. The default is 3.
+        key : str , optional
+            The key that holds the value to be interpolated in the dictionaries of the vertices. The default is "intensity".
+        tolerance : float , optional
+            The tolerance for computing if the input vertex is coincident with another vertex in the input list of vertices. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.vertex
+            The input vertex with the interpolated value stored in its dictionary at the key specified by the input key. Other keys and values in the dictionary are preserved.
+
+        """
+
+        def interpolate_value(point, data_points, n, tolerance=0.0001):
+            """
+            Interpolates the value associated with a point in 3D by averaging the values of the n nearest points.
+            The influence of the adjacent points is inversely proportional to their distance from the input point.
+
+            Args:
+                data_points (list): A list of tuples, each representing a data point in 3D space as (x, y, z, value).
+                                    The 'value' represents the value associated with that data point.
+                point (tuple): A tuple representing the point in 3D space as (x, y, z) for which we want to interpolate a value.
+                n (int): The number of nearest points to consider for interpolation.
+
+            Returns:
+                The interpolated value for the input point.
+            """
+            # Calculate the distances between the input point and all data points
+            distances = [(distance(p[:3], point), p[3]) for p in data_points]
+
+            # Sort the distances in ascending order
+            sorted_distances = sorted(distances, key=lambda x: x[0])
+
+            # Take the n nearest points
+            nearest_points = sorted_distances[:n]
+
+            n_p = nearest_points[0]
+            n_d = n_p[0]
+            if n_d < tolerance:
+                return n_p[1]
+
+            # Calculate the weights for each nearest point based on inverse distance
+
+            weights = [(1/d[0], d[1]) for d in nearest_points]
+
+            # Normalize the weights so they sum to 1
+            total_weight = sum(w[0] for w in weights)
+            normalized_weights = [(w[0]/total_weight, w[1]) for w in weights]
+
+            # Interpolate the value as the weighted average of the nearest points
+            interpolated_value = sum(w[0]*w[1] for w in normalized_weights)
+
+            return interpolated_value
+
+        def distance(point1, point2):
+            """
+            Calculates the Euclidean distance between two points in 3D space.
+
+            Args:
+                point1 (tuple): A tuple representing a point in 3D space as (x, y, z).
+                point2 (tuple): A tuple representing a point in 3D space as (x, y, z).
+
+            Returns:
+                The Euclidean distance between the two points.
+            """
+            return ((point1[0]-point2[0])**2 + (point1[1]-point2[1])**2 + (point1[2]-point2[2])**2)**0.5
+        
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+        if not isinstance(vertices, list):
+            return None
+        
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) == 0:
+            return None
+        
+        point = (Vertex.X(vertex), Vertex.Y(vertex), Vertex.Z(vertex))
+        data_points = []
+        for v in vertices:
+            d = Topology.Dictionary(v)
+            value = Dictionary.ValueAtKey(d, key)
+            if not value == None:
+                if type(value) == int or type(value) == float:
+                    data_points.append((Vertex.X(v), Vertex.Y(v), Vertex.Z(v), value))
+        if len(data_points) == 0:
+            return None
+        if n > len(data_points):
+            n = len(data_points)
+        value = interpolate_value(point, data_points, n, tolerance=0.0001)
+        d = Topology.Dictionary(vertex)
+        d = Dictionary.SetValueAtKey(d, key, value)
+        vertex = Topology.SetDictionary(vertex, d)
+        return vertex
+
+
+    @staticmethod
     def IsInside(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input vertex is inside the input topology. Returns False otherwise.
