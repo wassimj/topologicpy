@@ -74,6 +74,19 @@ class Dictionary(topologic.Dictionary):
                 stl_values.append(topologic.DoubleAttribute(value))
             elif isinstance(value, str):
                 stl_values.append(topologic.StringAttribute(value))
+            elif isinstance(value, tuple):
+                value = list(value)
+                l = []
+                for v in value:
+                    if isinstance(v, bool):
+                        l.append(topologic.IntAttribute(v))
+                    elif isinstance(v, int):
+                        l.append(topologic.IntAttribute(v))
+                    elif isinstance(v, float):
+                        l.append(topologic.DoubleAttribute(v))
+                    elif isinstance(v, str):
+                        l.append(topologic.StringAttribute(v))
+                stl_values.append(topologic.ListAttribute(l))
             elif isinstance(value, list):
                 l = []
                 for v in value:

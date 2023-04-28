@@ -1107,7 +1107,7 @@ class Plotly:
         yTitle : str , optional
             The Y-axis title. The default is "Accuracy and Loss".
         ySpacing : float , optional
-            THe Y-axis spacing. The default is 0.1.
+            The Y-axis spacing. The default is 0.1.
         useMarkers : bool , optional
             If set to True, markers will be displayed. The default is False.
         chartType : str , optional
@@ -1258,6 +1258,52 @@ class Plotly:
         return figure
 
     @staticmethod
+    def FigureByJSONFile(file):
+        """
+        Imports a plotly figure from a JSON file.
+
+        Parameters
+        ----------
+        file : file object
+            The JSON file.
+
+        Returns
+        -------
+        plotly.graph_objs._figure.Figure
+            The imported figure.
+
+        """
+        figure = None
+        if not file:
+            return None
+        figure = plotly.io.read_json(file, output_type='Figure', skip_invalid=True, engine=None)
+        file.close()
+        return figure
+    
+    @staticmethod
+    def FigureByJSONPath(path):
+        """
+        Imports a plotly figure from a JSON file path.
+
+        Parameters
+        ----------
+        path : str
+            The path to the BRep file.
+
+        Returns
+        -------
+        plotly.graph_objs._figure.Figure
+            The imported figure.
+
+        """
+        if not path:
+            return None
+        file = open(path)
+        if not file:
+            return None
+        return Plotly.FigureByJSONFile(file)
+
+    @staticmethod
     def FigureByPieChart(data, values, names):
         """
         Creates a plotly pie chart figure.
@@ -1278,6 +1324,180 @@ class Plotly:
         fig = px.pie(df, values=values, names=names)
         return fig
     
+    @staticmethod
+    def FigureExportToJSON(figure, path, overwrite=False):
+        """
+        Exports the input plotly figure to a JSON file.
+
+        Parameters
+        ----------
+        figure : plotly.graph_objs._figure.Figure
+            The input plotly figure.
+        path : str
+            The input file path.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
+
+        Returns
+        -------
+        bool
+            True if the export operation is successful. False otherwise.
+
+        """
+        if not isinstance(figure, plotly.graph_objs._figure.Figure):
+            print("Plotly.FigureExportToJSON - Error: The input figure is not a plolty figure. Returning None.")
+            return None
+        if not isinstance(path, str):
+            print("Plotly.FigureExportToJSON - Error: The input path is not a string. Returning None.")
+            return None
+        # Make sure the file extension is .BREP
+        ext = path[len(path)-5:len(path)]
+        if ext.lower() != ".json":
+            path = path+".json"
+        f = None
+        try:
+            if overwrite == True:
+                f = open(path, "w")
+            else:
+                f = open(path, "x") # Try to create a new File
+        except:
+            raise Exception("Error: Could not create a new file at the following location: "+path)
+        if (f):
+            plotly.io.write_json(figure, f, validate=True, pretty=False, remove_uids=True, engine=None)
+            f.close()    
+            return True
+        if f:
+            try:
+                f.close()
+            except:
+                pass
+        return False
+
+    @staticmethod
+    def FigureExportToPDF(figure, path, width=1920, height=1200, overwrite=False):
+        """
+        Exports the input plotly figure to a PDF file.
+
+        Parameters
+        ----------
+        figure : plotly.graph_objs._figure.Figure
+            The input plotly figure.
+        path : str
+            The input file path.
+        width : int, optional
+            The width of the exported image in pixels. The default is 1920.
+        height : int , optional
+            The height of the exported image in pixels. The default is 1200.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
+
+        Returns
+        -------
+        bool
+            True if the export operation is successful. False otherwise.
+
+        """
+        import os
+        if not isinstance(figure, plotly.graph_objs._figure.Figure):
+            print("Plotly.FigureExportToPNG - Error: The input figure is not a plolty figure. Returning None.")
+            return None
+        if not isinstance(path, str):
+            print("Plotly.FigureExportToPNG - Error: The input path is not a string. Returning None.")
+            return None
+        # Make sure the file extension is .BREP
+        ext = path[len(path)-4:len(path)]
+        if ext.lower() != ".pdf":
+            path = path+".pdf"
+        
+        if overwrite == False and os.path.exists(path):
+            raise Exception("Error: A file already exists at this location and overwrite is set to False. "+path)
+
+        plotly.io.write_image(figure, path, format='pdf', scale=1, width=width, height=height, validate=True, engine='auto')  
+        return True
+    
+    @staticmethod
+    def FigureExportToPNG(figure, path, width=1920, height=1200, overwrite=False):
+        """
+        Exports the input plotly figure to a PNG file.
+
+        Parameters
+        ----------
+        figure : plotly.graph_objs._figure.Figure
+            The input plotly figure.
+        path : str
+            The input file path.
+        width : int, optional
+            The width of the exported image in pixels. The default is 1920.
+        height : int , optional
+            The height of the exported image in pixels. The default is 1200.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
+
+        Returns
+        -------
+        bool
+            True if the export operation is successful. False otherwise.
+
+        """
+        import os
+        if not isinstance(figure, plotly.graph_objs._figure.Figure):
+            print("Plotly.FigureExportToPNG - Error: The input figure is not a plolty figure. Returning None.")
+            return None
+        if not isinstance(path, str):
+            print("Plotly.FigureExportToPNG - Error: The input path is not a string. Returning None.")
+            return None
+        # Make sure the file extension is .BREP
+        ext = path[len(path)-4:len(path)]
+        if ext.lower() != ".png":
+            path = path+".png"
+        
+        if overwrite == False and os.path.exists(path):
+            raise Exception("Error: A file already exists at this location and overwrite is set to False. "+path)
+
+        plotly.io.write_image(figure, path, format='png', scale=1, width=width, height=height, validate=True, engine='auto')  
+        return True
+    
+    @staticmethod
+    def FigureExportToSVG(figure, path, width=1920, height=1200, overwrite=False):
+        """
+        Exports the input plotly figure to a SVG file.
+
+        Parameters
+        ----------
+        figure : plotly.graph_objs._figure.Figure
+            The input plotly figure.
+        path : str
+            The input file path.
+        width : int, optional
+            The width of the exported image in pixels. The default is 1920.
+        height : int , optional
+            The height of the exported image in pixels. The default is 1200.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
+
+        Returns
+        -------
+        bool
+            True if the export operation is successful. False otherwise.
+
+        """
+        import os
+        if not isinstance(figure, plotly.graph_objs._figure.Figure):
+            print("Plotly.FigureExportToPNG - Error: The input figure is not a plolty figure. Returning None.")
+            return None
+        if not isinstance(path, str):
+            print("Plotly.FigureExportToPNG - Error: The input path is not a string. Returning None.")
+            return None
+        # Make sure the file extension is .BREP
+        ext = path[len(path)-4:len(path)]
+        if ext.lower() != ".svg":
+            path = path+".svg"
+        
+        if overwrite == False and os.path.exists(path):
+            raise Exception("Error: A file already exists at this location and overwrite is set to False. "+path)
+
+        plotly.io.write_image(figure, path, format='svg', scale=1, width=width, height=height, validate=True, engine='auto')  
+        return True
     @staticmethod
     def SetCamera(figure, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1]):
         """

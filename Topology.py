@@ -1221,17 +1221,17 @@ class Topology():
     @staticmethod
     def ByBREPFile(file):
         """
-        Create a topology by importing it from a BREP file.
+        Imports a topology from a BREP file.
 
         Parameters
         ----------
-        path : str
-            The path to the BRep file.
+        file : file object
+            The BREP file.
 
         Returns
         -------
-        topology : topologic.Topology
-            The created topology.
+        topologic.Topology
+            The imported topology.
 
         """
         topology = None
@@ -1242,20 +1242,20 @@ class Topology():
         file.close()
         return topology
     
-    staticmethod
+    @staticmethod
     def ByBREPPath(path):
         """
-        Create a topology by importing it from a BRep file path.
+        IMports a topology from a BREP file path.
 
         Parameters
         ----------
         path : str
-            The path to the BRep file.
+            The path to the BREP file.
 
         Returns
         -------
-        topology : topologic.Topology
-            The created topology.
+        topologic.Topology
+            The imported topology.
 
         """
         if not path:
@@ -1269,7 +1269,7 @@ class Topology():
     def ByImportedBRep(path):
         """
         DEPRECATED. DO NOT USE. Instead use Topology.ByBREPPath or Topology.ByBREPFile
-        Create a topology by importing it from a BRep file path.
+        IMportes a topology from a BRep file path.
 
         Parameters
         ----------
@@ -1278,8 +1278,8 @@ class Topology():
 
         Returns
         -------
-        topology : topologic.Topology
-            The created topology.
+        topologic.Topology
+            The imported topology.
 
         """
         print("Topology.ByImportedBRep - WARNING: This method is DEPRECATED. DO NOT USE. Instead use Topology.ByBREPPath or Topology.ByBREPFile")
@@ -2594,9 +2594,34 @@ class Topology():
             newTopologies.append(newTopology)
         return Cluster.ByTopologies(newTopologies)
 
-    
     @staticmethod
     def ExportToBRep(topology, path, overwrite=True, version=3):
+        """
+        DEPRECTATED. DO NOT USE. INSTEAD USE Topology.ExportToBREP.
+        Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        path : str
+            The input file path.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
+        version : int , optional
+            The desired version number for the BREP file. The default is 3.
+
+        Returns
+        -------
+        bool
+            True if the export operation is successful. False otherwise.
+
+        """
+        print("Topology.ExportToBRep - WARNING: This method is deprecated. Please use instead Topology.ExportToBREP.")
+        return Topology.ExportToBREP(topology=topology, path=path, overwrite=overwrite, version=version)
+    
+    @staticmethod
+    def ExportToBREP(topology, path, overwrite=True, version=3):
         """
         Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html.
 

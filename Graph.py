@@ -1953,7 +1953,6 @@ class Graph:
             The created graph.
 
         """
-
         if not isinstance(vertices, list):
             return None
         if not isinstance(edges, list):

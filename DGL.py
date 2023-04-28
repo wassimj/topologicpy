@@ -1901,7 +1901,7 @@ class DGL:
         hl_widths : list , optional
             The list of hidden layer widths. A list of [16, 32, 16] means that the model will have 3 hidden layers with number of neurons in each being 16, 32, 16 respectively from input to output. The default is [32].
         conv_layer_type : str , optional
-            THe desired type of the convultion layer. The options are "Classic", "GraphConv", "GINConv", "SAGEConv", "TAGConv", "DGN". It is case insensitive. The default is "SAGEConv".
+            The desired type of the convolution layer. The options are "Classic", "GraphConv", "GINConv", "SAGEConv", "TAGConv", "DGN". It is case insensitive. The default is "SAGEConv".
         pooling : str , optional
             The desired type of pooling. The options are "AvgPooling", "MaxPooling", or "SumPooling". It is case insensitive. The default is "AvgPooling".
         batch_size : int , optional
@@ -1911,7 +1911,7 @@ class DGL:
         use_gpu : bool , optional
             If set to True, the model will attempt to use the GPU. The default is False.
         loss_function : str , optional
-            The desired loss function. The optionals are "Cross-Entropy" or "Negative Log Likelihood". It is case insensitive. The default is "Cross-Entropy".
+            The desired loss function. The options are "Cross-Entropy" or "Negative Log Likelihood". It is case insensitive. The default is "Cross-Entropy".
 
         Returns
         -------
@@ -2334,7 +2334,7 @@ class DGL:
         yTitle : str , optional
             The Y-axis title. The default is "Accuracy and Loss".
         ySpacing : float , optional
-            THe Y-axis spacing. The default is 0.1.
+            The Y-axis spacing. The default is 0.1.
         useMarkers : bool , optional
             If set to True, markers will be displayed. The default is False.
         chartType : str , optional
@@ -2512,7 +2512,29 @@ class DGL:
         Returns
         -------
         dict
-            A dictionary containing the model data.
+            A dictionary containing the model data. The keys in the dictionary are:
+            'Model Type'
+            'Optimizer'
+            'CV Type'
+            'Split'
+            'K-Folds'
+            'HL Widths'
+            'Conv Layer Type'
+            'Pooling'
+            'Learning Rate'
+            'Batch Size'
+            'Epochs'
+            'Training Accuracy'
+            'Validation Accuracy'
+            'Testing Accuracy'
+            'Training Loss'
+            'Validation Loss'
+            'Testing Loss'
+            'Accuracies' (Classifier and K-Fold only)
+            'Max Accuracy' (Classifier and K-Fold only)
+            'Losses' (Regressor and K-fold only)
+            'min Loss' (Regressor and K-fold only)
+
 
         """
         from topologicpy.Helper import Helper
@@ -2578,7 +2600,7 @@ class DGL:
         labelKey : str , optional
             The label key to use. The default is "value".
         key : str , optional
-            The node attributes key. THe default is 'node_attr'.
+            The node attributes key. The default is 'node_attr'.
 
         Returns
         -------
