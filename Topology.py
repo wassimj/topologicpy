@@ -1784,6 +1784,7 @@ class Topology():
             The imported topology.
 
         """
+        from topologicpy.Vertex import Vertex
         def parse(lines):
             vertices = []
             faces = []
@@ -1793,10 +1794,7 @@ class Topology():
                 if isinstance(s, list):
                     if len(s) > 3:
                         if s[0].lower() == "v":
-                            if transposeAxes:
-                                vertices.append([float(s[1]), float(s[3]), float(s[2])])
-                            else:
-                                vertices.append([float(s[1]), float(s[2]), float(s[3])])
+                            vertices.append([float(s[1]), float(s[2]), float(s[3])])
                         elif s[0].lower() == "f":
                             temp_faces = []
                             for j in range(1,len(s)):
@@ -1813,9 +1811,6 @@ class Topology():
                 if isinstance(s, list):
                     if len(s) > 3:
                         if s[0].lower() == "v":
-                            if transposeAxes:
-                                vertices.append([float(s[1]), float(s[3]), float(s[2])])
-                            else:
                                 vertices.append([float(s[1]), float(s[2]), float(s[3])])
                         elif s[0].lower() == "f":
                             temp_faces = []
@@ -1841,7 +1836,10 @@ class Topology():
                 vertices, faces = parse(lines)
         file.close()
         if vertices or faces:
-            return Topology.ByGeometry(vertices = vertices, faces = faces, outputMode="default", tolerance=tolerance)
+            topology = Topology.ByGeometry(vertices = vertices, faces = faces, outputMode="default", tolerance=tolerance)
+            if transposeAxes == True:
+                topology = Topology.Rotate(topology, Vertex.Origin(), 1,0,0,90)
+            return topology
         return None
     
     @staticmethod
@@ -4822,7 +4820,7 @@ class Topology():
              target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", showScale=False,
              
              cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
-             cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=4):
+             cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=4, tolerance=0.0001):
         """
             Shows the input topology on screen.
 
@@ -4981,6 +4979,8 @@ class Topology():
             The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         mantissa : int , optional
             The desired length of the mantissa for the values listed on the colorbar. The default is 4.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -4990,7 +4990,6 @@ class Topology():
         from topologicpy.Plotly import Plotly
         if not isinstance(topology, topologic.Topology):
             return None
-        #data = Plotly.DataByTopology(topology=topology, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, vertexGroups=vertexGroups, edgeGroups=edgeGroups, faceGroups=faceGroups, faceColor=faceColor, faceOpacity=faceOpacity, edgeColor=edgeColor, edgeWidth=edgeWidth, vertexColor=vertexColor, vertexSize=vertexSize, showFaces=showFaces, showEdges=showEdges, showVertices=showVertices, intensityKey=intensityKey, colorScale=colorScale, showScale=showScale)
         data = Plotly.DataByTopology(topology=topology,
                        showVertices=showVertices, vertexSize=vertexSize, vertexColor=vertexColor, 
                        vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, 
@@ -5007,7 +5006,7 @@ class Topology():
                        faceMinGroup=faceMinGroup, faceMaxGroup=faceMaxGroup, 
                        showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel, faceLegendRank=faceLegendRank,
                        faceLegendGroup=faceLegendGroup, 
-                       intensityKey=intensityKey, colorScale=colorScale)
+                       intensityKey=intensityKey, colorScale=colorScale, tolerance=tolerance)
         figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
         if showScale:
             figure = Plotly.AddColorBar(figure, values=cbValues, nTicks=cbTicks, xPosition=cbX, width=cbWidth, outlineWidth=cbOutlineWidth, title=cbTitle, subTitle=cbSubTitle, units=cbUnits, colorScale=colorScale, mantissa=mantissa)

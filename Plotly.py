@@ -374,7 +374,7 @@ class Plotly:
                        faceMinGroup=None, faceMaxGroup=None, 
                        showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
                        faceLegendGroup=3, 
-                       intensityKey=None, colorScale="Viridis"):
+                       intensityKey=None, colorScale="Viridis", tolerance=0.0001):
         """
         Creates plotly face, edge, and vertex data.
 
@@ -479,6 +479,8 @@ class Plotly:
             If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         
         Returns
         -------
@@ -807,14 +809,21 @@ class Plotly:
                     if faceLabelKey or faceGroupKey:
                         f_dictionaries.append(Topology.Dictionary(tp_face))
             faces = []
+            orig_tolerance = tolerance
             for tri in triangles:
                 w = Face.ExternalBoundary(tri)
                 w_vertices = Topology.SubTopologies(w, subTopologyType="vertex")
                 temp_f = []
                 for w_v in w_vertices:
-                    i = Vertex.Index(vertex=w_v, vertices=tp_verts, tolerance=0.01)
-                    temp_f.append(i)
-                faces.append(temp_f)
+                    i = None
+                    tolerance = orig_tolerance
+                    while i == None and tolerance < 3:
+                        i = Vertex.Index(vertex=w_v, vertices=tp_verts, tolerance=tolerance)
+                        tolerance = tolerance*10
+                    if not i == None:
+                        temp_f.append(i)
+                if len(temp_f) > 2:
+                    faces.append(temp_f)
             data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensities, colorScale=colorScale))
         return data
 

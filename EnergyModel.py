@@ -3,6 +3,7 @@ import topologic
 from topologicpy.Topology import Topology
 from topologicpy.Dictionary import Dictionary
 
+import shutil
 import math
 from collections import OrderedDict
 import os
@@ -664,7 +665,7 @@ class EnergyModel:
         return list(OrderedDict( (x,1) for x in columnNames ).keys()) #Making a unique list and keeping its order
 
     @staticmethod
-    def Run(model, weatherFilePath: str = None, osBinaryPath : str = None, outputFolder : str = None):
+    def Run(model, weatherFilePath: str = None, osBinaryPath : str = None, outputFolder : str = None, removeFiles : bool = False):
         """
             Runs an energy simulation.
         
@@ -678,6 +679,8 @@ class EnergyModel:
             The path to the openstudio binary.
         outputFolder : str
             The path to the output folder.
+        removeFiles : bool , optional
+            If set to True, the working files are removed at the end of the process. The default is False.
 
         Returns
         -------
@@ -686,8 +689,22 @@ class EnergyModel:
 
         """
         import os
+        import time
+        def deleteOldFiles(path):
+            onemonth = (time.time()) - 30 * 86400
+            try:
+                for filename in os.listdir(path):
+                    if os.path.getmtime(os.path.join(path, filename)) < onemonth:
+                        if os.path.isfile(os.path.join(path, filename)):
+                            os.remove(os.path.join(path, filename))
+                        elif os.path.isdir(os.path.join(path, filename)):
+                            shutil.rmtree((os.path.join(path, filename)))
+            except:
+                pass
         if not weatherFilePath:
             weatherFilePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "GBR_London.Gatwick.037760_IWEC.epw")
+        if removeFiles:
+            deleteOldFiles(outputFolder)
         pbar = tqdm(desc='Running Simulation', total=100, leave=False)
         utcnow = datetime.utcnow()
         timestamp = utcnow.strftime("UTC-%Y-%m-%d-%H-%M-%S")
