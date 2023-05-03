@@ -565,6 +565,72 @@ class Face(topologic.Face):
         return Face.ByWires(externalBoundary, internalBoundaries)
     
     @staticmethod
+    def NorthArrow(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, direction: list = [0,0,1], northAngle: float = 0.0,
+                   placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+        """
+        Creates a north arrow.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex, optional
+            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
+        radius : float , optional
+            The radius of the circle. The default is 1.
+        sides : int , optional
+            The number of sides of the circle. The default is 16.
+        direction : list , optional
+            The vector representing the up direction of the circle. The default is [0,0,1].
+        northAngle : float , optional
+            The angular offset in degrees from the positive Y axis direction. The angle is measured in a counter-clockwise fashion where 0 is positive Y, 90 is negative X, 180 is negative Y, and 270 is positive X.
+        placement : str , optional
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Face
+            The created circle.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        if not origin:
+            origin = Vertex.Origin()
+        
+        c = Face.Circle(origin=origin, radius=radius, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
+        r = Face.Rectangle(origin=origin, width=radius*0.01,length=radius*1.2, placement="lowerleft")
+        r = Topology.Translate(r, -0.005*radius,0,0)
+        arrow = Topology.Difference(c, r)
+        arrow = Topology.Rotate(arrow, Vertex.Origin(), 0,0,1,northAngle)
+        if placement.lower() == "lowerleft":
+            arrow = Topology.Translate(arrow, radius, radius, 0)
+        elif placement.lower() == "upperleft":
+            arrow = Topology.Translate(arrow, radius, -radius, 0)
+        elif placement.lower() == "lowerright":
+            arrow = Topology.Translate(arrow, -radius, radius, 0)
+        elif placement.lower() == "upperright":
+            arrow = Topology.Translate(arrow, -radius, -radius, 0)
+        x1 = origin.X()
+        y1 = origin.Y()
+        z1 = origin.Z()
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1    
+        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
+        if dist < 0.0001:
+            theta = 0
+        else:
+            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
+        arrow = Topology.Rotate(arrow, origin, 0, 1, 0, theta)
+        arrow = Topology.Rotate(arrow, origin, 0, 0, 1, phi)
+        return arrow
+
+    @staticmethod
     def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0,0,1],
                    placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
@@ -1371,72 +1437,6 @@ class Face(topologic.Face):
         vec = Face.NormalAtParameters(face, u=u, v=v)
         ev = Topology.TranslateByDirectionDistance(sv, vec, length)
         return Edge.ByVertices([sv, ev])
-    
-    @staticmethod
-    def NorthArrow(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, direction: list = [0,0,1], northAngle: float = 0.0,
-                   placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
-        """
-        Creates a north arrow.
-
-        Parameters
-        ----------
-        origin : topologic.Vertex, optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
-        radius : float , optional
-            The radius of the circle. The default is 1.
-        sides : int , optional
-            The number of sides of the circle. The default is 16.
-        direction : list , optional
-            The vector representing the up direction of the circle. The default is [0,0,1].
-        northAngle : float , optional
-            The angular offset in degrees from the positive Y axis direction. The angle is measured in a counter-clockwise fashion where 0 is positive Y, 90 is negative X, 180 is negative Y, and 270 is positive X.
-        placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        topologic.Face
-            The created circle.
-
-        """
-        from topologicpy.Topology import Topology
-        from topologicpy.Vertex import Vertex
-        if not origin:
-            origin = Vertex.Origin()
-        
-        c = Face.Circle(origin=origin, radius=radius, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
-        r = Face.Rectangle(origin=origin, width=radius*0.01,length=radius*1.2, placement="lowerleft")
-        r = Topology.Translate(r, -0.005*radius,0,0)
-        arrow = Topology.Difference(c, r)
-        arrow = Topology.Rotate(arrow, Vertex.Origin(), 0,0,1,northAngle)
-        if placement.lower() == "lowerleft":
-            arrow = Topology.Translate(arrow, radius, radius, 0)
-        elif placement.lower() == "upperleft":
-            arrow = Topology.Translate(arrow, radius, -radius, 0)
-        elif placement.lower() == "lowerright":
-            arrow = Topology.Translate(arrow, -radius, radius, 0)
-        elif placement.lower() == "upperright":
-            arrow = Topology.Translate(arrow, -radius, -radius, 0)
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + direction[0]
-        y2 = origin.Y() + direction[1]
-        z2 = origin.Z() + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        arrow = Topology.Rotate(arrow, origin, 0, 1, 0, theta)
-        arrow = Topology.Rotate(arrow, origin, 0, 0, 1, phi)
-        return arrow
 
     @staticmethod
     def Planarize(face: topologic.Face, origin: topologic.Vertex = None, direction: list = None) -> topologic.Face:

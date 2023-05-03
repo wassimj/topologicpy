@@ -173,7 +173,11 @@ class EnergyModel:
             The created OSM model.
 
         """
-        
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
         def getKeyName(d, keyName):
             keys = d.Keys()
             for key in keys:
@@ -182,10 +186,12 @@ class EnergyModel:
             return None
         
         def createUniqueName(name, nameList, number):
+            if number > 9999:
+                return name+"_9999"
             if not (name in nameList):
                 return name
-            elif not ((name+"_"+str(number)) in nameList):
-                return name+"_"+str(number)
+            elif not ((name+"_"+"{:04d}".format(number)) in nameList):
+                return name+"_"+"{:04d}".format(number)
             else:
                 return createUniqueName(name,nameList, number+1)
         
@@ -273,8 +279,9 @@ class EnergyModel:
                     osBuildingStory = x
                 break
             osSpace.setBuildingStory(osBuildingStory)
-            cellDictionary = buildingCell.GetDictionary()
-            if cellDictionary:
+            cellDictionary = Topology.Dictionary(buildingCell)
+            keys = Dictionary.Keys(cellDictionary)
+            if len(keys) > 0:
                 if spaceTypeKey:
                     keyType = getKeyName(cellDictionary, spaceTypeKey)
                 else:
@@ -298,7 +305,7 @@ class EnergyModel:
                 if osSpaceName:
                     osSpace.setName(osSpaceName)
             else:
-                osSpaceName = osBuildingStory.name().get() + "_SPACE_" + str(spaceNumber)
+                osSpaceName = "SPACE_" + "{:04d}".format(spaceNumber)
                 osSpace.setName(osSpaceName)
                 sp_ = osModel.getSpaceTypeByName(defaultSpaceType)
                 if sp_.is_initialized():
@@ -311,7 +318,7 @@ class EnergyModel:
                     for vertex in Topology.SubTopologies(buildingFace.ExternalBoundary(), "Vertex"):
                         osFacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
                     osSurface = openstudio.model.Surface(osFacePoints, osModel)
-                    faceNormal = topologic.FaceUtility.NormalAtParameters(buildingFace, 0.5, 0.5)
+                    faceNormal = Face.Normal(buildingFace)
                     osFaceNormal = openstudio.Vector3d(faceNormal[0], faceNormal[1], faceNormal[2])
                     osFaceNormal.normalize()
                     if osFaceNormal.dot(osSurface.outwardNormal()) < 1e-6:
@@ -345,7 +352,7 @@ class EnergyModel:
                                     for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
                                         osSubSurfacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
                                     osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
-                                    apertureFaceNormal = topologic.FaceUtility.NormalAtParameters(apertureFace, 0.5, 0.5)
+                                    apertureFaceNormal = Face.Normal(apertureFace)
                                     osSubSurfaceNormal = openstudio.Vector3d(apertureFaceNormal[0], apertureFaceNormal[1], apertureFaceNormal[2])
                                     osSubSurfaceNormal.normalize()
                                     if osSubSurfaceNormal.dot(osSubSurface.outwardNormal()) < 1e-6:
@@ -384,7 +391,7 @@ class EnergyModel:
                                 for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
                                     osSubSurfacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
                                 osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
-                                apertureFaceNormal = topologic.FaceUtility.NormalAtParameters(apertureFace, 0.5, 0.5)
+                                apertureFaceNormal = Face.Normal(apertureFace)
                                 osSubSurfaceNormal = openstudio.Vector3d(apertureFaceNormal[0], apertureFaceNormal[1], apertureFaceNormal[2])
                                 osSubSurfaceNormal.normalize()
                                 if osSubSurfaceNormal.dot(osSubSurface.outwardNormal()) < 1e-6:
@@ -393,10 +400,10 @@ class EnergyModel:
                                 osSubSurface.setSurface(osSurface)
 
             osThermalZone = openstudio.model.ThermalZone(osModel)
-            osThermalZone.setVolume(topologic.CellUtility.Volume(buildingCell))
+            osThermalZone.setVolume(Cell.Volume(buildingCell))
             osThermalZone.setName(osSpace.name().get() + "_THERMAL_ZONE")
             osThermalZone.setUseIdealAirLoads(True)
-            osThermalZone.setVolume(topologic.CellUtility.Volume(buildingCell))
+            osThermalZone.setVolume(Cell.Volume(buildingCell))
             osThermalZone.setThermostatSetpointDualSetpoint(osThermostat)
             osSpace.setThermalZone(osThermalZone)
 
@@ -413,7 +420,7 @@ class EnergyModel:
                 for aVertex in Topology.SubTopologies(shadingFace.ExternalBoundary(), "Vertex"):
                     facePoints.append(openstudio.Point3d(aVertex.X(), aVertex.Y(), aVertex.Z()))
                 aShadingSurface = openstudio.model.ShadingSurface(facePoints, osModel)
-                faceNormal = topologic.FaceUtility.NormalAtParameters(shadingFace, 0.5, 0.5)
+                faceNormal = Face.Normal(shadingFace)
                 osFaceNormal = openstudio.Vector3d(faceNormal[0], faceNormal[1], faceNormal[2])
                 osFaceNormal.normalize()
                 if osFaceNormal.dot(aShadingSurface.outwardNormal()) < 0:
