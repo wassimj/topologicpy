@@ -164,6 +164,27 @@ class Helper:
         return returnList
 
     @staticmethod
+    def Sort(lA, lB):
+        """
+        Sorts the first input list according to the values in the second input list.
+
+        Parameters
+        ----------
+        lA : list
+            The first input list to be sorts
+        lB : list
+            The second input list to use for sorting the first input list.
+
+        Returns
+        -------
+        list
+            The sorted list.
+
+        """
+        lA.sort(key=dict(zip(lA, lB)).get)
+        return lA
+    
+    @staticmethod
     def Version():
         """
         Returns the current version of the software.

@@ -396,7 +396,7 @@ class Cluster(topologic.Cluster):
             return topologic.Vertex.Type()
 
     @staticmethod
-    def MysticRose(wire: topologic.Wire = None, origin: topologic.Vertex = None, radius: float = 1.0, sides: int = 16, perimeter: bool = True, direction: list = [0,0,1], placement:str = "center", tolerance: float = 0.0001) -> topologic.Cluster:
+    def MysticRose(wire: topologic.Wire = None, origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, perimeter: bool = True, direction: list = [0,0,1], placement:str = "center", tolerance: float = 0.0001) -> topologic.Cluster:
         """
         Creates a mystic rose.
 

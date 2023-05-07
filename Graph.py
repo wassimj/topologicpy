@@ -1962,6 +1962,81 @@ class Graph:
         return topologic.Graph.ByVerticesEdges(vertices, edges)
     
     @staticmethod
+    def Color(graph, vertices=None, key="color", tolerance=0.0001):
+        """
+        Colors the input vertices within the input graph. The saved value is an integer rather than an actual color. See Color.ByValueInRange to convert to an actual color. See https://en.wikipedia.org/wiki/Graph_coloring.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertices : list , optional
+            The input list of graph vertices. If no vertices are specified, all vertices in the input graph are colored. The default is None.
+        key : str , optional
+            The dictionary key to use to save the color information.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The colored list of vertices.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
+        def color_graph(graph, vertices, key):
+            # Create a dictionary to store the colors of each vertex
+            colors = {}
+            # Iterate over each vertex in the graph
+            for j, vertex in enumerate(vertices):
+                # Initialize an empty set of used colors
+                used_colors = set()
+
+                # Iterate over each neighbor of the vertex
+                for neighbor in Graph.AdjacentVertices(graph, vertex):
+                    # If the neighbor has already been colored, add its color to the used colors set
+                    index = Vertex.Index(neighbor, vertices)
+                    if index in colors:
+                        used_colors.add(colors[index])
+
+                # Choose the smallest unused color for the vertex
+                for i in range(len(vertices)):
+                    if i not in used_colors:
+                        v_d = Topology.Dictionary(vertex)
+                        keys = Dictionary.Keys(v_d)
+                        values = Dictionary.Values(v_d)
+                        if len(keys) > 0:
+                            keys.append(key)
+                            values.append(i)
+                        else:
+                            keys = [key]
+                            values = [i]
+                        d = Dictionary.ByKeysValues(keys, values)
+                        vertex = Topology.SetDictionary(vertex, d)
+                        colors[j] = i
+                        break
+
+            return colors
+
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if vertices == None:
+            vertices = Graph.Vertices(graph)
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) == 0:
+            return None
+        graph_vertices = [Graph.NearestVertex(graph,v) for v in vertices]
+        degrees = [Graph.VertexDegree(graph, v) for v in graph_vertices]
+        graph_vertices = Helper.Sort(graph_vertices, degrees)
+        graph_vertices.reverse()
+        _ = color_graph(graph, graph_vertices, key)
+        return graph_vertices
+
+    @staticmethod
     def ClosenessCentrality(graph, vertices=None, tolerance = 0.0001):
         """
         Return the closeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the closeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Centrality.
@@ -2916,12 +2991,12 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
-
         if not isinstance(graph, topologic.Graph):
             return None
         if not isinstance(vertex, topologic.Vertex):
             return None
         vertices = Graph.Vertices(graph)
+
         nearestVertex = vertices[0]
         nearestDistance = Vertex.Distance(vertex, nearestVertex)
         for aGraphVertex in vertices:
