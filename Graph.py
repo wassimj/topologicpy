@@ -1964,7 +1964,7 @@ class Graph:
     @staticmethod
     def Color(graph, vertices=None, key="color", tolerance=0.0001):
         """
-        Colors the input vertices within the input graph. The saved value is an integer rather than an actual color. See Color.ByValueInRange to convert to an actual color. See https://en.wikipedia.org/wiki/Graph_coloring.
+        Colors the input vertices within the input graph. The saved value is an integer rather than an actual color. See Color.ByValueInRange to convert to an actual color. Any vertices that have been pre-colored will not be affected. See https://en.wikipedia.org/wiki/Graph_coloring.
 
         Parameters
         ----------
@@ -1990,9 +1990,13 @@ class Graph:
 
         def color_graph(graph, vertices, key):
             # Create a dictionary to store the colors of each vertex
-            colors = {}
+            colors = {}                
             # Iterate over each vertex in the graph
             for j, vertex in enumerate(vertices):
+                d = Topology.Dictionary(vertex)
+                color_value = Dictionary.ValueAtKey(d, key)
+                if color_value != None:
+                    colors[j] = color_value
                 # Initialize an empty set of used colors
                 used_colors = set()
 
@@ -2003,24 +2007,39 @@ class Graph:
                     if index in colors:
                         used_colors.add(colors[index])
 
-                # Choose the smallest unused color for the vertex
-                for i in range(len(vertices)):
-                    if i not in used_colors:
-                        v_d = Topology.Dictionary(vertex)
-                        keys = Dictionary.Keys(v_d)
-                        values = Dictionary.Values(v_d)
-                        if len(keys) > 0:
-                            keys.append(key)
-                            values.append(i)
-                        else:
-                            keys = [key]
-                            values = [i]
-                        d = Dictionary.ByKeysValues(keys, values)
-                        vertex = Topology.SetDictionary(vertex, d)
-                        colors[j] = i
-                        break
+                if color_value == None:
+                    # Choose the smallest unused color for the vertex
+                    for i in range(len(vertices)):
+                        if i not in used_colors:
+                            v_d = Topology.Dictionary(vertex)
+                            keys = Dictionary.Keys(v_d)
+                            values = Dictionary.Values(v_d)
+                            if len(keys) > 0:
+                                keys.append(key)
+                                values.append(i)
+                            else:
+                                keys = [key]
+                                values = [i]
+                            d = Dictionary.ByKeysValues(keys, values)
+                            vertex = Topology.SetDictionary(vertex, d)
+                            colors[j] = i
+                            break
 
             return colors
+
+        if not isinstance(graph, topologic.Graph):
+            return None
+        if vertices == None:
+            vertices = Graph.Vertices(graph)
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) == 0:
+            return None
+        graph_vertices = [Graph.NearestVertex(graph,v) for v in vertices]
+        degrees = [Graph.VertexDegree(graph, v) for v in graph_vertices]
+        graph_vertices = Helper.Sort(graph_vertices, degrees)
+        graph_vertices.reverse()
+        _ = color_graph(graph, graph_vertices, key)
+        return graph_vertices
 
         if not isinstance(graph, topologic.Graph):
             return None
