@@ -1747,6 +1747,21 @@ class Face(topologic.Face):
         return trimmed_face
     
     @staticmethod
+    def UnFlatten(face: topologic.Face, dictionary: topologic.Dictionary):
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        theta = Dictionary.ValueAtKey(dictionary, "theta")
+        phi = Dictionary.ValueAtKey(dictionary, "phi")
+        xTran = Dictionary.ValueAtKey(dictionary, "xTran")
+        yTran = Dictionary.ValueAtKey(dictionary, "yTran")
+        zTran = Dictionary.ValueAtKey(dictionary, "zTran")
+        newFace = Topology.Rotate(face, origin=Vertex.Origin(), x=0, y=1, z=0, degree=theta)
+        newFace = Topology.Rotate(newFace, origin=Vertex.Origin(), x=0, y=0, z=1, degree=phi)
+        newFace = Topology.Translate(newFace, xTran, yTran, zTran)
+        return newFace
+    
+    @staticmethod
     def VertexByParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5) -> topologic.Vertex:
         """
         Creates a vertex at the *u* and *v* parameters of the input face.

@@ -3,9 +3,10 @@ import math
 
 class Color:
     @staticmethod
-    def ByValueInRange(value: float = 0.5, minValue: float = 0.0, maxValue: float = 1.0, alpha: float = 1.0, useAlpha: float = False, colorScale="viridis"):
+    def ByValueInRange(value: float = 0.5, minValue: float = 0.0, maxValue: float = 1.0, alpha: float = 1.0, useAlpha: bool = False, colorScale="viridis"):
         """
-        Retursn the r, g, b, (and optionally) a list of numbers representing the red, green, blue and alpha color elements.
+        Returns the r, g, b, (and optionally) a list of numbers representing the red, green, blue and alpha color elements.
+        
         Parameters
         ----------
         value : float , optional
@@ -15,16 +16,16 @@ class Color:
         maxValue : float , optional
             The input maximum value. The default is 1.0.
         alpha : float , optional
-            The int alpha (transparency) value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. The default is 1.0.
+            The alpha (transparency) value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. The default is 1.0.
         useAlpha : bool , optional
-            If set to True, the returns list includes the alpha value as a fourth element in the lists.
+            If set to True, the returns list includes the alpha value as a fourth element in the list.
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        list
+            The color expressed as an [r,g,b] or an [r,g,b,a] list.
 
         """
         
@@ -155,3 +156,36 @@ class Color:
         if useAlpha:
             rgbList.append(alpha)
         return rgbList
+    
+    @staticmethod
+    def PlotlyColor(color, alpha=1.0, useAlpha=False):
+        """
+        Returns a plotly color string based on the input list of [r,g,b] or [r,g,b,a]. If your list is [r,g,b], you can optionally specify an alpha value
+
+        Parameters
+        ----------
+        color : list
+            The input color list. This is assumed to be in the format [r,g,b] or [r,g,b,a]
+        alpha : float , optional
+            The transparency value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. The default is 1.0.
+        useAlpha : bool , optional
+            If set to True, the returns list includes the alpha value as a fourth element in the list.
+
+        Returns
+        -------
+        str
+            The plotly color string.
+
+        """
+        if not isinstance(color, list):
+            return None
+        if len(color) < 3:
+            return None
+        if len(color) == 4:
+            alpha = color[3]
+        alpha = min(max(alpha, 0), 1)
+        if alpha < 1:
+            useAlpha = True
+        if useAlpha:
+            return "rgba("+str(color[0])+","+str(color[1])+","+str(color[2])+","+str(alpha)+")"
+        return "rgb("+str(color[0])+","+str(color[1])+","+str(color[2])+")"

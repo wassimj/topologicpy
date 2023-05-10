@@ -1220,7 +1220,7 @@ class DGL:
         return {"rmse":rmse, "size":size}
     
     @staticmethod
-    def BalanceDataset(dataset, labels, method="undersampling", key="node_attr"):
+    def DatasetBalance(dataset, labels=None, method="undersampling", key="node_attr"):
         """
         Balances the input dataset using the specified method.
     
@@ -1228,8 +1228,8 @@ class DGL:
         ----------
         dataset : DGLDataset
             The input dataset.
-        labels : list
-            The input list of labels.
+        labels : list , optional
+            The input list of labels. If set to None, all labels in the dataset will be considered and balanced.
         method : str, optional
             The method of sampling. This can be "undersampling" or "oversampling". It is case insensitive. The defaul is "undersampling".
         key : str
@@ -1241,6 +1241,8 @@ class DGL:
             The balanced dataset.
         
         """
+        if labels == None:
+            labels = dataset.labels
         df = pd.DataFrame({'graph_index': range(len(labels)), 'label': labels})
 
         if method.lower() == 'undersampling':
@@ -1259,7 +1261,7 @@ class DGL:
             graph, label = dataset[index]
             graphs.append(graph)
             labels.append(label)
-        return DGL.DatasetByGraphs(graphs=graphs, labels=labels, key=key)
+        return DGL.DatasetByGraphs(dictionary={'graphs': graphs, 'labels': labels}, key=key)
     
     @staticmethod
     def GraphByTopologicGraph(topologicGraph, bidirectional=True, key=None, categories=[], node_attr_key="node_attr", tolerance=0.0001):

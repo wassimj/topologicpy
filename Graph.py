@@ -1962,7 +1962,7 @@ class Graph:
         return topologic.Graph.ByVerticesEdges(vertices, edges)
     
     @staticmethod
-    def Color(graph, vertices=None, key="color", tolerance=0.0001):
+    def Color(graph, vertices=None, key="color", delta=1, tolerance=0.0001):
         """
         Colors the input vertices within the input graph. The saved value is an integer rather than an actual color. See Color.ByValueInRange to convert to an actual color. Any vertices that have been pre-colored will not be affected. See https://en.wikipedia.org/wiki/Graph_coloring.
 
@@ -1974,6 +1974,8 @@ class Graph:
             The input list of graph vertices. If no vertices are specified, all vertices in the input graph are colored. The default is None.
         key : str , optional
             The dictionary key to use to save the color information.
+        delta : int , optional
+            The desired minimum delta value between the assigned colors.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1987,8 +1989,19 @@ class Graph:
         from topologicpy.Helper import Helper
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
+        import math
 
-        def color_graph(graph, vertices, key):
+        delta = max(abs(delta), 1) # Ensure that delta is never less than 1
+
+        def satisfiesCondition(i, used_colors, delta):
+            if delta == 1:
+                return i not in used_colors
+            else:
+                for j in used_colors:
+                    if abs(j-i) < delta:
+                        return False
+                return True
+        def color_graph(graph, vertices, key, delta):
             # Create a dictionary to store the colors of each vertex
             colors = {}                
             # Iterate over each vertex in the graph
@@ -2009,8 +2022,9 @@ class Graph:
 
                 if color_value == None:
                     # Choose the smallest unused color for the vertex
-                    for i in range(len(vertices)):
-                        if i not in used_colors:
+                    for i in range(0,int(math.ceil(len(vertices)*int(math.ceil(delta)))), int(math.ceil(delta))):
+                        #if i not in used_colors:
+                        if satisfiesCondition(i, used_colors, int(math.ceil(delta))):
                             v_d = Topology.Dictionary(vertex)
                             keys = Dictionary.Keys(v_d)
                             values = Dictionary.Values(v_d)
@@ -2038,7 +2052,7 @@ class Graph:
         degrees = [Graph.VertexDegree(graph, v) for v in graph_vertices]
         graph_vertices = Helper.Sort(graph_vertices, degrees)
         graph_vertices.reverse()
-        _ = color_graph(graph, graph_vertices, key)
+        _ = color_graph(graph, graph_vertices, key, delta)
         return graph_vertices
 
         if not isinstance(graph, topologic.Graph):
