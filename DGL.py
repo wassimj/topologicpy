@@ -1207,17 +1207,14 @@ class DGL:
         
         Returns
         -------
-        dict
-            A dictionary returning the accuracy information. This contains the following keys and values:
-            - "rmse" (float): Root Mean Square Error.
-            - "size" (int): The size of the predictions list
+        float
+            The RMSE value.
         """
         if len(predicted) < 1 or len(actual) < 1 or not len(predicted) == len(actual):
             return None
         size = len(predicted)
         mse = F.mse_loss(torch.tensor(predicted), torch.tensor(actual))
-        rmse = round(torch.sqrt(mse).item(), mantissa)
-        return {"rmse":rmse, "size":size}
+        return round(torch.sqrt(mse).item(), mantissa)
     
     @staticmethod
     def DatasetBalance(dataset, labels=None, method="undersampling", key="node_attr"):
@@ -2208,7 +2205,6 @@ class DGL:
         for item in tqdm(dataset, desc='Predicting', leave=False):
             graph = item[0]
             pred = model(graph, graph.ndata[node_attr_key].float())
-            print(pred)
             values.append(round(pred.item(), 3))
         return values
     
@@ -2676,6 +2672,86 @@ class DGL:
             except:
                 status = False
         return status
+    
+    @staticmethod
+    def Precision(actual, predicted, mantissa=4):
+        """
+        Returns the precision of the predicted values vs. the actual values. See https://en.wikipedia.org/wiki/Precision_and_recall
+
+        Parameters
+        ----------
+        actual : list
+            The input list of actual values.
+        predicted : list
+            The input list of predicted values.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        float
+            The precision value
+        
+        """
+
+        categories = set(actual)
+        true_positives = {category: 0 for category in categories}
+        false_positives = {category: 0 for category in categories}
+
+        for i in range(len(predicted)):
+            if predicted[i] == actual[i]:
+                true_positives[actual[i]] += 1
+            else:
+                false_positives[predicted[i]] += 1
+
+        total_true_positives = sum(true_positives.values())
+        total_false_positives = sum(false_positives.values())
+
+        if total_true_positives + total_false_positives == 0:
+            return 0
+
+        return round(total_true_positives / (total_true_positives + total_false_positives), mantissa)
+    
+    @staticmethod
+    def Recall(actual, predicted, mantissa=4):
+        """
+        Returns the recall metric of the predicted values vs. the actual values. See https://en.wikipedia.org/wiki/Precision_and_recall
+
+        Parameters
+        ----------
+        actual : list
+            The input list of actual values.
+        predicted : list
+            The input list of predicted values.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        float
+            The recall value
+        
+        """
+
+        categories = set(actual)
+        true_positives = {category: 0 for category in categories}
+        false_negatives = {category: 0 for category in categories}
+
+        for i in range(len(predicted)):
+            if predicted[i] == actual[i]:
+                true_positives[actual[i]] += 1
+            else:
+                false_negatives[actual[i]] += 1
+
+        total_true_positives = sum(true_positives.values())
+        total_false_negatives = sum(false_negatives.values())
+
+        if total_true_positives + total_false_negatives == 0:
+            return 0
+
+        return round(total_true_positives / (total_true_positives + total_false_negatives), mantissa)
+
+
 
     '''
     @staticmethod
