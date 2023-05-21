@@ -3762,7 +3762,7 @@ class Graph:
         if not isinstance(vertexA, topologic.Vertex):
             print("Graph.TopologicalDistance - Error: The input vertexA is not a valid vertex. Returning None.")
             return None
-         if not isinstance(vertexB, topologic.Vertex):
+        if not isinstance(vertexB, topologic.Vertex):
             print("Graph.TopologicalDistance - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         return graph.TopologicalDistance(vertexA, vertexB, tolerance)
