@@ -336,7 +336,7 @@ class Vertex(Topology):
         strict : bool , optional
             If set to True, the vertex must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. The default is False.
         tolerance : float , optional
-            The tolerance for computing if the input vertex is enclosed in a cell. The default is 0.0001.
+            The tolerance for computing if the input vertex is identical to a vertex from the list. The default is 0.0001.
 
         Returns
         -------

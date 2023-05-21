@@ -553,7 +553,6 @@ class _RegressorHoldout:
                 path = path+".pt"
             torch.save(self.model, path)
 
-
 class _RegressorKFold:
     def __init__(self, hparams, trainingDataset, testingDataset=None):
         self.trainingDataset = trainingDataset
@@ -2694,7 +2693,7 @@ class DGL:
         
         """
 
-        categories = set(actual)
+        categories = set(actual+predicted)
         true_positives = {category: 0 for category in categories}
         false_positives = {category: 0 for category in categories}
 
@@ -2733,7 +2732,7 @@ class DGL:
         
         """
 
-        categories = set(actual)
+        categories = set(actual+predicted)
         true_positives = {category: 0 for category in categories}
         false_negatives = {category: 0 for category in categories}
 

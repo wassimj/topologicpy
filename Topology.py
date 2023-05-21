@@ -1620,22 +1620,26 @@ class Topology():
             cellSelectors = []
             for cellDataItem in cellDataList:
                 cellSelectors.append(assignDictionary(cellDataItem))
-            Topology.TransferDictionariesBySelectors(topology=topology, selectors=cellSelectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=True, tolerance=0.0001)
+            if len(cellSelectors) > 0:
+                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=cellSelectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=True, tolerance=0.0001)
             faceDataList = jsonItem['faceDictionaries']
             faceSelectors = []
             for faceDataItem in faceDataList:
                 faceSelectors.append(assignDictionary(faceDataItem))
-            Topology.TransferDictionariesBySelectors(topology=topology, selectors=faceSelectors, tranVertices=False, tranEdges=False, tranFaces=True, tranCells=False, tolerance=0.0001)
+            if len(faceSelectors) > 0:
+                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=faceSelectors, tranVertices=False, tranEdges=False, tranFaces=True, tranCells=False, tolerance=0.0001)
             edgeDataList = jsonItem['edgeDictionaries']
             edgeSelectors = []
             for edgeDataItem in edgeDataList:
                 edgeSelectors.append(assignDictionary(edgeDataItem))
-            Topology.TransferDictionariesBySelectors(topology=topology, selectors=edgeSelectors, tranVertices=False, tranEdges=True, tranFaces=False, tranCells=False, tolerance=0.0001)
+            if len(edgeSelectors) > 0:
+                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=edgeSelectors, tranVertices=False, tranEdges=True, tranFaces=False, tranCells=False, tolerance=0.0001)
             vertexDataList = jsonItem['vertexDictionaries']
             vertexSelectors = []
             for vertexDataItem in vertexDataList:
                 vertexSelectors.append(assignDictionary(vertexDataItem))
-            Topology.TransferDictionariesBySelectors(topology=topology, selectors=vertexSelectors, tranVertices=True, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001)
+            if len(vertexSelectors) > 0:
+                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=vertexSelectors, tranVertices=True, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001)
             topologies.append(topology)
 
         if len(topologies) == 1:
@@ -1830,14 +1834,14 @@ class Topology():
         return None
 
     @staticmethod
-    def ByOBJFile(file, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
+    def ByOBJString(string, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
         """
-        Imports the topology from a Weverfront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+        Creates a topology from the input Waverfront OBJ string. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
         Parameters
         ----------
-        file : file object
-            The input OBJ file.
+        string : str
+            The input OBJ string.
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up" 
         tolerance : float , optional
@@ -1846,7 +1850,7 @@ class Topology():
         Returns
         -------
         topology
-            The imported topology.
+            The created topology.
 
         """
         from topologicpy.Vertex import Vertex
@@ -1885,12 +1889,8 @@ class Topology():
                             faces.append(temp_faces)
             return [vertices, faces]
         
-        if not file:
-            print("Topology.ByOBJFile - Error: the input file is not a valid file. Returning None.")
-            return None
-        lines = []
-        for lineo, line in enumerate(file):
-                lines.append(line)
+        
+        lines = string.split("\n")
         if lines:
             if progressBar:
                 if renderer.lower() == "notebook":
@@ -1900,14 +1900,41 @@ class Topology():
                 vertices, faces = parsetqdm(lines)
             else:
                 vertices, faces = parse(lines)
-        file.close()
         if vertices or faces:
             topology = Topology.ByGeometry(vertices = vertices, faces = faces, outputMode="default", tolerance=tolerance)
             if transposeAxes == True:
                 topology = Topology.Rotate(topology, Vertex.Origin(), 1,0,0,90)
             return topology
-        print("Topology.ByOBJFile - Error: Could not find vertices or faces. Returning None.")
+        print("Topology.ByOBJString - Error: Could not find vertices or faces. Returning None.")
         return None
+
+    @staticmethod
+    def ByOBJFile(file, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
+        """
+        Imports the topology from a Weverfront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+
+        Parameters
+        ----------
+        file : file object
+            The input OBJ file.
+        transposeAxes : bool , optional
+            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topology
+            The imported topology.
+
+        """
+        if not file:
+            print("Topology.ByOBJFile - Error: the input file is not a valid file. Returning None.")
+            return None
+        obj_string = file.read()
+        topology = Topology.ByOBJString(obj_string)
+        file.close()
+        return topology
     
     @staticmethod
     def ByOBJPath(path, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
@@ -3249,6 +3276,55 @@ class Topology():
         return False
     
     @staticmethod
+    def OBJString(topology, transposeAxes=True):
+        """
+        Returns the Wavefront string of the input topology. This is very experimental and outputs a simple solid topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        transposeAxes : bool , optional
+            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+
+        Returns
+        -------
+        str
+            The Wavefront OBJ string of the input topology
+
+        """
+        from topologicpy.Helper import Helper
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+
+        if not isinstance(topology, topologic.Topology):
+            print("Topology.ExportToOBJ - Error: the input topology is not a valid topology. Returning None.")
+            return None
+        
+        lines = []
+        version = Helper.Version()
+        lines.append("# topologicpy "+version)
+        d = Topology.Geometry(topology)
+        vertices = d['vertices']
+        faces = d['faces']
+        tVertices = []
+        if transposeAxes:
+            for v in vertices:
+                tVertices.append([v[0], v[2], v[1]])
+            vertices = tVertices
+        for v in vertices:
+            lines.append("v "+str(v[0])+" "+str(v[1])+" "+str(v[2]))
+        for f in faces:
+            line = "f"
+            for j in f:
+                line = line+" "+str(j+1)
+            lines.append(line)
+        finalLines = lines[0]
+        for i in range(1,len(lines)):
+            finalLines = finalLines+"\n"+lines[i]
+        return finalLines
+    
+    @staticmethod
     def ExportToOBJ(topology, path, transposeAxes=True, overwrite=True):
         """
         Exports the input topology to a Wavefront OBJ file. This is very experimental and outputs a simple solid topology.
@@ -3287,29 +3363,9 @@ class Topology():
         if ext.lower() != ".obj":
             path = path+".obj"
         status = False
-        lines = []
-        version = Helper.Version()
-        lines.append("# topologicpy "+version)
-        d = Topology.Geometry(topology)
-        vertices = d['vertices']
-        faces = d['faces']
-        tVertices = []
-        if transposeAxes:
-            for v in vertices:
-                tVertices.append([v[0], v[2], v[1]])
-            vertices = tVertices
-        for v in vertices:
-            lines.append("v "+str(v[0])+" "+str(v[1])+" "+str(v[2]))
-        for f in faces:
-            line = "f"
-            for j in f:
-                line = line+" "+str(j+1)
-            lines.append(line)
-        finalLines = lines[0]
-        for i in range(1,len(lines)):
-            finalLines = finalLines+"\n"+lines[i]
+        objString = Topology.OBJString(topology, transposeAxes=transposeAxes)
         with open(path, "w") as f:
-            f.writelines(finalLines)
+            f.writelines(objString)
             f.close()
             status = True
         return status
@@ -5804,14 +5860,17 @@ class Topology():
             The input topology with the dictionaries transferred to its subtopologies.
 
         """
+        
         if not isinstance(topology, topologic.Topology):
             print("Topology.TransferDictionariesBySelectors - Error: The input topology is not a valid topology. Returning None.")
             return None
         if not isinstance(selectors, list):
             print("Topology.TransferDictionariesBySelectors - Error: The input selectors is not a valid list. Returning None.")
             return None
-        selectors = [x for x in selectors if isinstance(x, topologic.Topology)]
-        if len(selectors) < 1:
+        selectors_tmp = [x for x in selectors if isinstance(x, topologic.Topology)]
+        if len(selectors_tmp) < 1:
+            print("Topology", topology)
+            print("Selectors", selectors)
             print("Topology.TransferDictionariesBySelectors - Error: The input selectors does not contain any valid topologies. Returning None.")
             return None
         sinkEdges = []

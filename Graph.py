@@ -8,7 +8,7 @@ import time
 
 class Graph:
     @staticmethod
-    def AdjacencyMatrix(graph, tolerance=0.0001):
+    def AdjacencyMatrix(graph, edgeKeyFwd=None, edgeKeyBwd=None, bidirKey=None, bidirectional=True, useEdgeIndex=False, useEdgeLength=False, tolerance=0.0001):
         """
         Returns the adjacency matrix of the input Graph. See https://en.wikipedia.org/wiki/Adjacency_matrix.
 
@@ -16,6 +16,18 @@ class Graph:
         ----------
         graph : topologic.Graph
             The input graph.
+        edgeKeyFwd : str , optional
+            If set, the value at this key in the connecting edge from start vertex to end verrtex (forward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
+        edgeKeyBwd : str , optional
+            If set, the value at this key in the connecting edge from end vertex to start verrtex (backward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
+        bidirKey : bool , optional
+            If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. The default is None
+        bidirectional : bool , optional
+            If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. The default is True.
+        useEdgeIndex : bool , False
+            If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
+        useEdgeLength : bool , False
+            If set to True, the adjacency matrix values will the length of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -26,25 +38,58 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
+
         if not isinstance(graph, topologic.Graph):
+            print("Graph.AdjacencyMatrix - Error: The input graph is not a valid graph. Returning None.")
             return None
         
         vertices = Graph.Vertices(graph)
+        edges = Graph.Edges(graph)
         order = len(vertices)
         matrix = []
+        # Initialize the matrix with zeroes
         for i in range(order):
             tempRow = []
             for j in range(order):
                 tempRow.append(0)
             matrix.append(tempRow)
-        for i in range(order):
-            adjVertices = Graph.AdjacentVertices(graph, vertices[i])
-            for adjVertex in adjVertices:
-                adjIndex = Vertex.Index(vertex=adjVertex, vertices=vertices, strict=True, tolerance=0.01)
-                if not adjIndex == None:
-                    matrix[i][adjIndex] = 1
+        
+        for i, edge in enumerate(edges):
+            sv = Edge.StartVertex(edge)
+            ev = Edge.EndVertex(edge)
+            svi = Vertex.Index(sv, vertices, tolerance=tolerance)
+            evi = Vertex.Index(ev, vertices, tolerance=tolerance)
+            if bidirKey == None:
+                bidir = bidirectional
+            else:
+                bidir = Dictionary.ValueAtKey(Topology.Dictionary(edge), bidirKey)
+                if bidir == None:
+                    bidir = bidirectional
+            if edgeKeyFwd == None:
+                valueFwd = 1
+            else:
+                valueFwd = Dictionary.ValueAtKey(Topology.Dictionary(edge), edgeKeyFwd)
+                if valueFwd == None:
+                    valueFwd = 1
+            if edgeKeyBwd == None:
+                valueBwd = 1
+            else:
+                valueBwd = Dictionary.ValueAtKey(Topology.Dictionary(edge), edgeKeyBwd)
+                if valueBwd == None:
+                    valueBwd = 1
+            if useEdgeIndex:
+                valueFwd = i+1
+                valueBwd = i+1
+            if useEdgeLength:
+                valueFwd = Edge.Length(edge)
+                valueBwd = Edge.Length(edge)
+            matrix[svi][evi] = valueFwd
+            if bidir:
+                matrix[evi][svi] = valueBwd
         return matrix
+    
     @staticmethod
     def AdjacencyList(graph, tolerance=0.0001):
         """
@@ -65,6 +110,7 @@ class Graph:
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         if not isinstance(graph, topologic.Graph):
+            print("Graph.AdjacencyList - Error: The input graph is not a valid graph. Returning None.")
             return None
         vertices = Graph.Vertices(graph)
         order = len(vertices)
@@ -132,8 +178,10 @@ class Graph:
             return [graph_vertices, returnVertex]
 
         if not isinstance(graph, topologic.Graph):
+            print("Graph.AddEdge - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(edge, topologic.Edge):
+            print("Graph.AddEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
         graph_vertices = Graph.Vertices(graph)
         graph_edges = Graph.Edges(graph, graph_vertices, tolerance)
@@ -169,8 +217,10 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.AddVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
+            print("Graph.AddVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         _ = graph.AddVertices([vertex], tolerance)
         return graph
@@ -196,11 +246,14 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.AddVertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(vertices, list):
+            print("Graph.AddVertices - Error: The input list of vertices is not a valid list. Returning None.")
             return None
         vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
         if len(vertices) < 1:
+            print("Graph.AddVertices - Error: Could not find any valid vertices in the input list of vertices. Returning None.")
             return None
         _ = graph.AddVertices(vertices, tolerance)
         return graph
@@ -223,6 +276,12 @@ class Graph:
             The list of adjacent vertices.
 
         """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.AdjacentVertices - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            print("Graph.AdjacentVertices - Error: The input vertex is not a valid vertex. Returning None.")
+            return None
         vertices = []
         _ = graph.AdjacentVertices(vertex, vertices)
         return list(vertices)
@@ -249,6 +308,15 @@ class Graph:
             The list of all paths (wires) found within the time limit.
 
         """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.AllPaths - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertexA, topologic.Vertex):
+            print("Graph.AllPaths - Error: The input vertexA is not a valid vertex. Returning None.")
+            return None
+        if not isinstance(vertexB, topologic.Vertex):
+            print("Graph.AllPaths - Error: The input vertexB is not a valid vertex. Returning None.")
+            return None
         paths = []
         _ = graph.AllPaths(vertexA, vertexB, True, timeLimit, paths)
         return paths
@@ -302,6 +370,7 @@ class Graph:
                 print("DGL - Error: Could not import tqdm")
 
         if not isinstance(graph, topologic.Graph):
+            print("Graph.BetweenessCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
         graphVertices = Graph.Vertices(graph)
         if not isinstance(vertices, list):
@@ -309,18 +378,21 @@ class Graph:
         else:
             vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
         if len(vertices) < 1:
+            print("Graph.BetweenessCentrality - Error: The input list of vertices does not contain valid vertices. Returning None.")
             return None
         if not isinstance(sources, list):
             sources = graphVertices
         else:
             sources = [v for v in sources if isinstance(v, topologic.Vertex)]
         if len(sources) < 1:
+            print("Graph.BetweenessCentrality - Error: The input list of sources does not contain valid vertices. Returning None.")
             return None
         if not isinstance(destinations, list):
             destinations = graphVertices
         else:
             destinations = [v for v in destinations if isinstance(v, topologic.Vertex)]
         if len(destinations) < 1:
+            print("Graph.BetweenessCentrality - Error: The input list of destinations does not contain valid vertices. Returning None.")
             return None
         
         paths = []
@@ -377,6 +449,7 @@ class Graph:
             return vertices
         
         if not file:
+            print("Graph.ByDGCNNFile - Error: The input file is not a valid file. Returning None.")
             return None
         graphs = []
         labels = []
@@ -1873,6 +1946,7 @@ class Graph:
 
         
         if not isinstance(topology, topologic.Topology):
+            print("Graph.ByTopology - Error: The input topology is not a valid topology. Returning None.")
             return None
         graph = None
         item = [topology, None, None, None, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, None, useInternalVertex, storeBRep, tolerance]
@@ -1954,8 +2028,10 @@ class Graph:
 
         """
         if not isinstance(vertices, list):
+            print("Graph.ByVerticesEdges - Error: The input list of vertices is not a valid list. Returning None.")
             return None
         if not isinstance(edges, list):
+            print("Graph.ByVerticesEdges - Error: The input list of edges is not a valid list. Returning None.")
             return None
         vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
         edges = [e for e in edges if isinstance(e, topologic.Edge)]
@@ -2042,31 +2118,19 @@ class Graph:
             return colors
 
         if not isinstance(graph, topologic.Graph):
+            print("Graph.Color - Error: The input graph is not a valid graph. Returning None.")
             return None
         if vertices == None:
             vertices = Graph.Vertices(graph)
         vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
         if len(vertices) == 0:
+            print("Graph.Color - Error: The input list of vertices does not contain any valid vertices. Returning None.")
             return None
         graph_vertices = [Graph.NearestVertex(graph,v) for v in vertices]
         degrees = [Graph.VertexDegree(graph, v) for v in graph_vertices]
         graph_vertices = Helper.Sort(graph_vertices, degrees)
         graph_vertices.reverse()
         _ = color_graph(graph, graph_vertices, key, delta)
-        return graph_vertices
-
-        if not isinstance(graph, topologic.Graph):
-            return None
-        if vertices == None:
-            vertices = Graph.Vertices(graph)
-        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
-        if len(vertices) == 0:
-            return None
-        graph_vertices = [Graph.NearestVertex(graph,v) for v in vertices]
-        degrees = [Graph.VertexDegree(graph, v) for v in graph_vertices]
-        graph_vertices = Helper.Sort(graph_vertices, degrees)
-        graph_vertices.reverse()
-        _ = color_graph(graph, graph_vertices, key)
         return graph_vertices
 
     @staticmethod
@@ -2103,6 +2167,7 @@ class Graph:
                 print("DGL - Error: Could not import tqdm")
 
         if not isinstance(graph, topologic.Graph):
+            print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
         graphVertices = Graph.Vertices(graph)
         if not isinstance(vertices, list):
@@ -2110,6 +2175,7 @@ class Graph:
         else:
             vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
         if len(vertices) < 1:
+            print("Graph.ClosenessCentrality - Error: The input list of vertices does not contain any valid vertices. Returning None.")
             return None
         n = len(graphVertices)
 
@@ -2165,17 +2231,25 @@ class Graph:
             The input graph with the connected input vertices.
 
         """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.Connect - Error: The input graph is not a valid graph. Returning None.")
+            return None
         if not isinstance(verticesA, list):
+            print("Graph.Connect - Error: The input list of verticesA is not a valid list. Returning None.")
             return None
         if not isinstance(verticesB, list):
+            print("Graph.Connect - Error: The input list of verticesB is not a valid list. Returning None.")
             return None
         verticesA = [v for v in verticesA if isinstance(v, topologic.Vertex)]
         verticesB = [v for v in verticesB if isinstance(v, topologic.Vertex)]
         if len(verticesA) < 1:
+            print("Graph.Connect - Error: The input list of verticesA does not contain any valid vertices. Returning None.")
             return None
         if len(verticesB) < 1:
+            print("Graph.Connect - Error: The input list of verticesB does not contain any valid vertices. Returning None.")
             return None
         if not len(verticesA) == len(verticesB):
+            print("Graph.Connect - Error: The input lists verticesA and verticesB have different lengths. Returning None.")
             return None
         _ = graph.Connect(verticesA, verticesB, tolerance)
         return graph
@@ -2201,8 +2275,10 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.ContainsEdge - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(edge, topologic.Edge):
+            print("Graph.ContainsEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
         return graph.ContainsEdge(edge, tolerance)
     
@@ -2227,11 +2303,13 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.ContainsVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
+            print("Graph.ContainsVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         return graph.ContainsVertex(vertex, tolerance)
-    
+
     @staticmethod
     def DegreeSequence(graph):
         """
@@ -2248,6 +2326,9 @@ class Graph:
             The degree sequence of the input graph.
 
         """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.DegreeSequence - Error: The input graph is not a valid graph. Returning None.")
+            return None
         sequence = []
         _ = graph.DegreeSequence(sequence)
         return sequence
@@ -2269,6 +2350,7 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.Density - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.Density()
     
@@ -2293,6 +2375,7 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.DepthMap - Error: The input graph is not a valid graph. Returning None.")
             return None
         graphVertices = Graph.Vertices(graph)
         if not isinstance(vertices, list):
@@ -2300,6 +2383,7 @@ class Graph:
         else:
             vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
         if len(vertices) < 1:
+            print("Graph.DepthMap - Error: The input list of vertices does not contain any valid vertices. Returning None.")
             return None
         depthMap = []
         for va in vertices:
@@ -2330,6 +2414,7 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.Diameter - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.Diameter()
     
@@ -2356,8 +2441,13 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.Distance - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexA, topologic.Vertex) or not isinstance(vertexB, topologic.Vertex):
+        if not isinstance(vertexA, topologic.Vertex):
+            print("Graph.Distance - Error: The input vertexA is not a valid vertex. Returning None.")
+            return None
+        if not isinstance(vertexB, topologic.Vertex):
+            print("Graph.Distance - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         return graph.TopologicalDistance(vertexA, vertexB, tolerance)
 
@@ -2384,8 +2474,13 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.Edge - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexA, topologic.Vertex) or not isinstance(vertexB, topologic.Vertex):
+        if not isinstance(vertexA, topologic.Vertex):
+            print("Graph.Edge - Error: The input vertexA is not a valid vertex. Returning None.")
+            return None
+        if not isinstance(vertexB, topologic.Vertex):
+            print("Graph.Edge - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         return graph.Edge(vertexA, vertexB, tolerance)
     
@@ -2410,6 +2505,7 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.Edges - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not vertices:
             edges = []
@@ -2417,11 +2513,12 @@ class Graph:
             return edges
         else:
             vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
-        if len(vertices) > 0:
-            edges = []
-            _ = graph.Edges(vertices, tolerance, edges)
-            return list(dict.fromkeys(edges)) # remove duplicates
-        return []
+        if len(vertices) < 1:
+            print("Graph.Edges - Error: The input list of vertices does not contain any valid vertices. Returning None.")
+            return None
+        edges = []
+        _ = graph.Edges(vertices, tolerance, edges)
+        return list(dict.fromkeys(edges)) # remove duplicates
 
     @staticmethod
     def ExportToCSV_GC(graphs, graphLabels, graphsPath, edgesPath, nodesPath, graphIDHeader="graph_id", graphLabelHeader="label",graphNumNodesHeader="num_nodes",edgeSRCHeader="src", edgeDSTHeader="dst", edgeLabelHeader="label", edgeLabelKey="label", defaultEdgeLabel=0, nodeLabelHeader="label", nodeLabelKey="label", defaultNodeLabel=0, overwrite=False):
@@ -2473,7 +2570,7 @@ class Graph:
         import pandas as pd
 
         if not isinstance(graphs, list):
-            print("Graph.ExportToCSV - Error: The input list of graphs is not a list. Returning None.")
+            print("Graph.ExportToCSV - Error: The input list of graphs is not a valid list. Returning None.")
             return None
         
         for graph_index, graph in enumerate(graphs):
@@ -2628,7 +2725,7 @@ class Graph:
         import pandas as pd
 
         if not isinstance(graphs, list):
-            print("Graph.ExportToCSV - Error: The input list of graphs is not a list. Returning None.")
+            print("Graph.ExportToCSV - Error: The input list of graphs is not a valid list. Returning None.")
             return None
         if abs(trainRatio  + validateRatio + testRatio - 1) > 0.001:
             print("Graph.ExportToCSV - Error: The train, validate, test ratios do not add up to 1. Returning None")
@@ -2842,6 +2939,7 @@ class Graph:
             # no two connected vertex have same colours
             return True
         if not isinstance(graph, topologic.Graph):
+            print("Graph.IsBipartite - Error: The input graph is not a valid graph. Returning None.")
             return None
         order = Graph.Order(graph)
         adjList = Graph.AdjacencyList(graph, tolerance)
@@ -2864,6 +2962,7 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.IsComplete - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.IsComplete()
     
@@ -2886,6 +2985,7 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.IsErdoesGallai - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.IsErdoesGallai(sequence)
     
@@ -2906,11 +3006,108 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.IsolatedVertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         vertices = []
         _ = graph.IsolatedVertices(vertices)
         return vertices
     
+    @staticmethod
+    def LongestPath(graph, vertexA, vertexB, vertexKey=None, edgeKey=None, costKey=None, timeLimit=10):
+        """
+        Returns the longest path that connects the input vertices.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertexA : topologic.Vertex
+            The first input vertex.
+        vertexB : topologic.Vertex
+            The second input vertex.
+        vertexKey : str , optional
+            The vertex key to maximize. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the longest path that maximizes the total value. The value must be numeric. The default is None.
+        edgeKey : str , optional
+            The edge key to maximize. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the longest path that maximizes the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. The default is "length".
+        costKey : str , optional
+            If not None, the total cost of the longest_path will be stored in its dictionary under this key. The default is None. 
+        timeLimit : int , optional
+            The time limit in second. The default is 10 seconds.
+
+        Returns
+        -------
+        topologic.Wire
+            The longest path between the input vertices.
+
+        """
+        from topologicpy. Dictionary import Dictionary
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+    
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.LongestPath - Error: the input graph is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertexA, topologic.Vertex):
+            print("Graph.LongestPath - Error: the input vertexA is not a valid vertex. Returning None.")
+            return None
+        if not isinstance(vertexB, topologic.Vertex):
+            print("Graph.LongestPath - Error: the input vertexB is not a valid vertex. Returning None.")
+            return None
+        
+        g_edges = Graph.Edges(graph)
+
+        paths = Graph.AllPaths(graph, vertexA, vertexB, timeLimit=timeLimit)
+        if not paths:
+            print("Graph.LongestPath - Error: Could not find any paths within the specified time limit. Returning None.")
+            return None
+        if len(paths) < 1:
+            print("Graph.LongestPath - Error: Could not find any paths within the specified time limit. Returning None.")
+            return None
+        if edgeKey == None:
+            lengths = [len(Topology.Edges(path)) for path in paths]
+        elif edgeKey.lower() == "length":
+            lengths = [Wire.Length(path) for path in paths]
+        else:
+            lengths = []
+            for path in paths:
+                edges = Topology.Edges(path)
+                pathCost = 0
+                for edge in edges:
+                    index = Edge.Index(edge, g_edges)
+                    d = Topology.Dictionary(g_edges[index])
+                    value = Dictionary.ValueAtKey(d, edgeKey)
+                    if not value == None:
+                        pathCost += value
+                lengths.append(pathCost)
+        if not vertexKey == None:
+            g_vertices = Graph.Vertices(graph)
+            for i, path in enumerate(paths):
+                vertices = Topology.Vertices(path)
+                pathCost = 0
+                for vertex in vertices:
+                    index = Vertex.Index(vertex, g_vertices)
+                    d = Topology.Dictionary(g_vertices[index])
+                    value = Dictionary.ValueAtKey(d, vertexKey)
+                    if not value == None:
+                        pathCost += value
+                lengths[i] += pathCost
+        new_paths = Helper.Sort(paths, lengths)
+        temp_path = new_paths[-1]
+        cost = lengths[-1]
+        new_edges = []
+        for edge in Topology.Edges(temp_path):
+            new_edges.append(g_edges[Edge.Index(edge, g_edges)])
+        longest_path = Cluster.SelfMerge(Cluster.ByTopologies(new_edges))
+        if not costKey == None:
+            lengths.sort()
+            d = Dictionary.ByKeysValues([costKey], [cost])
+            longest_path = Topology.SetDictionary(longest_path, d)
+        return longest_path
+
     @staticmethod
     def MaximumDelta(graph):
         """
@@ -2928,9 +3125,115 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.MaximumDelta - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.MaximumDelta()
     
+    @staticmethod
+    def MaximumFlow(graph, source, sink, edgeKeyFwd=None, edgeKeyBwd=None, bidirKey=None, bidirectional=False, residualKey="residual", tolerance=0.0001):
+        """
+        Returns the maximum flow of the input graph. See https://en.wikipedia.org/wiki/Maximum_flow_problem 
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph. This is assumed to be a directed graph
+        source : topologic.Vertex
+            The input source vertex.
+        sink : topologic.Vertex
+            The input sink/target vertex.
+        edgeKeyFwd : str , optional
+            The edge dictionary key to use to find the value of the forward capacity of the edge. If not set, the length of the edge is used as its capacity. The default is None.
+        edgeKeyBwd : str , optional
+            The edge dictionary key to use to find the value of the backward capacity of the edge. This is only considered if the edge is set to be bidrectional. The default is None.
+        bidirKey : str , optional
+            The edge dictionary key to use to determine if the edge is bidrectional. The default is None.
+        bidrectional : bool , optional
+            If set to True, the whole graph is considered to be bidirectional. The default is False.
+        residualKey : str , optional
+            The name of the key to use to store the residual value of each edge capacity in the input graph. The default is "residual".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        float
+            The maximum flow.
+
+        """
+        from topologicpy.Vertex import Vertex
+        # Using BFS as a searching algorithm 
+        def searching_algo_BFS(adjMatrix, s, t, parent):
+
+            visited = [False] * (len(adjMatrix))
+            queue = []
+
+            queue.append(s)
+            visited[s] = True
+
+            while queue:
+
+                u = queue.pop(0)
+
+                for ind, val in enumerate(adjMatrix[u]):
+                    if visited[ind] == False and val > 0:
+                        queue.append(ind)
+                        visited[ind] = True
+                        parent[ind] = u
+
+            return True if visited[t] else False
+
+        # Applying fordfulkerson algorithm
+        def ford_fulkerson(adjMatrix, source, sink):
+            am = adjMatrix.copy()
+            row = len(am)
+            parent = [-1] * (row)
+            max_flow = 0
+
+            while searching_algo_BFS(am, source, sink, parent):
+
+                path_flow = float("Inf")
+                s = sink
+                while(s != source):
+                    path_flow = min(path_flow, am[parent[s]][s])
+                    s = parent[s]
+
+                # Adding the path flows
+                max_flow += path_flow
+
+                # Updating the residual values of edges
+                v = sink
+                while(v != source):
+                    u = parent[v]
+                    am[u][v] -= path_flow
+                    am[v][u] += path_flow
+                    v = parent[v]
+            return [max_flow, am]
+        if edgeKeyFwd == None:
+            useEdgeLength = True
+        else:
+            useEdgeLength = False
+        adjMatrix = Graph.AdjacencyMatrix(graph, edgeKeyFwd=edgeKeyFwd, edgeKeyBwd=edgeKeyBwd, bidirKey=bidirKey, bidirectional=bidirectional, useEdgeIndex = False, useEdgeLength=useEdgeLength, tolerance=tolerance)
+        edgeMatrix = Graph.AdjacencyMatrix(graph, edgeKeyFwd=edgeKeyFwd, edgeKeyBwd=edgeKeyBwd, bidirKey=bidirKey, bidirectional=bidirectional, useEdgeIndex = True, useEdgeLength=False, tolerance=tolerance)
+        vertices = Graph.Vertices(graph)
+        edges = Graph.Edges(graph)
+        sourceIndex = Vertex.Index(source, vertices)
+        sinkIndex = Vertex.Index(sink, vertices)
+        max_flow, am = ford_fulkerson(adjMatrix=adjMatrix, source=sourceIndex, sink=sinkIndex)
+        for i in range(len(am)):
+            row = am[i]
+            for j in range(len(row)):
+                residual = am[i][j]
+                edge = edges[edgeMatrix[i][j]-1]
+                d = Topology.Dictionary(edge)
+                keys = Dictionary.Keys(d)
+                values = Dictionary.Values(d)
+                keys.append(residualKey)
+                values.append(residual)
+                d = Dictionary.ByKeysValues(keys, values)
+                edge = Topology.SetDictionary(edge,d)
+        return max_flow
+
     @staticmethod
     def MinimumDelta(graph):
         """
@@ -2948,6 +3251,7 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.MinimumDelta - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.MinimumDelta()
     
@@ -2979,7 +3283,10 @@ class Graph:
                 if Vertex.Distance(v, vertex) < tolerance:
                     return True
             return False
-            
+        
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.MinimumSpanningTree - Error: The input graph is not a valid graph. Returning None.")
+            return None
         edges = Graph.Edges(graph)
         vertices = Graph.Vertices(graph)
         values = []
@@ -3025,8 +3332,10 @@ class Graph:
         """
         from topologicpy.Vertex import Vertex
         if not isinstance(graph, topologic.Graph):
+            print("Graph.NearestVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
+            print("Graph.NearestVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         vertices = Graph.Vertices(graph)
 
@@ -3063,6 +3372,7 @@ class Graph:
         import sys
         import subprocess
         if not isinstance(graph, topologic.Graph):
+            print("Graph.NetworkXGraph - Error: The input graph is not a valid graph. Returning None.")
             return None
         try:
             import networkx as nx
@@ -3113,7 +3423,7 @@ class Graph:
     @staticmethod
     def Order(graph):
         """
-        Returns the graph order of the input graph. The graph order is its number of vertices
+        Returns the graph order of the input graph. The graph order is its number of vertices.
 
         Parameters
         ----------
@@ -3127,6 +3437,7 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.Order - Error: The input graph is not a valid graph. Returning None.")
             return None
         return len(Graph.Vertices(graph))
 
@@ -3150,6 +3461,15 @@ class Graph:
             The path (wire) in the input graph that connects the input vertices.
 
         """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.Path - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertexA, topologic.Vertex):
+            print("Graph.Path - Error: The input vertexA is not a valid vertex. Returning None.")
+            return None
+        if not isinstance(vertexB, topologic.Vertex):
+            print("Graph.Path - Error: The input vertexB is not a valid vertex. Returning None.")
+            return None
         return graph.Path(vertexA, vertexB)
     
     @staticmethod
@@ -3173,8 +3493,10 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.RemoveEdge - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(edge, topologic.Edge):
+            print("Graph.RemoveEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
         _ = graph.RemoveEdges([edge], tolerance)
         return graph
@@ -3200,13 +3522,15 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.RemoveVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
+            print("Graph.RemoveVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         graphVertex = Graph.NearestVertex(graph, vertex)
         _ = graph.RemoveVertices([graphVertex])
         return graph
-    
+
     @staticmethod
     def ShortestPath(graph, vertexA, vertexB, vertexKey="", edgeKey="Length"):
         """
@@ -3232,10 +3556,13 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.ShortestPath - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(vertexA, topologic.Vertex):
+            print("Graph.ShortestPath - Error: The input vertexA is not a valid vertex. Returning None.")
             return None
         if not isinstance(vertexB, topologic.Vertex):
+            print("Graph.ShortestPath - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         if edgeKey:
             if edgeKey.lower() == "length":
@@ -3244,7 +3571,7 @@ class Graph:
             return graph.ShortestPath(vertexA, vertexB, vertexKey, edgeKey)
         except:
             return None
-    
+
     @staticmethod
     def ShortestPaths(graph, vertexA, vertexB, vertexKey="", edgeKey="length", timeLimit=10,
                            pathLimit=10, tolerance=0.0001):
@@ -3294,6 +3621,15 @@ class Graph:
                     return False
             return True
         
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.ShortestPaths - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertexA, topologic.Vertex):
+            print("Graph.ShortestPaths - Error: The input vertexA is not a valid vertex. Returning None.")
+            return None
+        if not isinstance(vertexB, topologic.Vertex):
+            print("Graph.ShortestPaths - Error: The input vertexB is not a valid vertex. Returning None.")
+            return None
         shortestPaths = []
         end = time.time() + timeLimit
         while time.time() < end and len(shortestPaths) < pathLimit:
@@ -3321,18 +3657,66 @@ class Graph:
         return shortestPaths
 
     @staticmethod
-    def Show(graph, vertexColor="white", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, renderer="notebook"):
+    def Show(graph, vertexColor="black", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, renderer="notebook"):
+        """
+        Shows the graph using Plotly.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertexLabelKey : str , optional
+            The dictionary key to use to display the vertex label. The default is None.
+        vertexGroupKey : str , optional
+            The dictionary key to use to display the vertex group. The default is None.
+        edgeLabelKey : str , optional
+            The dictionary key to use to display the edge label. The default is None.
+        edgeGroupKey : str , optional
+            The dictionary key to use to display the edge group. The default is None.
+        edgeColor : str , optional
+            The desired color of the output edges. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        edgeWidth : float , optional
+            The desired thickness of the output edges. The default is 1.
+        vertexColor : str , optional
+            The desired color of the output vertices. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        vertexSize : float , optional
+            The desired size of the vertices. The default is 1.1.
+        showEdges : bool , optional
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+        showVertices : bool , optional
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+        
+        Returns
+        -------
+        None
+
+        """
         from topologicpy.Plotly import Plotly
+
         if not isinstance(graph, topologic.Graph):
+            print("Graph.Show - Error: The input graph is not a valid graph. Returning None.")
             return None
-        data= Plotly.DataByGraph(graph, vertexColor="white", vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges)
+        
+        data= Plotly.DataByGraph(graph, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges)
         fig = Plotly.FigureByData(data, color=vertexColor)
         Plotly.Show(fig, renderer=renderer)
 
     @staticmethod
     def Size(graph):
         """
-        Returns the graph size of the input graph. The graph size is its number of edges
+        Returns the graph size of the input graph. The graph size is its number of edges.
 
         Parameters
         ----------
@@ -3346,6 +3730,7 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.Size - Error: The input graph is not a valid graph. Returning None.")
             return None
         return len(Graph.Edges(graph))
 
@@ -3371,6 +3756,15 @@ class Graph:
             The topological distance between the input vertices.
 
         """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.TopologicalDistance - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertexA, topologic.Vertex):
+            print("Graph.TopologicalDistance - Error: The input vertexA is not a valid vertex. Returning None.")
+            return None
+         if not isinstance(vertexB, topologic.Vertex):
+            print("Graph.TopologicalDistance - Error: The input vertexB is not a valid vertex. Returning None.")
+            return None
         return graph.TopologicalDistance(vertexA, vertexB, tolerance)
     
     @staticmethod
@@ -3389,6 +3783,9 @@ class Graph:
             The topology of the input graph.
 
         """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.Topology - Error: The input graph is not a valid graph. Returning None.")
+            return None
         return graph.Topology()
     
     @staticmethod
@@ -3452,6 +3849,7 @@ class Graph:
             return dictionary
         
         if not isinstance(graph, topologic.Graph):
+            print("Graph.Tree - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
             vertex = Graph.Vertices(graph)[0]
@@ -3480,8 +3878,10 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.VertexDegree - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
+            print("Graph.VertexDegree - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         return graph.VertexDegree(vertex)
     
@@ -3502,6 +3902,7 @@ class Graph:
 
         """
         if not isinstance(graph, topologic.Graph):
+            print("Graph.Vertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         vertices = []
         if graph:
@@ -3565,6 +3966,7 @@ class Graph:
             return edges
 
         if not isinstance(boundary, topologic.Wire):
+            print("Graph.VisibilityGraph - Error: The input boundary is not a valid wire. Returning None.")
             return None
         if not obstacles:
             obstacles = []

@@ -377,6 +377,54 @@ class Edge():
             else:
                 return e2
         return None
+    @staticmethod
+    def Index(edge: topologic.Edge, edges: list, strict: bool = False, tolerance: float = 0.0001) -> int:
+        """
+        Returns index of the input edge in the input list of edges
+
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The input edge.
+        edges : list
+            The input list of edges.
+        strict : bool , optional
+            If set to True, the edge must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. The default is False.
+        tolerance : float , optional
+            The tolerance for computing if the input edge is identical to an edge from the list. The default is 0.0001.
+
+        Returns
+        -------
+        int
+            The index of the input edge in the input list of edges.
+
+        """
+        from topologicpy.Topology import Topology
+        if not isinstance(edge, topologic.Edge):
+            return None
+        if not isinstance(edges, list):
+            return None
+        edges = [e for e in edges if isinstance(e, topologic.Edge)]
+        if len(edges) == 0:
+            return None
+        sva = Edge.StartVertex(edge)
+        eva = Edge.EndVertex(edge)
+        for i in range(len(edges)):
+            if strict:
+                if Topology.IsSame(edge, edges[i]):
+                    return i
+            else:
+                svb = Edge.StartVertex(edges[i])
+                evb = Edge.EndVertex(edges[i])
+                dsvsv = Vertex.Distance(sva, svb)
+                devev = Vertex.Distance(eva, evb)
+                if dsvsv < tolerance and devev < tolerance:
+                    return i
+                dsvev = Vertex.Distance(sva, evb)
+                devsv = Vertex.Distance(eva, svb)
+                if dsvev < tolerance and devsv < tolerance:
+                    return i
+        return None
 
     @staticmethod
     def Intersect2D(edgeA: topologic.Edge, edgeB: topologic.Edge) -> topologic.Vertex:

@@ -107,6 +107,41 @@ class Helper:
         return {'clusters': clusters, 'centroids': centroids}
     
     @staticmethod
+    def Normalize(l, mantissa=4):
+        """
+        Normalizes the input list so that it is in the range 0 to 1
+
+        Parameters
+        ----------
+        l : list
+            The input nested list.
+        mantissa : int , optional
+            The desired mantissa value. The default is 4.
+
+        Returns
+        -------
+        list
+            The normalized list.
+
+        """
+        if l == None:
+            print("Helper.Normalize - Error: The input list is not valid. Returning None.")
+            return None
+        
+        # Make sure the list is numeric
+        l = [x for x in l if type(x) == int or type(x) == float]
+        if len(l) < 1:
+            print("Helper.Normalize - Error: The input list does not contain numeric values. Returning None.")
+            return None
+        min_val = min(l)
+        max_val = max(l)
+        if min_val == max_val:
+            normalized_list = [0 for x in l]
+        else:
+            normalized_list = [round((x - min_val) / (max_val - min_val), mantissa) for x in l]
+        return normalized_list
+
+    @staticmethod
     def Repeat(l):
         """
         Repeats the input nested list so that each sublist has the same number of members. To fill extra members, the last item in the shorter lists are repeated and appended.
@@ -141,6 +176,27 @@ class Helper:
             for i in range(len(anItem), maxLength):
                 anItem.append(itemToAppend)
         return repeated_list
+
+    @staticmethod
+    def Sort(lA, lB):
+        """
+        Sorts the first input list according to the values in the second input list.
+
+        Parameters
+        ----------
+        lA : list
+            The first input list to be sorts
+        lB : list
+            The second input list to use for sorting the first input list.
+
+        Returns
+        -------
+        list
+            The sorted list.
+
+        """
+        lA.sort(key=dict(zip(lA, lB)).get)
+        return lA
 
     @staticmethod
     def Transpose(l):
@@ -196,27 +252,6 @@ class Helper:
             anItem = anItem[:minLength]
             returnList.append(anItem)
         return returnList
-
-    @staticmethod
-    def Sort(lA, lB):
-        """
-        Sorts the first input list according to the values in the second input list.
-
-        Parameters
-        ----------
-        lA : list
-            The first input list to be sorts
-        lB : list
-            The second input list to use for sorting the first input list.
-
-        Returns
-        -------
-        list
-            The sorted list.
-
-        """
-        lA.sort(key=dict(zip(lA, lB)).get)
-        return lA
     
     @staticmethod
     def Version():

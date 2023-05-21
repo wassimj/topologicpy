@@ -1246,7 +1246,7 @@ class Cell(Topology):
                 theta = 0
             else:
                 theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-            endcapA = Topology.DeepCopy(endcapA)
+            endcapA = Topology.Copy(endcapA)
             endcapA = Topology.Rotate(endcapA, zzz, 0, 1, 0, theta)
             endcapA = Topology.Rotate(endcapA, zzz, 0, 0, 1, phi + 180)
             endcapA = Topology.Translate(endcapA, origin.X(), origin.Y(), origin.Z())
@@ -1267,7 +1267,7 @@ class Cell(Topology):
                 theta = 0
             else:
                 theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-            endcapB = Topology.DeepCopy(endcapB)
+            endcapB = Topology.Copy(endcapB)
             endcapB = Topology.Rotate(endcapB, zzz, 0, 1, 0, theta)
             endcapB = Topology.Rotate(endcapB, zzz, 0, 0, 1, phi + 180)
             endcapB = Topology.Translate(endcapB, origin.X(), origin.Y(), origin.Z())
