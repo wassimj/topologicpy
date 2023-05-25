@@ -1379,7 +1379,7 @@ class DGL:
         Returns
         -------
         dict
-            The dicitonary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
+            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
 
         """
         print("DGL.ByImportedCSV - WARNING: This method is deprecated. Please do not use. Instead use DGL.ByCSVPath.")
@@ -1428,7 +1428,7 @@ class DGL:
         Returns
         -------
         dict
-            The dicitonary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
+            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
 
         """
 
@@ -2612,7 +2612,7 @@ class DGL:
         return {"graphs" : graphs, "labels": labels}
     
     @staticmethod
-    def DataExportToCSV(data, path, overwrite=True):
+    def DataExportToCSV(data, path, overwrite=False):
         """
         Exports the input data to a CSV file
 
@@ -2621,7 +2621,7 @@ class DGL:
         data : dict
             The input data. See Data(model)
         overwrite : bool , optional
-            If set to True, previous saved results files are overwritten. Otherwise, the new results are appended to the previously saved files. The default is True.
+            If set to True, previous saved results files are overwritten. Otherwise, the new results are appended to the previously saved files. The default is False.
 
         Returns
         -------
@@ -2630,11 +2630,16 @@ class DGL:
 
         """
         from topologicpy.Helper import Helper
+        from os.path import exists
         
         # Make sure the file extension is .csv
         ext = path[len(path)-4:len(path)]
         if ext.lower() != ".csv":
             path = path+".csv"
+        
+        if not overwrite and exists(path):
+            print("DGL.ExportToCSV - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
         
         epoch_list = list(range(1, data['Epochs'][0]+1))
         
@@ -2754,7 +2759,7 @@ class DGL:
 
     '''
     @staticmethod
-    def TrainRegressor(hparams, trainingDataset, validationDataset=None, testingDataset=None, overwrite=True):
+    def TrainRegressor(hparams, trainingDataset, validationDataset=None, testingDataset=None, overwrite=False):
         """
         Trains a neural network regressor.
 
@@ -2769,7 +2774,7 @@ class DGL:
         testingDataset : DGLDataset
             The input testing dataset. If not specified, a portion of the trainingDataset will be used for testing according the to the split list as specified in the hyper-parameters.
         overwrite : bool , optional
-            If set to True, previous saved results files are overwritten. Otherwise, the new results are appended to the previously saved files. The default is True.
+            If set to True, previous saved results files are overwritten. Otherwise, the new results are appended to the previously saved files. The default is False.
 
         Returns
         -------

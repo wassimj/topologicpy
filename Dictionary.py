@@ -314,7 +314,7 @@ class Dictionary(topologic.Dictionary):
 
         Parameters
         ----------
-        dicitonary : topologic.Dictionary
+        dictionary : topologic.Dictionary
             The input dictionary.
 
         Returns
@@ -351,7 +351,7 @@ class Dictionary(topologic.Dictionary):
 
         Parameters
         ----------
-        dicitonary : topologic.Dictionary or dict
+        dictionary : topologic.Dictionary or dict
             The input dictionary.
         key : string
             The input key.

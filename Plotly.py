@@ -1578,7 +1578,7 @@ class Plotly:
         if not isinstance(path, str):
             print("Plotly.FigureExportToJSON - Error: The input path is not a string. Returning None.")
             return None
-        # Make sure the file extension is .BREP
+        # Make sure the file extension is .json
         ext = path[len(path)-5:len(path)]
         if ext.lower() != ".json":
             path = path+".json"
@@ -1589,7 +1589,8 @@ class Plotly:
             else:
                 f = open(path, "x") # Try to create a new File
         except:
-            raise Exception("Error: Could not create a new file at the following location: "+path)
+           print("Plotly.FigureExportToJSON - Error: Could not create a new file at the following location: "+path+". Returning None.")
+           return None
         if (f):
             plotly.io.write_json(figure, f, validate=True, pretty=False, remove_uids=True, engine=None)
             f.close()    
@@ -1632,13 +1633,14 @@ class Plotly:
         if not isinstance(path, str):
             print("Plotly.FigureExportToPNG - Error: The input path is not a string. Returning None.")
             return None
-        # Make sure the file extension is .BREP
+        # Make sure the file extension is .pdf
         ext = path[len(path)-4:len(path)]
         if ext.lower() != ".pdf":
             path = path+".pdf"
         
         if overwrite == False and os.path.exists(path):
-            raise Exception("Error: A file already exists at this location and overwrite is set to False. "+path)
+            print("Plotly.FigureExportToPDF - Error: A file already exists at this location and overwrite is set to False. Returning None.")
+            return None
 
         plotly.io.write_image(figure, path, format='pdf', scale=1, width=width, height=height, validate=True, engine='auto')  
         return True
@@ -1674,13 +1676,14 @@ class Plotly:
         if not isinstance(path, str):
             print("Plotly.FigureExportToPNG - Error: The input path is not a string. Returning None.")
             return None
-        # Make sure the file extension is .BREP
+        # Make sure the file extension is .png
         ext = path[len(path)-4:len(path)]
         if ext.lower() != ".png":
             path = path+".png"
         
         if overwrite == False and os.path.exists(path):
-            raise Exception("Error: A file already exists at this location and overwrite is set to False. "+path)
+            print("Plotly.FigureExportToPNG - Error: A file already exists at this location and overwrite is set to False. Returning None.")
+            return None
 
         plotly.io.write_image(figure, path, format='png', scale=1, width=width, height=height, validate=True, engine='auto')  
         return True
@@ -1711,21 +1714,23 @@ class Plotly:
         """
         import os
         if not isinstance(figure, plotly.graph_objs._figure.Figure):
-            print("Plotly.FigureExportToPNG - Error: The input figure is not a plolty figure. Returning None.")
+            print("Plotly.FigureExportToSVG - Error: The input figure is not a plolty figure. Returning None.")
             return None
         if not isinstance(path, str):
-            print("Plotly.FigureExportToPNG - Error: The input path is not a string. Returning None.")
+            print("Plotly.FigureExportToSVG - Error: The input path is not a string. Returning None.")
             return None
-        # Make sure the file extension is .BREP
+        # Make sure the file extension is .svg
         ext = path[len(path)-4:len(path)]
         if ext.lower() != ".svg":
             path = path+".svg"
         
         if overwrite == False and os.path.exists(path):
-            raise Exception("Error: A file already exists at this location and overwrite is set to False. "+path)
+            print("Plotly.FigureExportToSVG - Error: A file already exists at this location and overwrite is set to False. Returning None.")
+            return None
 
         plotly.io.write_image(figure, path, format='svg', scale=1, width=width, height=height, validate=True, engine='auto')  
         return True
+    
     @staticmethod
     def SetCamera(figure, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1]):
         """

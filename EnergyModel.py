@@ -503,7 +503,7 @@ class EnergyModel:
     @staticmethod
     def ExportToGbXML(model, path, overwrite=False):
         """
-            Exports the input OSM model to a gbxml file.
+            DEPRECATED. Please do NOT use. Instead use EnergyModel.ExportToGBXML.
 
         Parameters
         ----------
@@ -520,12 +520,51 @@ class EnergyModel:
             True if the file is written successfully. False otherwise.
 
         """
+        from os.path import exists
+        
+        print("EnergyModel.ExportToGbXML - Warning: This method is deprecated. Please do NOT use. Instead use EnergyModel.ExportToGBXML.")
+        # Make sure the file extension is .xml
         ext = path[len(path)-4:len(path)]
         if ext.lower() != ".xml":
             path = path+".xml"
-        if(exists(path) and (overwrite == False)):
-            print("EnergyModel.ExportToGbXML - Error: Could not export the file because it already exists and overwrite is set to False. Returning None.")
+        
+        if not overwrite and exists(path):
+            print("EnergyModel.ExportToGbXML - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
             return None
+
+        return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, openstudio.openstudioutilitiescore.toPath(path))
+    
+    @staticmethod
+    def ExportToGBXML(model, path, overwrite=False):
+        """
+            Exports the input OSM model to a GBXML file.
+
+        Parameters
+        ----------
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+        path : str
+            The path for saving the file.
+        overwrite : bool, optional
+            If set to True any file with the same name is over-written. The default is False.
+
+        Returns
+        -------
+        bool
+            True if the file is written successfully. False otherwise.
+
+        """
+        from os.path import exists
+        
+        # Make sure the file extension is .xml
+        ext = path[len(path)-4:len(path)]
+        if ext.lower() != ".xml":
+            path = path+".xml"
+        
+        if not overwrite and exists(path):
+            print("EnergyModel.ExportToGbXML - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
+
         return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, openstudio.openstudioutilitiescore.toPath(path))
 
     
@@ -549,9 +588,16 @@ class EnergyModel:
             True if the file is written successfully. False otherwise.
 
         """
+        from os.path import exists
+        
+        # Make sure the file extension is .osm
         ext = path[len(path)-4:len(path)]
         if ext.lower() != ".osm":
             path = path+".osm"
+        
+        if not overwrite and exists(path):
+            print("EnergyModel.ExportToOSM - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
         osCondition = False
         osPath = openstudio.openstudioutilitiescore.toPath(path)
         osCondition = model.save(osPath, overwrite)
@@ -560,7 +606,25 @@ class EnergyModel:
     @staticmethod
     def GbXMLString(model):
         """
-            Returns the gbxml string of the input OSM model.
+            DEPRECATED. Please do NOT use. Instead use EnergyModel.GBXMLString.
+
+        Parameters
+        ----------
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+
+        Returns
+        -------
+        str
+            The gbxml string.
+
+        """
+        return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXMLString(model)
+    
+    @staticmethod
+    def GBXMLString(model):
+        """
+            Returns the GBXML string of the input OSM model.
 
         Parameters
         ----------

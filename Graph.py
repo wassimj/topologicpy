@@ -425,7 +425,258 @@ class Graph:
 
 
     @staticmethod
-    def ByDGCNNFile(file, key):
+    def ByCSVFile(graphs_file, edges_file, nodes_file,
+                  graph_id_header="graph_id", graph_label_header="label", num_nodes_header="num_nodes",
+                  src_header="src", dst_header="dst",
+                  node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
+        """
+        Returns graphs according to the input CSV files. This method assumes the CSV files follow DGL's schema.
+
+        Parameters
+        ----------
+        graphs_file : file
+            The grpahs CSV file.
+        edges_file : file
+            The edges CSV file.
+        nodes_file : file
+            The nodes CSV file.
+        graph_id_header : str , optional
+            The header string used to specify the graph id. The default is "graph_id".
+        graph_label_header : str , optional
+            The header string used to specify the graph label. The default is "label".
+        num_nodes_header : str , optional
+            The header string used to specify the number of nodes. The default is "num_nodes".
+        src_header : str , optional
+            The header string used to specify the source of edges. The default is "src".
+        dst_header : str , optional
+            The header string used to specify the destination of edges. The default is "dst".
+        node_label_header : str , optional
+            The header string used to specify the node label. The default is "label".
+        node_X_header : str , optional
+            The header string used to specify the node X Coordinate. The default is "X".
+        node_Y_header : str , optional
+            The header string used to specify the node Y Coordinate. The default is "Y".
+        node_Z_header : str , optional
+            The header string used to specify the node Y Coordinate. The default is "Z".
+
+        Returns
+        -------
+        dict
+            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
+
+        """
+        if not graphs_file:
+            print("Graph.ByCSVFile - Error: The input graphs file is not a valid file. Returning None.")
+            return None
+        if not edges_file:
+            print("Graph.ByCSVFile - Error: The input edges file is not a valid file. Returning None.")
+            return None
+        if not nodes_file:
+            print("Graph.ByCSVFile - Error: The input nodes file is not a valid file. Returning None.")
+            return None
+        graphs_string = graphs_file.read()
+        graphs_file.close()
+        edges_string = edges_file.read()
+        edges_file.close()
+        nodes_string = nodes_file.read()
+        nodes_file.close()
+        return Graph.ByCSVString(graphs_string, edges_string, nodes_string,
+                               graph_id_header=graph_id_header, graph_label_header=graph_label_header, num_nodes_header=num_nodes_header,
+                               src_header=src_header, dst_header=dst_header,
+                               node_label_header=node_label_header, node_X_header=node_X_header, node_Y_header=node_Y_header, node_Z_header=node_Z_header)
+        
+    @staticmethod
+    def ByCSVPath(graphs_file_path, edges_file_path, nodes_file_path,
+                  graph_id_header="graph_id", graph_label_header="label", num_nodes_header="num_nodes",
+                  src_header="src", dst_header="dst",
+                  node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
+        """
+        Returns graphs according to the input CSV file paths. This method assumes the CSV files follow DGL's schema.
+
+        Parameters
+        ----------
+        graphs_file_path : str
+            The file path to the grpahs CSV file.
+        edges_file_path : str
+            The file path to the edges CSV file.
+        nodes_file_path : str
+            The file path to the nodes CSV file.
+        graph_id_header : str , optional
+            The header string used to specify the graph id. The default is "graph_id".
+        graph_label_header : str , optional
+            The header string used to specify the graph label. The default is "label".
+        num_nodes_header : str , optional
+            The header string used to specify the number of nodes. The default is "num_nodes".
+        src_header : str , optional
+            The header string used to specify the source of edges. The default is "src".
+        dst_header : str , optional
+            The header string used to specify the destination of edges. The default is "dst".
+        node_label_header : str , optional
+            The header string used to specify the node label. The default is "label".
+        node_X_header : str , optional
+            The header string used to specify the node X Coordinate. The default is "X".
+        node_Y_header : str , optional
+            The header string used to specify the node Y Coordinate. The default is "Y".
+        node_Z_header : str , optional
+            The header string used to specify the node Y Coordinate. The default is "Z".
+
+        Returns
+        -------
+        dict
+            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
+
+        """
+        if not graphs_file_path:
+            print("Graph.ByCSVPath - Error: the input graphs_file_path is not a valid path. Returning None.")
+            return None
+        if not edges_file_path:
+            print("Graph.ByCSVPath - Error: the input edges_file_path is not a valid path. Returning None.")
+            return None
+        if not nodes_file_path:
+            print("Graph.ByCSVPath - Error: the input edges_file_path is not a valid path. Returning None.")
+            return None
+        graphs_file = open(graphs_file_path)
+        if not graphs_file:
+            print("Graph.ByCSVPath - Error: the graphs file is not a valid file. Returning None.")
+            return None
+        edges_file = open(edges_file_path)
+        if not edges_file:
+            print("Graph.ByCSVPath - Error: the edges file is not a valid file. Returning None.")
+            return None
+        nodes_file = open(nodes_file_path)
+        if not nodes_file:
+            print("Graph.ByCSVPath - Error: the nodes file is not a valid file. Returning None.")
+            return None
+        return Graph.ByCSVFile(graphs_file, edges_file, nodes_file,
+                               graph_id_header=graph_id_header, graph_label_header=graph_label_header, num_nodes_header=num_nodes_header,
+                               src_header=src_header, dst_header=dst_header,
+                               node_label_header=node_label_header, node_X_header=node_X_header, node_Y_header=node_Y_header, node_Z_header=node_Z_header)
+    
+    @staticmethod
+    def ByCSVString(graphs_string, edges_string, nodes_string,
+                    graph_id_header="graph_id", graph_label_header="label", num_nodes_header="num_nodes",
+                    src_header="src", dst_header="dst",
+                    node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
+        """
+        Returns graphs according to the input CSV strings. This method assumes the CSV strings follow DGL's schema.
+
+        Parameters
+        ----------
+        graphs_file_path : str
+            The file path to the grpahs CSV file.
+        edges_file_path : str
+            The file path to the edges CSV file.
+        nodes_file_path : str
+            The file path to the nodes CSV file.
+        graph_id_header : str , optional
+            The header string used to specify the graph id. The default is "graph_id".
+        graph_label_header : str , optional
+            The header string used to specify the graph label. The default is "label".
+        num_nodes_header : str , optional
+            The header string used to specify the number of nodes. The default is "num_nodes".
+        src_header : str , optional
+            The header string used to specify the source of edges. The default is "src".
+        dst_header : str , optional
+            The header string used to specify the destination of edges. The default is "dst".
+        node_label_header : str , optional
+            The header string used to specify the node label. The default is "label".
+        node_X_header : str , optional
+            The header string used to specify the node X Coordinate. The default is "X".
+        node_Y_header : str , optional
+            The header string used to specify the node Y Coordinate. The default is "Y".
+        node_Z_header : str , optional
+            The header string used to specify the node Y Coordinate. The default is "Z".
+
+        Returns
+        -------
+        dict
+            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import pandas as pd
+        
+        if not graphs_string:
+            print("Graph.ByCSVString - Error: the input graphs_string is not a valid string. Returning None.")
+            return None
+        if not edges_string:
+            print("Graph.ByCSVString - Error: the input edges_string is not a valid string. Returning None.")
+            return None
+        if not nodes_string:
+            print("Graph.ByCSVString - Error: the input nodes_string is not a valid string. Returning None.")
+            return None
+        # Using split by line
+        lines = graphs_string.split('\n')[1:-1]
+        lines = [l for l in lines if lines != None or lines != ""]
+        pd_graphs = pd.DataFrame([row.split(',') for row in lines], 
+                        columns=[graph_id_header, graph_label_header, num_nodes_header])
+        
+        lines = edges_string.split('\n')[1:-1]
+        lines = [l for l in lines if lines != None or lines != ""]
+        edges = pd.DataFrame([row.split(',') for row in lines], 
+                        columns=[graph_id_header, src_header, dst_header])
+
+        lines = nodes_string.split('\n')[1:-1]
+        lines = [l for l in lines if lines[-1] != None or lines[-1] != ""]
+        nodes = pd.DataFrame([row.split(',') for row in lines], 
+                        columns=[graph_id_header, node_label_header, node_X_header, node_Y_header, node_Z_header])
+
+        graphs = []
+        labels = []
+
+        # Create a graph for each graph ID from the edges table.
+        # First process the graphs table into two dictionaries with graph IDs as keys.
+        # The label and number of nodes are values.
+        label_dict = {}
+        num_nodes_dict = {}
+        for _, row in pd_graphs.iterrows():
+            label_dict[row[graph_id_header]] = row[graph_label_header]
+            num_nodes_dict[row[graph_id_header]] = row[num_nodes_header]
+        # For the edges, first group the table by graph IDs.
+        edges_group = edges.groupby(graph_id_header)
+        # For the nodes, first group the table by graph IDs.
+        nodes_group = nodes.groupby(graph_id_header)
+        # For each graph ID...
+        for graph_id in edges_group.groups:
+            graph_dict = {}
+            graph_dict[src_header] = []
+            graph_dict[dst_header] = []
+            graph_dict[node_label_header] = {}
+            graph_dict["node_features"] = []
+            num_nodes = num_nodes_dict[graph_id]
+            graph_label = label_dict[graph_id]
+            labels.append(int(graph_label))
+
+            # Find the nodes and their labels and features
+            nodes_of_id = nodes_group.get_group(graph_id)
+            node_labels = nodes_of_id[node_label_header].values
+            node_XCoords = nodes_of_id[node_X_header].values
+            node_YCoords = nodes_of_id[node_Y_header].values
+            node_ZCoords = nodes_of_id[node_Z_header].values
+            vertices = []
+            for i in range(len(node_XCoords)):
+                v = Vertex.ByCoordinates(float(node_XCoords[i]), float(node_YCoords[i]), float(node_ZCoords[i]))
+                d = Dictionary.ByKeysValues([node_label_header], [int(node_labels[i])])
+                v = Topology.SetDictionary(v, d)
+                vertices.append(v)
+            
+             # Find the edges as well as the number of nodes and its label.
+            edges_of_id = edges_group.get_group(graph_id)
+            src = edges_of_id[src_header].values
+            dst = edges_of_id[dst_header].values
+            edges = []
+            for i in range(len(src)):
+                sv = vertices[int(src[i])]
+                ev = vertices[int(dst[i])]
+                edges.append(Edge.ByVertices([sv, ev]))
+            graphs.append(Graph.ByVerticesEdges(vertices, edges))
+        return {"graphs":graphs, "labels":labels}
+    
+    @staticmethod
+    def ByDGCNNFile(file, key="label"):
         """
         Creates a graph from a DGCNN File.
 
@@ -433,27 +684,83 @@ class Graph:
         ----------
         file : file object
             The input file.
-        key : str
-            The desired key for storing the node label.
+        key : str , optional
+            The desired key for storing the node label. The default is "label".
 
         Returns
         -------
         dict
             A dictionary with the graphs and labels. The keys are 'graphs' and 'labels'.
 
-        """        
-        def verticesByCoordinates(x_coords, y_coords):
-            vertices = []
-            for i in range(len(x_coords)):
-                vertices.append(topologic.Vertex.ByCoordinates(x_coords[i], y_coords[i], 0))
-            return vertices
+        """
         
         if not file:
             print("Graph.ByDGCNNFile - Error: The input file is not a valid file. Returning None.")
             return None
+        dgcnn_string = file.read()
+        file.close()
+        return Graph.ByDGCNNString(dgcnn_string, key=key)
+    
+    @staticmethod
+    def ByDGCNNPath(path, key="label"):
+        """
+        Creates a graph from a DGCNN path.
+
+        Parameters
+        ----------
+        path : str
+            The input file path.
+        key : str , optional
+            The desired key for storing the node label. The default is "label".
+
+        Returns
+        -------
+        dict
+            A dictionary with the graphs and labels. The keys are 'graphs' and 'labels'.
+
+        """
+        if not path:
+            print("Graph.ByDGCNNPath - Error: the input path is not a valid path. Returning None.")
+            return None
+        file = open(path)
+        if not file:
+            print("Graph.ByDGCNNPath - Error: the input file is not a valid file. Returning None.")
+            return None
+        return Graph.ByDGCNNFile(file, key=key)
+    
+    @staticmethod
+    def ByDGCNNString(string, key="label"):
+        """
+        Creates a graph from a DGCNN string.
+
+        Parameters
+        ----------
+        string : str
+            The input string.
+        key : str , optional
+            The desired key for storing the node label. The default is "label".
+
+        Returns
+        -------
+        dict
+            A dictionary with the graphs and labels. The keys are 'graphs' and 'labels'.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import random
+
+        def verticesByCoordinates(x_coords, y_coords):
+            vertices = []
+            for i in range(len(x_coords)):
+                vertices.append(Vertex.ByCoordinates(x_coords[i], y_coords[i], 0))
+            return vertices
+
         graphs = []
         labels = []
-        lines = file.readlines()
+        lines = string.split("\n")
         n_graphs = int(lines[0])
         index = 1
         for i in range(n_graphs):
@@ -469,21 +776,20 @@ class Graph:
             for j in range(n_nodes):
                 line = lines[index+j].split()
                 node_label = int(line[0])
-                node_dict = Dictionary.DictionaryByKeysValues([key], [node_label])
-                Topology.TopologySetDictionary(vertices[j], node_dict)
+                node_dict = Dictionary.ByKeysValues([key], [node_label])
+                Topology.SetDictionary(vertices[j], node_dict)
             for j in range(n_nodes):
                 line = lines[index+j].split()
                 sv = vertices[j]
                 adj_vertices = line[2:]
                 for adj_vertex in adj_vertices:
                     ev = vertices[int(adj_vertex)]
-                    e = topologic.Edge.ByStartVertexEndVertex(sv, ev)
+                    e = Edge.ByStartVertexEndVertex(sv, ev)
                     edges.append(e)
             index+=n_nodes
             graphs.append(topologic.Graph.ByVerticesEdges(vertices, edges))
-        file.close()
         return {'graphs':graphs, 'labels':labels}
-
+    
     @staticmethod
     def ByTopology(topology, direct=True, directApertures=False, viaSharedTopologies=False, viaSharedApertures=False, toExteriorTopologies=False, toExteriorApertures=False, toContents=False, toOutposts=False, idKey="TOPOLOGIC_ID", outpostsKey="outposts", useInternalVertex=True, storeBRep=False, tolerance=0.0001):
         """
@@ -2568,11 +2874,52 @@ class Graph:
         from topologicpy.Topology import Topology
         import random
         import pandas as pd
-
+        from os.path import exists
+        
+        
         if not isinstance(graphs, list):
-            print("Graph.ExportToCSV - Error: The input list of graphs is not a valid list. Returning None.")
+            print("Graph.ExportToCSV_GC - Error: The input list of graphs is not a valid list. Returning None.")
             return None
         
+        if not isinstance(graphLabels, list):
+            print("Graph.ExportToCSV_GC - Error: The input list of labels is not a valid list. Returning None.")
+            return None
+        
+        graphs = [g for g in graphs if isinstance(g, topologic.Graph)]
+
+        if len(graphs) < 1:
+            print("Graph.ExportToCSV_GC - Error: The input list of graphs does not contain any valid graphs. Returning None.")
+            return None
+        if len(graphs) != len(graphLabels):
+            print("Graph.ExportToCSV_GC - Error: The input list of graphs and the input list of labels have different lengths. Returning None.")
+            return None
+        # Make sure the file extension is .csv
+        ext = graphsPath[len(graphsPath)-4:len(graphsPath)]
+        if ext.lower() != ".csv":
+            graphsPath = graphsPath+".csv"
+        
+        if not overwrite and exists(graphsPath):
+            print("DGL.ExportToCSV_GC - Error: a file already exists at the specified graphs path and overwrite is set to False. Returning None.")
+            return None
+        
+        # Make sure the file extension is .csv
+        ext = edgesPath[len(edgesPath)-4:len(edgesPath)]
+        if ext.lower() != ".csv":
+            edgesPath = edgesPath+".csv"
+        
+        if not overwrite and exists(edgesPath):
+            print("DGL.ExportToCSV_GC - Error: a file already exists at the specified edges path and overwrite is set to False. Returning None.")
+            return None
+        
+        # Make sure the file extension is .csv
+        ext = nodesPath[len(nodesPath)-4:len(nodesPath)]
+        if ext.lower() != ".csv":
+            nodesPath = nodesPath+".csv"
+        
+        if not overwrite and exists(nodesPath):
+            print("DGL.ExportToCSV_GC - Error: a file already exists at the specified nodes path and overwrite is set to False. Returning None.")
+            return None
+
         for graph_index, graph in enumerate(graphs):
             graph_label = graphLabels[graph_index]
             # Export Graph Properties
@@ -2723,12 +3070,36 @@ class Graph:
         import math
         import random
         import pandas as pd
-
+        from os.path import exists
+        
+        
         if not isinstance(graphs, list):
-            print("Graph.ExportToCSV - Error: The input list of graphs is not a valid list. Returning None.")
+            print("Graph.ExportToCSV_GC - Error: The input list of graphs is not a valid list. Returning None.")
             return None
+        
+        if not isinstance(graphLabels, list):
+            print("Graph.ExportToCSV_GC - Error: The input list of labels is not a valid list. Returning None.")
+            return None
+        
+        graphs = [g for g in graphs if isinstance(g, topologic.Graph)]
+
+        if len(graphs) < 1:
+            print("Graph.ExportToCSV_GC - Error: The input list of graphs does not contain any valid graphs. Returning None.")
+            return None
+        if len(graphs) != len(graphLabels):
+            print("Graph.ExportToCSV_GC - Error: The input list of graphs and the input list of labels have different lengths. Returning None.")
+            return None
+        # Make sure the file extension is .csv
+        ext = path[len(path)-4:len(path)]
+        if ext.lower() != ".csv":
+            path = path+".csv"
+        
+        if not overwrite and exists(path):
+            print("DGL.ExportToCSV_NC - Error: a file already exists at the specified graphs path and overwrite is set to False. Returning None.")
+            return None
+        
         if abs(trainRatio  + validateRatio + testRatio - 1) > 0.001:
-            print("Graph.ExportToCSV - Error: The train, validate, test ratios do not add up to 1. Returning None")
+            print("Graph.ExportToCSV_NC - Error: The train, validate, test ratios do not add up to 1. Returning None")
             return None
         for graph_index, graph in enumerate(graphs):
             graph_label = graphLabels[graph_index]

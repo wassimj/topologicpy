@@ -2748,7 +2748,7 @@ class Topology():
         return Cluster.ByTopologies(newTopologies)
 
     @staticmethod
-    def ExportToBRep(topology, path, overwrite=True, version=3):
+    def ExportToBRep(topology, path, overwrite=False, version=3):
         """
         DEPRECTATED. DO NOT USE. INSTEAD USE Topology.ExportToBREP.
         Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html.
@@ -2760,7 +2760,7 @@ class Topology():
         path : str
             The input file path.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
         version : int , optional
             The desired version number for the BREP file. The default is 3.
 
@@ -2774,7 +2774,7 @@ class Topology():
         return Topology.ExportToBREP(topology=topology, path=path, overwrite=overwrite, version=version)
     
     @staticmethod
-    def ExportToBREP(topology, path, overwrite=True, version=3):
+    def ExportToBREP(topology, path, overwrite=False, version=3):
         """
         Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html.
 
@@ -2785,7 +2785,7 @@ class Topology():
         path : str
             The input file path.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
         version : int , optional
             The desired version number for the BREP file. The default is 3.
 
@@ -2802,7 +2802,7 @@ class Topology():
         if not isinstance(path, str):
             print("Topology.ExportToBREP - Error: the input path is not a valid string. Returning None.")
             return None
-        # Make sure the file extension is .BREP
+        # Make sure the file extension is .brep
         ext = path[len(path)-5:len(path)]
         if ext.lower() != ".brep":
             path = path+".brep"
@@ -2852,7 +2852,7 @@ class Topology():
         # topology, url, port, user, password = item
         
         def exportToBREP(topology, path, overwrite):
-            # Make sure the file extension is .BREP
+            # Make sure the file extension is .brep
             ext = path[len(path)-5:len(path)]
             if ext.lower() != ".brep":
                 path = path+".brep"
@@ -2884,7 +2884,7 @@ class Topology():
     @staticmethod
     def ExportToJSON(topologies, path, version=3, overwrite=False, tolerance=0.0001):
         """
-        Export the input list of topologies to a JSON file
+        Exports the input list of topologies to a JSON file.
 
         Parameters
         ----------
@@ -2895,7 +2895,7 @@ class Topology():
         version : int , optional
             The OCCT BRep version to use. Options are 1,2,or 3. The default is 3.
         overwrite : bool , optional
-            If set to True, any existing file will be overwritten. The default is False.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -2922,14 +2922,14 @@ class Topology():
         except:
             raise Exception("Error: Could not create a new file at the following location: "+path)
         if (f):
-            jsondata = json.loads(Topology.JSONString(topologies, version=version, overwrite=overwrite, tolerance=tolerance))
+            jsondata = json.loads(Topology.JSONString(topologies, version=version, tolerance=tolerance))
             json.dump(jsondata, f, indent=4, sort_keys=True)
             f.close()
 
     @staticmethod
-    def JSONString(topologies, version=3, overwrite=False, tolerance=0.0001):
+    def JSONString(topologies, version=3, tolerance=0.0001):
         """
-        Export the input list of topologies to a JSON file
+        Exports the input list of topologies to a JSON string
 
         Parameters
         ----------
@@ -2939,8 +2939,6 @@ class Topology():
             The path to the JSON file.
         version : int , optional
             The OCCT BRep version to use. Options are 1,2,or 3. The default is 3.
-        overwrite : bool , optional
-            If set to True, any existing file will be overwritten. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -3325,7 +3323,7 @@ class Topology():
         return finalLines
     
     @staticmethod
-    def ExportToOBJ(topology, path, transposeAxes=True, overwrite=True):
+    def ExportToOBJ(topology, path, transposeAxes=True, overwrite=False):
         """
         Exports the input topology to a Wavefront OBJ file. This is very experimental and outputs a simple solid topology.
 
@@ -3338,7 +3336,7 @@ class Topology():
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up" 
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
 
         Returns
         -------
@@ -3347,9 +3345,6 @@ class Topology():
 
         """
         from os.path import exists
-        from topologicpy.Helper import Helper
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Face import Face
 
         if not isinstance(topology, topologic.Topology):
             print("Topology.ExportToOBJ - Error: the input topology is not a valid topology. Returning None.")
@@ -3358,7 +3353,7 @@ class Topology():
             print("Topology.ExportToOBJ - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
             return None
         
-        	# Make sure the file extension is .txt
+        # Make sure the file extension is .obj
         ext = path[len(path)-4:len(path)]
         if ext.lower() != ".obj":
             path = path+".obj"
