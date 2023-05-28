@@ -31,6 +31,29 @@ class Dictionary(topologic.Dictionary):
         return dictionaries
     '''
     @staticmethod
+    def ByKeyValue(key, value):
+        """
+        Creates a Dictionary from the input key and the input value.
+
+        Parameters
+        ----------
+        key : str
+            The string representing the key of the value in the dictionary.
+        value : int, float, str, or list
+            A value corresponding to the input key. A value can be an integer, a float, a string, or a list.
+
+        Returns
+        -------
+        topologic.Dictionary
+            The created dictionary.
+
+        """
+        if not isinstance(key, str):
+            print("Dictionary.ByKeyValue - Error: The input key is not a valid string. Returning None.")
+            return None
+        return Dictionary.ByKeysValues([key], [value])
+    
+    @staticmethod
     def ByKeysValues(keys, values):
         """
         Creates a Dictionary from the input list of keys and the input list of values.
