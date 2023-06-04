@@ -1156,6 +1156,7 @@ class Shell(Topology):
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
+        from topologicpy.Topology import Topology
         
         def planarizeList(wireList):
             returnList = []
@@ -1167,10 +1168,10 @@ class Shell(Topology):
         ext_boundary = Shell.ExternalBoundary(shell)
         if isinstance(ext_boundary, topologic.Wire):
             try:
-                return topologic.Face.ByExternalBoundary(Wire.RemoveCollinearEdges(ext_boundary, angTolerance))
+                return topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(ext_boundary, angTolerance))
             except:
                 try:
-                    return topologic.Face.ByExternalBoundary(Wire.Planarize(Wire.RemoveCollinearEdges(ext_boundary, angTolerance)))
+                    return topologic.Face.ByExternalBoundary(Wire.Planarize(Topology.RemoveCollinearEdges(ext_boundary, angTolerance)))
                 except:
                     print("FaceByPlanarShell - Error: The input Wire is not planar and could not be fixed. Returning None.")
                     return None
@@ -1181,9 +1182,9 @@ class Shell(Topology):
             areas = []
             for aWire in wires:
                 try:
-                    aFace = topologic.Face.ByExternalBoundary(Wire.RemoveCollinearEdges(aWire, angTolerance))
+                    aFace = topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(aWire, angTolerance))
                 except:
-                    aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Wire.RemoveCollinearEdges(aWire, angTolerance)))
+                    aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance)))
                 anArea = topologic.FaceUtility.Area(aFace)
                 faces.append(aFace)
                 areas.append(anArea)
@@ -1194,10 +1195,10 @@ class Shell(Topology):
             for int_boundary in int_boundaries:
                 temp_wires = []
                 _ = int_boundary.Wires(None, temp_wires)
-                int_wires.append(Wire.RemoveCollinearEdges(temp_wires[0], angTolerance))
+                int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance))
             temp_wires = []
             _ = ext_boundary.Wires(None, temp_wires)
-            ext_wire = Wire.RemoveCollinearEdges(temp_wires[0], angTolerance)
+            ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
             try:
                 return Face.ByWires(ext_wire, int_wires)
             except:

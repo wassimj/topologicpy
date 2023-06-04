@@ -339,13 +339,13 @@ class Face(topologic.Face):
             return returnList
         
         ext_boundary = Shell.ExternalBoundary(shell)
-        ext_boundary = Wire.RemoveCollinearEdges(ext_boundary, angTolerance)
+        ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
         if not Topology.IsPlanar(ext_boundary):
             ext_boundary = Wire.Planarize(ext_boundary)
 
         if isinstance(ext_boundary, topologic.Wire):
             try:
-                return topologic.Face.ByExternalBoundary(Wire.RemoveCollinearEdges(ext_boundary, angTolerance))
+                return topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(ext_boundary, angTolerance))
             except:
                 try:
                     w = Wire.Planarize(ext_boundary)
@@ -361,9 +361,9 @@ class Face(topologic.Face):
             areas = []
             for aWire in wires:
                 try:
-                    aFace = topologic.Face.ByExternalBoundary(Wire.RemoveCollinearEdges(aWire, angTolerance))
+                    aFace = topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(aWire, angTolerance))
                 except:
-                    aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Wire.RemoveCollinearEdges(aWire, angTolerance)))
+                    aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance)))
                 anArea = topologic.FaceUtility.Area(aFace)
                 faces.append(aFace)
                 areas.append(anArea)
@@ -374,10 +374,10 @@ class Face(topologic.Face):
             for int_boundary in int_boundaries:
                 temp_wires = []
                 _ = int_boundary.Wires(None, temp_wires)
-                int_wires.append(Wire.RemoveCollinearEdges(temp_wires[0], angTolerance))
+                int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance))
             temp_wires = []
             _ = ext_boundary.Wires(None, temp_wires)
-            ext_wire = Wire.RemoveCollinearEdges(temp_wires[0], angTolerance)
+            ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
             try:
                 return topologic.Face.ByExternalInternalBoundaries(ext_wire, int_wires)
             except:
@@ -462,7 +462,7 @@ class Face(topologic.Face):
         import random
 
         def triangulateWire(wire):
-            wire = Wire.RemoveCollinearEdges(wire)
+            wire = Topology.RemoveCollinearEdges(wire)
             vertices = Wire.Vertices(wire)
             shell = Shell.Delaunay(vertices)
             if isinstance(shell, topologic.Shell):
@@ -1303,7 +1303,7 @@ class Face(topologic.Face):
 
         tempWire = Cluster.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
         if isinstance(tempWire, topologic.Wire) and angTolerance > 0:
-            tempWire = Wire.RemoveCollinearEdges(tempWire, angTolerance=angTolerance)
+            tempWire = Topology.RemoveCollinearEdges(tempWire, angTolerance=angTolerance)
         medialAxisEdges = Wire.Edges(tempWire)
         for v in theVertices:
             nv = Vertex.NearestVertex(v, tempWire, useKDTree=False)
@@ -1317,7 +1317,7 @@ class Face(topologic.Face):
                     medialAxisEdges.append(Edge.ByVertices([nv, v]))
         medialAxis = Cluster.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
         if isinstance(medialAxis, topologic.Wire) and angTolerance > 0:
-            medialAxis = Wire.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance)
+            medialAxis = Topology.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance)
         medialAxis = Topology.Rotate(medialAxis, origin=world_origin, x=0, y=1, z=0, degree=theta)
         medialAxis = Topology.Rotate(medialAxis, origin=world_origin, x=0, y=0, z=1, degree=phi)
         medialAxis = Topology.Translate(medialAxis, xTran, yTran, zTran)

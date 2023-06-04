@@ -429,14 +429,16 @@ class Cell(Topology):
         return Cell.ByWires(wires, close=close, triangulate=triangulate, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
-    def Compactness(cell: topologic.Cell, mantissa: int = 4) -> float:
+    def Compactness(cell: topologic.Cell, reference = "sphere", mantissa: int = 4) -> float:
         """
-        Returns the compactness measure of the input cell. This is also known as 'sphericity' (https://en.wikipedia.org/wiki/Sphericity).
+        Returns the compactness measure of the input cell. If the reference is "sphere", this is also known as 'sphericity' (https://en.wikipedia.org/wiki/Sphericity).
 
         Parameters
         ----------
         cell : topologic.Cell
             The input cell.
+        reference : str , optional
+            The desired reference to which to compare this compactness. The options are "sphere" and "cube". It is case insensitive. The default is "sphere".
         mantissa : int , optional
             The desired length of the mantissa. The default is 4.
 
@@ -460,7 +462,11 @@ class Cell(Topology):
         compactness  = 0
         #From https://en.wikipedia.org/wiki/Sphericity
         if area > 0:
-            compactness = (((math.pi)**(1/3))*((6*volume)**(2/3)))/area
+            if reference.lower() == "sphere":
+                compactness = (((math.pi)**(1/3))*((6*volume)**(2/3)))/area
+                print(4.84*volume**(2/3)/area)
+            else:
+                compactness = 6*(volume**(2/3))/area
         else:
             raise Exception("Error: Cell.Compactness: Cell surface area is not positive")
         return round(compactness, mantissa)

@@ -246,18 +246,7 @@ assert isinstance(rec1, topologic.Wire), "Wire.Rectangle. Should be topologic.Wi
 rec2 = Wire.Rectangle(v2, 3, 7, [1, 0, 0], 'center', 0.005)     # with optional inputs
 assert isinstance(rec2, topologic.Wire), "Wire.Rectangle. Should be topologic.Wire"
  
-# Case 19 - RemoveCollinearEdges
-# cw = CollinearWire, ce = collinearEdge
-cw1 = Wire.ByVertices([v6, v1, v8])                      # create wire
-cw2 = Wire.ByVertices([v5, v1, v7])                      # create wire                            
-# test 1
-ce1 = Wire.RemoveCollinearEdges(cw1)             # without optional inputs
-assert isinstance(ce1, topologic.Wire), "Wire.RemoveCollinearEdges. Should be topologic.Wire"
-# test 2
-ce2 = Wire.RemoveCollinearEdges(cw2, 0.2)      # without optional inputs
-assert isinstance(ce2, topologic.Wire), "Wire.RemoveCollinearEdges. Should be topologic.Wire"
- 
-# Case 20 -  Split
+# Case 19 -  Split
 # creating Wire
 w7 = Wire.ByVertices([v5, v7, v8, v6])                      # create wire
 w8 = Wire.ByVertices([v8, v6, v7, v11, v12, v5])       # create wire
@@ -268,7 +257,7 @@ assert isinstance(Spl1, list), "Wire.Split. Should be list"
 Spl2 = Wire.Split(w8)
 assert isinstance(Spl2, list), "Wire.Split. Should be list"
 
-# Case 21 - Star
+# Case 20 - Star
 # test 1
 s1 = Wire.Star(v3, 2, 5, 6, [1, 1, 1], 'lowerleft', 0.0001)                                                             # with optional inputs
 assert isinstance(s1, topologic.Wire), "Wire.Star. Should be topologic.Wire"
@@ -276,7 +265,7 @@ assert isinstance(s1, topologic.Wire), "Wire.Star. Should be topologic.Wire"
 s2 = Wire.Star()                                                                                                                       # without optional inputs
 assert isinstance(s2, topologic.Wire), "Wire.Star. Should be topologic.Wire"
  
-# Case 22 - Trapezoid
+# Case 21 - Trapezoid
 # test 1
 t1 = Wire.Trapezoid()                                                                                                              # without optional inputs
 assert isinstance(t1, topologic.Wire), "Wire.Trapezoid. Should be topologic.Wire"
@@ -285,7 +274,7 @@ t2 =Wire.Trapezoid(origin=v5, widthA=1.3, widthB=0.85, offsetA=0.8, offsetB=0.7,
                    length=2.0, direction=[1, 0, 1], placement='center', tolerance=0.0001)            # with optional inputs
 assert isinstance(t2, topologic.Wire), "Wire.Trapezoid. Should be topologic.Wire"
 
-# Case 23 - Vertices
+# Case 22 - Vertices
 # wv = wire_vertices
 # test 1
 wv1 = Wire.Vertices(w3)
@@ -294,7 +283,7 @@ assert isinstance(wv1, list), "Wire.Vertices. Should be list"
 wv2 = Wire.Vertices(w6)
 assert isinstance(wv2, list), "Wire.Vertices. Should be list"
 
-# Case 24 - Einstein
+# Case 23 - Einstein
 # test 1
 ein = Wire.Einstein()
 assert isinstance(ein, topologic.Wire), "Wire.Einstein. Should be a wire"

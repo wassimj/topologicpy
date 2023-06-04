@@ -3827,6 +3827,7 @@ class Topology():
             return [a,b,c,d]
 
         if not isinstance(topology, topologic.Topology):
+            print("Topology.IsPlanar", topology)
             print("Topology.IsPlanar - Error: the input topology is not a valid topology. Returning None.")
             return None
         vertices = Topology.Vertices(topology)
@@ -4391,7 +4392,7 @@ class Topology():
             eb = Face.ExternalBoundary(aFace)
             ibList = Face.InternalBoundaries(aFace)
             try:
-                eb = Wire.RemoveCollinearEdges(eb, angTolerance=angTolerance)
+                eb = Topology.RemoveCollinearEdges(eb, angTolerance=angTolerance)
             except:
                 pass
             finalIbList = []
@@ -4399,7 +4400,7 @@ class Topology():
                 for ib in ibList:
                     temp_ib = ib
                     try:
-                        temp_ib = Wire.RemoveCollinearEdges(ib, angTolerance=angTolerance)
+                        temp_ib = Topology.RemoveCollinearEdges(ib, angTolerance=angTolerance)
                     except:
                         pass
                     finalIbList.append(temp_ib)
@@ -5061,7 +5062,7 @@ class Topology():
              
              width=950, height=500,
              xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)',
-             marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25],
+             marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[-1.25, -1.25, 1.25],
              target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", showScale=False,
              
              cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",

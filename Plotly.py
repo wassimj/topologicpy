@@ -1754,11 +1754,11 @@ class Plotly:
 
         """
         if not isinstance(camera, list):
-            return None
+            camera = [1.25, 1.25, 1.25]
         if not isinstance(target, list):
-            return None
+            target = [0,0,0]
         if not isinstance(up, list):
-            return None
+            up = [0,0,1]
         scene_camera = dict(
         up=dict(x=up[0], y=up[1], z=up[2]),
         eye=dict(x=camera[0], y=camera[1], z=camera[2]),
@@ -1768,7 +1768,7 @@ class Plotly:
         return figure
 
     @staticmethod
-    def Show(figure, camera=[1.25, 1.25, 1.25], renderer="notebook", target=[0, 0, 0], up=[0, 0, 1]):
+    def Show(figure, camera=None, renderer="notebook", target=None, up=None):
         """
         Shows the input figure.
 
@@ -1799,7 +1799,8 @@ class Plotly:
         if not renderer.lower() in Plotly.Renderers():
             print("Plotly.Show - Error: The input renderer is not in the approved list of renderers. Returning None.")
             return None
-        figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
+        if not camera == None:
+            figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
         figure.show(renderer=renderer)
         return None
 
