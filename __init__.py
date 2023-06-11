@@ -2,7 +2,7 @@ import sys
 import os, re
 from sys import platform
 
-__version__ = '0.4.24'
+__version__ = '0.4.27'
 __version_info__ = tuple([ int(num) for num in __version__.split('.')])
 
 if platform == 'win32':
@@ -14,7 +14,7 @@ sitePackagesFolderName = os.path.join(os.path.dirname(os.path.realpath(__file__)
 test1 = os.path.dirname(os.path.realpath(__file__))
 topologicFolderName = [filename for filename in os.listdir(sitePackagesFolderName) if filename.startswith("topologic")][0]
 topologicPath = os.path.join(sitePackagesFolderName, topologicFolderName)
-sys.path.append(topologicPath)
+sys.path.append(topologicPath.replace(".libs",""))
 
 import topologic
 

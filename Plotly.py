@@ -183,7 +183,7 @@ class Plotly:
         return df
 
     @staticmethod
-    def DataByGraph(graph, vertexColor="white", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True):
+    def DataByGraph(graph, vertexColor="white", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, colorScale="viridis"):
         """
         Creates plotly vertex and edge data from the input graph.
 
@@ -193,8 +193,6 @@ class Plotly:
             The input graph.
         vertexLabelKey : str , optional
             The dictionary key to use to display the vertex label. The default is None.
-        vertexGroupKey : str , optional
-            The dictionary key to use to display the vertex group. The default is None.
         edgeLabelKey : str , optional
             The dictionary key to use to display the edge label. The default is None.
         edgeGroupKey : str , optional
@@ -217,13 +215,20 @@ class Plotly:
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
+        vertexGroupKey : str , optional
+            The dictionary key to use to display the vertex group. The default is None.
+        vertexGroups : list , optional
+            The list of vertex groups against which to index the color of the vertex. The default is [].
+        vertexLabelKey : str , optional
+            The dictionary key to use to display the vertex label. The default is None.
         vertexSize : float , optional
             The desired size of the vertices. The default is 1.1.
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
-
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         Returns
         -------
         list
@@ -258,15 +263,18 @@ class Plotly:
                         except:
                             v_label = ""
                         try:
-                            v_group = str(Dictionary.ValueAtKey(d, key=vertexGroupKey)) or ""
+                            v_group = Dictionary.ValueAtKey(d, key=vertexGroupKey)
                         except:
-                            v_group = ""
+                            v_group = None
                     try:
                         v_groupList.append(vertexGroups.index(v_group))
                     except:
                         v_groupList.append(len(vertexGroups))
                     if not v_label == "" and not v_group == "":
-                        v_label = v_label+" ("+v_group+")"
+                        if v_group == 0:
+                            v_label = v_label+" (0)"
+                        else:
+                            v_label = v_label+" ("+str(v_group)+")"
                     v_labels.append(v_label)
             else:
                 for v in vertices:
@@ -287,7 +295,7 @@ class Plotly:
                 marker=dict(symbol='circle',
                                 size=vertexSize,
                                 color=v_groupList,
-                                colorscale='Viridis',
+                                colorscale=colorScale,
                                 line=dict(color=edgeColor, width=0.5)
                                 ),
                 text=v_labels,

@@ -367,7 +367,7 @@ class Graph:
             try:
                 from tqdm.auto import tqdm
             except:
-                print("DGL - Error: Could not import tqdm")
+                print("Graph.BetweenessCentrality - Error: Could not import tqdm")
 
         if not isinstance(graph, topologic.Graph):
             print("Graph.BetweenessCentrality - Error: The input graph is not a valid graph. Returning None.")
@@ -535,16 +535,19 @@ class Graph:
         if not nodes_file_path:
             print("Graph.ByCSVPath - Error: the input edges_file_path is not a valid path. Returning None.")
             return None
-        graphs_file = open(graphs_file_path)
-        if not graphs_file:
+        try:
+            graphs_file = open(graphs_file_path)
+        except:
             print("Graph.ByCSVPath - Error: the graphs file is not a valid file. Returning None.")
             return None
-        edges_file = open(edges_file_path)
-        if not edges_file:
+        try:
+            edges_file = open(edges_file_path)
+        except:
             print("Graph.ByCSVPath - Error: the edges file is not a valid file. Returning None.")
             return None
-        nodes_file = open(nodes_file_path)
-        if not nodes_file:
+        try:
+            nodes_file = open(nodes_file_path)
+        except:
             print("Graph.ByCSVPath - Error: the nodes file is not a valid file. Returning None.")
             return None
         return Graph.ByCSVFile(graphs_file, edges_file, nodes_file,
@@ -611,17 +614,17 @@ class Graph:
         # Using split by line
         lines = graphs_string.split('\n')[1:-1]
         lines = [l for l in lines if lines != None or lines != ""]
-        pd_graphs = pd.DataFrame([row.split(',') for row in lines], 
+        pd_graphs = pd.DataFrame([row.split(',')[0:3] for row in lines], 
                         columns=[graph_id_header, graph_label_header, num_nodes_header])
         
         lines = edges_string.split('\n')[1:-1]
         lines = [l for l in lines if lines != None or lines != ""]
-        edges = pd.DataFrame([row.split(',') for row in lines], 
+        edges = pd.DataFrame([row.split(',')[0:3] for row in lines], 
                         columns=[graph_id_header, src_header, dst_header])
 
         lines = nodes_string.split('\n')[1:-1]
         lines = [l for l in lines if lines[-1] != None or lines[-1] != ""]
-        nodes = pd.DataFrame([row.split(',') for row in lines], 
+        nodes = pd.DataFrame([row.split(',')[0:5] for row in lines], 
                         columns=[graph_id_header, node_label_header, node_X_header, node_Y_header, node_Z_header])
 
         graphs = []
@@ -648,7 +651,12 @@ class Graph:
             graph_dict["node_features"] = []
             num_nodes = num_nodes_dict[graph_id]
             graph_label = label_dict[graph_id]
-            labels.append(int(graph_label))
+            if graph_label.isnumeric():
+                if graph_label.isdecimal():
+                    graph_label = int(graph_label)
+                else:
+                    graph_label = float(graph_label)
+            labels.append(float(graph_label))
 
             # Find the nodes and their labels and features
             nodes_of_id = nodes_group.get_group(graph_id)
@@ -722,9 +730,10 @@ class Graph:
         if not path:
             print("Graph.ByDGCNNPath - Error: the input path is not a valid path. Returning None.")
             return None
-        file = open(path)
-        if not file:
-            print("Graph.ByDGCNNPath - Error: the input file is not a valid file. Returning None.")
+        try:
+            file = open(path)
+        except:
+            print("Graph.ByDGCNNPath - Error: the DGCNN file is not a valid file. Returning None.")
             return None
         return Graph.ByDGCNNFile(file, key=key)
     

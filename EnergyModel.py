@@ -115,7 +115,7 @@ class EnergyModel:
         return EnergyModel.ByOSMPath(path=path)
     
     @staticmethod
-    def ByTopology(building : topologic.CellComplex,
+    def ByTopology(building : topologic.Topology,
                    shadingSurfaces : topologic.Topology = None,
                    osModelPath : str = None,
                    weatherFilePath : str = None,
@@ -135,7 +135,7 @@ class EnergyModel:
 
         Parameters
         ----------
-        building : topologic.CellComplex
+        building : topologic.CellComplex or topologic.Cell
             The input building topology.
         shadingSurfaces : topologic.Topology , optional
             The input topology for shading surfaces. The default is None.
@@ -197,14 +197,22 @@ class EnergyModel:
         
         def getFloorLevels(building):
             from topologicpy.Vertex import Vertex
+            from topologicpy.Cell import Cell
             from topologicpy.CellComplex import CellComplex
-            from topologicpy.Dictionary import Dictionary
 
-            d = CellComplex.Decompose(building)
-            bhf = d['bottomHorizontalFaces']
-            ihf = d['internalHorizontalFaces']
-            thf = d ['topHorizontalFaces']
-            hf = bhf+ihf+thf
+            if isinstance(building, topologic.CellComplex):
+                d = CellComplex.Decompose(building)
+                bhf = d['bottomHorizontalFaces']
+                ihf = d['internalHorizontalFaces']
+                thf = d ['topHorizontalFaces']
+                hf = bhf+ihf+thf
+            elif isinstance(building, topologic.Cell):
+                d = Cell.Decompose(building)
+                bhf = d['bottomHorizontalFaces']
+                thf = d ['topHorizontalFaces']
+                hf = bhf+thf
+            else:
+                return None
             floorLevels = [Vertex.Z(Topology.Centroid(f)) for f in hf]
             floorLevels = list(set(floorLevels))
             floorLevels.sort()
@@ -267,7 +275,11 @@ class EnergyModel:
         osBuildingStorys.sort(key=lambda x: x.nominalZCoordinate().get())
         osSpaces = []
         spaceNames = []
-        for spaceNumber, buildingCell in enumerate(Topology.SubTopologies(building, "Cell")):
+        if isinstance(building, topologic.CellComplex):
+            building_cells = Topology.SubTopologies(building, "Cell")
+        elif isinstance(building, topologic.Cell):
+            building_cells = [building]
+        for spaceNumber, buildingCell in enumerate(building_cells):
             osSpace = openstudio.model.Space(osModel)
             osSpaceZ = buildingCell.CenterOfMass().Z()
             osBuildingStory = osBuildingStorys[0]

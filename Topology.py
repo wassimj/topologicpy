@@ -1287,9 +1287,10 @@ class Topology():
         if not path:
             print("Topology.ByBREPPath - Error: the input path is not a valid path. Returning None.")
             return None
-        file = open(path)
-        if not file:
-            print("Topology.ByBREPPath - Error: the input file is not a valid file. Returning None.")
+        try:
+            file = open(path)
+        except:
+            print("Topology.ByBREPPath - Error: the BREP file is not a valid file. Returning None.")
             return None
         return Topology.ByBREPFile(file)
     
@@ -1668,9 +1669,10 @@ class Topology():
         if not path:
             print("Topology.ByJSONPath - Error: the input path is not a valid path. Returning None.")
             return None
-        file = open(path)
-        if not file:
-            print("Topology.ByJSONPath - Error: the input file is not a valid file. Returning None.")
+        try:
+            file = open(path)
+        except:
+            print("Topology.ByJSONPath - Error: the JSON file is not a valid file. Returning None.")
             return None
         return Topology.ByJSONFile(file=file, tolerance=tolerance)
 
@@ -1959,7 +1961,11 @@ class Topology():
         if not path:
             print("Topology.ByOBJPath - Error: the input path is not a valid path. Returning None.")
             return None
-        file = open(path)
+        try:
+            file = open(path)
+        except:
+            print("Topology.ByOBJPath - Error: the OBJ file is not a valid file. Returning None.")
+            return None
         return Topology.ByOBJFile(file, transposeAxes=transposeAxes, progressBar=progressBar, renderer=renderer, tolerance=tolerance)
     
     @staticmethod
@@ -2184,7 +2190,11 @@ class Topology():
         if not path:
             print("Topology.ByXYZPath - Error: the input path is not a valid path. Returning None.")
             return None
-        file = open(path)
+        try:
+            file = open(path)
+        except:
+            print("Topology.ByXYZPath - Error: the XYZ file is not a valid file. Returning None.")
+            return None
         return Topology.ByXYZFile(file, frameIdKey=frameIdKey, vertexIdKey=frameIdKey)
     
     @staticmethod

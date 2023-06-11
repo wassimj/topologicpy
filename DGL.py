@@ -1532,8 +1532,10 @@ class DGL:
         """
         if not path:
             return None
-        file = open(path)
-        if not file:
+        try:
+            file = open(path)
+        except:
+            print("DGL.GraphsByDGCNNPath - Error: the DGCNN file is not a valid file. Returning None.")
             return None
         return DGL.GraphsByDGCNNFile(file=file, categories=categories, bidirectional=bidirectional)
 
@@ -2203,7 +2205,7 @@ class DGL:
         values = []
         for item in tqdm(dataset, desc='Predicting', leave=False):
             graph = item[0]
-            pred = model(graph, graph.ndata[node_attr_key].float())
+            pred = model.model(graph, graph.ndata[node_attr_key].float())
             values.append(round(pred.item(), 3))
         return values
     
