@@ -88,7 +88,10 @@ class _Dataset(DGLDataset):
     def __init__(self, graphs, labels, node_attr_key):
         super().__init__(name='GraphDGL')
         self.graphs = graphs
-        self.labels = torch.LongTensor(labels)
+        if isinstance(labels[0], int):
+            self.labels = torch.LongTensor(labels)
+        else:
+            self.labels = torch.DoubleTensor(labels)
         self.node_attr_key = node_attr_key
         # as all graphs have same length of node features then we get dim_nfeats from first graph in the list
         self.dim_nfeats = graphs[0].ndata[node_attr_key].shape[1]
@@ -1988,7 +1991,10 @@ class DGL:
         list
             The list of labels.
         """
-        return [int(g[1]) for g in dataset]
+        labels = dataset[1]
+        if isinstance(labels, torch.LongTensor):
+            return [int(g[1]) for g in dataset]
+        return [float(g[1]) for g in dataset]
     
     @staticmethod
     def DatasetMerge(datasets, key="node_attr"):
@@ -2420,12 +2426,12 @@ class DGL:
         if hparams.model_type.lower() == "classifier":
             if hparams.cv_type.lower() == "holdout":
                 model = _ClassifierHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
-            elif hparams.cv_type.lower() == "k-fold" or hparams.cv_type.lower() == "kfold":
+            elif "k" in hparams.cv_type.lower():
                 model = _ClassifierKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
         elif hparams.model_type.lower() == "regressor":
             if hparams.cv_type.lower() == "holdout":
                 model = _RegressorHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
-            elif hparams.cv_type.lower() == "k-fold" or hparams.cv_type.lower() == "kfold":
+            elif "k" in hparams.cv_type.lower():
                 model = _RegressorKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
         else:
             raise NotImplementedError
