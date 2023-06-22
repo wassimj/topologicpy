@@ -2175,6 +2175,10 @@ class DGL:
             - "probabilities" (list): the list of probabilities that the label is one of the categories.
 
         """
+        try:
+            model = model.model #The inoput model might be our wrapper model. In that case, get its model attribute to do the prediciton.
+        except:
+            pass
         labels = []
         probabilities = []
         for item in tqdm(dataset, desc='Classifying', leave=False):
@@ -2208,6 +2212,10 @@ class DGL:
         list
             The list of predictions
         """
+        try:
+            model = model.model #The inoput model might be our wrapper model. In that case, get its model attribute to do the prediciton.
+        except:
+            pass
         values = []
         for item in tqdm(dataset, desc='Predicting', leave=False):
             graph = item[0]
