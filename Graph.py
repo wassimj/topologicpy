@@ -1248,9 +1248,8 @@ class Graph:
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance = item
             vertices = []
             edges = []
-
             if useInternalVertex == True:
-                vCell = topologic.CellUtility.InternalVertex(topology, tolerance)
+                vCell = topologic.CellUtility.InternalVertex(Topology.Copy(topology), tolerance)
             else:
                 vCell = topology.CenterOfMass()
             d1 = topology.GetDictionary()
@@ -1261,7 +1260,6 @@ class Graph:
             else:
                 _ = vCell.SetDictionary(d1)
             vertices.append(vCell)
-
             if toOutposts and others:
                 d = Topology.Dictionary(topology)
                 keys = Dictionary.Keys(d)
@@ -1284,14 +1282,12 @@ class Graph:
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
             if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
-                faces = []
-                _ = topology.Faces(None, faces)
+                faces = Topology.Faces(topology)
                 exteriorTopologies = []
                 exteriorApertures = []
                 for aFace in faces:
                     exteriorTopologies.append(aFace)
-                    apertures = []
-                    _ = aFace.Apertures(apertures)
+                    apertures = Topology.Apertures(aFace)
                     for anAperture in apertures:
                         exteriorApertures.append(anAperture)
                     if toExteriorTopologies:
