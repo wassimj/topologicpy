@@ -629,6 +629,7 @@ class Graph:
 
         graphs = []
         labels = []
+        graph_ids = []
 
         # Create a graph for each graph ID from the edges table.
         # First process the graphs table into two dictionaries with graph IDs as keys.
@@ -681,7 +682,11 @@ class Graph:
                 ev = vertices[int(dst[i])]
                 edges.append(Edge.ByVertices([sv, ev]))
             graphs.append(Graph.ByVerticesEdges(vertices, edges))
-        return {"graphs":graphs, "labels":labels}
+            graph_ids.append(int(graph_id))
+        graphs.sort(key=dict(zip(graphs, graph_ids)).get)
+        labels.sort(key=dict(zip(labels, graph_ids)).get)
+        graph_ids.sort()
+        return {"graphs":graphs, "labels":labels, "ids":graph_ids}
     
     @staticmethod
     def ByDGCNNFile(file, key="label"):
