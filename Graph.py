@@ -5,6 +5,17 @@ from topologicpy.Topology import Topology
 from topologicpy.Aperture import Aperture
 import random
 import time
+import sys
+import subprocess
+try:
+    from tqdm.auto import tqdm
+except:
+    call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
+    subprocess.run(call)
+    try:
+        from tqdm.auto import tqdm
+    except:
+        print("Graph - Error: Could not import tqdm")
 
 class Graph:
     @staticmethod
@@ -644,7 +655,7 @@ class Graph:
         # For the nodes, first group the table by graph IDs.
         nodes_group = nodes.groupby(graph_id_header)
         # For each graph ID...
-        for graph_id in edges_group.groups:
+        for graph_id in tqdm(edges_group.groups, desc="Importing Graphs", leave=False):
             graph_dict = {}
             graph_dict[src_header] = []
             graph_dict[dst_header] = []
