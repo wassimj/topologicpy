@@ -664,11 +664,10 @@ class Graph:
             num_nodes = num_nodes_dict[graph_id]
             graph_label = label_dict[graph_id]
             if graph_label.isnumeric():
-                if graph_label.isdecimal():
-                    graph_label = int(graph_label)
-                else:
-                    graph_label = float(graph_label)
-            labels.append(float(graph_label))
+                graph_label = int(graph_label)
+            else:
+                graph_label = float(graph_label)
+            labels.append(graph_label)
 
             # Find the nodes and their labels and features
             nodes_of_id = nodes_group.get_group(graph_id)

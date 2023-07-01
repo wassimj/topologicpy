@@ -88,7 +88,12 @@ class _Dataset(DGLDataset):
     def __init__(self, graphs, labels, node_attr_key):
         super().__init__(name='GraphDGL')
         self.graphs = graphs
-        if isinstance(labels[0], int):
+        if isinstance(labels[0], str):
+            if labels[0].isnumeric():
+                self.labels = torch.LongTensor([int(label) for label in labels])
+            else:
+                self.labels = torch.DoubleTensor([float(label) for label in labels])
+        elif isinstance(labels[0], int) or isinstance(labels[0], np.int64):
             self.labels = torch.LongTensor(labels)
         else:
             self.labels = torch.DoubleTensor(labels)
@@ -1244,10 +1249,10 @@ class DGL:
             labels = dataset.labels
         df = pd.DataFrame({'graph_index': range(len(labels)), 'label': labels})
 
-        if method.lower() == 'undersampling':
+        if 'under' in method.lower():
             min_distribution = df['label'].value_counts().min()
             df = df.groupby('label').sample(n=min_distribution)
-        elif method.lower() == 'oversampling':
+        elif 'over' in method.lower():
             max_distribution = df['label'].value_counts().max()
             df = df.groupby('label').sample(n=max_distribution, replace=True)
         else:
@@ -1259,7 +1264,7 @@ class DGL:
         for index in list_idx:
             graph, label = dataset[index]
             graphs.append(graph)
-            labels.append(label)
+            labels.append(label.item())
         return DGL.DatasetByGraphs(dictionary={'graphs': graphs, 'labels': labels}, key=key)
     
     @staticmethod
