@@ -10,6 +10,7 @@ import os
 from os.path import exists
 import json
 from datetime import datetime
+import time
 import sys
 import subprocess
 try:
@@ -245,7 +246,6 @@ class EnergyModel:
         else:
             print("EnergyModel.ByTopology - Error: The ddy file is not initialized. Returning None.")
             return None
-
         osBuilding = osModel.getBuilding()
         if not floorLevels:
             floorLevels = getFloorLevels(building)
@@ -262,7 +262,6 @@ class EnergyModel:
             osBuildingStory.setNominalZCoordinate(floorLevels[storyNumber])
             osBuildingStory.setNominalFloortoFloorHeight(osBuilding.nominalFloortoFloorHeight().get())
         osBuilding.setNorthAxis(northAxis)
-
         heatingScheduleConstant = openstudio.model.ScheduleConstant(osModel)
         heatingScheduleConstant.setValue(heatingTemp)
         coolingScheduleConstant = openstudio.model.ScheduleConstant(osModel)
@@ -270,7 +269,6 @@ class EnergyModel:
         osThermostat = openstudio.model.ThermostatSetpointDualSetpoint(osModel)
         osThermostat.setHeatingSetpointTemperatureSchedule(heatingScheduleConstant)
         osThermostat.setCoolingSetpointTemperatureSchedule(coolingScheduleConstant)
-
         osBuildingStorys = list(osModel.getBuildingStorys())
         osBuildingStorys.sort(key=lambda x: x.nominalZCoordinate().get())
         osSpaces = []

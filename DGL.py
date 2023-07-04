@@ -1201,6 +1201,7 @@ class DGL:
     @staticmethod
     def RMSE(actual, predicted, mantissa=4):
         """
+        WARNING: This method is DEPRECATED. Please use DGL.Performance(actual, predicted, mantissa)
         Computes the accuracy based on the mean squared error of the input predictions based on the input actual values. This is to be used only with regression not with classification.
 
         Parameters
@@ -1217,11 +1218,68 @@ class DGL:
         float
             The RMSE value.
         """
+        print("DGL.RMSE - WARNING: This method is DEPRECTAED. Please use instead DGL.Performance(actual, predicted, mantissa)")
         if len(predicted) < 1 or len(actual) < 1 or not len(predicted) == len(actual):
             return None
         size = len(predicted)
         mse = F.mse_loss(torch.tensor(predicted), torch.tensor(actual))
         return round(torch.sqrt(mse).item(), mantissa)
+    
+    def Performance(actual, predicted, mantissa=4):
+        """
+        Computes regression model performance measures. This is to be used only with regression not with classification.
+
+        Parameters
+        ----------
+        actual : list
+            The input list of actual values.
+        predicted : list
+            The input list of predicted values.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
+        
+        Returns
+        -------
+        dict
+            The dictionary containing the performance measures. The keys in the dictionary are: 'mae', 'mape', 'mse', 'r', 'r2', 'rmse', .
+        """
+        
+        import numpy as np
+
+        if not isinstance(actual, list):
+            print("DGL.Performance - ERROR: The actual input is not a list. Returning None")
+            return None
+        if not isinstance(predicted, list):
+            print("DGL.Performance - ERROR: The predicted input is not a list. Returning None")
+            return None
+        if not (len(actual) == len(predicted)):
+            print("DGL.Performance - ERROR: The actual and predicted input lists have different lengths. Returning None")
+            return None
+        
+        predicted = np.array(predicted)
+        actual = np.array(actual)
+
+        mae = np.mean(np.abs(predicted - actual))
+        mape = np.mean(np.abs((actual - predicted) / actual))*100
+        mse = np.mean((predicted - actual)**2)
+        correlation_matrix = np.corrcoef(predicted, actual)
+        r = correlation_matrix[0, 1]
+        r2 = r**2
+        absolute_errors = np.abs(predicted - actual)
+        mean_actual = np.mean(actual)
+        if mean_actual == 0:
+            rae = None
+        else:
+            rae = np.mean(absolute_errors) / mean_actual
+        rmse = np.sqrt(mse)
+        return {'mae': round(mae, mantissa),
+                'mape': round(mape, mantissa),
+                'mse': round(mse, mantissa),
+                'r': round(r, mantissa),
+                'r2': round(r2, mantissa),
+                'rae': round(rae, mantissa),
+                'rmse': round(rmse, mantissa)
+                }
     
     @staticmethod
     def DatasetBalance(dataset, labels=None, method="undersampling", key="node_attr"):

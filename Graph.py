@@ -815,6 +815,52 @@ class Graph:
         return {'graphs':graphs, 'labels':labels}
     
     @staticmethod
+    def ByMeshData(vertices, edges, vertexDictionaries, edgeDictionaries):
+        """
+        Creates a graph from the input mesh data
+
+        Parameters
+        ----------
+        vertices : The list of [x,y,z] coordinates of the vertices/
+        edges : the list of [i,j] indices into the vertices list to signify and edge that connects vertices[i] to vertices[j].
+        vertexDictionaries : The python dictionaries of the vertices (in the same order as the list of vertices).
+        edgeDictionaries : The python dictionaries of the edges (in the same order as the list of edges).
+
+        Returns
+        -------
+        topologic.Graph
+            The created graph
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        g_vertices = []
+        for i, v in enumerate(vertices):
+            g_v = Vertex.ByCoordinates(v[0], v[1], v[2])
+            if isinstance(vertexDictionaries[i], dict):
+                d = Dictionary.ByPythonDictionary(vertexDictionaries[i])
+            else:
+                d = vertexDictionaries[i]
+            if len(Dictionary.Keys(d)) > 0:
+                g_v = Topology.SetDictionary(g_v, d)
+            g_vertices.append(g_v)
+            
+        g_edges = []
+        for i, e in enumerate(edges):
+            sv = g_vertices[e[0]]
+            ev = g_vertices[e[1]]
+            g_e = Edge.ByVertices([sv, ev])
+            if isinstance(edgeDictionaries[i], dict):
+                d = Dictionary.ByPythonDictionary(edgeDictionaries[i])
+            else:
+                d = edgeDictionaries[i]
+            if len(Dictionary.Keys(d)) > 0:
+                g_e = Topology.SetDictionary(g_e, d)
+            g_edges.append(g_e)
+        return Graph.ByVerticesEdges(g_vertices, g_edges)
+    
+    @staticmethod
     def ByTopology(topology, direct=True, directApertures=False, viaSharedTopologies=False, viaSharedApertures=False, toExteriorTopologies=False, toExteriorApertures=False, toContents=False, toOutposts=False, idKey="TOPOLOGIC_ID", outpostsKey="outposts", useInternalVertex=True, storeBRep=False, tolerance=0.0001):
         """
         Creates a graph.See https://en.wikipedia.org/wiki/Graph_(discrete_mathematics).
@@ -3259,6 +3305,98 @@ class Graph:
         return True
     
     @staticmethod
+    def Flatten(graph, mode="spring", iterations=50, k=0.8, seed=None, radius=0.5):
+        """
+        Flattens the input graph.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        mode : str , optional
+            The desired mode for flattening. If set to 'spring', the algorithm uses a simplified version of the Fruchterman-Reingold force-directed algorithm to flatten and distribute the vertices.
+            If set to 'circular', the nodes will be distributed along a circle. The default is 'spring'.
+        iterations : int , optional
+            The desired maximum number of iterations to solve the forces in the 'spring' mode. The default is 50.
+        k : float, optional
+            The desired constant to use for the attractive and repulsive forces. The default is 0.8.
+        seed : int , optional
+            The desired random seed to use. The default is None.
+        radius : float, optional
+            The desired radius of the circle to use in the 'circular' mode.
+
+        Returns
+        -------
+        topologic.Graph
+            The flattened graph.
+
+        """
+        import math
+
+        d = Graph.MeshData(graph)
+        vertices = d['vertices']
+        edges = d['edges']
+        v_dicts = d['vertexDictionaries']
+        e_dicts = d['edgeDictionaries']
+        if 'spring' in mode.lower():
+            num_vertices = len(vertices)
+
+            # Initialize random seed if provided
+            if seed is not None:
+                random.seed(seed)
+
+            # Assign random initial positions to nodes
+            positions = {i: vertices[i][:2] for i in range(num_vertices)}
+
+            # Perform spring layout iterations
+            for _ in range(iterations):
+                # Compute attractive forces between connected nodes
+                for u, v in edges:
+                    dx = positions[v][0] - positions[u][0]
+                    dy = positions[v][1] - positions[u][1]
+                    distance = max(math.sqrt(dx**2 + dy**2), 0.01)
+                    attractive_force = k * distance
+
+                    # Update positions based on attractive forces
+                    positions[u][0] += (attractive_force / distance) * dx
+                    positions[u][1] += (attractive_force / distance) * dy
+                    positions[v][0] -= (attractive_force / distance) * dx
+                    positions[v][1] -= (attractive_force / distance) * dy
+
+                # Apply repulsive forces between all node pairs
+                for u in range(num_vertices):
+                    for v in range(num_vertices):
+                        if u != v:
+                            dx = positions[v][0] - positions[u][0]
+                            dy = positions[v][1] - positions[u][1]
+                            distance = max(math.sqrt(dx**2 + dy**2), 0.01)
+                            repulsive_force = k / (distance ** 2)
+
+                            # Update positions based on repulsive forces
+                            positions[u][0] -= (repulsive_force / distance) * dx
+                            positions[u][1] -= (repulsive_force / distance) * dy
+
+            positions = [positions[i][:2]+[0] for i in range(num_vertices)]
+        elif 'circ' in mode.lower():
+            # Calculate the total number of nodes
+            num_vertices = len(vertices)
+            # Calculate the angle between each node in the circular layout
+            angle = 2 * math.pi / num_vertices
+
+            # Create a list to store the positions of the nodes
+            positions = []
+
+            # Assign coordinates to each node in the circular layout
+            for i in range(num_vertices):
+                theta = i * angle
+                x = math.cos(theta)*radius
+                y = math.sin(theta)*radius
+                z = 0
+                positions.append([x, y, z])
+        flat_graph = Graph.ByMeshData(positions, edges, v_dicts, e_dicts)
+        return flat_graph
+
+    @staticmethod
     def IsBipartite(graph, tolerance=0.0001):
         """
         Returns True if the input graph is bipartite. Returns False otherwise. See https://en.wikipedia.org/wiki/Bipartite_graph.
@@ -3625,6 +3763,53 @@ class Graph:
                 edge = Topology.SetDictionary(edge,d)
         return max_flow
 
+    @staticmethod
+    def MeshData(g):
+        """
+        Returns the mesh data of the input graph.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+
+        Returns
+        -------
+        dict
+            The python dictionary of the mesh data of the input graph. The keys in the dictionary are:
+            'vertices' : The list of [x,y,z] coordinates of the vertices.
+            'edges' : the list of [i,j] indices into the vertices list to signify and edge that connects vertices[i] to vertices[j].
+            'vertexDictionaries' : The python dictionaries of the vertices (in the same order as the list of vertices).
+            'edgeDictionaries' : The python dictionaries of the edges (in the same order as the list of edges).
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        g_vertices = Graph.Vertices(g)
+        m_vertices = []
+        v_dicts = []
+        for g_vertex in g_vertices:
+            m_vertices.append(Vertex.Coordinates(g_vertex))
+            d = Dictionary.PythonDictionary(Topology.Dictionary(g_vertex))
+            v_dicts.append(d)
+        g_edges = Graph.Edges(g)
+        m_edges = []
+        e_dicts = []
+        for g_edge in g_edges:
+            sv = g_edge.StartVertex()
+            ev = g_edge.EndVertex()
+            si = Vertex.Index(sv, g_vertices)
+            ei = Vertex.Index(ev, g_vertices)
+            m_edges.append([si, ei])
+            d = Dictionary.PythonDictionary(Topology.Dictionary(g_edge))
+            e_dicts.append(d)
+        return {'vertices':m_vertices,
+                'edges': m_edges,
+                'vertexDictionaries': v_dicts,
+                'edgeDictionaries': e_dicts
+                }
+    
     @staticmethod
     def MinimumDelta(graph):
         """
@@ -4048,7 +4233,9 @@ class Graph:
         return shortestPaths
 
     @staticmethod
-    def Show(graph, vertexColor="black", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, renderer="notebook"):
+    def Show(graph, vertexColor="black", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, showVertexLegend=False, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, showEdgeLegend=False, colorScale='viridis', renderer="notebook",
+             width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0,
+             camera=None, target=None, up=None):
         """
         Shows the graph using Plotly.
 
@@ -4056,24 +4243,6 @@ class Graph:
         ----------
         graph : topologic.Graph
             The input graph.
-        vertexLabelKey : str , optional
-            The dictionary key to use to display the vertex label. The default is None.
-        vertexGroupKey : str , optional
-            The dictionary key to use to display the vertex group. The default is None.
-        edgeLabelKey : str , optional
-            The dictionary key to use to display the edge label. The default is None.
-        edgeGroupKey : str , optional
-            The dictionary key to use to display the edge group. The default is None.
-        edgeColor : str , optional
-            The desired color of the output edges. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is "black".
-        edgeWidth : float , optional
-            The desired thickness of the output edges. The default is 1.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -4084,11 +4253,72 @@ class Graph:
             The default is "black".
         vertexSize : float , optional
             The desired size of the vertices. The default is 1.1.
-        showEdges : bool , optional
-            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+        vertexLabelKey : str , optional
+            The dictionary key to use to display the vertex label. The default is None.
+        vertexGroupKey : str , optional
+            The dictionary key to use to display the vertex group. The default is None.
+        vertexGroups : list , optional
+            The list of vertex groups against which to index the color of the vertex. The default is [].
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
-        
+        showVertexLegend : bool , optional
+            If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. The default is False.
+        edgeColor : str , optional
+            The desired color of the output edges. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        edgeWidth : float , optional
+            The desired thickness of the output edges. The default is 1.
+        edgeLabelKey : str , optional
+            The dictionary key to use to display the edge label. The default is None.
+        edgeGroupKey : str , optional
+            The dictionary key to use to display the edge group. The default is None.
+        showEdges : bool , optional
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+        showEdgeLegend : bool , optional
+            If set to True the edge legend will be drawn. Otherwise, it will not be drawn. The default is False.
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+        renderer : str , optional
+            The desired type of renderer. The default is 'notebook'.
+        width : int , optional
+            The width in pixels of the figure. The default value is 950.
+        height : int , optional
+            The height in pixels of the figure. The default value is 950.
+        xAxis : bool , optional
+            If set to True the x axis is drawn. Otherwise it is not drawn. The default is False.
+        yAxis : bool , optional
+            If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.
+        zAxis : bool , optional
+            If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
+        axisSize : float , optional
+            The size of the X,Y,Z, axes. The default is 1.
+        backgroundColor : str , optional
+            The desired color of the background. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "rgba(0,0,0,0)".
+        marginLeft : int , optional
+            The size in pixels of the left margin. The default value is 0.
+        marginRight : int , optional
+            The size in pixels of the right margin. The default value is 0.
+        marginTop : int , optional
+            The size in pixels of the top margin. The default value is 20.
+        marginBottom : int , optional
+            The size in pixels of the bottom margin. The default value is 0.
+        camera : list , optional
+            The desired location of the camera. The default is [0,0,0].
+        target : list , optional
+            The desired camera target. The default is [0,0,0].
+        up : list , optional
+            The desired up vector. The default is [0,0,1].
         Returns
         -------
         None
@@ -4100,9 +4330,10 @@ class Graph:
             print("Graph.Show - Error: The input graph is not a valid graph. Returning None.")
             return None
         
-        data= Plotly.DataByGraph(graph, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges)
-        fig = Plotly.FigureByData(data, color=vertexColor)
-        Plotly.Show(fig, renderer=renderer)
+        data= Plotly.DataByGraph(graph, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLegend=showEdgeLegend, colorScale=colorScale)
+        fig = Plotly.FigureByData(data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor,
+                                  marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
+        Plotly.Show(fig, renderer=renderer, camera=camera, target=target, up=up)
 
     @staticmethod
     def Size(graph):

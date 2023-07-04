@@ -183,7 +183,7 @@ class Plotly:
         return df
 
     @staticmethod
-    def DataByGraph(graph, vertexColor="white", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, colorScale="viridis"):
+    def DataByGraph(graph, vertexColor="black", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, showVertexLegend=False, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, showEdgeLegend=False, colorScale="viridis"):
         """
         Creates plotly vertex and edge data from the input graph.
 
@@ -191,12 +191,26 @@ class Plotly:
         ----------
         graph : topologic.Graph
             The input graph.
+        vertexColor : str , optional
+            The desired color of the output vertices. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
+        vertexSize : float , optional
+            The desired size of the vertices. The default is 6.
         vertexLabelKey : str , optional
             The dictionary key to use to display the vertex label. The default is None.
-        edgeLabelKey : str , optional
-            The dictionary key to use to display the edge label. The default is None.
-        edgeGroupKey : str , optional
-            The dictionary key to use to display the edge group. The default is None.
+        vertexGroupKey : str , optional
+            The dictionary key to use to display the vertex group. The default is None.
+        vertexGroups : list , optional
+            The list of vertex groups against which to index the color of the vertex. The default is [].
+        showVertices : bool , optional
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+        showVertexLegend : bool , optional
+            If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. The default is False.
         edgeColor : str , optional
             The desired color of the output edges. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -207,26 +221,16 @@ class Plotly:
             The default is "black".
         edgeWidth : float , optional
             The desired thickness of the output edges. The default is 1.
-        vertexColor : str , optional
-            The desired color of the output vertices. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is "black".
-        vertexGroupKey : str , optional
-            The dictionary key to use to display the vertex group. The default is None.
-        vertexGroups : list , optional
-            The list of vertex groups against which to index the color of the vertex. The default is [].
-        vertexLabelKey : str , optional
-            The dictionary key to use to display the vertex label. The default is None.
-        vertexSize : float , optional
-            The desired size of the vertices. The default is 1.1.
+        edgeLabelKey : str , optional
+            The dictionary key to use to display the edge label. The default is None.
+        edgeGroupKey : str , optional
+            The dictionary key to use to display the edge group. The default is None.
+        edgeGroups : list , optional
+            The list of groups to use for indexing the color of edges. The default is None.
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
-        showVertices : bool , optional
-            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+        showEdgeLegend : bool , optional
+            If set to True the edge legend will be drawn. Otherwise, it will not be drawn. The default is False.
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         Returns
@@ -292,6 +296,7 @@ class Plotly:
                 name='Graph Vertices',
                 legendgroup=4,
                 legendrank=4,
+                showlegend=showVertexLegend,
                 marker=dict(symbol='circle',
                                 size=vertexSize,
                                 color=v_groupList,
@@ -357,6 +362,7 @@ class Plotly:
                                  name='Graph Edges',
                                  legendgroup=5,
                                  legendrank=5,
+                                 showlegend=showEdgeLegend,
                                  line=dict(color=e_groupList, width=edgeWidth),
                                  text=e_labels,
                                  hoverinfo='text'
@@ -1108,7 +1114,7 @@ class Plotly:
         Parameters
         ----------
         df : pandas.df
-            The p[andas dataframe to display.
+            The pandas dataframe to display.
         data_labels : list
             The labels to use for the data.
         width : int , optional
@@ -1185,7 +1191,7 @@ class Plotly:
 
 
     @staticmethod
-    def FigureByData(data, color=None, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0):
+    def FigureByData(data, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0):
         """
         Creates a plotly figure.
 
@@ -1315,8 +1321,10 @@ class Plotly:
         """
         if not path:
             return None
-        file = open(path)
-        if not file:
+        try:
+            file = open(path)
+        except:
+            print("Plotly.FigureByJSONPath - Error: the JSON file is not a valid file. Returning None.")
             return None
         return Plotly.FigureByJSONFile(file)
 
