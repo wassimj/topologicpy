@@ -3,6 +3,7 @@ import topologic
 from topologicpy.Dictionary import Dictionary
 from topologicpy.Topology import Topology
 from topologicpy.Aperture import Aperture
+from topologicpy.Vertex import Vertex
 import random
 import time
 import sys
@@ -16,6 +17,93 @@ except:
         from tqdm.auto import tqdm
     except:
         print("Graph - Error: Could not import tqdm")
+
+try:
+    import numpy as np
+except:
+    call = [sys.executable, '-m', 'pip', 'install', 'numpy', '-t', sys.path[0]]
+    subprocess.run(call)
+    try:
+        import numpy as np
+    except:
+        print("Graph - Error: Could not import numpy")
+
+class _Tree:
+    def __init__(self, node="", *children):
+        self.node = node
+        self.width = len(node)
+        if children:
+            self.children = children
+        else:
+            self.children = []
+
+    def __str__(self):
+        return "%s" % (self.node)
+
+    def __repr__(self):
+        return "%s" % (self.node)
+
+    def __getitem__(self, key):
+        if isinstance(key, int) or isinstance(key, slice):
+            return self.children[key]
+        if isinstance(key, str):
+            for child in self.children:
+                if child.node == key:
+                    return child
+
+    def __iter__(self):
+        return self.children.__iter__()
+
+    def __len__(self):
+        return len(self.children)
+
+
+
+class _DrawTree(object):
+    def __init__(self, tree, parent=None, depth=0, number=1):
+        self.x = -1.0
+        self.y = depth
+        self.tree = tree
+        self.children = [
+            _DrawTree(c, self, depth + 1, i + 1) for i, c in enumerate(tree.children)
+        ]
+        self.parent = parent
+        self.thread = None
+        self.mod = 0
+        self.ancestor = self
+        self.change = self.shift = 0
+        self._lmost_sibling = None
+        # this is the number of the node in its group of siblings 1..n
+        self.number = number
+
+    def left(self):
+        return self.thread or len(self.children) and self.children[0]
+
+    def right(self):
+        return self.thread or len(self.children) and self.children[-1]
+
+    def lbrother(self):
+        n = None
+        if self.parent:
+            for node in self.parent.children:
+                if node == self:
+                    return n
+                else:
+                    n = node
+        return n
+
+    def get_lmost_sibling(self):
+        if not self._lmost_sibling and self.parent and self != self.parent.children[0]:
+            self._lmost_sibling = self.parent.children[0]
+        return self._lmost_sibling
+
+    lmost_sibling = property(get_lmost_sibling)
+
+    def __str__(self):
+        return "%s: x=%s mod=%s" % (self.tree, self.x, self.mod)
+
+    def __repr__(self):
+        return self.__str__()
 
 class Graph:
     @staticmethod
@@ -139,7 +227,7 @@ class Graph:
         return adjList
 
     @staticmethod
-    def AddEdge(graph, edge, tolerance=0.0001):
+    def AddEdge(graph, edge, transferVertexDictionaries=False, transferEdgeDictionaries=False, tolerance=0.0001):
         """
         Adds the input edge to the input Graph.
 
@@ -149,6 +237,8 @@ class Graph:
             The input graph.
         edges : topologic.Edge
             The input edge.
+        transferDictionaries : bool, optional
+            If set to True, the dictionaries of the edge and its vertices are transfered to the graph.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -168,19 +258,20 @@ class Graph:
             returnVertex = vertex
             for gv in graph_vertices:
                 if (Vertex.Distance(vertex, gv) < tolerance):
-                    gd = Topology.Dictionary(gv)
-                    vd = Topology.Dictionary(vertex)
-                    gk = gd.Keys()
-                    vk = vd.Keys()
-                    d = None
-                    if (len(gk) > 0) and (len(vk) > 0):
-                        d = Dictionary.ByMergedDictionaries([gd, vd])
-                    elif (len(gk) > 0) and (len(vk) < 1):
-                        d = gd
-                    elif (len(gk) < 1) and (len(vk) > 0):
-                        d = vd
-                    if d:
-                        _ = Topology.SetDictionary(gv,d)
+                    if transferVertexDictionaries == True:
+                        gd = Topology.Dictionary(gv)
+                        vd = Topology.Dictionary(vertex)
+                        gk = gd.Keys()
+                        vk = vd.Keys()
+                        d = None
+                        if (len(gk) > 0) and (len(vk) > 0):
+                            d = Dictionary.ByMergedDictionaries([gd, vd])
+                        elif (len(gk) > 0) and (len(vk) < 1):
+                            d = gd
+                        elif (len(gk) < 1) and (len(vk) > 0):
+                            d = vd
+                        if d:
+                            _ = Topology.SetDictionary(gv,d)
                     unique = False
                     returnVertex = gv
                     break
@@ -202,7 +293,8 @@ class Graph:
             graph_vertices, nv = addIfUnique(graph_vertices, vertex, tolerance)
             new_vertices.append(nv)
         new_edge = Edge.ByVertices([new_vertices[0], new_vertices[1]])
-        _ = Topology.SetDictionary(new_edge, Topology.Dictionary(edge))
+        if transferEdgeDictionaries == True:
+            _ = Topology.SetDictionary(new_edge, Topology.Dictionary(edge))
         graph_edges.append(new_edge)
         new_graph = Graph.ByVerticesEdges(graph_vertices, graph_edges)
         return new_graph
@@ -815,7 +907,7 @@ class Graph:
         return {'graphs':graphs, 'labels':labels}
     
     @staticmethod
-    def ByMeshData(vertices, edges, vertexDictionaries, edgeDictionaries):
+    def ByMeshData(vertices, edges, vertexDictionaries=None, edgeDictionaries=None):
         """
         Creates a graph from the input mesh data
 
@@ -838,12 +930,13 @@ class Graph:
         g_vertices = []
         for i, v in enumerate(vertices):
             g_v = Vertex.ByCoordinates(v[0], v[1], v[2])
-            if isinstance(vertexDictionaries[i], dict):
-                d = Dictionary.ByPythonDictionary(vertexDictionaries[i])
-            else:
-                d = vertexDictionaries[i]
-            if len(Dictionary.Keys(d)) > 0:
-                g_v = Topology.SetDictionary(g_v, d)
+            if not vertexDictionaries == None:
+                if isinstance(vertexDictionaries[i], dict):
+                    d = Dictionary.ByPythonDictionary(vertexDictionaries[i])
+                else:
+                    d = vertexDictionaries[i]
+                if len(Dictionary.Keys(d)) > 0:
+                    g_v = Topology.SetDictionary(g_v, d)
             g_vertices.append(g_v)
             
         g_edges = []
@@ -851,12 +944,13 @@ class Graph:
             sv = g_vertices[e[0]]
             ev = g_vertices[e[1]]
             g_e = Edge.ByVertices([sv, ev])
-            if isinstance(edgeDictionaries[i], dict):
-                d = Dictionary.ByPythonDictionary(edgeDictionaries[i])
-            else:
-                d = edgeDictionaries[i]
-            if len(Dictionary.Keys(d)) > 0:
-                g_e = Topology.SetDictionary(g_e, d)
+            if not edgeDictionaries == None:
+                if isinstance(edgeDictionaries[i], dict):
+                    d = Dictionary.ByPythonDictionary(edgeDictionaries[i])
+                else:
+                    d = edgeDictionaries[i]
+                if len(Dictionary.Keys(d)) > 0:
+                    g_e = Topology.SetDictionary(g_e, d)
             g_edges.append(g_e)
         return Graph.ByVerticesEdges(g_vertices, g_edges)
     
@@ -3305,7 +3399,7 @@ class Graph:
         return True
     
     @staticmethod
-    def Flatten(graph, mode="spring", iterations=50, k=0.8, seed=None, radius=0.5):
+    def Flatten(graph, layout="spring", k=0.8, seed=None, iterations=50, rootVertex=None):
         """
         Flattens the input graph.
 
@@ -3313,17 +3407,18 @@ class Graph:
         ----------
         graph : topologic.Graph
             The input graph.
-        mode : str , optional
+        layout : str , optional
             The desired mode for flattening. If set to 'spring', the algorithm uses a simplified version of the Fruchterman-Reingold force-directed algorithm to flatten and distribute the vertices.
-            If set to 'circular', the nodes will be distributed along a circle. The default is 'spring'.
-        iterations : int , optional
-            The desired maximum number of iterations to solve the forces in the 'spring' mode. The default is 50.
+            If set to 'radial', the nodes will be distributed along a circle.
+            If set to 'tree', the nodes will be distributed using the Reingold-Tillford layout. The default is 'spring'.
         k : float, optional
-            The desired constant to use for the attractive and repulsive forces. The default is 0.8.
+            The desired spring constant to use for the attractive and repulsive forces. The default is 0.8.
         seed : int , optional
             The desired random seed to use. The default is None.
-        radius : float, optional
-            The desired radius of the circle to use in the 'circular' mode.
+        iterations : int , optional
+            The desired maximum number of iterations to solve the forces in the 'spring' mode. The default is 50.
+        rootVertex : topologic.Vertex , optional
+            The desired vertex to use as the root of the tree and radial layouts.
 
         Returns
         -------
@@ -3332,67 +3427,326 @@ class Graph:
 
         """
         import math
+        import numpy as np
 
+        def buchheim(tree):
+            dt = firstwalk(_DrawTree(tree))
+            min = second_walk(dt)
+            if min < 0:
+                third_walk(dt, -min)
+            return dt
+
+        def third_walk(tree, n):
+            tree.x += n
+            for c in tree.children:
+                third_walk(c, n)
+
+        def firstwalk(v, distance=1.0):
+            if len(v.children) == 0:
+                if v.lmost_sibling:
+                    v.x = v.lbrother().x + distance
+                else:
+                    v.x = 0.0
+            else:
+                default_ancestor = v.children[0]
+                for w in v.children:
+                    firstwalk(w)
+                    default_ancestor = apportion(w, default_ancestor, distance)
+                execute_shifts(v)
+
+                midpoint = (v.children[0].x + v.children[-1].x) / 2
+
+
+                w = v.lbrother()
+                if w:
+                    v.x = w.x + distance
+                    v.mod = v.x - midpoint
+                else:
+                    v.x = midpoint
+            return v
+
+        def apportion(v, default_ancestor, distance):
+            w = v.lbrother()
+            if w is not None:
+                vir = vor = v
+                vil = w
+                vol = v.lmost_sibling
+                sir = sor = v.mod
+                sil = vil.mod
+                sol = vol.mod
+                while vil.right() and vir.left():
+                    vil = vil.right()
+                    vir = vir.left()
+                    vol = vol.left()
+                    vor = vor.right()
+                    vor.ancestor = v
+                    shift = (vil.x + sil) - (vir.x + sir) + distance
+                    if shift > 0:
+                        move_subtree(ancestor(vil, v, default_ancestor), v, shift)
+                        sir = sir + shift
+                        sor = sor + shift
+                    sil += vil.mod
+                    sir += vir.mod
+                    sol += vol.mod
+                    sor += vor.mod
+                if vil.right() and not vor.right():
+                    vor.thread = vil.right()
+                    vor.mod += sil - sor
+                else:
+                    if vir.left() and not vol.left():
+                        vol.thread = vir.left()
+                        vol.mod += sir - sol
+                    default_ancestor = v
+            return default_ancestor
+
+
+        def move_subtree(wl, wr, shift):
+            subtrees = wr.number - wl.number
+            wr.change -= shift / subtrees
+            wr.shift += shift
+            wl.change += shift / subtrees
+            wr.x += shift
+            wr.mod += shift
+
+
+        def execute_shifts(v):
+            shift = change = 0
+            for w in v.children[::-1]:
+                w.x += shift
+                w.mod += shift
+                change += w.change
+                shift += w.shift + change
+
+
+        def ancestor(vil, v, default_ancestor):
+            if vil.ancestor in v.parent.children:
+                return vil.ancestor
+            else:
+                return default_ancestor
+
+
+        def second_walk(v, m=0, depth=0, min=None):
+            v.x += m
+            v.y = depth
+
+            if min is None or v.x < min:
+                min = v.x
+
+            for w in v.children:
+                min = second_walk(w, m + v.mod, depth + 1, min)
+
+            return min
+
+
+        def edge_list_to_adjacency_matrix(edge_list):
+            """Converts an edge list to an adjacency matrix.
+
+            Args:
+                edge_list: A list of tuples, where each tuple is an edge.
+
+            Returns:
+                A numpy array representing the adjacency matrix.
+            """
+
+            # Get the number of nodes from the edge list.
+            num_nodes = max([max(edge) for edge in edge_list]) + 1
+
+            # Create an adjacency matrix.
+            adjacency_matrix = np.zeros((num_nodes, num_nodes))
+
+            # Fill in the adjacency matrix.
+            for edge in edge_list:
+                adjacency_matrix[edge[0], edge[1]] = 1
+                adjacency_matrix[edge[1], edge[0]] = 1
+
+            return adjacency_matrix
+
+
+        def tree_from_edge_list(edge_list, root_index=0):
+            
+            adj_matrix = edge_list_to_adjacency_matrix(edge_list)
+            num_nodes = adj_matrix.shape[0]
+            root = _Tree(str(root_index))
+            is_visited = np.zeros(num_nodes)
+            is_visited[root_index] = 1
+            old_roots = [root]
+
+            new_roots = []
+            while(np.sum(is_visited) < num_nodes):
+                new_roots = []
+                for temp_root in old_roots:
+                    children = []
+                    for i in range(num_nodes):
+                        if adj_matrix[int(temp_root.node), i] == 1  and is_visited[i] == 0:
+                            is_visited[i] = 1
+                            child = _Tree(str(i))
+                            temp_root.children.append(child)
+                            children.append(child)
+
+                    new_roots.extend(children)
+                old_roots = new_roots
+            return root, num_nodes
+
+        def spring_layout(edge_list, iterations=500, k=None, seed=None):
+            # Compute the layout of a graph using the Fruchterman-Reingold algorithm
+            # with a force-directed layout approach.
+
+            adj_matrix = edge_list_to_adjacency_matrix(edge_list)
+            # Set the random seed
+            if seed is not None:
+                np.random.seed(seed)
+
+            # Set the optimal distance between nodes
+            if k is None or k <= 0:
+                k = np.sqrt(1.0 / adj_matrix.shape[0])
+
+            # Initialize the positions of the nodes randomly
+            pos = np.random.rand(adj_matrix.shape[0], 2)
+
+            # Compute the initial temperature
+            t = 0.1 * np.max(pos)
+
+            # Compute the cooling factor
+            cooling_factor = t / iterations
+
+            # Iterate over the specified number of iterations
+            for i in range(iterations):
+                # Compute the distance between each pair of nodes
+                delta = pos[:, np.newaxis, :] - pos[np.newaxis, :, :]
+                distance = np.linalg.norm(delta, axis=-1)
+
+                # Avoid division by zero
+                distance = np.where(distance == 0, 0.1, distance)
+
+                # Compute the repulsive force between each pair of nodes
+                repulsive_force = k ** 2 / distance ** 2
+
+                # Compute the attractive force between each pair of adjacent nodes
+                attractive_force = adj_matrix * distance / k
+
+                # Compute the total force acting on each node
+                force = np.sum((repulsive_force - attractive_force)[:, :, np.newaxis] * delta, axis=1)
+
+                # Compute the displacement of each node
+                displacement = t * force / np.linalg.norm(force, axis=1)[:, np.newaxis]
+
+                # Update the positions of the nodes
+                pos += displacement
+
+                # Cool the temperature
+                t -= cooling_factor
+
+            return pos
+
+        def tree_layout(edge_list,  root_index=0):
+
+            root, num_nodes = tree_from_edge_list(edge_list, root_index)
+            dt = buchheim(root)
+            pos = np.zeros((num_nodes, 2))
+
+            pos[int(dt.tree.node), 0] = dt.x
+            pos[int(dt.tree.node), 1] = dt.y
+
+            old_roots = [dt]
+            new_roots = []
+
+            while(len(old_roots) > 0):
+                new_roots = []
+                for temp_root in old_roots:
+                    children = temp_root.children
+                    for child in children:
+                        pos[int(child.tree.node), 0] = child.x
+                        pos[int(child.tree.node), 1] = child.y
+                    new_roots.extend(children)
+                    
+                old_roots = new_roots
+
+            pos[:, 1] = np.max(pos[:, 1]) - pos[:, 1]
+            
+            return pos
+
+        def radial_layout(edge_list, root_index=0):
+            root, num_nodes = tree_from_edge_list(edge_list, root_index)
+            dt = buchheim(root)
+            pos = np.zeros((num_nodes, 2))
+
+            pos[int(dt.tree.node), 0] = dt.x
+            pos[int(dt.tree.node), 1] = dt.y
+
+            old_roots = [dt]
+            new_roots = []
+
+            while(len(old_roots) > 0):
+                new_roots = []
+                for temp_root in old_roots:
+                    children = temp_root.children
+                    for child in children:
+                        pos[int(child.tree.node), 0] = child.x
+                        pos[int(child.tree.node), 1] = child.y
+                    new_roots.extend(children)
+                    
+                old_roots = new_roots
+
+            # pos[:, 1] = np.max(pos[:, 1]) - pos[:, 1]
+            pos[:, 0] = pos[:, 0] - np.min(pos[:, 0])
+            pos[:, 1] = pos[:, 1] - np.min(pos[:, 1])
+
+            pos[:, 0] = pos[:, 0] / np.max(pos[:, 0])
+            pos[:, 0] = pos[:, 0] - pos[:, 0][root_index]
+            
+            range_ = np.max(pos[:, 0]) - np.min(pos[:, 0])
+            pos[:, 0] = pos[:, 0] / range_
+
+            pos[:, 0] = pos[:, 0] * np.pi * 1.98
+            pos[:, 1] = pos[:, 1] / np.max(pos[:, 1]) 
+
+
+            new_pos = np.zeros((num_nodes, 2))
+            new_pos[:, 0] = pos[:, 1] * np.cos(pos[:, 0])
+            new_pos[:, 1] = pos[:, 1] * np.sin(pos[:, 0])
+            
+            return new_pos
+
+        def graph_layout(edge_list, layout='tree', root_index=0, k=None, seed=None, iterations=500):
+
+            if layout == 'tree':
+                return tree_layout(edge_list, root_index=root_index)
+            elif layout == 'spring':
+                return spring_layout(edge_list, k=k, seed=seed, iterations=iterations)
+            elif layout == 'radial':
+                return radial_layout(edge_list, root_index=root_index)
+            else:
+                raise NotImplementedError(f"{layout} is not implemented yet. Please choose from ['radial', 'spring', 'tree']")
+
+        def vertex_max_degree(graph, vertices):
+            degrees = [Graph.VertexDegree(graph, vertex) for vertex in vertices]
+            i = degrees.index(max(degrees))
+            return vertices[i], i
+
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.Flatten - Error: The input graph is not a valid topologic graph. Returning None.")
+            return None
         d = Graph.MeshData(graph)
         vertices = d['vertices']
         edges = d['edges']
         v_dicts = d['vertexDictionaries']
         e_dicts = d['edgeDictionaries']
-        if 'spring' in mode.lower():
-            num_vertices = len(vertices)
+        vertices = Graph.Vertices(graph)
+        if rootVertex == None:
+            rootVertex, root_index = vertex_max_degree(graph, vertices)
+        else:
+            root_index = Vertex.Index(rootVertex, vertices)
 
-            # Initialize random seed if provided
-            if seed is not None:
-                random.seed(seed)
-
-            # Assign random initial positions to nodes
-            positions = {i: vertices[i][:2] for i in range(num_vertices)}
-
-            # Perform spring layout iterations
-            for _ in range(iterations):
-                # Compute attractive forces between connected nodes
-                for u, v in edges:
-                    dx = positions[v][0] - positions[u][0]
-                    dy = positions[v][1] - positions[u][1]
-                    distance = max(math.sqrt(dx**2 + dy**2), 0.01)
-                    attractive_force = k * distance
-
-                    # Update positions based on attractive forces
-                    positions[u][0] += (attractive_force / distance) * dx
-                    positions[u][1] += (attractive_force / distance) * dy
-                    positions[v][0] -= (attractive_force / distance) * dx
-                    positions[v][1] -= (attractive_force / distance) * dy
-
-                # Apply repulsive forces between all node pairs
-                for u in range(num_vertices):
-                    for v in range(num_vertices):
-                        if u != v:
-                            dx = positions[v][0] - positions[u][0]
-                            dy = positions[v][1] - positions[u][1]
-                            distance = max(math.sqrt(dx**2 + dy**2), 0.01)
-                            repulsive_force = k / (distance ** 2)
-
-                            # Update positions based on repulsive forces
-                            positions[u][0] -= (repulsive_force / distance) * dx
-                            positions[u][1] -= (repulsive_force / distance) * dy
-
-            positions = [positions[i][:2]+[0] for i in range(num_vertices)]
-        elif 'circ' in mode.lower():
-            # Calculate the total number of nodes
-            num_vertices = len(vertices)
-            # Calculate the angle between each node in the circular layout
-            angle = 2 * math.pi / num_vertices
-
-            # Create a list to store the positions of the nodes
-            positions = []
-
-            # Assign coordinates to each node in the circular layout
-            for i in range(num_vertices):
-                theta = i * angle
-                x = math.cos(theta)*radius
-                y = math.sin(theta)*radius
-                z = 0
-                positions.append([x, y, z])
+        if 'rad' in layout.lower():
+            positions = radial_layout(edges, root_index=root_index)
+        elif 'spring' in layout.lower():
+            positions = spring_layout(edges, k=k, seed=seed, iterations=iterations)
+        elif 'tree' in layout.lower():
+            positions = tree_layout(edges, root_index=root_index)
+        else:
+            raise NotImplementedError(f"{layout} is not implemented yet. Please choose from ['radial', 'spring', 'tree']")
+        positions = positions.tolist()
+        positions = [[p[0], p[1], 0] for p in positions]
         flat_graph = Graph.ByMeshData(positions, edges, v_dicts, e_dicts)
         return flat_graph
 
@@ -3885,7 +4239,7 @@ class Graph:
             ev = Edge.EndVertex(edge)
             if len(Graph.Vertices(mst)) > 0:
                 if not Graph.Path(mst, Graph.NearestVertex(mst, sv), Graph.NearestVertex(mst, ev)):
-                    mst = Graph.AddEdge(mst, edge)
+                    mst = Graph.AddEdge(mst, edge, transferVertexDictionaries=False, transferEdgeDictionaries=True)
         return mst
 
     @staticmethod
@@ -4418,7 +4772,7 @@ class Graph:
         Parameters
         ----------
         graph : topologic.Graph
-            DESCRIPTION.
+            The input graph.
         vertex : topologic.Vertex , optional
             The input root vertex. If not set, the first vertex in the graph is set as the root vertex. The default is None.
         tolerance : float , optional

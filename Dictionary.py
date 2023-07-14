@@ -148,15 +148,15 @@ class Dictionary(topologic.Dictionary):
         if d != None:
             stlKeys = d.Keys()
             if len(stlKeys) > 0:
-                sinkKeys = d.Keys()
+                sinkKeys = Dictionary.Keys(d)
                 sinkValues = Dictionary.Values(d)
             for i in range(1,len(dictionaries)):
                 d = dictionaries[i]
                 if d == None:
                     continue
-                stlKeys = d.Keys()
+                stlKeys = Dictionary.Keys(d)
                 if len(stlKeys) > 0:
-                    sourceKeys = d.Keys()
+                    sourceKeys = Dictionary.Keys(d)
                     for aSourceKey in sourceKeys:
                         if aSourceKey not in sinkKeys:
                             sinkKeys.append(aSourceKey)
@@ -167,9 +167,11 @@ class Dictionary(topologic.Dictionary):
                         if sourceValue != None:
                             if sinkValues[index] != "":
                                 if isinstance(sinkValues[index], list):
-                                    sinkValues[index].append(sourceValue)
+                                    if not sourceValue in sinkValues[index]:
+                                        sinkValues[index].append(sourceValue)
                                 else:
-                                    sinkValues[index] = [sinkValues[index], sourceValue]
+                                    if not sourceValue == sinkValues[index]:
+                                        sinkValues[index] = [sinkValues[index], sourceValue]
                             else:
                                 sinkValues[index] = sourceValue
         if len(sinkKeys) > 0 and len(sinkValues) > 0:
