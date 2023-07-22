@@ -704,6 +704,27 @@ class Vertex(Topology):
         topologic.Vertex
         """
         return Vertex.ByCoordinates(0,0,0)
+    
+    @staticmethod
+    def Point(x=0, y=0, z=0) -> topologic.Vertex:
+        """
+        Creates a point (vertex) using the input parameters
+
+        Parameters
+        -----------
+        x : float , optional.
+            The desired x coordinate. The default is 0.
+        y : float , optional.
+            The desired y coordinate. The default is 0.
+        z : float , optional.
+            The desired z coordinate. The default is 0.
+
+        Return
+        -----------
+        topologic.Vertex
+        """
+        
+        return Vertex.ByCoordinates(x,y,z)
 
     @staticmethod
     def Project(vertex: topologic.Vertex, face: topologic.Face, direction: bool = None, mantissa: int = 4, tolerance: float = 0.0001) -> topologic.Vertex:

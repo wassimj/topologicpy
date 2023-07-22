@@ -833,90 +833,74 @@ class Topology():
             sourceEdges = []
             sourceFaces = []
             sourceCells = []
+            sinkVertices = []
+            sinkEdges = []
+            sinkFaces = []
+            sinkCells = []
             hidimA = Topology.HighestType(topologyA)
             hidimB = Topology.HighestType(topologyB)
             hidimC = Topology.HighestType(topologyC)
-            verticesA = []
+
             if topologyA.Type() == topologic.Vertex.Type():
-                verticesA.append(topologyA)
+                sourceVertices += [topologyA]
             elif hidimA >= topologic.Vertex.Type():
-                _ = topologyA.Vertices(None, verticesA)
-                for aVertex in verticesA:
-                    sourceVertices.append(aVertex)
-            verticesB = []
+                sourceVertices += Topology.Vertices(topologyA)
             if topologyB.Type() == topologic.Vertex.Type():
-                verticesB.append(topologyB)
+                sourceVertices += [topologyB]
             elif hidimB >= topologic.Vertex.Type():
-                _ = topologyB.Vertices(None, verticesB)
-                for aVertex in verticesB:
-                    sourceVertices.append(aVertex)
-            sinkVertices = []
+                sourceVertices += Topology.Vertices(topologyB)
             if topologyC.Type() == topologic.Vertex.Type():
-                sinkVertices.append(topologyC)
+                sinkVertices = [topologyC]
             elif hidimC >= topologic.Vertex.Type():
-                _ = topologyC.Vertices(None, sinkVertices)
-            _ = Topology.TransferDictionaries(sourceVertices, sinkVertices, tolerance)
+                sinkVertices = Topology.Vertices(topologyC)
+            if len(sourceVertices) > 0 and len(sinkVertices) > 0:
+                _ = Topology.TransferDictionaries(sourceVertices, sinkVertices, tolerance)
+
             if topologyA.Type() == topologic.Edge.Type():
-                sourceEdges.append(topologyA)
+                sourceEdges += [topologyA]
             elif hidimA >= topologic.Edge.Type():
-                edgesA = []
-                _ = topologyA.Edges(None, edgesA)
-                for anEdge in edgesA:
-                    sourceEdges.append(anEdge)
+                sourceEdges += Topology.Edges(topologyA)
             if topologyB.Type() == topologic.Edge.Type():
-                sourceEdges.append(topologyB)
+                sourceEdges += [topologyB]
             elif hidimB >= topologic.Edge.Type():
-                edgesB = []
-                _ = topologyB.Edges(None, edgesB)
-                for anEdge in edgesB:
-                    sourceEdges.append(anEdge)
-            sinkEdges = []
+                sourceEdges += Topology.Edges(topologyB)
             if topologyC.Type() == topologic.Edge.Type():
-                sinkEdges.append(topologyC)
+                sinkEdges = [topologyC]
             elif hidimC >= topologic.Edge.Type():
-                _ = topologyC.Edges(None, sinkEdges)
-            _ = Topology.TransferDictionaries(sourceEdges, sinkEdges, tolerance)
+                sinkEdges = Topology.Edges(topologyC)
+            if len(sourceEdges) > 0 and len(sinkEdges) > 0:
+                _ = Topology.TransferDictionaries(sourceEdges, sinkEdges, tolerance)
 
             if topologyA.Type() == topologic.Face.Type():
-                sourceFaces.append(topologyA)
+                sourceFaces += [topologyA]
             elif hidimA >= topologic.Face.Type():
-                facesA = []
-                _ = topologyA.Faces(None, facesA)
-                for aFace in facesA:
-                    sourceFaces.append(aFace)
+                sourceFaces += Topology.Faces(topologyA)
             if topologyB.Type() == topologic.Face.Type():
-                sourceFaces.append(topologyB)
+                sourceFaces += [topologyB]
             elif hidimB >= topologic.Face.Type():
-                facesB = []
-                _ = topologyB.Faces(None, facesB)
-                for aFace in facesB:
-                    sourceFaces.append(aFace)
-            sinkFaces = []
+                sourceFaces += Topology.Faces(topologyB)
             if topologyC.Type() == topologic.Face.Type():
-                sinkFaces.append(topologyC)
+                sinkFaces += [topologyC]
             elif hidimC >= topologic.Face.Type():
-                _ = topologyC.Faces(None, sinkFaces)
-            _ = Topology.TransferDictionaries(sourceFaces, sinkFaces, tolerance)
+                sinkFaces += Topology.Faces(topologyC)
+            if len(sourceFaces) > 0 and len(sinkFaces) > 0:
+                _ = Topology.TransferDictionaries(sourceFaces, sinkFaces, tolerance)
+
             if topologyA.Type() == topologic.Cell.Type():
-                sourceCells.append(topologyA)
+                sourceCells += [topologyA]
             elif hidimA >= topologic.Cell.Type():
-                cellsA = []
-                _ = topologyA.Cells(None, cellsA)
-                for aCell in cellsA:
-                    sourceCells.append(aCell)
+                sourceCells += Topology.Cells(topologyA)
             if topologyB.Type() == topologic.Cell.Type():
-                sourceCells.append(topologyB)
+                sourceCells += [topologyB]
             elif hidimB >= topologic.Cell.Type():
-                cellsB = []
-                _ = topologyB.Cells(None, cellsB)
-                for aCell in cellsB:
-                    sourceCells.append(aCell)
-            sinkCells = []
+                sourceCells += Topology.Cells(topologyB)
             if topologyC.Type() == topologic.Cell.Type():
-                sinkCells.append(topologyC)
+                sinkCells = [topologyC]
             elif hidimC >= topologic.Cell.Type():
-                _ = topologyC.Cells(None, sinkCells)
-            _ = Topology.TransferDictionaries(sourceCells, sinkCells, tolerance)
+                sinkCells = Topology.Cells(topologyC)
+            if len(sourceCells) > 0 and len(sinkCells) > 0:
+                print("919: Trying to transfer dictionaries of cells!")
+                _ = Topology.TransferDictionaries(sourceCells, sinkCells, tolerance)
         return topologyC
 
     
@@ -3738,7 +3722,7 @@ class Topology():
             print("Topology.IsInside - Error: the input topology is not a valid topology. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
-            print("Topology.ExportToOBJ - Error: the input vertex is not a valid vertex. Returning None.")
+            print("Topology.IsInside - Error: the input vertex is not a valid vertex. Returning None.")
             return None
         is_inside = False
         if topology.Type() == topologic.Vertex.Type():
@@ -3928,6 +3912,7 @@ class Topology():
             return None
         return topology.GetOcctShape()
     
+    @staticmethod
     def Degree(topology, hostTopology):
         """
         Returns the number of immediate super topologies that use the input topology
@@ -3968,6 +3953,7 @@ class Topology():
             return 0
         return len(superTopologies)
 
+    @staticmethod
     def NonPlanarFaces(topology, tolerance=0.0001):
         """
         Returns any nonplanar faces in the input topology
@@ -3990,6 +3976,7 @@ class Topology():
         faces = Topology.SubTopologies(topology, subTopologyType="face")
         return [f for f in faces if not Topology.IsPlanar(f, tolerance=tolerance)]
     
+    @staticmethod
     def OpenFaces(topology):
         """
         Returns the faces that border no cells.
@@ -4012,6 +3999,7 @@ class Topology():
         
         return [f for f in Topology.SubTopologies(topology, subTopologyType="face") if Topology.Degree(f, hostTopology=topology) < 1]
     
+    @staticmethod
     def OpenEdges(topology):
         """
         Returns the edges that border only one face.
@@ -4034,6 +4022,7 @@ class Topology():
         
         return [e for e in Topology.SubTopologies(topology, subTopologyType="edge") if Topology.Degree(e, hostTopology=topology) < 2]
     
+    @staticmethod
     def OpenVertices(topology):
         """
         Returns the vertices that border only one edge.
@@ -4056,6 +4045,7 @@ class Topology():
         
         return [v for v in Topology.SubTopologies(topology, subTopologyType="vertex") if Topology.Degree(v, hostTopology=topology) < 2]
     
+    @staticmethod
     def Orient(topology, origin=None, dirA=[0,0,1], dirB=[0,0,1], tolerance=0.0001):
         """
         Orients the input topology such that the input such that the input dirA vector is parallel to the input dirB vector.
@@ -4147,6 +4137,7 @@ class Topology():
             newTopology = None
         return newTopology
     
+    @staticmethod
     def RelevantSelector(topology, tolerance=0.0001):
         """
         Returns the relevant selector (vertex) of the input topology
@@ -5806,10 +5797,10 @@ class Topology():
         for sink in sinks:
             sinkKeys = []
             sinkValues = []
-            #iv = Topology.RelevantSelector(sink, tolerance)
+            iv = Topology.RelevantSelector(sink, tolerance)
             j = 1
             for source in sources:
-                if Topology.IsInside(sink, source, tolerance):
+                if Topology.IsInside(source, iv, tolerance):
                     d = Topology.Dictionary(source)
                     if d == None:
                         continue

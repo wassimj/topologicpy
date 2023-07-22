@@ -1633,6 +1633,64 @@ class Wire(topologic.Wire):
         return totalLength
 
     @staticmethod
+    def Line(origin: topologic.Vertex = None, length: float = 1, direction: list = [1,0,0], sides: int = 2, placement: str ="center") -> topologic.Wire:
+        """
+        Creates a straight line wire using the input parameters.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The origin location of the box. The default is None which results in the edge being placed at (0,0,0).
+        length : float , optional
+            The desired length of the edge. The default is 1.0.
+        direction : list , optional
+            The desired direction (vector) of the edge. The default is [1,0,0] (along the X-axis).
+        sides : int , optional
+            The desired number of sides/segments. The minimum number of sides is 2. The default is 2.
+        placement : str , optional
+            The desired placement of the edge. The options are:
+            1. "center" which places the center of the edge at the origin.
+            2. "start" which places the start of the edge at the origin.
+            3. "end" which places the end of the edge at the origin.
+            The default is "center".
+
+        Returns
+        -------
+        topology.Edge
+            The created edge
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Vector import Vector
+        from topologicpy.Topology import Topology
+
+        if origin == None:
+            origin = Vertex.Origin()
+        if not isinstance(origin, topologic.Vertex):
+            print("Wire.Line - Error: The input origin is not a valid vertex. Returning None.")
+            return None
+        if length <= 0:
+            print("Wire.Line - Error: The input length is less than or equal to zero. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            print("Wire.Line - Error: The input direction is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            print("Wire.Line - Error: The length of the input direction is not equal to three. Returning None.")
+            return None
+        if sides < 2:
+            print("Wire.Line - Error: The number of sides cannot be less than two. Consider using Edge.Line() instead. Returning None.")
+            return None
+        edge = Edge.Line(origin=origin, length=length, direction=direction, placement=placement)
+        vertices = [Edge.StartVertex(edge)]
+        unitDistance = float(1)/float(sides)
+        for i in range(1, sides):
+            vertices.append(Edge.VertexByParameter(edge, i*unitDistance))
+        vertices.append(Edge.EndVertex(edge))
+        return Wire.ByVertices(vertices)
+    
+    @staticmethod
     def Planarize(wire: topologic.Wire) -> topologic.Wire:
         """
         Returns a planarized version of the input wire.

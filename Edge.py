@@ -572,6 +572,67 @@ class Edge():
         return length
 
     @staticmethod
+    def Line(origin: topologic.Vertex = None, length: float = 1, direction: list = [1,0,0], placement: str ="center") -> topologic.Edge:
+        """
+        Creates a straight edge (line) using the input parameters.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The origin location of the box. The default is None which results in the edge being placed at (0,0,0).
+        length : float , optional
+            The desired length of the edge. The default is 1.0.
+        direction : list , optional
+            The desired direction (vector) of the edge. The default is [1,0,0] (along the X-axis).
+        placement : str , optional
+            The desired placement of the edge. The options are:
+            1. "center" which places the center of the edge at the origin.
+            2. "start" which places the start of the edge at the origin.
+            3. "end" which places the end of the edge at the origin.
+            The default is "center".
+
+        Returns
+        -------
+        topology.Edge
+            The created edge
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Vector import Vector
+        from topologicpy.Topology import Topology
+
+        if origin == None:
+            origin = Vertex.Origin()
+        if not isinstance(origin, topologic.Vertex):
+            print("Edge.Line - Error: The input origin is not a valid vertex. Returning None.")
+            return None
+        if length <= 0:
+            print("Edge.Line - Error: The input length is less than or equal to zero. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            print("Edge.Line - Error: The input direction is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            print("Edge.Line - Error: The length of the input direction is not equal to three. Returning None.")
+            return None
+        direction = Vector.Normalize(direction)
+        if "center" in placement.lower():
+            sv = Topology.TranslateByDirectionDistance(origin, direction=Vector.Reverse(direction), distance=length*0.5)
+            ev = Topology.TranslateByDirectionDistance(sv, direction=direction, distance=length)
+            return Edge.ByVertices([sv,ev])
+        if "start" in placement.lower():
+            sv = origin
+            ev = Topology.TranslateByDirectionDistance(sv, direction=direction, distance=length)
+            return Edge.ByVertices([sv,ev])
+        if "end" in placement.lower():
+            sv = Topology.TranslateByDirectionDistance(origin, direction=Vector.Reverse(direction), distance=length)
+            ev = Topology.TranslateByDirectionDistance(sv, direction=direction, distance=length)
+            return Edge.ByVertices([sv,ev])
+        else:
+            print("Edge.Line - Error: The input placement string is not one of center, start, or end. Returning None.")
+            return None
+    
+    @staticmethod
     def Normal2D(edge: topologic.Edge) -> list:
         """
         Returns the normal (perpendicular) vector to the input edge. This method is intended for edges that are in the XY plane. Z is assumed to be zero and ignored.
@@ -849,7 +910,7 @@ class Edge():
         return topologic.Vertex.ByCoordinates(origin.X()+vector[0], origin.Y()+vector[1], origin.Z()+vector[2])
     
     @staticmethod
-    def VertexByParameter(edge: topologic.Vertex, parameter: float = 0.0) -> topologic.Vertex:
+    def VertexByParameter(edge: topologic.Edge, parameter: float = 0.0) -> topologic.Vertex:
         """
         Creates a vertex along the input edge offset by the input *u* parameter.
 
