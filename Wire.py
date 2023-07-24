@@ -2083,6 +2083,139 @@ class Wire(topologic.Wire):
         return Wire.Roof(face, degree=0, tolerance=tolerance)
     
     @staticmethod
+    def Spiral(origin : topologic.Vertex = None, radiusA : float = 0.05, radiusB : float = 0.5, height : float = 1, turns : int = 10, sides : int = 36, clockwise : bool = False, reverse : bool = False, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
+        """
+        Creates a spiral.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The location of the origin of the spiral. The default is None which results in the spiral being placed at (0,0,0).
+        radiusA : float , optional
+            The initial radius of the spiral. The default is 0.05.
+        radiusB : float , optional
+            The final radius of the spiral. The default is 0.5.
+        height : float , optional
+            The height of the radius. The default is 0.
+        turns : int , optional
+            The number of turns of the spiral. The default is 10.
+        sides : int , optional
+            The number of sides of one full turn in the spiral. The default is 36.
+        clockwise : bool , optional
+            If set to True, the spiral will be oriented in a clockwise fashion. Otherwise, it will be oriented in an anti-clockwise fashion. The default is False.
+        reverse : bool , optional
+            If set to True, the spiral will increase in height from the center to the circumference. Otherwise, it will increase in height from the conference to the center. The default is False.
+        direction : list , optional
+            The vector representing the up direction of the spiral. The default is [0,0,1].
+        placement : str , optional
+            The description of the placement of the origin of the spiral. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+
+        Returns
+        -------
+        topologic.Wire
+            The created spiral.
+
+        """
+        from topologicpy.Vertex import Vertex
+        import math
+        if not origin:
+            origin = topologic.Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            print("Wire.Spiral - Error: the input origin is not a valid topologic Vertex. Returning None.")
+            return None
+        if radiusA <= 0:
+            print("Wire.Spiral - Error: the input radiusA cannot be less than or equal to zero. Returning None.")
+            return None
+        if radiusB <= 0:
+            print("Wire.Spiral - Error: the input radiusB cannot be less than or equal to zero. Returning None.")
+            return None
+        if radiusA == radiusB:
+            print("Wire.Spiral - Error: the inputs radiusA and radiusB cannot be equal. Returning None.")
+            return None
+        if radiusB > radiusA:
+            temp = radiusA
+            radiusA = radiusB
+            radiusB = temp
+        if turns <= 0:
+            print("Wire.Spiral - Error: the input turns cannot be less than or equal to zero. Returning None.")
+            return None
+        if sides < 3:
+            print("Wire.Spiral - Error: the input sides cannot be less than three. Returning None.")
+            return None
+        if not placement.lower() in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
+            print("Wire.Spiral - Error: the input placement string is not one of center, lowerleft, upperleft, lowerright, or upperright. Returning None.")
+            return None
+        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) < tolerance:
+            print("Wire.Spiral - Error: the input direction vector is not a valid direction. Returning None.")
+            return None
+        
+        vertices = []
+        xList = []
+        yList = []
+        zList = []
+        if clockwise:
+            cw = -1
+        else:
+            cw = 1
+        n_vertices = sides*turns + 1
+        zOffset = height/float(n_vertices)
+        if reverse == True:
+            z = height
+        else:
+            z = 0
+        theta = 0
+        angOffset = float(360/float(sides))
+        b = (radiusB - radiusA)/(2*math.pi*turns)
+        while theta <= 360*turns:
+            rad = math.radians(theta)
+            x = (radiusA + b*rad)*math.cos(rad)*cw
+            xList.append(x)
+            y = (radiusA + b*rad)*math.sin(rad)
+            yList.append(y)
+            zList.append(z)
+            if reverse == True:
+                z = z - zOffset
+            else:
+                z = z + zOffset
+            vertices.append(Vertex.ByCoordinates(x,y,z))
+            theta = theta + angOffset
+        
+        minX = min(xList)
+        maxX = max(xList)
+        minY = min(yList)
+        maxY = max(yList)
+        radius = radiusA + radiusB*turns*0.5
+        baseWire = Wire.ByVertices(vertices, close=False)
+        if placement.lower() == "center":
+            baseWire = topologic.TopologyUtility.Translate(baseWire, 0, 0, -height*0.5)
+        if placement.lower() == "lowerleft":
+            baseWire = topologic.TopologyUtility.Translate(baseWire, -minX, -minY, 0)
+        elif placement.lower() == "upperleft":
+            baseWire = topologic.TopologyUtility.Translate(baseWire, -minX, -maxY, 0)
+        elif placement.lower() == "lowerright":
+            baseWire = topologic.TopologyUtility.Translate(baseWire, -maxX, -minY, 0)
+        elif placement.lower() == "upperright":
+            baseWire = topologic.TopologyUtility.Translate(baseWire, -maxX, -maxY, 0)
+        x1 = origin.X()
+        y1 = origin.Y()
+        z1 = origin.Z()
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1    
+        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
+        if dist < tolerance:
+            theta = 0
+        else:
+            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
+        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 1, 0, theta)
+        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 0, 1, phi)
+        return baseWire
+
+    @staticmethod
     def Split(wire: topologic.Wire) -> list:
         """
         Splits the input wire into segments at its intersections (i.e. at any vertex where more than two edges meet).

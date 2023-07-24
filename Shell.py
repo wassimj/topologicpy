@@ -243,6 +243,7 @@ class Shell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
         from random import sample
         import sys
         import subprocess
@@ -261,63 +262,63 @@ class Shell(Topology):
         if not isinstance(vertices, list):
             return None
         vertices = [x for x in vertices if isinstance(x, topologic.Vertex)]
-        if len(vertices) < 2:
+        if len(vertices) < 3:
             return None
-
-        if not isinstance(face, topologic.Face):
-            face_vertices = sample(vertices,3)
-            tempFace = Face.ByWire(Wire.ByVertices(face_vertices))
-            # Flatten the input face
-            flatFace = Face.Flatten(tempFace)
-        else:
-            flatFace = Face.Flatten(face)
-            faceVertices = Face.Vertices(face)
-            vertices += faceVertices
-        # Retrieve the needed transformations
-        dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
-        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
-        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
-        phi = Dictionary.ValueAtKey(dictionary,"phi")
-        theta = Dictionary.ValueAtKey(dictionary,"theta")
 
         # Create a Vertex at the world's origin (0,0,0)
         world_origin = Vertex.ByCoordinates(0,0,0)
 
-        # Create a cluster of the input vertices
-        verticesCluster = Cluster.ByTopologies(vertices)
+        if isinstance(face, topologic.Face):
+            flatFace = Face.Flatten(face)
+            faceVertices = Face.Vertices(face)
+            vertices += faceVertices
+            # Retrieve the needed transformations
+            dictionary = Topology.Dictionary(flatFace)
+            xTran = Dictionary.ValueAtKey(dictionary,"xTran")
+            yTran = Dictionary.ValueAtKey(dictionary,"yTran")
+            zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+            phi = Dictionary.ValueAtKey(dictionary,"phi")
+            theta = Dictionary.ValueAtKey(dictionary,"theta")
 
-        # Flatten the cluster using the same transformations
-        verticesCluster = Topology.Translate(verticesCluster, -xTran, -yTran, -zTran)
-        verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=0, z=1, degree=-phi)
-        verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=1, z=0, degree=-theta)
+            
 
-        flatVertices = Cluster.Vertices(verticesCluster)
+            # Create a cluster of the input vertices
+            verticesCluster = Cluster.ByTopologies(vertices)
+
+            # Flatten the cluster using the same transformations
+            verticesCluster = Topology.Translate(verticesCluster, -xTran, -yTran, -zTran)
+            verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=0, z=1, degree=-phi)
+            verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=1, z=0, degree=-theta)
+
+            vertices = Cluster.Vertices(verticesCluster)
         tempFlatVertices = []
         points = []
-        for flatVertex in flatVertices:
-            tempFlatVertices.append(Vertex.ByCoordinates(flatVertex.X(), flatVertex.Y(), 0))
-            points.append([flatVertex.X(), flatVertex.Y()])
-        flatVertices = tempFlatVertices
+        for v in vertices:
+            tempFlatVertices.append(Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), 0))
+            points.append([Vertex.X(v), Vertex.Y(v)])
+        #flatVertices = tempFlatVertices
         delaunay = Delaunay(points)
         simplices = delaunay.simplices
 
         faces = []
         for simplex in simplices:
             tempTriangleVertices = []
-            tempTriangleVertices.append(flatVertices[simplex[0]])
-            tempTriangleVertices.append(flatVertices[simplex[1]])
-            tempTriangleVertices.append(flatVertices[simplex[2]])
+            tempTriangleVertices.append(vertices[simplex[0]])
+            tempTriangleVertices.append(vertices[simplex[1]])
+            tempTriangleVertices.append(vertices[simplex[2]])
             faces.append(Face.ByWire(Wire.ByVertices(tempTriangleVertices)))
 
         shell = Shell.ByFaces(faces)
+        if shell == None:
+            print("Shell.Delaunay - WARNING: Could not create Shell. Returning a Cluster of Faces.")
+            shell = Cluster.ByTopologies(faces)
         if isinstance(face, topologic.Face):
             edges = Shell.Edges(shell)
             edgesCluster = Cluster.ByTopologies(edges)
             shell = Topology.Boolean(flatFace,edgesCluster, operation="slice")
-        shell = Topology.Rotate(shell, origin=world_origin, x=0, y=1, z=0, degree=theta)
-        shell = Topology.Rotate(shell, origin=world_origin, x=0, y=0, z=1, degree=phi)
-        shell = Topology.Translate(shell, xTran, yTran, zTran)
+            shell = Topology.Rotate(shell, origin=world_origin, x=0, y=1, z=0, degree=theta)
+            shell = Topology.Rotate(shell, origin=world_origin, x=0, y=0, z=1, degree=phi)
+            shell = Topology.Translate(shell, xTran, yTran, zTran)
         return shell
 
     @staticmethod

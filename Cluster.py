@@ -2,6 +2,93 @@ import topologicpy
 import topologic
 class Cluster(topologic.Cluster):
     @staticmethod
+    def ByFormula(formula, xRange=None, yRange=None, xString="X", yString="Y"):
+        """
+        Creates a cluster of vertices by vvaluating the input formula for a range of x and, optionally, a range of y values.
+
+        Parameters
+        ----------
+        formula : str
+            A string representing the formula to be evaluated.
+            For 2D formulas, use 'X' for the independent variable. For 3D formulas, use 'X' and 'Y' for the independent variables.
+            You can use standard math functions like 'sin', 'cos', 'tan', 'sqrt', etc.
+            For example, 'X**2 + 2*X - sqrt(X)' or 'cos(abs(X)+abs(Y))'
+            xRange : tuple , optional
+                A tuple (start, end, step) representing the range of X values
+                for which the formula should be evaluated.
+                For example, to evaluate for X values from -5 to 5 with a step of 0.1: (-5, 5, 0.1)
+                If the xRange is set to None or not specified:
+                    The method assumes that the formula uses the yString (e.g. 'Y' as in 'Y**2 + 2*Y - sqrt(Y)')
+                    The method will attempt to use the YRange instead for the independent variable.
+            yRange : tuple , optional
+                A tuple (start, end, step) representing the range of Y values
+                for which the formula should be evaluated.
+                            For example, to evaluate for x values from -5 to 5 with a step of 0.1:
+                            (-5, 5, 0.1)
+
+        Returns:
+            topologic.Cluster
+                The created cluster of vertices.
+        """
+        from topologicpy.Vertex import Vertex
+        import math
+        if xRange == None and yRange == None:
+            print("Wire.ByFormula - Error: Both ranges cannot be None at the same time. Returning None.")
+            return None
+        if xString.islower():
+            print("Wire.ByFormula - Error: the input xString cannot lowercase. Please consider using uppercase (e.g. X). Returning None.")
+            return None
+        if yString == 'y':
+            print("Wire.ByFormula - Error: the input yString cannot be lowercase. Please consider using uppercase (e.g. Y). Returning None.")
+            return None
+        
+        x_values = []
+        y_values = []
+        if not xRange == None:
+            x_start, x_end, x_step = xRange
+            x = x_start
+            while x < x_end:
+                x_values.append(x)
+                x = x + x_step
+            x_values.append(x_end)
+        
+        if not yRange == None:
+            y_start, y_end, y_step = yRange
+            y = y_start
+            while y < y_end:
+                y_values.append(y)
+                y = y + y_step
+            y_values.append(y_end)
+
+        # Evaluate the formula for each x and y value
+        x_return = []
+        y_return = []
+        z_return = []
+        if len(x_values) > 0 and len(y_values) > 0: # Both X and Y exist, compute Z.
+            for x in x_values:
+                for y in y_values:
+                    x_return.append(x)
+                    y_return.append(y)
+                    formula1 = formula.replace(xString, str(x)).replace(yString, str(y)).replace('sqrt', 'math.sqrt').replace('sin', 'math.sin').replace('cos', 'math.cos').replace('tan', 'math.tan').replace('radians', 'math.radians').replace('pi', 'math.pi')
+                    z_return.append(eval(formula1))
+        elif len(x_values) == 0 and len(y_values) > 0: # Only Y exists, compute X, Z is always 0.
+            for y in y_values:
+                y_return.append(y)
+                formula1 = formula.replace(xString, str(y)).replace('sqrt', 'math.sqrt').replace('sin', 'math.sin').replace('cos', 'math.cos').replace('tan', 'math.tan').replace('radians', 'math.radians').replace('pi', 'math.pi')
+                x_return.append(eval(formula1))
+                z_return.append(0)
+        else: # Only X exists, compute Y, Z is always 0.
+            for x in x_values:
+                x_return.append(x)
+                formula1 = formula.replace(xString, str(x)).replace('sqrt', 'math.sqrt').replace('sin', 'math.sin').replace('cos', 'math.cos').replace('tan', 'math.tan').replace('radians', 'math.radians').replace('pi', 'math.pi')
+                y_return.append(eval(formula1))
+                z_return.append(0)
+        vertices = []
+        for i in range(len(x_return)):
+            vertices.append(Vertex.ByCoordinates(x_return[i], y_return[i], z_return[i]))
+        return Cluster.ByTopologies(vertices)
+    
+    @staticmethod
     def ByTopologies(topologies: list) -> topologic.Cluster:
         """
         Creates a topologic Cluster from the input list of topologies.
