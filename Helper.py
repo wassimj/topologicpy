@@ -107,6 +107,42 @@ class Helper:
         return {'clusters': clusters, 'centroids': centroids}
     
     @staticmethod
+    def MergeByThreshold(l, threshold=0.0001):
+        """
+        Merges the numbers in the input list so that numbers within the input threshold are averaged into one number.
+
+        Parameters
+        ----------
+        l : list
+            The input nested list.
+        threshold : float , optional
+            The desired merge threshold value. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The merged list. The list is sorted in ascending numeric order.
+
+        """
+        # Sort the list in ascending order
+        l.sort()
+        merged_list = []
+
+        # Initialize the first element in the merged list
+        merged_list.append(l[0])
+
+        # Merge numbers within the threshold
+        for i in range(1, len(l)):
+            if l[i] - merged_list[-1] <= threshold:
+                # Merge the current number with the last element in the merged list
+                merged_list[-1] = (merged_list[-1] + l[i]) / 2
+            else:
+                # If the current number is beyond the threshold, add it as a new element
+                merged_list.append(l[i])
+
+        return merged_list
+
+    @staticmethod
     def Normalize(l, mantissa=4):
         """
         Normalizes the input list so that it is in the range 0 to 1

@@ -1562,7 +1562,34 @@ class Face(topologic.Face):
         if not isinstance(wire, topologic.Wire):
             return None
         return Face.ByWire(wire)
+    
+    @staticmethod
+    def Skeleton(face, tolerance=0.001):
+        """
+            Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+            This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
 
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+    
+        tolerance : float , optional
+            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+
+        Returns
+        -------
+        topologic.Wire
+            The created straight skeleton.
+
+        """
+        from topologicpy.Wire import Wire
+        if not isinstance(face, topologic.Face):
+            print("Face.Skeleton - Error: The input face is not a valid topologic face. Retruning None.")
+            return None
+        return Wire.Roof(face, degree=0, tolerance=tolerance)
+    
     @staticmethod
     def Square(origin: topologic.Vertex = None, size: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """

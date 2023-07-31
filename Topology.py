@@ -5800,7 +5800,12 @@ class Topology():
             iv = Topology.RelevantSelector(sink, tolerance)
             j = 1
             for source in sources:
-                if Topology.IsInside(source, iv, tolerance):
+                flag = False
+                if isinstance(source, topologic.Vertex):
+                    flag = Topology.IsInside(sink, source, tolerance)
+                else:
+                    flag = Topology.IsInside(source, iv, tolerance)
+                if flag:
                     d = Topology.Dictionary(source)
                     if d == None:
                         continue
@@ -5857,17 +5862,14 @@ class Topology():
             The input topology with the dictionaries transferred to its subtopologies.
 
         """
-        
         if not isinstance(topology, topologic.Topology):
             print("Topology.TransferDictionariesBySelectors - Error: The input topology is not a valid topology. Returning None.")
             return None
         if not isinstance(selectors, list):
             print("Topology.TransferDictionariesBySelectors - Error: The input selectors is not a valid list. Returning None.")
             return None
-        selectors_tmp = [x for x in selectors if isinstance(x, topologic.Topology)]
+        selectors_tmp = [x for x in selectors if isinstance(x, topologic.Vertex)]
         if len(selectors_tmp) < 1:
-            print("Topology", topology)
-            print("Selectors", selectors)
             print("Topology.TransferDictionariesBySelectors - Error: The input selectors does not contain any valid topologies. Returning None.")
             return None
         sinkEdges = []

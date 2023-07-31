@@ -6,6 +6,171 @@ import math
 
 class Shell(Topology):
     @staticmethod
+    def ByDisjointFaces(externalBoundary, faces, maximumGap=0.5, mergeJunctions=False, threshold=0.5, transferDictionaries=False, tolerance=0.0001):
+        """
+        Creates a shell from an input list of disjointed faces.
+
+        Parameters
+        ----------
+        externalBoundary : topologic.Face
+            The input external boundary of the faces. This resembles a ribbon (face with hole) where its interior boundary touches the edges of the input list of faces.
+        faces : list
+            The input list of faces.
+        maximumGap : float , optional
+            The length of the maximum gap between the faces. The default is 0.5.
+        mergeJunctions : bool , optional
+            If set to True, the interior junctions are merged into a single vertex. Otherwise, diagonal edges are added to resolve transitions between different gap distances.
+        threshold : float , optional
+            The desired threshold under which vertices are merged into a single vertex. The default is 0.5.
+        transferDictionaries : bool, optional.
+            If set to True, the dictionaries in the input list of faces are transfered to the faces of the resulting shell. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Shell
+            The created Shell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Helper import Helper
+
+        def removeShards(edges, hostTopology, maximumGap=0.5):
+            returnEdges = []
+            for e in edges:
+                if Edge.Length(e) < maximumGap:
+                    sv = Edge.StartVertex(e)
+                    ev = Edge.EndVertex(e)
+                    sEdges = Topology.SuperTopologies(sv, hostTopology, "edge")
+                    sn = len(sEdges)
+                    eEdges = Topology.SuperTopologies(ev, hostTopology, "edge")
+                    en = len(eEdges)
+                    if sn >= 2 and en >= 2:
+                        returnEdges.append(e)
+                else:
+                    returnEdges.append(e)
+            return returnEdges
+
+        def extendEdges(edges, hostTopology, maximumGap=0.5):
+            returnEdges = []
+            for e in edges:
+                sv = Edge.StartVertex(e)
+                ev = Edge.EndVertex(e)
+                sEdges = Topology.SuperTopologies(sv, hostTopology, "edge")
+                sn = len(sEdges)
+                eEdges = Topology.SuperTopologies(ev, hostTopology, "edge")
+                en = len(eEdges)
+                if sn == 1:
+                    ee = Edge.Extend(e, distance=maximumGap, bothSides=False, reverse=True)
+                    returnEdges.append(ee)
+                elif en == 1:
+                    ee = Edge.Extend(e, distance=maximumGap, bothSides=False, reverse=False)
+                    returnEdges.append(ee)
+                else:
+                    returnEdges.append(e)
+            return returnEdges
+        
+        facesCluster = Cluster.ByTopologies(faces)
+        internalBoundary = Face.ByWire(Face.InternalBoundaries(externalBoundary)[0])
+        walls = Topology.Difference(internalBoundary, facesCluster)
+        skeleton = Wire.Skeleton(walls)
+        skEdges = Topology.Edges(skeleton)
+        skeleton = Topology.Difference(skeleton, facesCluster)
+        skeleton = Topology.Difference(skeleton, Face.Wire(walls))
+        
+        skEdges = Topology.SelfMerge(Cluster.ByTopologies(removeShards(Topology.Edges(skeleton), skeleton, maximumGap=maximumGap)))
+        skEdges = extendEdges(Topology.Edges(skEdges), skEdges, maximumGap=maximumGap)
+        cluster = Cluster.ByTopologies(skEdges)
+        shell = Topology.Slice(internalBoundary, cluster)
+        if mergeJunctions == True:
+            vertices = Shell.Vertices(shell)
+            centers = []
+            used = []
+            for v in vertices:
+                for w in vertices:
+                    if not Topology.IsSame(v,w) and not w in used:
+                        if Vertex.Distance(v,w) < threshold:
+                            centers.append(v)
+                            used.append(w)
+            edges = Shell.Edges(shell)
+            new_edges = []
+            for e in edges:
+                sv = Edge.StartVertex(e)
+                ev = Edge.EndVertex(e)
+                for v in centers:
+                    if Vertex.Distance(sv, v) < threshold:
+                        sv = v
+                    if Vertex.Distance(ev, v) < threshold:
+                        ev = v
+                new_edges.append(Edge.ByVertices([sv,ev]))
+            cluster = Cluster.ByTopologies(new_edges)
+
+            vertices = Topology.Vertices(cluster)
+            edges = Topology.Edges(shell)
+
+            xList = list(set([Vertex.X(v) for v in vertices]))
+            xList.sort()
+            xList = Helper.MergeByThreshold(xList, 0.5)
+            yList = list(set([Vertex.Y(v) for v in vertices]))
+            yList.sort()
+            yList = Helper.MergeByThreshold(yList, 0.5)
+            yList.sort()
+
+            centers = []
+
+            new_edges = []
+
+            for e in edges:
+                sv = Edge.StartVertex(e)
+                ev = Edge.EndVertex(e)
+                svx = Vertex.X(sv)
+                svy = Vertex.Y(sv)
+                evx = Vertex.X(ev)
+                evy = Vertex.Y(ev)
+                for x in xList:
+                    if abs(svx-x) < threshold:
+                        svx = x
+                        break;
+                for y in yList:
+                    if abs(svy-y) < threshold:
+                        svy = y
+                        break;
+                sv = Vertex.ByCoordinates(svx, svy, 0)
+                for x in xList:
+                    if abs(evx-x) < threshold:
+                        evx = x
+                        break;
+                for y in yList:
+                    if abs(evy-y) < threshold:
+                        evy = y
+                        break;
+                sv = Vertex.ByCoordinates(svx, svy, 0)
+                ev = Vertex.ByCoordinates(evx, evy, 0)
+                new_edges.append(Edge.ByVertices([sv, ev]))
+
+            cluster = Cluster.ByTopologies(new_edges)
+            ob = Face.ByWire(Shell.ExternalBoundary(shell))
+            shell = Topology.Slice(ob, cluster)
+        temp_wires = [Wire.RemoveCollinearEdges(w, angTolerance=1.0) for w in Topology.Wires(shell)]
+        temp_faces = [Face.ByWire(w) for w in temp_wires]
+        shell = Shell.ByFaces(temp_faces, tolerance=tolerance)
+
+        if transferDictionaries == True:
+            selectors = []
+            for f in faces:
+                d = Topology.Dictionary(f)
+                s = Face.InternalVertex(f)
+                s = Topology.SetDictionary(s, d)
+                selectors.append(s)
+            _ = Topology.TransferDictionariesBySelectors(topology=shell, selectors=selectors, tranFaces=True, tolerance=tolerance)
+        return shell
+    
+    @staticmethod
     def ByFaces(faces: list, tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a shell from the input list of faces.
