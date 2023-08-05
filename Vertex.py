@@ -6,9 +6,73 @@ import collections
 
 class Vertex(Topology):
     @staticmethod
+    def AreCollinear(vertices: list, tolerance: float = 0.0001):
+        """
+        Returns True if the input list of vertices form a straight line. Returns False otherwise.
+
+        Parameters
+        ----------
+        vertices : list
+            The input list of vertices.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the input vertices are on the same side of the face. False otherwise.
+
+        """
+
+        from topologicpy.Vector import Vector
+
+        def three_at_a_time(input_list):
+            """
+            Yield 3 elements at a time from the list, or return the last 3 elements if there aren't enough elements.
+
+            Parameters:
+                input_list: The list from which elements need to be extracted.
+
+            Yields:
+                A list of 3 elements extracted at a time or the last 3 elements if there aren't enough elements.
+            """
+            length = len(input_list)
+            if length < 3:
+                return None
+            if length % 3 == 0:
+                for i in range(0, length, 3):
+                    yield input_list[i:i+3]
+            else:
+                for i in range(0, length-3, 3):
+                    yield input_list[i:i+3]
+
+            if length % 3 != 0:
+                yield input_list[-3:]
+
+        def areCollinear(vertices, tolerance=0.0001):
+            point1 = [Vertex.X(vertices[0]), Vertex.Y(vertices[0]), Vertex.Z(vertices[0])]
+            point2 = [Vertex.X(vertices[1]), Vertex.Y(vertices[1]), Vertex.Z(vertices[1])]
+            point3 = [Vertex.X(vertices[2]), Vertex.Y(vertices[2]), Vertex.Z(vertices[2])]
+
+            vector1 = [point2[0] - point1[0], point2[1] - point1[1], point2[2] - point1[2]]
+            vector2 = [point3[0] - point1[0], point3[1] - point1[1], point3[2] - point1[2]]
+
+            cross_product_result = Vector.Cross(vector1, vector2, tolerance=tolerance)
+            return cross_product_result == None
+        
+        result = True
+        n = 0
+        slices = list(three_at_a_time(vertices))
+        while result and n < len(slices):
+            for slice in slices:
+                result = areCollinear(slice, tolerance=tolerance)
+                n = n+1
+        return result
+    
+    @staticmethod
     def AreIpsilateral(vertices: list, face: topologic.Face) -> bool:
         """
-        Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
+        Returns True if the input list of vertices form a straight line. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
 
         Parameters
         ----------

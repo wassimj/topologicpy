@@ -35,28 +35,8 @@ class Wire(topologic.Wire):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Vector import Vector
         from random import sample
-
-
-        def areCollinear(vertices, tolerance=0.0001):
-            def cross_product(p1, p2):
-                # Calculate cross product between two vectors.
-                return [p1[1]*p2[2] - p1[2]*p2[1],
-                        p1[2]*p2[0] - p1[0]*p2[2],
-                        p1[0]*p2[1] - p1[1]*p2[0]]
-
-            point1 = [Vertex.X(vertices[0]), Vertex.Y(vertices[0]), Vertex.Z(vertices[0])]
-            point2 = [Vertex.X(vertices[1]), Vertex.Y(vertices[1]), Vertex.Z(vertices[1])]
-            point3 = [Vertex.X(vertices[2]), Vertex.Y(vertices[2]), Vertex.Z(vertices[2])]
-
-            vector1 = [point2[0] - point1[0], point2[1] - point1[1], point2[2] - point1[2]]
-            vector2 = [point3[0] - point1[0], point3[1] - point1[1], point3[2] - point1[2]]
-
-            cross_product_result = cross_product(vector1, vector2)
-
-            # If the cross product has a magnitude close to zero, the points are collinear.
-            return abs(cross_product_result[0]) < tolerance and abs(cross_product_result[1]) < tolerance and abs(cross_product_result[2]) < tolerance
-
 
         def br(topology):
             vertices = []
@@ -78,11 +58,10 @@ class Wire(topologic.Wire):
         world_origin = Vertex.ByCoordinates(0,0,0)
 
         result = False
-        # Create a sample face
+        vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
         while not result:
-            vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
             vList = sample(vertices, 3)
-            result = areCollinear(vList)
+            result = Vertex.AreCollinear(vList)
         w = Wire.ByVertices(vList)
         f = Face.ByWire(w)
         f = Face.Flatten(f)
