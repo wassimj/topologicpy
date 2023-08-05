@@ -59,15 +59,18 @@ class Wire(topologic.Wire):
 
         world_origin = Vertex.ByCoordinates(0,0,0)
 
-        result = False
         vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
         start = time.time()
         period = 0
+        result = True
         while result and period < 30:
             vList = sample(vertices, 3)
             result = Vertex.AreCollinear(vList)
             end = time.time()
             period = end - start
+        if result == True:
+            print("Wire.BoundingRectangle - Error: Could not find three vertices that are not colinear within 30 seconds. Returning None.")
+            return None
         w = Wire.ByVertices(vList)
         f = Face.ByWire(w)
         f = Face.Flatten(f)

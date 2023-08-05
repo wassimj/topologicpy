@@ -23,31 +23,9 @@ class Vertex(Topology):
             True if the input vertices are on the same side of the face. False otherwise.
 
         """
-
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
-
-        def three_at_a_time(input_list):
-            """
-            Yield 3 elements at a time from the list, or return the last 3 elements if there aren't enough elements.
-
-            Parameters:
-                input_list: The list from which elements need to be extracted.
-
-            Yields:
-                A list of 3 elements extracted at a time or the last 3 elements if there aren't enough elements.
-            """
-            length = len(input_list)
-            if length < 3:
-                return None
-            if length % 3 == 0:
-                for i in range(0, length, 3):
-                    yield input_list[i:i+3]
-            else:
-                for i in range(0, length-3, 3):
-                    yield input_list[i:i+3]
-
-            if length % 3 != 0:
-                yield input_list[-3:]
 
         def areCollinear(vertices, tolerance=0.0001):
             point1 = [Vertex.X(vertices[0]), Vertex.Y(vertices[0]), Vertex.Z(vertices[0])]
@@ -60,14 +38,24 @@ class Vertex(Topology):
             cross_product_result = Vector.Cross(vector1, vector2, tolerance=tolerance)
             return cross_product_result == None
         
-        result = True
-        n = 0
-        slices = list(three_at_a_time(vertices))
-        while result and n < len(slices):
-            for slice in slices:
-                result = areCollinear(slice, tolerance=tolerance)
-                n = n+1
-        return result
+        if not isinstance(vertices, list):
+            print("Vertex.AreCollinear - Error: The input list of vertices is not a valid list. Returning None.")
+            return None
+        vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        if len(vertexList) < 2:
+            print("Vertex.AreCollinear - Error: The input list of vertices does not contain sufficient valid vertices. Returning None.")
+            return None
+        if len(vertexList) < 3:
+            return True # Any two vertices can form a line!
+        cluster = Topology.SelfMerge(Cluster.ByTopologies(vertexList))
+        vertexList = Topology.Vertices(cluster)
+        slices = []
+        for i in range(2,len(vertexList)):
+            slices.append([vertexList[0], vertexList[1], vertexList[i]])
+        for slice in slices:
+            if not areCollinear(slice, tolerance=tolerance):
+                return False
+        return True
     
     @staticmethod
     def AreIpsilateral(vertices: list, face: topologic.Face) -> bool:
