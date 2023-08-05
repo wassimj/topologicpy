@@ -905,7 +905,7 @@ class Topology():
 
     
     @staticmethod
-    def BoundingBox(topology, optimize=0, axes="xyz"):
+    def BoundingBox(topology, optimize=0, axes="xyz", tolerance=0.0001):
         """
         Returns a cell representing a bounding box of the input topology. The returned cell contains a dictionary with keys "xrot", "yrot", and "zrot" that represents rotations around the X,Y, and Z axes. If applied in the order of Z,Y,Z, the resulting box will become axis-aligned.
 
@@ -917,9 +917,12 @@ class Topology():
             If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding box so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding box. The default is 0.
         axes : str , optional
             Sets what axes are to be used for rotating the bounding box. This can be any permutation or substring of "xyz". It is not case sensitive. The default is "xyz".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
-        topologic.Cell
+        topologic.Cell or topologic.Face
             The bounding box of the input topology.
 
         """
@@ -1050,17 +1053,16 @@ class Topology():
         vb3 = topologic.Vertex.ByCoordinates(maxX, maxY, minZ)
         vb4 = topologic.Vertex.ByCoordinates(minX, maxY, minZ)
 
-        vt1 = topologic.Vertex.ByCoordinates(minX, minY, maxZ)
-        vt2 = topologic.Vertex.ByCoordinates(maxX, minY, maxZ)
-        vt3 = topologic.Vertex.ByCoordinates(maxX, maxY, maxZ)
-        vt4 = topologic.Vertex.ByCoordinates(minX, maxY, maxZ)
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
         baseFace = Face.ByWire(baseWire)
-        box = Cell.ByThickenedFace(baseFace, planarize=False, thickness=abs(maxZ-minZ), bothSides=False)
+        if abs(maxZ-minZ) < tolerance:
+            box = baseFace
+        else:
+            box = Cell.ByThickenedFace(baseFace, planarize=False, thickness=abs(maxZ-minZ), bothSides=False)
         box = Topology.Rotate(box, origin=origin, x=1,y=0,z=0, degree=-best_x)
         box = Topology.Rotate(box, origin=origin, x=0,y=1,z=0, degree=-best_y)
         box = Topology.Rotate(box, origin=origin, x=0,y=0,z=1, degree=-best_z)
-        dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot"], [best_x, best_y, best_z])
+        dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot", "minx", "miny", "minz", "maxx", "maxy", "maxz", "width", "length", "height"], [best_x, best_y, best_z, minX, minY, minZ, maxX, maxY, maxZ, (maxX-minX), (maxY-minY), (maxZ-minZ)])
         box = Topology.SetDictionary(box, dictionary)
         return box
 
@@ -4155,14 +4157,27 @@ class Topology():
             The relevant selector.
 
         """
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+
         if topology.Type() == topologic.Vertex.Type():
             return topology
         elif topology.Type() == topologic.Edge.Type():
-            return topologic.EdgeUtility.PointAtParameter(topology, 0.5)
+            return Edge.VertexByParameter(topology, 0.5)
+        elif topology.Type() == topologic.Wire.Type():
+            e = Topology.Edges(topology)[0]
+            return Edge.VertexByParameter(e, 0.5)
         elif topology.Type() == topologic.Face.Type():
-            return topologic.FaceUtility.InternalVertex(topology, tolerance)
+            return Face.InternalVertex(topology, tolerance)
+        elif topology.Type() == topologic.Shell.Type():
+            f = Topology.Faces(topology)[0]
+            return Face.InternalVertex(f, tolerance)
         elif topology.Type() == topologic.Cell.Type():
-            return topologic.CellUtility.InternalVertex(topology, tolerance)
+            return Cell.InternalVertex(topology, tolerance)
+        elif topology.Type() == topologic.CellComplex.Type():
+            c = Topology.Cells(topology)[0]
+            return Cell.InternalVertex(c, tolerance)
         else:
             return topology.CenterOfMass()
 
