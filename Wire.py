@@ -37,6 +37,8 @@ class Wire(topologic.Wire):
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Vector import Vector
         from random import sample
+        import time
+
 
         def br(topology):
             vertices = []
@@ -59,9 +61,13 @@ class Wire(topologic.Wire):
 
         result = False
         vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
-        while not result:
+        start = time.time()
+        period = 0
+        while result and period < 30:
             vList = sample(vertices, 3)
             result = Vertex.AreCollinear(vList)
+            end = time.time()
+            period = end - start
         w = Wire.ByVertices(vList)
         f = Face.ByWire(w)
         f = Face.Flatten(f)
