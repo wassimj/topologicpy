@@ -158,6 +158,33 @@ class Color:
         return rgbList
     
     @staticmethod
+    def HEXToRGB(hex_color):
+        """
+        Converts a hexadecimal color string to RGB color values.
+
+        Parameters
+        ----------
+        hex_color : str
+            A hexadecimal color string in the format '#RRGGBB'.
+
+        Returns
+        -------
+        tuple
+            A tuple containing three integers representing the RGB values.
+
+        """
+        
+        hex_color = hex_color.lstrip('#')
+        if len(hex_color) != 6:
+            raise ValueError("Invalid hexadecimal color format. It should be a 6-digit hex value.")
+        
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        
+        return (r, g, b)
+
+    @staticmethod
     def PlotlyColor(color, alpha=1.0, useAlpha=False):
         """
         Returns a plotly color string based on the input list of [r,g,b] or [r,g,b,a]. If your list is [r,g,b], you can optionally specify an alpha value
@@ -189,3 +216,23 @@ class Color:
         if useAlpha:
             return "rgba("+str(color[0])+","+str(color[1])+","+str(color[2])+","+str(alpha)+")"
         return "rgb("+str(color[0])+","+str(color[1])+","+str(color[2])+")"
+    
+    @staticmethod
+    def RGBToHex(rgb):
+        """
+        Converts RGB color values to a hexadecimal color string.
+
+        Parameters
+        ----------
+        rgb : tuple
+            A tuple containing three integers representing the RGB values.
+
+        Returns
+        -------
+        str
+            A hexadecimal color string in the format '#RRGGBB'.
+        """
+
+        r, g, b = rgb
+        hex_value = "#{:02x}{:02x}{:02x}".format(r, g, b)
+        return hex_value.upper()

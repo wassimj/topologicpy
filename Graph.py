@@ -28,6 +28,16 @@ except:
     except:
         print("Graph - Error: Could not import numpy")
 
+try:
+    from pyvis.network import Network
+except:
+    call = [sys.executable, '-m', 'pip', 'install', 'pyvis', '-t', sys.path[0]]
+    subprocess.run(call)
+    try:
+        from pyvis.network import Network
+    except:
+        print("Graph - Error: Could not import pyvis")
+
 class _Tree:
     def __init__(self, node="", *children):
         self.node = node
@@ -4402,6 +4412,177 @@ class Graph:
             return None
         return graph.Path(vertexA, vertexB)
     
+    @staticmethod
+    def PyvisGraph(graph, path, overwrite=True, height=900, backgroundColor="white", fontColor="black", notebook=False,
+                   vertexSize=6, vertexSizeKey=None, vertexColor="black", vertexColorKey=None, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=None, minVertexGroup=None, maxVertexGroup=None, 
+                   edgeWeight=0, edgeWeightKey=None, showNeighbours=True, selectMenu=True, filterMenu=True, colorScale="viridis"):
+        """
+        Displays a pyvis graph. See https://pyvis.readthedocs.io/.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        path : str
+            The desired file path to the HTML file into which to save the pyvis graph.
+        overwrite : bool , optional
+            If set to True, the HTML file is overwritten.
+        height : int , optional
+            The desired figure height in pixels. The default is 900 pixels.
+        backgroundColor : str, optional
+            The desired background color for the figure. This can be a named color or a hexadecimal value. The default is 'white'.
+        fontColor : str , optional
+            The desired font color for the figure. This can be a named color or a hexadecimal value. The default is 'black'.
+        notebook : bool , optional
+            If set to True, the figure will be targeted at a Jupyter Notebook. Note that this is not working well. Pyvis has bugs. The default is False.
+        vertexSize : int , optional
+            The desired default vertex size. The default is 6.
+        vertexSizeKey : str , optional
+            If not set to None, the vertex size will be derived from the dictionary value set at this key. If set to "degree", the size of the vertex will be determined by its degree (number of neighbors). The default is None.
+        vertexColor : int , optional
+            The desired default vertex color. his can be a named color or a hexadecimal value. The default is 'black'.
+        vertexColorKey : str , optional
+            If not set to None, the vertex color will be derived from the dictionary value set at this key. The default is None.
+        vertexLabelKey : str , optional
+            If not set to None, the vertex label will be derived from the dictionary value set at this key. The default is None.
+        vertexGroupKey : str , optional
+            If not set to None, the vertex color will be determined by the group the vertex belongs to as derived from the value set at this key. The default is None.
+        vertexGroups : list , optional
+            The list of all possible vertex groups. This will help in vertex coloring. The default is None.
+        minVertexGroup : int or float , optional
+            If the vertex groups are numeric, specify the minimum value you wish to consider for vertex coloring. The default is None.
+        maxVertexGroup : int or float , optional
+            If the vertex groups are numeric, specify the maximum value you wish to consider for vertex coloring. The default is None.
+        
+        edgeWeight : int , optional
+            The desired default weight of the edge. This determines its thickness. The default is 0.
+        edgeWeightKey : str, optional
+            If not set to None, the edge weight will be derived from the dictionary value set at this key. If set to "length" or "distance", the weight of the edge will be determined by its geometric length. The default is None.
+        showNeighbors : bool , optional
+            If set to True, a list of neighbors is shown when you hover over a vertex. The default is True.
+        selectMenu : bool , optional
+            If set to True, a selection menu will be displayed. The default is True
+        filterMenu : bool , optional
+            If set to True, a filtering menu will be displayed. The default is True.
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+
+        Returns
+        -------
+        None
+            The pyvis graph is displayed either inline (notebook mode) or in a new browser window or tab.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+        from os.path import exists
+        net = Network(height=str(height)+"px", width="100%", bgcolor=backgroundColor, font_color=fontColor, select_menu=selectMenu, filter_menu=filterMenu, cdn_resources="remote", notebook=notebook)
+        if notebook == True:
+            net.prep_notebook()
+        
+        vertices = Graph.Vertices(graph)
+        edges = Graph.Edges(graph)
+
+        nodes = [i for i in range(len(vertices))]
+        if not vertexLabelKey == None:
+            node_labels = [Dictionary.ValueAtKey(Topology.Dictionary(v), vertexLabelKey) for v in vertices]
+        else:
+            node_labels = list(range(len(vertices)))
+        if not vertexColorKey == None:
+            colors = [Dictionary.ValueAtKey(Topology.Dictionary(v), vertexColorKey) for v in vertices]
+        else:
+            colors = [vertexColor for v in vertices]
+        node_titles = [str(n) for n in node_labels]
+        group = ""
+        if not vertexGroupKey == None:
+            colors = []
+            if vertexGroups:
+                if len(vertexGroups) > 0:
+                    if type(vertexGroups[0]) == int or type(vertexGroups[0]) == float:
+                        if not minVertexGroup:
+                            minVertexGroup = min(vertexGroups)
+                        if not maxVertexGroup:
+                            maxVertexGroup = max(vertexGroups)
+                    else:
+                        minVertexGroup = 0
+                        maxVertexGroup = len(vertexGroups) - 1
+            else:
+                minVertexGroup = 0
+                maxVertexGroup = 1
+            for m, v in enumerate(vertices):
+                group = ""
+                d = Topology.Dictionary(v)
+                if d:
+                    try:
+                        group = Dictionary.ValueAtKey(d, key=vertexGroupKey) or None
+                    except:
+                        group = ""
+                try:
+                    if type(group) == int or type(group) == float:
+                        if group < minVertexGroup:
+                            group = minVertexGroup
+                        if group > maxVertexGroup:
+                            group = maxVertexGroup
+                        color = Color.RGBToHex(Color.ByValueInRange(group, minValue=minVertexGroup, maxValue=maxVertexGroup, colorScale=colorScale))
+                    else:
+                        color = Color.RGBToHex(Color.ByValueInRange(vertexGroups.index(group), minValue=minVertexGroup, maxValue=maxVertexGroup, colorScale=colorScale))
+                    colors.append(color)
+                except:
+                    colors.append(vertexColor)
+        net.add_nodes(nodes, label=node_labels, title=node_titles, color=colors)
+
+        for e in edges:
+            w = edgeWeight
+            if not edgeWeightKey == None:
+                d = Topology.Dictionary(e)
+                if edgeWeightKey.lower() == "length" or edgeWeightKey.lower() == "distance":
+                    w = Edge.Length(e)
+                else:
+                    weightValue = Dictionary.ValueAtKey(d, edgeWeightKey)
+                if weightValue:
+                    w = weightValue
+            sv = Edge.StartVertex(e)
+            ev = Edge.EndVertex(e)
+            svi = Vertex.Index(sv, vertices)
+            evi = Vertex.Index(ev, vertices)
+            net.add_edge(svi, evi, weight=w)
+        net.inherit_edge_colors(False)
+        
+        # add neighbor data to node hover data and compute vertexSize
+        if showNeighbours == True or not vertexSizeKey == None:
+            for i, node in enumerate(net.nodes):
+                if showNeighbours == True:
+                    neighbors = list(net.neighbors(node["id"]))
+                    neighbor_labels = [str(net.nodes[n]["id"])+": "+net.nodes[n]["label"] for n in neighbors]
+                    node["title"] = str(node["id"])+": "+node["title"]+"\n"
+                    node["title"] += "Neighbors:\n" + "\n".join(neighbor_labels)
+                vs = vertexSize
+                if not vertexSizeKey == None:
+                    d = Topology.Dictionary(vertices[i])
+                    if vertexSizeKey.lower() == "neighbours" or vertexSizeKey.lower() == "degree":
+                        temp_vs = Graph.VertexDegree(graph, vertices[i])
+                    else:
+                        temp_vs = Dictionary.ValueAtKey(vertices[i], vertexSizeKey)
+                    if temp_vs:
+                        vs = temp_vs
+                node["value"] = vs
+        
+        # Make sure the file extension is .html
+        ext = path[len(path)-5:len(path)]
+        if ext.lower() != ".html":
+            path = path+".html"
+        if not overwrite and exists(path):
+            print("Graph.PyvisGraph - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
+        if overwrite == True:
+            net.save_graph(path)
+        net.show_buttons()
+        net.show(path, notebook=notebook)
+        return None
+        
     @staticmethod
     def RemoveEdge(graph, edge, tolerance=0.0001):
         """
