@@ -388,7 +388,7 @@ class Plotly:
                        faceMinGroup=None, faceMaxGroup=None, 
                        showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
                        faceLegendGroup=3, 
-                       intensityKey=None, colorScale="Viridis", tolerance=0.0001):
+                       intensityKey=None, colorScale="Viridis", mantissa=4, tolerance=0.0001):
         """
         Creates plotly face, edge, and vertex data.
 
@@ -493,6 +493,8 @@ class Plotly:
             If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -528,9 +530,9 @@ class Plotly:
                     minGroup = 0
                     maxGroup = 1
                 for m, v in enumerate(vertices):
-                    x.append(v[0])
-                    y.append(v[1])
-                    z.append(v[2])
+                    x.append(round(v[0], mantissa))
+                    y.append(round(v[1], mantissa))
+                    z.append(round(v[2], mantissa))
                     label = ""
                     group = ""
                     if len(dictionaries) > 0:
@@ -560,9 +562,9 @@ class Plotly:
                         labels.append(label)
             else:
                 for v in vertices:
-                    x.append(v[0])
-                    y.append(v[1])
-                    z.append(v[2])
+                    x.append(round(v[0], mantissa))
+                    y.append(round(v[1], mantissa))
+                    z.append(round(v[2], mantissa))
             
             if len(list(set(groupList))) < 2:
                 groupList = color
@@ -607,9 +609,9 @@ class Plotly:
                 for m, e in enumerate(edges):
                     sv = vertices[e[0]]
                     ev = vertices[e[1]]
-                    x+=[sv[0],ev[0], None] # x-coordinates of edge ends
-                    y+=[sv[1],ev[1], None] # y-coordinates of edge ends
-                    z+=[sv[2],ev[2], None] # z-coordinates of edge ends
+                    x+=[round(sv[0],5),round(ev[0],mantissa), None] # x-coordinates of edge ends
+                    y+=[round(sv[1],5),round(ev[1],mantissa), None] # y-coordinates of edge ends
+                    z+=[round(sv[2],5),round(ev[2],mantissa), None] # z-coordinates of edge ends
                     label = ""
                     group = ""
                     if len(dictionaries) > 0:
@@ -641,9 +643,9 @@ class Plotly:
                 for e in edges:
                     sv = vertices[e[0]]
                     ev = vertices[e[1]]
-                    x+=[sv[0],ev[0], None] # x-coordinates of edge ends
-                    y+=[sv[1],ev[1], None] # y-coordinates of edge ends
-                    z+=[sv[2],ev[2], None] # z-coordinates of edge ends
+                    x+=[round(sv[0],mantissa),round(ev[0],mantissa), None] # x-coordinates of edge ends
+                    y+=[round(sv[1],mantissa),round(ev[1],mantissa), None] # y-coordinates of edge ends
+                    z+=[round(sv[2],mantissa),round(ev[2],mantissa), None] # z-coordinates of edge ends
                 
             if len(list(set(groupList))) < 2:
                     groupList = color
@@ -668,9 +670,9 @@ class Plotly:
             y = []
             z = []
             for v in vertices:
-                x.append(v[0])
-                y.append(v[1])
-                z.append(v[2])
+                x.append(round(v[0], mantissa))
+                y.append(round(v[1], mantissa))
+                z.append(round(v[2], mantissa))
             i = []
             j = []
             k = []
@@ -951,7 +953,8 @@ class Plotly:
              marginLeft=0,
              marginRight=0,
              marginTop=40,
-             marginBottom=0):
+             marginBottom=0,
+             mantissa=4):
         """
         Returns a Plotly Figure of the input matrix.
 
@@ -997,6 +1000,8 @@ class Plotly:
             The desired top margin in pixels. The default is 40.
         marginBottom : int , optional
             The desired bottom margin in pixels. The default is 0.
+        mantissa : int , optional
+            The desired number of digits of the mantissa. The default is 4.
 
         """
         #import plotly.figure_factory as ff
@@ -1033,7 +1038,7 @@ class Plotly:
                             "font": {"color": "black"},
                             "bgcolor": "white",
                             "opacity": 0.5,
-                            "text": str(round(value,2)), 
+                            "text": str(round(value, mantissa)), 
                             "xref": "x1",
                             "yref": "y1",
                             "showarrow": False
@@ -1054,7 +1059,7 @@ class Plotly:
                             "font": {"color": "black"},
                             "bgcolor": "white",
                             "opacity": 0.5,
-                            "text": str(round(value,2)),
+                            "text": str(round(value,mantissa)),
                             "xref": "x1",
                             "yref": "y1",
                             "showarrow": False
@@ -1067,9 +1072,9 @@ class Plotly:
             maxRow = sum(row)
             for j in range(len(row)):
                 if maxRow == 0:
-                    new_row.append(round(0, 3))
+                    new_row.append(round(0, mantissa))
                 else:
-                    new_row.append(round(float(row[j])/float(maxRow), 3))
+                    new_row.append(round(float(row[j])/float(maxRow), mantissa))
             new_matrix.append(new_row)
         data = go.Heatmap(z=new_matrix, y=yCategories, x=xCategories, zmin=minValue, zmax=maxValue, showscale=showScale, colorscale=colors)
         
