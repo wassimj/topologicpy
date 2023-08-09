@@ -1549,7 +1549,7 @@ class Plotly:
 
         """
         if not isinstance(topology, topologic.Topology):
-            print("Topology.Show - Error: the input topology is not a valid topology. Returning None.")
+            print("Plotly.FigureByTopology - Error: the input topology is not a valid topology. Returning None.")
             return None
         data = Plotly.DataByTopology(topology=topology,
                        showVertices=showVertices, vertexSize=vertexSize, vertexColor=vertexColor, 
@@ -1822,7 +1822,11 @@ class Plotly:
             return None
         if not camera == None:
             figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
-        figure.show(renderer=renderer)
+        if renderer.lower() == "offline":
+            import plotly.offline as ofl
+            ofl.plot(figure)
+        else:
+            figure.show(renderer=renderer)
         return None
 
     @staticmethod
@@ -1843,7 +1847,7 @@ class Plotly:
          'notebook', 'notebook_connected', 'kaggle', 'azure', 'colab',
          'cocalc', 'databricks', 'json', 'png', 'jpeg', 'jpg', 'svg',
          'pdf', 'browser', 'firefox', 'chrome', 'chromium', 'iframe',
-         'iframe_connected', 'sphinx_gallery', 'sphinx_gallery_png']
+         'iframe_connected', 'sphinx_gallery', 'sphinx_gallery_png', 'offline']
 
     @staticmethod
     def ExportToImage(figure, path, format="png", width="1920", height="1080"):
