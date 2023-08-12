@@ -1517,122 +1517,359 @@ class Topology():
             The list of imported topologies. If the list only contains one element, it returns that element.
 
         """
-        from topologicpy.Dictionary import Dictionary
 
-        def processApertures(subTopologies, apertures, exclusive, tolerance):
-            usedTopologies = []
-            for subTopology in subTopologies:
-                    usedTopologies.append(0)
-            ap = 1
-            for aperture in apertures:
-                apCenter = Topology.InternalVertex(aperture, tolerance)
-                for i in range(len(subTopologies)):
-                    subTopology = subTopologies[i]
-                    if exclusive == True and usedTopologies[i] == 1:
-                        continue
-                    if topologic.VertexUtility.Distance(apCenter, subTopology) < tolerance:
-                        context = topologic.Context.ByTopologyParameters(subTopology, 0.5, 0.5, 0.5)
-                        _ = topologic.Aperture.ByTopologyContext(aperture, context)
-                        if exclusive == True:
-                            usedTopologies[i] = 1
-                ap = ap + 1
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Context import Context
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Aperture import Aperture
+
+
+        def getUUID(topology, uuidKey="uuid"):
+            d = Topology.Dictionary(topology)
+            if d == None:
+                uuidOne = str(uuid.uuid1())
+                d = Dictionary.ByKeyValue(uuidKey, uuidOne)
+            elif uuidKey not in Dictionary.Keys(d):
+                uuidOne = str(uuid.uuid1())
+                d = Dictionary.SetValueAtKey(d, uuidKey, uuidOne)
+                topology = Topology.SetDictionary(topology, d)
+            else:
+                uuidOne = Dictionary.ValueAtKey(d, uuidKey)
+            return uuidOne
+            
+        def find_json_item(json_list, key, value):
+            for item in json_list:
+                if key in item and item[key] == value:
+                    return item
             return None
 
-        def getApertures(apertureList):
-            returnApertures = []
-            for item in apertureList:
-                aperture = Topology.ByBREPString(item['brep'])
-                dictionary = item['dictionary']
-                keys = list(dictionary.keys())
-                values = []
-                for key in keys:
-                    values.append(dictionary[key])
-                topDictionary = Dictionary.ByKeysValues(keys, values)
-                if len(keys) > 0:
-                    _ = aperture.SetDictionary(topDictionary)
-                returnApertures.append(aperture)
-            return returnApertures
-        
-        def assignDictionary(dictionary):
-            selector = dictionary['selector']
-            pydict = dictionary['dictionary']
-            v = topologic.Vertex.ByCoordinates(selector[0], selector[1], selector[2])
-            d = Dictionary.ByPythonDictionary(pydict)
-            _ = v.SetDictionary(d)
+        def buildAperture(j_aperture):
+            j_vertices = []
+            j_edges = []
+            j_wires = []
+            j_faces = []
+            j_shells = []
+            j_cells = []
+            j_cellComplexes = []
+            for jsonItem in j_aperture:
+                topology_type = jsonItem['type']
+                if topology_type.lower() == "vertex":
+                    j_vertices.append(jsonItem)
+                elif topology_type.lower() == "edge":
+                    j_edges.append(jsonItem)
+                elif topology_type.lower() == "wire":
+                    j_wires.append(jsonItem)
+                elif topology_type.lower() == "face":
+                    j_faces.append(jsonItem)
+                elif topology_type.lower() == "shell":
+                    j_shells.append(jsonItem)
+                elif topology_type.lower() == "cell":
+                    j_cells.append(jsonItem)
+                elif topology_type.lower() == "cellcomplex":
+                    j_cellComplexes.append(jsonItem)
+
+            vertices = [buildVertex(j_v) for j_v in j_vertices]
+            edges = [buildEdge(j_e, j_vertices, uuidKey="uuid") for j_e in j_edges]
+            wires = [buildWire(j_w, j_edges, j_vertices, uuidKey="uuid") for j_w in j_wires]
+            faces = [buildFace(j_f, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_f in j_faces]
+            shells = [buildShell(j_s, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_s in j_shells]
+            cells = [buildCell(j_c, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_c in j_cells]
+            cellComplexes = [buildCellComplex(j_cc, j_cells, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_cc in j_cellComplexes]
+            if len(cellComplexes) > 0:
+                everything = cellComplexes
+            elif len(cells) > 0:
+                everything = cells
+            elif len(shells) > 0:
+                everything = shells
+            elif len(faces) > 0:
+                everything = faces
+            elif len(wires) > 0:
+                everything = wires
+            elif len(edges) > 0:
+                everything = edges
+            elif len(vertices) > 0:
+                everything = vertices
+            else:
+                return None
+            if len(everything) == 1:
+                aperture = everything[0]
+            else:
+                aperture = Topology.SelfMerge(Cluster.ByTopologies(everything))
+            return aperture
+
+        def buildVertex(json_item):
+            x, y, z = json_item['coordinates']
+            d = json_item['dictionary']
+            v = Vertex.ByCoordinates(x,y,z)
+            v = Topology.SetDictionary(v, Dictionary.ByPythonDictionary(d))
+            apertures = [buildAperture(j_ap) for j_ap in json_item['apertures']]
+            context = Context.ByTopologyParameters(v, u=0.5, v=0.5, w=0.5)
+            for ap in apertures:
+                _ = Aperture.ByTopologyContext(ap, context)
             return v
 
-        topology = None
-        if not string:
-            print("Topology.ByJSONString - Error: the input string is not a valid string. Returning None.")
+        def buildEdge(json_item, j_vertices, uuidKey="uuid"):
+            edge_vertices = json_item['vertices']
+            vertices = []
+            for j_v in edge_vertices:
+                vertices.append(buildVertex(find_json_item(j_vertices, uuidKey, j_v)))
+            e = Edge.ByVertices(vertices)
+            d = json_item['dictionary']
+            e = Topology.SetDictionary(e, Dictionary.ByPythonDictionary(d))
+            apertures = [buildAperture(j_ap) for j_ap in json_item['apertures']]
+            context = Context.ByTopologyParameters(e, u=0.5, v=0.5, w=0.5)
+            for ap in apertures:
+                _ = Aperture.ByTopologyContext(ap, context)
+            return e
+
+        def buildWire(json_item, j_edges, j_vertices, uuidKey="uuid"):
+            wire_edges = json_item['edges']
+            edges = []
+            for j_e in wire_edges:
+                edges.append(buildEdge(find_json_item(j_edges, uuidKey, j_e), j_vertices, uuidKey=uuidKey))
+            w = Wire.ByEdges(edges)
+            d = json_item['dictionary']
+            w = Topology.SetDictionary(w, Dictionary.ByPythonDictionary(d))
+            apertures = [buildAperture(j_ap) for j_ap in json_item['apertures']]
+            context = Context.ByTopologyParameters(w, u=0.5, v=0.5, w=0.5)
+            for ap in apertures:
+                _ = Aperture.ByTopologyContext(ap, context)
+            return w
+
+        def buildFace(json_item, j_wires, j_edges, j_vertices, uuidKey="uuid"):
+            face_wires = json_item['wires']
+            wires = []
+            external_boundary = buildWire(find_json_item(j_wires, uuidKey, face_wires[0]), j_edges, j_vertices, uuidKey=uuidKey)
+            internal_boundaries = []
+            for j_w in face_wires[1:]:
+                ib = buildWire(find_json_item(j_wires, uuidKey, j_w),j_edges, j_vertices, uuidKey=uuidKey)
+                internal_boundaries.append(ib)
+            f = Face.ByWire(external_boundary)
+            if Face.Area(f) < 0:
+                f = Face.ByWires(Wire.Invert(external_boundary), internal_boundaries)
+            else:
+                f = Face.ByWires(external_boundary, internal_boundaries)
+            d = json_item['dictionary']
+            f = Topology.SetDictionary(f, Dictionary.ByPythonDictionary(d))
+            apertures = [buildAperture(j_ap) for j_ap in json_item['apertures']]
+            context = Context.ByTopologyParameters(f, u=0.5, v=0.5, w=0.5)
+            for ap in apertures:
+                _ = Aperture.ByTopologyContext(ap, context)
+            return f
+
+        def buildShell(json_item, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid"):
+            shell_faces = json_item['faces']
+            faces = []
+            for j_f in shell_faces:
+                faces.append(buildFace(find_json_item(j_faces, uuidKey, j_f), j_wires, j_edges, j_vertices, uuidKey=uuidKey))
+            s = Shell.ByFaces(faces)
+            d = json_item['dictionary']
+            s = Topology.SetDictionary(s, Dictionary.ByPythonDictionary(d))
+            apertures = [buildAperture(j_ap) for j_ap in json_item['apertures']]
+            context = Context.ByTopologyParameters(s, u=0.5, v=0.5, w=0.5)
+            for ap in apertures:
+                _ = Aperture.ByTopologyContext(ap, context)
+            return s
+
+        def buildCell(json_item, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid"):
+            cell_shells = json_item['shells']
+            shells = []
+            external_boundary = buildShell(find_json_item(j_shells, uuidKey, cell_shells[0]), j_faces, j_wires, j_edges, j_vertices, uuidKey=uuidKey)
+            internal_boundaries = []
+            for j_s in cell_shells[1:]:
+                internal_boundaries.append(buildShell(find_json_item(j_shells, uuidKey, j_s), j_faces, j_wires, j_edges, j_vertices, uuidKey=uuidKey))
+            c = Cell.ByShell(external_boundary)
+            for ib in internal_boundaries:
+                ib_c = Cell.ByShell(ib)
+                c = Topology.Difference(c, ib_c)
+            d = json_item['dictionary']
+            c = Topology.SetDictionary(c, Dictionary.ByPythonDictionary(d))
+            apertures = [buildAperture(j_ap) for j_ap in json_item['apertures']]
+            context = Context.ByTopologyParameters(c, u=0.5, v=0.5, w=0.5)
+            for ap in apertures:
+                _ = Aperture.ByTopologyContext(ap, context)
+            return c
+
+        def buildCellComplex(json_item, j_cells, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid"):
+            cc_cells = json_item['cells']
+            cells = []
+            for j_c in cc_cells:
+                cells.append(buildCell(find_json_item(j_cells, uuidKey, j_c), j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey=uuidKey))
+            cc = CellComplex.ByCells(cells)
+            d = json_item['dictionary']
+            cc = Topology.SetDictionary(cc, Dictionary.ByPythonDictionary(d))
+            apertures = [buildAperture(j_ap) for j_ap in json_item['apertures']]
+            context = Context.ByTopologyParameters(cc, u=0.5, v=0.5, w=0.5)
+            for ap in apertures:
+                _ = Aperture.ByTopologyContext(ap, context)
+            return cc
+
+        def addAperturesUUID(topology, uuidKey="uuid"):
+            topology_apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(topology)]
+            apertures_uuid = []
+            for top_a in topology_apertures:
+                uuid = getUUID(top_a, uuidKey=uuidKey)
+                apertures_uuid.append(uuid)
+            d = Topology.Dictionary(topology)
+            d = Dictionary.SetValueAtKey(d, 'apertures', apertures_uuid)
+            topology = Topology.SetDictionary(topology, d)
+            s = Topology.InternalVertex(topology)
+            s = Topology.SetDictionary(s, d)
+            return topology, s, topology_apertures
+
+        def findAperture(uuid, apertures, uuidKey="uuid"):
+            for ap in apertures:
+                d = Topology.Dictionary(ap)
+                ap_uuid = Dictionary.ValueAtKey(d, uuidKey)
+                if uuid == ap_uuid:
+                    return ap
             return None
-        topologies = []
+
+        def setApertures(topology, allApertures, uuidKey="uuid"):
+            apertures = []
+            d = Topology.Dictionary(topology)
+            apertures_uuid = Dictionary.ValueAtKey(d, 'apertures')
+            if not isinstance(apertures_uuid, list):
+                apertures_uuid = [apertures_uuid]
+            for ap_uuid in apertures_uuid:
+                ap = findAperture(ap_uuid, allApertures, uuidKey=uuidKey)
+                if ap != None:
+                    apertures.append(ap)
+            context = Context.ByTopologyParameters(topology, u=0.5, v=0.5, w=0.5)
+            for ap in apertures:
+                _ = Aperture.ByTopologyContext(ap, context)
+            return topology
+                    
+                
         jsondata = json.loads(string)
         if not isinstance(jsondata, list):
             jsondata = [jsondata]
-        for jsonItem in jsondata:
-            brep = jsonItem['brep']
-            topology = Topology.ByBREPString(brep)
-            dictionary = jsonItem['dictionary']
-            topDictionary = Dictionary.ByPythonDictionary(dictionary)
-            topology = Topology.SetDictionary(topology, topDictionary)
-            cellApertures = getApertures(jsonItem['cellApertures'])
-            cells = []
-            try:
-                _ = topology.Cells(None, cells)
-            except:
-                pass
-            processApertures(cells, cellApertures, False, 0.001)
-            faceApertures = getApertures(jsonItem['faceApertures'])
-            faces = []
-            try:
-                _ = topology.Faces(None, faces)
-            except:
-                pass
-            processApertures(faces, faceApertures, False, 0.001)
-            edgeApertures = getApertures(jsonItem['edgeApertures'])
-            edges = []
-            try:
-                _ = topology.Edges(None, edges)
-            except:
-                pass
-            processApertures(edges, edgeApertures, False, 0.001)
-            vertexApertures = getApertures(jsonItem['vertexApertures'])
-            vertices = []
-            try:
-                _ = topology.Vertices(None, vertices)
-            except:
-                pass
-            processApertures(vertices, vertexApertures, False, 0.001)
-            cellDataList = jsonItem['cellDictionaries']
-            cellSelectors = []
-            for cellDataItem in cellDataList:
-                cellSelectors.append(assignDictionary(cellDataItem))
-            if len(cellSelectors) > 0:
-                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=cellSelectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=True, tolerance=0.0001)
-            faceDataList = jsonItem['faceDictionaries']
-            faceSelectors = []
-            for faceDataItem in faceDataList:
-                faceSelectors.append(assignDictionary(faceDataItem))
-            if len(faceSelectors) > 0:
-                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=faceSelectors, tranVertices=False, tranEdges=False, tranFaces=True, tranCells=False, tolerance=0.0001)
-            edgeDataList = jsonItem['edgeDictionaries']
-            edgeSelectors = []
-            for edgeDataItem in edgeDataList:
-                edgeSelectors.append(assignDictionary(edgeDataItem))
-            if len(edgeSelectors) > 0:
-                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=edgeSelectors, tranVertices=False, tranEdges=True, tranFaces=False, tranCells=False, tolerance=0.0001)
-            vertexDataList = jsonItem['vertexDictionaries']
-            vertexSelectors = []
-            for vertexDataItem in vertexDataList:
-                vertexSelectors.append(assignDictionary(vertexDataItem))
-            if len(vertexSelectors) > 0:
-                topology = Topology.TransferDictionariesBySelectors(topology=topology, selectors=vertexSelectors, tranVertices=True, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001)
-            topologies.append(topology)
 
-        if len(topologies) == 1:
-            return topologies[0]
+        j_vertices = []
+        j_edges = []
+        j_wires = []
+        j_faces = []
+        j_shells = []
+        j_cells = []
+        j_cellComplexes = []
+
+        vertices = []
+        edges = []
+        wires = []
+        faces = []
+        shells = []
+        cells = []
+        cellComplexes = []
+
+        for jsonItem in jsondata:
+            topology_type = jsonItem['type']
+            if topology_type.lower() == "vertex":
+                j_vertices.append(jsonItem)
+            elif topology_type.lower() == "edge":
+                j_edges.append(jsonItem)
+            elif topology_type.lower() == "wire":
+                j_wires.append(jsonItem)
+            elif topology_type.lower() == "face":
+                j_faces.append(jsonItem)
+            elif topology_type.lower() == "shell":
+                j_shells.append(jsonItem)
+            elif topology_type.lower() == "cell":
+                j_cells.append(jsonItem)
+            elif topology_type.lower() == "cellcomplex":
+                j_cellComplexes.append(jsonItem)
+
+        vertices = [buildVertex(j_v) for j_v in j_vertices]
+        vertex_selectors = []
+        all_vertex_apertures = []
+        for v in vertices:
+            v, s, vertex_apertures = addAperturesUUID(v, uuidKey="uuid")
+            all_vertex_apertures += vertex_apertures
+            vertex_selectors.append(s)
+
+        edges = [buildEdge(j_e, j_vertices, uuidKey="uuid") for j_e in j_edges]
+        edge_selectors = []
+        all_edge_apertures = []
+        for e in edges:
+            e, s, edge_apertures = addAperturesUUID(e, uuidKey="uuid")
+            all_edge_apertures += edge_apertures
+            edge_selectors.append(s)
+
+        wires = [buildWire(j_w, j_edges, j_vertices, uuidKey="uuid") for j_w in j_wires]
+        wire_selectors = []
+        all_wire_apertures = []
+        for w in wires:
+            w, s, wire_apertures = addAperturesUUID(w, uuidKey="uuid")
+            all_wire_apertures += wire_apertures
+            wire_selectors.append(s)
+
+        faces = [buildFace(j_f, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_f in j_faces]
+        face_selectors = []
+        all_face_apertures = []
+        for f in faces:
+            f, s, face_apertures = addAperturesUUID(f, uuidKey="uuid")
+            all_face_apertures += face_apertures
+            face_selectors.append(s)
+
+        shells = [buildShell(j_s, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_s in j_shells]
+        shell_selectors = []
+        all_shell_apertures = []
+        for sh in shells:
+            sh, s, shell_apertures = addAperturesUUID(sh, uuidKey="uuid")
+            all_shell_apertures += shell_apertures
+            shell_selectors.append(s)
+
+        cells = [buildCell(j_c, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_c in j_cells]
+        cell_selectors = []
+        all_cell_apertures = []
+        for c in cells:
+            c, s, cell_apertures = addAperturesUUID(c, uuidKey="uuid")
+            all_cell_apertures += cell_apertures
+            cell_selectors.append(s)
+
+        cellComplexes = [buildCellComplex(j_cc, j_cells, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_cc in j_cellComplexes]
+        cellComplex_selectors = []
+        all_cellComplex_apertures = []
+        for cc in cellComplexes:
+            cc, s, cellComplex_apertures = addAperturesUUID(cc, uuidKey="uuid")
+            all_cellComplex_apertures += cellComplex_apertures
+            cellComplex_selectors.append(s)
+
+        everything = vertices+edges+wires+faces+shells+cells+cellComplexes
+        toplevelTopologies = []
+        for ev in everything:
+            d = Topology.Dictionary(ev)
+            if Dictionary.ValueAtKey(d,'toplevel') == True:
+                toplevelTopologies.append(ev)
+
+        for tp in toplevelTopologies:
+            _ = Topology.TransferDictionariesBySelectors(tp, vertex_selectors, tranVertices=True, tolerance=tolerance)
+            _ = Topology.TransferDictionariesBySelectors(tp, edge_selectors, tranEdges=True, tolerance=tolerance)
+            _ = Topology.TransferDictionariesBySelectors(tp, face_selectors, tranFaces=True, tolerance=tolerance)
+            _ = Topology.TransferDictionariesBySelectors(tp, cell_selectors, tranCells=True, tolerance=tolerance)
+            tp_vertices = Topology.Vertices(tp)
+            for tp_vertex in tp_vertices:
+                tp_vertex = setApertures(tp_vertex, all_vertex_apertures, uuidKey="uuid")
+            tp_edges = Topology.Edges(tp)
+            for tp_edge in tp_edges:
+                tp_edge = setApertures(tp_edge, all_edge_apertures, uuidKey="uuid")
+            tp_faces = Topology.Faces(tp)
+            for tp_face in tp_faces:
+                tp_face = setApertures(tp_face, all_face_apertures, uuidKey="uuid")
+            tp_cells = Topology.Cells(tp)
+            for tp_cell in tp_cells:
+                tp_cell = setApertures(tp_cell, all_cell_apertures, uuidKey="uuid")
+    
+        if len(toplevelTopologies) == 1:
+            return toplevelTopologies[0]
         else:
-            return topologies
+            return toplevelTopologies
     
     @staticmethod
     def ByJSONPath(path, tolerance=0.0001):
@@ -1661,165 +1898,6 @@ class Topology():
             print("Topology.ByJSONPath - Error: the JSON file is not a valid file. Returning None.")
             return None
         return Topology.ByJSONFile(file=file, tolerance=tolerance)
-
-    @staticmethod
-    def ByImportedJSONMK1(path, tolerance=0.0001):
-        """
-        DEPRECATED. DO NOT USE. Instead use Topology.ByJSONPath or Topology.ByJSONFile
-        Imports the topology from a JSON file.
-
-        Parameters
-        ----------
-        path : str
-            The file path to the json file.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        list
-            The list of imported topologies.
-
-        """
-        print("Topology.ByImportedJSONMK1 - WARNING: This method is DEPRECATED. DO NOT USE. Instead use Topology.ByJSONPathMK1 or Topology.ByJSONFileMK1")
-        return Topology.ByJSONPath(path=path, tolerance=tolerance)
-
-    @staticmethod
-    def ByImportedJSONMK2(path, tolerance=0.0001):
-        """
-        Imports the topology from a JSON file.
-
-        Parameters
-        ----------
-        path : str
-            The file path to the json file.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        list
-            The list of imported topologies.
-
-        """
-        from topologicpy.Dictionary import Dictionary
-        def getApertures(apertureList, folderPath):
-            returnApertures = []
-            for item in apertureList:
-                brepFileName = item['brep']
-                breppath = os.path.join(folderPath, brepFileName+".brep")
-                brepFile = open(breppath)
-                if brepFile:
-                    brepString = brepFile.read()
-                    aperture = Topology.ByBREPString(brepString)
-                    brepFile.close()
-                dictionary = item['dictionary']
-                keys = list(dictionary.keys())
-                values = []
-                for key in keys:
-                    values.append(dictionary[key])
-                topDictionary = Dictionary.ByKeysValues(keys, values)
-                if len(keys) > 0:
-                    _ = aperture.SetDictionary(topDictionary)
-                returnApertures.append(aperture)
-            return returnApertures
-
-        def processApertures(subTopologies, apertures, exclusive, tolerance):
-            usedTopologies = []
-            for subTopology in subTopologies:
-                    usedTopologies.append(0)
-            ap = 1
-            for aperture in apertures:
-                apCenter = Topology.InternalVertex(aperture, tolerance)
-                for i in range(len(subTopologies)):
-                    subTopology = subTopologies[i]
-                    if exclusive == True and usedTopologies[i] == 1:
-                        continue
-                    if topologic.VertexUtility.Distance(apCenter, subTopology) < tolerance:
-                        context = topologic.Context.ByTopologyParameters(subTopology, 0.5, 0.5, 0.5)
-                        _ = topologic.Aperture.ByTopologyContext(aperture, context)
-                        if exclusive == True:
-                            usedTopologies[i] = 1
-                ap = ap + 1
-            return None
-
-        def assignDictionary(dictionary):
-            selector = dictionary['selector']
-            pydict = dictionary['dictionary']
-            v = topologic.Vertex.ByCoordinates(selector[0], selector[1], selector[2])
-            d = Dictionary.ByPythonDictionary(pydict)
-            _ = v.SetDictionary(d)
-            return v
-
-        topology = None
-        jsonFile = open(path)
-        folderPath = os.path.dirname(path)
-        if jsonFile:
-            topologies = []
-            jsondata = json.load(jsonFile)
-            for jsonItem in jsondata:
-                brepFileName = jsonItem['brep']
-                breppath = os.path.join(folderPath, brepFileName+".brep")
-                brepFile = open(breppath)
-                if brepFile:
-                    brepString = brepFile.read()
-                    topology = Topology.ByBREPString(brepString)
-                    brepFile.close()
-                dictionary = jsonItem['dictionary']
-                topDictionary = Dictionary.ByPythonDictionary(dictionary)
-                _ = topology.SetDictionary(topDictionary)
-                cellApertures = getApertures(jsonItem['cellApertures'], folderPath)
-                cells = []
-                try:
-                    _ = topology.Cells(None, cells)
-                except:
-                    pass
-                processApertures(cells, cellApertures, False, 0.001)
-                faceApertures = getApertures(jsonItem['faceApertures'], folderPath)
-                faces = []
-                try:
-                    _ = topology.Faces(None, faces)
-                except:
-                    pass
-                processApertures(faces, faceApertures, False, 0.001)
-                edgeApertures = getApertures(jsonItem['edgeApertures'], folderPath)
-                edges = []
-                try:
-                    _ = topology.Edges(None, edges)
-                except:
-                    pass
-                processApertures(edges, edgeApertures, False, 0.001)
-                vertexApertures = getApertures(jsonItem['vertexApertures'], folderPath)
-                vertices = []
-                try:
-                    _ = topology.Vertices(None, vertices)
-                except:
-                    pass
-                processApertures(vertices, vertexApertures, False, 0.001)
-                cellDataList = jsonItem['cellDictionaries']
-                cellSelectors = []
-                for cellDataItem in cellDataList:
-                    cellSelectors.append(assignDictionary(cellDataItem))
-                Topology.TransferDictionariesBySelectors(topology, cellSelectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=True, tolerance=tolerance)
-                faceDataList = jsonItem['faceDictionaries']
-                faceSelectors = []
-                for faceDataItem in faceDataList:
-                    faceSelectors.append(assignDictionary(faceDataItem))
-                Topology.TransferDictionariesBySelectors(topology, faceSelectors, tranVertices=False, tranEdges=False, tranFaces=True, tranCells=False, tolerance=tolerance)
-                edgeDataList = jsonItem['edgeDictionaries']
-                edgeSelectors = []
-                for edgeDataItem in edgeDataList:
-                    edgeSelectors.append(assignDictionary(edgeDataItem))
-                Topology.TransferDictionariesBySelectors(topology, edgeSelectors, tranVertices=False, tranEdges=True, tranFaces=False, tranCells=False, tolerance=tolerance)
-                vertexDataList = jsonItem['vertexDictionaries']
-                vertexSelectors = []
-                for vertexDataItem in vertexDataList:
-                    vertexSelectors.append(assignDictionary(vertexDataItem))
-                Topology.TransferDictionariesBySelectors(topology, vertexSelectors, tranVertices=True, tranEdges=False, tranFaces=False, tranCells=False, tolerance=tolerance)
-                topologies.append(topology)
-            return topologies
-        print("Topology.ByImportedJSONMK2 - Error: the input file is not a valid file. Returning None.")
-        return None
 
     @staticmethod
     def ByOBJString(string, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
@@ -2878,7 +2956,7 @@ class Topology():
         return ''
     '''
     @staticmethod
-    def ExportToJSON(topologies, path, version=3, overwrite=False, tolerance=0.0001):
+    def ExportToJSON(topologies, path, overwrite=False):
         """
         Exports the input list of topologies to a JSON file.
 
@@ -2888,12 +2966,8 @@ class Topology():
             The input list of topologies.
         path : str
             The path to the JSON file.
-        version : int , optional
-            The OCCT BRep version to use. Options are 1,2,or 3. The default is 3.
         overwrite : bool , optional
             If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -2918,12 +2992,20 @@ class Topology():
         except:
             raise Exception("Error: Could not create a new file at the following location: "+path)
         if (f):
-            jsondata = json.loads(Topology.JSONString(topologies, version=version, tolerance=tolerance))
-            json.dump(jsondata, f, indent=4, sort_keys=True)
-            f.close()
+            jsondata = json.loads(Topology.JSONString(topologies))
+            if jsondata != None:
+                json.dump(jsondata, f, indent=4, sort_keys=True)
+                f.close()
+                return True
+            else:
+                f.close()
+                return False
+        return False
+
+
 
     @staticmethod
-    def JSONString(topologies, version=3, tolerance=0.0001):
+    def JSONString(topologies):
         """
         Exports the input list of topologies to a JSON string
 
@@ -2931,12 +3013,6 @@ class Topology():
         ----------
         topologies : list or topologic.Topology
             The input list of topologies or a single topology.
-        path : str
-            The path to the JSON file.
-        version : int , optional
-            The OCCT BRep version to use. Options are 1,2,or 3. The default is 3.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -2945,329 +3021,234 @@ class Topology():
 
         """
 
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
         from topologicpy.Dictionary import Dictionary
 
-        def cellAperturesAndDictionaries(topology, tolerance=0.0001):
-            cells = []
-            try:
-                _ = topology.Cells(None, cells)
-            except:
-                return [[],[],[]]
-            cellApertures = []
-            cellDictionaries = []
-            cellSelectors = []
-            for aCell in cells:
-                tempApertures = []
-                _ = aCell.Apertures(tempApertures)
-                for anAperture in tempApertures:
-                    cellApertures.append(anAperture)
-                cellDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aCell))
-                if len(cellDictionary.keys()) > 0:
-                    cellDictionaries.append(cellDictionary)
-                    iv = topologic.CellUtility.InternalVertex(aCell, tolerance)
-                    cellSelectors.append([iv.X(), iv.Y(), iv.Z()])
-            return [cellApertures, cellDictionaries, cellSelectors]
-
-        def faceAperturesAndDictionaries(topology, tolerance=0.0001):
-            faces = []
-            try:
-                _ = topology.Faces(None, faces)
-            except:
-                return [[],[],[]]
-            faceApertures = []
-            faceDictionaries = []
-            faceSelectors = []
-            for aFace in faces:
-                tempApertures = []
-                _ = aFace.Apertures(tempApertures)
-                for anAperture in tempApertures:
-                    faceApertures.append(anAperture)
-                faceDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aFace))
-                if len(faceDictionary.keys()) > 0:
-                    faceDictionaries.append(faceDictionary)
-                    iv = topologic.FaceUtility.InternalVertex(aFace, tolerance)
-                    faceSelectors.append([iv.X(), iv.Y(), iv.Z()])
-            return [faceApertures, faceDictionaries, faceSelectors]
-
-        def edgeAperturesAndDictionaries(topology):
-            edges = []
-            try:
-                _ = topology.Edges(None, edges)
-            except:
-                return [[],[],[]]
-            edgeApertures = []
-            edgeDictionaries = []
-            edgeSelectors = []
-            for anEdge in edges:
-                tempApertures = []
-                _ = anEdge.Apertures(tempApertures)
-                for anAperture in tempApertures:
-                    edgeApertures.append(anAperture)
-                edgeDictionary = Dictionary.PythonDictionary(Topology.Dictionary(anEdge))
-                if len(edgeDictionary.keys()) > 0:
-                    edgeDictionaries.append(edgeDictionary)
-                    iv = topologic.EdgeUtility.PointAtParameter(anEdge, 0.5)
-                    edgeSelectors.append([iv.X(), iv.Y(), iv.Z()])
-            return [edgeApertures, edgeDictionaries, edgeSelectors]
-
-        def vertexAperturesAndDictionaries(topology):
-            vertices = []
-            try:
-                _ = topology.Vertices(None, vertices)
-            except:
-                return [[],[],[]]
-            vertexApertures = []
-            vertexDictionaries = []
-            vertexSelectors = []
-            for aVertex in vertices:
-                tempApertures = []
-                _ = aVertex.Apertures(tempApertures)
-                for anAperture in tempApertures:
-                    vertexApertures.append(anAperture)
-                vertexDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aVertex))
-                if len(vertexDictionary.keys()) > 0:
-                    vertexDictionaries.append(vertexDictionary)
-                    vertexSelectors.append([aVertex.X(), aVertex.Y(), aVertex.Z()])
-            return [vertexApertures, vertexDictionaries, vertexSelectors]
-        
-        def apertureDicts(apertureList):
-            apertureDicts = []
-            for anAperture in apertureList:
-                apertureData = {}
-                apertureData['brep'] = Topology.BREPString(Aperture.Topology(anAperture))
-                apertureData['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(anAperture))
-                apertureDicts.append(apertureData)
-            return apertureDicts
-
-        def subTopologyDicts(dicts, selectors):
-            returnDicts = []
-            for i in range(len(dicts)):
-                data = {}
-                data['dictionary'] = dicts[i]
-                data['selector'] = selectors[i]
-                returnDicts.append(data)
-            return returnDicts
-
-        def getTopologyData(topology, version=3, tolerance=0.0001):
-            returnDict = {}
-            brep = Topology.BREPString(topology, version=version)
-            dictionary = Dictionary.PythonDictionary(Topology.Dictionary(topology))
-            returnDict['brep'] = brep
-            returnDict['dictionary'] = dictionary
-            cellApertures, cellDictionaries, cellSelectors = cellAperturesAndDictionaries(topology, tolerance=tolerance)
-            faceApertures, faceDictionaries, faceSelectors = faceAperturesAndDictionaries(topology, tolerance=tolerance)
-            edgeApertures, edgeDictionaries, edgeSelectors = edgeAperturesAndDictionaries(topology)
-            vertexApertures, vertexDictionaries, vertexSelectors = vertexAperturesAndDictionaries(topology)
-            returnDict['cellApertures'] = apertureDicts(cellApertures)
-            returnDict['faceApertures'] = apertureDicts(faceApertures)
-            returnDict['edgeApertures'] = apertureDicts(edgeApertures)
-            returnDict['vertexApertures'] = apertureDicts(vertexApertures)
-            returnDict['cellDictionaries'] = subTopologyDicts(cellDictionaries, cellSelectors)
-            returnDict['faceDictionaries'] = subTopologyDicts(faceDictionaries, faceSelectors)
-            returnDict['edgeDictionaries'] = subTopologyDicts(edgeDictionaries, edgeSelectors)
-            returnDict['vertexDictionaries'] = subTopologyDicts(vertexDictionaries, vertexSelectors)
-            return returnDict
-
-        if not isinstance(topologies,list):
-            return json.dumps(getTopologyData(topologies, version=version, tolerance=tolerance))
-        elif len(topologies) == 1:
-            return json.dumps(getTopologyData(topologies[0], version=version, tolerance=tolerance))
-        jsondata = []
-        for topology in topologies:
-            jsondata.append(getTopologyData(topology, version=version, tolerance=tolerance))
-        return json.dumps(jsondata, indent=4, sort_keys=True)
-    
-    @staticmethod
-    def ExportToJSONMK2(topologies, folderPath, fileName, version=3, overwrite=False, tolerance=0.0001):
-        """
-        Export the input list of topologies to a JSON file
-
-        Parameters
-        ----------
-        topologies : list
-            The input list of topologies.
-        folderPath : list
-            The path to the folder containing the json file and brep files.
-        fileName : str
-            The name of the JSON file.
-        version : int , optional
-            The OCCT BRep version to use. Options are 1,2,or 3. The default is 3.
-        overwrite : bool , optional
-            If set to True, any existing file will be overwritten. The default is False.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            The status of exporting the JSON file. If True, the operation was successful. Otherwise, it was unsuccesful.
-
-        """
-
-        from topologicpy.Dictionary import Dictionary
-
-        def cellAperturesAndDictionaries(topology, tolerance=0.0001):
-            if topology.Type() <= 32:
-                return [[],[],[]]
-            cells = []
-            try:
-                _ = topology.Cells(None, cells)
-            except:
-                return [[],[],[]]
-            cellApertures = []
-            cellDictionaries = []
-            cellSelectors = []
-            for aCell in cells:
-                tempApertures = []
-                _ = aCell.Apertures(tempApertures)
-                for anAperture in tempApertures:
-                    cellApertures.append(anAperture)
-                cellDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aCell))
-                if len(cellDictionary.keys()) > 0:
-                    cellDictionaries.append(cellDictionary)
-                    iv = topologic.CellUtility.InternalVertex(aCell, tolerance)
-                    cellSelectors.append([iv.X(), iv.Y(), iv.Z()])
-            return [cellApertures, cellDictionaries, cellSelectors]
-
-        def faceAperturesAndDictionaries(topology, tolerance=0.0001):
-            if topology.Type() <= 8:
-                return [[],[],[]]
-            faces = []
-            try:
-                _ = topology.Faces(None, faces)
-            except:
-                return [[],[],[]]
-            faceApertures = []
-            faceDictionaries = []
-            faceSelectors = []
-            for aFace in faces:
-                tempApertures = []
-                _ = aFace.Apertures(tempApertures)
-                for anAperture in tempApertures:
-                    faceApertures.append(anAperture)
-                faceDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aFace))
-                if len(faceDictionary.keys()) > 0:
-                    faceDictionaries.append(faceDictionary)
-                    iv = topologic.FaceUtility.InternalVertex(aFace, tolerance)
-                    faceSelectors.append([iv.X(), iv.Y(), iv.Z()])
-            return [faceApertures, faceDictionaries, faceSelectors]
-
-        def edgeAperturesAndDictionaries(topology):
-            if topology.Type() <= 2:
-                return [[],[],[]]
-            edges = []
-            try:
-                _ = topology.Edges(None, edges)
-            except:
-                return [[],[],[]]
-            edgeApertures = []
-            edgeDictionaries = []
-            edgeSelectors = []
-            for anEdge in edges:
-                tempApertures = []
-                _ = anEdge.Apertures(tempApertures)
-                for anAperture in tempApertures:
-                    edgeApertures.append(anAperture)
-                edgeDictionary = Dictionary.PythonDictionary(Topology.Dictionary(anEdge))
-                if len(edgeDictionary.keys()) > 0:
-                    edgeDictionaries.append(edgeDictionary)
-                    iv = topologic.EdgeUtility.PointAtParameter(anEdge, 0.5)
-                    edgeSelectors.append([iv.X(), iv.Y(), iv.Z()])
-            return [edgeApertures, edgeDictionaries, edgeSelectors]
-
-        def vertexAperturesAndDictionaries(topology):
-            if topology.Type() <= 1:
-                return [[],[],[]]
-            vertices = []
-            try:
-                _ = topology.Vertices(None, vertices)
-            except:
-                return [[],[],[]]
-            vertexApertures = []
-            vertexDictionaries = []
-            vertexSelectors = []
-            for aVertex in vertices:
-                tempApertures = []
-                _ = aVertex.Apertures(tempApertures)
-                for anAperture in tempApertures:
-                    vertexApertures.append(anAperture)
-                vertexDictionary = Dictionary.PythonDictionary(Topology.Dictionary(aVertex))
-                if len(vertexDictionary.keys()) > 0:
-                    vertexDictionaries.append(vertexDictionary)
-                    vertexSelectors.append([aVertex.X(), aVertex.Y(), aVertex.Z()])
-            return [vertexApertures, vertexDictionaries, vertexSelectors]
-
-
-        def apertureDicts(apertureList, brepName, folderPath, version=3):
-            apertureDicts = []
-            for index, anAperture in enumerate(apertureList):
-                apertureName = brepName+"_aperture_"+str(index+1).zfill(5)
-                breppath = os.path.join(folderPath, apertureName+".brep")
-                brepFile = open(breppath, "w")
-                brepFile.write(Topology.BREPString(anAperture, version=version))
-                brepFile.close()
-                apertureData = {}
-                apertureData['brep'] = apertureName
-                apertureData['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(anAperture))
-                apertureDicts.append(apertureData)
-            return apertureDicts
-
-        def subTopologyDicts(dicts, selectors):
-            returnDicts = []
-            for i in range(len(dicts)):
-                data = {}
-                data['dictionary'] = dicts[i]
-                data['selector'] = selectors[i]
-                returnDicts.append(data)
-            return returnDicts
-
-        def getTopologyData(topology, brepName, folderPath, version=3, tolerance=0.0001):
-            returnDict = {}
-            dictionary = Dictionary.PythonDictionary(Topology.Dictionary(topology))
-            returnDict['brep'] = brepName
-            returnDict['dictionary'] = dictionary
-            cellApertures, cellDictionaries, cellSelectors = cellAperturesAndDictionaries(topology, tolerance=tolerance)
-            faceApertures, faceDictionaries, faceSelectors = faceAperturesAndDictionaries(topology, tolerance=tolerance)
-            edgeApertures, edgeDictionaries, edgeSelectors = edgeAperturesAndDictionaries(topology)
-            vertexApertures, vertexDictionaries, vertexSelectors = vertexAperturesAndDictionaries(topology)
-            returnDict['cellApertures'] = apertureDicts(cellApertures, brepName, folderPath, version)
-            returnDict['faceApertures'] = apertureDicts(faceApertures, brepName, folderPath, version)
-            returnDict['edgeApertures'] = apertureDicts(edgeApertures, brepName, folderPath, version)
-            returnDict['vertexApertures'] = apertureDicts(vertexApertures, brepName, folderPath, version)
-            returnDict['cellDictionaries'] = subTopologyDicts(cellDictionaries, cellSelectors)
-            returnDict['faceDictionaries'] = subTopologyDicts(faceDictionaries, faceSelectors)
-            returnDict['edgeDictionaries'] = subTopologyDicts(edgeDictionaries, edgeSelectors)
-            returnDict['vertexDictionaries'] = subTopologyDicts(vertexDictionaries, vertexSelectors)
-            return returnDict
-        
-        if not (isinstance(topologies,list)):
-            topologies = [topologies]
-        # Make sure the file extension is .json
-        ext = fileName[len(fileName)-5:len(fileName)]
-        if ext.lower() != ".json":
-            fileName = fileName+".json"
-        jsonFile = None
-        jsonpath = os.path.join(folderPath, fileName)
-        try:
-            if overwrite == True:
-                jsonFile = open(jsonpath, "w")
+        def getUUID(topology, uuidKey="uuid"):
+            d = Topology.Dictionary(topology)
+            if d == None:
+                print("Dictionary is None for", topology)
+            if uuidKey not in Dictionary.Keys(d):
+                uuidOne = str(uuid.uuid1())
+                d = Dictionary.SetValueAtKey(d, uuidKey, uuidOne)
+                topology = Topology.SetDictionary(topology, d)
             else:
-                jsonFile = open(jsonpath, "x") # Try to create a new File
-        except:
-            raise Exception("Error: Could not create a new file at the following location: "+jsonpath)
-        if (jsonpath):
-            jsondata = []
-            for index, topology in enumerate(topologies):
-                brepName = "topology_"+str(index+1).zfill(5)
-                breppath = os.path.join(folderPath, brepName+".brep")
-                brepFile = open(breppath, "w")
-                brepFile.write(Topology.BREPString(topology, version=version))
-                brepFile.close()
-                jsondata.append(getTopologyData(topology, brepName, folderPath, version=version, tolerance=tolerance))
-            json.dump(jsondata, jsonFile, indent=4, sort_keys=True)
-            jsonFile.close()    
-            return True
-        return False
+                uuidOne = Dictionary.ValueAtKey(d, uuidKey)
+            return uuidOne
+
+        def getVertex(topology, uuidKey="uuid"):
+            returnDict = {}
+            uuidOne = getUUID(topology, uuidKey=uuidKey)
+            returnDict['type'] = "Vertex"
+            returnDict['uuid'] = uuidOne
+            returnDict['coordinates'] = [Vertex.X(topology), Vertex.Y(topology), Vertex.Z(topology)]
+            returnDict['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(topology))
+            return returnDict
+
+        def getEdge(topology, uuidKey="uuid"):
+            returnDict = {}
+            uuidOne = getUUID(topology, uuidKey=uuidKey)
+            returnDict['type'] = "Edge"
+            returnDict['uuid'] = uuidOne
+            returnDict['vertices'] = [getUUID(v, uuidKey=uuidKey) for v in Edge.Vertices(topology)]
+            returnDict['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(topology))
+            return returnDict
+
+        def getWire(topology, uuidKey="uuid"):
+            returnDict = {}
+            uuidOne = getUUID(topology, uuidKey="uuid")
+            returnDict['type'] = "Wire"
+            returnDict['uuid'] = uuidOne
+            returnDict['edges'] = [getUUID(e, uuidKey=uuidKey) for e in Topology.Edges(topology)]
+            returnDict['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(topology))
+            return returnDict
+
+        def getFace(topology, uuidKey="uuid"):
+            apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(topology)]
+            returnDict = {}
+            uuidOne = getUUID(topology, uuidKey=uuidKey)
+            returnDict['type'] = "Face"
+            returnDict['uuid'] = uuidOne
+            wires = []
+            external_boundary = Face.ExternalBoundary(topology)
+            wires.append(getUUID(Face.ExternalBoundary(topology), uuidKey=uuidKey))
+            internal_boundaries = [getUUID(ib, uuidKey=uuidKey) for ib in Face.InternalBoundaries(topology)]
+            wires += internal_boundaries
+            returnDict['wires'] = wires
+            dictionary = Dictionary.PythonDictionary(Topology.Dictionary(topology))
+            returnDict['dictionary'] = dictionary
+            return returnDict
+
+        def getShell(topology, uuidKey="uuid"):
+            returnDict = {}
+            uuidOne = getUUID(topology, uuidKey=uuidKey)
+            returnDict['type'] = "Shell"
+            returnDict['uuid'] = uuidOne
+            returnDict['faces'] = [getUUID(f, uuidKey=uuidKey) for f in Topology.Faces(topology)]
+            returnDict['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(topology))
+            return returnDict
+
+        def getCell(topology, uuidKey="uuid"):
+            returnDict = {}
+            uuidOne = getUUID(topology, uuidKey=uuidKey)
+            returnDict['type'] = "Cell"
+            returnDict['uuid'] = uuidOne
+            shells = []
+            external_boundary = Cell.ExternalBoundary(topology)
+            shells.append(getUUID(external_boundary, uuidKey=uuidKey))
+            internal_boundaries = [getUUID(ib, uuidKey=uuidKey) for ib in Cell.InternalBoundaries(topology)]
+            shells += internal_boundaries
+            returnDict['shells'] = shells
+            dictionary = Dictionary.PythonDictionary(Topology.Dictionary(topology))
+            returnDict['dictionary'] = dictionary
+            return returnDict
+
+        def getCellComplex(topology, uuidKey="uuid"):
+            returnDict = {}
+            uuidOne = getUUID(topology, uuidKey=uuidKey)
+            returnDict['type'] = "CellComplex"
+            returnDict['uuid'] = uuidOne
+            returnDict['cells'] = [getUUID(c, uuidKey=uuidKey) for c in Topology.Cells(topology)]
+            returnDict['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(topology))
+            return returnDict
+
+
+        def getApertureData(topology, topLevel="False", uuidKey="uuid"):
+            json_data = []
+            if isinstance(topology, topologic.Vertex):
+                d = getVertex(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.Edge):
+                d = getEdge(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.Wire):
+                d = getWire(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.Face):
+                d = getFace(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.Shell):
+                d = getShell(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.Cell):
+                d = getCell(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.CellComplex):
+                d = getCellComplex(topology, uuidKey=uuidKey)
+            d['dictionary']['toplevel'] = topLevel
+            json_data += getSubTopologyData(topology, uuidKey=uuidKey)
+            apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(topology)]
+            aperture_data = []
+            for ap in apertures:
+                aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
+            d['apertures'] = aperture_data
+            json_data.append(d)
+            return json_data
+
+        def getSubTopologyData(topology, uuidKey="uuid"):
+            json_data = []
+            vertices = Topology.Vertices(topology)
+            for v in vertices:
+                d = getVertex(v, uuidKey=uuidKey)
+                d['dictionary']['toplevel'] = False
+                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(v)]
+                aperture_data = []
+                for ap in apertures:
+                    aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
+                d['apertures'] = aperture_data
+                json_data.append(d)
+            edges = Topology.Edges(topology)
+            for e in edges:
+                d = getEdge(e, uuidKey=uuidKey)
+                d['dictionary']['toplevel'] = False
+                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(e)]
+                aperture_data = []
+                for ap in apertures:
+                    aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
+                d['apertures'] = aperture_data
+                json_data.append(d)
+            wires = Topology.Wires(topology)
+            for w in wires:
+                d = getWire(w, uuidKey=uuidKey)
+                d['dictionary']['toplevel'] = False
+                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(w)]
+                aperture_data = []
+                for ap in apertures:
+                    aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
+                d['apertures'] = aperture_data
+                json_data.append(d)
+            faces = Topology.Faces(topology)
+            for f in faces:
+                d = getFace(f, uuidKey=uuidKey)
+                d['dictionary']['toplevel'] = False
+                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(f)]
+                aperture_data = []
+                for ap in apertures:
+                    aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
+                d['apertures'] = aperture_data
+                json_data.append(d)
+            shells = Topology.Shells(topology)
+            for s in shells:
+                d = getShell(s, uuidKey=uuidKey)
+                d['dictionary']['toplevel'] = False
+                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(s)]
+                aperture_data = []
+                for ap in apertures:
+                    aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
+                d['apertures'] = aperture_data
+                json_data.append(d)
+            cells = Topology.Cells(topology)
+            for c in cells:
+                d = getCell(c, uuidKey=uuidKey)
+                d['dictionary']['toplevel'] = False
+                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(c)]
+                aperture_data = []
+                for ap in apertures:
+                    aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
+                d['apertures'] = aperture_data
+                json_data.append(d)
+            cellComplexes = Topology.CellComplexes(topology)
+            for cc in cellComplexes:
+                d = getCellComplex(cc, uuidKey=uuidKey)
+                d['dictionary']['toplevel'] = False
+                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(cc)]
+                aperture_data = []
+                for ap in apertures:
+                    aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
+                d['apertures'] = aperture_data
+                json_data.append(d)
+            return json_data
+
+        def getJSONData(topology, topLevel=False, uuidKey="uuid"):
+            json_data = []
+            if isinstance(topology, topologic.Vertex):
+                d = getVertex(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.Edge):
+                d = getEdge(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.Wire):
+                d = getWire(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.Face):
+                d = getFace(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.Shell):
+                d = getShell(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.Cell):
+                d = getCell(topology, uuidKey=uuidKey)
+            elif isinstance(topology, topologic.CellComplex):
+                d = getCellComplex(topology, uuidKey=uuidKey)
+            d['dictionary']['toplevel'] = topLevel
+            json_data += getSubTopologyData(topology, uuidKey=uuidKey)
+            apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(topology)]
+            aperture_data = []
+            for ap in apertures:
+                aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
+            d['apertures'] = aperture_data
+            json_data.append(d)
+            return json_data
+        json_data = []
+        if not isinstance(topologies, list):
+            topologies = [topologies]
+        topologies = [x for x in topologies if isinstance(x, topologic.Topology)]
+        for topology in topologies:
+            json_data += getJSONData(topology, topLevel=True, uuidKey="uuid")
+        json_string = json.dumps(json_data, indent=4, sort_keys=False)
+        return json_string
     
     @staticmethod
     def OBJString(topology, transposeAxes=True):
@@ -3656,40 +3637,39 @@ class Topology():
             A vertex guaranteed to be inside the input topology.
 
         """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
         if not isinstance(topology, topologic.Topology):
             print("Topology.InternalVertex - Error: the input topology is not a valid topology. Returning None.")
             return None
         vst = None
         classType = topology.Type()
         if classType == 64: #CellComplex
-            tempCells = []
-            _ = topology.Cells(tempCells)
-            tempCell = tempCells[0]
-            vst = topologic.CellUtility.InternalVertex(tempCell, tolerance)
+            tempCell = Topology.Cells(topology)[0]
+            vst = Cell.InternalVertex(tempCell, tolerance)
         elif classType == 32: #Cell
-            vst = topologic.CellUtility.InternalVertex(topology, tolerance)
+            vst = Cell.InternalVertex(topology, tolerance)
         elif classType == 16: #Shell
-            tempFaces = []
-            _ = topology.Faces(None, tempFaces)
-            tempFace = tempFaces[0]
-            vst = topologic.FaceUtility.InternalVertex(tempFace, tolerance)
+            tempFace = Topology.Faces(topology)[0]
+            vst = Face.InternalVertex(tempFace, tolerance)
         elif classType == 8: #Face
-            vst = topologic.FaceUtility.InternalVertex(topology, tolerance)
+            vst = Face.InternalVertex(topology, tolerance)
         elif classType == 4: #Wire
             if topology.IsClosed():
                 internalBoundaries = []
                 tempFace = topologic.Face.ByExternalInternalBoundaries(topology, internalBoundaries)
-                vst = topologic.FaceUtility.InternalVertex(tempFace, tolerance)
+                vst = Face.InternalVertex(tempFace, tolerance)
             else:
-                tempEdges = []
-                _ = topology.Edges(None, tempEdges)
-                vst = topologic.EdgeUtility.PointAtParameter(tempEdges[0], 0.5)
+                tempEdge = Topology.Edges(topology)[0]
+                vst = Edge.VertexByParameter(tempEdge, 0.5)
         elif classType == 2: #Edge
-            vst = topologic.EdgeUtility.PointAtParameter(topology, 0.5)
+            vst = Edge.VertexByParameter(topology, 0.5)
         elif classType == 1: #Vertex
             vst = topology
         else:
-            vst = topology.Centroid()
+            vst = Topology.Centroid(topology)
         return vst
 
     @staticmethod
