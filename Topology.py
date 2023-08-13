@@ -1281,26 +1281,6 @@ class Topology():
         return Topology.ByBREPFile(file)
     
     @staticmethod
-    def ByImportedBRep(path):
-        """
-        DEPRECATED. DO NOT USE. Instead use Topology.ByBREPPath or Topology.ByBREPFile
-        IMportes a topology from a BRep file path.
-
-        Parameters
-        ----------
-        path : str
-            The path to the BRep file.
-
-        Returns
-        -------
-        topologic.Topology
-            The imported topology.
-
-        """
-        print("Topology.ByImportedBRep - WARNING: This method is DEPRECATED. DO NOT USE. Instead use Topology.ByBREPPath or Topology.ByBREPFile")
-        return Topology.ByBREPPath(path=path)
-    
-    @staticmethod
     def ByIFCFile(file, transferDictionaries=False):
         """
         Create a topology by importing it from an IFC file.
@@ -1422,28 +1402,6 @@ class Topology():
             print("Topology.ByIFCPath - Error: the input file is not a valid file. Returning None.")
             return None
         return Topology.ByIFCFile(file, transferDictionaries=transferDictionaries)
-        
-    @staticmethod
-    def ByImportedIFC(path, transferDictionaries=False):
-        """
-        DEPRECATED. DO NOT USE. Instead use Topology.ByIFCPath or Topology.ByIFCFile
-        Create a topology by importing it from an IFC file path.
-
-        Parameters
-        ----------
-        path : str
-            The path to the IFC file.
-        transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won't. The default is False.
-        
-        Returns
-        -------
-        list
-            The created list of topologies.
-        
-        """
-        print("Topology.ByImportedIFC - WARNING: This method is DEPRECATED. DO NOT USE. Instead use Topology.ByIFCPath or Topology.ByIFCFile")
-        return Topology.ByIFCPath(path=path, transferDictionaries=transferDictionaries)
     
     '''
     @staticmethod
@@ -2031,30 +1989,6 @@ class Topology():
             print("Topology.ByOBJPath - Error: the OBJ file is not a valid file. Returning None.")
             return None
         return Topology.ByOBJFile(file, transposeAxes=transposeAxes, progressBar=progressBar, renderer=renderer, tolerance=tolerance)
-    
-    @staticmethod
-    def ByImportedOBJ(path, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
-        """
-        DEPRECATED. DO NOT USE. Instead use Topology.ByOBJPath or Topology.ByOBJFile
-        Imports the topology from a Weverfront OBJ file path. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
-
-        Parameters
-        ----------
-        path : str
-            The file path to the OBJ file.
-        transposeAxes : bool , optional
-            If set to True the Z and Y coordinates are transposed so that Y points "up" 
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        topology
-            The imported topology.
-
-        """
-        print("Topology.ByImportedOBJ - WARNING: This method is DEPRECATED. DO NOT USE. Instead use Topology.ByOBJPath or Topology.ByOBJFile")
-        return Topology.ByOBJPath(path, transposeAxes=transposeAxes, progressBar=progressBar, renderer=renderer, tolerance=tolerance)
 
     @staticmethod
     def ByOCCTShape(occtShape):
@@ -2073,33 +2007,6 @@ class Topology():
 
         """
         return topologic.Topology.ByOcctShape(occtShape, "")
-    
-    @staticmethod
-    def ByString(string):
-        """
-        DEPRECATED! Do not Use. Use ByBREPString instead.
-
-        Parameters
-        ----------
-        string : str
-            The input brep string.
-
-        Returns
-        -------
-        topologic.Topology
-            The created topology.
-
-        """
-        print("WARNING! Topology.ByString method is DEPRECATED. Do NOT use. Instead use Topology.ByBREPString.")
-        if not isinstance(string, str):
-            print("Topology.ByString - Error: the input string is not a valid string. Returning None.")
-            return None
-        returnTopology = None
-        try:
-            returnTopology = topologic.Topology.ByString(string)
-        except:
-            returnTopology = None
-        return returnTopology
     
     @staticmethod
     def ByBREPString(string):
@@ -2820,32 +2727,6 @@ class Topology():
             newTopology = Topology.Translate(aTopology, xT, yT, zT)
             newTopologies.append(newTopology)
         return Cluster.ByTopologies(newTopologies)
-
-    @staticmethod
-    def ExportToBRep(topology, path, overwrite=False, version=3):
-        """
-        DEPRECTATED. DO NOT USE. INSTEAD USE Topology.ExportToBREP.
-        Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html.
-
-        Parameters
-        ----------
-        topology : topologic.Topology
-            The input topology.
-        path : str
-            The input file path.
-        overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
-        version : int , optional
-            The desired version number for the BREP file. The default is 3.
-
-        Returns
-        -------
-        bool
-            True if the export operation is successful. False otherwise.
-
-        """
-        print("Topology.ExportToBRep - WARNING: This method is deprecated. Please use instead Topology.ExportToBREP.")
-        return Topology.ExportToBREP(topology=topology, path=path, overwrite=overwrite, version=version)
     
     @staticmethod
     def ExportToBREP(topology, path, overwrite=False, version=3):
@@ -5436,30 +5317,6 @@ class Topology():
         """
         if not isinstance(topology, topologic.Topology):
             print("Topology.BREPString - Error: the input topology is not a valid topology. Returning None.")
-            return None
-        return topologic.Topology.String(topology, version)
-    
-    @staticmethod
-    def String(topology, version=3):
-        """
-        DEPRECATED. Do not use. Instead use BREPString.
-
-        Parameters
-        ----------
-        topology : topologic.Topology
-            The input topology.
-        version : int , optional
-            The desired BRep version number. The default is 3.
-
-        Returns
-        -------
-        str
-            The BRep string.
-
-        """
-        print("WARNING! Topology.String is deprecated. Do not use. Instead use Topology.BREPString")
-        if not isinstance(topology, topologic.Topology):
-            print("Topology.String - Error: the input topology is not a valid topology. Returning None.")
             return None
         return topologic.Topology.String(topology, version)
     
