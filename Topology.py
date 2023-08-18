@@ -1429,7 +1429,7 @@ class Topology():
         url = '/dns/'+url+'/tcp/'+port+'/https'
         client = ipfshttpclient.connect(url)
         brepString = client.cat(hash_).decode("utf-8")
-        topology = Topology.ByString(brepString)
+        topology = Topology.ByBREPString(brepString)
         return topology
     '''
     @staticmethod
@@ -2773,7 +2773,7 @@ class Topology():
         except:
             raise Exception("Error: Could not create a new file at the following location: "+path)
         if (f):
-            s = topology.String(version)
+            s = Topology.BREPString(topology, version)
             f.write(s)
             f.close()    
             return True
@@ -2820,7 +2820,7 @@ class Topology():
             except:
                 raise Exception("Error: Could not create a new file at the following location: "+path)
             if (f):
-                topString = topology.String()
+                topString = topology.BREPString()
                 f.write(topString)
                 f.close()	
                 return True
@@ -5318,7 +5318,7 @@ class Topology():
         if not isinstance(topology, topologic.Topology):
             print("Topology.BREPString - Error: the input topology is not a valid topology. Returning None.")
             return None
-        return topologic.Topology.String(topology, version)
+        return topologic.Topology.BREPString(topology, version)
     
     @staticmethod
     def Vertices(topology):
