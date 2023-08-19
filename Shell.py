@@ -121,15 +121,18 @@ class Shell(Topology):
                         break;
                 if flag == False:
                     walls.append(w1)
+            print("Walls:", walls)
             for wall in walls:
                 skeleton = Wire.Skeleton(wall)
+                print("1. Skeleton:", skeleton, "facesCluster:", facesCluster)
                 skeleton = Topology.Difference(skeleton, facesCluster)
+                print("2. Skeleton:", skeleton, "Face.Wire(wall):", fFace.Wire(wall))
                 skeleton = Topology.Difference(skeleton, Face.Wire(wall))
+                print("3. Skeleton:", skeleton)
                 skeletons.append(skeleton)
         print("Finished all tiles")
         if len(skeletons) > 0:
             skeleton_cluster = Cluster.ByTopologies(skeletons+[internalBoundary])
-            Topology.Show(skeleton_cluster)
             skEdges = Topology.SelfMerge(Cluster.ByTopologies(removeShards(Topology.Edges(skeleton_cluster), skeleton_cluster, maximumGap=maximumGap)))
             if isinstance(skEdges, topologic.Edge):
                 skEdges = extendEdges([skEdges], skEdges, maximumGap=maximumGap)
@@ -143,7 +146,6 @@ class Shell(Topology):
         #print("ShellByDisjointFaces - Error: Could not derive central skeleton of interior walls. Returning None.")
         #return None
 
-            Topology.Show(skeleton_cluster)
             shell = Topology.Slice(internalBoundary, skeleton_cluster)
             #Topology.Show(shell)
             if mergeJunctions == True:
