@@ -296,9 +296,9 @@ class Vertex(Topology):
         return vertices
     
     @staticmethod
-    def Distance(vertex: topologic.Vertex, topology: topologic.Topology, mantissa: int = 4) -> float:
+    def Distance(vertex: topologic.Vertex, topology: topologic.Topology, includeCentroid: bool =True, mantissa: int = 4) -> float:
         """
-        Returns the distance between the input vertex and the input topology.
+        Returns the distance between the input vertex and the input topology. This method returns the distance to the closest sub-topology in the input topology, optionally including its centroid.
 
         Parameters
         ----------
@@ -306,6 +306,8 @@ class Vertex(Topology):
             The input vertex.
         topology : topologic.Topology
             The input topology.
+        includeCentroid : bool
+            If set to True, the centroid of the input topology will be considered in finding the nearest subTopology to the input vertex. The default is True.
         mantissa: int , optional
             The desired length of the mantissa. The default is 4.
 
@@ -315,9 +317,126 @@ class Vertex(Topology):
             The distance between the input vertex and the input topology.
 
         """
+        import numpy as np
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+
+        def distance_point_to_point(point1, point2):
+            # Convert input points to NumPy arrays
+            point1 = np.array(point1)
+            point2 = np.array(point2)
+            
+            # Calculate the Euclidean distance
+            distance = np.linalg.norm(point1 - point2)
+            
+            return distance
+
+        def distance_point_to_line(point, line_start, line_end):
+            # Convert input points to NumPy arrays for vector operations
+            point = np.array(point)
+            line_start = np.array(line_start)
+            line_end = np.array(line_end)
+            
+            # Calculate the direction vector of the edge
+            line_direction = line_end - line_start
+            
+            # Vector from the edge's starting point to the point
+            point_to_start = point - line_start
+            
+            # Calculate the parameter 't' where the projection of the point onto the edge occurs
+            t = np.dot(point_to_start, line_direction) / np.dot(line_direction, line_direction)
+            
+            # Check if 't' is outside the range [0, 1], and if so, calculate distance to closest endpoint
+            if t < 0:
+                return np.linalg.norm(point - line_start)
+            elif t > 1:
+                return np.linalg.norm(point - line_end)
+            
+            # Calculate the closest point on the edge to the given point
+            closest_point = line_start + t * line_direction
+            
+            # Calculate the distance between the closest point and the given point
+            distance = np.linalg.norm(point - closest_point)
+            
+            return distance
+
+        def distance_point_to_plane(point, plane_point, plane_normal):
+            # Convert input points and normal vector to NumPy arrays
+            point = np.array(point)
+            plane_point = np.array(plane_point)
+            plane_normal = np.array(plane_normal)
+            
+            # Calculate the vector from the plane point to the given point
+            point_to_plane = point - plane_point
+            
+            # Calculate the distance as the projection of the point-to-plane vector onto the plane's normal
+            distance = np.abs(np.dot(point_to_plane, plane_normal) / np.linalg.norm(plane_normal))
+            
+            return distance
+        
+        def distance_to_vertex(vertexA, vertexB):
+            a = (Vertex.X(vertexA), Vertex.Y(vertexA), Vertex.Z(vertexA))
+            b = (Vertex.X(vertexB), Vertex.Y(vertexB), Vertex.Z(vertexB))
+            return distance_point_to_point(a,b)
+        
+        def distance_to_edge(vertex, edge):
+            a = (Vertex.X(vertex), Vertex.Y(vertex), Vertex.Z(vertex))
+            sv = Edge.StartVertex(edge)
+            ev = Edge.EndVertex(edge)
+            svp = (Vertex.X(sv), Vertex.Y(sv), Vertex.Z(sv))
+            evp = (Vertex.X(ev), Vertex.Y(ev), Vertex.Z(ev))
+            return distance_point_to_line(a,svp, evp)
+        
+        def distance_to_face(vertex, face):
+            a = (Vertex.X(vertex), Vertex.Y(vertex), Vertex.Z(vertex))
+            c = Topology.Centroid(face)
+            c = (Vertex.X(c), Vertex.Y(c), Vertex.Z(c))
+            n = Face.Normal(face)
+            n = (n[0], n[1], n[2])
+            return distance_point_to_plane(a, c, n)
+        
         if not isinstance(vertex, topologic.Vertex) or not isinstance(topology, topologic.Topology):
             return None
-        return round(topologic.VertexUtility.Distance(vertex, topology), mantissa)
+        if isinstance(topology, topologic.Vertex):
+            return round(distance_to_vertex(vertex,topology), mantissa)
+        elif isinstance(topology, topologic.Edge):
+            return round(distance_to_edge(vertex,topology), mantissa)
+        elif isinstance(topology, topologic.Wire):
+            vertices = Topology.Vertices(topology)
+            distances = [distance_to_vertex(vertex, v) for v in vertices]
+            edges = Topology.Edges(topology)
+            distances += [distance_to_edge(vertex, e) for e in edges]
+            if includeCentroid:
+                distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
+            return round(min(distances), mantissa)
+        elif isinstance(topology, topologic.Face):
+            vertices = Topology.Vertices(topology)
+            distances = [distance_to_vertex(vertex, v) for v in vertices]
+            edges = Topology.Edges(topology)
+            distances += [distance_to_edge(vertex, e) for e in edges]
+            distances.append(distance_to_face(vertex,topology))
+            if includeCentroid:
+                distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
+            return round(min(distances), mantissa)
+        elif isinstance(topology, topologic.Shell) or isinstance(topology, topologic.Cell) or isinstance(topology, topologic.CellComplex) or isinstance(topology, topologic.Cluster):
+            vertices = Topology.Vertices(topology)
+            distances = [distance_to_vertex(vertex, v) for v in vertices]
+            edges = Topology.Edges(topology)
+            distances += [distance_to_edge(vertex, e) for e in edges]
+            faces = Topology.Faces(topology)
+            distances += [distance_to_face(vertex, f) for f in faces]
+            edges = Topology.Edges(topology)
+            distances += [distance_to_edge(vertex, e) for e in edges]
+            if includeCentroid:
+                distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
+            return round(min(distances), mantissa)
+        else:
+            print("Vertex.Distance - Error: Could not recognize the input topology. Returning None.")
+            return None
     
     @staticmethod
     def EnclosingCell(vertex: topologic.Vertex, topology: topologic.Topology, exclusive: bool = True, tolerance: float = 0.0001) -> list:
