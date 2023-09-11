@@ -3068,27 +3068,27 @@ class Graph:
         if ext.lower() != ".csv":
             graphsPath = graphsPath+".csv"
         
-        if not overwrite and exists(graphsPath):
-            print("DGL.ExportToCSV_GC - Error: a file already exists at the specified graphs path and overwrite is set to False. Returning None.")
-            return None
+        #if not overwrite and exists(graphsPath):
+            #print("DGL.ExportToCSV_GC - Error: a file already exists at the specified graphs path and overwrite is set to False. Returning None.")
+            #return None
         
         # Make sure the file extension is .csv
         ext = edgesPath[len(edgesPath)-4:len(edgesPath)]
         if ext.lower() != ".csv":
             edgesPath = edgesPath+".csv"
         
-        if not overwrite and exists(edgesPath):
-            print("DGL.ExportToCSV_GC - Error: a file already exists at the specified edges path and overwrite is set to False. Returning None.")
-            return None
+        #if not overwrite and exists(edgesPath):
+            #print("DGL.ExportToCSV_GC - Error: a file already exists at the specified edges path and overwrite is set to False. Returning None.")
+            #return None
         
         # Make sure the file extension is .csv
         ext = nodesPath[len(nodesPath)-4:len(nodesPath)]
         if ext.lower() != ".csv":
             nodesPath = nodesPath+".csv"
         
-        if not overwrite and exists(nodesPath):
-            print("DGL.ExportToCSV_GC - Error: a file already exists at the specified nodes path and overwrite is set to False. Returning None.")
-            return None
+        #if not overwrite and exists(nodesPath):
+            #print("DGL.ExportToCSV_GC - Error: a file already exists at the specified nodes path and overwrite is set to False. Returning None.")
+            #return None
 
         for graph_index, graph in enumerate(graphs):
             graph_label = graphLabels[graph_index]
@@ -3138,7 +3138,7 @@ class Graph:
                 for key in keys:
                     if key != nodeLabelKey and (key in node_columns):
                         value = Dictionary.ValueAtKey(d, key)
-                        if not value:
+                        if value == None:
                             value = 'None'
                         single_node_data.append(value)
                 node_data.append(single_node_data)
@@ -4234,7 +4234,7 @@ class Graph:
             for edge in edges:
                 d = Dictionary.Dictionary(edge)
                 value = Dictionary.ValueAtKey(d, edgeKey)
-                if not value or not isinstance(value, int) or not isinstance(value, float):
+                if value == None or not isinstance(value, int) or not isinstance(value, float):
                     return None
                 values.append(value)
         else:
