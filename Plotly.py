@@ -255,9 +255,9 @@ class Plotly:
             vertices = Graph.Vertices(graph)
             if vertexLabelKey or vertexGroupKey:
                 for v in vertices:
-                    Xn=[Vertex.X(v) for v in vertices] # x-coordinates of nodes
-                    Yn=[Vertex.Y(v) for v in vertices] # y-coordinates of nodes
-                    Zn=[Vertex.Z(v) for v in vertices] # x-coordinates of nodes
+                    Xn=[round(Vertex.X(v),4) for v in vertices] # x-coordinates of nodes
+                    Yn=[round(Vertex.Y(v),4) for v in vertices] # y-coordinates of nodes
+                    Zn=[round(Vertex.Z(v),4) for v in vertices] # x-coordinates of nodes
                     v_label = ""
                     v_group = ""
                     d = Topology.Dictionary(v)
@@ -282,9 +282,9 @@ class Plotly:
                     v_labels.append(v_label)
             else:
                 for v in vertices:
-                    Xn=[Vertex.X(v) for v in vertices] # x-coordinates of nodes
-                    Yn=[Vertex.Y(v) for v in vertices] # y-coordinates of nodes
-                    Zn=[Vertex.Z(v) for v in vertices] # x-coordinates of nodes
+                    Xn=[round(Vertex.X(v),4) for v in vertices] # x-coordinates of nodes
+                    Yn=[round(Vertex.Y(v),4) for v in vertices] # y-coordinates of nodes
+                    Zn=[round(Vertex.Z(v),4) for v in vertices] # x-coordinates of nodes
             if len(list(set(v_groupList))) < 2:
                 v_groupList = vertexColor
             if len(v_labels) < 1:
@@ -320,9 +320,9 @@ class Plotly:
                 for e in edges:
                     sv = Edge.StartVertex(e)
                     ev = Edge.EndVertex(e)
-                    Xe+=[Vertex.X(sv),Vertex.X(ev), None] # x-coordinates of edge ends
-                    Ye+=[Vertex.Y(sv),Vertex.Y(ev), None] # y-coordinates of edge ends
-                    Ze+=[Vertex.Z(sv),Vertex.Z(ev), None] # z-coordinates of edge ends
+                    Xe+=[round(Vertex.X(sv),4), round(Vertex.X(ev),4), None] # x-coordinates of edge ends
+                    Ye+=[round(Vertex.Y(sv),4), round(Vertex.Y(ev),4), None] # y-coordinates of edge ends
+                    Ze+=[round(Vertex.Z(sv),4), round(Vertex.Z(ev),4), None] # z-coordinates of edge ends
                     e_label = ""
                     e_group = ""
                     d = Topology.Dictionary(e)
@@ -346,9 +346,9 @@ class Plotly:
                 for e in edges:
                     sv = Edge.StartVertex(e)
                     ev = Edge.EndVertex(e)
-                    Xe+=[Vertex.X(sv),Vertex.X(ev), None] # x-coordinates of edge ends
-                    Ye+=[Vertex.Y(sv),Vertex.Y(ev), None] # y-coordinates of edge ends
-                    Ze+=[Vertex.Z(sv),Vertex.Z(ev), None] # z-coordinates of edge ends
+                    Xe+=[round(Vertex.X(sv),4), round(Vertex.X(ev),4), None] # x-coordinates of edge ends
+                    Ye+=[round(Vertex.Y(sv),4), round(Vertex.Y(ev),4), None] # y-coordinates of edge ends
+                    Ze+=[round(Vertex.Z(sv),4), round(Vertex.Z(ev),4), None] # z-coordinates of edge ends
 
             if len(list(set(e_groupList))) < 2:
                 e_groupList = edgeColor

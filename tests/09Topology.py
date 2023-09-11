@@ -235,11 +235,11 @@ assert isinstance(bbox2z, topologic.Cell), "Topology.BoundingBox. Should be topo
 
 # case 13 - ByString
 # test 1
-g1 = Topology.ByString(Topology.String(box1))
-assert isinstance(g1,topologic.Topology), "Topology.ByString. Should be topologic.Topology"
+g1 = Topology.ByBREPString(Topology.BREPString(box1))
+assert isinstance(g1,topologic.Topology), "Topology.ByBREPString. Should be topologic.Topology"
 # test 2
-g2 = Topology.ByString(Topology.String(box2))
-assert isinstance(g1,topologic.Topology), "Topology.ByString. Should be topologic.Topology"
+g2 = Topology.ByBREPString(Topology.BREPString(box2))
+assert isinstance(g1,topologic.Topology), "Topology.ByBREPString. Should be topologic.Topology"
 
 # case 14 - CenterOfMass
 # test 1
@@ -632,10 +632,10 @@ assert isinstance(topology_spin, topologic.Topology), "Topology.Spin. Should be 
 
 # Case 52 - String
 # test 1
-topology_str = Topology.String(cell_cy)
-topology_str2 = Topology.String(cell_cy3)
-assert isinstance(topology_str, str), "Topology.String. Should be string"
-assert isinstance(topology_str2, str), "Topology.String. Should be string"
+topology_str = Topology.BREPString(cell_cy)
+topology_str2 = Topology.BREPString(cell_cy3)
+assert isinstance(topology_str, str), "Topology.BREPString. Should be string"
+assert isinstance(topology_str2, str), "Topology.BREPString. Should be string"
 #print(topology_str)
 #print(topology_str2)
 
