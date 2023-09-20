@@ -1172,7 +1172,6 @@ class Face(topologic.Face):
 
         # Test the distance first
         if Vertex.Distance(vertex, face, includeCentroid=False) > tolerance:
-            print("FAR")
             return False
         
         point = (Vertex.X(vertex), Vertex.Y(vertex), Vertex.Z(vertex))
@@ -1184,7 +1183,6 @@ class Face(topologic.Face):
             inner_boundary = [(Vertex.X(v), Vertex.Y(v), Vertex.Z(v)) for v in Topology.Vertices(ib)]
             inner_boundaries.append(inner_boundary)
         status = point_inside_face(point, outer_boundary, inner_boundaries)
-        print(status)
         return status
 
     @staticmethod
