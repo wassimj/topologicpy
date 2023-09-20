@@ -664,6 +664,7 @@ class Vertex(Topology):
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
@@ -674,7 +675,7 @@ class Vertex(Topology):
             return None
 
         if isinstance(topology, topologic.Vertex):
-            return topologic.VertexUtility.Distance(vertex, topology) < tolerance
+            return Vertex.Distance(vertex, topology) < tolerance
         elif isinstance(topology, topologic.Edge):
             try:
                 parameter = topologic.EdgeUtility.ParameterAtPoint(topology, vertex)
@@ -688,7 +689,7 @@ class Vertex(Topology):
                     return True
             return False
         elif isinstance(topology, topologic.Face):
-            return topologic.FaceUtility.IsInside(topology, vertex, tolerance)
+            return Face.IsInside(topology, vertex, tolerance)
         elif isinstance(topology, topologic.Shell):
             faces = Shell.Faces(topology)
             for face in faces:
@@ -932,16 +933,16 @@ class Vertex(Topology):
             return None
         if not direction:
             direction = Vector.Reverse(Face.NormalAtParameters(face, 0.5, 0.5, "XYZ", mantissa))
-        if topologic.FaceUtility.IsInside(face, vertex, tolerance):
+        if Face.IsInside(face, vertex, tolerance):
             return vertex
-        d = topologic.VertexUtility.Distance(vertex, face)*10
-        far_vertex = topologic.TopologyUtility.Translate(vertex, direction[0]*d, direction[1]*d, direction[2]*d)
-        if topologic.VertexUtility.Distance(vertex, far_vertex) > tolerance:
+        d = Vertex.Distance(vertex, face)*10
+        far_vertex = Topology.Translate(vertex, direction[0]*d, direction[1]*d, direction[2]*d)
+        if Vertex.Distance(vertex, far_vertex) > tolerance:
             e = topologic.Edge.ByStartVertexEndVertex(vertex, far_vertex)
             pv = face.Intersect(e, False)
             if not pv:
-                far_vertex = topologic.TopologyUtility.Translate(vertex, -direction[0]*d, -direction[1]*d, -direction[2]*d)
-                if topologic.VertexUtility.Distance(vertex, far_vertex) > tolerance:
+                far_vertex = Topology.Translate(vertex, -direction[0]*d, -direction[1]*d, -direction[2]*d)
+                if Vertex.Distance(vertex, far_vertex) > tolerance:
                     e = topologic.Edge.ByStartVertexEndVertex(vertex, far_vertex)
                     pv = face.Intersect(e, False)
             return pv

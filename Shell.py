@@ -3,6 +3,8 @@ import topologicpy
 import topologic
 from topologicpy.Topology import Topology
 import math
+import sys
+import subprocess
 try:
     from tqdm.auto import tqdm
 except:
@@ -859,6 +861,7 @@ class Shell(Topology):
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
         if not isinstance(origin, topologic.Vertex):
             origin = Vertex.ByCoordinates(0,0,0)
         uOffset = float(360)/float(sides)
@@ -995,9 +998,9 @@ class Shell(Topology):
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
         zeroOrigin = topologic.Vertex.ByCoordinates(0,0,0)
-        returnTopology = topologic.TopologyUtility.Rotate(returnTopology, zeroOrigin, 0, 1, 0, theta)
-        returnTopology = topologic.TopologyUtility.Rotate(returnTopology, zeroOrigin, 0, 0, 1, phi)
-        returnTopology = topologic.TopologyUtility.Translate(returnTopology, origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset)
+        returnTopology = Topology.Rotate(returnTopology, zeroOrigin, 0, 1, 0, theta)
+        returnTopology = Topology.Rotate(returnTopology, zeroOrigin, 0, 0, 1, phi)
+        returnTopology = Topology.Translate(returnTopology, origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset)
         return returnTopology
     
     @staticmethod
@@ -1417,7 +1420,7 @@ class Shell(Topology):
                     aFace = topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(aWire, angTolerance))
                 except:
                     aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance)))
-                anArea = topologic.FaceUtility.Area(aFace)
+                anArea = Face.Area(aFace)
                 faces.append(aFace)
                 areas.append(anArea)
             max_index = areas.index(max(areas))

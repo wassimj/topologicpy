@@ -57,6 +57,9 @@ class CellComplex(topologic.CellComplex):
             The created cellcomplex.
 
         """
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
         if not cells:
             return None
         if not isinstance(cells, list):
@@ -64,23 +67,15 @@ class CellComplex(topologic.CellComplex):
         cells = [x for x in cells if isinstance(x, topologic.Cell)]
         if len(cells) < 1:
             return None
-        cellComplex = topologic.CellComplex.ByCells(cells, tolerance)
-        if not cellComplex:
-            warnings.warn("Warning: Default CellComplex.ByCells method failed. Attempting to Merge the Cells.", UserWarning)
-            result = cells[0]
-            remainder = cells[1:]
-            cluster = topologic.Cluster.ByTopologies(remainder, False)
-            result = result.Merge(cluster, False)
-            if result.Type() != 64: #64 is the type of a CellComplex
-                warnings.warn("Warning: Input Cells do not form a CellComplex", UserWarning)
-                if result.Type() > 64:
-                    returnCellComplexes = []
-                    _ = result.CellComplexes(None, returnCellComplexes)
-                    return returnCellComplexes[0]
-                else:
-                    return None
-        else:
-            return cellComplex
+        elif len(cells) == 1:
+            print("CellComplex.ByCells - Warning: Found only one cell. Returning Cell instead of CellComplex.")
+            return cells[0]        
+        cluster = Cluster.ByTopologies(cells)
+        cellComplex = Cluster.SelfMerge(cluster)
+        if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning Cluster instead of CellComplex.")
+            return cluster
+        return cellComplex
     
     @staticmethod
     def ByCellsCluster(cluster: topologic.Cluster, tolerance: float = 0.0001) -> topologic.CellComplex:

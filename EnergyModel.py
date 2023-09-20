@@ -334,8 +334,7 @@ class EnergyModel:
                     if osFaceNormal.dot(osSurface.outwardNormal()) < 1e-6:
                         osSurface.setVertices(list(reversed(osFacePoints)))
                     osSurface.setSpace(osSpace)
-                    faceCells = []
-                    _ = topologic.FaceUtility.AdjacentCells(buildingFace, building, faceCells)
+                    faceCells = Topology.AdjacentTopologies(buildingFace, building, topologyType="cell")
                     if len(faceCells) == 1: #Exterior Surfaces
                         osSurface.setOutsideBoundaryCondition("Outdoors")
                         if (math.degrees(math.acos(osSurface.outwardNormal().dot(openstudio.Vector3d(0, 0, 1)))) > 135) or (math.degrees(math.acos(osSurface.outwardNormal().dot(openstudio.Vector3d(0, 0, 1)))) < 45):

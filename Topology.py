@@ -1850,12 +1850,10 @@ class Topology():
         if not path:
             print("Topology.ByJSONPath - Error: the input path is not a valid path. Returning None.")
             return None
-        try:
-            file = open(path)
-        except:
-            print("Topology.ByJSONPath - Error: the JSON file is not a valid file. Returning None.")
-            return None
-        return Topology.ByJSONFile(file=file, tolerance=tolerance)
+        data = None
+        with open(path) as file:
+            data = Topology.ByJSONFile(file=file, tolerance=tolerance)
+        return data
 
     @staticmethod
     def ByOBJString(string, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
@@ -3996,7 +3994,7 @@ class Topology():
         try:
             newTopology = Topology.Translate(topology, x, y, z)
         except:
-            print("ERROR: (Topologic>TopologyUtility.Place) operation failed. Returning None.")
+            print("Topology.Place - ERROR: (Topologic>TopologyUtility.Place) operation failed. Returning None.")
             newTopology = None
         return newTopology
     
@@ -4550,7 +4548,7 @@ class Topology():
         return new_topology
 
     @staticmethod
-    def Rotate(topology, origin=None, x=0, y=0, z=1, degree=0):
+    def Rotate(topology, origin=None, x=0, y=0, z=1, degree=0, angTolerance=0.001):
         """
         Rotates the input topology
 
@@ -4568,6 +4566,8 @@ class Topology():
             The 'z' component of the rotation axis. The default is 0.
         degree : float , optional
             The angle of rotation in degrees. The default is 0.
+        angTolerance : float , optional
+            The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
 
         Returns
         -------
@@ -4576,13 +4576,21 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
         if not isinstance(topology, topologic.Topology):
             return None
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
             return None
-        return topologic.TopologyUtility.Rotate(topology, origin, x, y, z, degree)
+        returnTopology = topology
+        if abs(degree) >= angTolerance:
+            try:
+                returnTopology = topologic.TopologyUtility.Rotate(topology, origin, x, y, z, degree)
+            except:
+                print("Topology.Rotate - Error: (topologic.TopologyUtility.Rotate) operation failed. Returning None.")
+                return None
+        return returnTopology
     
     @staticmethod
     def Scale(topology, origin=None, x=1, y=1, z=1):
@@ -4619,7 +4627,7 @@ class Topology():
         try:
             newTopology = topologic.TopologyUtility.Scale(topology, origin, x, y, z)
         except:
-            print("ERROR: (Topologic>TopologyUtility.Scale) operation failed. Returning None.")
+            print("Topology.Scale - ERROR: (Topologic>TopologyUtility.Scale) operation failed. Returning None.")
             newTopology = None
         return newTopology
 
@@ -5227,7 +5235,9 @@ class Topology():
         topologies = []
         unit_degree = degree / float(sides)
         for i in range(sides+1):
-            topologies.append(topologic.TopologyUtility.Rotate(topology, origin, direction[0], direction[1], direction[2], unit_degree*i))
+            tempTopology = Topology.Rotate(topology, origin, direction[0], direction[1], direction[2], unit_degree*i)
+            if tempTopology:
+                topologies.append(tempTopology)
         returnTopology = None
         if topology.Type() == topologic.Vertex.Type():
             returnTopology = Wire.ByVertices(topologies, False)
@@ -5318,7 +5328,15 @@ class Topology():
         if not isinstance(topology, topologic.Topology):
             print("Topology.BREPString - Error: the input topology is not a valid topology. Returning None.")
             return None
-        return topologic.Topology.BREPString(topology, version)
+        st = None
+        try:
+            st = topologic.Topology.String(topology, version)
+        except:
+            try:
+                st = topologic.Topology.BREPString(topology, version)
+            except:
+                st = None
+        return st
     
     @staticmethod
     def Vertices(topology):

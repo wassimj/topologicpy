@@ -173,6 +173,7 @@ class Edge():
             The created edge.
 
         """
+        from topologicpy.Vertex import Vertex
         edge = None
         if not isinstance(vertexA, topologic.Vertex):
             return None
@@ -180,7 +181,7 @@ class Edge():
             return None
         if topologic.Topology.IsSame(vertexA, vertexB):
             return None
-        if topologic.VertexUtility.Distance(vertexA, vertexB) < tolerance:
+        if Vertex.Distance(vertexA, vertexB) < tolerance:
             return None
         try:
             edge = topologic.Edge.ByStartVertexEndVertex(vertexA, vertexB)

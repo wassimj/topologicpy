@@ -364,7 +364,7 @@ class Face(topologic.Face):
                     aFace = topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(aWire, angTolerance))
                 except:
                     aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance)))
-                anArea = topologic.FaceUtility.Area(aFace)
+                anArea = Face.Area(aFace)
                 faces.append(aFace)
                 areas.append(anArea)
             max_index = areas.index(max(areas))
@@ -691,7 +691,7 @@ class Face(topologic.Face):
         perimeter = 0.0
         for anEdge in edges:
             perimeter = perimeter + abs(topologic.EdgeUtility.Length(anEdge))
-        area = abs(topologic.FaceUtility.Area(face))
+        area = abs(Face.Area(face))
         compactness  = 0
         #From https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
@@ -860,6 +860,8 @@ class Face(topologic.Face):
 
         """
 
+        from topologicpy.Vertex import Vertex
+
         def leftMost(vertices, tolerance = 0.0001):
             xCoords = []
             for v in vertices:
@@ -884,7 +886,7 @@ class Face(topologic.Face):
 
         def vIndex(v, vList, tolerance):
             for i in range(len(vList)):
-                if topologic.VertexUtility.Distance(v, vList[i]) < tolerance:
+                if Vertex.Distance(v, vList[i]) < tolerance:
                     return i+1
             return None
         
@@ -1128,7 +1130,96 @@ class Face(topologic.Face):
             True if the input vertex is inside the input face. False otherwise.
 
         """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import numpy as np
 
+        def point_inside_face(point, outer_boundary, inner_boundaries):
+            def is_point_inside_polygon(p, polygon):
+                n = len(polygon)
+                inside = False
+
+                x, y, z = p
+                p1x, p1y, p1z = polygon[0]
+
+                for i in range(n + 1):
+                    p2x, p2y, p2z = polygon[i % n]
+                    if y > min(p1y, p2y):
+                        if y <= max(p1y, p2y):
+                            if x <= max(p1x, p2x):
+                                if p1y != p2y:
+                                    xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                                    if x <= xinters:
+                                        inside = not inside
+                    p1x, p1y, p1z = p2x, p2y, p2z
+
+                return inside
+
+            if is_point_inside_polygon(point, outer_boundary):
+                for inner_boundary in inner_boundaries:
+                    if is_point_inside_polygon(point, inner_boundary):
+                        return False
+
+                return True
+
+            return False
+        
+        if not isinstance(face, topologic.Face):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+
+        # Test the distance first
+        if Vertex.Distance(vertex, face, includeCentroid=False) > tolerance:
+            print("FAR")
+            return False
+        
+        point = (Vertex.X(vertex), Vertex.Y(vertex), Vertex.Z(vertex))
+        ob = Face.ExternalBoundary(face)
+        ibs = Face.InternalBoundaries(face)
+        outer_boundary = [(Vertex.X(v), Vertex.Y(v), Vertex.Z(v)) for v in Topology.Vertices(ob)]
+        inner_boundaries = []
+        for ib in ibs:
+            inner_boundary = [(Vertex.X(v), Vertex.Y(v), Vertex.Z(v)) for v in Topology.Vertices(ib)]
+            inner_boundaries.append(inner_boundary)
+        status = point_inside_face(point, outer_boundary, inner_boundaries)
+        print(status)
+        return status
+
+    @staticmethod
+    def IsInside_orig(face: topologic.Face, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is inside the input face. Returns False otherwise.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the input vertex is inside the input face. False otherwise.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not isinstance(face, topologic.Face):
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            return None
+
+        # Test the distance first
+        if Vertex.Distance(vertex, face, includeCentroid=False) > tolerance:
+            return False
+        
         # Ray tracing from https://stackoverflow.com/questions/36399381/whats-the-fastest-way-of-checking-if-a-point-is-inside-a-polygon-in-python
         def ray_tracing_method(x,y,poly):
             n = len(poly)
@@ -1157,6 +1248,9 @@ class Face(topologic.Face):
         if not isinstance(vertex, topologic.Vertex):
             return None
 
+        # Test the distance first
+        if Vertex.Distance(vertex, face, includeCentroid=False) > tolerance:
+            return False
         world_origin = Vertex.ByCoordinates(0,0,0)
         # Flatten face and vertex
         flatFace = Face.Flatten(face)

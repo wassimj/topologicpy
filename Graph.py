@@ -1538,6 +1538,7 @@ class Graph:
             return [vertices, edges]
 
         def processShell(item):
+            from topologicpy.Face import Face
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance = item
             graph = None
             edges = []
@@ -1560,8 +1561,8 @@ class Graph:
                             sharedt = Topology.SharedEdges(topFaces[i], topFaces[j])
                             if len(sharedt) > 0:
                                 if useInternalVertex == True:
-                                    v1 = topologic.FaceUtility.InternalVertex(topFaces[i], tolerance)
-                                    v2 = topologic.FaceUtility.InternalVertex(topFaces[j], tolerance)
+                                    v1 = Face.InternalVertex(topFaces[i], tolerance)
+                                    v2 = Face.InternalVertex(topFaces[j], tolerance)
                                 else:
                                     v1 = topFaces[i].CenterOfMass()
                                     v2 = topFaces[j].CenterOfMass()
@@ -1599,8 +1600,8 @@ class Graph:
                                     for ap in apList:
                                         apTopList.append(ap.Topology())
                                     if useInternalVertex == True:
-                                        v1 = topologic.FaceUtility.InternalVertex(topFaces[i], tolerance)
-                                        v2 = topologic.FaceUtility.InternalVertex(topFaces[j], tolerance)
+                                        v1 = Face.InternalVertex(topFaces[i], tolerance)
+                                        v2 = Face.InternalVertex(topFaces[j], tolerance)
                                     else:
                                         v1 = topFaces[i].CenterOfMass()
                                         v2 = topFaces[j].CenterOfMass()
@@ -1615,7 +1616,7 @@ class Graph:
             if (viaSharedTopologies == True) or (viaSharedApertures == True) or (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
                 for aFace in topFaces:
                     if useInternalVertex == True:
-                        vFace = topologic.FaceUtility.InternalVertex(aFace, tolerance)
+                        vFace = Face.InternalVertex(aFace, tolerance)
                     else:
                         vFace = aFace.CenterOfMass()
                     _ = vFace.SetDictionary(aFace.GetDictionary())
@@ -1827,13 +1828,14 @@ class Graph:
             return [vertices, edges]
 
         def processFace(item):
+            from topologic.Face import Face
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance = item
             graph = None
             vertices = []
             edges = []
 
             if useInternalVertex == True:
-                vFace = topologic.FaceUtility.InternalVertex(topology, tolerance)
+                vFace = Face.InternalVertex(topology, tolerance)
             else:
                 vFace = topology.CenterOfMass()
             d1 = topology.GetDictionary()

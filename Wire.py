@@ -504,6 +504,8 @@ class Wire(topologic.Wire):
             The created circle.
 
         """
+        from topologicpy.Topology import Topology
+
         if not origin:
             origin = topologic.Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
@@ -540,13 +542,13 @@ class Wire(topologic.Wire):
         baseWire = Wire.ByVertices(baseV[::-1], close) #reversing the list so that the normal points up in Blender
 
         if placement.lower() == "lowerleft":
-            baseWire = topologic.TopologyUtility.Translate(baseWire, radius, radius, 0)
+            baseWire = Topology.Translate(baseWire, radius, radius, 0)
         elif placement.lower() == "upperleft":
-            baseWire = topologic.TopologyUtility.Translate(baseWire, radius, -radius, 0)
+            baseWire = Topology.Translate(baseWire, radius, -radius, 0)
         elif placement.lower() == "lowerright":
-            baseWire = topologic.TopologyUtility.Translate(baseWire, -radius, radius, 0)
+            baseWire = Topology.Translate(baseWire, -radius, radius, 0)
         elif placement.lower() == "upperright":
-            baseWire = topologic.TopologyUtility.Translate(baseWire, -radius, -radius, 0)
+            baseWire = Topology.Translate(baseWire, -radius, -radius, 0)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -562,8 +564,8 @@ class Wire(topologic.Wire):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 1, 0, theta)
-        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 0, 1, phi)
+        baseWire = Topology.Rotate(baseWire, origin, 0, 1, 0, theta)
+        baseWire = Topology.Rotate(baseWire, origin, 0, 0, 1, phi)
         return baseWire
 
     @staticmethod
@@ -1012,6 +1014,8 @@ class Wire(topologic.Wire):
             8. "length" : The length
 
         """
+        from topologicpy.Topology import Topology
+
         if not origin:
             origin = topologic.Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
@@ -1086,7 +1090,7 @@ class Wire(topologic.Wire):
         ellipse = Wire.ByVertices(baseV[::-1], close) #reversing the list so that the normal points up in Blender
 
         if placement.lower() == "lowerleft":
-            ellipse = topologic.TopologyUtility.Translate(ellipse, a, b, 0)
+            ellipse = Topology.Translate(ellipse, a, b, 0)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -1102,17 +1106,17 @@ class Wire(topologic.Wire):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        ellipse = topologic.TopologyUtility.Rotate(ellipse, origin, 0, 1, 0, theta)
-        ellipse = topologic.TopologyUtility.Rotate(ellipse, origin, 0, 0, 1, phi)
+        ellipse = Topology.Rotate(ellipse, origin, 0, 1, 0, theta)
+        ellipse = Topology.Rotate(ellipse, origin, 0, 0, 1, phi)
 
         # Create a Cluster of the two foci
         v1 = topologic.Vertex.ByCoordinates(c+origin.X(), 0+origin.Y(),0)
         v2 = topologic.Vertex.ByCoordinates(-c+origin.X(), 0+origin.Y(),0)
         foci = topologic.Cluster.ByTopologies([v1, v2])
         if placement.lower() == "lowerleft":
-            foci = topologic.TopologyUtility.Translate(foci, a, b, 0)
-        foci = topologic.TopologyUtility.Rotate(foci, origin, 0, 1, 0, theta)
-        foci = topologic.TopologyUtility.Rotate(foci, origin, 0, 0, 1, phi)
+            foci = Topology.Translate(foci, a, b, 0)
+        foci = Topology.Rotate(foci, origin, 0, 1, 0, theta)
+        foci = Topology.Rotate(foci, origin, 0, 0, 1, phi)
         d = {}
         d['ellipse'] = ellipse
         d['foci'] = foci
@@ -1417,7 +1421,8 @@ class Wire(topologic.Wire):
             A list of faces representing the isovist projection from the input viewpoint.
 
         """
-        
+        from topologicpy.Topology import Topology
+
         def vertexPartofFace(vertex, face, tolerance):
             vertices = []
             _ = face.Vertices(None, vertices)
@@ -1450,7 +1455,7 @@ class Wire(topologic.Wire):
             d = topologic.VertexUtility.Distance(viewPoint, aVertex)
             if d > tolerance:
                 scaleFactor = maxDistance/d
-                newV = topologic.TopologyUtility.Scale(aVertex, viewPoint, scaleFactor, scaleFactor, scaleFactor)
+                newV = Topology.Scale(aVertex, viewPoint, scaleFactor, scaleFactor, scaleFactor)
                 try:
                     ray = topologic.Edge.ByStartVertexEndVertex(viewPoint, newV)
                     topologyC = ray.Intersect(wire, False)
@@ -2122,7 +2127,9 @@ class Wire(topologic.Wire):
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
         import math
+
         if not origin:
             origin = topologic.Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
@@ -2192,15 +2199,15 @@ class Wire(topologic.Wire):
         radius = radiusA + radiusB*turns*0.5
         baseWire = Wire.ByVertices(vertices, close=False)
         if placement.lower() == "center":
-            baseWire = topologic.TopologyUtility.Translate(baseWire, 0, 0, -height*0.5)
+            baseWire = Topology.Translate(baseWire, 0, 0, -height*0.5)
         if placement.lower() == "lowerleft":
-            baseWire = topologic.TopologyUtility.Translate(baseWire, -minX, -minY, 0)
+            baseWire = Topology.Translate(baseWire, -minX, -minY, 0)
         elif placement.lower() == "upperleft":
-            baseWire = topologic.TopologyUtility.Translate(baseWire, -minX, -maxY, 0)
+            baseWire = Topology.Translate(baseWire, -minX, -maxY, 0)
         elif placement.lower() == "lowerright":
-            baseWire = topologic.TopologyUtility.Translate(baseWire, -maxX, -minY, 0)
+            baseWire = Topology.Translate(baseWire, -maxX, -minY, 0)
         elif placement.lower() == "upperright":
-            baseWire = topologic.TopologyUtility.Translate(baseWire, -maxX, -maxY, 0)
+            baseWire = Topology.Translate(baseWire, -maxX, -maxY, 0)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -2216,8 +2223,8 @@ class Wire(topologic.Wire):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 1, 0, theta)
-        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 0, 1, phi)
+        baseWire = Topology.Rotate(baseWire, origin, 0, 1, 0, theta)
+        baseWire = Topology.Rotate(baseWire, origin, 0, 0, 1, phi)
         return baseWire
 
     @staticmethod
@@ -2352,6 +2359,7 @@ class Wire(topologic.Wire):
             The created star.
 
         """
+        from topologicpy.Topology import Topology
 
         if not origin:
             origin = topologic.Vertex.ByCoordinates(0,0,0)
@@ -2428,8 +2436,8 @@ class Wire(topologic.Wire):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Y-Axis
-        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 1, 0, theta)
-        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 0, 1, phi)
+        baseWire = Topology.Rotate(baseWire, origin, 0, 1, 0, theta)
+        baseWire = Topology.Rotate(baseWire, origin, 0, 0, 1, phi)
         return baseWire
 
     @staticmethod
@@ -2464,6 +2472,8 @@ class Wire(topologic.Wire):
             The created trapezoid.
 
         """
+        from topologicpy.Topology import Topology
+
         if not origin:
             origin = topologic.Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
@@ -2514,8 +2524,8 @@ class Wire(topologic.Wire):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 1, 0, theta)
-        baseWire = topologic.TopologyUtility.Rotate(baseWire, origin, 0, 0, 1, phi)
+        baseWire = Topology.Rotate(baseWire, origin, 0, 1, 0, theta)
+        baseWire = Topology.Rotate(baseWire, origin, 0, 0, 1, phi)
         return baseWire
 
     @staticmethod

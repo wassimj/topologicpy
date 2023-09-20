@@ -453,11 +453,12 @@ class Cell(Topology):
             The compactness of the input cell.
 
         """
+        from topologicpy.Face import Face
         faces = []
         _ = cell.Faces(None, faces)
         area = 0.0
         for aFace in faces:
-            area = area + abs(topologic.FaceUtility.Area(aFace))
+            area = area + abs(Face.Area(aFace))
         volume = abs(topologic.CellUtility.Volume(cell))
         compactness  = 0
         #From https://en.wikipedia.org/wiki/Sphericity
