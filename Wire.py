@@ -735,10 +735,10 @@ class Wire(topologic.Wire):
             The list of circuits (closed wires) found within the input wire.
 
         """
-        
+        from topologicpy.Vertex import Vertex
         def vIndex(v, vList, tolerance):
             for i in range(len(vList)):
-                if topologic.VertexUtility.Distance(v, vList[i]) < tolerance:
+                if Vertex.Distance(v, vList[i]) < tolerance:
                     return i+1
             return None
         

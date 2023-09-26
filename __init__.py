@@ -2,11 +2,13 @@ import sys
 import os, re
 from sys import platform
 
-__version__ = '0.4.40'
+__version__ = '0.4.41'
 __version_info__ = tuple([ int(num) for num in __version__.split('.')])
 
 if platform == 'win32':
     os_name = 'windows'
+elif platform == "darwin":
+    os_name = 'macos'
 else:
     os_name = 'linux'
 

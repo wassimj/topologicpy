@@ -1166,6 +1166,9 @@ class Topology():
         topVerts = []
         topEdges = []
         topFaces = []
+        vertices = [v for v in vertices if not v == []]
+        edges = [e for e in edges if not e == []]
+        faces = [f for f in faces if not f == []]
         if len(vertices) > 0:
             for aVertex in vertices:
                 v = Vertex.ByCoordinates(aVertex[0], aVertex[1], aVertex[2])
@@ -2881,7 +2884,164 @@ class Topology():
                 return False
         return False
 
+    @staticmethod
+    def Fix(topology, topologyType="CellComplex"):
+        """
+        Attempts to fix the input topology to matched the desired output type.
 
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology
+        topologyType : str , optional
+            The desired output topology type. This must be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. The default is "CellComplex"
+        
+        Returns
+        -------
+        topologic.Topology
+            The output topology in the desired type.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
+
+        topology = Cluster.ByTopologies([topology])
+        a_type = Topology.TypeAsString(topology).lower()
+        b_type = topologyType.lower()
+        if b_type not in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster"]:
+            print("Topology.Fix - Error: Desired topologyType is not recognized. Returning original topology.")
+            return topology
+        if a_type == b_type:
+            return topology
+        if b_type == "cluster":
+            topology = Topology.SelfMerge(topology)
+            return Cluster.ByTopologies([topology])
+        if b_type == "cellcomplex":
+            topology = Topology.SelfMerge(topology)
+            if Topology.TypeAsString(topology).lower() == "cellcomplex":
+                return topology
+            cells = Topology.Cells(topology)
+            if len(cells) < 2:
+                print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                return topology
+            return_topology = CellComplex.ByCells(cells)
+            if return_topology == None:
+                print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                return topology
+            if Topology.TypeAsString(topology).lower() == "cellcomplex":
+                return return_topology
+            faces = Topology.Faces(topology)
+            if len(faces) < 3:
+                print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                return topology
+            return_topology = CellComplex.ByFaces(faces)
+            if return_topology == None:
+                print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                return topology
+            if Topology.TypeAsString(return_topology).lower() == "cellcomplex":
+                return return_topology
+            print("6 Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+            return topology
+        if b_type == "cell":
+            topology = Topology.SelfMerge(topology)
+            if Topology.TypeAsString(topology).lower() == "cell":
+                return topology
+            if Topology.TypeAsString(topology).lower() == "cellComplex":
+                return Cell.Complex.ExternalBoundary(topology)
+            faces = Topology.Faces(topology)
+            if len(faces) < 3:
+                print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                return topology
+            return_topology = Cell.ByFaces(faces)
+            if return_topology == None:
+                return_topology = CellComplex.ByFaces(faces)
+                print("Return Topology:", return_topology)
+                if return_topology == None:
+                    print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                    return topology
+                elif len(Topology.Cells(return_topology)) < 1:
+                    print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                    return topology
+                return_topology = CellComplex.ExternalBoundary(return_topology)
+            if return_topology == None:
+                print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                return topology
+            if Topology.TypeAsString(return_topology).lower() == "cell":
+                return return_topology
+            print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+            return topology
+        if b_type == "shell":
+            topology = Topology.SelfMerge(topology)
+            if Topology.TypeAsString(topology).lower() == "shell":
+                return topology
+            faces = Topology.Faces(topology)
+            if len(faces) < 2:
+                print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                return topology
+            return_topology = Shell.ByFaces(faces)
+            if Topology.TypeAsString(return_topology).lower() == "shell":
+                return return_topology
+            print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+            return topology
+        if b_type == "face":
+            topology = Topology.SelfMerge(topology)
+            if Topology.TypeAsString(topology).lower() == "face":
+                return topology
+            wires = Topology.Wires(topology)
+            if len(wires) < 1:
+                print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                return topology
+            return_topology = Face.ByWire(wires[0])
+            if Topology.TypeAsString(return_topology).lower() == "face":
+                return return_topology
+            print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+            return topology
+        if b_type == "wire":
+            topology = Topology.SelfMerge(topology)
+            if Topology.TypeAsString(topology).lower() == "wire":
+                return topology
+            edges = Topology.Edges(topology)
+            if len(edges) < 2:
+                print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                return topology
+            return_topology = Wire.ByEdges(edges)
+            if Topology.TypeAsString(return_topology).lower() == "wire":
+                return return_topology
+            print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+            return topology
+        if b_type == "edge":
+            topology = Topology.SelfMerge(topology)
+            if Topology.TypeAsString(topology).lower() == "edge":
+                return topology
+            vertices = Topology.Vertices(topology)
+            if len(vertices) < 2:
+                print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                return topology
+            return_topology = Edge.ByVertices(vertices)
+            if Topology.TypeAsString(return_topology).lower() == "edge":
+                return return_topology
+            print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+            return topology
+        if b_type == "vertex":
+            topology = Topology.SelfMerge(topology)
+            if Topology.TypeAsString(topology).lower() == "vertex":
+                return topology
+            vertices = Topology.Vertices(topology)
+            if len(vertices) < 1:
+                print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+                return topology
+            return_topology = vertices[0]
+            if Topology.TypeAsString(return_topology).lower() == "vertex":
+                return return_topology
+            print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+            return topology
+        return topology
 
     @staticmethod
     def JSONString(topologies):
@@ -4537,13 +4697,12 @@ class Topology():
         g_edges = geom['edges']
         g_faces = geom['faces']
         verts = [Topology.Vertices(Topology.ByGeometry(vertices=[g_v]))[0] for g_v in g_verts]
+        new_verts = [v for v in verts]
         for i, v in enumerate(verticesA):
             n = Vertex.Index(v, verts, tolerance=tolerance)
             if not n == None:
-                verts[n] = verticesB[i]
-        new_g_verts = []
-        for v in verts:
-            new_g_verts.append([Vertex.X(v),Vertex.Y(v),Vertex.Z(v)])
+                new_verts[n] = verticesB[i]
+        new_g_verts = [[Vertex.X(v),Vertex.Y(v),Vertex.Z(v)] for v in new_verts]
         new_topology = Topology.ByGeometry(vertices=new_g_verts, edges=g_edges, faces=g_faces)
         return new_topology
 
