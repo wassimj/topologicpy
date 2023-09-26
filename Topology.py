@@ -1198,7 +1198,7 @@ class Topology():
                 topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]])
                 topEdges.append(topEdge)
             if len(topEdges) > 0:
-                returnTopology = topologyByEdges(topEdges)
+                returnTopology = topologyByEdges(topEdges, outputMode=outputMode)
         else:
             returnTopology = Cluster.ByTopologies(topVerts)
         if returnTopology:
