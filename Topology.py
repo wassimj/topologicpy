@@ -1067,6 +1067,37 @@ class Topology():
         return box
 
     @staticmethod
+    def BREPString(topology, version=3):
+        """
+        Returns the BRep string of the input topology.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        version : int , optional
+            The desired BRep version number. The default is 3.
+
+        Returns
+        -------
+        str
+            The BREP string.
+
+        """
+        if not isinstance(topology, topologic.Topology):
+            print("Topology.BREPString - Error: the input topology is not a valid topology. Returning None.")
+            return None
+        st = None
+        try:
+            st = topologic.Topology.String(topology, version)
+        except:
+            try:
+                st = topologic.Topology.BREPString(topology, version)
+            except:
+                st = None
+        return st
+    
+    @staticmethod
     def ByGeometry(vertices=[], edges=[], faces=[], color=[1.0,1.0,1.0,1.0], id=None, name=None, lengthUnit="METERS", outputMode="default", tolerance=0.0001):
         """
         Create a topology by the input lists of vertices, edges, and faces.
@@ -1131,7 +1162,7 @@ class Topology():
                 return edges[0]
             output = Cluster.ByTopologies(edges)
             if outputMode.lower() == "wire":
-                output = Cluster.SelfMerge(output)
+                output = Topology.SelfMerge(output)
                 if isinstance(output, topologic.Wire):
                     return output
                 else:
@@ -2326,7 +2357,7 @@ class Topology():
             if len(aCategory) > 0:
                 for index in aCategory:
                     tempList.append(faces[index])
-                returnList.append(Cluster.SelfMerge(Cluster.ByTopologies(tempList)))
+                returnList.append(Topology.SelfMerge(Cluster.ByTopologies(tempList)))
         return returnList
 
     @staticmethod
@@ -2445,7 +2476,7 @@ class Topology():
                 c = Cell.ByFaces(faces, tolerance=tolerance)
                 return c
             except:
-                returnTopology = Cluster.SelfMerge(Cluster.ByTopologies(faces))
+                returnTopology = Topology.SelfMerge(Cluster.ByTopologies(faces))
                 if returnTopology.Type() == 16:
                     return Shell.ExternalBoundary(returnTopology)
         if not isinstance(topology, topologic.Topology):
@@ -3482,7 +3513,6 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
         if not isinstance(topology, topologic.Topology):
             print("Topology.Flatten - Error: the input topology is not a valid topology. Returning None.")
             return None
@@ -3628,12 +3658,6 @@ class Topology():
                         fVertexIndex = len(vertices)-1
                     f.append(fVertexIndex)
                 faces.append(f)
-        if len(vertices) == 0:
-            vertices = [[]]
-        if len(edges) == 0:
-            edges = [[]]
-        if len(faces) == 0:
-            faces = [[]]
         return {"vertices":vertices, "edges":edges, "faces":faces}
 
     @staticmethod
@@ -4373,7 +4397,6 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
         if not isinstance(topology, topologic.Topology):
             return None
         t = topology.Type()
@@ -4382,7 +4405,7 @@ class Topology():
         clusters = Topology.ClusterFaces(topology, tolerance=tolerance)
         faces = []
         for aCluster in clusters:
-            aCluster = Cluster.SelfMerge(aCluster)
+            aCluster = Topology.SelfMerge(aCluster)
             if isinstance(aCluster, topologic.Shell):
                 shells = [aCluster]
             else:
@@ -4735,7 +4758,6 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
         if not isinstance(topology, topologic.Topology):
             return None
         if not origin:
@@ -4849,8 +4871,10 @@ class Topology():
             The self-merged topology.
 
         """
+        from topologicpy.Cluster import Cluster
+
         if topology.Type() != 128:
-            topology = topologic.Cluster.ByTopologies([topology])
+            topology = Cluster.ByTopologies([topology])
         resultingTopologies = []
         topCC = []
         _ = topology.CellComplexes(None, topCC)
@@ -4907,9 +4931,14 @@ class Topology():
             resultingTopologies.append(vertex)
         if len(resultingTopologies) == 1:
             return resultingTopologies[0]
-        return topology.SelfMerge()
+        return_topology = topology.SelfMerge()
+        if isinstance(return_topology, topologic.CellComplex):
+            cells = Topology.Cells(return_topology)
+            topA = cells[0]
+            topB = Cluster.ByTopologies(cells[1:])
+            return_topology = Topology.Merge(topA, topB)
+        return return_topology
 
-    
     @staticmethod
     def SetDictionary(topology, dictionary):
         """
@@ -5465,37 +5494,108 @@ class Topology():
             except:
                 pass
         return returnTopology
-
+    
     @staticmethod
-    def BREPString(topology, version=3):
+    def Taper(topology, origin=None, ratioRange=[0,1], triangulate=False, tolerance=0.0001):
         """
-        Returns the BRep string of the input topology.
+        Tapers the input topology. This method tapers the input geometry along its Z-axis based on the ratio range input.
 
         Parameters
         ----------
         topology : topologic.Topology
             The input topology.
-        version : int , optional
-            The desired BRep version number. The default is 3.
+        origin : topologic.Vertex , optional
+            The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. The default is None.
+        ratioRange : list , optional
+            The desired ratio range. This will specify a linear range from bottom to top for tapering the vertices. 0 means no tapering, and 1 means maximum (inward) tapering. Negative numbers mean that tapering will be outwards.
+        triangulate : bool , optional
+            If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. The default is False.
+        tolerance : float , optional
+            The desired tolerance. Vertices will not be moved if the calculated distance is at or less than this tolerance.
 
         Returns
         -------
-        str
-            The BREP string.
+        topologic.Topology
+            The tapered topology.
 
         """
-        if not isinstance(topology, topologic.Topology):
-            print("Topology.BREPString - Error: the input topology is not a valid topology. Returning None.")
-            return None
-        st = None
-        try:
-            st = topologic.Topology.String(topology, version)
-        except:
-            try:
-                st = topologic.Topology.BREPString(topology, version)
-            except:
-                st = None
-        return st
+        from topologicpy.Vertex import Vertex
+        ratioRange = [min(1,ratioRange[0]), min(1,ratioRange[1])]
+        if ratioRange == [0,0]:
+            return topology
+        if ratioRange == [1,1]:
+            print("Topology.Taper - Error: Degenerate result. Returning original topology.")
+            return topology
+        if triangulate == True:
+            topology = Topology.Triangulate(topology)
+        if origin == None:
+            origin = Topology.Centroid(topology)
+        vertices = Topology.Vertices(topology)
+        zList = [Vertex.Z(v) for v in vertices]
+        minZ = min(zList)
+        maxZ = max(zList)
+        new_vertices = []
+        for v in vertices:
+            ht = (Vertex.Z(v)-minZ)/(maxZ - minZ)
+            rt = ratioRange[0] + ht*(ratioRange[1] - ratioRange[0])
+            new_origin = Vertex.ByCoordinates(Vertex.X(origin), Vertex.Y(origin), Vertex.Z(v))
+            new_dist = Vertex.Distance(new_origin, v)*rt
+            c_a = Vertex.Coordinates(new_origin)
+            c_b = Vertex.Coordinates(v)
+            new_dir = [(c_a[0]-c_b[0]), (c_a[1]-c_b[1]), 0]
+            if abs(new_dist) > tolerance:
+                new_v = Topology.TranslateByDirectionDistance(v, direction=new_dir, distance=new_dist)
+            else:
+                new_v = v
+            new_vertices.append(new_v)
+        return_topology = Topology.ReplaceVertices(topology, vertices, new_vertices)
+        return return_topology
+    
+    @staticmethod
+    def Twist(topology, origin=None, degreeRange=[45,90], triangulate=False):
+        """
+        Twists the input topology. This method twists the input geometry along its Z-axis based on the degree range input.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        origin : topologic.Vertex , optional
+            The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. The default is None.
+        degreeRange : list , optional
+            The desired angle range in degrees. This will specify a linear range from bottom to top for twisting the vertices. positive numbers mean a clockwise rotation.
+        triangulate : bool , optional
+            If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. The default is False.
+        
+        Returns
+        -------
+        topologic.Topology
+            The twisted topology.
+
+        """
+        from topologicpy.Vertex import Vertex
+
+        if degreeRange == [0,0]:
+            return topology
+        if triangulate == True:
+            topology = Topology.Triangulate(topology)
+        if origin == None:
+            origin = Topology.Centroid(topology)
+            
+        vertices = Topology.Vertices(topology)
+        zList = [Vertex.Z(v) for v in vertices]
+        minZ = min(zList)
+        maxZ = max(zList)
+        h = maxZ - minZ
+        new_vertices = []
+        for v in vertices:
+            ht = (Vertex.Z(v)-minZ)/(maxZ - minZ)
+            new_rot = degreeRange[0] + ht*(degreeRange[1] - degreeRange[0])
+            orig = Vertex.ByCoordinates(Vertex.X(origin), Vertex.Y(origin), Vertex.Z(v))
+            new_vertices.append(Topology.Rotate(v, origin=orig, degree=new_rot))
+        return_topology = Topology.ReplaceVertices(topology, vertices, new_vertices)
+        return_topology = Topology.Fix(return_topology, topologyType=Topology.TypeAsString(topology))
+        return return_topology
     
     @staticmethod
     def Vertices(topology):
@@ -6065,7 +6165,6 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
         if not isinstance(topology, topologic.Topology):

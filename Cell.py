@@ -194,7 +194,7 @@ class Cell(Topology):
             topEdge = Topology.Translate(bottomEdge, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
             sideEdge1 = Edge.ByVertices([bottomEdge.StartVertex(), topEdge.StartVertex()])
             sideEdge2 = Edge.ByVertices([bottomEdge.EndVertex(), topEdge.EndVertex()])
-            cellWire = Cluster.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
+            cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
             cellFaces.append(Face.ByWire(cellWire))
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
 
@@ -248,7 +248,7 @@ class Cell(Topology):
             topEdge = Topology.Translate(bottomEdge, direction[0]*thickness, direction[1]*thickness, direction[2]*thickness)
             sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)])
             sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)])
-            cellWire = Cluster.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
+            cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
             cellFace = Face.ByWire(cellWire)
             cellFaces.append(cellFace)
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)

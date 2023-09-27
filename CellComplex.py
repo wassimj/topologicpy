@@ -59,7 +59,7 @@ class CellComplex(topologic.CellComplex):
         """
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-
+        print("Entered CellComplex.ByCells")
         if not cells:
             return None
         if not isinstance(cells, list):
@@ -69,12 +69,17 @@ class CellComplex(topologic.CellComplex):
             return None
         elif len(cells) == 1:
             print("CellComplex.ByCells - Warning: Found only one cell. Returning Cell instead of CellComplex.")
-            return cells[0]        
-        cluster = Cluster.ByTopologies(cells)
-        cellComplex = Cluster.SelfMerge(cluster)
-        if not isinstance(cellComplex, topologic.CellComplex):
-            print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning Cluster instead of CellComplex.")
-            return cluster
+            return cells[0]
+        cellComplex = None
+        try:
+            cellComplex = topologic.CellComplex.ByCells(cells)
+        except:
+            topA = cells[0]
+            topB = Cluster.ByTopologies(cells[1:])
+            cellComplex = Topology.Merge(topA, topB)
+            if not isinstance(cellComplex, topologic.CellComplex):
+                print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning Cluster instead of CellComplex.")
+                cellComplex = Cluster.ByTopologies(cells)
         return cellComplex
     
     @staticmethod

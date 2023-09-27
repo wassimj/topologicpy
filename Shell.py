@@ -1020,6 +1020,7 @@ class Shell(Topology):
 
         """
         from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
         edges = []
         _ = shell.Edges(None, edges)
         ibEdges = []
@@ -1028,7 +1029,7 @@ class Shell(Topology):
             _ = anEdge.Faces(shell, faces)
             if len(faces) > 1:
                 ibEdges.append(anEdge)
-        return Cluster.SelfMerge(Cluster.ByTopologies(ibEdges))
+        return Topology.SelfMerge(Cluster.ByTopologies(ibEdges))
     
     @staticmethod
     def IsClosed(shell: topologic.Shell) -> bool:

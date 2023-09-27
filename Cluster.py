@@ -702,7 +702,26 @@ class Cluster(topologic.Cluster):
         for comb in combs:
             edges.append(Edge.ByVertices([vertices[comb[0]], vertices[comb[1]]]))
         return Cluster.ByTopologies(edges)
+    
+    @staticmethod
+    def SelfMerge(topology):
+        """
+        Self merges the input topology to return the most logical topology type given the input data.
 
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+
+        Returns
+        -------
+        topologic.Topology
+            The self-merged topology.
+
+        """
+        from topologicpy.Topology import Topology
+        return Topology.SelfMerge(topology)
+    
     @staticmethod
     def Shells(cluster: topologic.Cluster) -> list:
         """

@@ -1282,7 +1282,7 @@ class Face(topologic.Face):
         if externalVertices:
             theVertices = theVertices+extVertices
 
-        tempWire = Cluster.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
+        tempWire = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
         if isinstance(tempWire, topologic.Wire) and angTolerance > 0:
             tempWire = Topology.RemoveCollinearEdges(tempWire, angTolerance=angTolerance)
         medialAxisEdges = Wire.Edges(tempWire)
@@ -1296,7 +1296,7 @@ class Face(topologic.Face):
                         medialAxisEdges.append(Edge.ByVertices([nv, v]))
                 else:
                     medialAxisEdges.append(Edge.ByVertices([nv, v]))
-        medialAxis = Cluster.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
+        medialAxis = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
         if isinstance(medialAxis, topologic.Wire) and angTolerance > 0:
             medialAxis = Topology.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance)
         medialAxis = Topology.Rotate(medialAxis, origin=world_origin, x=0, y=1, z=0, degree=theta)

@@ -226,10 +226,10 @@ class Wire(topologic.Wire):
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
-        from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        from topologicpy.Vector import Vector
+
         from random import randrange, sample
 
         if not isinstance(wire, topologic.Wire):
@@ -374,7 +374,7 @@ class Wire(topologic.Wire):
                                         miterEdge = Edge.SetLength(miterEdge, Edge.Length(miterEdge)*1.02)
                                         miterEdges.append(miterEdge)
 
-            c = Cluster.SelfMerge(Cluster.ByTopologies(newEdges+miterEdges))
+            c = Topology.SelfMerge(Cluster.ByTopologies(newEdges+miterEdges))
             vertices = Wire.Vertices(c)
             subtractEdges = []
             for v in vertices:
@@ -418,6 +418,7 @@ class Wire(topologic.Wire):
 
         """
         from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
         if not isinstance(vertices, list):
             return None
         vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
@@ -446,7 +447,7 @@ class Wire(topologic.Wire):
             return None
         #return Wire.ByEdges(edges)
         c = Cluster.ByTopologies(edges)
-        return Cluster.SelfMerge(c)
+        return Topology.SelfMerge(c)
 
     @staticmethod
     def ByVerticesCluster(cluster: topologic.Cluster, close: bool = True) -> topologic.Wire:

@@ -3996,7 +3996,7 @@ class Graph:
         new_edges = []
         for edge in Topology.Edges(temp_path):
             new_edges.append(g_edges[Edge.Index(edge, g_edges)])
-        longest_path = Cluster.SelfMerge(Cluster.ByTopologies(new_edges))
+        longest_path = Topology.SelfMerge(Cluster.ByTopologies(new_edges))
         if not costKey == None:
             lengths.sort()
             d = Dictionary.ByKeysValues([costKey], [cost])
@@ -5189,6 +5189,6 @@ class Graph:
                                     for tempEdge in tempEdges:
                                         edges = addEdge(tempEdge, edges, viewpointsA, viewpointsB, 0.0001)
         cluster = Cluster.ByTopologies(viewpointsA+viewpointsB)
-        cluster = Cluster.SelfMerge(cluster)
+        cluster = Topology.SelfMerge(cluster)
         viewpoints = Cluster.Vertices(cluster)
         return Graph.ByVerticesEdges(viewpoints, edges)
