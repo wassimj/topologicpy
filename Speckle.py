@@ -21,8 +21,10 @@ class Speckle:
         geom = Topology.Geometry(topology)
         vertices = geom['vertices']
         faces = geom['faces']
-        m_verts: List[float] = []
-        m_faces: List[int] = []
+        #m_verts: List[float] = []
+        #m_faces: List[int] = []
+        m_verts = []
+        m_faces = []
 
         for v in vertices:
             m_verts.append(v[0])

@@ -714,7 +714,7 @@ class Shell(Topology):
             Returns True if the input vertex is inside the input shell. Returns False otherwise.
 
         """
-
+        from topologicpy.Wire import Wire
         if not isinstance(shell, topologic.Shell):
             return None
         if not isinstance(vertex, topologic.Vertex):
