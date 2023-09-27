@@ -128,7 +128,7 @@ class Shell(Topology):
                 skeleton = Wire.Skeleton(wall)
                 print("1. Skeleton:", skeleton, "facesCluster:", facesCluster)
                 skeleton = Topology.Difference(skeleton, facesCluster)
-                print("2. Skeleton:", skeleton, "Face.Wire(wall):", fFace.Wire(wall))
+                print("2. Skeleton:", skeleton, "Face.Wire(wall):", Face.Wire(wall))
                 skeleton = Topology.Difference(skeleton, Face.Wire(wall))
                 print("3. Skeleton:", skeleton)
                 skeletons.append(skeleton)

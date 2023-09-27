@@ -2063,6 +2063,7 @@ class Topology():
         try:
             returnTopology = topologic.Topology.ByString(string)
         except:
+            print("Topology.ByBREPString - Error: the input string is not a valid string. Returning None.")
             returnTopology = None
         return returnTopology
     
