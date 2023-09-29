@@ -5888,7 +5888,7 @@ class Topology():
             print("ERROR: (Topologic>Topology.SymmetricDifference) operation failed. Returning None.")
             topologyC = None
         return topologyC
-    
+
     @staticmethod
     def TransferDictionaries(sources, sinks, tolerance=0.0001):
         """

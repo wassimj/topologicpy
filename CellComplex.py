@@ -59,7 +59,6 @@ class CellComplex(topologic.CellComplex):
         """
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        print("Entered CellComplex.ByCells")
         if not cells:
             return None
         if not isinstance(cells, list):

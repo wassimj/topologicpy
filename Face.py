@@ -1133,37 +1133,6 @@ class Face(topologic.Face):
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        import numpy as np
-
-        def point_inside_face(point, outer_boundary, inner_boundaries):
-            def is_point_inside_polygon(p, polygon):
-                n = len(polygon)
-                inside = False
-
-                x, y, z = p
-                p1x, p1y, p1z = polygon[0]
-
-                for i in range(n + 1):
-                    p2x, p2y, p2z = polygon[i % n]
-                    if y > min(p1y, p2y):
-                        if y <= max(p1y, p2y):
-                            if x <= max(p1x, p2x):
-                                if p1y != p2y:
-                                    xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
-                                    if x <= xinters:
-                                        inside = not inside
-                    p1x, p1y, p1z = p2x, p2y, p2z
-
-                return inside
-
-            if is_point_inside_polygon(point, outer_boundary):
-                for inner_boundary in inner_boundaries:
-                    if is_point_inside_polygon(point, inner_boundary):
-                        return False
-
-                return True
-
-            return False
         
         if not isinstance(face, topologic.Face):
             return None
@@ -1173,17 +1142,7 @@ class Face(topologic.Face):
         # Test the distance first
         if Vertex.Distance(vertex, face, includeCentroid=False) > tolerance:
             return False
-        
-        point = (Vertex.X(vertex), Vertex.Y(vertex), Vertex.Z(vertex))
-        ob = Face.ExternalBoundary(face)
-        ibs = Face.InternalBoundaries(face)
-        outer_boundary = [(Vertex.X(v), Vertex.Y(v), Vertex.Z(v)) for v in Topology.Vertices(ob)]
-        inner_boundaries = []
-        for ib in ibs:
-            inner_boundary = [(Vertex.X(v), Vertex.Y(v), Vertex.Z(v)) for v in Topology.Vertices(ib)]
-            inner_boundaries.append(inner_boundary)
-        status = point_inside_face(point, outer_boundary, inner_boundaries)
-        return status
+        return topologic.FaceUtility.IsInside(face, vertex, tolerance)
 
     @staticmethod
     def MedialAxis(face: topologic.Face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
