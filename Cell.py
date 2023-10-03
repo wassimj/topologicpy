@@ -465,7 +465,6 @@ class Cell(Topology):
         if area > 0:
             if reference.lower() == "sphere":
                 compactness = (((math.pi)**(1/3))*((6*volume)**(2/3)))/area
-                print(4.84*volume**(2/3)/area)
             else:
                 compactness = 6*(volume**(2/3))/area
         else:

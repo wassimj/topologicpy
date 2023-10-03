@@ -182,9 +182,13 @@ class Vertex(Topology):
         return Vertex.AreIpsilateral(vertices, face)
 
     @staticmethod
-    def ByCoordinates(x: float = 0, y: float = 0, z: float = 0) -> topologic.Vertex:
+    def ByCoordinates(*args, **kwargs) -> topologic.Vertex:
         """
-        Creates a vertex at the coordinates specified by the x, y, z inputs.
+        Creates a vertex at the coordinates specified by the x, y, z inputs. You can call this method using a list of coordinates or individually.
+        Examples:
+        v = Vertex.ByCoordinates(3.4, 5.7, 2.8)
+        v = Vertex.ByCoordinates([3.4, 5.7, 2.8])
+        v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)
 
         Parameters
         ----------
@@ -201,11 +205,74 @@ class Vertex(Topology):
             The created vertex.
 
         """
+        import numbers
+        x = None
+        y = None
+        z = None
+        if len(args) > 3 or len(kwargs.items()) > 3:
+            print("Vertex.ByCoordinates - Error: Input parameters are greater than 3. Returning None.")
+            return None
+        if len(args) > 0:
+            value = args[0]
+            if isinstance(value, list) and len(value) > 3:
+                print("Vertex.ByCoordinates - Error: Input parameters are greater than 3. Returning None.")
+                return None
+            elif isinstance(value, list) and len(value) == 3:
+                x = value[0]
+                y = value[1]
+                z = value[2]
+            elif isinstance(value, list) and len(value) == 2:
+                x = value[0]
+                y = value[1]
+            elif isinstance(value, list) and len(value) == 1:
+                x = value[0]
+            elif len(args) == 3:
+                x = args[0]
+                y = args[1]
+                z = args[2]
+            elif len(args) == 2:
+                x = args[0]
+                y = args[1]
+            elif len(args) == 1:
+                x = args[0]
+        for key, value in kwargs.items():
+            if "x" in key.lower():
+                if not x == None:
+                    print("Vertex.ByCoordinates - Error: Input parameters are not formed properly. Returning None.")
+                    return None
+                x = value
+            elif "y" in key.lower():
+                if not y == None:
+                    print("Vertex.ByCoordinates - Error: Input parameters are not formed properly. Returning None.")
+                    return None
+                y = value
+            elif "z" in key.lower():
+                if not z == None:
+                    print("Vertex.ByCoordinates - Error: Input parameters are not formed properly. Returning None.")
+                    return None
+                z = value
+        if x == None:
+            x = 0
+        if y == None:
+            y = 0
+        if z == None:
+            z = 0
+        if not isinstance(x, numbers.Number):
+            print("Vertex.ByCoordinates - Error: The x value is not a valid number. Returning None.")
+            return None
+        if not isinstance(y, numbers.Number):
+            print("Vertex.ByCoordinates - Error: The y value is not a valid number. Returning None.")
+            return None
+        if not isinstance(z, numbers.Number):
+            print("Vertex.ByCoordinates - Error: The z value is not a valid number. Returning None.")
+            return None
+        
         vertex = None
         try:
             vertex = topologic.Vertex.ByCoordinates(x, y, z)
         except:
             vertex = None
+            print("Vertex.ByCoordinates - Error: Could not create a topologic vertex. Returning None.")
         return vertex
     
     @staticmethod
@@ -319,11 +386,8 @@ class Vertex(Topology):
         """
         import numpy as np
         from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Shell import Shell
-        from topologicpy.Cell import Cell
-        from topologicpy.Cluster import Cluster
+        import math
 
         def distance_point_to_point(point1, point2):
             # Convert input points to NumPy arrays
@@ -348,7 +412,10 @@ class Vertex(Topology):
             point_to_start = point - line_start
             
             # Calculate the parameter 't' where the projection of the point onto the edge occurs
-            t = np.dot(point_to_start, line_direction) / np.dot(line_direction, line_direction)
+            if np.dot(line_direction, line_direction) == 0:
+                t = 0
+            else:
+                t = np.dot(point_to_start, line_direction) / np.dot(line_direction, line_direction)
             
             # Check if 't' is outside the range [0, 1], and if so, calculate distance to closest endpoint
             if t < 0:
@@ -361,20 +428,6 @@ class Vertex(Topology):
             
             # Calculate the distance between the closest point and the given point
             distance = np.linalg.norm(point - closest_point)
-            
-            return distance
-
-        def distance_point_to_plane(point, plane_point, plane_normal):
-            # Convert input points and normal vector to NumPy arrays
-            point = np.array(point)
-            plane_point = np.array(plane_point)
-            plane_normal = np.array(plane_normal)
-            
-            # Calculate the vector from the plane point to the given point
-            point_to_plane = point - plane_point
-            
-            # Calculate the distance as the projection of the point-to-plane vector onto the plane's normal
-            distance = np.abs(np.dot(point_to_plane, plane_normal) / np.linalg.norm(plane_normal))
             
             return distance
         
@@ -391,14 +444,27 @@ class Vertex(Topology):
             evp = (Vertex.X(ev), Vertex.Y(ev), Vertex.Z(ev))
             return distance_point_to_line(a,svp, evp)
         
-        def distance_to_face(vertex, face):
-            a = (Vertex.X(vertex), Vertex.Y(vertex), Vertex.Z(vertex))
-            c = Topology.Centroid(face)
-            c = (Vertex.X(c), Vertex.Y(c), Vertex.Z(c))
-            n = Face.Normal(face)
-            n = (n[0], n[1], n[2])
-            return distance_point_to_plane(a, c, n)
-        
+        def distance_to_face(vertex, face, includeCentroid):
+            v_proj = Vertex.Project(vertex, face)
+            if not Face.IsInside(face, v_proj):
+                vertices = Topology.Vertices(topology)
+                distances = [distance_to_vertex(vertex, v) for v in vertices]
+                edges = Topology.Edges(topology)
+                distances += [distance_to_edge(vertex, e) for e in edges]
+                if includeCentroid:
+                    distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
+                return min(distances)
+            dic = Face.PlaneEquation(face)
+            a = dic["a"]
+            b = dic["b"]
+            c = dic["c"]
+            d = dic["d"]
+            x1, y1, z1 = Vertex.Coordinates(vertex)
+            d = abs((a * x1 + b * y1 + c * z1 + d))
+            e = (math.sqrt(a * a + b * b + c * c))
+            if e == 0:
+                return 0
+            return d/e
         if not isinstance(vertex, topologic.Vertex) or not isinstance(topology, topologic.Topology):
             return None
         if isinstance(topology, topologic.Vertex):
@@ -418,7 +484,7 @@ class Vertex(Topology):
             distances = [distance_to_vertex(vertex, v) for v in vertices]
             edges = Topology.Edges(topology)
             distances += [distance_to_edge(vertex, e) for e in edges]
-            distances.append(distance_to_face(vertex,topology))
+            distances.append(distance_to_face(vertex,topology, includeCentroid))
             if includeCentroid:
                 distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
             return round(min(distances), mantissa)
@@ -428,9 +494,7 @@ class Vertex(Topology):
             edges = Topology.Edges(topology)
             distances += [distance_to_edge(vertex, e) for e in edges]
             faces = Topology.Faces(topology)
-            distances += [distance_to_face(vertex, f) for f in faces]
-            edges = Topology.Edges(topology)
-            distances += [distance_to_edge(vertex, e) for e in edges]
+            distances += [distance_to_face(vertex, f, includeCentroid) for f in faces]
             if includeCentroid:
                 distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
             return round(min(distances), mantissa)
@@ -878,6 +942,46 @@ class Vertex(Topology):
         return Vertex.ByCoordinates(0,0,0)
     
     @staticmethod
+    def PerpendicularDistance(vertex: topologic.Vertex, face: topologic.Face, mantissa: int=4):
+        """
+        Returns the perpendicular distance between the input vertex and the input face. The face is considered to be infinite.
+
+        Parameters
+        ----------
+        vertex : topologic.Vertex
+            The input vertex.
+        face : topologic.Face
+            The input face.
+        mantissa: int , optional
+            The desired length of the mantissa. The default is 4.
+
+        Returns
+        -------
+        float
+            The distance between the input vertex and the input topology.
+
+        """
+        from topologicpy.Face import Face
+        import math
+        if not isinstance(vertex, topologic.Vertex):
+            print("Vertex.PerpendicularDistance - Error: The input vertex is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(face, topologic.Face):
+            print("Vertex.PerpendicularDistance - Error: The input face is not a valid topologic face. Returning None.")
+            return None
+        dic = Face.PlaneEquation(face)
+        a = dic["a"]
+        b = dic["b"]
+        c = dic["c"]
+        d = dic["d"]
+        x1, y1, z1 = Vertex.Coordinates(vertex)
+        d = abs((a * x1 + b * y1 + c * z1 + d))
+        e = (math.sqrt(a * a + b * b + c * c))
+        if e == 0:
+            return 0
+        return round(d/e, mantissa)
+        
+    @staticmethod
     def Point(x=0, y=0, z=0) -> topologic.Vertex:
         """
         Creates a point (vertex) using the input parameters
@@ -927,27 +1031,37 @@ class Vertex(Topology):
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
 
+        def project_point_onto_plane(point, plane_coeffs):
+            """
+            Project a point onto a plane defined by its equation coefficients (a, b, c, d).
+            
+            Args:
+                point: A tuple or list containing the coordinates of the point (x, y, z).
+                plane_coeffs: A tuple or list containing the plane equation coefficients (a, b, c, d).
+            
+            Returns:
+                projected_point: A tuple containing the coordinates of the projected point (x_proj, y_proj, z_proj).
+            """
+            x, y, z = point
+            a, b, c, d = plane_coeffs
+            
+            # Calculate the distance from the point to the plane
+            distance = (a * x + b * y + c * z + d) / (a**2 + b**2 + c**2)
+            
+            # Calculate the coordinates of the projected point
+            x_proj = x - distance * a
+            y_proj = y - distance * b
+            z_proj = z - distance * c
+            
+            return [x_proj, y_proj, z_proj]
+
         if not isinstance(vertex, topologic.Vertex):
             return None
         if not isinstance(face, topologic.Face):
             return None
-        if not direction:
-            direction = Vector.Reverse(Face.NormalAtParameters(face, 0.5, 0.5, "XYZ", mantissa))
-        if Face.IsInside(face, vertex, tolerance):
-            return vertex
-        d = Vertex.Distance(vertex, face)*10
-        far_vertex = Topology.Translate(vertex, direction[0]*d, direction[1]*d, direction[2]*d)
-        if Vertex.Distance(vertex, far_vertex) > tolerance:
-            e = topologic.Edge.ByStartVertexEndVertex(vertex, far_vertex)
-            pv = face.Intersect(e, False)
-            if not pv:
-                far_vertex = Topology.Translate(vertex, -direction[0]*d, -direction[1]*d, -direction[2]*d)
-                if Vertex.Distance(vertex, far_vertex) > tolerance:
-                    e = topologic.Edge.ByStartVertexEndVertex(vertex, far_vertex)
-                    pv = face.Intersect(e, False)
-            return pv
-        else:
-            return None
+        eq = Face.PlaneEquation(face)
+        pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]])
+        return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 
     @staticmethod
     def X(vertex: topologic.Vertex, mantissa: int = 4) -> float:

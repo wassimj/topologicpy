@@ -46,7 +46,7 @@ class Topology():
                     usedTopologies.append(0)
             ap = 1
             for aperture in apertures:
-                apCenter = Topology.InternalVertex(aperture, tolerance)
+                apCenter = Topology.InternalVertex(Aperture.ApertureTopology(aperture), tolerance)
                 for i in range(len(subTopologies)):
                     subTopology = subTopologies[i]
                     if exclusive == True and usedTopologies[i] == 1:
@@ -5888,7 +5888,7 @@ class Topology():
             print("ERROR: (Topologic>Topology.SymmetricDifference) operation failed. Returning None.")
             topologyC = None
         return topologyC
-
+    
     @staticmethod
     def TransferDictionaries(sources, sinks, tolerance=0.0001):
         """

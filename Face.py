@@ -1140,7 +1140,7 @@ class Face(topologic.Face):
             return None
 
         # Test the distance first
-        if Vertex.Distance(vertex, face, includeCentroid=False) > tolerance:
+        if Vertex.PerpendicularDistance(vertex, face) > tolerance:
             return False
         return topologic.FaceUtility.IsInside(face, vertex, tolerance)
 
@@ -1378,6 +1378,60 @@ class Face(topologic.Face):
         ev = Topology.TranslateByDirectionDistance(sv, vec, length)
         return Edge.ByVertices([sv, ev])
 
+    @staticmethod
+    def PlaneEquation(face: topologic.Face, mantissa: int = 4) -> dict:
+        """
+        Returns the a, b, c, d coefficients of the plane equation of the input face. The input face is assumed to be planar.
+        
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        
+        Returns
+        -------
+        dict
+            The dictionary containing the coefficients of the plane equation. The keys of the dictionary are: ["a", "b", "c", "d"].
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        import random
+        import time
+
+        if not isinstance(face, topologic.Face):
+            print("Face.PlaneEquation - Error: The input face is not a valid topologic face. Returning None.")
+            return None
+        all_vertices = Topology.Vertices(face)
+        if len(all_vertices) < 3:
+            print("Face.PlaneEquation - Error: The input face has less than 3 vertices. Returning None.")
+            return None
+        vertices = random.sample(all_vertices, 3)
+        start = time.time()
+        end = time.time()
+        duration = (end - start)
+        while Vertex.AreCollinear(vertices) and duration < 10:
+            vertices = random.sample(all_vertices, 3)
+            end = time.time()
+            duration = (end - start)
+        if Vertex.AreCollinear(vertices):
+            print("Face.PlaneEquation - Error: Could not sample 3 non-collinear vertices. Returning None.")
+            return None
+        v1, v2, v3 = vertices
+        x1, y1, z1 = Vertex.Coordinates(v1)
+        x2, y2, z2 = Vertex.Coordinates(v2)
+        x3, y3, z3 = Vertex.Coordinates(v3)
+        vector1 = [x2 - x1, y2 - y1, z2 - z1]
+        vector2 = [x3 - x1, y3 - y1, z3 - z1]
+
+        cross_product = [vector1[1] * vector2[2] - vector1[2] * vector2[1], -1 * (vector1[0] * vector2[2] - vector1[2] * vector2[0]), vector1[0] * vector2[1] - vector1[1] * vector2[0]]
+
+        a = round(cross_product[0], mantissa)
+        b = round(cross_product[1], mantissa)
+        c = round(cross_product[2], mantissa)
+        d = round(- (cross_product[0] * x1 + cross_product[1] * y1 + cross_product[2] * z1), mantissa)
+        return {"a": a, "b": b, "c": c, "d": d}
+    
     @staticmethod
     def Planarize(face: topologic.Face, origin: topologic.Vertex = None, direction: list = None) -> topologic.Face:
         """
