@@ -528,7 +528,6 @@ class Graph:
                         if path:
                             paths.append(path)
 
-        #Topology.Show(cluster)
         values = betweeness(vertices, paths, tolerance=tolerance)
         minValue = min(values)
         maxValue = max(values)
@@ -780,7 +779,15 @@ class Graph:
             vertices = []
             for i in range(len(node_XCoords)):
                 v = Vertex.ByCoordinates(float(node_XCoords[i]), float(node_YCoords[i]), float(node_ZCoords[i]))
-                d = Dictionary.ByKeysValues([node_label_header], [int(node_labels[i])])
+                node_label = 0
+                try:
+                    node_label = int(node_labels[i])
+                except:
+                    try:
+                        node_label = float(node_labels[i])
+                    except:
+                        node_label = node_labels[i]
+                d = Dictionary.ByKeyValue(node_label_header, node_label)
                 v = Topology.SetDictionary(v, d)
                 vertices.append(v)
             

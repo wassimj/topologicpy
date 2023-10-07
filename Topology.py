@@ -3780,7 +3780,7 @@ class Topology():
         elif topology.Type() == topologic.Edge.Type():
             u = Edge.ParameterAtVertex(topology, vertex)
             d = Vertex.Distance(vertex, topology)
-            if u:
+            if not u == None:
                 is_inside = (0 <= u <= 1) and (d <= tolerance)              
             else:
                 is_inside = False
@@ -5992,6 +5992,8 @@ class Topology():
             The input topology with the dictionaries transferred to its subtopologies.
 
         """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
         if not isinstance(topology, topologic.Topology):
             print("Topology.TransferDictionariesBySelectors - Error: The input topology is not a valid topology. Returning None.")
             return None

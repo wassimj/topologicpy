@@ -1043,8 +1043,22 @@ class Face(topologic.Face):
             The created vertex.
 
         """
+        from topologicpy.Topology import Topology
         if not isinstance(face, topologic.Face):
             return None
+        v = Topology.Centroid(face)
+        if Face.IsInside(face, v):
+            return v
+        l1 = [0.1,0.9]
+        l2 = [0.3,0.7]
+        l3 = [0.2,0.4,0.6,0.8]
+        l_all = [l1,l2,l3]
+        for l in l_all:
+            for uv in l:
+                t = max(min(uv,0.9),0.1)
+                v = Face.VertexByParameters(face, t, t)
+                if Face.IsInside(face, v):
+                    return v
         v = topologic.FaceUtility.InternalVertex(face, tolerance)
         return v
 
@@ -1131,6 +1145,8 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         
@@ -1138,10 +1154,10 @@ class Face(topologic.Face):
             return None
         if not isinstance(vertex, topologic.Vertex):
             return None
-
         # Test the distance first
         if Vertex.PerpendicularDistance(vertex, face) > tolerance:
             return False
+        
         return topologic.FaceUtility.IsInside(face, vertex, tolerance)
 
     @staticmethod

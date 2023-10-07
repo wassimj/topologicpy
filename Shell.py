@@ -19,7 +19,7 @@ class Shell(Topology):
     @staticmethod
     def ByDisjointFaces(externalBoundary, faces, maximumGap=0.5, mergeJunctions=False, threshold=0.5, uSides=1, vSides=1, transferDictionaries=False, tolerance=0.0001):
         """
-        Creates a shell from an input list of disjointed faces.
+        Creates a shell from an input list of disjointed faces. THIS IS STILL EXPERIMENTAL
 
         Parameters
         ----------
@@ -102,12 +102,7 @@ class Shell(Topology):
         uRange = [u*unitU for u in range(uSides)]
         vRange = [v*unitV for v in range(vSides)]
         grid = Grid.EdgesByDistances(internalBoundary, uRange=uRange, vRange=vRange, clip=True)
-        #grid = Topology.Rotate(grid, origin=Topology.Centroid(grid), degree=25)
-        #grid = Topology.Scale(grid, origin=Topology.Centroid(grid), x=3, y=3, z=1)
         grid = Topology.Slice(internalBoundary, grid)
-        Topology.Show(grid)
-        #temp_clus = Cluster.ByTopologies([grid, internalBoundary, facesCluster])
-        #Topology.Show(temp_clus)
         grid_faces = Topology.Faces(grid)
         skeletons = []
         for ib in tqdm(grid_faces, desc="Processing "+str(len(grid_faces))+" tiles", leave=False):
@@ -142,14 +137,11 @@ class Shell(Topology):
                 skEdges = extendEdges(Topology.Edges(skEdges), skEdges, maximumGap=maximumGap)
             if len(skEdges) < 1:
                 print("WARNING - No Edges!")
-                #Topology.Show(walls)
-            #Topology.Show(skeleton_cluster)
             #return Cluster.ByTopologies(skEdges)
         #print("ShellByDisjointFaces - Error: Could not derive central skeleton of interior walls. Returning None.")
         #return None
 
             shell = Topology.Slice(internalBoundary, skeleton_cluster)
-            #Topology.Show(shell)
             if mergeJunctions == True:
                 vertices = Shell.Vertices(shell)
                 centers = []
