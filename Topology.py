@@ -4691,6 +4691,13 @@ class Topology():
             return Topology.SelfMerge(Cluster.ByTopologies(remaining_vertices))
     
     @staticmethod
+    def Cleanup():
+        """
+        Clean up all resources in which are managed by topologic library.
+        """
+        topologic.Topology.Cleanup()
+
+    @staticmethod
     def ReplaceVertices(topology, verticesA=[], verticesB=[], tolerance=0.0001):
         """
         Replaces the vertices in the first input list with the vertices in the second input list and rebuilds the input topology. The two lists must be of the same length.
