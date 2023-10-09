@@ -952,8 +952,9 @@ class Graph:
                     d = Dictionary.ByPythonDictionary(vertexDictionaries[i])
                 else:
                     d = vertexDictionaries[i]
-                if len(Dictionary.Keys(d)) > 0:
-                    g_v = Topology.SetDictionary(g_v, d)
+                if not d == None:
+                    if len(Dictionary.Keys(d)) > 0:
+                        g_v = Topology.SetDictionary(g_v, d)
             g_vertices.append(g_v)
             
         g_edges = []
@@ -966,8 +967,9 @@ class Graph:
                     d = Dictionary.ByPythonDictionary(edgeDictionaries[i])
                 else:
                     d = edgeDictionaries[i]
-                if len(Dictionary.Keys(d)) > 0:
-                    g_e = Topology.SetDictionary(g_e, d)
+                if not d == None:
+                    if len(Dictionary.Keys(d)) > 0:
+                        g_e = Topology.SetDictionary(g_e, d)
             g_edges.append(g_e)
         return Graph.ByVerticesEdges(g_vertices, g_edges)
     
@@ -1096,7 +1098,10 @@ class Graph:
             idList = []
             for t in topologies:
                 d = Topology.Dictionary(t)
-                keys = Dictionary.Keys(d)
+                if not d == None:
+                    keys = Dictionary.Keys(d)
+                else:
+                    keys = []
                 k = None
                 for key in keys:
                     if key.lower() == idKey.lower():
@@ -1144,8 +1149,12 @@ class Graph:
                                     v2 = cells[j].CenterOfMass()
                                 e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
                                 mDict = mergeDictionaries(sharedt)
-                                keys = (Dictionary.Keys(mDict) or [])+["relationship"]
-                                values = (Dictionary.Values(mDict) or [])+["Direct"]
+                                if not mDict == None:
+                                    keys = (Dictionary.Keys(mDict) or [])+["relationship"]
+                                    values = (Dictionary.Values(mDict) or [])+["Direct"]
+                                else:
+                                    keys = []
+                                    values = []
                                 mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
                                     e.SetDictionary(mDict)
@@ -1191,7 +1200,10 @@ class Graph:
                                     edges.append(e)
             if toOutposts and others:
                 d = Topology.Dictionary(topology)
-                keys = Dictionary.Keys(d)
+                if not d == None:
+                    keys = Dictionary.Keys(d)
+                else:
+                    keys = []
                 k = None
                 for key in keys:
                     if key.lower() == outpostsKey.lower():
@@ -1434,7 +1446,10 @@ class Graph:
             vertices.append(vCell)
             if toOutposts and others:
                 d = Topology.Dictionary(topology)
-                keys = Dictionary.Keys(d)
+                if not d == None:
+                    keys = Dictionary.Keys(d)
+                else:
+                    keys = []
                 k = None
                 for key in keys:
                     if key.lower() == outpostsKey.lower():
@@ -1803,7 +1818,10 @@ class Graph:
                 vertices.append(vFace)
             if toOutposts and others:
                 d = Topology.Dictionary(topology)
-                keys = Dictionary.Keys(d)
+                if not d == None:
+                    keys = Dictionary.Keys(d)
+                else:
+                    keys = []
                 k = None
                 for key in keys:
                     if key.lower() == outpostsKey.lower():
@@ -1855,7 +1873,10 @@ class Graph:
             vertices.append(vFace)
             if toOutposts and others:
                 d = Topology.Dictionary(topology)
-                keys = Dictionary.Keys(d)
+                if not d == None:
+                    keys = Dictionary.Keys(d)
+                else:
+                    keys = []
                 k = None
                 for key in keys:
                     if key.lower() == outpostsKey.lower():
@@ -2226,7 +2247,10 @@ class Graph:
             
             if toOutposts and others:
                 d = Topology.Dictionary(topology)
-                keys = Dictionary.Keys(d)
+                if not d == None:
+                    keys = Dictionary.Keys(d)
+                else:
+                    keys = []
                 k = None
                 for key in keys:
                     if key.lower() == outpostsKey.lower():
@@ -2284,7 +2308,10 @@ class Graph:
 
             if toOutposts and others:
                 d = Topology.Dictionary(topology)
-                keys = Dictionary.Keys(d)
+                if not d == None:
+                    keys = Dictionary.Keys(d)
+                else:
+                    keys = []
                 k = None
                 for key in keys:
                     if key.lower() == outpostsKey.lower():
@@ -2407,7 +2434,10 @@ class Graph:
             
             if toOutposts and others:
                 d = Topology.Dictionary(topology)
-                keys = Dictionary.Keys(d)
+                if not d == None:
+                    keys = Dictionary.Keys(d)
+                else:
+                    keys = []
                 k = None
                 for key in keys:
                     if key.lower() == outpostsKey.lower():
@@ -2587,8 +2617,12 @@ class Graph:
                         #if i not in used_colors:
                         if satisfiesCondition(i, used_colors, int(math.ceil(delta))):
                             v_d = Topology.Dictionary(vertex)
-                            keys = Dictionary.Keys(v_d)
-                            values = Dictionary.Values(v_d)
+                            if not v_d == None:
+                                keys = Dictionary.Keys(v_d)
+                                values = Dictionary.Values(v_d)
+                            else:
+                                keys = []
+                                values = []
                             if len(keys) > 0:
                                 keys.append(key)
                                 values.append(i)
@@ -3132,7 +3166,10 @@ class Graph:
             node_columns = [graphIDHeader, nodeLabelHeader, "X", "Y", "Z"]
             # All keys should be the same for all vertices, so we can get them from the first vertex
             d = Topology.Dictionary(vertices[0])
-            keys = Dictionary.Keys(d)
+            if not d == None:
+                keys = Dictionary.Keys(d)
+            else:
+                keys = []
             for key in keys:
                 if key != nodeLabelKey: #We have already saved that in its own column
                     node_columns.append(key)
@@ -4128,8 +4165,12 @@ class Graph:
                 residual = am[i][j]
                 edge = edges[edgeMatrix[i][j]-1]
                 d = Topology.Dictionary(edge)
-                keys = Dictionary.Keys(d)
-                values = Dictionary.Values(d)
+                if not d == None:
+                    keys = Dictionary.Keys(d)
+                    values = Dictionary.Values(d)
+                else:
+                    keys = []
+                    values = []
                 keys.append(residualKey)
                 values.append(residual)
                 d = Dictionary.ByKeysValues(keys, values)

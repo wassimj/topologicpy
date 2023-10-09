@@ -218,7 +218,10 @@ class Honeybee:
             return returnList
 
         def getKeyName(d, keyName):
-            keys = Dictionary.Keys(d)
+            if not d == None:
+                keys = Dictionary.Keys(d)
+            else:
+                keys = []
             for key in keys:
                 if key.lower() == keyName.lower():
                     return key

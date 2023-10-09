@@ -290,7 +290,10 @@ class EnergyModel:
                 break
             osSpace.setBuildingStory(osBuildingStory)
             cellDictionary = Topology.Dictionary(buildingCell)
-            keys = Dictionary.Keys(cellDictionary)
+            if not cellDictionary == None:
+                keys = Dictionary.Keys(cellDictionary)
+            else:
+                keys = []
             if len(keys) > 0:
                 if spaceTypeKey:
                     keyType = getKeyName(cellDictionary, spaceTypeKey)
