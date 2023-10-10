@@ -46,7 +46,7 @@ class Topology():
                     usedTopologies.append(0)
             ap = 1
             for aperture in apertures:
-                apCenter = Topology.InternalVertex(Aperture.ApertureTopology(aperture), tolerance)
+                apCenter = Topology.InternalVertex(aperture, tolerance)
                 for i in range(len(subTopologies)):
                     subTopology = subTopologies[i]
                     if exclusive == True and usedTopologies[i] == 1:
@@ -672,7 +672,7 @@ class Topology():
         apertures = Topology.Apertures(topology=topology, subTopologyType=subTopologyType)
         apTopologies = []
         for aperture in apertures:
-            apTopologies.append(Aperture.ApertureTopology(aperture))
+            apTopologies.append(Aperture.Topology(aperture))
         return apTopologies
     
     @staticmethod
@@ -1704,7 +1704,7 @@ class Topology():
             return cc
 
         def addAperturesUUID(topology, uuidKey="uuid"):
-            topology_apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(topology)]
+            topology_apertures = [Aperture.Topology(ap) for ap in Topology.Apertures(topology)]
             apertures_uuid = []
             for top_a in topology_apertures:
                 uuid = getUUID(top_a, uuidKey=uuidKey)
@@ -2241,6 +2241,8 @@ class Topology():
         if not isinstance(topology, topologic.Topology):
             print("Topology.Centroid - Error: the input topology is not a valid topology. Returning None.")
             return None
+        if isinstance(topology, topologic.Aperture):
+            return Aperture.Topology(topology).Centroid()
         return topology.Centroid()
     
     @staticmethod
@@ -3138,7 +3140,7 @@ class Topology():
             return returnDict
 
         def getFace(topology, uuidKey="uuid"):
-            apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(topology)]
+            apertures = [Aperture.Topology(ap) for ap in Topology.Apertures(topology)]
             returnDict = {}
             uuidOne = getUUID(topology, uuidKey=uuidKey)
             returnDict['type'] = "Face"
@@ -3205,7 +3207,7 @@ class Topology():
                 d = getCellComplex(topology, uuidKey=uuidKey)
             d['dictionary']['toplevel'] = topLevel
             json_data += getSubTopologyData(topology, uuidKey=uuidKey)
-            apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(topology)]
+            apertures = [Aperture.Topology(ap) for ap in Topology.Apertures(topology)]
             aperture_data = []
             for ap in apertures:
                 aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
@@ -3219,7 +3221,7 @@ class Topology():
             for v in vertices:
                 d = getVertex(v, uuidKey=uuidKey)
                 d['dictionary']['toplevel'] = False
-                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(v)]
+                apertures = [Aperture.Topology(ap) for ap in Topology.Apertures(v)]
                 aperture_data = []
                 for ap in apertures:
                     aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
@@ -3229,7 +3231,7 @@ class Topology():
             for e in edges:
                 d = getEdge(e, uuidKey=uuidKey)
                 d['dictionary']['toplevel'] = False
-                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(e)]
+                apertures = [Aperture.Topology(ap) for ap in Topology.Apertures(e)]
                 aperture_data = []
                 for ap in apertures:
                     aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
@@ -3239,7 +3241,7 @@ class Topology():
             for w in wires:
                 d = getWire(w, uuidKey=uuidKey)
                 d['dictionary']['toplevel'] = False
-                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(w)]
+                apertures = [Aperture.Topology(ap) for ap in Topology.Apertures(w)]
                 aperture_data = []
                 for ap in apertures:
                     aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
@@ -3249,7 +3251,7 @@ class Topology():
             for f in faces:
                 d = getFace(f, uuidKey=uuidKey)
                 d['dictionary']['toplevel'] = False
-                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(f)]
+                apertures = [Aperture.Topology(ap) for ap in Topology.Apertures(f)]
                 aperture_data = []
                 for ap in apertures:
                     aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
@@ -3259,7 +3261,7 @@ class Topology():
             for s in shells:
                 d = getShell(s, uuidKey=uuidKey)
                 d['dictionary']['toplevel'] = False
-                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(s)]
+                apertures = [Aperture.Topology(ap) for ap in Topology.Apertures(s)]
                 aperture_data = []
                 for ap in apertures:
                     aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
@@ -3269,7 +3271,7 @@ class Topology():
             for c in cells:
                 d = getCell(c, uuidKey=uuidKey)
                 d['dictionary']['toplevel'] = False
-                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(c)]
+                apertures = [Aperture.Topology(ap) for ap in Topology.Apertures(c)]
                 aperture_data = []
                 for ap in apertures:
                     aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
@@ -3279,7 +3281,7 @@ class Topology():
             for cc in cellComplexes:
                 d = getCellComplex(cc, uuidKey=uuidKey)
                 d['dictionary']['toplevel'] = False
-                apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(cc)]
+                apertures = [Aperture.Topology(ap) for ap in Topology.Apertures(cc)]
                 aperture_data = []
                 for ap in apertures:
                     aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
@@ -3305,7 +3307,7 @@ class Topology():
                 d = getCellComplex(topology, uuidKey=uuidKey)
             d['dictionary']['toplevel'] = topLevel
             json_data += getSubTopologyData(topology, uuidKey=uuidKey)
-            apertures = [Aperture.ApertureTopology(ap) for ap in Topology.Apertures(topology)]
+            apertures = [Aperture.Topology(ap) for ap in Topology.Apertures(topology)]
             aperture_data = []
             for ap in apertures:
                 aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
@@ -3705,22 +3707,24 @@ class Topology():
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Aperture import Aperture
         if not isinstance(topology, topologic.Topology):
             print("Topology.InternalVertex - Error: the input topology is not a valid topology. Returning None.")
             return None
         vst = None
         classType = topology.Type()
-        if classType == 64: #CellComplex
+        if isinstance(topology, topologic.CellComplex): #CellComplex
             tempCell = Topology.Cells(topology)[0]
             vst = Cell.InternalVertex(tempCell, tolerance)
-        elif classType == 32: #Cell
+        elif isinstance(topology, topologic.Cell): #Cell
             vst = Cell.InternalVertex(topology, tolerance)
-        elif classType == 16: #Shell
+        elif isinstance(topology, topologic.Shell): #Shell
             tempFace = Topology.Faces(topology)[0]
             vst = Face.InternalVertex(tempFace, tolerance)
-        elif classType == 8: #Face
+        elif isinstance(topology, topologic.Face): #Face
             vst = Face.InternalVertex(topology, tolerance)
-        elif classType == 4: #Wire
+        elif isinstance(topology, topologic.Wire): #Wire
             if topology.IsClosed():
                 internalBoundaries = []
                 tempFace = topologic.Face.ByExternalInternalBoundaries(topology, internalBoundaries)
@@ -3728,10 +3732,12 @@ class Topology():
             else:
                 tempEdge = Topology.Edges(topology)[0]
                 vst = Edge.VertexByParameter(tempEdge, 0.5)
-        elif classType == 2: #Edge
+        elif isinstance(topology, topologic.Edge): #Edge
             vst = Edge.VertexByParameter(topology, 0.5)
-        elif classType == 1: #Vertex
+        elif isinstance(topology, topologic.Vertex): #Vertex
             vst = topology
+        elif isinstance(topology, topologic.Aperture): #Aperture
+            vst = Face.InternalVertex(Aperture.Topology(topology), tolerance)
         else:
             vst = Topology.Centroid(topology)
         return vst

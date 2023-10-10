@@ -539,8 +539,8 @@ class Graph:
     @staticmethod
     def ByCSVFile(graphs_file, edges_file, nodes_file,
                   graph_id_header="graph_id", graph_label_header="label", num_nodes_header="num_nodes",
-                  src_header="src", dst_header="dst",
-                  node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
+                  src_header="src_id", dst_header="dst_id",
+                  node_id_header="node_id", node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
         """
         Returns graphs according to the input CSV files. This method assumes the CSV files follow DGL's schema.
 
@@ -559,9 +559,11 @@ class Graph:
         num_nodes_header : str , optional
             The header string used to specify the number of nodes. The default is "num_nodes".
         src_header : str , optional
-            The header string used to specify the source of edges. The default is "src".
+            The header string used to specify the source of edges. The default is "src_id".
         dst_header : str , optional
-            The header string used to specify the destination of edges. The default is "dst".
+            The header string used to specify the destination of edges. The default is "dst_id".
+        node_id_header : str , optional
+            The header string used to specify the node id. The default is "node_id".
         node_label_header : str , optional
             The header string used to specify the node label. The default is "label".
         node_X_header : str , optional
@@ -600,8 +602,8 @@ class Graph:
     @staticmethod
     def ByCSVPath(graphs_file_path, edges_file_path, nodes_file_path,
                   graph_id_header="graph_id", graph_label_header="label", num_nodes_header="num_nodes",
-                  src_header="src", dst_header="dst",
-                  node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
+                  src_header="src_id", dst_header="dst_id",
+                  node_id_header="node_id", node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
         """
         Returns graphs according to the input CSV file paths. This method assumes the CSV files follow DGL's schema.
 
@@ -620,9 +622,11 @@ class Graph:
         num_nodes_header : str , optional
             The header string used to specify the number of nodes. The default is "num_nodes".
         src_header : str , optional
-            The header string used to specify the source of edges. The default is "src".
+            The header string used to specify the source of edges. The default is "src_id".
         dst_header : str , optional
-            The header string used to specify the destination of edges. The default is "dst".
+            The header string used to specify the destination of edges. The default is "dst_id".
+        node_id_header : str , optional
+            The header string used to specify the node id. The default is "node_id".
         node_label_header : str , optional
             The header string used to specify the node label. The default is "label".
         node_X_header : str , optional
@@ -670,8 +674,8 @@ class Graph:
     @staticmethod
     def ByCSVString(graphs_string, edges_string, nodes_string,
                     graph_id_header="graph_id", graph_label_header="label", num_nodes_header="num_nodes",
-                    src_header="src", dst_header="dst",
-                    node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
+                    src_header="src_id", dst_header="dst_id",
+                    node_id_header="node_id", node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
         """
         Returns graphs according to the input CSV strings. This method assumes the CSV strings follow DGL's schema.
 
@@ -690,9 +694,11 @@ class Graph:
         num_nodes_header : str , optional
             The header string used to specify the number of nodes. The default is "num_nodes".
         src_header : str , optional
-            The header string used to specify the source of edges. The default is "src".
+            The header string used to specify the source of edges. The default is "src_id".
         dst_header : str , optional
-            The header string used to specify the destination of edges. The default is "dst".
+            The header string used to specify the destination of edges. The default is "dst_id".
+        node_id_header : str , optional
+            The header string used to specify the node id. The default is "node_id".
         node_label_header : str , optional
             The header string used to specify the node label. The default is "label".
         node_X_header : str , optional
@@ -724,21 +730,29 @@ class Graph:
             print("Graph.ByCSVString - Error: the input nodes_string is not a valid string. Returning None.")
             return None
         # Using split by line
-        lines = graphs_string.split('\n')[1:-1]
+        lines = graphs_string.split('\n')[0:-1]
+        header_row = lines[0]
+        lines = lines[1:]
         lines = [l for l in lines if lines != None or lines != ""]
-        pd_graphs = pd.DataFrame([row.split(',')[0:3] for row in lines], 
-                        columns=[graph_id_header, graph_label_header, num_nodes_header])
+        columns = header_row.split(',')
+        pd_graphs = pd.DataFrame([row.split(',')[0:len(columns)] for row in lines], 
+                        columns=columns)
         
-        lines = edges_string.split('\n')[1:-1]
+        lines = edges_string.split('\n')[0:-1]
+        header_row = lines[0]
+        lines = lines[1:]
         lines = [l for l in lines if lines != None or lines != ""]
-        edges = pd.DataFrame([row.split(',')[0:3] for row in lines], 
-                        columns=[graph_id_header, src_header, dst_header])
+        columns = header_row.split(',')
+        edges = pd.DataFrame([row.split(',')[0:len(columns)] for row in lines], 
+                        columns=columns)
 
-        lines = nodes_string.split('\n')[1:-1]
+        lines = nodes_string.split('\n')[0:-1]
+        header_row = lines[0]
+        lines = lines[1:]
         lines = [l for l in lines if lines[-1] != None or lines[-1] != ""]
-        nodes = pd.DataFrame([row.split(',')[0:5] for row in lines], 
-                        columns=[graph_id_header, node_label_header, node_X_header, node_Y_header, node_Z_header])
-
+        columns = header_row.split(',')
+        nodes = pd.DataFrame([row.split(',')[0:len(columns)] for row in lines], 
+                        columns=columns)
         graphs = []
         labels = []
         graph_ids = []
@@ -772,10 +786,25 @@ class Graph:
 
             # Find the nodes and their labels and features
             nodes_of_id = nodes_group.get_group(graph_id)
-            node_labels = nodes_of_id[node_label_header].values
-            node_XCoords = nodes_of_id[node_X_header].values
-            node_YCoords = nodes_of_id[node_Y_header].values
-            node_ZCoords = nodes_of_id[node_Z_header].values
+            rows = nodes_of_id.shape[0]
+            node_ids = [None for n in range(rows)]
+            node_labels = [None for n in range(rows)]
+            node_XCoords = [None for n in range(rows)]
+            node_YCoords = [None for n in range(rows)]
+            node_ZCoords = [None for n in range(rows)]
+            headers = list(nodes_of_id.columns.values)
+            for header in headers:
+                if node_id_header.lower() in header.lower():
+                    node_ids = nodes_of_id[header].values
+                if node_label_header.lower() in header.lower():
+                    node_labels = nodes_of_id[header].values
+                elif node_X_header.lower() in header.lower():
+                    node_XCoords = nodes_of_id[header].values
+                elif node_Y_header.lower() in header.lower():
+                    node_YCoords = nodes_of_id[header].values
+                elif node_Z_header.lower() in header.lower():
+                    node_ZCoords = nodes_of_id[header].values
+
             vertices = []
             for i in range(len(node_XCoords)):
                 v = Vertex.ByCoordinates(float(node_XCoords[i]), float(node_YCoords[i]), float(node_ZCoords[i]))
@@ -787,7 +816,15 @@ class Graph:
                         node_label = float(node_labels[i])
                     except:
                         node_label = node_labels[i]
-                d = Dictionary.ByKeyValue(node_label_header, node_label)
+                node_id = 0
+                try:
+                    node_id = int(node_ids[i])
+                except:
+                    try:
+                        node_id = float(node_ids[i])
+                    except:
+                        node_id = node_ids[i]
+                d = Dictionary.ByKeysValues([node_id_header, node_label_header], [node_id,node_label])
                 v = Topology.SetDictionary(v, d)
                 vertices.append(v)
             
@@ -3040,7 +3077,10 @@ class Graph:
         return list(dict.fromkeys(edges)) # remove duplicates
 
     @staticmethod
-    def ExportToCSV_GC(graphs, graphLabels, graphsPath, edgesPath, nodesPath, graphIDHeader="graph_id", graphLabelHeader="label",graphNumNodesHeader="num_nodes",edgeSRCHeader="src", edgeDSTHeader="dst", edgeLabelHeader="label", edgeLabelKey="label", defaultEdgeLabel=0, nodeLabelHeader="label", nodeLabelKey="label", defaultNodeLabel=0, overwrite=False):
+    def ExportToCSV_GC(graphs, graphLabels, graphsPath, edgesPath, nodesPath,
+                       graphIDHeader="graph_id", graphLabelHeader="label",graphNumNodesHeader="num_nodes",
+                       edgeSRCHeader="src_id", edgeDSTHeader="dst_id", edgeLabelHeader="label", edgeLabelKey="label", defaultEdgeLabel=0,
+                       nodeLabelHeader="label", nodeLabelKey="label", defaultNodeLabel=0, overwrite=False):
         """
         Exports the input list of graphs into a set of CSV files compatible with DGL for Graph Classification.
 
@@ -3063,9 +3103,9 @@ class Graph:
         graphNumNodesHeader : str , optional
             The desired graph number of nodes column header. The default is "num_nodes".
         edgeSRCHeader : str , optional
-            The desired edge source column header. The default is "src".
+            The desired edge source column header. The default is "src_id".
         edgeDSTHeader : str , optional
-            The desired edge destination column header. The default is "dst".
+            The desired edge destination column header. The default is "dst_id".
         nodeLabelHeader : str , optional
             The desired node label column header. The default is "label".
         nodeLabelKey : str , optional

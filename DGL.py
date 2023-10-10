@@ -1456,38 +1456,40 @@ class DGL:
                               categories=categories, bidirectional=bidirectional)
 
     @staticmethod
-    def GraphsByCSVPath(graphs_file_path, edges_file_path,
-                              nodes_file_path, graph_id_header="graph_id",
-                              graph_label_header="label", num_nodes_header="num_nodes", src_header="src",
-                              dst_header="dst", node_label_header="label", node_attr_key="node_attr",
-                              categories=[], bidirectional=True):
+    def GraphsByCSVPath(graphsPath, edgesPath, nodesPath,
+                        graphIDHeader="graph_id", graphLabelHeader="label", graphNUMNODESHeader="num_nodes", graphCategories=[],
+                        edgeSRCHeader="src_id", edgeDSTHeader="dst_id",
+                        nodeIDHeader="node_id", nodeLabelHeader="label", nodeATTRKey="node_attr",
+                        bidirectional=True):
         """
         Returns DGL graphs according to the input CSV file paths.
 
         Parameters
         ----------
-        graphs_file_path : str
+        graphsPath : str
             The file path to the grpahs CSV file.
-        edges_file_path : str
+        edgesPath : str
             The file path to the edges CSV file.
-        nodes_file_path : str
+        nodesPath : str
             The file path to the nodes CSV file.
-        graph_id_header : str , optional
+        graphIDHeader : str , optional
             The header string used to specify the graph id. The default is "graph_id".
-        graph_label_header : str , optional
+        graphLabelHeader : str , optional
             The header string used to specify the graph label. The default is "label".
-        num_nodes_header : str , optional
+        graphNUMNODESHeader : str , optional
             The header string used to specify the number of nodes. The default is "num_nodes".
-        src_header : str , optional
-            The header string used to specify the source of edges. The default is "src".
-        dst_header : str , optional
-            The header string used to specify the destination of edges. The default is "dst".
-        node_label_header : str , optional
+        graphCategories : list
+            The list of all possible graph categories (graph labels).
+        edgeSRCHeader : str , optional
+            The header string used to specify the source of edges. The default is "src_id".
+        edgeDSTHeader : str , optional
+            The header string used to specify the destination of edges. The default is "dst_id".
+        nodeIDHeader : str , optional
+            The header string used to specify the node id. The default is "node_id". This is NOT used yet.
+        nodeLabelHeader : str , optional
             The header string used to specify the node label. The default is "label".
-        node_attr_key : str , optional
+        nodeATTRKey : str , optional
             The key string used to specify the node attributes. The default is "node_attr".
-        categories : list
-            The list of categories.
         bidirectional : bool , optional
             If set to True, the output DGL graph is forced to be bi-directional. The default is True.
 
@@ -1498,9 +1500,9 @@ class DGL:
 
         """
 
-        graphs = pd.read_csv(graphs_file_path)
-        edges = pd.read_csv(edges_file_path)
-        nodes = pd.read_csv(nodes_file_path)
+        graphs = pd.read_csv(graphsPath)
+        edges = pd.read_csv(edgesPath)
+        nodes = pd.read_csv(nodesPath)
         dgl_graphs = []
         labels = []
 
@@ -1510,18 +1512,18 @@ class DGL:
         label_dict = {}
         num_nodes_dict = {}
         for _, row in graphs.iterrows():
-            label_dict[row[graph_id_header]] = row[graph_label_header]
-            num_nodes_dict[row[graph_id_header]] = row[num_nodes_header]
+            label_dict[row[graphIDHeader]] = row[graphLabelHeader]
+            num_nodes_dict[row[graphIDHeader]] = row[graphNUMNODESHeader]
         # For the edges, first group the table by graph IDs.
-        edges_group = edges.groupby(graph_id_header)
+        edges_group = edges.groupby(graphIDHeader)
         # For the nodes, first group the table by graph IDs.
-        nodes_group = nodes.groupby(graph_id_header)
+        nodes_group = nodes.groupby(graphIDHeader)
         # For each graph ID...
         for graph_id in edges_group.groups:
             graph_dict = {}
-            graph_dict[src_header] = []
-            graph_dict[dst_header] = []
-            graph_dict[node_label_header] = {}
+            graph_dict[edgeSRCHeader] = []
+            graph_dict[edgeDSTHeader] = []
+            graph_dict[nodeLabelHeader] = {}
             graph_dict["node_features"] = []
             num_nodes = num_nodes_dict[graph_id]
             graph_label = label_dict[graph_id]
@@ -1529,20 +1531,20 @@ class DGL:
 
             # Find the edges as well as the number of nodes and its label.
             edges_of_id = edges_group.get_group(graph_id)
-            src = edges_of_id[src_header].to_numpy()
-            dst = edges_of_id[dst_header].to_numpy()
+            src = edges_of_id[edgeSRCHeader].to_numpy()
+            dst = edges_of_id[edgeDSTHeader].to_numpy()
 
             # Find the nodes and their labels and features
             nodes_of_id = nodes_group.get_group(graph_id)
-            node_labels = nodes_of_id[node_label_header]
+            node_labels = nodes_of_id[nodeLabelHeader]
             #graph_dict["node_labels"][graph_id] = node_labels
 
             for node_label in node_labels:
-                graph_dict["node_features"].append(torch.tensor(DGL.OneHotEncode(node_label, categories)))
+                graph_dict["node_features"].append(torch.tensor(DGL.OneHotEncode(node_label, graphCategories)))
             # Create a graph and add it to the list of graphs and labels.
             dgl_graph = dgl.graph((src, dst), num_nodes=num_nodes)
             # Setting the node features as node_attr_key using onehotencoding of node_label
-            dgl_graph.ndata[node_attr_key] = torch.stack(graph_dict["node_features"])
+            dgl_graph.ndata[nodeATTRKey] = torch.stack(graph_dict["node_features"])
             if bidirectional:
                 dgl_graph = dgl.add_reverse_edges(dgl_graph)        
             dgl_graphs.append(dgl_graph)
@@ -1741,6 +1743,8 @@ class DGL:
         """
         if not path:
             return None
+        
+        # This is a hack. These are not needed
         return torch.load(path)
     
     def ConfusionMatrix(actual, predicted, normalize=False):
@@ -1780,7 +1784,7 @@ class DGL:
         return cm
     
     @staticmethod
-    def DatasetByGraphs(dictionary, key="node_attr"):
+    def DatasetByGraphs(dictionary, nodeATTRKey="node_attr"):
         """
         Returns a DGL Dataset from the input DGL graphs.
 
@@ -1788,7 +1792,7 @@ class DGL:
         ----------
         dictionary : dict
             The input dictionary of graphs and labels. This dictionary must have the keys "graphs" and "labels"
-        key : str
+        nodeATTRKey : str , optional
             The key used for the node attributes.
 
         Returns
@@ -1799,7 +1803,7 @@ class DGL:
         """
         graphs = dictionary['graphs']
         labels = dictionary['labels']
-        return _Dataset(graphs, labels, key)
+        return _Dataset(graphs, labels, nodeATTRKey)
     
     @staticmethod
     def DatasetByImportedCSV_NC(folderPath):
@@ -1820,22 +1824,55 @@ class DGL:
         return dgl.data.CSVDataset(folderPath, force_reload=True)
     
     @staticmethod
-    def DatasetByCSVPath_NC(folderPath):
+    def DatasetByCSVPath(graphsPath, edgesPath, nodesPath,
+                        graphIDHeader="graph_id", graphLabelHeader="label", graphNUMNODESHeader="num_nodes", graphCategories=[],
+                        edgeSRCHeader="src_id", edgeDSTHeader="dst_id",
+                        nodeIDHeader="node_id", nodeLabelHeader="label", nodeATTRKey="node_attr",
+                        bidirectional=True):
         """
-        UNDER CONSTRUCTION. DO NOT USE.
+        Returns DGL dataset according to the input CSV file paths.
 
         Parameters
         ----------
-        folderPath : str
-            The path to folder containing the input CSV files. In that folder there should be graphs.csv, edges.csv, and vertices.csv
+        graphsPath : str
+            The file path to the grpahs CSV file.
+        edgesPath : str
+            The file path to the edges CSV file.
+        nodesPath : str
+            The file path to the nodes CSV file.
+        graphIDHeader : str , optional
+            The header string used to specify the graph id. The default is "graph_id".
+        graphLabelHeader : str , optional
+            The header string used to specify the graph label. The default is "label".
+        graphNUMNODESHeader : str , optional
+            The header string used to specify the number of nodes. The default is "num_nodes".
+        graphCategories : list
+            The list of all possible graph categories (graph labels).
+        edgeSRCHeader : str , optional
+            The header string used to specify the source of edges. The default is "src_id".
+        edgeDSTHeader : str , optional
+            The header string used to specify the destination of edges. The default is "dst_id".
+        nodeIDHeader : str , optional
+            The header string used to specify the node id. The default is "node_id". This is NOT used yet.
+        nodeLabelHeader : str , optional
+            The header string used to specify the node label. The default is "label".
+        nodeATTRKey : str , optional
+            The key string used to specify the node attributes. The default is "node_attr".
+        bidirectional : bool , optional
+            If set to True, the output DGL graph is forced to be bi-directional. The default is True.
 
         Returns
         -------
-        DGLDataset
-            The returns DGL dataset.
+        dict
+            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
 
         """
-        return dgl.data.CSVDataset(folderPath, force_reload=True)
+        graphs = DGL.GraphsByCSVPath(graphsPath=graphsPath, edgesPath=edgesPath, nodesPath=nodesPath,
+                                     graphIDHeader=graphIDHeader, graphLabelHeader=graphLabelHeader, graphNUMNODESHeader=graphNUMNODESHeader, graphCategories=graphCategories,
+                                     edgeSRCHeader=edgeSRCHeader, edgeDSTHeader=edgeDSTHeader,
+                                     nodeIDHeader=nodeIDHeader, nodeLabelHeader=nodeLabelHeader, nodeATTRKey=nodeATTRKey,
+                                     bidirectional=bidirectional)
+        return DGL.DatasetByGraphs(graphs, nodeATTRKey=nodeATTRKey)
     
     @staticmethod
     def DatasetBySample(name="ENZYMES"):
@@ -2551,7 +2588,7 @@ class DGL:
         return model
     
     @staticmethod
-    def ModelSave(model, path=None):
+    def ModelSave(model, path, overwrite=False):
         """
         Saves the model.
 
@@ -2559,6 +2596,10 @@ class DGL:
         ----------
         model : Model
             The input model.
+        path : str
+            The file path at which to save the model.
+        overwrite : bool, optional
+            If set to True, any existing file will be overwritten. Otherwise, it won't. The default is False.
 
         Returns
         -------
@@ -2566,14 +2607,25 @@ class DGL:
             True if the model is saved correctly. False otherwise.
 
         """
-        if not model:
+        import os
+
+        if model == None:
+            print("DGL.ModelSave - Error: The input model parameter is invalid. Returning None.")
             return None
-        if path:
-            # Make sure the file extension is .pt
-            ext = path[len(path)-3:len(path)]
-            if ext.lower() != ".pt":
-                path = path+".pt"
-            return model.save(path)
+        if path == None:
+            print("DGL.ModelSave - Error: The input path parameter is invalid. Returning None.")
+            return None
+        if not overwrite and os.path.exists(path):
+            print("DGL.ModelSave - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
+        if overwrite and os.path.exists(path):
+            os.remove(path)
+        # Make sure the file extension is .pt
+        ext = path[len(path)-3:len(path)]
+        if ext.lower() != ".pt":
+            path = path+".pt"
+        model.save(path)
+        return True
     
     @staticmethod
     def ModelData(model):

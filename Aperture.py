@@ -3,7 +3,7 @@ import topologic
 
 class Aperture(topologic.Aperture):
     @staticmethod
-    def ApertureTopology(aperture: topologic.Aperture) -> topologic.Topology:
+    def Topology(aperture: topologic.Aperture) -> topologic.Topology:
         """
         Returns the topology of the input aperture.
         
