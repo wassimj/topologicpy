@@ -4697,11 +4697,27 @@ class Topology():
             return Topology.SelfMerge(Cluster.ByTopologies(remaining_vertices))
     
     @staticmethod
-    def Cleanup():
+    def Cleanup(topology=None):
         """
-        Clean up all resources in which are managed by topologic library.
+        Cleans up all resources in which are managed by topologic library. Use this to manage your application's memory consumption.
+        USE WITH CARE. This methods deletes dictionaries, contents, and contexts
+
+        Parameters
+        ----------
+        topology : topologic.Topology , optional
+            If specified the resources used by the input topology will be deleted. If not, ALL resources will be deleted.
+        
+        Returns
+        -------
+        topologic.Topology
+            The input topology, but with its resources deleted or None.
         """
-        topologic.Topology.Cleanup()
+        if not topology == None:
+            if not isinstance(topology, topologic.Topology):
+                print("Topology.Cleanup - Error: The input topology parameter is not a valid topology. Returning None.")
+                return None
+        topologic.Topology.Cleanup(topology)
+        return topology
 
     @staticmethod
     def ReplaceVertices(topology, verticesA=[], verticesB=[], tolerance=0.0001):
