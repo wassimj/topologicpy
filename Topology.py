@@ -1570,8 +1570,10 @@ class Topology():
 
             vertices = [buildVertex(j_v) for j_v in j_vertices]
             edges = [buildEdge(j_e, j_vertices, uuidKey="uuid") for j_e in j_edges]
+            edges = [x for x in edges if x is not None]
             wires = [buildWire(j_w, j_edges, j_vertices, uuidKey="uuid") for j_w in j_wires]
             faces = [buildFace(j_f, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_f in j_faces]
+            faces = [x for x in faces if x is not None]
             shells = [buildShell(j_s, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_s in j_shells]
             cells = [buildCell(j_c, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_c in j_cells]
             cellComplexes = [buildCellComplex(j_cc, j_cells, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_cc in j_cellComplexes]
@@ -1614,6 +1616,8 @@ class Topology():
             for j_v in edge_vertices:
                 vertices.append(buildVertex(find_json_item(j_vertices, uuidKey, j_v)))
             e = Edge.ByVertices(vertices)
+            if e is None:
+                return None
             d = json_item['dictionary']
             e = Topology.SetDictionary(e, Dictionary.ByPythonDictionary(d))
             apertures = [buildAperture(j_ap) for j_ap in json_item['apertures']]
@@ -1657,6 +1661,8 @@ class Topology():
                 ib = Wire.Planarize(ib)
                 internal_boundaries.append(ib)
             f = Face.ByWire(external_boundary)
+            if f is None:
+                return None
             if Face.Area(f) < 0:
                 external_boundary = Wire.Invert(external_boundary)
             f = Face.ByWires(external_boundary, internal_boundaries)
@@ -1676,6 +1682,7 @@ class Topology():
             faces = []
             for j_f in shell_faces:
                 faces.append(buildFace(find_json_item(j_faces, uuidKey, j_f), j_wires, j_edges, j_vertices, uuidKey=uuidKey))
+            faces = [x for x in faces if x is not None]
             s = Shell.ByFaces(faces)
             d = json_item['dictionary']
             s = Topology.SetDictionary(s, Dictionary.ByPythonDictionary(d))

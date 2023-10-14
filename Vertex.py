@@ -1143,6 +1143,8 @@ class Vertex(Topology):
         if not isinstance(face, topologic.Face):
             return None
         eq = Face.PlaneEquation(face)
+        if eq is None:
+            return None
         pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]])
         return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 

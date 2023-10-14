@@ -1768,9 +1768,13 @@ class Wire(topologic.Wire):
             sv = Edge.StartVertex(edge)
             ev = Edge.EndVertex(edge)
             new_sv = Vertex.Project(sv, f)
+            if new_sv is None:
+                return None
             if Vertex.Distance(sv, new_sv) < tolerance:
                 new_sv = sv
             new_ev = Vertex.Project(ev, f)
+            if new_ev is None:
+                return None
             if Vertex.Distance(ev, new_ev) < tolerance:
                 new_ev = ev
             new_edge = Edge.ByVertices([new_sv, new_ev])
