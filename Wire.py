@@ -1143,7 +1143,7 @@ class Wire(topologic.Wire):
         newLocation : topologic.Vertex , optional
             The new location at which to place the topology. If set to None, the world origin (0,0,0) is used. The default is None.
         direction : list , optional
-            The direction, expressed as a list of [X,Y,Z] that signifies the direction of the wire. If set to None, the positive ZAxis direction is considered the direction of the wire. The deafult is None.
+            The direction, expressed as a list of [X,Y,Z] that signifies the direction of the wire. If set to None, the positive ZAxis direction is considered the direction of the wire. The default is None.
 
         Returns
         -------
@@ -1157,10 +1157,30 @@ class Wire(topologic.Wire):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Vector import Vector
+        def cross(p1, p2, p3):
+            a = [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]]
+            b = [p3[0] - p3[0], p3[1] - p1[1], p2[2] - p1[2]]
+            c = [a[1]*b[2] - a[2]*b[1],
+                 a[2]*b[0] - a[0]*b[2],
+                 a[0]*b[1] - a[1]*b[0]]
+            return c
+        
+        def calc_cross(p1, p2, p3):
+            v1 = [p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]]
+            v2 = [p3[0] - p3[0], p3[1] - p1[1], p2[2] - p1[2]]
+            v3 =  np.cross(v1, v2)
+            return [x for x in (v3 / np.linalg.norm(v3))]
+
         if not isinstance(wire, topologic.Wire):
+            print("Wire.Flatten - Error: The input wire parameter is not a valid topologic Wire. Returning None.")
             return None
         if direction == None:
-            direction = Vector.ZAxis()
+            vertices = Topology.Vertices(wire)
+            v1 = Vertex.Coordinates(Topology.Centroid(wire))
+            v2 = Vertex.Coordinates(vertices[0])
+            v3 = Vertex.Coordinates(vertices[1])
+            direction = cross(v1, v2, v3)
+            #direction = Vector.ZAxis()
         if not isinstance(oldLocation, topologic.Vertex):
             oldLocation = Topology.CenterOfMass(wire)
         if not isinstance(newLocation, topologic.Vertex):
@@ -1186,6 +1206,9 @@ class Wire(topologic.Wire):
         flatWire = Topology.Translate(wire, -cm.X(), -cm.Y(), -cm.Z())
         flatWire = Topology.Rotate(flatWire, world_origin, 0, 0, 1, -phi)
         flatWire = Topology.Rotate(flatWire, world_origin, 0, 1, 0, -theta)
+        if not isinstance(flatWire, topologic.Wire):
+            print("1. Wire.Flatten - Error: The flat wire is not a valid topologic wire.", flatWire)
+            return None
         # Ensure flatness. Force Z to be zero
         edges = Wire.Edges(flatWire)
         flatEdges = []
@@ -1196,7 +1219,15 @@ class Wire(topologic.Wire):
             ev1 = Vertex.ByCoordinates(Vertex.X(ev), Vertex.Y(ev), 0)
             e1 = Edge.ByVertices([sv1, ev1])
             flatEdges.append(e1)
-        flatWire = Topology.SelfMerge(Cluster.ByTopologies(flatEdges))
+        flatWire = Wire.ByEdges(flatEdges)
+        if not isinstance(flatWire, topologic.Wire):
+            print("2. Wire.Flatten - Error: The flat wire is not a valid topologic wire.", flatWire)
+            clus = Cluster.ByTopologies(flatEdges)
+            Topology.Show(clus, vertexSize=3)
+            flatWire = Topology.SelfMerge(Cluster.ByTopologies(flatEdges))
+        if not isinstance(flatWire, topologic.Wire):
+            print("3. Wire.Flatten - Error: The flat wire is not a valid topologic wire. Giving up!", flatWire)
+            return None
         dictionary = Dictionary.ByKeysValues(["xTran", "yTran", "zTran", "phi", "theta"], [cm.X(), cm.Y(), cm.Z(), phi, theta])
         flatWire = Topology.SetDictionary(flatWire, dictionary)
         return flatWire
@@ -1702,7 +1733,7 @@ class Wire(topologic.Wire):
         return Wire.ByVertices(vertices)
     
     @staticmethod
-    def Planarize(wire: topologic.Wire) -> topologic.Wire:
+    def Planarize(wire: topologic.Wire, tolerance: float = 0.0001) -> topologic.Wire:
         """
         Returns a planarized version of the input wire.
 
@@ -1710,6 +1741,8 @@ class Wire(topologic.Wire):
         ----------
         wire : topologic.Wire
             The input wire.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001
 
         Returns
         -------
@@ -1718,10 +1751,33 @@ class Wire(topologic.Wire):
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+
         if not isinstance(wire, topologic.Wire):
             return None
+        
+        vertices = Topology.Vertices(wire)
+        w = Wire.ByVertices([Topology.Centroid(wire), vertices[0], vertices[1]])
+        f = Face.ByWire(w)
+        edges = Topology.Edges(wire)
+        new_edges = []
+        for edge in edges:
+            sv = Edge.StartVertex(edge)
+            ev = Edge.EndVertex(edge)
+            new_sv = Vertex.Project(sv, f)
+            if Vertex.Distance(sv, new_sv) < tolerance:
+                new_sv = sv
+            new_ev = Vertex.Project(ev, f)
+            if Vertex.Distance(ev, new_ev) < tolerance:
+                new_ev = ev
+            new_edge = Edge.ByVertices([new_sv, new_ev])
+            new_edges.append(new_edge)
+        return_wire = Topology.SelfMerge(Cluster.ByTopologies(new_edges))
+        return return_wire
+        '''
         verts = []
         _ = wire.Vertices(None, verts)
         w = Wire.ByVertices([verts[0], verts[1], verts[2]], close=True)
@@ -1733,6 +1789,7 @@ class Wire(topologic.Wire):
             v = Vertex.ByCoordinates(v.X()+direction[0]*5, v.Y()+direction[1]*5, v.Z()+direction[2]*5)
             proj_verts.append(Vertex.Project(v, f))
         return Wire.ByVertices(proj_verts, close=True)
+        '''
 
     @staticmethod
     def Project(wire: topologic.Wire, face: topologic.Face, direction: list = None, mantissa: int = 4) -> topologic.Wire:

@@ -26,7 +26,7 @@ class Vertex(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
-
+        import sys
         def areCollinear(vertices, tolerance=0.0001):
             point1 = [Vertex.X(vertices[0]), Vertex.Y(vertices[0]), Vertex.Z(vertices[0])]
             point2 = [Vertex.X(vertices[1]), Vertex.Y(vertices[1]), Vertex.Z(vertices[1])]
@@ -60,7 +60,7 @@ class Vertex(Topology):
     @staticmethod
     def AreIpsilateral(vertices: list, face: topologic.Face) -> bool:
         """
-        Returns True if the input list of vertices form a straight line. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
+        Returns True if the input list of vertices are on one side of a face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
 
         Parameters
         ----------
@@ -963,6 +963,38 @@ class Vertex(Topology):
         """
         from topologicpy.Face import Face
         import math
+
+        def distance_point_to_line(point, line_start, line_end):
+            # Convert input points to NumPy arrays for vector operations
+            point = np.array(point)
+            line_start = np.array(line_start)
+            line_end = np.array(line_end)
+            
+            # Calculate the direction vector of the edge
+            line_direction = line_end - line_start
+            
+            # Vector from the edge's starting point to the point
+            point_to_start = point - line_start
+            
+            # Calculate the parameter 't' where the projection of the point onto the edge occurs
+            if np.dot(line_direction, line_direction) == 0:
+                t = 0
+            else:
+                t = np.dot(point_to_start, line_direction) / np.dot(line_direction, line_direction)
+            
+            # Check if 't' is outside the range [0, 1], and if so, calculate distance to closest endpoint
+            if t < 0:
+                return np.linalg.norm(point - line_start)
+            elif t > 1:
+                return np.linalg.norm(point - line_end)
+            
+            # Calculate the closest point on the edge to the given point
+            closest_point = line_start + t * line_direction
+            
+            # Calculate the distance between the closest point and the given point
+            distance = np.linalg.norm(point - closest_point)
+            
+            return distance
         if not isinstance(vertex, topologic.Vertex):
             print("Vertex.PerpendicularDistance - Error: The input vertex is not a valid topologic vertex. Returning None.")
             return None
@@ -970,6 +1002,12 @@ class Vertex(Topology):
             print("Vertex.PerpendicularDistance - Error: The input face is not a valid topologic face. Returning None.")
             return None
         dic = Face.PlaneEquation(face)
+        if dic == None: # The face is degenerate. Try to treat as an edge.
+            point = Vertex.Coordinates(vertex)
+            face_vertices = Topology.Vertices(face)
+            line_start = Vertex.Coordinates(face_vertices[0])
+            line_end = Vertex.Coordinates(face_vertices[1])
+            return round(distance_point_to_line(point, line_start, line_end), mantissa)
         a = dic["a"]
         b = dic["b"]
         c = dic["c"]
@@ -980,7 +1018,52 @@ class Vertex(Topology):
         if e == 0:
             return 0
         return round(d/e, mantissa)
-        
+    
+    @staticmethod
+    def PlaneEquation(vertices):
+        """
+        Returns the equation of the average plane passing through a list of vertices.
+
+        Parameters
+        -----------
+        vertices : list
+            The input list of vertices
+
+        Return
+        -----------
+        dict
+            The dictionary containing the values of a,b,c,d for the plane equation in the form of ax+by+cz+d=0.
+            The keys in the dictionary are ["a", "b", "c". "d"]
+        """
+        import numpy as np
+        vertices = [Vertex.Coordinates(v) for v in vertices]
+        # Convert vertices to a NumPy array for easier calculations
+        vertices = np.array(vertices)
+
+        # Calculate the centroid of the vertices
+        centroid = np.mean(vertices, axis=0)
+
+        # Center the vertices by subtracting the centroid
+        centered_vertices = vertices - centroid
+
+        # Calculate the covariance matrix
+        covariance_matrix = np.dot(centered_vertices.T, centered_vertices)
+
+        # Find the normal vector by computing the eigenvector of the smallest eigenvalue
+        _, eigen_vectors = np.linalg.eigh(covariance_matrix)
+        normal_vector = eigen_vectors[:, 0]
+
+        # Normalize the normal vector
+        normal_vector /= np.linalg.norm(normal_vector)
+
+        # Calculate the constant D using the centroid and the normal vector
+        d = -np.dot(normal_vector, centroid)
+
+        # Create the plane equation in the form Ax + By + Cz + D = 0
+        a, b, c = normal_vector
+
+        return {"a":a, "b":b, "c":c, "d":d}
+    
     @staticmethod
     def Point(x=0, y=0, z=0) -> topologic.Vertex:
         """

@@ -1521,7 +1521,8 @@ class Topology():
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
         from topologicpy.Aperture import Aperture
-
+        from tqdm.auto import tqdm
+        import time
 
         def getUUID(topology, uuidKey="uuid"):
             d = Topology.Dictionary(topology)
@@ -1635,25 +1636,39 @@ class Topology():
                 _ = Aperture.ByTopologyContext(ap, context)
             return w
 
-        def buildFace(json_item, j_wires, j_edges, j_vertices, uuidKey="uuid"):
+        def buildFace(json_item, j_wires, j_edges, j_vertices, uuidKey="uuid",x=0):
+            bn = 298
+            if x >= bn:
+                print("        Entering buildFace function")
             face_wires = json_item['wires']
-            wires = []
             external_boundary = buildWire(find_json_item(j_wires, uuidKey, face_wires[0]), j_edges, j_vertices, uuidKey=uuidKey)
+            if not isinstance(external_boundary, topologic.Wire):
+                print("Topology.ByJSONString - ERROR: Something went wrong with original external boundary. Returning None.")
+                return None
+            temp_boundary = Wire.Planarize(external_boundary)
+            if temp_boundary == None or not isinstance(temp_boundary, topologic.Wire):
+                print("Topology.ByJSONString - Error: Something went wrong with external boundary. Returning None.")
+                return None
+            else:
+                external_boundary = temp_boundary
             internal_boundaries = []
             for j_w in face_wires[1:]:
                 ib = buildWire(find_json_item(j_wires, uuidKey, j_w),j_edges, j_vertices, uuidKey=uuidKey)
+                ib = Wire.Planarize(ib)
                 internal_boundaries.append(ib)
             f = Face.ByWire(external_boundary)
             if Face.Area(f) < 0:
-                f = Face.ByWires(Wire.Invert(external_boundary), internal_boundaries)
-            else:
-                f = Face.ByWires(external_boundary, internal_boundaries)
+                external_boundary = Wire.Invert(external_boundary)
+            f = Face.ByWires(external_boundary, internal_boundaries)
             d = json_item['dictionary']
             f = Topology.SetDictionary(f, Dictionary.ByPythonDictionary(d))
             apertures = [buildAperture(j_ap) for j_ap in json_item['apertures']]
-            context = Context.ByTopologyParameters(f, u=0.5, v=0.5, w=0.5)
-            for ap in apertures:
-                _ = Aperture.ByTopologyContext(ap, context)
+            if len(apertures) > 0:
+                context = Context.ByTopologyParameters(f, u=0.5, v=0.5, w=0.5)
+                for ap in apertures:
+                    _ = Aperture.ByTopologyContext(ap, context)
+            if x >= 298:
+                print("        Exiting buildFace function with face:", f)
             return f
 
         def buildShell(json_item, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid"):
@@ -1665,9 +1680,10 @@ class Topology():
             d = json_item['dictionary']
             s = Topology.SetDictionary(s, Dictionary.ByPythonDictionary(d))
             apertures = [buildAperture(j_ap) for j_ap in json_item['apertures']]
-            context = Context.ByTopologyParameters(s, u=0.5, v=0.5, w=0.5)
-            for ap in apertures:
-                _ = Aperture.ByTopologyContext(ap, context)
+            if len(apertures) > 0:
+                context = Context.ByTopologyParameters(s, u=0.5, v=0.5, w=0.5)
+                for ap in apertures:
+                    _ = Aperture.ByTopologyContext(ap, context)
             return s
 
         def buildCell(json_item, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid"):
@@ -1777,6 +1793,7 @@ class Topology():
             elif topology_type.lower() == "cellcomplex":
                 j_cellComplexes.append(jsonItem)
 
+        print("1. Importing", len(j_vertices),"vertices and selectors")
         vertices = [buildVertex(j_v) for j_v in j_vertices]
         vertex_selectors = []
         all_vertex_apertures = []
@@ -1784,7 +1801,9 @@ class Topology():
             v, s, vertex_apertures = addAperturesUUID(v, uuidKey="uuid")
             all_vertex_apertures += vertex_apertures
             vertex_selectors.append(s)
+        print("   Done importing vertices and selectors")
 
+        print("2. Importing", len(j_edges),"edges and selectors")
         edges = [buildEdge(j_e, j_vertices, uuidKey="uuid") for j_e in j_edges]
         edge_selectors = []
         all_edge_apertures = []
@@ -1792,7 +1811,9 @@ class Topology():
             e, s, edge_apertures = addAperturesUUID(e, uuidKey="uuid")
             all_edge_apertures += edge_apertures
             edge_selectors.append(s)
+        print("   Done importing edges and selectors")
 
+        print("3. Importing", len(j_wires),"wires and selectors")
         wires = [buildWire(j_w, j_edges, j_vertices, uuidKey="uuid") for j_w in j_wires]
         wire_selectors = []
         all_wire_apertures = []
@@ -1800,15 +1821,31 @@ class Topology():
             w, s, wire_apertures = addAperturesUUID(w, uuidKey="uuid")
             all_wire_apertures += wire_apertures
             wire_selectors.append(s)
+        print("   Done importing wires and selectors")
 
-        faces = [buildFace(j_f, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_f in j_faces]
+        print("4. Importing", len(j_faces),"faces and selectors")
+        faces = []
+        xx = 0
+        for j_f in tqdm(j_faces[298:302]):
+            xx = j_faces.index(j_f)
+            print("   ",xx,"Building face")
+            f = buildFace(j_f, j_wires, j_edges, j_vertices, uuidKey="uuid", x=xx)
+            print("   ",xx,"Received face:", f)
+            print("   ",xx,"Appending face to list", f)
+            faces.append(f)
+            print("   ",xx,"Done appending face to list")
+            xx += 1
+            print("   Fetching next item:", xx)
+        print("   Done importing faces")
         face_selectors = []
         all_face_apertures = []
         for f in faces:
             f, s, face_apertures = addAperturesUUID(f, uuidKey="uuid")
             all_face_apertures += face_apertures
             face_selectors.append(s)
+        print("   Done building face selectors")
 
+        print("5. Building shells and selectors")
         shells = [buildShell(j_s, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_s in j_shells]
         shell_selectors = []
         all_shell_apertures = []
@@ -1816,7 +1853,9 @@ class Topology():
             sh, s, shell_apertures = addAperturesUUID(sh, uuidKey="uuid")
             all_shell_apertures += shell_apertures
             shell_selectors.append(s)
+        print("   Done building shells and selectors")
 
+        print("6. Building cells and selectors")
         cells = [buildCell(j_c, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_c in j_cells]
         cell_selectors = []
         all_cell_apertures = []
@@ -1824,7 +1863,9 @@ class Topology():
             c, s, cell_apertures = addAperturesUUID(c, uuidKey="uuid")
             all_cell_apertures += cell_apertures
             cell_selectors.append(s)
+        print("   Done building cells and selectors")
 
+        print("7. Building cellcomplexes and selectors")
         cellComplexes = [buildCellComplex(j_cc, j_cells, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_cc in j_cellComplexes]
         cellComplex_selectors = []
         all_cellComplex_apertures = []
@@ -1832,6 +1873,7 @@ class Topology():
             cc, s, cellComplex_apertures = addAperturesUUID(cc, uuidKey="uuid")
             all_cellComplex_apertures += cellComplex_apertures
             cellComplex_selectors.append(s)
+        print("   Done building cellcomplexes and selectors")
 
         everything = vertices+edges+wires+faces+shells+cells+cellComplexes
         toplevelTopologies = []
@@ -1840,7 +1882,8 @@ class Topology():
             if Dictionary.ValueAtKey(d,'toplevel') == True:
                 toplevelTopologies.append(ev)
 
-        for tp in toplevelTopologies:
+        print("Found toplevelTopologies", len(toplevelTopologies))
+        for tp in tqdm(toplevelTopologies):
             _ = Topology.TransferDictionariesBySelectors(tp, vertex_selectors, tranVertices=True, tolerance=tolerance)
             _ = Topology.TransferDictionariesBySelectors(tp, edge_selectors, tranEdges=True, tolerance=tolerance)
             _ = Topology.TransferDictionariesBySelectors(tp, face_selectors, tranFaces=True, tolerance=tolerance)
@@ -3727,8 +3770,11 @@ class Topology():
         elif isinstance(topology, topologic.Wire): #Wire
             if topology.IsClosed():
                 internalBoundaries = []
-                tempFace = topologic.Face.ByExternalInternalBoundaries(topology, internalBoundaries)
-                vst = Face.InternalVertex(tempFace, tolerance)
+                try:
+                    tempFace = topologic.Face.ByExternalInternalBoundaries(topology, internalBoundaries)
+                    vst = Face.InternalVertex(tempFace, tolerance)
+                except:
+                    vst = Topology.Centroid(topology)
             else:
                 tempEdge = Topology.Edges(topology)[0]
                 vst = Edge.VertexByParameter(tempEdge, 0.5)
@@ -4964,9 +5010,13 @@ class Topology():
         return_topology = topology.SelfMerge()
         if isinstance(return_topology, topologic.CellComplex):
             cells = Topology.Cells(return_topology)
-            topA = cells[0]
-            topB = Cluster.ByTopologies(cells[1:])
-            return_topology = Topology.Merge(topA, topB)
+            if isinstance(cells, list):
+                if len(cells) > 1:
+                    topA = cells[0]
+                    topB = Cluster.ByTopologies(cells[1:])
+                    return_topology = Topology.Merge(topA, topB)
+                else:
+                    return_topology = cells[0]
         return return_topology
 
     @staticmethod

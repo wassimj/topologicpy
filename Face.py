@@ -470,8 +470,10 @@ class Face(topologic.Face):
             else:
                 return []
         if not isinstance(wire, topologic.Wire):
+            print("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
         if not Wire.IsClosed(wire):
+            print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
             return None
         
         edges = Wire.Edges(wire)
@@ -501,6 +503,7 @@ class Face(topologic.Face):
             else:
                 returnList.append(f)
         if len(returnList) == 0:
+            print("Face.ByWire - Error: Could not build a face from the input wire parameter. Returning None.")
             return None
         elif len(returnList) == 1:
             return returnList[0]
@@ -1118,7 +1121,11 @@ class Face(topologic.Face):
             True if the two input faces are coplanar. False otherwise.
 
         """
-        if not isinstance(faceA, topologic.Face) or not isinstance(faceB, topologic.Face):
+        if not isinstance(faceA, topologic.Face):
+            print("Face.IsInide - Error: The input faceA parameter is not a valid topologic face. Returning None.")
+            return None
+        if not isinstance(faceB, topologic.Face):
+            print("Face.IsInide - Error: The input faceB parameter is not a valid topologic face. Returning None.")
             return None
         dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
         dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
@@ -1151,14 +1158,23 @@ class Face(topologic.Face):
         from topologicpy.Dictionary import Dictionary
         
         if not isinstance(face, topologic.Face):
+            print("Face.IsInide - Error: The input face parameter is not a valid topologic face. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
+            print("Face.IsInide - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         # Test the distance first
         if Vertex.PerpendicularDistance(vertex, face) > tolerance:
             return False
-        
-        return topologic.FaceUtility.IsInside(face, vertex, tolerance)
+        status = False
+        try:
+            status = topologic.FaceUtility.IsInside(face, vertex, tolerance)
+        except:
+            print("Face.IsInide - Warning: Could not determine if vertex is inside face. Returning False.")
+            clus = Cluster.ByTopologies([vertex, face])
+            Topology.Show(clus)
+            status = False
+        return status
 
     @staticmethod
     def MedialAxis(face: topologic.Face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
@@ -1412,28 +1428,38 @@ class Face(topologic.Face):
         """
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
+        from topologicpy.Cluster import Cluster
         import random
         import time
 
         if not isinstance(face, topologic.Face):
             print("Face.PlaneEquation - Error: The input face is not a valid topologic face. Returning None.")
             return None
-        all_vertices = Topology.Vertices(face)
-        if len(all_vertices) < 3:
+        vertices = Topology.Vertices(face)
+        if len(vertices) < 3:
             print("Face.PlaneEquation - Error: The input face has less than 3 vertices. Returning None.")
             return None
-        vertices = random.sample(all_vertices, 3)
+        if len(vertices) == 3:
+            if Vertex.AreCollinear(vertices):
+                print("Face.PlaneEquation - Error: The face is degenerate. Could not sample 3 non-collinear vertices. Returning None.")
+                return None
         start = time.time()
         end = time.time()
         duration = (end - start)
-        while Vertex.AreCollinear(vertices) and duration < 10:
-            vertices = random.sample(all_vertices, 3)
-            end = time.time()
-            duration = (end - start)
-        if Vertex.AreCollinear(vertices):
-            print("Face.PlaneEquation - Error: Could not sample 3 non-collinear vertices. Returning None.")
-            return None
-        v1, v2, v3 = vertices
+        new_vertices = [Face.VertexByParameters(face, u=0.1,v=0.1), Face.VertexByParameters(face, u=0.9,v=0.2), Face.VertexByParameters(face, u=0.5,v=0.8)]
+        #while Vertex.AreCollinear(new_vertices) and duration < 20:
+            #new_vertices = [Topology.Centroid(face)]+random.sample(vertices, 2)
+            #end = time.time()
+            #duration = (end - start)
+            #if duration > 19:
+                #print("Face.PlaneEquation - Warning: Finding three non-collinear vertices is taking a long time", duration)
+        #if Vertex.AreCollinear(new_vertices):
+            #print("Face.PlaneEquation - Error: Could not sample 3 non-collinear vertices. Returning None.")
+            #clus = Cluster.ByTopologies([face]+new_vertices)
+            #print(new_vertices)
+            #Topology.Show(clus, vertexSize=5)
+            #return None
+        v1, v2, v3 = new_vertices[0:3]
         x1, y1, z1 = Vertex.Coordinates(v1)
         x2, y2, z2 = Vertex.Coordinates(v2)
         x3, y3, z3 = Vertex.Coordinates(v3)
@@ -1540,6 +1566,23 @@ class Face(topologic.Face):
             if temp_ib:
                 p_ib_list.append(temp_ib)
         return Face.ByWires(p_eb, p_ib_list)
+
+    @staticmethod
+    def RectangleByPlaneEquation(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, placement: str = "center", equation: dict = None, tolerance: float = 0.0001) -> topologic.Face:
+        import numpy as np
+        from topologicpy.Vertex import Vertex
+        # Extract coefficients of the plane equation
+        a = equation['a']
+        b = equation['b']
+        c = equation['c']
+        d = equation['d']
+
+        # Calculate the normal vector of the plane
+        direction = np.array([a, b, c], dtype=float)
+        direction /= np.linalg.norm(direction)
+        direction = [x for x in direction]
+
+        return Face.Rectangle(origin=origin, width=width, length=length, direction = direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
     def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
