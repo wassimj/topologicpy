@@ -1129,7 +1129,12 @@ class Vertex(Topology):
             a, b, c, d = plane_coeffs
             
             # Calculate the distance from the point to the plane
-            distance = (a * x + b * y + c * z + d) / (a**2 + b**2 + c**2)
+            division = (a**2 + b**2 + c**2)
+            if division:
+                distance = (a * x + b * y + c * z + d) / division
+            else:
+                # FIXME: what value should be set instead of zero ?
+                distance = 0
             
             # Calculate the coordinates of the projected point
             x_proj = x - distance * a
