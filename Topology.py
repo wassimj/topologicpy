@@ -1661,7 +1661,7 @@ class Topology():
                 ib = Wire.Planarize(ib)
                 internal_boundaries.append(ib)
             f = Face.ByWire(external_boundary)
-            if f is None:
+            if f is None or not isinstance(f, topologic.Face):
                 return None
             if Face.Area(f) < 0:
                 external_boundary = Wire.Invert(external_boundary)
