@@ -23,16 +23,16 @@ class Face(topologic.Face):
             The created face with internal boundaries added to it.
 
         """
-        if not face:
-            return None
+
         if not isinstance(face, topologic.Face):
+            print("Face.AddInternalBoundaries - Error: The input face parameter is not a valid topologic face. Returning None.")
             return None
-        if not wires:
-            return face
         if not isinstance(wires, list):
+            print("Face.AddInternalBoundaries - Warning: The input wires parameter is not a valid list. Returning the input face.")
             return face
         wireList = [w for w in wires if isinstance(w, topologic.Wire)]
         if len(wireList) < 1:
+            print("Face.AddInternalBoundaries - Warning: The input wires parameter does not contain any valid wires. Returning the input face.")
             return face
         faceeb = face.ExternalBoundary()
         faceibList = []
@@ -59,9 +59,8 @@ class Face(topologic.Face):
             The created face with internal boundaries added to it.
 
         """
-        if not face:
-            return None
         if not isinstance(face, topologic.Face):
+            print("Face.AddInternalBoundariesCluster - Warning: The input cluster parameter is not a valid cluster. Returning None.")
             return None
         if not cluster:
             return face
@@ -92,9 +91,11 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Vector import Vector
-        if not faceA or not isinstance(faceA, topologic.Face):
+        if not isinstance(faceA, topologic.Face):
+            print("Face.Angle - Warning: The input faceA parameter is not a valid topologic face. Returning None.")
             return None
-        if not faceB or not isinstance(faceB, topologic.Face):
+        if not isinstance(faceB, topologic.Face):
+            print("Face.Angle - Warning: The input faceB parameter is not a valid topologic face. Returning None.")
             return None
         dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
         dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
@@ -119,6 +120,7 @@ class Face(topologic.Face):
 
         """
         if not isinstance(face, topologic.Face):
+            print("Face.Area - Warning: The input face parameter is not a valid topologic face. Returning None.")
             return None
         area = None
         try:
@@ -165,6 +167,7 @@ class Face(topologic.Face):
             return [minX, minY, maxX, maxY]
 
         if not isinstance(topology, topologic.Topology):
+            print("Face.BoundingRectangle - Warning: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
         vertices = Topology.SubTopologies(topology, subTopologyType="vertex")
         topology = Cluster.ByTopologies(vertices)
@@ -242,10 +245,16 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Wire import Wire
-        wire = Wire.ByEdges(edges)
-        if not wire:
+        if not isinstance(edges, list):
+            print("Face.ByEdges - Error: The input edges parameter is not a valid list. Returning None.")
             return None
+        edges = [e for e in edges if isinstance(e, topologic.Edge)]
+        if len(edges) < 1:
+            print("Face.ByEdges - Error: The input edges parameter does not contain any valid edges. Returning None.")
+            return None
+        wire = Wire.ByEdges(edges)
         if not isinstance(wire, topologic.Wire):
+            print("Face.ByEdges - Error: Could not create the required wire. Returning None.")
             return None
         return Face.ByWire(wire)
 
@@ -267,8 +276,12 @@ class Face(topologic.Face):
         """
         from topologicpy.Cluster import Cluster
         if not isinstance(cluster, topologic.Cluster):
+            print("Face.ByEdgesCluster - Warning: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         edges = Cluster.Edges(cluster)
+        if len(edges) < 1:
+            print("Face.ByEdgesCluster - Warning: The input cluster parameter does not contain any valid edges. Returning None.")
+            return None
         return Face.ByEdges(edges)
 
     @staticmethod
@@ -300,7 +313,9 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Wire import Wire
-
+        if not isinstance(face, topologic.Face):
+            print("Face.ByOffset - Warning: The input face parameter is not a valid toplogic face. Returning None.")
+            return None
         eb = Face.Wire(face)
         internal_boundaries = Face.InternalBoundaries(face)
         offset_external_boundary = Wire.ByOffset(wire=eb, offset=offset, miter=miter, miterThreshold=miterThreshold, offsetKey=offsetKey, miterThresholdKey=miterThresholdKey, step=step)
@@ -338,6 +353,9 @@ class Face(topologic.Face):
                 returnList.append(Wire.Planarize(aWire))
             return returnList
         
+        if not isinstance(shell, topologic.Shell):
+            print("Face.ByShell - Warning: The input shell parameter is not a valid toplogic shell. Returning None.")
+            return None
         ext_boundary = Shell.ExternalBoundary(shell)
         ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
         if not Topology.IsPlanar(ext_boundary):
@@ -352,7 +370,7 @@ class Face(topologic.Face):
                     f = Face.ByWire(w)
                     return f
                 except:
-                    print("FaceByPlanarShell - Error: The input Wire is not planar and could not be fixed. Returning None.")
+                    print("Face.ByPlanarShell - Error: The wire could not be planarized. Returning None.")
                     return None
         elif isinstance(ext_boundary, topologic.Cluster):
             wires = []
@@ -364,6 +382,9 @@ class Face(topologic.Face):
                     aFace = topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(aWire, angTolerance))
                 except:
                     aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance)))
+                if not isinstance(aFace, topologic.Face):
+                    print("Face.ByShell - Error: The operation failed. Returning None.")
+                    return None
                 anArea = Face.Area(aFace)
                 faces.append(aFace)
                 areas.append(anArea)
@@ -529,11 +550,20 @@ class Face(topologic.Face):
 
         """
         if not isinstance(externalBoundary, topologic.Wire):
+            print("Face.ByWires - Error: The input externalBoundary parameter is not a valid topologic wire. Returning None.")
             return None
         if not Wire.IsClosed(externalBoundary):
+            print("Face.ByWires - Error: The input externalBoundary parameter is not a closed topologic wire. Returning None.")
             return None
         ibList = [x for x in internalBoundaries if isinstance(x, topologic.Wire) and Wire.IsClosed(x)]
-        return topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList)
+        face = None
+        try:
+            face = topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList)
+        except:
+            print("Face.ByWire - Error: The operation failed. Returning None.")
+            face = None
+        return face
+
 
     @staticmethod
     def ByWiresCluster(externalBoundary: topologic.Wire, internalBoundariesCluster: topologic.Cluster = None) -> topologic.Face:
@@ -556,12 +586,15 @@ class Face(topologic.Face):
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         if not isinstance(externalBoundary, topologic.Wire):
+            print("Face.ByWiresCluster - Error: The input externalBoundary parameter is not a valid topologic wire. Returning None.")
             return None
         if not Wire.IsClosed(externalBoundary):
+            print("Face.ByWiresCluster - Error: The input externalBoundary parameter is not a closed topologic wire. Returning None.")
             return None
         if not internalBoundariesCluster:
             internalBoundaries = []
         elif not isinstance(internalBoundariesCluster, topologic.Cluster):
+            print("Face.ByWiresCluster - Error: The input internalBoundariesCluster parameter is not a valid topologic cluster. Returning None.")
             return None
         else:
             internalBoundaries = Cluster.Wires(internalBoundariesCluster)
@@ -1158,10 +1191,10 @@ class Face(topologic.Face):
         from topologicpy.Dictionary import Dictionary
         
         if not isinstance(face, topologic.Face):
-            print("Face.IsInide - Error: The input face parameter is not a valid topologic face. Returning None.")
+            print("Face.IsInside - Error: The input face parameter is not a valid topologic face. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
-            print("Face.IsInide - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
+            print("Face.IsInside - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         # Test the distance first
         if Vertex.PerpendicularDistance(vertex, face) > tolerance:
@@ -1170,9 +1203,9 @@ class Face(topologic.Face):
         try:
             status = topologic.FaceUtility.IsInside(face, vertex, tolerance)
         except:
-            print("Face.IsInide - Warning: Could not determine if vertex is inside face. Returning False.")
+            print("Face.IsInside - Warning: Could not determine if vertex is inside face. Returning False.")
             clus = Cluster.ByTopologies([vertex, face])
-            Topology.Show(clus)
+            Topology.Show(clus, renderer="browser")
             status = False
         return status
 
@@ -1428,7 +1461,6 @@ class Face(topologic.Face):
         """
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
-        from topologicpy.Cluster import Cluster
         import random
         import time
 
@@ -1439,13 +1471,14 @@ class Face(topologic.Face):
         if len(vertices) < 3:
             print("Face.PlaneEquation - Error: The input face has less than 3 vertices. Returning None.")
             return None
-        if len(vertices) == 3:
-            if Vertex.AreCollinear(vertices):
-                print("Face.PlaneEquation - Error: The face is degenerate. Could not sample 3 non-collinear vertices. Returning None.")
-                return None
-        start = time.time()
-        end = time.time()
-        duration = (end - start)
+        #if len(vertices) == 3:
+            #if Vertex.AreCollinear(vertices, tolerance=0.01):
+                #print("Face.PlaneEquation - Error: The face is degenerate. Could not sample 3 non-collinear vertices. Returning None.")
+                #Topology.Show(face)
+                #return None
+        #start = time.time()
+        #end = time.time()
+        #duration = (end - start)
         new_vertices = [Face.VertexByParameters(face, u=0.1,v=0.1), Face.VertexByParameters(face, u=0.9,v=0.2), Face.VertexByParameters(face, u=0.5,v=0.8)]
         #while Vertex.AreCollinear(new_vertices) and duration < 20:
             #new_vertices = [Topology.Centroid(face)]+random.sample(vertices, 2)

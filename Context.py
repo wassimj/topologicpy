@@ -24,11 +24,15 @@ class Context:
             The created context object. See Aperture.ByObjectContext.
 
         """
-
+        if not isinstance(topology, topologic.Topology):
+            print("Context.ByTopologyParameters - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+            return None
+        
         context = None
         try:
             context = topologic.Context.ByTopologyParameters(topology, u, v, w)
         except:
+            print("Context.ByTopologyParameters - Error: The operation failed. Returning None.")
             context = None
         return context
     
@@ -48,9 +52,13 @@ class Context:
             The topology of the input context.
 
         """
+        if not isinstance(context, topologic.Context):
+            print("Context.Topology - Error: The input context parameter is not a valid topologic context. Returning None.")
+            return None
         topology = None
         try:
             topology = context.Topology()
         except:
+            print("Context.Topology - Error: The operation failed. Returning None.")
             topology = None
         return topology

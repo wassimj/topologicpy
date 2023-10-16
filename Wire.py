@@ -568,6 +568,68 @@ class Wire(topologic.Wire):
         baseWire = Topology.Rotate(baseWire, origin, 0, 1, 0, theta)
         baseWire = Topology.Rotate(baseWire, origin, 0, 0, 1, phi)
         return baseWire
+    
+    @staticmethod
+    def Close(wire, tolerance=0.0001):
+        """
+        Closes the input wire
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+                
+        Returns
+        -------
+        topologic.Wire
+            The closed version of the input wire.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+        
+        def nearest_vertex(vertex, vertices):
+            distances = []
+            for v in vertices:
+                distances.append(Vertex.Distance(vertex, v))
+            new_vertices = Helper.Sort(vertices, distances)
+            return new_vertices[1] #The first item is the same vertex, so return the next nearest vertex.
+        
+        if not isinstance(wire, topologic.Wire):
+            print("Wire.Close - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            return None
+        if Wire.IsClosed(wire):
+            return wire
+        vertices = Topology.Vertices(wire)
+        ends = [v for v in vertices if Vertex.Degree(v, wire) == 1]
+        if len(ends) < 2:
+            print("Wire.Close - Error: The input wire parameter contains less than two open end vertices. Returning None.")
+            return None
+        geometry = Topology.Geometry(wire)
+        g_vertices = geometry['vertices']
+        g_edges = geometry['edges']
+        used = []
+        for end in ends:
+            nearest = nearest_vertex(end, ends)
+            if not nearest in used:
+                d = Vertex.Distance(end, nearest)
+                i1 = Vertex.Index(end, vertices)
+                i2 = Vertex.Index(nearest, vertices)
+                if i1 == None or i2 == None:
+                    print("Wire.Close - Error: Something went wrong. Returning None.")
+                    return None
+                if d < tolerance:
+                    g_vertices[i1] = Vertex.Coordinates(end)
+                    g_vertices[i2] = Vertex.Coordinates(end)
+                else:
+                    if not(([i1, i2] in g_edges) or ([i2, i1] in g_edges)):
+                        g_edges.append([i1, i2])
+                used.append(end)
+        new_wire = Topology.ByGeometry(vertices=g_vertices, edges=g_edges, faces=[], outputMode="wire")
+        return new_wire
 
     @staticmethod
     def ConvexHull(topology):

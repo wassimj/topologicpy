@@ -59,15 +59,16 @@ class CellComplex(topologic.CellComplex):
         """
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        if not cells:
-            return None
+
         if not isinstance(cells, list):
+            print("CellComplex.ByCells - Error: The input cells parameter is not a valid list. Returning None.")
             return None
         cells = [x for x in cells if isinstance(x, topologic.Cell)]
         if len(cells) < 1:
+            print("CellComplex.ByCells - Error: The input cells parameter does not contain any valid cells. Returning None.")
             return None
         elif len(cells) == 1:
-            print("CellComplex.ByCells - Warning: Found only one cell. Returning Cell instead of CellComplex.")
+            print("CellComplex.ByCells - Warning: The input cells parameter contains only one valid cells. Returning object of type topologic.Cell instead of topologic.CellComplex.")
             return cells[0]
         cellComplex = None
         try:
@@ -77,7 +78,7 @@ class CellComplex(topologic.CellComplex):
             topB = Cluster.ByTopologies(cells[1:])
             cellComplex = Topology.Merge(topA, topB)
             if not isinstance(cellComplex, topologic.CellComplex):
-                print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning Cluster instead of CellComplex.")
+                print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning object of type topologic.Cluster instead of topologic.CellComplex.")
                 cellComplex = Cluster.ByTopologies(cells)
         return cellComplex
     
@@ -99,9 +100,9 @@ class CellComplex(topologic.CellComplex):
             The created cellcomplex.
 
         """
-        if not cluster:
-            return None
+
         if not isinstance(cluster, topologic.Cluster):
+            print("CellComplex.ByCellsCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cells = []
         _ = cluster.Cells(None, cells)
@@ -125,38 +126,41 @@ class CellComplex(topologic.CellComplex):
             The created cellcomplex.
 
         """
-        if not faces:
-            return None
+
         if not isinstance(faces, list):
+            print("CellComplex.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
             return None
         faces = [x for x in faces if isinstance(x, topologic.Face)]
         if len(faces) < 1:
+            print("CellComplex.ByFaces - Error: The input faces parameter does not contain any valid faces. Returning None.")
             return None
         try:
             cellComplex = topologic.CellComplex.ByFaces(faces, tolerance, False)
         except:
             cellComplex = None
         if not cellComplex:
-            print("Warning: Default CellComplex.ByFaces method failed. Attempting to Merge the Faces.")
+            print("CellComplex.ByFaces - Warning: The default method failed. Attempting a workaround.")
             cellComplex = faces[0]
             for i in range(1,len(faces)):
                 newCellComplex = None
                 try:
                     newCellComplex = cellComplex.Merge(faces[i], False)
                 except:
-                    print("Warning: Failed to merge Face #"+str(i)+". Skipping.")
+                    print("CellComplex.ByFaces - Warning: Failed to merge face #"+str(i)+". Skipping.")
                 if newCellComplex:
                     cellComplex = newCellComplex
             if cellComplex.Type() != 64: #64 is the type of a CellComplex
-                print("Warning: Input Faces do not form a CellComplex")
+                print("CellComplex.ByFaces - Warning: The input faces do not form a cellcomplex")
                 if cellComplex.Type() > 64:
                     returnCellComplexes = []
                     _ = cellComplex.CellComplexes(None, returnCellComplexes)
                     if len(returnCellComplexes) > 0:
                         return returnCellComplexes[0]
                     else:
+                        print("CellComplex.ByFaces - Error: Could not create a cellcomplex. Returning None.")
                         return None
                 else:
+                    print("CellComplex.ByFaces - Error: Could not create a cellcomplex. Returning None.")
                     return None
         else:
             return cellComplex
@@ -179,9 +183,9 @@ class CellComplex(topologic.CellComplex):
             The created cellcomplex.
 
         """
-        if not cluster:
-            return None
+
         if not isinstance(cluster, topologic.Cluster):
+            print("CellComplex.ByFacesCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         faces = []
         _ = cluster.Faces(None, faces)
@@ -195,7 +199,7 @@ class CellComplex(topologic.CellComplex):
         Parameters
         ----------
         wires : list
-            The input list of wires.
+            The input list of wires. The list should contain a minimum of two wires. All wires must have the same number of edges.
         triangulate : bool , optional
             If set to True, the faces will be triangulated. The default is True.
         tolerance : float , optional
@@ -211,6 +215,13 @@ class CellComplex(topologic.CellComplex):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
+        if not isinstance(wires, list):
+            print("CellComplex.ByFaces - Error: The input wires parameter is not a valid list. Returning None.")
+            return None
+        wires = [x for x in wires if isinstance(x, topologic.Wire)]
+        if len(wires) < 2:
+            print("CellComplex.ByWires - Error: The input wires parameter contains less than two valid wires. Returning None.")
+            return None
         faces = [topologic.Face.ByExternalBoundary(wires[0]), topologic.Face.ByExternalBoundary(wires[-1])]
         if triangulate == True:
             triangles = []
@@ -237,6 +248,7 @@ class CellComplex(topologic.CellComplex):
             w2_edges = []
             _ = wire2.Edges(None, w2_edges)
             if len(w1_edges) != len(w2_edges):
+                print("CellComplex.ByWires - Error: The input wires parameter contains wires with different number of edges. Returning None.")
                 return None
             for j in range (len(w1_edges)):
                 e1 = w1_edges[j]
@@ -311,9 +323,9 @@ class CellComplex(topologic.CellComplex):
             The created cellcomplex.
 
         """
-        if not cluster:
-            return None
+
         if not isinstance(cluster, topologic.Cluster):
+            print("CellComplex.ByWiresCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         wires = []
         _ = cluster.Wires(None, wires)
@@ -336,6 +348,7 @@ class CellComplex(topologic.CellComplex):
 
         """
         if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.Cells - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         cells = []
         _ = cellComplex.Cells(None, cells)
@@ -403,6 +416,7 @@ class CellComplex(topologic.CellComplex):
             return apTopologies
 
         if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.Decompose - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         externalVerticalFaces = []
         internalVerticalFaces = []
@@ -503,6 +517,7 @@ class CellComplex(topologic.CellComplex):
 
         """ 
         if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.Edges - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         edges = []
         _ = cellComplex.Edges(None, edges)
@@ -563,6 +578,7 @@ class CellComplex(topologic.CellComplex):
 
         """
         if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.Faces - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         faces = []
         _ = cellComplex.Faces(None, faces)
@@ -693,6 +709,7 @@ class CellComplex(topologic.CellComplex):
             prism = Topology.Rotate(prism, origin, 0, 0, 1, phi)
             return prism
         else:
+            print("CellComplex.Prism - Error: Could not create a prism. Returning None.")
             return None
 
     @staticmethod
@@ -712,6 +729,7 @@ class CellComplex(topologic.CellComplex):
 
         """
         if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.Shells - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         shells = []
         _ = cellComplex.Shells(None, shells)
@@ -734,6 +752,7 @@ class CellComplex(topologic.CellComplex):
 
         """
         if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.Vertices - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         vertices = []
         _ = cellComplex.Vertices(None, vertices)
@@ -759,11 +778,14 @@ class CellComplex(topologic.CellComplex):
         """
         from topologicpy.Cell import Cell
         if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.Volume - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         cells = CellComplex.Cells(cellComplex)
         volume = 0
         for cell in cells:
-            volume += Cell.Volume(cell)
+            volume = Cell.Volume(cell)
+            if not volume == None:
+                volume += Cell.Volume(cell)
         return round(volume, mantissa)
 
     @staticmethod
@@ -783,6 +805,7 @@ class CellComplex(topologic.CellComplex):
 
         """
         if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.Wires - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         wires = []
         _ = cellComplex.Wires(None, wires)

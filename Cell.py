@@ -90,9 +90,11 @@ class Cell(Topology):
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         if not isinstance(faces, list):
+            print("Cell.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
             return None
         faceList = [x for x in faces if isinstance(x, topologic.Face)]
         if len(faceList) < 1:
+            print("Cell.ByFaces - Error: The input faces parameter does not contain valid faces. Returning None.")
             return None
         planarizedList = []
         enlargedList = []
@@ -139,6 +141,7 @@ class Cell(Topology):
         """
         from topologicpy.Topology import Topology
         if not isinstance(shell, topologic.Shell):
+            print("Cell.ByShell - Error: The input shell parameter is not a valid topologic shell. Returning None.")
             return None
         faces = Topology.SubTopologies(shell, subTopologyType="face")
         return Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
@@ -176,6 +179,7 @@ class Cell(Topology):
         from topologicpy.Topology import Topology
 
         if not isinstance(face, topologic.Face):
+            print("Cell.ByThickenedFace - Error: The input face parameter is not a valid topologic face. Returning None.")
             return None
         if reverse == True and bothSides == False:
             thickness = -thickness
@@ -232,6 +236,7 @@ class Cell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         if not isinstance(shell, topologic.Shell):
+            print("Cell.ByThickenedShell - Error: The input shell parameter is not a valid topologic Shell. Returning None.")
             return None
         if reverse == True and bothSides == False:
             thickness = -thickness
@@ -306,6 +311,13 @@ class Cell(Topology):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
+        if not isinstance(wires, list):
+            print("Cell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
+            return None
+        wires = [w for w in wires if isinstance(w, topologic.Wire)]
+        if len(wires) < 2:
+            print("Cell.ByWires - Error: The input wires parameter contains less than two valid topologic wires. Returning None.")
+            return None
         faces = [Face.ByWire(wires[0]), Face.ByWire(wires[-1])]
         if close == True:
             faces.append(Face.ByWire(wires[0]))
@@ -325,6 +337,7 @@ class Cell(Topology):
             w2_edges = []
             _ = wire2.Edges(None, w2_edges)
             if len(w1_edges) != len(w2_edges):
+                print("Cell.ByWires - Error: The input wires parameter contains wires with different number of edges. Returning None.")
                 return None
             if triangulate == True:
                 for j in range (len(w1_edges)):
@@ -381,8 +394,6 @@ class Cell(Topology):
                             faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2])))
                     elif e4:
                             faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2])))
-        #for f in faces:
-            #cleanup(f)
         cell = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
         if not cell:
             cell = Shell.ByFaces(faces)
@@ -391,7 +402,9 @@ class Cell(Topology):
                 cell = Topology.ByGeometry(geom['vertices'], geom['edges'], geom['faces'])
             elif not isinstance(cell, topologic.Cell):
                 cell = Shell.ByFaces(faces)
+                print("Cell.ByWires - Warning: Could not create a cell. Returning a shell.")
                 if not cell:
+                    print("Cell.ByWires - Warning: Could not create a cell. Returning a cluster.")
                     cell = Cluster.ByTopologies(faces)
         return cell
 
@@ -423,6 +436,7 @@ class Cell(Topology):
 
         """
         if not isinstance(cluster, topologic.Cluster):
+            print("Cell.ByWiresCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         wires = []
         _ = cluster.Wires(None, wires)
@@ -533,6 +547,7 @@ class Cell(Topology):
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
+            print("Cell.Cone - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         xOffset = 0
         yOffset = 0
@@ -573,6 +588,7 @@ class Cell(Topology):
         topVertex = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset+height)
         cone = createCone(baseWire, topWire, baseVertex, topVertex, tolerance)
         if cone == None:
+            print("Cell.Cone - Error: Could not create a cone. Returning None.")
             return None
         
         if vSides > 1:
@@ -627,9 +643,11 @@ class Cell(Topology):
             Returns 0 if the vertex is inside, 1 if it is on the boundary of, and 2 if it is outside the input cell.
 
         """
-        if not cell:
-            return None
         if not isinstance(cell, topologic.Cell):
+            print("Cell.ContainmentStatus - Error: The input cell parameter is not a valid topologic cell. Returning None.")
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            print("Cell.ContainmentStatus - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         try:
             status = topologic.CellUtility.Contains(cell, vertex, tolerance)
@@ -640,6 +658,7 @@ class Cell(Topology):
             else:
                 return 2
         except:
+            print("Cell.ContainmentStatus - Error: Could not determine containment status. Returning None.")
             return None
  
     @staticmethod
@@ -681,6 +700,7 @@ class Cell(Topology):
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
+            print("Cell.Cylinder - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         xOffset = 0
         yOffset = 0
@@ -783,6 +803,7 @@ class Cell(Topology):
             return apTopologies
 
         if not isinstance(cell, topologic.Cell):
+            print("Cell.Decompose - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         verticalFaces = []
         topHorizontalFaces = []
@@ -852,6 +873,7 @@ class Cell(Topology):
 
         """ 
         if not isinstance(cell, topologic.Cell):
+            print("Cell.Edges - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         edges = []
         _ = cell.Edges(None, edges)
@@ -873,13 +895,14 @@ class Cell(Topology):
             The external boundary of the input cell.
 
         """
-        if not cell:
-            return None
+
         if not isinstance(cell, topologic.Cell):
+            print("Cell.ExternalBoundary - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         try:
             return cell.ExternalBoundary()
         except:
+            print("Cell.ExternalBoundary - Error: Could not compute the external boundary. Returning None.")
             return None
     
     @staticmethod
@@ -899,6 +922,7 @@ class Cell(Topology):
 
         """
         if not isinstance(cell, topologic.Cell):
+            print("Cell.Faces - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         faces = []
         _ = cell.Faces(None, faces)
@@ -969,6 +993,7 @@ class Cell(Topology):
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
+            print("Cell.Hyperboloid - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         baseV = []
         topV = []
@@ -996,6 +1021,7 @@ class Cell(Topology):
 
         hyperboloid = createHyperboloid(baseV, topV, tolerance)
         if hyperboloid == None:
+            print("Cell.Hyperboloid - Error: Could not create a hyperboloid. Returning None.")
             return None
         x1 = origin.X()
         y1 = origin.Y()
@@ -1054,13 +1080,14 @@ class Cell(Topology):
             The internal vertex.
 
         """
-        if not cell:
-            return None
+
         if not isinstance(cell, topologic.Cell):
+            print("Cell.InternalVertex - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         try:
             return topologic.CellUtility.InternalVertex(cell, tolerance)
         except:
+            print("Cell.InternalVertex - Error: Could not create an internal vertex. Returning None.")
             return None
     
     @staticmethod
@@ -1084,10 +1111,12 @@ class Cell(Topology):
 
         """
         if not isinstance(cell, topologic.Cell):
+            print("Cell.IsInside - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         try:
             return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 0)
         except:
+            print("Cell.IsInside - Error: Could not determine if the input vertex is inside the input cell. Returning None.")
             return None
     
     @staticmethod
@@ -1110,13 +1139,14 @@ class Cell(Topology):
             Returns True if the input vertex is inside the input cell. Returns False otherwise.
 
         """
-        if not cell:
-            return None
+
         if not isinstance(cell, topologic.Cell):
+            print("Cell.IsOnBoundary - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         try:
             return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 1)
         except:
+            print("Cell.IsOnBoundary - Error: Could not determine if the input vertex is on the boundary of the input cell. Returning None.")
             return None
  
     @staticmethod
@@ -1139,13 +1169,14 @@ class Cell(Topology):
             Returns True if the input vertex is inside the input cell. Returns False otherwise.
 
         """
-        if not cell:
-            return None
+
         if not isinstance(cell, topologic.Cell):
+            print("Cell.IsOutside - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         try:
             return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 2)
         except:
+            print("Cell.IsOutside - Error: Could not determine if the input vertex is outside the input cell. Returning None.")
             return None
    
     @staticmethod
@@ -1188,9 +1219,8 @@ class Cell(Topology):
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
 
-        if not edge:
-            return None
         if not isinstance(edge, topologic.Edge):
+            print("Cell.Pipe - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         length = Edge.Length(edge)
         origin = Edge.StartVertex(edge)
@@ -1342,6 +1372,7 @@ class Cell(Topology):
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
+            print("Cell.Prism - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         xOffset = 0
         yOffset = 0
@@ -1417,92 +1448,17 @@ class Cell(Topology):
         from topologicpy.Helper import Helper
         import topologic
         import math
-        '''
-        def nearest_vertex_2d(v, vertices, tolerance=0.001):
-            for vertex in vertices:
-                x2 = Vertex.X(vertex)
-                y2 = Vertex.Y(vertex)
-                temp_v = Vertex.ByCoordinates(x2, y2, Vertex.Z(v))
-                if Vertex.Distance(v, temp_v) <= tolerance:
-                    return vertex
-            return None
         
-        if not isinstance(face, topologic.Face):
-            return None
-        degree = abs(degree)
-        if degree >= 90-tolerance:
-            return None
-        if degree < tolerance:
-            return None
-        flat_face = Face.Flatten(face)
-        d = Topology.Dictionary(flat_face)
-        roof = Wire.Roof(flat_face, degree)
-        if not roof:
-            return None
-        shell = Shell.Skeleton(flat_face)
-        faces = Shell.Faces(shell)
-        
-        if not faces:
-            return None
-        triangles = []
-        for face in faces:
-            internalBoundaries = Face.InternalBoundaries(face)
-            if len(internalBoundaries) == 0:
-                if len(Topology.Vertices(face)) > 3:
-                    triangles += Face.Triangulate(face)
-                else:
-                    triangles += [face]
-
-        roof_vertices = Topology.Vertices(roof)
-        flat_vertices = []
-        for rv in roof_vertices:
-            flat_vertices.append(Vertex.ByCoordinates(Vertex.X(rv), Vertex.Y(rv), 0))
-
-        final_triangles = []
-        for triangle in triangles:
-            if len(Topology.Vertices(triangle)) > 3:
-                triangles = Face.Triangulate(triangle)
-            else:
-                triangles = [triangle]
-            final_triangles += triangles
-
-        final_faces = []
-        for triangle in final_triangles:
-            face_vertices = Topology.Vertices(triangle)
-            top_vertices = []
-            for sv in face_vertices:
-                temp = nearest_vertex_2d(sv, roof_vertices, tolerance=tolerance)
-                if temp:
-                    top_vertices.append(temp)
-                else:
-                    top_vertices.append(sv)
-            tri_face = Face.ByVertices(top_vertices)
-            final_faces.append(tri_face)
-        '''
         shell = Shell.Roof(face=face, degree=degree, angTolerance=angTolerance, tolerance=tolerance)
         faces = Topology.Faces(shell) + [face]
         cell = Cell.ByFaces(faces, tolerance=tolerance)
         if not cell:
+            print("Cell.Roof - Error: Could not create a roof cell. Returning None.")
             return None
         return cell
-        '''
-        if not cell:
-            cell = Shell.ByFaces(final_faces, tolerance=tolerance)
-            if not cell:
-                cell = Cluster.ByTopologies(final_faces)
-        cell = Topology.RemoveCoplanarFaces(cell, angTolerance=angTolerance)
-        xTran = Dictionary.ValueAtKey(d,"xTran")
-        yTran = Dictionary.ValueAtKey(d,"yTran")
-        zTran = Dictionary.ValueAtKey(d,"zTran")
-        phi = Dictionary.ValueAtKey(d,"phi")
-        theta = Dictionary.ValueAtKey(d,"theta")
-        cell = Topology.Rotate(cell, origin=Vertex.Origin(), x=0, y=1, z=0, degree=theta)
-        cell = Topology.Rotate(cell, origin=Vertex.Origin(), x=0, y=0, z=1, degree=phi)
-        cell = Topology.Translate(cell, xTran, yTran, zTran)
-        return cell
-        '''
+
     @staticmethod
-    def Sets(inputCells: list, superCells: list, tolerance: float = 0.0001) -> list:
+    def Sets(cells: list, superCells: list, tolerance: float = 0.0001) -> list:
         """
             Classifies the input cells into sets based on their enclosure within the input list of super cells. The order of the sets follows the order of the input list of super cells.
 
@@ -1521,26 +1477,40 @@ class Cell(Topology):
             The classified list of input cells based on their encolsure within the input list of super cells.
 
         """
+        if not isinstance(cells, list):
+            print("Cell.Sets - Error: The input cells parameter is not a valid list. Returning None.")
+            return None
+        if not isinstance(cesuperCells, list):
+            print("Cell.Sets - Error: The input superCells parameter is not a valid list. Returning None.")
+            return None
+        cells = [c for c in cells if isinstance(c, topologic.Cell)]
+        if len(cells) < 1:
+            print("Cell.Sets - Error: The input cells parameter does not contain any valid cells. Returning None.")
+            return None
+        superCells = [c for c in superCells if isinstance(c, topologic.Cell)]
+        if len(cells) < 1:
+            print("Cell.Sets - Error: The input cells parameter does not contain any valid cells. Returning None.")
+            return None
         if len(superCells) == 0:
-            cluster = inputCells[0]
-            for i in range(1, len(inputCells)):
+            cluster = cells[0]
+            for i in range(1, len(cells)):
                 oldCluster = cluster
-                cluster = cluster.Union(inputCells[i])
+                cluster = cluster.Union(cells[i])
                 del oldCluster
             superCells = []
             _ = cluster.Cells(None, superCells)
         unused = []
-        for i in range(len(inputCells)):
+        for i in range(len(cells)):
             unused.append(True)
         sets = []
         for i in range(len(superCells)):
             sets.append([])
-        for i in range(len(inputCells)):
+        for i in range(len(cells)):
             if unused[i]:
-                iv = topologic.CellUtility.InternalVertex(inputCells[i], tolerance)
+                iv = Cell.InternalVertex(cells[i], tolerance)
                 for j in range(len(superCells)):
-                    if (topologic.CellUtility.Contains(superCells[j], iv, tolerance) == 0):
-                        sets[j].append(inputCells[i])
+                    if (Cell.IsInside(superCells[j], iv, tolerance)):
+                        sets[j].append(cells[i])
                         unused[i] = False
         return sets
     
@@ -1561,6 +1531,7 @@ class Cell(Topology):
 
         """
         if not isinstance(cell, topologic.Cell):
+            print("Cell.Shells - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         shells = []
         _ = cell.Shells(None, shells)
@@ -1602,6 +1573,7 @@ class Cell(Topology):
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
+            print("Cell.Sphere - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         c = Wire.Circle(origin=origin, radius=radius, sides=vSides, fromAngle=90, toAngle=270, close=False, direction=[0, 1, 0], placement="center")
         s = Topology.Spin(c, origin=origin, triangulate=False, direction=[0,0,1], degree=360, sides=uSides, tolerance=tolerance)
@@ -1689,6 +1661,7 @@ class Cell(Topology):
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
+            print("Cell.Torus - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         c = Wire.Circle(origin=origin, radius=minorRadius, sides=vSides, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
         c = Topology.Translate(c, abs(majorRadius-minorRadius), 0, 0)
@@ -1735,6 +1708,7 @@ class Cell(Topology):
 
         """
         if not isinstance(cell, topologic.Cell):
+            print("Cell.Vertices - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         vertices = []
         _ = cell.Vertices(None, vertices)
@@ -1758,9 +1732,16 @@ class Cell(Topology):
             The volume of the input cell.
 
         """
-        if not cell:
+        if not isinstance(cell, topologic.Cell):
+            print("Cell.Volume - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
-        return round(topologic.CellUtility.Volume(cell), mantissa)
+        volume = None
+        try:
+            volume = round(topologic.CellUtility.Volume(cell), mantissa)
+        except:
+            print("Cell.Volume - Error: Could not compute the volume of the input cell. Returning None.")
+            volume = None
+        return volume
 
     @staticmethod
     def Wires(cell: topologic.Cell) -> list:
@@ -1779,6 +1760,7 @@ class Cell(Topology):
 
         """
         if not isinstance(cell, topologic.Cell):
+            print("Cell.Wires - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         wires = []
         _ = cell.Wires(None, wires)

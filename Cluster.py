@@ -125,6 +125,7 @@ class Cluster(topologic.Cluster):
 
         """
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.CellComplexes - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cellComplexes = []
         _ = cluster.CellComplexes(None, cellComplexes)
@@ -147,6 +148,7 @@ class Cluster(topologic.Cluster):
 
         """
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.Cells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cells = []
         _ = cluster.Cells(None, cells)
@@ -169,6 +171,7 @@ class Cluster(topologic.Cluster):
 
         """ 
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.Edges - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         edges = []
         _ = cluster.Edges(None, edges)
@@ -191,6 +194,7 @@ class Cluster(topologic.Cluster):
 
         """
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.Faces - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         faces = []
         _ = cluster.Faces(None, faces)
@@ -216,6 +220,7 @@ class Cluster(topologic.Cluster):
         from topologicpy.Topology import Topology
 
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.FreeCells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allCells = []
         _ = cluster.Cells(None, allCells)
@@ -258,6 +263,7 @@ class Cluster(topologic.Cluster):
         from topologicpy.Topology import Topology
 
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.FreeShells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allShells = []
         _ = cluster.Shells(None, allShells)
@@ -297,7 +303,9 @@ class Cluster(topologic.Cluster):
         """
         from topologicpy.Shell import Shell
         from topologicpy.Topology import Topology
+
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.FreeFaces - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allFaces = []
         _ = cluster.Faces(None, allFaces)
@@ -339,6 +347,7 @@ class Cluster(topologic.Cluster):
         from topologicpy.Topology import Topology
 
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.FreeWires - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allWires = []
         _ = cluster.Wires(None, allWires)
@@ -380,6 +389,7 @@ class Cluster(topologic.Cluster):
         from topologicpy.Topology import Topology
 
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.FreeEdges - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allEdges = []
         _ = cluster.Edges(None, allEdges)
@@ -421,6 +431,7 @@ class Cluster(topologic.Cluster):
         from topologicpy.Topology import Topology
 
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.FreeVertices - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allVertices = []
         _ = cluster.Vertices(None, allVertices)
@@ -459,6 +470,7 @@ class Cluster(topologic.Cluster):
 
         """
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.HighestType - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cellComplexes = Cluster.CellComplexes(cluster)
         if len(cellComplexes) > 0:
@@ -553,26 +565,38 @@ class Cluster(topologic.Cluster):
 
 
 
-        if topologies == None:
+        if not isinstance(topologies, list):
+            print("Cluster.K_Means - Error: The input topologies parameter is not a valid list. Returning None.")
             return None
         topologies = [t for t in topologies if isinstance(t, topologic.Topology)]
-        if len(topologies) == 0:
+        if len(topologies) < 1:
+            print("Cluster.K_Means - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
             return None
-        if selectors != None:
-            selectors = [s for s in selectors if isinstance(s, topologic.Vertex)]
-            if len(selectors) == 0:
+        if not isinstance(selectors, list):
+            check_vertices = [v for v in topologies if not isinstance(v, topologic.Vertex)]
+            if len(check_vertices) > 0:
+                print("Cluster.K_Means - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a topologic.Vertex. Returning None.")
                 return None
-            if not len(selectors) == len(topologies):
+        selectors = [s for s in selectors if isinstance(s, topologic.Vertex)]
+        if len(selectors) < 1:
+            check_vertices = [v for v in topologies if not isinstance(v, topologic.Vertex)]
+            if len(check_vertices) > 0:
+                print("Cluster.K_Means - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic.Vertex. Returning None.")
                 return None
-        if keys == None:
+        if not len(selectors) == len(topologies):
+            print("Cluster.K_Means - Error: The input topologies and selectors parameters do not have the same length. Returning None.")
             return None
-        if k == None:
+        if not isinstance(keys, list):
+            print("Cluster.K_Means - Error: The input keys parameter is not a valid list. Returning None.")
+            return None
+        if not isinstance(k , int):
+            print("Cluster.K_Means - Error: The input k parameter is not a valid integer. Returning None.")
             return None
         if k < 1:
-            return None
-        if not isinstance(topologies, list):
+            print("Cluster.K_Means - Error: The input k parameter is less than one. Returning None.")
             return None
         if len(topologies) < k:
+            print("Cluster.K_Means - Error: The input topologies parameter is less than the specified number of clusters. Returning None.")
             return None
         if len(topologies) == k:
             t_clusters = []
@@ -630,6 +654,7 @@ class Cluster(topologic.Cluster):
                             elements.append(value)
                 data.append(elements)
         if len(data) == 0:
+            print("Cluster.K_Means - Error: Could not perform the operation. Returning None.")
             return None
         if selectors:
             dict = k_means(data, selectors, k=k, maxIterations=maxIterations)
@@ -689,9 +714,10 @@ class Cluster(topologic.Cluster):
         from topologicpy.Cluster import Cluster
         from itertools import combinations
 
-        if not wire:
+        if wire == None:
             wire = Wire.Circle(origin=origin, radius=radius, sides=sides, fromAngle=0, toAngle=360, close=True, direction=direction, placement=placement, tolerance=tolerance)
         if not Wire.IsClosed(wire):
+            print("Cluster.MysticRose - Error: The input wire parameter is not a closed topologic wire. Returning None.")
             return None
         vertices = Wire.Vertices(wire)
         indices = list(range(len(vertices)))
@@ -719,6 +745,9 @@ class Cluster(topologic.Cluster):
             The self-merged topology.
 
         """
+        if not isinstance(topology, topologic.Topology):
+            print("Cluster.SelfMerge - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+            return None
         from topologicpy.Topology import Topology
         return Topology.SelfMerge(topology)
     
@@ -739,6 +768,7 @@ class Cluster(topologic.Cluster):
 
         """
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.Shells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         shells = []
         _ = cluster.Shells(None, shells)
@@ -761,6 +791,7 @@ class Cluster(topologic.Cluster):
 
         """
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.Simplify - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         resultingTopologies = []
         topCC = []
@@ -837,6 +868,7 @@ class Cluster(topologic.Cluster):
 
         """
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.Vertices - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         vertices = []
         _ = cluster.Vertices(None, vertices)
@@ -859,6 +891,7 @@ class Cluster(topologic.Cluster):
 
         """
         if not isinstance(cluster, topologic.Cluster):
+            print("Cluster.Wires - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         wires = []
         _ = cluster.Wires(None, wires)

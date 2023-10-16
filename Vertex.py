@@ -361,7 +361,37 @@ class Vertex(Topology):
         # sort the points based on their angle with respect to the centroid
         vertices.sort(key=lambda v: (math.atan2(Vertex.Y(v) - cy, Vertex.X(v) - cx) + 2 * math.pi) % (2 * math.pi))
         return vertices
-    
+
+    @staticmethod
+    def Degree(vertex: topologic.Vertex, hostTopology: topologic.Topology, topologyType: str = "edge"):
+        """
+        Returns the vertex degree (the number of super topologies connected to it). See https://en.wikipedia.org/wiki/Degree_(graph_theory).
+
+        Parameters
+        ----------
+        vertex : topologic.Vertex
+            The input vertex.
+        hostTopology : topologic.Topology
+            The input host topology in which to search for the connected super topologies.
+        topologyType : str , optional
+            The topology type to search for. This can be any of "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. If set to None, the immediate supertopology type is searched for. The default is None.
+
+        Returns
+        -------
+        int
+            The number of super topologies connected to this vertex
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not isinstance(vertex, topologic.Vertex):
+            print("Vertex.Degree - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
+        if not isinstance(hostTopology, topologic.Topology):
+            print("Vertex.Degree - Error: The input hostTopology parameter is not a valid topologic topology. Returning None.")
+        superTopologies = Topology.SuperTopologies(topology=vertex, hostTopology=hostTopology, topologyType=topologyType)
+        return len(superTopologies)
+
+
     @staticmethod
     def Distance(vertex: topologic.Vertex, topology: topologic.Topology, includeCentroid: bool =True, mantissa: int = 4) -> float:
         """
@@ -1129,7 +1159,10 @@ class Vertex(Topology):
             a, b, c, d = plane_coeffs
             
             # Calculate the distance from the point to the plane
-            distance = (a * x + b * y + c * z + d) / (a**2 + b**2 + c**2)
+            if (a**2 + b**2 + c**2) == 0:
+                distance = 0
+            else:
+                distance = (a * x + b * y + c * z + d) / (a**2 + b**2 + c**2)
             
             # Calculate the coordinates of the projected point
             x_proj = x - distance * a

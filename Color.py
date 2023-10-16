@@ -158,13 +158,13 @@ class Color:
         return rgbList
     
     @staticmethod
-    def HEXToRGB(hex_color):
+    def HEXToRGB(hex):
         """
         Converts a hexadecimal color string to RGB color values.
 
         Parameters
         ----------
-        hex_color : str
+        hex : str
             A hexadecimal color string in the format '#RRGGBB'.
 
         Returns
@@ -173,16 +173,17 @@ class Color:
             A tuple containing three integers representing the RGB values.
 
         """
-        
-        hex_color = hex_color.lstrip('#')
-        if len(hex_color) != 6:
-            raise ValueError("Invalid hexadecimal color format. It should be a 6-digit hex value.")
-        
-        r = int(hex_color[0:2], 16)
-        g = int(hex_color[2:4], 16)
-        b = int(hex_color[4:6], 16)
-        
-        return (r, g, b)
+        if not isinstance(hex, str):
+            print("Color.HEXtoRGB - Error: The input hex parameter is not a valid string. Returning None.")
+            return None
+        hex = hex.lstrip('#')
+        if len(hex) != 6:
+            print("Color.HEXtoRGB - Error: Invalid hexadecimal color format. It should be a 6-digit hex value. Returning None.")
+            return None
+        r = int(hex[0:2], 16)
+        g = int(hex[2:4], 16)
+        b = int(hex[4:6], 16)
+        return [r, g, b]
 
     @staticmethod
     def PlotlyColor(color, alpha=1.0, useAlpha=False):
@@ -205,8 +206,10 @@ class Color:
 
         """
         if not isinstance(color, list):
+            print("Color.PlotlyColor - Error: The input color parameter is not a valid list. Returning None.")
             return None
         if len(color) < 3:
+            print("Color.PlotlyColor - Error: The input color parameter contains less than the minimum three elements. Returning None.")
             return None
         if len(color) == 4:
             alpha = color[3]
@@ -232,7 +235,9 @@ class Color:
         str
             A hexadecimal color string in the format '#RRGGBB'.
         """
-
+        if not isinstance(rgb, list):
+            print("Color.RGBToHex - Error: The input rgb parameter is not a valid list. Returning None.")
+            return None
         r, g, b = rgb
         hex_value = "#{:02x}{:02x}{:02x}".format(r, g, b)
         return hex_value.upper()
