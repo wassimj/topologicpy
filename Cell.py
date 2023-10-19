@@ -108,7 +108,7 @@ class Cell(Topology):
                 centroid = Topology.Centroid(f)
                 n = Face.Normal(f)
                 v = Topology.Translate(centroid, n[0]*0.01,n[1]*0.01,n[2]*0.01)
-                if not Cell.IsInside(cell, v):
+                if not Cell.IsInternal(cell, v):
                     finalFaces.append(f)
             finalFinalFaces = []
             for f in finalFaces:
@@ -1093,6 +1093,7 @@ class Cell(Topology):
     @staticmethod
     def IsInside(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
+        DEPRECATED METHOD. DO NOT USE. INSTEAD USE Cell.IsInteranl.
         Returns True if the input vertex is inside the input cell. Returns False otherwise.
 
         Parameters
@@ -1110,13 +1111,39 @@ class Cell(Topology):
             Returns True if the input vertex is inside the input cell. Returns False otherwise.
 
         """
+        print("Cell.IsInternal - Warning: Deprecated method. This method will be removed in the future. Instead, use Cell.IsInternal.")
+        return Cell.IsInternal(cell=cell, vertex=vertex, tolerance=tolerance)
+    
+    @staticmethod
+    def IsInternal(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is an internal vertex of the input cell. Returns False otherwise.
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The input cell.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            Returns True if the input vertex is inside the input cell. Returns False otherwise.
+
+        """
         if not isinstance(cell, topologic.Cell):
-            print("Cell.IsInside - Error: The input cell parameter is not a valid topologic cell. Returning None.")
+            print("Cell.IsInternal - Error: The input cell parameter is not a valid topologic cell. Returning None.")
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            print("Cell.IsInternal - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         try:
             return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 0)
         except:
-            print("Cell.IsInside - Error: Could not determine if the input vertex is inside the input cell. Returning None.")
+            print("Cell.IsInternal - Error: Could not determine if the input vertex is inside the input cell. Returning None.")
             return None
     
     @staticmethod
@@ -1142,6 +1169,9 @@ class Cell(Topology):
 
         if not isinstance(cell, topologic.Cell):
             print("Cell.IsOnBoundary - Error: The input cell parameter is not a valid topologic cell. Returning None.")
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            print("Cell.IsOnBoundary - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         try:
             return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 1)
@@ -1172,6 +1202,9 @@ class Cell(Topology):
 
         if not isinstance(cell, topologic.Cell):
             print("Cell.IsOutside - Error: The input cell parameter is not a valid topologic cell. Returning None.")
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            print("Cell.IsOutside - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         try:
             return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 2)
@@ -1509,7 +1542,7 @@ class Cell(Topology):
             if unused[i]:
                 iv = Cell.InternalVertex(cells[i], tolerance)
                 for j in range(len(superCells)):
-                    if (Cell.IsInside(superCells[j], iv, tolerance)):
+                    if (Cell.IsInternal(superCells[j], iv, tolerance)):
                         sets[j].append(cells[i])
                         unused[i] = False
         return sets

@@ -113,7 +113,7 @@ class Shell(Topology):
                 iv = Face.InternalVertex(w1)
                 flag = False
                 for w2 in faces:
-                    if Face.IsInside(w2, iv):
+                    if Face.IsInternal(w2, iv):
                         flag = True
                         break;
                 if flag == False:
@@ -652,7 +652,7 @@ class Shell(Topology):
             return None
         faces = Shell.Faces(shell)
         for f in faces:
-            if Face.IsInside(fface=f, vertex=vertex, tolerance=tolerance):
+            if Face.IsInternal(fface=f, vertex=vertex, tolerance=tolerance):
                 return True
         return False
     

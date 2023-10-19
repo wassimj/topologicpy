@@ -476,7 +476,7 @@ class Vertex(Topology):
         
         def distance_to_face(vertex, face, includeCentroid):
             v_proj = Vertex.Project(vertex, face)
-            if not Face.IsInside(face, v_proj):
+            if not Face.IsInternal(face, v_proj):
                 vertices = Topology.Vertices(topology)
                 distances = [distance_to_vertex(vertex, v) for v in vertices]
                 edges = Topology.Edges(topology)
@@ -783,7 +783,7 @@ class Vertex(Topology):
                     return True
             return False
         elif isinstance(topology, topologic.Face):
-            return Face.IsInside(topology, vertex, tolerance)
+            return Face.IsInternal(topology, vertex, tolerance)
         elif isinstance(topology, topologic.Shell):
             faces = Shell.Faces(topology)
             for face in faces:

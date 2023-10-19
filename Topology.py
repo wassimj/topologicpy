@@ -3811,7 +3811,30 @@ class Topology():
     @staticmethod
     def IsInside(topology, vertex, tolerance=0.0001):
         """
+        DEPRECATED METHOD. DO NOT USE. INSTEAD USE Topology.IsInternal.
         Returns True if the input vertex is inside the input topology. Returns False otherwise.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        vertex : topologic.Vertex
+            The input Vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the input vertex is inside the input topology. False otherwise.
+
+        """
+        print("Topology.IsInside - Warning: This method is deprecated. It will be removed in the future. Instead, use Topology.IsInternal.")
+    
+    @staticmethod
+    def IsInternal(topology, vertex, tolerance=0.0001):
+        """
+        Returns True if the input vertex is an internal vertex of the input topology. Returns False otherwise.
 
         Parameters
         ----------
@@ -3836,49 +3859,50 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
+        
         if not isinstance(topology, topologic.Topology):
-            print("Topology.IsInside - Error: the input topology parameter is not a valid topology. Returning None.")
+            print("Topology.IsInternal - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
-            print("Topology.IsInside - Error: the input vertex parameter is not a valid vertex. Returning None.")
+            print("Topology.IsInternal - Error: the input vertex parameter is not a valid vertex. Returning None.")
             return None
-        is_inside = False
+        is_internal = False
         if topology.Type() == topologic.Vertex.Type():
             try:
-                is_inside = (Vertex.Distance(vertex, topology) <= tolerance)
+                is_internal = (Vertex.Distance(vertex, topology) <= tolerance)
             except:
-                is_inside = False
-            return is_inside
+                is_internal = False
+            return is_internal
         elif topology.Type() == topologic.Edge.Type():
             u = Edge.ParameterAtVertex(topology, vertex)
             d = Vertex.Distance(vertex, topology)
             if not u == None:
-                is_inside = (0 <= u <= 1) and (d <= tolerance)              
+                is_internal = (0 <= u <= 1) and (d <= tolerance)              
             else:
-                is_inside = False
-            return is_inside
+                is_internal = False
+            return is_internal
         elif topology.Type() == topologic.Wire.Type():
             edges = Wire.Edges(topology)
             for edge in edges:
-                is_inside = (Vertex.Distance(vertex, edge) <= tolerance)
-                if is_inside:
-                    return is_inside
+                is_internal = (Vertex.Distance(vertex, edge) <= tolerance)
+                if is_internal:
+                    return is_internal
         elif topology.Type() == topologic.Face.Type():
-            return Face.IsInside(topology, vertex, tolerance)
+            return Face.IsInternal(topology, vertex, tolerance)
         elif topology.Type() == topologic.Shell.Type():
             faces = Shell.Faces(topology)
             for face in faces:
-                is_inside = Face.IsInside(face, vertex, tolerance)
-                if is_inside:
-                    return is_inside
+                is_internal = Face.IsInternal(face, vertex, tolerance)
+                if is_internal:
+                    return is_internal
         elif topology.Type() == topologic.Cell.Type():
-            return Cell.IsInside(topology, vertex, tolerance)
+            return Cell.IsInternal(topology, vertex, tolerance)
         elif topology.Type() == topologic.CellComplex.Type():
             cells = CellComplex.Cells(topology)
             for cell in cells:
-                is_inside = Cell.IsInside(cell, vertex, tolerance)
-                if is_inside:
-                    return is_inside
+                is_internal = Cell.IsInternal(cell, vertex, tolerance)
+                if is_internal:
+                    return is_internal
         elif topology.Type() == topologic.Cluster.Type():
             cells = Cluster.Cells(topology)
             faces = Cluster.Faces(topology)
@@ -3894,9 +3918,9 @@ class Topology():
             if isinstance(vertices, list):
                 subTopologies += vertices
             for subTopology in subTopologies:
-                is_inside = Topology.IsInside(subTopology, vertex, tolerance)
-                if is_inside:
-                    return is_inside
+                is_internal = Topology.IsInternal(subTopology, vertex, tolerance)
+                if is_internal:
+                    return is_internal
         return False
 
     @staticmethod
@@ -4694,7 +4718,7 @@ class Topology():
         for t_f in t_faces:
             remove = False
             for i, v in enumerate(selectors):
-                if Face.IsInside(face=t_f, vertex=v, tolerance=tolerance):
+                if Face.IsInternal(face=t_f, vertex=v, tolerance=tolerance):
                     remove = True
                     selectors = selectors[:i]+ selectors[i:]
                     break

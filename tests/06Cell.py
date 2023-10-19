@@ -259,11 +259,11 @@ assert isinstance(iv_cell1, topologic.Vertex), "Cell.Hyperboloid. topologic.Vert
 # Case 20 - IsInside
 
 # test 1
-b_inside = Cell.IsInside(cell_c, v2)                        # without optional inputs
-assert isinstance(b_inside, bool), "Cell.IsInside. boolean"
+b_inside = Cell.IsInternal(cell_c, v2)                        # without optional inputs
+assert isinstance(b_inside, bool), "Cell.IsInternal. boolean"
 # test 2
-b_inside1 = Cell.IsInside(cell_cy, v2, tolerance=0.001)     # with optional inputs
-assert isinstance(b_inside1, bool), "Cell.IsInside. boolean"
+b_inside1 = Cell.IsInternal(cell_cy, v2, tolerance=0.001)     # with optional inputs
+assert isinstance(b_inside1, bool), "Cell.IsInternal. boolean"
 
 # Case 21 - Pipe
 

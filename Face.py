@@ -1083,17 +1083,13 @@ class Face(topologic.Face):
         if not isinstance(face, topologic.Face):
             return None
         v = Topology.Centroid(face)
-        if Face.IsInside(face, v):
+        if Face.IsInternal(face, v):
             return v
-        l1 = [0.1,0.9]
-        l2 = [0.3,0.7]
-        l3 = [0.2,0.4,0.6,0.8]
-        l_all = [l1,l2,l3]
-        for l in l_all:
-            for uv in l:
-                t = max(min(uv,0.9),0.1)
-                v = Face.VertexByParameters(face, t, t)
-                if Face.IsInside(face, v):
+        l = [0.4,0.6,0.3,0.7,0.2,0.8,0.1,0.9]
+        for u in l:
+            for v in l:
+                v = Face.VertexByParameters(face, u, v)
+                if Face.IsInternal(face, v):
                     return v
         v = topologic.FaceUtility.InternalVertex(face, tolerance)
         return v
@@ -1167,7 +1163,31 @@ class Face(topologic.Face):
     @staticmethod
     def IsInside(face: topologic.Face, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
+        DEPRACTED METHOD. DO NOT USE. INSTEAD USE Face.IsInternal.
         Returns True if the input vertex is inside the input face. Returns False otherwise.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the input vertex is inside the input face. False otherwise.
+
+        """
+        print("Face.IsInside - Warning: This method is deprecated and will be removed in future versions. Instead, use Face.IsInternal.")
+        return Face.IsInternal(face=face, vertex=vertex, tolerance=tolerance)
+    
+    @staticmethod
+    def IsInternal(face: topologic.Face, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is an internal vertex of the input face. Returns False otherwise.
 
         Parameters
         ----------
@@ -1191,10 +1211,10 @@ class Face(topologic.Face):
         from topologicpy.Dictionary import Dictionary
         
         if not isinstance(face, topologic.Face):
-            print("Face.IsInside - Error: The input face parameter is not a valid topologic face. Returning None.")
+            print("Face.IsInternal - Error: The input face parameter is not a valid topologic face. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
-            print("Face.IsInside - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
+            print("Face.IsInternal - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         # Test the distance first
         if Vertex.PerpendicularDistance(vertex, face) > tolerance:
@@ -1203,12 +1223,12 @@ class Face(topologic.Face):
         try:
             status = topologic.FaceUtility.IsInside(face, vertex, tolerance)
         except:
-            print("Face.IsInside - Warning: Could not determine if vertex is inside face. Returning False.")
+            print("Face.IsInternal - Warning: Could not determine if vertex is inside face. Returning False.")
             clus = Cluster.ByTopologies([vertex, face])
             Topology.Show(clus, renderer="browser")
             status = False
         return status
-
+    
     @staticmethod
     def MedialAxis(face: topologic.Face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
         """
@@ -1288,7 +1308,7 @@ class Face(topologic.Face):
             svTouchesEdge = touchesEdge(sv, faceEdges, tolerance=tolerance)
             evTouchesEdge = touchesEdge(ev, faceEdges, tolerance=tolerance)
             #connectsToCorners = (Vertex.Index(sv, faceVertices) != None) or (Vertex.Index(ev, faceVertices) != None)
-            #if Face.IsInside(flatFace, sv, tolerance=tolerance) and Face.IsInside(flatFace, ev, tolerance=tolerance):
+            #if Face.IsInternal(flatFace, sv, tolerance=tolerance) and Face.IsInternal(flatFace, ev, tolerance=tolerance):
             if not svTouchesEdge and not evTouchesEdge:
                 medialAxisEdges.append(e)
 
