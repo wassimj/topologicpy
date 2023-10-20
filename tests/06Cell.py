@@ -256,7 +256,7 @@ assert isinstance(iv_cell, topologic.Vertex), "Cell.Hyperboloid. topologic.Verte
 iv_cell1 = Cell.InternalVertex(cell_c, tolerance=0.001)                                   # with optional inputs
 assert isinstance(iv_cell1, topologic.Vertex), "Cell.Hyperboloid. topologic.Vertex"
 
-# Case 20 - IsInside
+# Case 20 - IsInternal
 
 # test 1
 b_inside = Cell.IsInternal(cell_c, v2)                        # without optional inputs

@@ -3812,24 +3812,9 @@ class Topology():
     def IsInside(topology, vertex, tolerance=0.0001):
         """
         DEPRECATED METHOD. DO NOT USE. INSTEAD USE Topology.IsInternal.
-        Returns True if the input vertex is inside the input topology. Returns False otherwise.
-
-        Parameters
-        ----------
-        topology : topologic.Topology
-            The input topology.
-        vertex : topologic.Vertex
-            The input Vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            True if the input vertex is inside the input topology. False otherwise.
-
         """
-        print("Topology.IsInside - Warning: This method is deprecated. It will be removed in the future. Instead, use Topology.IsInternal.")
+        print("Topology.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Topology.IsInternal.")
+        return Topology.IsInternal(topology=topology, vertex=vertex, tolerance=tolerance)
     
     @staticmethod
     def IsInternal(topology, vertex, tolerance=0.0001):
@@ -4531,7 +4516,7 @@ class Topology():
                     for tempFace in tempFaces:
                         isInside = False
                         for tempShell in shells:
-                            if Topology.IsInside(tempShell, Face.InternalVertex(tempFace), tolerance=tolerance):
+                            if Topology.IsInternal(tempShell, Face.InternalVertex(tempFace), tolerance=tolerance):
                                 isInside = True
                                 break;
                         if not isInside:
@@ -5525,7 +5510,7 @@ class Topology():
             found = False
             for j in range(len(topologies)):
                 if usedTopologies[j] == 0:
-                    if Topology.IsInside(topologies[j], selectors[i], tolerance):
+                    if Topology.IsInternal(topologies[j], selectors[i], tolerance):
                         sortedTopologies.append(topologies[j])
                         if exclusive == True:
                             usedTopologies[j] = 1
@@ -6092,9 +6077,9 @@ class Topology():
             for source in sources:
                 flag = False
                 if isinstance(source, topologic.Vertex):
-                    flag = Topology.IsInside(sink, source, tolerance)
+                    flag = Topology.IsInternal(sink, source, tolerance)
                 else:
-                    flag = Topology.IsInside(source, iv, tolerance)
+                    flag = Topology.IsInternal(source, iv, tolerance)
                 if flag:
                     d = Topology.Dictionary(source)
                     if d == None:

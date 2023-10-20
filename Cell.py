@@ -1093,25 +1093,9 @@ class Cell(Topology):
     @staticmethod
     def IsInside(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
-        DEPRECATED METHOD. DO NOT USE. INSTEAD USE Cell.IsInteranl.
-        Returns True if the input vertex is inside the input cell. Returns False otherwise.
-
-        Parameters
-        ----------
-        cell : topologic.Cell
-            The input cell.
-        vertex : topologic.Vertex
-            The input vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            Returns True if the input vertex is inside the input cell. Returns False otherwise.
-
+        DEPRECATED METHOD. DO NOT USE. INSTEAD USE Cell.IsInternal.
         """
-        print("Cell.IsInternal - Warning: Deprecated method. This method will be removed in the future. Instead, use Cell.IsInternal.")
+        print("Cell.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Cell.IsInternal.")
         return Cell.IsInternal(cell=cell, vertex=vertex, tolerance=tolerance)
     
     @staticmethod

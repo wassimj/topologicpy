@@ -405,7 +405,7 @@ class Edge():
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
         intVertex = Edge.Intersect2D(edgeA, edgeB)
-        if intVertex and not (Topology.IsInside(edgeA, intVertex)):
+        if intVertex and not (Topology.IsInternal(edgeA, intVertex)):
             e1 = Edge.ByVertices([sva, intVertex])
             e2 = Edge.ByVertices([eva, intVertex])
             l1 = Edge.Length(e1)
@@ -933,7 +933,7 @@ class Edge():
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
         intVertex = Edge.Intersect2D(edgeA, edgeB)
-        if intVertex and (Topology.IsInside(edgeA, intVertex)):
+        if intVertex and (Topology.IsInternal(edgeA, intVertex)):
             if reverse:
                 return Edge.ByVertices([eva, intVertex])
             else:

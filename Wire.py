@@ -367,7 +367,7 @@ class Wire(topologic.Wire):
                                 miterEdge = Edge.SetLength(miterEdge, abs(offset)*10)
                                 msv = Edge.Intersect2D(miterEdge, e1)
                                 mev = Edge.Intersect2D(miterEdge, e2)
-                                if (Topology.IsInside(e1, msv,tolerance=0.01) and (Topology.IsInside(e2, mev, tolerance=0.01))):
+                                if (Topology.IsInternal(e1, msv,tolerance=0.01) and (Topology.IsInternal(e2, mev, tolerance=0.01))):
                                     miterEdge = Edge.ByVertices([msv, mev])
                                     if miterEdge:
                                         cleanMiterEdges.append(miterEdge)
@@ -1460,11 +1460,18 @@ class Wire(topologic.Wire):
             if isinstance(wire, topologic.Wire):
                 status = wire.IsClosed()
         return status
-    
     @staticmethod
     def IsInside(wire: topologic.Wire, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
-        Returns True if the input vertex is inside the input wire. Returns False otherwise.
+        DEPRECATED. DO NOT USE. INSTEAD USE Wire.IsInternal.
+        """
+        print("Wire.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Wire.IsInternal.")
+        return Wire.IsInternal(wire=wire, vertex=vertex, tolerance=tolerance)
+    
+    @staticmethod
+    def IsInternal(wire: topologic.Wire, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is an internal vertex of the input wire. Returns False otherwise.
 
         Parameters
         ----------

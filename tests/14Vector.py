@@ -121,11 +121,11 @@ assert i == 2, "EnclosingCell. Index. i should be 2"
 
 # Case 10 - IsInside
 # test 1
-status = Vertex.IsInside(v9, cc)
-assert status == False, "IsInside. status should be False"
+status = Vertex.IsInternal(v9, cc)
+assert status == False, "IsInternal. status should be False"
 # test 2
-status = Vertex.IsInside(v10, cc)
-assert status == True, "IsInside. status should be True"
+status = Vertex.IsInternal(v10, cc)
+assert status == True, "IsInternal. status should be True"
 
 # Case 11 - NearestVertex
 # test 1

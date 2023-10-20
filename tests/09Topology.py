@@ -432,13 +432,13 @@ assert isinstance(topology_iv, topologic.Vertex), "Topology.InternalVertex. Shou
 # Case 34 - IsInside
 # test 1
 topology_c = Topology.Centroid(cell_cy)
-topology_ii = Topology.IsInside(cell_cy,topology_c)    # without optional inputs
-assert isinstance(topology_ii, bool), "Topology.IsInside. Should be bool"
-assert topology_ii == True, "Topology.IsInside. Should be True"
+topology_ii = Topology.IsInternal(cell_cy,topology_c)    # without optional inputs
+assert isinstance(topology_ii, bool), "Topology.IsInternal. Should be bool"
+assert topology_ii == True, "Topology.IsInternal. Should be True"
 # test 2
-topology_ii_2 = Topology.IsInside(cell_cy,v01,0.001)
-assert isinstance(topology_ii_2, bool), "Topology.IsInside. Should be bool"
-assert topology_ii_2 == False, "Topology.IsInside. Should be False"
+topology_ii_2 = Topology.IsInternal(cell_cy,v01,0.001)
+assert isinstance(topology_ii_2, bool), "Topology.IsInternal. Should be bool"
+assert topology_ii_2 == False, "Topology.IsInternal. Should be False"
 
 # Case 35 - IsPlanar
 # test 1

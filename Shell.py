@@ -627,7 +627,16 @@ class Shell(Topology):
     @staticmethod
     def IsInside(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
-        Returns True if the input vertex is inside the input shell. Returns False otherwise. Inside is defined as being inside one of the shell's faces
+        DEPRECATED METHOD. DO NOT USE. INSTEAD USE Shell.IsInternal.
+        """
+        print("Shell.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Cell.IsInternal.")
+        return Shell.IsInternal(shell=shell, vertex=vertex, tolerance=tolerance)
+    
+    @staticmethod
+        
+    def IsInternal(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is an internal vertex of the input shell. Returns False otherwise. Intenral is defined as being inside one of the shell's faces.
 
         Parameters
         ----------
@@ -684,7 +693,7 @@ class Shell(Topology):
         if not isinstance(vertex, topologic.Vertex):
             return None
         boundary = Shell.ExternalBoundary(shell)
-        return Wire.IsInside(wire=boundary, vertex=vertex, tolerance=tolerance)
+        return Wire.IsInternal(wire=boundary, vertex=vertex, tolerance=tolerance)
     
     @staticmethod
     def IsOutside(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
@@ -711,7 +720,7 @@ class Shell(Topology):
             return None
         if not isinstance(vertex, topologic.Vertex):
             return None
-        return not Wire.IsInside(shell=shell, vertex=vertex, tolerance=tolerance)
+        return not Wire.IsInternal(shell=shell, vertex=vertex, tolerance=tolerance)
     
     @staticmethod
     def HyperbolicParaboloidRectangularDomain(origin: topologic.Vertex = None, llVertex: topologic.Vertex = None, lrVertex: topologic.Vertex =None, ulVertex: topologic.Vertex =None, urVertex: topologic.Vertex = None,

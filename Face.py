@@ -1163,25 +1163,9 @@ class Face(topologic.Face):
     @staticmethod
     def IsInside(face: topologic.Face, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
-        DEPRACTED METHOD. DO NOT USE. INSTEAD USE Face.IsInternal.
-        Returns True if the input vertex is inside the input face. Returns False otherwise.
-
-        Parameters
-        ----------
-        face : topologic.Face
-            The input face.
-        vertex : topologic.Vertex
-            The input vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            True if the input vertex is inside the input face. False otherwise.
-
+        DEPRECATED METHOD. DO NOT USE. INSTEAD USE Face.IsInternal.
         """
-        print("Face.IsInside - Warning: This method is deprecated and will be removed in future versions. Instead, use Face.IsInternal.")
+        print("Face.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Face.IsInternal.")
         return Face.IsInternal(face=face, vertex=vertex, tolerance=tolerance)
     
     @staticmethod

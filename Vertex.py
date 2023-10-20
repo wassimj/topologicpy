@@ -736,9 +736,16 @@ class Vertex(Topology):
         vertex = Topology.SetDictionary(vertex, d)
         return vertex
 
-
     @staticmethod
     def IsInside(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001) -> bool:
+        """
+        DEPRECATED. DO NOT USE. INSTEAD USE Vertex.IsInternal
+        """
+        print("Vertex.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Vertex.IsInternal.")
+        return Vertex.IsInternal(vertex=vertex, topology=topology, tolerance=tolerance)
+
+    @staticmethod
+    def IsInternal(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input vertex is inside the input topology. Returns False otherwise.
 
@@ -779,7 +786,7 @@ class Vertex(Topology):
         elif isinstance(topology, topologic.Wire):
             edges = Wire.Edges(topology)
             for edge in edges:
-                if Vertex.IsInside(vertex, edge, tolerance):
+                if Vertex.IsInternal(vertex, edge, tolerance):
                     return True
             return False
         elif isinstance(topology, topologic.Face):
@@ -787,7 +794,7 @@ class Vertex(Topology):
         elif isinstance(topology, topologic.Shell):
             faces = Shell.Faces(topology)
             for face in faces:
-                if Vertex.IsInside(vertex, face, tolerance):
+                if Vertex.IsInternal(vertex, face, tolerance):
                     return True
             return False
         elif isinstance(topology, topologic.Cell):
@@ -799,7 +806,7 @@ class Vertex(Topology):
             vertices = CellComplex.Vertices(topology)
             subtopologies = cells + faces + edges + vertices
             for subtopology in subtopologies:
-                if Vertex.IsInside(vertex, subtopology, tolerance):
+                if Vertex.IsInternal(vertex, subtopology, tolerance):
                     return True
             return False
         elif isinstance(topology, topologic.Cluster):
@@ -809,7 +816,7 @@ class Vertex(Topology):
             vertices = Cluster.Vertices(topology)
             subtopologies = cells + faces + edges + vertices
             for subtopology in subtopologies:
-                if Vertex.IsInside(vertex, subtopology, tolerance):
+                if Vertex.IsInternal(vertex, subtopology, tolerance):
                     return True
             return False
         return False
