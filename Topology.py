@@ -4342,6 +4342,7 @@ class Topology():
                 else:
                     return False
             else:
+                #Topology.Show(wire, renderer="browser")
                 raise Exception("Topology.RemoveCollinearEdges - Error: This method only applies to manifold closed wires")
 
         #----------------------------------------------------------------------

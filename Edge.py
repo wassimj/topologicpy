@@ -889,6 +889,8 @@ class Edge():
             print("Edge.Trim - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         distance = abs(distance)
+        if distance == 0:
+            return edge
         if distance < tolerance:
             print("Edge.Trim - Warning: The input distance parameter is less than the input tolerance parameter. Returning the input edge.")
             return edge
