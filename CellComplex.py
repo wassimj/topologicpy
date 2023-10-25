@@ -658,37 +658,57 @@ class CellComplex(topologic.CellComplex):
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         
+        def bb(topology):
+            vertices = []
+            _ = topology.Vertices(None, vertices)
+            x = []
+            y = []
+            z = []
+            for aVertex in vertices:
+                x.append(aVertex.X())
+                y.append(aVertex.Y())
+                z.append(aVertex.Z())
+            minX = min(x)
+            minY = min(y)
+            minZ = min(z)
+            maxX = max(x)
+            maxY = max(y)
+            maxZ = max(z)
+            return [minX, minY, minZ, maxX, maxY, maxZ]
+        
+        def slice(topology, uSides, vSides, wSides):
+            minX, minY, minZ, maxX, maxY, maxZ = bb(topology)
+            centroid = Vertex.ByCoordinates(minX+(maxX-minX)*0.5, minY+(maxY-minY)*0.5, minZ+(maxZ-minZ)*0.5)
+            wOrigin = Vertex.ByCoordinates(Vertex.X(centroid), Vertex.Y(centroid), minZ)
+            wFace = Face.Rectangle(origin=wOrigin, width=(maxX-minX)*1.1, length=(maxY-minY)*1.1)
+            wFaces = []
+            wOffset = (maxZ-minZ)/wSides
+            for i in range(wSides-1):
+                wFaces.append(Topology.Translate(wFace, 0,0,wOffset*(i+1)))
+            uOrigin = Vertex.ByCoordinates(minX, Vertex.Y(centroid), Vertex.Z(centroid))
+            uFace = Face.Rectangle(origin=uOrigin, width=(maxZ-minZ)*1.1, length=(maxY-minY)*1.1, direction=[1,0,0])
+            uFaces = []
+            uOffset = (maxX-minX)/uSides
+            for i in range(uSides-1):
+                uFaces.append(Topology.Translate(uFace, uOffset*(i+1),0,0))
+            vOrigin = Vertex.ByCoordinates(Vertex.X(centroid), minY, Vertex.Z(centroid))
+            vFace = Face.Rectangle(origin=vOrigin, width=(maxZ-minZ)*1.1, length=(maxX-minX)*1.1, direction=[0,1,0])
+            vFaces = []
+            vOffset = (maxY-minY)/vSides
+            for i in range(vSides-1):
+                vFaces.append(Topology.Translate(vFace, 0,vOffset*(i+1),0))
+            f_clus = Cluster.ByTopologies(uFaces+vFaces+wFaces)
+            return Topology.Slice(topology, f_clus)
         if not isinstance(origin, topologic.Vertex):
             origin = Vertex.ByCoordinates(0,0,0)
 
-        uOffset = float(width) / float(uSides)
-        vOffset = float(length) / float(vSides)
-        wOffset = float(height) / float(wSides)
-        if placement.lower() == "center":
-            xOffset = width*0.5
-            yOffset = length*0.5
-            zOffset = height*0.5
-        elif placement.lower() == "bottom":
-            xOffset = width*0.5
-            yOffset = length*0.5
-            zOffset = 0
-        else:
-            xOffset = 0
-            yOffset = 0
-            zOffset = 0
-        cells = []
-        for i in range(uSides):
-            for j in range(vSides):
-                for k in range(wSides):
-                    cOrigin = Vertex.ByCoordinates(origin.X()+i*uOffset - xOffset, origin.Y()+ j*vOffset - yOffset, origin.Z() + k*wOffset - zOffset)
-                    cells.append(Cell.Prism(cOrigin, width=uOffset, length=vOffset, height=wOffset, placement="lowerleft"))
-        prism = CellComplex.ByCells(cells)
+        c = Cell.Prism(origin=origin, width=width, length=length, height=height, uSides=1, vSides=1, wSides=1, placement=placement)
+        prism = slice(c, uSides=uSides, vSides=vSides, wSides=wSides)
         if prism:
             x1 = origin.X()
             y1 = origin.Y()

@@ -324,7 +324,7 @@ class Grid(topologic.Cluster):
             uRange.sort()
             for u in uRange:
                 for v in vRange:
-                    gridVertex = Vertex.ByParameter(face, u, v)
+                    gridVertex = Face.VertexByParameters(face, u, v)
                     if clip and isinstance(face, topologic.Face):
                         gridVertex = gridVertex.Intersect(face, False)
                     if isinstance(gridVertex, topologic.Vertex):

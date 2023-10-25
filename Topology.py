@@ -3055,7 +3055,7 @@ class Topology():
             return_topology = Cell.ByFaces(faces)
             if return_topology == None:
                 return_topology = CellComplex.ByFaces(faces)
-                print("Return Topology:", return_topology)
+                #print("Return Topology:", return_topology)
                 if return_topology == None:
                     print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
                     return topology

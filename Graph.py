@@ -5208,7 +5208,7 @@ class Graph:
             ev = Edge.EndVertex(edge)
             con1 = Vertex.Index(sv, viewpointsA, strict=False, tolerance=tolerance)
             con2 = Vertex.Index(ev, viewpointsB, strict=False, tolerance=tolerance)
-            if con1 != None and con2 != None:
+            if con1 != None or con2 != None:
                 edges.append(edge)
             return edges
 
@@ -5260,6 +5260,7 @@ class Graph:
                                 if tempEdges:
                                     for tempEdge in tempEdges:
                                         edges = addEdge(tempEdge, edges, viewpointsA, viewpointsB, 0.0001)
+
         except:
             for i in range(len(viewpointsA)):
                 for j in range(len(viewpointsB)):
