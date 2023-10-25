@@ -822,14 +822,17 @@ class Plotly:
             all_triangles = []
             for tp_face in tp_faces:
                 shell = Topology.Triangulate(tp_face, transferDictionaries = False)
-                triangles = Topology.SubTopologies(shell, subTopologyType="face")
-                if faceLabelKey or faceGroupKey:
-                    for tri in triangles:
+                if isinstance(shell, topologic.Face):
+                    triangles = [shell]
+                else:
+                    triangles = Topology.SubTopologies(shell, subTopologyType="face")
+                for tri in triangles:
+                    if faceLabelKey or faceGroupKey:
                         d = Topology.Dictionary(tp_face)
                         f_dictionaries.append(d)
                         if d:
                             _ = Topology.SetDictionary(tri, d)
-                        all_triangles.append(tri)
+                    all_triangles.append(tri)
             f_cluster = Cluster.ByTopologies(all_triangles)
             geo = Topology.Geometry(f_cluster)
             vertices = geo['vertices']
