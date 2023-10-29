@@ -17,17 +17,19 @@ from collections import namedtuple
 from multiprocessing import Process, Queue
 
 QueueItem = namedtuple('QueueItem', ['ID', 'sinkKeys', 'sinkValues'])
+SinkItem = namedtuple('SinkItem', ['ID', 'sink_str'])
 
 class WorkerProcessPool(object):
     """
     Create and manage a list of Worker processes. Each worker process
     transfers the dictionaries from a subset of sources to the list of sinks.
     """
-    def __init__(self, num_workers, message_queue, sources, sinks, tolerance=0.0001):
+    def __init__(self, num_workers, message_queue, sources, sinks, so_dicts, tolerance=0.0001):
         self.num_workers = num_workers
         self.message_queue = message_queue
         self.sources = sources
         self.sinks = sinks
+        self.so_dicts = so_dicts
         self.tolerance = tolerance
         self.process_list = []
 
@@ -37,11 +39,13 @@ class WorkerProcessPool(object):
             if i == self.num_workers - 1:
                 begin = i * num_item_per_worker
                 sub_sources = self.sources[begin:]
+                sub_dict = self.so_dicts[begin:]
             else:
                 begin = i * num_item_per_worker
                 end = begin + num_item_per_worker
                 sub_sources = self.sources[begin : end]
-            wp = WorkerProcess(self.message_queue, sub_sources, self.sinks, self.tolerance)
+                sub_dict = self.so_dicts[begin : end]
+            wp = WorkerProcess(self.message_queue, sub_sources, self.sinks, sub_dict, self.tolerance)
             wp.start()
             self.process_list.append(wp)
 
@@ -58,26 +62,31 @@ class WorkerProcess(Process):
     """
     Transfers the dictionaries from a subset of sources to the list of sinks.
     """
-    def __init__(self, message_queue, sources, sinks, tolerance=0.0001):
+    def __init__(self, message_queue, sources, sinks, so_dicts, tolerance=0.0001):
         Process.__init__(self, target=self.run)
         self.message_queue = message_queue
         self.sources = sources
         self.sinks = sinks
+        self.so_dicts = so_dicts
         self.tolerance = tolerance
 
     def run(self):
-        for sink in self.sinks:
+        for sink_item in self.sinks:
+            sink = Topology.ByBREPString(sink_item.sink_str)
             sinkKeys = []
             sinkValues = []
             iv = Topology.RelevantSelector(sink, self.tolerance)
-            for source in self.sources:
+            for j, source_str in enumerate(self.sources):
+                source = Topology.ByBREPString(source_str)
                 flag = False
                 if isinstance(source, topologic.Vertex):
                     flag = Topology.IsInternal(sink, source, self.tolerance)
                 else:
                     flag = Topology.IsInternal(source, iv, self.tolerance)
                 if flag:
-                    d = Topology.Dictionary(source)
+                    #d = Topology.Dictionary(source)
+                    d = Dictionary.ByPythonDictionary(self.so_dicts[j])
+                    # print(Dictionary.Keys(d), Dictionary.Values(d))
                     if d == None:
                         continue
                     stlKeys = d.Keys()
@@ -100,23 +109,24 @@ class WorkerProcess(Process):
                                     sinkValues[index] = sourceValue
                     break
             if len(sinkKeys) > 0 and len(sinkValues) > 0:
-                self.message_queue.put(QueueItem(id(sink), sinkKeys, sinkValues))
+                self.message_queue.put(QueueItem(sink_item.ID, sinkKeys, sinkValues))
 
 class MergingProcess(Process):
     """
     Receive message from other processes and merging the result
     """
-    def __init__(self, message_queue, sources, sinks):
+    def __init__(self, message_queue, sources, sinks, so_dicts):
         Process.__init__(self, target=self.wait_message)
         self.message_queue = message_queue
         self.sources = sources
         self.sinks = sinks
+        self.so_dicts = so_dicts
         self.sinkMap = self._init_sink_map()
 
     def _init_sink_map(self):
         sinkMap = {}
         for sink in self.sinks:
-            sinkMap[id(sink)] = QueueItem(id(sink), [], [])
+            sinkMap[sink.ID] = QueueItem(sink.ID, [], [])
         return sinkMap
 
     def wait_message(self):
@@ -6185,6 +6195,7 @@ class Topology():
             return None
         sources = [x for x in sources if isinstance(x, topologic.Topology)]
         sinks = [x for x in sinks if isinstance(x, topologic.Topology)]
+        so_dicts = [Dictionary.PythonDictionary(Topology.Dictionary(s)) for s in sources]
         if len(sources) < 1:
             print("Topology.TransferDictionaries - Error: The input sources does not contain any valid topologies. Returning None.")
             return None
@@ -6193,10 +6204,12 @@ class Topology():
             return None
 
         queue = Queue()
-        mergingProcess = MergingProcess(queue, sources, sinks)
+        sources_str = [Topology.BREPString(s) for s in sources]
+        sink_items = [SinkItem(id(s), Topology.BREPString(s)) for s in sinks]
+        mergingProcess = MergingProcess(queue, sources_str, sink_items, so_dicts)
         mergingProcess.start()
 
-        workerProcessPool = WorkerProcessPool(numWorkers, queue, sources, sinks, tolerance)
+        workerProcessPool = WorkerProcessPool(numWorkers, queue, sources_str, sink_items, so_dicts, tolerance)
         workerProcessPool.startProcesses()
         workerProcessPool.join()
 
@@ -6204,10 +6217,11 @@ class Topology():
         sinkMap = queue.get()
         mergingProcess.join()
 
-        for sink in sinks:
-            mapItem = sinkMap[id(sink)]
+        for i, sink in enumerate(sink_items):
+            mapItem = sinkMap[sink.ID]
             newDict = Dictionary.ByKeysValues(mapItem.sinkKeys, mapItem.sinkValues)
-            _ = sink.SetDictionary(newDict)
+            # print("newDict", Dictionary.Keys(newDict), Dictionary.Values(newDict))
+            _ = sinks[i].SetDictionary(newDict)
         return {"sources": sources, "sinks": sinks}
 
     
