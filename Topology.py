@@ -3,6 +3,7 @@
 import topologicpy
 import topologic
 from topologicpy.Aperture import Aperture
+from topologicpy.Dictionary import Dictionary
 
 import uuid
 import json
@@ -11,6 +12,125 @@ import numpy as np
 from numpy import arctan, pi, signbit
 from numpy.linalg import norm
 import math
+
+from collections import namedtuple
+from multiprocessing import Process, Queue
+
+QueueItem = namedtuple('QueueItem', ['ID', 'sinkKeys', 'sinkValues'])
+
+class WorkerProcessPool(object):
+    """
+    Create and manage a list of Worker processes. Each worker process
+    transfers the dictionaries from a subset of sources to the list of sinks.
+    """
+    def __init__(self, num_workers, message_queue, sources, sinks, tolerance=0.0001):
+        self.num_workers = num_workers
+        self.message_queue = message_queue
+        self.sources = sources
+        self.sinks = sinks
+        self.tolerance = tolerance
+        self.process_list = []
+
+    def startProcesses(self):
+        num_item_per_worker = len(self.sources) // self.num_workers
+        for i in range(self.num_workers):
+            if i == self.num_workers - 1:
+                begin = i * num_item_per_worker
+                sub_sources = self.sources[begin:]
+            else:
+                begin = i * num_item_per_worker
+                end = begin + num_item_per_worker
+                sub_sources = self.sources[begin : end]
+            wp = WorkerProcess(self.message_queue, sub_sources, self.sinks, self.tolerance)
+            wp.start()
+            self.process_list.append(wp)
+
+    def stopProcesses(self):
+        for p in self.process_list:
+            p.join()
+        self.process_list = []
+
+    def join(self):
+        for p in self.process_list:
+            p.join()
+
+class WorkerProcess(Process):
+    """
+    Transfers the dictionaries from a subset of sources to the list of sinks.
+    """
+    def __init__(self, message_queue, sources, sinks, tolerance=0.0001):
+        Process.__init__(self, target=self.run)
+        self.message_queue = message_queue
+        self.sources = sources
+        self.sinks = sinks
+        self.tolerance = tolerance
+
+    def run(self):
+        for sink in self.sinks:
+            sinkKeys = []
+            sinkValues = []
+            iv = Topology.RelevantSelector(sink, self.tolerance)
+            for source in self.sources:
+                flag = False
+                if isinstance(source, topologic.Vertex):
+                    flag = Topology.IsInternal(sink, source, self.tolerance)
+                else:
+                    flag = Topology.IsInternal(source, iv, self.tolerance)
+                if flag:
+                    d = Topology.Dictionary(source)
+                    if d == None:
+                        continue
+                    stlKeys = d.Keys()
+                    if len(stlKeys) > 0:
+                        sourceKeys = d.Keys()
+                        for aSourceKey in sourceKeys:
+                            if aSourceKey not in sinkKeys:
+                                sinkKeys.append(aSourceKey)
+                                sinkValues.append("")
+                        for i in range(len(sourceKeys)):
+                            index = sinkKeys.index(sourceKeys[i])
+                            sourceValue = Dictionary.ValueAtKey(d, sourceKeys[i])
+                            if sourceValue != None:
+                                if sinkValues[index] != "":
+                                    if isinstance(sinkValues[index], list):
+                                        sinkValues[index].append(sourceValue)
+                                    else:
+                                        sinkValues[index] = [sinkValues[index], sourceValue]
+                                else:
+                                    sinkValues[index] = sourceValue
+                    break
+            if len(sinkKeys) > 0 and len(sinkValues) > 0:
+                self.message_queue.put(QueueItem(id(sink), sinkKeys, sinkValues))
+
+class MergingProcess(Process):
+    """
+    Receive message from other processes and merging the result
+    """
+    def __init__(self, message_queue, sources, sinks):
+        Process.__init__(self, target=self.wait_message)
+        self.message_queue = message_queue
+        self.sources = sources
+        self.sinks = sinks
+        self.sinkMap = self._init_sink_map()
+
+    def _init_sink_map(self):
+        sinkMap = {}
+        for sink in self.sinks:
+            sinkMap[id(sink)] = QueueItem(id(sink), [], [])
+        return sinkMap
+
+    def wait_message(self):
+        while True:
+            try:
+                item = self.message_queue.get()
+                if item is None:
+                    self.message_queue.put(self.sinkMap)
+                    break
+                mapItem = self.sinkMap[item.ID]
+                mapItem.sinkKeys.extend(item.sinkKeys)
+                mapItem.sinkValues.extend(item.sinkValues)
+            except Exception as e:
+                print(str(e))
 
 class Topology():
     @staticmethod
@@ -6035,7 +6155,7 @@ class Topology():
         return topologyC
     
     @staticmethod
-    def TransferDictionaries(sources, sinks, tolerance=0.0001):
+    def TransferDictionaries(sources, sinks, tolerance=0.0001, numWorkers=10):
         """
         Transfers the dictionaries from the list of sources to the list of sinks.
 
@@ -6047,6 +6167,8 @@ class Topology():
             The list of topologies to which to transfer the dictionaries.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        numWorkers : int, optional
+            Number of workers run in parallel to process.
 
         Returns
         -------
@@ -6069,48 +6191,28 @@ class Topology():
         if len(sinks) < 1:
             print("Topology.TransferDictionaries - Error: The input sinks does not contain any valid topologies. Returning None.")
             return None
+
+        queue = Queue()
+        mergingProcess = MergingProcess(queue, sources, sinks)
+        mergingProcess.start()
+
+        workerProcessPool = WorkerProcessPool(numWorkers, queue, sources, sinks, tolerance)
+        workerProcessPool.startProcesses()
+        workerProcessPool.join()
+
+        queue.put_nowait(None)
+        sinkMap = queue.get()
+        mergingProcess.join()
+
         for sink in sinks:
-            sinkKeys = []
-            sinkValues = []
-            iv = Topology.RelevantSelector(sink, tolerance)
-            j = 1
-            for source in sources:
-                flag = False
-                if isinstance(source, topologic.Vertex):
-                    flag = Topology.IsInternal(sink, source, tolerance)
-                else:
-                    flag = Topology.IsInternal(source, iv, tolerance)
-                if flag:
-                    d = Topology.Dictionary(source)
-                    if d == None:
-                        continue
-                    stlKeys = d.Keys()
-                    if len(stlKeys) > 0:
-                        sourceKeys = d.Keys()
-                        for aSourceKey in sourceKeys:
-                            if aSourceKey not in sinkKeys:
-                                sinkKeys.append(aSourceKey)
-                                sinkValues.append("")
-                        for i in range(len(sourceKeys)):
-                            index = sinkKeys.index(sourceKeys[i])
-                            sourceValue = Dictionary.ValueAtKey(d, sourceKeys[i])
-                            if sourceValue != None:
-                                if sinkValues[index] != "":
-                                    if isinstance(sinkValues[index], list):
-                                        sinkValues[index].append(sourceValue)
-                                    else:
-                                        sinkValues[index] = [sinkValues[index], sourceValue]
-                                else:
-                                    sinkValues[index] = sourceValue
-                    break;
-            if len(sinkKeys) > 0 and len(sinkValues) > 0:
-                newDict = Dictionary.ByKeysValues(sinkKeys, sinkValues)
-                _ = sink.SetDictionary(newDict)
+            mapItem = sinkMap[id(sink)]
+            newDict = Dictionary.ByKeysValues(mapItem.sinkKeys, mapItem.sinkValues)
+            _ = sink.SetDictionary(newDict)
         return {"sources": sources, "sinks": sinks}
 
     
     @staticmethod
-    def TransferDictionariesBySelectors(topology, selectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001):
+    def TransferDictionariesBySelectors(topology, selectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001, numWorkers=10):
         """
         Transfers the dictionaries of the list of selectors to the subtopologies of the input topology based on the input parameters.
 
@@ -6130,6 +6232,8 @@ class Topology():
             If True transfer dictionaries to the cells of the input topology.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        numWorkers : int, optional
+            Number of workers run in parallel to process.
 
         Returns
         -------
@@ -6159,28 +6263,28 @@ class Topology():
                 sinkVertices.append(topology)
             elif hidimSink >= topologic.Vertex.Type():
                 topology.Vertices(None, sinkVertices)
-            _ = Topology.TransferDictionaries(selectors, sinkVertices, tolerance)
+            _ = Topology.TransferDictionaries(selectors, sinkVertices, tolerance, numWorkers)
         if tranEdges == True:
             sinkEdges = []
             if topology.Type() == topologic.Edge.Type():
                 sinkEdges.append(topology)
             elif hidimSink >= topologic.Edge.Type():
                 topology.Edges(None, sinkEdges)
-                _ = Topology.TransferDictionaries(selectors, sinkEdges, tolerance)
+                _ = Topology.TransferDictionaries(selectors, sinkEdges, tolerance, numWorkers)
         if tranFaces == True:
             sinkFaces = []
             if topology.Type() == topologic.Face.Type():
                 sinkFaces.append(topology)
             elif hidimSink >= topologic.Face.Type():
                 topology.Faces(None, sinkFaces)
-            _ = Topology.TransferDictionaries(selectors, sinkFaces, tolerance)
+            _ = Topology.TransferDictionaries(selectors, sinkFaces, tolerance, numWorkers)
         if tranCells == True:
             sinkCells = []
             if topology.Type() == topologic.Cell.Type():
                 sinkCells.append(topology)
             elif hidimSink >= topologic.Cell.Type():
                 topology.Cells(None, sinkCells)
-            _ = Topology.TransferDictionaries(selectors, sinkCells, tolerance)
+            _ = Topology.TransferDictionaries(selectors, sinkCells, tolerance, numWorkers)
         return topology
 
     
