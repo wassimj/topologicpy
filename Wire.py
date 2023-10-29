@@ -296,11 +296,11 @@ class Wire(topologic.Wire):
                 dupVertices.append(vertices[0])
                 dupVertices.append(vertices[0])
             else:
-                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)])
+                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], verbose=False)
                 normal = Edge.Normal(e1)
                 normal = [normal[0]*finalOffset*10, normal[1]*finalOffset*10, normal[2]*finalOffset*10]
                 tempV = Vertex.ByCoordinates(vertices[0].X()+normal[0], vertices[0].Y()+normal[1], vertices[0].Z()+normal[2])
-                tempEdge2 = Edge.ByVertices([vertices[0], tempV])
+                tempEdge2 = Edge.ByVertices([vertices[0], tempV], verbose=False)
                 intV = Edge.Intersect2D(tempEdge1,tempEdge2)
                 newVertices.append(intV)
                 dupVertices.append(vertices[0])
@@ -320,11 +320,11 @@ class Wire(topologic.Wire):
                 dupVertices.append(vertices[i+1])
                 dupVertices.append(vertices[i+1])
             else:
-                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)])
+                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], verbose=False)
                 normal = Edge.Normal(e1)
                 normal = [normal[0]*finalOffset*10, normal[1]*finalOffset*10, normal[2]*finalOffset*10]
                 tempV = Vertex.ByCoordinates(vertices[i+1].X()+normal[0], vertices[i+1].Y()+normal[1], vertices[i+1].Z()+normal[2])
-                tempEdge2 = Edge.ByVertices([vertices[i+1], tempV])
+                tempEdge2 = Edge.ByVertices([vertices[i+1], tempV], verbose=False)
                 intV = Edge.Intersect2D(tempEdge1,tempEdge2)
                 newVertices.append(intV)
                 dupVertices.append(vertices[i+1])
@@ -2144,7 +2144,7 @@ class Wire(topologic.Wire):
                     sink_vertex = Vertex.ByCoordinates(sink.x, sink.y, z)
                     if (source.x, source.y) == (sink.x, sink.y):
                         continue
-                    if Edge.ByStartVertexEndVertex(source_vertex, sink_vertex) not in edges:
+                    if Edge.ByStartVertexEndVertex(source_vertex, sink_vertex, tolerance=tolerance, verbose=False) not in edges:
                         edges.append(Edge.ByStartVertexEndVertex(source_vertex, sink_vertex))
             return edges
         

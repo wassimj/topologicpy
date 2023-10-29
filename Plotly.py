@@ -779,6 +779,7 @@ class Plotly:
         if not isinstance(topology, topologic.Topology):
             return None
         
+        intensities = []
         data = []
         
         if showVertices:
@@ -833,11 +834,12 @@ class Plotly:
                         if d:
                             _ = Topology.SetDictionary(tri, d)
                     all_triangles.append(tri)
-            f_cluster = Cluster.ByTopologies(all_triangles)
-            geo = Topology.Geometry(f_cluster)
-            vertices = geo['vertices']
-            faces = geo['faces']
-            data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensities, colorScale=colorScale))
+            if len(all_triangles) > 0:
+                f_cluster = Cluster.ByTopologies(all_triangles)
+                geo = Topology.Geometry(f_cluster)
+                vertices = geo['vertices']
+                faces = geo['faces']
+                data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensities, colorScale=colorScale))
         return data
 
     @staticmethod

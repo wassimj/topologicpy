@@ -1417,7 +1417,7 @@ class Face(topologic.Face):
         return Face.NormalEdgeAtParameters(face, u=0.5, v=0.5, length=length)
 
     @staticmethod
-    def NormalEdgeAtParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5, length: float = 1.0) -> topologic.Edge:
+    def NormalEdgeAtParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5, length: float = 1.0, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Returns the normal vector to the input face as an edge with the desired input length. A normal vector of a face is a vector perpendicular to it.
 
@@ -1431,7 +1431,9 @@ class Face(topologic.Face):
             The *v* parameter at which to compute the normal to the input face. The default is 0.5.
         length : float , optional
             The desired length of the normal edge. The default is 1.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Edge
@@ -1445,7 +1447,7 @@ class Face(topologic.Face):
         sv = Face.VertexByParameters(face=face, u=u, v=v)
         vec = Face.NormalAtParameters(face, u=u, v=v)
         ev = Topology.TranslateByDirectionDistance(sv, vec, length)
-        return Edge.ByVertices([sv, ev])
+        return Edge.ByVertices([sv, ev], tolerance=tolerance, verbose=True)
 
     @staticmethod
     def PlaneEquation(face: topologic.Face, mantissa: int = 4) -> dict:

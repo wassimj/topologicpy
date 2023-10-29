@@ -89,9 +89,9 @@ class Cluster(topologic.Cluster):
         return Cluster.ByTopologies(vertices)
     
     @staticmethod
-    def ByTopologies(topologies: list) -> topologic.Cluster:
+    def ByTopologies(*args) -> topologic.Cluster:
         """
-        Creates a topologic Cluster from the input list of topologies.
+        Creates a topologic Cluster from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.
 
         Parameters
         ----------
@@ -104,8 +104,31 @@ class Cluster(topologic.Cluster):
             The created topologic Cluster.
 
         """
-        assert isinstance(topologies, list), "Cluster.ByTopologies - Error: Input is not a list"
-        topologyList = [x for x in topologies if isinstance(x, topologic.Topology)]
+        from topologicpy.Helper import Helper
+        #assert isinstance(topologies, list), "Cluster.ByTopologies - Error: Input is not a list"
+        if len(args) == 0:
+            print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+            return None
+        if len(args) == 1:
+            topologies = args[0]
+            if isinstance(topologies, list):
+                if len(topologies) == 0:
+                    print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+                    return None
+                else:
+                    topologyList = [x for x in topologies if isinstance(x, topologic.Topology)]
+                    if len(topologies) == 0:
+                        print("Cluster.ByTopologies - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
+                        return None
+            else:
+                print("Cluster.ByTopologies - Warning: The input topologies parameter contains only one topology. Returning the same topology.")
+                return topologies
+        else:
+            topologyList = Helper.Flatten(list(args))
+            topologyList = [x for x in topologyList if isinstance(x, topologic.Topology)]
+        if len(topologyList) == 0:
+            print("Cluster.ByTopologies - Error: The input parameters do not contain any valid topologies. Returning None.")
+            return None
         return topologic.Cluster.ByTopologies(topologyList, False)
 
     @staticmethod

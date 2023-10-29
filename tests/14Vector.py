@@ -23,144 +23,152 @@ f = Face.Rectangle()
 
 # Case 1 - Angle
 # test 1
-angle = Vector.Angle([0,0,0], [0,1,0])
+angle = Vector.Angle([1,0,0], [0,1,0])
 assert angle == 90, "Vector.Angle. Should be 90"
 
-# Case 2 - ByAzimuthAltitude
+# Case 2 - AzimuthAltitude
+# test 1
+dictionary = Vector.AzimuthAltitude([1,0,0], mantissa=4)
+assert dictionary['azimuth'] == 90, "Vector.AzimuthAltitude. Azimuth Should be 90.0"
+assert dictionary['altitude'] == 0, "Vector.AzimuthAltitude. Altitude Should be 0.0"
+
+# Case 3 - ByAzimuthAltitude
 # test 1
 vector = Vector.ByAzimuthAltitude(azimuth=0, altitude=0, north=0, reverse=False)
 assert vector == [0.0,1.0,0.0], "Vector.ByAzimuthAltitude. Should be [0,1,0]"
-# test 2
-status = Vertex.AreIpsilateral(v_list2, face=f)
-assert status == True, "Vertex.AreIpsilateral. Should be False"
 
-# Case 3 - AreIpsilateralCluster
+# Case 4 - ByCoordinates
 # test 1
-status = Vertex.AreIpsilateralCluster(Cluster.ByTopologies(v_list1), face=f)
-assert status == False, "Vertex.AreIpsilateral. Should be False"
-# test 2
-status = Vertex.AreIpsilateralCluster(Cluster.ByTopologies(v_list2), face=f)
-assert status == True, "Vertex.AreIpsilateral. Should be False"
+vector = Vector.ByCoordinates(2,3,4)
+assert vector == [2,3,4], "Vector.ByCoordinates. Should be [2,3,4]"
 
-# Case 4 - AreOnSameSide
+# Case 5 - ByVertices
+v1 = Vertex.ByCoordinates(10,0,0)
+v2 = Vertex.ByCoordinates(20,0,0)
 # test 1
-status = Vertex.AreOnSameSide(v_list1, face=f)
-assert status == False, "Vertex.AreIpsilateral. Should be False"
+vector = Vector.ByVertices([v1,v2], normalize=True)
+assert vector == [1,0,0], "Vector.ByAzimuthAltitude. Should be [1,0,0]"
 # test 2
-status = Vertex.AreOnSameSide(v_list2, face=f)
-assert status == True, "Vertex.AreIpsilateral. Should be False"
+vector = Vector.ByVertices([v1,v2], normalize=False)
+assert vector == [10,0,0], "Vector.ByAzimuthAltitude. Should be [10,0,0]"
 
-# Case 5 - AreOnSameSideCluster
+# Case 6 - CompassAngle
 # test 1
-status = Vertex.AreOnSameSideCluster(Cluster.ByTopologies(v_list1), face=f)
-assert status == False, "Vertex.AreIpsilateral. Should be False"
-# test 2
-status = Vertex.AreOnSameSideCluster(Cluster.ByTopologies(v_list2), face=f)
-assert status == True, "Vertex.AreIpsilateral. Should be False"
+vectorA = [0,1,0]
+vectorB = [0,1,0]
+angle = Vector.CompassAngle(vectorA, vectorB)
+assert angle == 0, "Vector.CompassAngle. Should be 0"
 
-# Case 6 - Coordinates
-# test 1
-coordinates = Vertex.Coordinates(v1, mantissa=0)
-assert coordinates == [0,10,1], "Vertex.Coordinates. Should be [0,10,1]"
 # test 2
-coordinates = Vertex.Coordinates(v1, outputType = "xy", mantissa=0)
-assert coordinates == [0,10], "Vertex.Coordinates. Should be [0.0,10.0]"
+vectorA = [0,1,0]
+vectorB = [1,1,0]
+angle = Vector.CompassAngle(vectorA, vectorB)
+assert angle == 45, "Vector.CompassAngle. Should be 45"
+
 # test 3
-coordinates = Vertex.Coordinates(v1, outputType = "xz", mantissa=0)
-assert coordinates == [0,1], "Vertex.Coordinates. Should be [0.0,1.0]"
+vectorA = [0,1,0]
+vectorB = [1,0,0]
+angle = Vector.CompassAngle(vectorA, vectorB)
+assert angle == 90, "Vector.CompassAngle. Should be 90"
+
 # test 4
-coordinates = Vertex.Coordinates(v1, outputType = "yz", mantissa=0)
-assert coordinates == [10,1], "Vertex.Coordinates. Should be [10.0,1.0]"
+vectorA = [0,1,0]
+vectorB = [1,-1,0]
+angle = Vector.CompassAngle(vectorA, vectorB)
+assert angle == 135, "Vector.CompassAngle. Should be 135"
+
 # test 5
-coordinates = Vertex.Coordinates(v1, outputType = "x", mantissa=0)
-assert coordinates == [0], "Vertex.Coordinates. Should be [0.0]"
-# test 6
-coordinates = Vertex.Coordinates(v1, outputType = "y", mantissa=0)
-assert coordinates == [10], "Vertex.Coordinates. Should be [10.0]"
-# test 7
-coordinates = Vertex.Coordinates(v1, outputType = "z", mantissa=0)
-assert coordinates == [1], "Vertex.Coordinates. Should be [1.0]"
+vectorA = [0,1,0]
+vectorB = [0,-1,0]
+angle = Vector.CompassAngle(vectorA, vectorB)
+assert angle == 180, "Vector.CompassAngle. Should be 180"
 
-# Case 7 - Distance
+# Case 7 - Coordinates
+vectorA = [10,20,30]
 # test 1
-d = Vertex.Distance(v4, v5)
-assert d == 10, "Vertex.Distance. Should be 10"
+coordinates = Vector.Coordinates(vectorA, outputType="xyz")
+assert coordinates == [10,20,30], "Vector.Coordinates. Should be [10,20,30]"
+
 # test 2
-c = Cell.Prism(origin=v5)
-d = Vertex.Distance(v4, c)
-assert d == 9.5, "Vertex.Distance. Should be 9.5"
+coordinates = Vector.Coordinates(vectorA, outputType="xy")
+assert coordinates == [10,20], "Vector.Coordinates. Should be [10,20]"
+
 # test 3
-v7 = Vertex.ByCoordinates(0,4,0)
-v8 = Vertex.ByCoordinates(4,0,0)
-e = Edge.ByVertices([v7, v8])
-d = Vertex.Distance(v0, e)
-epsilon = abs(d - 2.8284)
-assert epsilon < 0.001, "Vertex.Distance. Should very small"
+coordinates = Vector.Coordinates(vectorA, outputType="xz")
+assert coordinates == [10,30], "Vector.Coordinates. Should be [10,30]"
 
-# Case 8 - EnclosingCell
+# Case 8 - Cross
+vectorA = [1,0,0]
+vectorB = [0,1,0]
+cross = Vector.Cross(vectorA, vectorB)
+assert cross == [0,0,1], "Vector.Cross. Should be [0,0,1]"
+
+# Case 9 - Up
+vector = Vector.Up()
+assert vector == [0,0,1], "Vector.Up. Should be [0,0,1]"
+
+# Case 10 - Down
+vector = Vector.Down()
+assert vector == [0,0,-1], "Vector.Down. Should be [0,0,-1]"
+
+# Case 11 - North
+vector = Vector.North()
+assert vector == [0,1,0], "Vector.North. Should be [0,1,0]"
+
+# Case 12 - East
+vector = Vector.East()
+assert vector == [1,0,0], "Vector.East. Should be [1,0,0]"
+
+# Case 13 - South
+vector = Vector.South()
+assert vector == [0,-1,0], "Vector.South. Should be [0,-1,0]"
+
+# Case 14 - West
+vector = Vector.West()
+assert vector == [-1,0,0], "Vector.West. Should be [-1,0,0]"
+
+# Case 15 - IsCollinear
 # test 1
-cc = CellComplex.Prism(height=2)
-v9 = Vertex.ByCoordinates(0.7,0.8,0.5)
-v10 = Vertex.ByCoordinates(0.25,0.3,0.75)
-# test 1
-cells = Vertex.EnclosingCell(v9, cc)
-assert len(cells) == 0, "EnclosingCell. Length of cells should be 0"
+vectorA = [1,1,1]
+vectorB = [10,10,10]
+status = Vector.IsCollinear(vectorA, vectorB)
+assert status == True, "Vector.IsCollinear. Should be True"
+
 # test 2
-cells = Vertex.EnclosingCell(v10, cc)
-assert len(cells) == 1, "EnclosingCell. Length of cells should be 1"
-# test 3
-cell = cells[0]
-centroid = Topology.Centroid(cell)
-coordinates = Vertex.Coordinates(centroid)
-assert coordinates == [0.25, 0.25, 0.5], "EnclosingCell. Coordinates should be [0.5, 0.5, 0.5]"
+vectorA = [1,1,2]
+vectorB = [10,10,10]
+status = Vector.IsCollinear(vectorA, vectorB)
+assert status == False, "Vector.IsCollinear. Should be False"
 
-# Case 9 - Index
+# Case 16 - Magnitude
 # test 1
-i = Vertex.Index(v3, v_list1)
-assert i == 2, "EnclosingCell. Index. i should be 2"
+vectorA = [10,0,0]
+magnitude = Vector.Magnitude(vectorA)
+assert magnitude == 10, "Vector.Magnitude. Should be 10"
 
-# Case 10 - IsInside
+# Case 17 - Multiply
 # test 1
-status = Vertex.IsInternal(v9, cc)
-assert status == False, "IsInternal. status should be False"
-# test 2
-status = Vertex.IsInternal(v10, cc)
-assert status == True, "IsInternal. status should be True"
+vectorA = [10,0,0]
+magnitude = 10
+vectorB = Vector.Multiply(vectorA, magnitude)
+assert vectorB == [100,0,0], "Vector.Multiply. Should be [100,0,0]"
 
-# Case 11 - NearestVertex
+# Case 18 - Normalize
 # test 1
-cluster = Cluster.ByTopologies(v_list1)
-v = Vertex.NearestVertex(v_list1[2], cluster)
-i = Vertex.Index(v, v_list1)
-assert i == 2, "NearestVertex. i must be 2"
+vectorA = [10,0,0]
+vectorB = Vector.Normalize(vectorA)
+assert vectorB == [1,0,0], "Vector.Normalize. Should be [1,0,0]"
 
-# Case 12 - Origin
+# Case 19 - Reverse
 # test 1
-origin = Vertex.Origin()
-coordinates = Vertex.Coordinates(origin)
-assert coordinates == [0,0,0], "Origin. coordinates should be [0,0,0]"
+vectorA = [10,10,0]
+vectorB = Vector.Reverse(vectorA)
+assert vectorB == [-10,-10,0], "Vector.Normalize. Should be [1,0,0]"
 
-# Case 13 - Project
+# Case 20 - SetMagnitude
 # test 1
-v = Vertex.ByCoordinates(10,10,10)
-f = Face.Rectangle(width=20, length=20)
-v_p = Vertex.Project(v, f)
-coordinates = Vertex.Coordinates(v_p)
-assert coordinates == [10,10,0], "Origin. coordinates should be [10,10,0]"
-
-# Case 14 - X
-# test 1
-v = Vertex.ByCoordinates(10,20,30)
-assert Vertex.X(v) == 10, "Origin. x coordinate should be 10"
-
-# Case 15 - Y
-# test 1
-v = Vertex.ByCoordinates(10,20,30)
-assert Vertex.Y(v) == 20, "Origin. y coordinate should be 20"
-
-# Case 16 - Z
-# test 1
-v = Vertex.ByCoordinates(10,20,30)
-assert Vertex.Z(v) == 30, "Origin. z coordinate should be 30"
-
-
+vectorA = [10,20,0]
+magnitude = 20
+vectorB = Vector.SetMagnitude(vectorA, magnitude)
+magnitude = Vector.Magnitude(vectorB)
+assert magnitude == 20, "Vector.SetMagnitude. Should be 20"

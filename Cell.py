@@ -196,8 +196,8 @@ class Cell(Topology):
         _ = bottomFace.Edges(None, bottomEdges)
         for bottomEdge in bottomEdges:
             topEdge = Topology.Translate(bottomEdge, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
-            sideEdge1 = Edge.ByVertices([bottomEdge.StartVertex(), topEdge.StartVertex()])
-            sideEdge2 = Edge.ByVertices([bottomEdge.EndVertex(), topEdge.EndVertex()])
+            sideEdge1 = Edge.ByVertices([bottomEdge.StartVertex(), topEdge.StartVertex()], tolerance=tolerance, verbose=False)
+            sideEdge2 = Edge.ByVertices([bottomEdge.EndVertex(), topEdge.EndVertex()], tolerance=tolerance, verbose=False)
             cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
             cellFaces.append(Face.ByWire(cellWire))
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
@@ -251,8 +251,8 @@ class Cell(Topology):
         bottomEdges = Wire.Edges(bottomWire)
         for bottomEdge in bottomEdges:
             topEdge = Topology.Translate(bottomEdge, direction[0]*thickness, direction[1]*thickness, direction[2]*thickness)
-            sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)])
-            sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)])
+            sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)], tolerance=tolerance, verbose=False)
+            sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)], tolerance=tolerance, verbose=False)
             cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
             cellFace = Face.ByWire(cellWire)
             cellFaces.append(cellFace)
@@ -346,23 +346,23 @@ class Cell(Topology):
                     e3 = None
                     e4 = None
                     try:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, verbose=False)
                     except:
                         try:
-                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
+                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
                             faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4])))
                         except:
                             pass
                     try:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
                     except:
                         try:
-                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
+                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, verbose=False)
                             faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3])))
                         except:
                             pass
                     if e3 and e4:
-                        e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()])
+                        e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4])))
                         faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3])))
             else:
@@ -372,17 +372,17 @@ class Cell(Topology):
                     e3 = None
                     e4 = None
                     try:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, verbose=False)
                     except:
                         try:
-                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
+                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
                         except:
                             pass
                     try:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()])
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
                     except:
                         try:
-                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()])
+                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, verbose=False)
                         except:
                             pass
                     if e3 and e4:
@@ -1497,7 +1497,7 @@ class Cell(Topology):
         if not isinstance(cells, list):
             print("Cell.Sets - Error: The input cells parameter is not a valid list. Returning None.")
             return None
-        if not isinstance(cesuperCells, list):
+        if not isinstance(superCells, list):
             print("Cell.Sets - Error: The input superCells parameter is not a valid list. Returning None.")
             return None
         cells = [c for c in cells if isinstance(c, topologic.Cell)]

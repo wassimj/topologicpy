@@ -899,7 +899,6 @@ class Topology():
             elif hidimC >= topologic.Cell.Type():
                 sinkCells = Topology.Cells(topologyC)
             if len(sourceCells) > 0 and len(sinkCells) > 0:
-                print("919: Trying to transfer dictionaries of cells!")
                 _ = Topology.TransferDictionaries(sourceCells, sinkCells, tolerance)
         return topologyC
 

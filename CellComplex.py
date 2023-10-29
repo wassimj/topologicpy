@@ -702,8 +702,12 @@ class CellComplex(topologic.CellComplex):
             vOffset = (maxY-minY)/vSides
             for i in range(vSides-1):
                 vFaces.append(Topology.Translate(vFace, 0,vOffset*(i+1),0))
-            f_clus = Cluster.ByTopologies(uFaces+vFaces+wFaces)
-            return Topology.Slice(topology, f_clus)
+            all_faces = uFaces+vFaces+wFaces
+            if len(all_faces) > 0:
+                f_clus = Cluster.ByTopologies(uFaces+vFaces+wFaces)
+                return Topology.Slice(topology, f_clus)
+            else:
+                return topologic.CellComplex.ByCells([topology])
         if not isinstance(origin, topologic.Vertex):
             origin = Vertex.ByCoordinates(0,0,0)
 
