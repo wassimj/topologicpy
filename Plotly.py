@@ -783,63 +783,66 @@ class Plotly:
         data = []
         
         if showVertices:
-            vertices = []
             tp_vertices = Topology.SubTopologies(topology, subTopologyType="vertex")
-            v_dictionaries = []
-            intensities = []
-            for i, tp_v in enumerate(tp_vertices):
-                vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
-                d = Topology.Dictionary(tp_v)
-                if intensityKey:
-                    if d:
-                        v = Dictionary.ValueAtKey(d, key=intensityKey)
-                        if not v == None:
-                            intensities.append(v)
+            if not (tp_vertices == None or tp_vertices == []):
+                vertices = []
+                v_dictionaries = []
+                intensities = []
+                for i, tp_v in enumerate(tp_vertices):
+                    vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
+                    d = Topology.Dictionary(tp_v)
+                    if intensityKey:
+                        if d:
+                            v = Dictionary.ValueAtKey(d, key=intensityKey)
+                            if not v == None:
+                                intensities.append(v)
+                            else:
+                                intensities.append(0)
                         else:
                             intensities.append(0)
                     else:
-                        intensities.append(0)
-                else:
-                    intensities = None            
-                if vertexLabelKey or vertexGroupKey:
-                    v_dictionaries.append(d)
-            data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
+                        intensities = None            
+                    if vertexLabelKey or vertexGroupKey:
+                        v_dictionaries.append(d)
+                data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
 
         if showEdges and topology.Type() > topologic.Vertex.Type():
             tp_edges = Topology.SubTopologies(topology, subTopologyType="edge")
-            e_dictionaries = []
-            if edgeLabelKey or edgeGroupKey:
-                for tp_edge in tp_edges:
-                    e_dictionaries.append(Topology.Dictionary(tp_edge))
-            e_cluster = Cluster.ByTopologies(tp_edges)
-            geo = Topology.Geometry(e_cluster)
-            vertices = geo['vertices']
-            edges = geo['edges']
-            data.append(edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, width=edgeWidth, labelKey=edgeLabelKey, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
+            if not (tp_edges == None or tp_edges == []):
+                e_dictionaries = []
+                if edgeLabelKey or edgeGroupKey:
+                    for tp_edge in tp_edges:
+                        e_dictionaries.append(Topology.Dictionary(tp_edge))
+                e_cluster = Cluster.ByTopologies(tp_edges)
+                geo = Topology.Geometry(e_cluster)
+                vertices = geo['vertices']
+                edges = geo['edges']
+                data.append(edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, width=edgeWidth, labelKey=edgeLabelKey, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
         
         if showFaces and topology.Type() >= topologic.Face.Type():
             tp_faces = Topology.SubTopologies(topology, subTopologyType="face")
-            f_dictionaries = []
-            all_triangles = []
-            for tp_face in tp_faces:
-                shell = Topology.Triangulate(tp_face, transferDictionaries = False)
-                if isinstance(shell, topologic.Face):
-                    triangles = [shell]
-                else:
-                    triangles = Topology.SubTopologies(shell, subTopologyType="face")
-                for tri in triangles:
-                    if faceLabelKey or faceGroupKey:
-                        d = Topology.Dictionary(tp_face)
-                        f_dictionaries.append(d)
-                        if d:
-                            _ = Topology.SetDictionary(tri, d)
-                    all_triangles.append(tri)
-            if len(all_triangles) > 0:
-                f_cluster = Cluster.ByTopologies(all_triangles)
-                geo = Topology.Geometry(f_cluster)
-                vertices = geo['vertices']
-                faces = geo['faces']
-                data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensities, colorScale=colorScale))
+            if not(tp_faces == None or tp_faces == []):
+                f_dictionaries = []
+                all_triangles = []
+                for tp_face in tp_faces:
+                    shell = Topology.Triangulate(tp_face, transferDictionaries = False)
+                    if isinstance(shell, topologic.Face):
+                        triangles = [shell]
+                    else:
+                        triangles = Topology.SubTopologies(shell, subTopologyType="face")
+                    for tri in triangles:
+                        if faceLabelKey or faceGroupKey:
+                            d = Topology.Dictionary(tp_face)
+                            f_dictionaries.append(d)
+                            if d:
+                                _ = Topology.SetDictionary(tri, d)
+                        all_triangles.append(tri)
+                if len(all_triangles) > 0:
+                    f_cluster = Cluster.ByTopologies(all_triangles)
+                    geo = Topology.Geometry(f_cluster)
+                    vertices = geo['vertices']
+                    faces = geo['faces']
+                    data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensities, colorScale=colorScale))
         return data
 
     @staticmethod
