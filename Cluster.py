@@ -259,10 +259,12 @@ class Cluster(topologic.Cluster):
             return allCells
         cellComplexesCluster = Cluster.ByTopologies(cellComplexesCells)
         resultingCluster = Topology.Boolean(allCellsCluster, cellComplexesCluster, operation="Difference")
+        if resultingCluster == None:
+            return []
         if isinstance(resultingCluster, topologic.Cell):
             return [resultingCluster]
         result = Topology.SubTopologies(resultingCluster, subTopologyType="cell")
-        if not result:
+        if result == None:
             return [] #Make sure you return an empty list instead of None
         return result
     
@@ -301,10 +303,12 @@ class Cluster(topologic.Cluster):
             return allShells
         cellsCluster = Cluster.ByTopologies(cellsShells)
         resultingCluster = Topology.Boolean(allShellsCluster, cellsCluster, operation="Difference")
+        if resultingCluster == None:
+            return []
         if isinstance(resultingCluster, topologic.Shell):
             return [resultingCluster]
         result = Topology.SubTopologies(resultingCluster, subTopologyType="shell")
-        if not result:
+        if result == None:
             return [] #Make sure you return an empty list instead of None
         return result
     
@@ -343,10 +347,12 @@ class Cluster(topologic.Cluster):
             return allFaces
         shellCluster = Cluster.ByTopologies(shellFaces)
         resultingCluster = Topology.Boolean(allFacesCluster, shellCluster, operation="Difference")
+        if resultingCluster == None:
+            return []
         if isinstance(resultingCluster, topologic.Face):
             return [resultingCluster]
         result = Topology.SubTopologies(resultingCluster, subTopologyType="face")
-        if not result:
+        if result == None:
             return [] #Make sure you return an empty list instead of None
         return result
 
@@ -385,6 +391,8 @@ class Cluster(topologic.Cluster):
             return allWires
         facesCluster = Cluster.ByTopologies(facesWires)
         resultingCluster = Topology.Boolean(allWiresCluster, facesCluster, operation="Difference")
+        if resultingCluster == None:
+            return []
         if isinstance(resultingCluster, topologic.Wire):
             return [resultingCluster]
         result = Topology.SubTopologies(resultingCluster, subTopologyType="wire")
@@ -427,10 +435,12 @@ class Cluster(topologic.Cluster):
             return allEdges
         wireCluster = Cluster.ByTopologies(wireEdges)
         resultingCluster = Topology.Boolean(allEdgesCluster, wireCluster, operation="Difference")
+        if resultingCluster == None:
+            return []
         if isinstance(resultingCluster, topologic.Edge):
             return [resultingCluster]
         result = Topology.SubTopologies(resultingCluster, subTopologyType="edge")
-        if not result:
+        if result == None:
             return [] #Make sure you return an empty list instead of None
         return result
     
@@ -471,8 +481,10 @@ class Cluster(topologic.Cluster):
         resultingCluster = Topology.Boolean(allVerticesCluster, edgesCluster, operation="Difference")
         if isinstance(resultingCluster, topologic.Vertex):
             return [resultingCluster]
+        if resultingCluster == None:
+            return []
         result = Topology.SubTopologies(resultingCluster, subTopologyType="vertex")
-        if not result:
+        if result == None:
             return [] #Make sure you return an empty list instead of None
         return result
     

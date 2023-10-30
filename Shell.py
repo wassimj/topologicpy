@@ -1488,7 +1488,152 @@ class Shell(Topology):
                 final_faces.append(f)
         shell = Shell.ByFaces(final_faces)
         return shell
-    
+
+    @staticmethod
+    def Simplify(shell, simplifyBoundary=True, tolerance=0.0001):
+        """
+            Simplifies the input shell edges based on the Douglas Peucker algorthim. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+            Part of this code was contributed by gaoxipeng. See https://github.com/wassimj/topologicpy/issues/35
+
+        Parameters
+        ----------
+        shell : topologic.Shell
+            The input shell.
+        simplifyBoundary : bool , optional
+            If set to True, the external boundary of the shell will be simplified as well. Otherwise, it will not be simplified. The default is True.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001. Edges shorter than this length will be removed.
+
+        Returns
+        -------
+        topologic.Shell
+            The simplified shell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+        
+        def perpendicular_distance(point, line_start, line_end):
+            # Calculate the perpendicular distance from a point to a line segment
+            x0 = point.X()
+            y0 = point.Y()
+            x1 = line_start.X()
+            y1 = line_start.Y()
+            x2 = line_end.X()
+            y2 = line_end.Y()
+
+            numerator = abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1)
+            denominator = Vertex.Distance(line_start, line_end)
+
+            return numerator / denominator
+
+        def douglas_peucker(wire, tolerance):
+            if isinstance(wire, list):
+                points = wire
+            else:
+                points = Wire.Vertices(wire)
+                # points.insert(0, points.pop())
+            if len(points) <= 2:
+                return points
+
+            # Use the first and last points in the list as the starting and ending points
+            start_point = points[0]
+            end_point = points[-1]
+
+            # Find the point with the maximum distance
+            max_distance = 0
+            max_index = 0
+
+            for i in range(1, len(points) - 1):
+                d = perpendicular_distance(points[i], start_point, end_point)
+                if d > max_distance:
+                    max_distance = d
+                    max_index = i
+
+            # If the maximum distance is less than the tolerance, no further simplification is needed
+            if max_distance <= tolerance:
+                return [start_point, end_point]
+
+            # Recursively simplify
+            first_segment = douglas_peucker(points[:max_index + 1], tolerance)
+            second_segment = douglas_peucker(points[max_index:], tolerance)
+
+            # Merge the two simplified segments
+            return first_segment[:-1] + second_segment
+        if not isinstance(shell, topologic.Shell):
+            print("Shell.Simplify - Error: The input shell parameter is not a valid topologic shell. Returning None.")
+            return None
+        # Get the external boundary of the shell. This can be simplified as well, but might cause issues at the end.
+        # At this point, it is assumed to be left as is.
+        all_edges = Topology.Edges(shell)
+        if simplifyBoundary == False:
+            ext_boundary = Face.ByWire(Shell.ExternalBoundary(shell))
+            
+            # Get the internal edges of the shell.
+            i_edges = []
+            for edge in all_edges:
+                faces = Topology.SuperTopologies(edge, shell, topologyType="face")
+                if len(faces) > 1: # This means that the edge separates two faces so it is internal.
+                    i_edges.append(edge)
+            # Creat a Wire from the internal edges
+            wire = Topology.SelfMerge(Cluster.ByTopologies(i_edges))
+        else:
+            wire = Topology.SelfMerge(Cluster.ByTopologies(all_edges))
+        # Split the wires at its junctions (where more than two edges meet at a vertex)
+        components = Wire.Split(wire)
+        separators = []
+        wires = []
+        for component in components:
+            if isinstance(component, topologic.Cluster):
+                component = Topology.SelfMerge(component)
+                if isinstance(component, topologic.Cluster):
+                    separators.append(Cluster.FreeEdges(component))
+                    wires.append(Cluster.FreeWires(component))
+                if isinstance(component, topologic.Edge):
+                    separators.append(component)
+                if isinstance(component, topologic.Wire):
+                    wires.append(component)
+            if isinstance(component, topologic.Edge):
+                separators.append(component)
+            if isinstance(component, topologic.Wire):
+                wires.append(component)
+        wires = Helper.Flatten(wires)
+        separators = Helper.Flatten(separators)
+        results = []
+        for w in wires:
+            temp_wire = Wire.ByVertices(douglas_peucker(w, tolerance), close=False)
+            results.append(temp_wire)
+        # Make a Cluster out of the results
+        cluster = Cluster.ByTopologies(results)
+        # Get all the edges of the result
+        edges = Topology.Edges(cluster)
+        # Add them to the final edges
+        final_edges = edges + separators
+        # Make a Cluster out of the final set of edges
+        cluster = Cluster.ByTopologies(final_edges)
+        if simplifyBoundary == False:
+            # Slice the external boundary of the shell by the cluster
+            final_result = Topology.Slice(ext_boundary, cluster)
+        else:
+            br = Wire.BoundingRectangle(shell)
+            br = Topology.Scale(br, Topology.Centroid(br), 1.5, 1.5, 1.5)
+            br = Face.ByWire(br)
+            v = Face.VertexByParameters(br, 0.1, 0.1)
+            result = Topology.Slice(br, cluster)
+            faces = Topology.Faces(result)
+            final_faces = []
+            for face in faces:
+                if not Face.IsInternal(face, v, tolerance=0.01):
+                    final_faces.append(face)
+            final_result = Shell.ByFaces(final_faces)
+        return final_result
+
+
     @staticmethod
     def Vertices(shell: topologic.Shell) -> list:
         """
