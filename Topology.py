@@ -6165,7 +6165,7 @@ class Topology():
         return topologyC
     
     @staticmethod
-    def TransferDictionaries(sources, sinks, tolerance=0.0001, numWorkers=10):
+    def TransferDictionaries(sources, sinks, tolerance=0.0001, numWorkers=None):
         """
         Transfers the dictionaries from the list of sources to the list of sinks.
 
@@ -6193,6 +6193,9 @@ class Topology():
         if not isinstance(sinks, list):
             print("Topology.TransferDictionaries - Error: The input sinks parameter is not a valid list. Returning None.")
             return None
+        if numWorkers == None:
+            import multiprocessing
+            numWorkers = multiprocessing.cpu_count()*2
         sources = [x for x in sources if isinstance(x, topologic.Topology)]
         sinks = [x for x in sinks if isinstance(x, topologic.Topology)]
         so_dicts = [Dictionary.PythonDictionary(Topology.Dictionary(s)) for s in sources]
@@ -6226,7 +6229,7 @@ class Topology():
 
     
     @staticmethod
-    def TransferDictionariesBySelectors(topology, selectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001, numWorkers=10):
+    def TransferDictionariesBySelectors(topology, selectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001, numWorkers=None):
         """
         Transfers the dictionaries of the list of selectors to the subtopologies of the input topology based on the input parameters.
 
@@ -6247,7 +6250,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         numWorkers : int, optional
-            Number of workers run in parallel to process.
+            Number of workers run in parallel to process. The default is twice the number of cpu cores in the host computer.
 
         Returns
         -------
@@ -6263,6 +6266,9 @@ class Topology():
         if not isinstance(selectors, list):
             print("Topology.TransferDictionariesBySelectors - Error: The input selectors parameter is not a valid list. Returning None.")
             return None
+        if numWorkers == None:
+            import multiprocessing
+            numWorkers = multiprocessing.cpu_count()*2
         selectors_tmp = [x for x in selectors if isinstance(x, topologic.Vertex)]
         if len(selectors_tmp) < 1:
             print("Topology.TransferDictionariesBySelectors - Error: The input selectors do not contain any valid topologies. Returning None.")
