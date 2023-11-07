@@ -5281,3 +5281,69 @@ class Graph:
         cluster = Topology.SelfMerge(cluster)
         viewpoints = Cluster.Vertices(cluster)
         return Graph.ByVerticesEdges(viewpoints, edges)
+
+    @staticmethod
+    def SetDictionary(graph, dictionary):
+        """
+        Sets the input graph's dictionary to the input dictionary
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        dictionary : topologic.Dictionary
+            The input dictionary.
+
+        Returns
+        -------
+        topologic.Graph
+            The input graph with the input dictionary set in it.
+
+        """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.SetDictionary - Error: the input graph parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(dictionary, topologic.Dictionary):
+            print("Graph.SetDictionary - Warning: the input dictionary parameter is not a valid dictionary. No setting dictionary.")
+            return graph
+        if len(dictionary.Keys()) < 1:
+            print("Graph.SetDictionary - Warning: the input dictionary parameter is empty. No setting dictionary.")
+            return graph
+        _ = graph.SetDictionary(dictionary)
+        return graph
+
+    @staticmethod
+    def Dictionary(graph):
+        """
+        Returns the dictionary of the input graph
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+
+        Returns
+        -------
+        topologic.Dictionary
+            The dictionary of the input graph.
+
+        """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.Dictionary - Error: the input graph parameter is not a valid graph. Returning None.")
+            return None
+        return graph.GetDictionary()
+
+    @staticmethod
+    def Guid(graph):
+        """
+        Returns the guid of the input graph
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.Guid - Error: the input graph parameter is not a valid graph. Returning empty string.")
+            return ""
+        return graph.GetGUID()
