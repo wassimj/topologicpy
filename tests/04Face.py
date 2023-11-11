@@ -154,8 +154,10 @@ fV2 = Face.ByVertices([v11, v12, v13, v14])                 # create face
 fV3 = Face.ByVertices([v13, v14, v9, v10])                   # create face
 #creating Shell by faces
 sh1 = Shell.ByFaces([fV1, fV2])                                   # create shell
+print("sh1", sh1)
 sh2 = Shell.ByFaces([fV1, fV2, fV3])                            # create shell
 # test 1
+Topology.Show(Cluster.ByTopologies([fV1,fV2]), renderer="browser")
 fs1 = Face.ByShell(sh1)                                               # without optional inputs
 assert isinstance(fs1, topologic.Face), "Face.ByShell. Should be topologic.Face"
 # test 2
@@ -313,11 +315,11 @@ assert isinstance(ChkC2, bool), "Face.IsCoplanar. Should be boolean"
  
 # Case 25 - IsInside
 # test 1
-isIn1 = Face.IsInside(f1, v8)                        # without optional inputs
-assert isinstance(isIn1, bool), "Face.IsInside. Should be boolean"
+isIn1 = Face.IsInternal(f1, v8)                        # without optional inputs
+assert isinstance(isIn1, bool), "Face.IsInternal. Should be boolean"
 # test 2
-isIn2 = Face.IsInside(c1, tv4, 0.001)            # with optional inputs
-assert isinstance(isIn2, bool), "Face.IsInside. Should be boolean"
+isIn2 = Face.IsInternal(c1, tv4, 0.001)            # with optional inputs
+assert isinstance(isIn2, bool), "Face.IsInternal. Should be boolean"
 
 # Case 26 - MedialAxis
 # test 1

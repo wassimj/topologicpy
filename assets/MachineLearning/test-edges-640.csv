@@ -1,4 +1,4 @@
-graph_id,src,dst
+graph_id,src_id,dst_id
 0,0,10
 0,0,25
 0,0,8

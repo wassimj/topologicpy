@@ -315,7 +315,7 @@ class Neo4j:
             ev = e.EndVertex()
             sn = nodes[Vertex.Index(sv, vertices, tolerance)]
             en = nodes[Vertex.Index(ev, vertices, tolerance)]
-            relationshipType = Dictionary.ValueAtKey(ed, relationshipKey)
+            relationshipType = Dictionary.ValueAtKey(e, relationshipKey)
             if not (relationshipType):
                 relationshipType = "Connected To"
             snen = py2neo.Relationship(sn, relationshipType, en)

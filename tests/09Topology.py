@@ -235,11 +235,11 @@ assert isinstance(bbox2z, topologic.Cell), "Topology.BoundingBox. Should be topo
 
 # case 13 - ByString
 # test 1
-g1 = Topology.ByString(Topology.String(box1))
-assert isinstance(g1,topologic.Topology), "Topology.ByString. Should be topologic.Topology"
+g1 = Topology.ByBREPString(Topology.BREPString(box1))
+assert isinstance(g1,topologic.Topology), "Topology.ByBREPString. Should be topologic.Topology"
 # test 2
-g2 = Topology.ByString(Topology.String(box2))
-assert isinstance(g1,topologic.Topology), "Topology.ByString. Should be topologic.Topology"
+g2 = Topology.ByBREPString(Topology.BREPString(box2))
+assert isinstance(g1,topologic.Topology), "Topology.ByBREPString. Should be topologic.Topology"
 
 # case 14 - CenterOfMass
 # test 1
@@ -432,13 +432,13 @@ assert isinstance(topology_iv, topologic.Vertex), "Topology.InternalVertex. Shou
 # Case 34 - IsInside
 # test 1
 topology_c = Topology.Centroid(cell_cy)
-topology_ii = Topology.IsInside(cell_cy,topology_c)    # without optional inputs
-assert isinstance(topology_ii, bool), "Topology.IsInside. Should be bool"
-assert topology_ii == True, "Topology.IsInside. Should be True"
+topology_ii = Topology.IsInternal(cell_cy,topology_c)    # without optional inputs
+assert isinstance(topology_ii, bool), "Topology.IsInternal. Should be bool"
+assert topology_ii == True, "Topology.IsInternal. Should be True"
 # test 2
-topology_ii_2 = Topology.IsInside(cell_cy,v01,0.001)
-assert isinstance(topology_ii_2, bool), "Topology.IsInside. Should be bool"
-assert topology_ii_2 == False, "Topology.IsInside. Should be False"
+topology_ii_2 = Topology.IsInternal(cell_cy,v01,0.001)
+assert isinstance(topology_ii_2, bool), "Topology.IsInternal. Should be bool"
+assert topology_ii_2 == False, "Topology.IsInternal. Should be False"
 
 # Case 35 - IsPlanar
 # test 1
@@ -632,10 +632,10 @@ assert isinstance(topology_spin, topologic.Topology), "Topology.Spin. Should be 
 
 # Case 52 - String
 # test 1
-topology_str = Topology.String(cell_cy)
-topology_str2 = Topology.String(cell_cy3)
-assert isinstance(topology_str, str), "Topology.String. Should be string"
-assert isinstance(topology_str2, str), "Topology.String. Should be string"
+topology_str = Topology.BREPString(cell_cy)
+topology_str2 = Topology.BREPString(cell_cy3)
+assert isinstance(topology_str, str), "Topology.BREPString. Should be string"
+assert isinstance(topology_str2, str), "Topology.BREPString. Should be string"
 #print(topology_str)
 #print(topology_str2)
 

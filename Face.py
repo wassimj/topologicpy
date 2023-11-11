@@ -23,16 +23,16 @@ class Face(topologic.Face):
             The created face with internal boundaries added to it.
 
         """
-        if not face:
-            return None
+
         if not isinstance(face, topologic.Face):
+            print("Face.AddInternalBoundaries - Error: The input face parameter is not a valid topologic face. Returning None.")
             return None
-        if not wires:
-            return face
         if not isinstance(wires, list):
+            print("Face.AddInternalBoundaries - Warning: The input wires parameter is not a valid list. Returning the input face.")
             return face
         wireList = [w for w in wires if isinstance(w, topologic.Wire)]
         if len(wireList) < 1:
+            print("Face.AddInternalBoundaries - Warning: The input wires parameter does not contain any valid wires. Returning the input face.")
             return face
         faceeb = face.ExternalBoundary()
         faceibList = []
@@ -59,9 +59,8 @@ class Face(topologic.Face):
             The created face with internal boundaries added to it.
 
         """
-        if not face:
-            return None
         if not isinstance(face, topologic.Face):
+            print("Face.AddInternalBoundariesCluster - Warning: The input cluster parameter is not a valid cluster. Returning None.")
             return None
         if not cluster:
             return face
@@ -92,9 +91,11 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Vector import Vector
-        if not faceA or not isinstance(faceA, topologic.Face):
+        if not isinstance(faceA, topologic.Face):
+            print("Face.Angle - Warning: The input faceA parameter is not a valid topologic face. Returning None.")
             return None
-        if not faceB or not isinstance(faceB, topologic.Face):
+        if not isinstance(faceB, topologic.Face):
+            print("Face.Angle - Warning: The input faceB parameter is not a valid topologic face. Returning None.")
             return None
         dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
         dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
@@ -119,6 +120,7 @@ class Face(topologic.Face):
 
         """
         if not isinstance(face, topologic.Face):
+            print("Face.Area - Warning: The input face parameter is not a valid topologic face. Returning None.")
             return None
         area = None
         try:
@@ -165,6 +167,7 @@ class Face(topologic.Face):
             return [minX, minY, maxX, maxY]
 
         if not isinstance(topology, topologic.Topology):
+            print("Face.BoundingRectangle - Warning: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
         vertices = Topology.SubTopologies(topology, subTopologyType="vertex")
         topology = Cluster.ByTopologies(vertices)
@@ -242,10 +245,16 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Wire import Wire
-        wire = Wire.ByEdges(edges)
-        if not wire:
+        if not isinstance(edges, list):
+            print("Face.ByEdges - Error: The input edges parameter is not a valid list. Returning None.")
             return None
+        edges = [e for e in edges if isinstance(e, topologic.Edge)]
+        if len(edges) < 1:
+            print("Face.ByEdges - Error: The input edges parameter does not contain any valid edges. Returning None.")
+            return None
+        wire = Wire.ByEdges(edges)
         if not isinstance(wire, topologic.Wire):
+            print("Face.ByEdges - Error: Could not create the required wire. Returning None.")
             return None
         return Face.ByWire(wire)
 
@@ -267,8 +276,12 @@ class Face(topologic.Face):
         """
         from topologicpy.Cluster import Cluster
         if not isinstance(cluster, topologic.Cluster):
+            print("Face.ByEdgesCluster - Warning: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         edges = Cluster.Edges(cluster)
+        if len(edges) < 1:
+            print("Face.ByEdgesCluster - Warning: The input cluster parameter does not contain any valid edges. Returning None.")
+            return None
         return Face.ByEdges(edges)
 
     @staticmethod
@@ -300,7 +313,9 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Wire import Wire
-
+        if not isinstance(face, topologic.Face):
+            print("Face.ByOffset - Warning: The input face parameter is not a valid toplogic face. Returning None.")
+            return None
         eb = Face.Wire(face)
         internal_boundaries = Face.InternalBoundaries(face)
         offset_external_boundary = Wire.ByOffset(wire=eb, offset=offset, miter=miter, miterThreshold=miterThreshold, offsetKey=offsetKey, miterThresholdKey=miterThresholdKey, step=step)
@@ -338,21 +353,24 @@ class Face(topologic.Face):
                 returnList.append(Wire.Planarize(aWire))
             return returnList
         
+        if not isinstance(shell, topologic.Shell):
+            print("Face.ByShell - Warning: The input shell parameter is not a valid toplogic shell. Returning None.")
+            return None
         ext_boundary = Shell.ExternalBoundary(shell)
-        ext_boundary = Wire.RemoveCollinearEdges(ext_boundary, angTolerance)
+        ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
         if not Topology.IsPlanar(ext_boundary):
             ext_boundary = Wire.Planarize(ext_boundary)
 
         if isinstance(ext_boundary, topologic.Wire):
             try:
-                return topologic.Face.ByExternalBoundary(Wire.RemoveCollinearEdges(ext_boundary, angTolerance))
+                return topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(ext_boundary, angTolerance))
             except:
                 try:
                     w = Wire.Planarize(ext_boundary)
                     f = Face.ByWire(w)
                     return f
                 except:
-                    print("FaceByPlanarShell - Error: The input Wire is not planar and could not be fixed. Returning None.")
+                    print("Face.ByPlanarShell - Error: The wire could not be planarized. Returning None.")
                     return None
         elif isinstance(ext_boundary, topologic.Cluster):
             wires = []
@@ -361,10 +379,13 @@ class Face(topologic.Face):
             areas = []
             for aWire in wires:
                 try:
-                    aFace = topologic.Face.ByExternalBoundary(Wire.RemoveCollinearEdges(aWire, angTolerance))
+                    aFace = topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(aWire, angTolerance))
                 except:
-                    aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Wire.RemoveCollinearEdges(aWire, angTolerance)))
-                anArea = topologic.FaceUtility.Area(aFace)
+                    aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance)))
+                if not isinstance(aFace, topologic.Face):
+                    print("Face.ByShell - Error: The operation failed. Returning None.")
+                    return None
+                anArea = Face.Area(aFace)
                 faces.append(aFace)
                 areas.append(anArea)
             max_index = areas.index(max(areas))
@@ -374,10 +395,10 @@ class Face(topologic.Face):
             for int_boundary in int_boundaries:
                 temp_wires = []
                 _ = int_boundary.Wires(None, temp_wires)
-                int_wires.append(Wire.RemoveCollinearEdges(temp_wires[0], angTolerance))
+                int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance))
             temp_wires = []
             _ = ext_boundary.Wires(None, temp_wires)
-            ext_wire = Wire.RemoveCollinearEdges(temp_wires[0], angTolerance)
+            ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
             try:
                 return topologic.Face.ByExternalInternalBoundaries(ext_wire, int_wires)
             except:
@@ -462,7 +483,7 @@ class Face(topologic.Face):
         import random
 
         def triangulateWire(wire):
-            wire = Wire.RemoveCollinearEdges(wire)
+            wire = Topology.RemoveCollinearEdges(wire)
             vertices = Wire.Vertices(wire)
             shell = Shell.Delaunay(vertices)
             if isinstance(shell, topologic.Shell):
@@ -470,8 +491,10 @@ class Face(topologic.Face):
             else:
                 return []
         if not isinstance(wire, topologic.Wire):
+            print("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
         if not Wire.IsClosed(wire):
+            print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
             return None
         
         edges = Wire.Edges(wire)
@@ -501,6 +524,7 @@ class Face(topologic.Face):
             else:
                 returnList.append(f)
         if len(returnList) == 0:
+            print("Face.ByWire - Error: Could not build a face from the input wire parameter. Returning None.")
             return None
         elif len(returnList) == 1:
             return returnList[0]
@@ -526,11 +550,20 @@ class Face(topologic.Face):
 
         """
         if not isinstance(externalBoundary, topologic.Wire):
+            print("Face.ByWires - Error: The input externalBoundary parameter is not a valid topologic wire. Returning None.")
             return None
         if not Wire.IsClosed(externalBoundary):
+            print("Face.ByWires - Error: The input externalBoundary parameter is not a closed topologic wire. Returning None.")
             return None
         ibList = [x for x in internalBoundaries if isinstance(x, topologic.Wire) and Wire.IsClosed(x)]
-        return topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList)
+        face = None
+        try:
+            face = topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList)
+        except:
+            print("Face.ByWire - Error: The operation failed. Returning None.")
+            face = None
+        return face
+
 
     @staticmethod
     def ByWiresCluster(externalBoundary: topologic.Wire, internalBoundariesCluster: topologic.Cluster = None) -> topologic.Face:
@@ -553,12 +586,15 @@ class Face(topologic.Face):
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         if not isinstance(externalBoundary, topologic.Wire):
+            print("Face.ByWiresCluster - Error: The input externalBoundary parameter is not a valid topologic wire. Returning None.")
             return None
         if not Wire.IsClosed(externalBoundary):
+            print("Face.ByWiresCluster - Error: The input externalBoundary parameter is not a closed topologic wire. Returning None.")
             return None
         if not internalBoundariesCluster:
             internalBoundaries = []
         elif not isinstance(internalBoundariesCluster, topologic.Cluster):
+            print("Face.ByWiresCluster - Error: The input internalBoundariesCluster parameter is not a valid topologic cluster. Returning None.")
             return None
         else:
             internalBoundaries = Cluster.Wires(internalBoundariesCluster)
@@ -691,7 +727,7 @@ class Face(topologic.Face):
         perimeter = 0.0
         for anEdge in edges:
             perimeter = perimeter + abs(topologic.EdgeUtility.Length(anEdge))
-        area = abs(topologic.FaceUtility.Area(face))
+        area = abs(Face.Area(face))
         compactness  = 0
         #From https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
@@ -860,6 +896,8 @@ class Face(topologic.Face):
 
         """
 
+        from topologicpy.Vertex import Vertex
+
         def leftMost(vertices, tolerance = 0.0001):
             xCoords = []
             for v in vertices:
@@ -884,7 +922,7 @@ class Face(topologic.Face):
 
         def vIndex(v, vList, tolerance):
             for i in range(len(vList)):
-                if topologic.VertexUtility.Distance(v, vList[i]) < tolerance:
+                if Vertex.Distance(v, vList[i]) < tolerance:
                     return i+1
             return None
         
@@ -1041,8 +1079,18 @@ class Face(topologic.Face):
             The created vertex.
 
         """
+        from topologicpy.Topology import Topology
         if not isinstance(face, topologic.Face):
             return None
+        v = Topology.Centroid(face)
+        if Face.IsInternal(face, v):
+            return v
+        l = [0.4,0.6,0.3,0.7,0.2,0.8,0.1,0.9]
+        for u in l:
+            for v in l:
+                v = Face.VertexByParameters(face, u, v)
+                if Face.IsInternal(face, v):
+                    return v
         v = topologic.FaceUtility.InternalVertex(face, tolerance)
         return v
 
@@ -1102,7 +1150,11 @@ class Face(topologic.Face):
             True if the two input faces are coplanar. False otherwise.
 
         """
-        if not isinstance(faceA, topologic.Face) or not isinstance(faceB, topologic.Face):
+        if not isinstance(faceA, topologic.Face):
+            print("Face.IsInide - Error: The input faceA parameter is not a valid topologic face. Returning None.")
+            return None
+        if not isinstance(faceB, topologic.Face):
+            print("Face.IsInide - Error: The input faceB parameter is not a valid topologic face. Returning None.")
             return None
         dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
         dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
@@ -1111,7 +1163,15 @@ class Face(topologic.Face):
     @staticmethod
     def IsInside(face: topologic.Face, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
-        Returns True if the input vertex is inside the input face. Returns False otherwise.
+        DEPRECATED METHOD. DO NOT USE. INSTEAD USE Face.IsInternal.
+        """
+        print("Face.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Face.IsInternal.")
+        return Face.IsInternal(face=face, vertex=vertex, tolerance=tolerance)
+    
+    @staticmethod
+    def IsInternal(face: topologic.Face, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is an internal vertex of the input face. Returns False otherwise.
 
         Parameters
         ----------
@@ -1128,82 +1188,31 @@ class Face(topologic.Face):
             True if the input vertex is inside the input face. False otherwise.
 
         """
-
-        # Ray tracing from https://stackoverflow.com/questions/36399381/whats-the-fastest-way-of-checking-if-a-point-is-inside-a-polygon-in-python
-        def ray_tracing_method(x,y,poly):
-            n = len(poly)
-            inside = False
-
-            p1x,p1y = poly[0]
-            for i in range(n+1):
-                p2x,p2y = poly[i % n]
-                if y > min(p1y,p2y):
-                    if y <= max(p1y,p2y):
-                        if x <= max(p1x,p2x):
-                            if p1y != p2y:
-                                xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
-                            if p1x == p2x or x <= xints:
-                                inside = not inside
-                p1x,p1y = p2x,p2y
-
-            return inside
-
         from topologicpy.Vertex import Vertex
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-
+        
         if not isinstance(face, topologic.Face):
+            print("Face.IsInternal - Error: The input face parameter is not a valid topologic face. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
+            print("Face.IsInternal - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
-
-        world_origin = Vertex.ByCoordinates(0,0,0)
-        # Flatten face and vertex
-        flatFace = Face.Flatten(face)
-        # Retrieve the needed transformations
-        dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
-        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
-        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
-        phi = Dictionary.ValueAtKey(dictionary,"phi")
-        theta = Dictionary.ValueAtKey(dictionary,"theta")
-
-        vertex = Topology.Translate(vertex, -xTran, -yTran, -zTran)
-        vertex = Topology.Rotate(vertex, origin=world_origin, x=0, y=0, z=1, degree=-phi)
-        vertex = Topology.Rotate(vertex, origin=world_origin, x=0, y=1, z=0, degree=-theta)
-
-        # Test if Vertex is hovering above or below face
-        if abs(Vertex.Z(vertex)) > tolerance:
+        # Test the distance first
+        if Vertex.PerpendicularDistance(vertex, face) > tolerance:
             return False
-
-        # Build 2D poly from flat face
-        wire = Face.ExternalBoundary(flatFace)
-        vertices = Wire.Vertices(wire)
-        poly = []
-        for v in vertices:
-            poly.append([Vertex.X(v), Vertex.Y(v)])
-
-        # Use ray tracing method to test if vertex is inside the face
-        status = ray_tracing_method(Vertex.X(vertex), Vertex.Y(vertex), poly)
-        # Vertex is not inside
-        if not status:
-            return status
-
-        # If it is inside, we must check if it is inside a hole in the face
-        internal_boundaries = Face.InternalBoundaries(flatFace)
-        if len(internal_boundaries) == 0:
-            return status
-        
-        for ib in internal_boundaries:
-            vertices = Wire.Vertices(ib)
-            poly = []
-            for v in vertices:
-                poly.append([Vertex.X(v), Vertex.Y(v)])
-            status2 = ray_tracing_method(Vertex.X(vertex), Vertex.Y(vertex), poly)
-            if status2:
-                return False
+        status = False
+        try:
+            status = topologic.FaceUtility.IsInside(face, vertex, tolerance)
+        except:
+            print("Face.IsInternal - Warning: Could not determine if vertex is inside face. Returning False.")
+            clus = Cluster.ByTopologies([vertex, face])
+            Topology.Show(clus, renderer="browser")
+            status = False
         return status
-
+    
     @staticmethod
     def MedialAxis(face: topologic.Face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
         """
@@ -1283,7 +1292,7 @@ class Face(topologic.Face):
             svTouchesEdge = touchesEdge(sv, faceEdges, tolerance=tolerance)
             evTouchesEdge = touchesEdge(ev, faceEdges, tolerance=tolerance)
             #connectsToCorners = (Vertex.Index(sv, faceVertices) != None) or (Vertex.Index(ev, faceVertices) != None)
-            #if Face.IsInside(flatFace, sv, tolerance=tolerance) and Face.IsInside(flatFace, ev, tolerance=tolerance):
+            #if Face.IsInternal(flatFace, sv, tolerance=tolerance) and Face.IsInternal(flatFace, ev, tolerance=tolerance):
             if not svTouchesEdge and not evTouchesEdge:
                 medialAxisEdges.append(e)
 
@@ -1301,9 +1310,9 @@ class Face(topologic.Face):
         if externalVertices:
             theVertices = theVertices+extVertices
 
-        tempWire = Cluster.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
+        tempWire = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
         if isinstance(tempWire, topologic.Wire) and angTolerance > 0:
-            tempWire = Wire.RemoveCollinearEdges(tempWire, angTolerance=angTolerance)
+            tempWire = Topology.RemoveCollinearEdges(tempWire, angTolerance=angTolerance)
         medialAxisEdges = Wire.Edges(tempWire)
         for v in theVertices:
             nv = Vertex.NearestVertex(v, tempWire, useKDTree=False)
@@ -1315,9 +1324,9 @@ class Face(topologic.Face):
                         medialAxisEdges.append(Edge.ByVertices([nv, v]))
                 else:
                     medialAxisEdges.append(Edge.ByVertices([nv, v]))
-        medialAxis = Cluster.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
+        medialAxis = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
         if isinstance(medialAxis, topologic.Wire) and angTolerance > 0:
-            medialAxis = Wire.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance)
+            medialAxis = Topology.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance)
         medialAxis = Topology.Rotate(medialAxis, origin=world_origin, x=0, y=1, z=0, degree=theta)
         medialAxis = Topology.Rotate(medialAxis, origin=world_origin, x=0, y=0, z=1, degree=phi)
         medialAxis = Topology.Translate(medialAxis, xTran, yTran, zTran)
@@ -1408,7 +1417,7 @@ class Face(topologic.Face):
         return Face.NormalEdgeAtParameters(face, u=0.5, v=0.5, length=length)
 
     @staticmethod
-    def NormalEdgeAtParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5, length: float = 1.0) -> topologic.Edge:
+    def NormalEdgeAtParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5, length: float = 1.0, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Returns the normal vector to the input face as an edge with the desired input length. A normal vector of a face is a vector perpendicular to it.
 
@@ -1422,7 +1431,9 @@ class Face(topologic.Face):
             The *v* parameter at which to compute the normal to the input face. The default is 0.5.
         length : float , optional
             The desired length of the normal edge. The default is 1.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Edge
@@ -1436,8 +1447,72 @@ class Face(topologic.Face):
         sv = Face.VertexByParameters(face=face, u=u, v=v)
         vec = Face.NormalAtParameters(face, u=u, v=v)
         ev = Topology.TranslateByDirectionDistance(sv, vec, length)
-        return Edge.ByVertices([sv, ev])
+        return Edge.ByVertices([sv, ev], tolerance=tolerance, verbose=True)
 
+    @staticmethod
+    def PlaneEquation(face: topologic.Face, mantissa: int = 4) -> dict:
+        """
+        Returns the a, b, c, d coefficients of the plane equation of the input face. The input face is assumed to be planar.
+        
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        
+        Returns
+        -------
+        dict
+            The dictionary containing the coefficients of the plane equation. The keys of the dictionary are: ["a", "b", "c", "d"].
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        import random
+        import time
+
+        if not isinstance(face, topologic.Face):
+            print("Face.PlaneEquation - Error: The input face is not a valid topologic face. Returning None.")
+            return None
+        vertices = Topology.Vertices(face)
+        if len(vertices) < 3:
+            print("Face.PlaneEquation - Error: The input face has less than 3 vertices. Returning None.")
+            return None
+        #if len(vertices) == 3:
+            #if Vertex.AreCollinear(vertices, tolerance=0.01):
+                #print("Face.PlaneEquation - Error: The face is degenerate. Could not sample 3 non-collinear vertices. Returning None.")
+                #Topology.Show(face)
+                #return None
+        #start = time.time()
+        #end = time.time()
+        #duration = (end - start)
+        new_vertices = [Face.VertexByParameters(face, u=0.1,v=0.1), Face.VertexByParameters(face, u=0.9,v=0.2), Face.VertexByParameters(face, u=0.5,v=0.8)]
+        #while Vertex.AreCollinear(new_vertices) and duration < 20:
+            #new_vertices = [Topology.Centroid(face)]+random.sample(vertices, 2)
+            #end = time.time()
+            #duration = (end - start)
+            #if duration > 19:
+                #print("Face.PlaneEquation - Warning: Finding three non-collinear vertices is taking a long time", duration)
+        #if Vertex.AreCollinear(new_vertices):
+            #print("Face.PlaneEquation - Error: Could not sample 3 non-collinear vertices. Returning None.")
+            #clus = Cluster.ByTopologies([face]+new_vertices)
+            #print(new_vertices)
+            #Topology.Show(clus, vertexSize=5)
+            #return None
+        v1, v2, v3 = new_vertices[0:3]
+        x1, y1, z1 = Vertex.Coordinates(v1)
+        x2, y2, z2 = Vertex.Coordinates(v2)
+        x3, y3, z3 = Vertex.Coordinates(v3)
+        vector1 = [x2 - x1, y2 - y1, z2 - z1]
+        vector2 = [x3 - x1, y3 - y1, z3 - z1]
+
+        cross_product = [vector1[1] * vector2[2] - vector1[2] * vector2[1], -1 * (vector1[0] * vector2[2] - vector1[2] * vector2[0]), vector1[0] * vector2[1] - vector1[1] * vector2[0]]
+
+        a = round(cross_product[0], mantissa)
+        b = round(cross_product[1], mantissa)
+        c = round(cross_product[2], mantissa)
+        d = round(- (cross_product[0] * x1 + cross_product[1] * y1 + cross_product[2] * z1), mantissa)
+        return {"a": a, "b": b, "c": c, "d": d}
+    
     @staticmethod
     def Planarize(face: topologic.Face, origin: topologic.Vertex = None, direction: list = None) -> topologic.Face:
         """
@@ -1532,6 +1607,23 @@ class Face(topologic.Face):
         return Face.ByWires(p_eb, p_ib_list)
 
     @staticmethod
+    def RectangleByPlaneEquation(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, placement: str = "center", equation: dict = None, tolerance: float = 0.0001) -> topologic.Face:
+        import numpy as np
+        from topologicpy.Vertex import Vertex
+        # Extract coefficients of the plane equation
+        a = equation['a']
+        b = equation['b']
+        c = equation['c']
+        d = equation['d']
+
+        # Calculate the normal vector of the plane
+        direction = np.array([a, b, c], dtype=float)
+        direction /= np.linalg.norm(direction)
+        direction = [x for x in direction]
+
+        return Face.Rectangle(origin=origin, width=width, length=length, direction = direction, placement=placement, tolerance=tolerance)
+
+    @staticmethod
     def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a rectangle.
@@ -1562,7 +1654,34 @@ class Face(topologic.Face):
         if not isinstance(wire, topologic.Wire):
             return None
         return Face.ByWire(wire)
+    
+    @staticmethod
+    def Skeleton(face, tolerance=0.001):
+        """
+            Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+            This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
 
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+    
+        tolerance : float , optional
+            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+
+        Returns
+        -------
+        topologic.Wire
+            The created straight skeleton.
+
+        """
+        from topologicpy.Wire import Wire
+        if not isinstance(face, topologic.Face):
+            print("Face.Skeleton - Error: The input face is not a valid topologic face. Retruning None.")
+            return None
+        return Wire.Roof(face, degree=0, tolerance=tolerance)
+    
     @staticmethod
     def Square(origin: topologic.Vertex = None, size: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
@@ -1745,6 +1864,21 @@ class Face(topologic.Face):
         if reverse:
             trimmed_face = face.Difference(trimmed_face)
         return trimmed_face
+    
+    @staticmethod
+    def UnFlatten(face: topologic.Face, dictionary: topologic.Dictionary):
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        theta = Dictionary.ValueAtKey(dictionary, "theta")
+        phi = Dictionary.ValueAtKey(dictionary, "phi")
+        xTran = Dictionary.ValueAtKey(dictionary, "xTran")
+        yTran = Dictionary.ValueAtKey(dictionary, "yTran")
+        zTran = Dictionary.ValueAtKey(dictionary, "zTran")
+        newFace = Topology.Rotate(face, origin=Vertex.Origin(), x=0, y=1, z=0, degree=theta)
+        newFace = Topology.Rotate(newFace, origin=Vertex.Origin(), x=0, y=0, z=1, degree=phi)
+        newFace = Topology.Translate(newFace, xTran, yTran, zTran)
+        return newFace
     
     @staticmethod
     def VertexByParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5) -> topologic.Vertex:

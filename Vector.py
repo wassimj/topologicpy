@@ -26,6 +26,10 @@ class Vector(list):
         """
         n_v1=la.norm(vectorA)
         n_v2=la.norm(vectorB)
+        if n_v1 == 0 or n_v2 == 0:
+            # Handle the case where one or both vectors have a magnitude of zero.
+            return 0.0
+    
         if (abs(np.log10(n_v1/n_v2)) > 10):
             vectorA = vectorA/n_v1
             vectorB = vectorB/n_v2
@@ -165,7 +169,9 @@ class Vector(list):
     @staticmethod
     def CompassAngle(vectorA, vectorB, mantissa=4, tolerance=0.0001):
         """
-        Returns the horizontal compass angle in degrees between the two input vectors. The angle is measured in counter-clockwise fashion. Only the first two elements in the input vectors are considered.
+        Returns the horizontal compass angle in degrees between the two input vectors. The angle is measured in clockwise fashion.
+        0 is along the positive Y-axis, 90 is along the positive X axis.
+        Only the first two elements in the input vectors are considered.
 
         Parameters
         ----------
@@ -355,16 +361,11 @@ class Vector(list):
             The created vector that multiplies the input vector by the input magnitude.
 
         """
-        oldMag = 0
-        for value in vector:
-            oldMag += value ** 2
-        oldMag = oldMag ** 0.5
-        if oldMag < tolerance:
-            return [0,0,0]
-        newVector = []
-        for i in range(len(vector)):
-            newVector.append(vector[i] * magnitude / oldMag)
-        return newVector
+        if abs(magnitude) < tolerance:
+            return [0.0] * len(vector)
+        scaled_vector = [component * (magnitude) for component in vector]
+        return scaled_vector
+
 
     @staticmethod
     def Normalize(vector):

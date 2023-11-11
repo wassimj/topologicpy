@@ -2,9 +2,50 @@ from specklepy.api.client import SpeckleClient
 from specklepy.api.wrapper import StreamWrapper
 from specklepy.api import operations
 from specklepy.objects import Base
+from specklepy.objects.other import RenderMaterial
 from specklepy.transports.server import ServerTransport
-
+from topologicpy.Topology import Topology
+from specklepy.objects.geometry import (Mesh, Point, Polyline)
 class Speckle:
+
+    @staticmethod
+    def mesh_to_speckle(topology) -> Base:
+        b = Base()
+        b["name"] = "Topologic_Object"
+        b["@displayValue"] = Speckle.mesh_to_speckle_mesh(topology)
+        return b
+
+    @staticmethod
+    def mesh_to_speckle_mesh(topology) -> Mesh:
+
+        geom = Topology.Geometry(topology)
+        vertices = geom['vertices']
+        faces = geom['faces']
+        #m_verts: List[float] = []
+        #m_faces: List[int] = []
+        m_verts = []
+        m_faces = []
+
+        for v in vertices:
+            m_verts.append(v[0])
+            m_verts.append(v[1])
+            m_verts.append(v[2])
+        
+        for f in faces:
+            n = len(f)
+            m_faces.append(n)
+            for i in range(n):
+                m_faces.append(f[i])
+
+        speckle_mesh = Mesh(
+            vertices=m_verts,
+            faces=m_faces,
+        )      
+        speckle_mat = RenderMaterial()
+        speckle_mat['Opacity'] = 0.5
+        speckle_mesh["renderMaterial"] = speckle_mat
+        return speckle_mesh
+
     @staticmethod
     def SpeckleBranchByID(branch_list, branch_id):
         """
@@ -28,7 +69,7 @@ class Speckle:
         return None
 
     @staticmethod
-    def SpeckleBranchesByStream(client, stream):
+    def BranchesByStream(client, stream):
         """
         Parameters
         ----------
@@ -51,7 +92,7 @@ class Speckle:
         return branches
     
     @staticmethod
-    def SpeckleClientByHost(url, token):
+    def ClientByURL(url="speckle.xyz", token=None):
         """
         Parameters
         ----------
@@ -66,36 +107,18 @@ class Speckle:
             DESCRIPTION.
 
         """
-        # url, token = item
+        import getpass
+        if token == None:
+            token = getpass.getpass()
+        if token == None:
+            print("Speckle.ClientByHost - Error: Could not retrieve token. Returning None.")
+            return None
         client = SpeckleClient(host=url) # or whatever your host is
         client.authenticate_with_token(token)
         return client
     
     @staticmethod
-    def SpeckleClientByURL(url, token):
-        """
-        Parameters
-        ----------
-        url : TYPE
-            DESCRIPTION.
-        token : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        client : TYPE
-            DESCRIPTION.
-
-        """
-        # url, token = item
-        # provide any stream, branch, commit, object, or globals url
-        wrapper = StreamWrapper(url)
-        client = wrapper.get_client()
-        client.authenticate_with_token(token)
-        return client
-    
-    @staticmethod
-    def SpeckleCommitByID(commit_list, commit_id):
+    def CommitByID(commit_list, commit_id):
         """
         Parameters
         ----------
@@ -195,7 +218,7 @@ class Speckle:
         return False
     
     @staticmethod
-    def SpeckleCommitsByBranch(item):
+    def CommitsByBranch(branch):
         """
         Parameters
         ----------
@@ -208,7 +231,7 @@ class Speckle:
             DESCRIPTION.
 
         """
-        return item.commits.items
+        return branch.commits.items
     
     @staticmethod
     def SpeckleGlobalsByStream(client, stream):
@@ -254,7 +277,7 @@ class Speckle:
         return None
     
     @staticmethod
-    def SpeckleSend(client, stream, branch, description, message, key, data, run):
+    def Send(client, stream, branch, description, message, key, data, run):
         """
         Parameters
         ----------
@@ -295,7 +318,7 @@ class Speckle:
         commit_id = client.commit.create(
             stream.id,
             obj_id,
-            "gbxml",
+            key,
             message=message,
         )
         print("COMMIT ID", commit_id)
@@ -305,6 +328,43 @@ class Speckle:
                 return commit
         return None
     
+    @staticmethod
+    def Object(client, stream, branch, commit):
+        #from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+        def add_vertices(speckle_mesh, scale=1.0):
+            sverts = speckle_mesh.vertices
+            vertices = []
+            if sverts and len(sverts) > 0:
+                for i in range(0, len(sverts), 3):
+                    vertices.append([float(sverts[i]) * scale, float(sverts[i + 1]) * scale, float(sverts[i + 2]) * scale])
+            return vertices
+
+        def add_faces(speckle_mesh):
+            sfaces = speckle_mesh.faces
+            faces = []
+            if sfaces and len(sfaces) > 0:
+                i = 0
+                while i < len(sfaces):
+                    n = sfaces[i]
+                    if n < 3:
+                        n += 3  # 0 -> 3, 1 -> 4
+                    i += 1
+                    faces.append([int(x) for x in sfaces[i : i + n]])
+                    i += n
+                return faces
+
+        def mesh_to_native(speckle_mesh, scale=1.0):
+            vertices = add_vertices(speckle_mesh, scale)
+            faces = add_faces(speckle_mesh)
+            topology = Topology.ByGeometry(vertices=vertices, edges=[], faces=faces)
+            return topology
+        
+        transport = ServerTransport(stream.id, client)
+        last_obj_id = commit.referencedObject
+        speckle_mesh = operations.receive(obj_id=last_obj_id, remote_transport=transport)
+        print(speckle_mesh)
+        return mesh_to_native(speckle_mesh["@display_value"])
     
     @staticmethod
     def SpeckleSendObjects(client, stream, branch, description, message, key, data, run):
@@ -417,7 +477,7 @@ class Speckle:
         return stream
 
     @staticmethod
-    def SpeckleStreamsByClient(item):
+    def StreamsByClient(item):
         """
         Parameters
         ----------

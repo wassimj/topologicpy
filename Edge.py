@@ -27,7 +27,11 @@ class Edge():
 
         """
 
-        if not isinstance(edgeA, topologic.Edge) or not isinstance(edgeB, topologic.Edge):
+        if not isinstance(edgeA, topologic.Edge):
+            print("Edge.Angle - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+            return None
+        if not isinstance(edgeB, topologic.Edge):
+            print("Edge.Angle - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
         dirA = Edge.Direction(edgeA, mantissa)
         dirB = Edge.Direction(edgeB, mantissa)
@@ -65,17 +69,27 @@ class Edge():
             The created bisecting edge.
 
         """
-        if not isinstance(edgeA, topologic.Edge) or not isinstance(edgeB, topologic.Edge):
-            return None
-        if Edge.Length(edgeA) < tolerance or Edge.Length(edgeB) < tolerance:
-            return None
         from topologicpy.Topology import Topology
+
+        if not isinstance(edgeA, topologic.Edge):
+            print("Edge.Bisect - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+            return None
+        if not isinstance(edgeB, topologic.Edge):
+            print("Edge.Bisect - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
+            return None
+        if Edge.Length(edgeA) < tolerance:
+            print("Edge.Bisect - Error: The input edgeA parameter is shorter than the input tolerance parameter. Returning None.")
+            return None
+        if Edge.Length(edgeB) < tolerance:
+            print("Edge.Bisect - Error: The input edgeB parameter is shorter than the input tolerance parameter. Returning None.")
+            return None
+        
         v1 = Edge.VertexByDistance(edgeA, -1, edgeA.EndVertex(), tolerance=0.0001)
-        newEdgeA = Edge.ByVertices([v1, edgeA.EndVertex()])
+        newEdgeA = Edge.ByVertices([v1, edgeA.EndVertex()], tolerance=tolerance, verbose=False)
         v1 = Edge.VertexByDistance(edgeB, 1, edgeB.StartVertex(), tolerance=0.0001)
-        newEdgeB = Edge.ByVertices([edgeB.StartVertex(), v1])
+        newEdgeB = Edge.ByVertices([edgeB.StartVertex(), v1], tolerance=tolerance, verbose=False)
         newEdgeB = Topology.Place(newEdgeB, newEdgeB.StartVertex(), newEdgeA.StartVertex())
-        bisectingEdge = Edge.ByVertices([newEdgeA.EndVertex(), newEdgeB.EndVertex()])
+        bisectingEdge = Edge.ByVertices([newEdgeA.EndVertex(), newEdgeB.EndVertex()], tolerance=tolerance, verbose=False)
         bEdgeLength = Edge.Length(bisectingEdge)
         bisectingEdge = Topology.Scale(bisectingEdge, bisectingEdge.StartVertex(), 1/bEdgeLength, 1/bEdgeLength, 1/bEdgeLength)
         if length != 1.0 and length > tolerance:
@@ -115,14 +129,23 @@ class Edge():
         from topologicpy.Topology import Topology
         edge = None
         if not isinstance(face, topologic.Face):
+            print("Edge.ByFaceNormal - Error: The input face parameter is not a valid topologic face. Returning None.")
             return None
         if not isinstance(origin, topologic.Vertex):
             origin = Topology.Centroid(face)
-        
+        if not isinstance(origin, topologic.Vertex):
+            print("Edge.ByFaceNormal - Error: The input origin parameter is not a valid topologic origin. Returning None.")
+            return None
         n = Face.Normal(face)
         v2 = Topology.Translate(origin, n[0], n[1], n[2])
         edge = topologic.Edge.ByStartVertexEndVertex(origin, v2)
+        if not isinstance(edge, topologic.Edge):
+            print("Edge.ByFaceNormal - Error: Could not create an edge. Returning None.")
+            return None
         edge = Edge.SetLength(edge, length, bothSides=False)
+        if not isinstance(edge, topologic.Edge):
+            print("Edge.ByFaceNormal - Error: Could not create an edge. Returning None.")
+            return None
         return edge
 
     @staticmethod
@@ -149,12 +172,12 @@ class Edge():
         n = Edge.Normal2D(edge)
         n = Vector.Normalize(n)
         n = Vector.Multiply(n, offset, tolerance)
-        edge2 = Topology.Translate(edge, n[0], n[1], n[2])
-        return edge2
+        edge = Topology.Translate(edge, n[0], n[1], n[2])
+        return edge
 
 
     @staticmethod
-    def ByStartVertexEndVertex(vertexA: topologic.Vertex, vertexB: topologic.Vertex, tolerance: float = 0.0001) -> topologic.Edge:
+    def ByStartVertexEndVertex(vertexA: topologic.Vertex, vertexB: topologic.Vertex, tolerance: float = 0.0001, verbose=True) -> topologic.Edge:
         """
         Creates a straight edge that connects the input vertices.
 
@@ -166,30 +189,43 @@ class Edge():
             The second input vertex. This is considered the end vertex.
         tolerance : float , optional
             The desired tolerance to decide if an Edge can be created. The default is 0.0001.
-
+        verbose : bool , optional
+            If set to True, error and warning messages are printed. Otherwise, they are not. The default is True.
+        
         Returns
         -------
         edge : topologic.Edge
             The created edge.
 
         """
+        from topologicpy.Vertex import Vertex
         edge = None
         if not isinstance(vertexA, topologic.Vertex):
+            if verbose:
+                print("Edge.ByStartVertexEndVertex - Error: The input vertexA parameter is not a valid topologic vertex. Returning None.")
             return None
         if not isinstance(vertexB, topologic.Vertex):
+            if verbose:
+                print("Edge.ByStartVertexEndVertex - Error: The input vertexB parameter is not a valid topologic vertex. Returning None.")
             return None
         if topologic.Topology.IsSame(vertexA, vertexB):
+            if verbose:
+                print("Edge.ByStartVertexEndVertex - Error: The input vertexA and vertexB parameters are the same vertex. Returning None.")
             return None
-        if topologic.VertexUtility.Distance(vertexA, vertexB) < tolerance:
+        if Vertex.Distance(vertexA, vertexB) < tolerance:
+            if verbose:
+                print("Edge.ByStartVertexEndVertex - Error: The distance between the input vertexA and vertexB parameters is less than the input tolerance. Returning None.")
             return None
         try:
             edge = topologic.Edge.ByStartVertexEndVertex(vertexA, vertexB)
         except:
+            if verbose:
+                print("Edge.ByStartVertexEndVertex - Error: Could not create an edge. Returning None.")
             edge = None
         return edge
     
     @staticmethod
-    def ByVertices(vertices: list, tolerance: float = 0.0001) -> topologic.Edge:
+    def ByVertices(vertices: list, tolerance: float = 0.0001, verbose: bool = False) -> topologic.Edge:
         """
         Creates a straight edge that connects the input list of vertices.
 
@@ -199,6 +235,8 @@ class Edge():
             The input list of vertices. The first item is considered the start vertex and the last item is considered the end vertex.
         tolerance : float , optional
             The desired tolerance to decide if an edge can be created. The default is 0.0001.
+        verbose : bool , optional
+            If set to True, error and warning messages are printed. Otherwise, they are not. The default is True.
 
         Returns
         -------
@@ -207,11 +245,13 @@ class Edge():
 
         """
         if not isinstance(vertices, list):
+            print("Edge.ByVertices - Error: The input vertices parameter is not a valid list. Returning None.")
             return None
         vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
         if len(vertexList) < 2:
+            print("Edge.ByVertices - Error: The input vertices parameter has less than two vertices. Returning None.")
             return None
-        return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance)
+        return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance, verbose)
     
     @staticmethod
     def ByVerticesCluster(cluster: topologic.Cluster, tolerance: float = 0.0001) -> topologic.Edge:
@@ -233,10 +273,12 @@ class Edge():
         """
         from topologicpy.Cluster import Cluster
         if not isinstance(cluster, topologic.Cluster):
+            print("Edge.ByVerticesCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         vertices = Cluster.Vertices(cluster)
         vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
         if len(vertexList) < 2:
+            print("Edge.ByVerticesCluster - Error: The input cluster parameter contains less than two vertices. Returning None.")
             return None
         return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance)
 
@@ -262,6 +304,7 @@ class Edge():
         from topologicpy.Vector import Vector
 
         if not isinstance(edge, topologic.Edge):
+            print("Edge.Direction - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         ev = edge.EndVertex()
         sv = edge.StartVertex()
@@ -291,6 +334,7 @@ class Edge():
 
         """
         if not isinstance(edge, topologic.Edge):
+            print("Edge.EndVertex - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         vert = None
         try:
@@ -324,6 +368,7 @@ class Edge():
 
         """
         if not isinstance(edge, topologic.Edge):
+            print("Edge.Extend - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         distance = abs(distance)
         if distance < tolerance:
@@ -339,10 +384,10 @@ class Edge():
         else:
             sve = Edge.StartVertex(edge)
             eve = Edge.VertexByDistance(edge, distance=distance, origin=ev, tolerance=tolerance)
-        return Edge.ByVertices([sve, eve])
+        return Edge.ByVertices([sve, eve], tolerance=tolerance, verbose=False)
 
     @staticmethod
-    def ExtendToEdge2D(edgeA: topologic.Edge, edgeB: topologic.Edge) -> topologic.Edge:
+    def ExtendToEdge2D(edgeA: topologic.Edge, edgeB: topologic.Edge, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Extends the first input edge to meet the second input edge. This works only in the XY plane. Z coordinates are ignored.
 
@@ -352,7 +397,9 @@ class Edge():
             The first input edge.
         edgeB : topologic.Edge
             The second input edge.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Edge
@@ -361,21 +408,76 @@ class Edge():
         """
         from topologicpy.Topology import Topology
         if not isinstance(edgeA, topologic.Edge):
+            print("Edge.ExtendToEdge2D - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
             return None
         if not isinstance(edgeB, topologic.Edge):
+            print("Edge.ExtendToEdge2D - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
         intVertex = Edge.Intersect2D(edgeA, edgeB)
-        if intVertex and not (Topology.IsInside(edgeA, intVertex)):
-            e1 = Edge.ByVertices([sva, intVertex])
-            e2 = Edge.ByVertices([eva, intVertex])
+        if intVertex and not (Topology.IsInternal(edgeA, intVertex)):
+            e1 = Edge.ByVertices([sva, intVertex], tolerance=tolerance, verbose=False)
+            e2 = Edge.ByVertices([eva, intVertex], tolerance=tolerance, verbose=False)
             l1 = Edge.Length(e1)
             l2 = Edge.Length(e2)
             if l1 > l2:
                 return e1
             else:
                 return e2
+        print("Edge.ExtendToEdge2D - Error: The operation failed. Returning None.")
+        return None
+    
+    @staticmethod
+    def Index(edge: topologic.Edge, edges: list, strict: bool = False, tolerance: float = 0.0001) -> int:
+        """
+        Returns index of the input edge in the input list of edges
+
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The input edge.
+        edges : list
+            The input list of edges.
+        strict : bool , optional
+            If set to True, the edge must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. The default is False.
+        tolerance : float , optional
+            The tolerance for computing if the input edge is identical to an edge from the list. The default is 0.0001.
+
+        Returns
+        -------
+        int
+            The index of the input edge in the input list of edges.
+
+        """
+        from topologicpy.Topology import Topology
+        if not isinstance(edge, topologic.Edge):
+            print("Edge.Index - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            return None
+        if not isinstance(edges, list):
+            print("Edge.Index - Error: The input edges parameter is not a valid list. Returning None.")
+            return None
+        edges = [e for e in edges if isinstance(e, topologic.Edge)]
+        if len(edges) < 1:
+            print("Edge.Index - Error: The input edges parameter contains no valid edges. Returning None.")
+            return None
+        sva = Edge.StartVertex(edge)
+        eva = Edge.EndVertex(edge)
+        for i in range(len(edges)):
+            if strict:
+                if Topology.IsSame(edge, edges[i]):
+                    return i
+            else:
+                svb = Edge.StartVertex(edges[i])
+                evb = Edge.EndVertex(edges[i])
+                dsvsv = Vertex.Distance(sva, svb)
+                devev = Vertex.Distance(eva, evb)
+                if dsvsv < tolerance and devev < tolerance:
+                    return i
+                dsvev = Vertex.Distance(sva, evb)
+                devsv = Vertex.Distance(eva, svb)
+                if dsvev < tolerance and devsv < tolerance:
+                    return i
         return None
 
     @staticmethod
@@ -397,10 +499,10 @@ class Edge():
 
         """
         if not isinstance(edgeA, topologic.Edge):
-            print("Intersect2D: edgeA is not a topologic.Edge")
+            print("Edge.Intersect2D - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
             return None
         if not isinstance(edgeB, topologic.Edge):
-            print("Intersect2D: edgeB is not a topologic.Edge")
+            print("Edge.Intersect2D - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
@@ -421,6 +523,7 @@ class Edge():
         if (determinant == 0):
             # The lines are parallel. This is simplified
             # by returning a pair of FLT_MAX
+            print("Edge.Intersect2D - Warning: The input edgeA and edgeB parameters are parallel edges. Returning None.")
             return None
         else:
             x = (b2*c1 - b1*c2)/determinant
@@ -452,7 +555,11 @@ class Edge():
             True if the two edges are collinear. False otherwise.
 
         """
-        if not isinstance(edgeA, topologic.Edge) or not isinstance(edgeB, topologic.Edge):
+        if not isinstance(edgeA, topologic.Edge):
+            print("Edge.IsCollinear - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+            return None
+        if not isinstance(edgeB, topologic.Edge):
+            print("Edge.IsCollinear - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
         ang = Edge.Angle(edgeA, edgeB, mantissa=mantissa, bracket=True)
         svA = Edge.StartVertex(edgeA)
@@ -489,7 +596,11 @@ class Edge():
             True if the two edges are collinear. False otherwise.
 
         """
-        if not isinstance(edgeA, topologic.Edge) or not isinstance(edgeB, topologic.Edge):
+        if not isinstance(edgeA, topologic.Edge):
+            print("Edge.IsParallel - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+            return None
+        if not isinstance(edgeB, topologic.Edge):
+            print("Edge.IsParallel - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
         ang = Edge.Angle(edgeA, edgeB, mantissa=mantissa, bracket=True)
         if abs(ang) < angTolerance or abs(180 - ang) < angTolerance:
@@ -515,14 +626,79 @@ class Edge():
 
         """
         if not isinstance(edge, topologic.Edge):
+            print("Edge.Length - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         length = None
         try:
             length = round(topologic.EdgeUtility.Length(edge), mantissa)
         except:
             length = None
+        if length == None:
+            print("Edge.Length - Error: Could not compute the length of the input edge parameter. Returning None.")
         return length
 
+    @staticmethod
+    def Line(origin: topologic.Vertex = None, length: float = 1, direction: list = [1,0,0], placement: str ="center", tolerance: float = 0.0001) -> topologic.Edge:
+        """
+        Creates a straight edge (line) using the input parameters.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The origin location of the box. The default is None which results in the edge being placed at (0,0,0).
+        length : float , optional
+            The desired length of the edge. The default is 1.0.
+        direction : list , optional
+            The desired direction (vector) of the edge. The default is [1,0,0] (along the X-axis).
+        placement : str , optional
+            The desired placement of the edge. The options are:
+            1. "center" which places the center of the edge at the origin.
+            2. "start" which places the start of the edge at the origin.
+            3. "end" which places the end of the edge at the origin.
+            The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        Returns
+        -------
+        topology.Edge
+            The created edge
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Vector import Vector
+        from topologicpy.Topology import Topology
+
+        if origin == None:
+            origin = Vertex.Origin()
+        if not isinstance(origin, topologic.Vertex):
+            print("Edge.Line - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if length <= 0:
+            print("Edge.Line - Error: The input length is less than or equal to zero. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            print("Edge.Line - Error: The input direction parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            print("Edge.Line - Error: The length of the input direction parameter is not equal to three. Returning None.")
+            return None
+        direction = Vector.Normalize(direction)
+        if "center" in placement.lower():
+            sv = Topology.TranslateByDirectionDistance(origin, direction=Vector.Reverse(direction), distance=length*0.5)
+            ev = Topology.TranslateByDirectionDistance(sv, direction=direction, distance=length)
+            return Edge.ByVertices([sv,ev], tolerance=tolerance, verbose=True)
+        if "start" in placement.lower():
+            sv = origin
+            ev = Topology.TranslateByDirectionDistance(sv, direction=direction, distance=length)
+            return Edge.ByVertices([sv,ev], tolerance=tolerance, verbose=True)
+        if "end" in placement.lower():
+            sv = Topology.TranslateByDirectionDistance(origin, direction=Vector.Reverse(direction), distance=length)
+            ev = Topology.TranslateByDirectionDistance(sv, direction=direction, distance=length)
+            return Edge.ByVertices([sv,ev], tolerance=tolerance, verbose=True)
+        else:
+            print("Edge.Line - Error: The input placement string is not one of center, start, or end. Returning None.")
+            return None
+    
     @staticmethod
     def Normal2D(edge: topologic.Edge) -> list:
         """
@@ -541,7 +717,9 @@ class Edge():
         """
         
         from topologicpy.Vector import Vector
-
+        if not isinstance(edge, topologic.Edge):
+            print("Edge.Normal2D - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            return None
         sv = Edge.StartVertex(edge)
         ev = Edge.EndVertex(edge)
         x1 = Vertex.X(sv)
@@ -573,6 +751,7 @@ class Edge():
 
         """
         if not isinstance(edge, topologic.Edge):
+            print("Edge.Normalize - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         if not useEndVertex:
             sv = edge.StartVertex()
@@ -602,13 +781,17 @@ class Edge():
             The *u* parameter along the input edge based on the location of the input vertex.
 
         """
-        if not isinstance(edge, topologic.Edge) or not isinstance(vertex, topologic.Vertex):
+        if not isinstance(edge, topologic.Edge):
+            print("Edge.ParameterAtVertex - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            print("Edge.ParameterAtVertex - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         parameter = None
         try:
             parameter = topologic.EdgeUtility.ParameterAtPoint(edge, vertex)
         except:
-            return None
+            return None #Return silently because topologic C++ returns a runtime error if point is not on curve.
         return round(parameter, mantissa)
 
     @staticmethod
@@ -628,6 +811,7 @@ class Edge():
 
         """
         if not isinstance(edge, topologic.Edge):
+            print("Edge.Reverse - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         return Edge.ByVertices([edge.EndVertex(), edge.StartVertex()])
     
@@ -656,6 +840,7 @@ class Edge():
 
         """
         if not isinstance(edge, topologic.Edge):
+            print("Edge.SetLength - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         distance = (length - Edge.Length(edge))
         if distance > 0:
@@ -679,6 +864,7 @@ class Edge():
 
         """
         if not isinstance(edge, topologic.Edge):
+            print("Edge.StartVertex - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         vert = None
         try:
@@ -712,9 +898,13 @@ class Edge():
 
         """
         if not isinstance(edge, topologic.Edge):
+            print("Edge.Trim - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         distance = abs(distance)
+        if distance == 0:
+            return edge
         if distance < tolerance:
+            print("Edge.Trim - Warning: The input distance parameter is less than the input tolerance parameter. Returning the input edge.")
             return edge
         sv = Edge.StartVertex(edge)
         ev = Edge.EndVertex(edge)
@@ -727,10 +917,10 @@ class Edge():
         else:
             sve = Edge.StartVertex(edge)
             eve = Edge.VertexByDistance(edge, distance=-distance, origin=ev, tolerance=tolerance)
-        return Edge.ByVertices([sve, eve])
+        return Edge.ByVertices([sve, eve], tolerance=tolerance, verbose=True)
 
     @staticmethod
-    def TrimByEdge2D(edgeA: topologic.Edge, edgeB: topologic.Edge, reverse: bool = False) -> topologic.Edge:
+    def TrimByEdge2D(edgeA: topologic.Edge, edgeB: topologic.Edge, reverse: bool = False, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Trims the first input edge by the second input edge. This works only in the XY plane. Z coordinates are ignored.
 
@@ -740,7 +930,9 @@ class Edge():
             The first input edge.
         edgeB : topologic.Edge
             The second input edge.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Edge
@@ -749,17 +941,19 @@ class Edge():
         """
         from topologicpy.Topology import Topology
         if not isinstance(edgeA, topologic.Edge):
+            print("Edge.TrimByEdge2D - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
             return None
         if not isinstance(edgeB, topologic.Edge):
+            print("Edge.TrimByEdge2D - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
         intVertex = Edge.Intersect2D(edgeA, edgeB)
-        if intVertex and (Topology.IsInside(edgeA, intVertex)):
+        if intVertex and (Topology.IsInternal(edgeA, intVertex)):
             if reverse:
-                return Edge.ByVertices([eva, intVertex])
+                return Edge.ByVertices([eva, intVertex], tolerance=tolerance, verbose=True)
             else:
-                return Edge.ByVertices([sva, intVertex])
+                return Edge.ByVertices([sva, intVertex], tolerance=tolerance, verbose=True)
         return edgeA
 
     @staticmethod
@@ -786,10 +980,12 @@ class Edge():
         """
 
         if not isinstance(edge, topologic.Edge):
+            print("Edge.TrimByEdge2D - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         if not origin:
             origin = edge.StartVertex()
         if not isinstance(origin, topologic.Vertex):
+            print("Edge.TrimByEdge2D - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         sv = edge.StartVertex()
         ev = edge.EndVertex()
@@ -801,7 +997,7 @@ class Edge():
         return topologic.Vertex.ByCoordinates(origin.X()+vector[0], origin.Y()+vector[1], origin.Z()+vector[2])
     
     @staticmethod
-    def VertexByParameter(edge: topologic.Vertex, parameter: float = 0.0) -> topologic.Vertex:
+    def VertexByParameter(edge: topologic.Edge, parameter: float = 0.0) -> topologic.Vertex:
         """
         Creates a vertex along the input edge offset by the input *u* parameter.
 
@@ -819,6 +1015,7 @@ class Edge():
 
         """
         if not isinstance(edge, topologic.Edge):
+            print("Edge.VertexByParameter - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         vertex = None
         if parameter == 0:
@@ -829,6 +1026,7 @@ class Edge():
             try:
                 vertex = topologic.EdgeUtility.PointAtParameter(edge, parameter)
             except:
+                print("Edge.VertexByParameter - Error: Could not create a vertex at the input parameter. Returning None.")
                 vertex = None
         return vertex
 
@@ -849,6 +1047,7 @@ class Edge():
 
         """
         if not isinstance(edge, topologic.Edge):
+            print("Edge.Vertices - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         vertices = []
         _ = edge.Vertices(None, vertices)

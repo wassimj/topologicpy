@@ -31,6 +31,29 @@ class Dictionary(topologic.Dictionary):
         return dictionaries
     '''
     @staticmethod
+    def ByKeyValue(key, value):
+        """
+        Creates a Dictionary from the input key and the input value.
+
+        Parameters
+        ----------
+        key : str
+            The string representing the key of the value in the dictionary.
+        value : int, float, str, or list
+            A value corresponding to the input key. A value can be an integer, a float, a string, or a list.
+
+        Returns
+        -------
+        topologic.Dictionary
+            The created dictionary.
+
+        """
+        if not isinstance(key, str):
+            print("Dictionary.ByKeyValue - Error: The input key is not a valid string. Returning None.")
+            return None
+        return Dictionary.ByKeysValues([key], [value])
+    
+    @staticmethod
     def ByKeysValues(keys, values):
         """
         Creates a Dictionary from the input list of keys and the input list of values.
@@ -48,9 +71,14 @@ class Dictionary(topologic.Dictionary):
             The created dictionary.
 
         """
-        if not isinstance(keys, list) or not isinstance(values, list):
+        if not isinstance(keys, list):
+            print("Dictionary.ByKeysValues - Error: The input keys parameter is not a valid list. Returning None.")
+            return None
+        if not isinstance(values, list):
+            print("Dictionary.ByKeysValues - Error: The input values parameter is not a valid list. Returning None.")
             return None
         if len(keys) != len(values):
+            print("Dictionary.ByKeysValues - Error: The input keys and values parameters are not of equal length. Returning None.")
             return None
         stl_keys = []
         stl_values = []
@@ -63,6 +91,8 @@ class Dictionary(topologic.Dictionary):
                 value = values[i][0]
             else:
                 value = values[i]
+            if value == None:
+                value = "__NONE__"
             if isinstance(value, bool):
                 if value == False:
                     stl_values.append(topologic.IntAttribute(0))
@@ -115,25 +145,42 @@ class Dictionary(topologic.Dictionary):
 
         Returns
         -------
-        topologic.DIctionary
+        topologic.Dictionary
             The created dictionary.
 
         """
+        if not isinstance(dictionaries, list):
+            print("Dictionary.ByMergedDictionaries - Error: The input dictionaries parameter is not a valid list. Returning None.")
+            return None
+        new_dictionaries = []
+        for d in dictionaries:
+            if isinstance(d, topologic.Dictionary):
+                new_dictionaries.append(d)
+            elif isinstance(d, dict):
+                new_dictionaries.append(Dictionary.ByPythonDictionary(d))
+        if len(new_dictionaries) == 0:
+            print("Dictionary.ByMergedDictionaries - Error: The input dictionaries parameter does not contain valid dictionaries. Returning None.")
+            return None
+        elif len(new_dictionaries) == 1:
+            print("Dictionary.ByMergedDictionaries - Warning: The input dictionaries parameter contains only one valid dictionary. Returning that dictionary.")
+            return new_dictionaries[0]
+        else:
+            dictionaries = new_dictionaries
         sinkKeys = []
         sinkValues = []
         d = dictionaries[0]
         if d != None:
             stlKeys = d.Keys()
             if len(stlKeys) > 0:
-                sinkKeys = d.Keys()
+                sinkKeys = Dictionary.Keys(d)
                 sinkValues = Dictionary.Values(d)
             for i in range(1,len(dictionaries)):
                 d = dictionaries[i]
                 if d == None:
                     continue
-                stlKeys = d.Keys()
+                stlKeys = Dictionary.Keys(d)
                 if len(stlKeys) > 0:
-                    sourceKeys = d.Keys()
+                    sourceKeys = Dictionary.Keys(d)
                     for aSourceKey in sourceKeys:
                         if aSourceKey not in sinkKeys:
                             sinkKeys.append(aSourceKey)
@@ -144,9 +191,11 @@ class Dictionary(topologic.Dictionary):
                         if sourceValue != None:
                             if sinkValues[index] != "":
                                 if isinstance(sinkValues[index], list):
-                                    sinkValues[index].append(sourceValue)
+                                    if not sourceValue in sinkValues[index]:
+                                        sinkValues[index].append(sourceValue)
                                 else:
-                                    sinkValues[index] = [sinkValues[index], sourceValue]
+                                    if not sourceValue == sinkValues[index]:
+                                        sinkValues[index] = [sinkValues[index], sourceValue]
                             else:
                                 sinkValues[index] = sourceValue
         if len(sinkKeys) > 0 and len(sinkValues) > 0:
@@ -248,6 +297,7 @@ class Dictionary(topologic.Dictionary):
 
         """
         if not isinstance(pythonDictionary, dict):
+            print("Dictionary.ByPythonDictionary - Error: The input dictionary parameter is not a valid python dictionary. Returning None.")
             return None
         keys = list(pythonDictionary.keys())
         values = []
@@ -271,6 +321,9 @@ class Dictionary(topologic.Dictionary):
             The list of keys of the input dictionary.
 
         """
+        if not isinstance(dictionary, topologic.Dictionary) and not isinstance(dictionary, dict):
+            print("Dictionary.Keys - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+            return None
         if isinstance(dictionary, dict):
             return list(dictionary.keys())
         elif isinstance(dictionary, topologic.Dictionary):
@@ -314,7 +367,7 @@ class Dictionary(topologic.Dictionary):
 
         Parameters
         ----------
-        dicitonary : topologic.Dictionary
+        dictionary : topologic.Dictionary
             The input dictionary.
 
         Returns
@@ -323,7 +376,11 @@ class Dictionary(topologic.Dictionary):
             The python dictionary equivalent of the input dictionary
 
         """
+        if isinstance(dictionary, dict):
+            print("Dictionary.PythonDictionary - Warning: The input dictionary parameter is already a python dictionary. Returning that dictionary.")
+            return dictionary
         if not isinstance(dictionary, topologic.Dictionary):
+            print("Dictionary.PythonDictionary - Error: The input dictionary parameter is not a valid topologic dictionary. Returning None.")
             return None
         keys = dictionary.Keys()
         pythonDict = {}
@@ -337,7 +394,11 @@ class Dictionary(topologic.Dictionary):
             elif isinstance(attr, topologic.DoubleAttribute):
                 pythonDict[key] = (attr.DoubleValue())
             elif isinstance(attr, topologic.StringAttribute):
-                pythonDict[key] = (attr.StringValue())
+                temp_str = attr.StringValue()
+                if temp_str == "__NONE__":
+                    pythonDict[key] = None
+                else:
+                    pythonDict[key] = (temp_str)
             elif isinstance(attr, topologic.ListAttribute):
                 pythonDict[key] = (Dictionary.ListAttributeValues(attr))
             else:
@@ -351,7 +412,7 @@ class Dictionary(topologic.Dictionary):
 
         Parameters
         ----------
-        dicitonary : topologic.Dictionary or dict
+        dictionary : topologic.Dictionary or dict
             The input dictionary.
         key : string
             The input key.
@@ -365,6 +426,8 @@ class Dictionary(topologic.Dictionary):
 
         """
         def processPythonDictionary (dictionary, key, value):
+            if value == "__NONE__":
+                value = None
             dictionary[key] = value
             return dictionary
 
@@ -379,7 +442,15 @@ class Dictionary(topologic.Dictionary):
                 else:
                     values.append(Dictionary.ValueAtKey(dictionary, k))
             return Dictionary.ByKeysValues(keys, values)
-
+        
+        if not isinstance(dictionary, topologic.Dictionary) and not isinstance(dictionary, dict):
+            print("Dictionary.SetValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+            return None
+        if not isinstance(key, str):
+            print("Dictionary.SetValueAtKey - Error: The input key parameter is not a valid string. Returning None.")
+            return None
+        if value == None:
+            value = "__NONE__"
         if isinstance(dictionary, dict):
             return processPythonDictionary(dictionary, key, value)
         elif isinstance(dictionary, topologic.Dictionary):
@@ -405,6 +476,9 @@ class Dictionary(topologic.Dictionary):
             The value found at the input key in the input dictionary.
 
         """
+        if not isinstance(dictionary, topologic.Dictionary) and not isinstance(dictionary, dict):
+            print("Dictionary.ValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+            return None
         if isinstance(dictionary, dict):
             attr = dictionary[key]
         elif isinstance(dictionary, topologic.Dictionary):
@@ -417,7 +491,11 @@ class Dictionary(topologic.Dictionary):
         elif isinstance(attr, DoubleAttribute):
             return (attr.DoubleValue())
         elif isinstance(attr, StringAttribute):
-            return (attr.StringValue())
+            temp_attr = attr.StringValue()
+            if temp_attr == "__NONE__":
+                return None
+            else:
+                return (attr.StringValue())
         elif isinstance(attr, ListAttribute):
             return (Dictionary.ListAttributeValues(attr))
         elif isinstance(attr, float) or isinstance(attr, int) or isinstance(attr, str):
@@ -445,6 +523,9 @@ class Dictionary(topologic.Dictionary):
             The list of values found in the input dictionary.
 
         """
+        if not isinstance(dictionary, topologic.Dictionary) and not isinstance(dictionary, dict):
+            print("Dictionary.Values - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+            return None
         keys = None
         if isinstance(dictionary, dict):
             keys = dictionary.keys()
@@ -468,7 +549,11 @@ class Dictionary(topologic.Dictionary):
             elif isinstance(attr, topologic.DoubleAttribute):
                 returnList.append(attr.DoubleValue())
             elif isinstance(attr, topologic.StringAttribute):
-                returnList.append(attr.StringValue())
+                temp_attr = attr.StringValue()
+                if temp_attr == "__NONE__":
+                    returnList.append(None)
+                else:
+                    returnList.append(attr.StringValue())
             elif isinstance(attr, topologic.ListAttribute):
                 returnList.append(Dictionary.ListAttributeValues(attr))
             elif isinstance(attr, float) or isinstance(attr, int) or isinstance(attr, str):

@@ -3,7 +3,7 @@ import topologic
 
 class Aperture(topologic.Aperture):
     @staticmethod
-    def ApertureTopology(aperture: topologic.Aperture) -> topologic.Topology:
+    def Topology(aperture: topologic.Aperture) -> topologic.Topology:
         """
         Returns the topology of the input aperture.
         
@@ -18,6 +18,9 @@ class Aperture(topologic.Aperture):
             The topology of the input aperture.
 
         """
+        if not isinstance(aperture, topologic.Aperture):
+            print("Aperture.Topology - Error: The input aperture parameter is not a valid topologic aperture. Returning None.")
+            return None
         return topologic.Aperture.Topology(aperture)
 
     @staticmethod
@@ -38,9 +41,17 @@ class Aperture(topologic.Aperture):
             The created aperture.
 
         """
+        if not isinstance(topology, topologic.Topology):
+            print("Aperture.ByTopologyContext - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+            return None
+        if not isinstance(context, topologic.Context):
+            print("Aperture.ByTopologyContext - Error: The input context parameter is not a valid topologic context. Returning None.")
+            return None
         aperture = None
         try:
             aperture = topologic.Aperture.ByTopologyContext(topology, context)
         except:
+            print("Aperture.ByTopologyContext - Error: The operation failed. Returning None.")
             aperture = None
         return aperture
+    

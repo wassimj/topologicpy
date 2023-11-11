@@ -119,7 +119,7 @@ class Honeybee:
         return [constrSets, constrIdentifiers]
     
     @staticmethod
-    def ExportToHBJSON(model, path, overwrite=True):
+    def ExportToHBJSON(model, path, overwrite=False):
         """
         Exports the input HB Model to a file.
 
@@ -130,7 +130,7 @@ class Honeybee:
         path : str
             The location of the output file.
         overwrite : bool , optional
-            If set to True this method overwrites any existing file. Otherwise, it won't. The default is True.
+            If set to True this method overwrites any existing file. Otherwise, it won't. The default is False.
 
         Returns
         -------
@@ -138,11 +138,16 @@ class Honeybee:
             Returns True if the operation is successful. Returns False otherwise.
 
         """
-        # hbModel, path = item
+        from os.path import exists
+
         # Make sure the file extension is .hbjson
         ext = path[len(path)-7:len(path)]
         if ext.lower() != ".hbjson":
             path = path+".hbjson"
+        
+        if not overwrite and exists(path):
+            print("DGL.ExportToHBJSON - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
         f = None
         try:
             if overwrite == True:
@@ -150,7 +155,8 @@ class Honeybee:
             else:
                 f = open(path, "x") # Try to create a new File
         except:
-            raise Exception("Error: Could not create a new file at the following location: "+path)
+            print("DGL.ExportToHBJSON - Error: Could not create a new file at the following location: "+path+". Returning None.")
+            return None
         if (f):
             json.dump(model.to_dict(), f, indent=4)
             f.close()    
@@ -212,7 +218,10 @@ class Honeybee:
             return returnList
 
         def getKeyName(d, keyName):
-            keys = Dictionary.Keys(d)
+            if not d == None:
+                keys = Dictionary.Keys(d)
+            else:
+                keys = []
             for key in keys:
                 if key.lower() == keyName.lower():
                     return key

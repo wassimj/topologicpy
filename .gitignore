@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 *.so*
 *.dll
+*.dylib
 */__pycache__/
 *.py[cod]
 *.pynb_*/*

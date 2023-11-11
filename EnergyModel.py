@@ -10,6 +10,7 @@ import os
 from os.path import exists
 import json
 from datetime import datetime
+import time
 import sys
 import subprocess
 try:
@@ -115,7 +116,7 @@ class EnergyModel:
         return EnergyModel.ByOSMPath(path=path)
     
     @staticmethod
-    def ByTopology(building : topologic.CellComplex,
+    def ByTopology(building : topologic.Topology,
                    shadingSurfaces : topologic.Topology = None,
                    osModelPath : str = None,
                    weatherFilePath : str = None,
@@ -135,7 +136,7 @@ class EnergyModel:
 
         Parameters
         ----------
-        building : topologic.CellComplex
+        building : topologic.CellComplex or topologic.Cell
             The input building topology.
         shadingSurfaces : topologic.Topology , optional
             The input topology for shading surfaces. The default is None.
@@ -173,7 +174,11 @@ class EnergyModel:
             The created OSM model.
 
         """
-        
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
         def getKeyName(d, keyName):
             keys = d.Keys()
             for key in keys:
@@ -182,23 +187,33 @@ class EnergyModel:
             return None
         
         def createUniqueName(name, nameList, number):
+            if number > 9999:
+                return name+"_9999"
             if not (name in nameList):
                 return name
-            elif not ((name+"_"+str(number)) in nameList):
-                return name+"_"+str(number)
+            elif not ((name+"_"+"{:04d}".format(number)) in nameList):
+                return name+"_"+"{:04d}".format(number)
             else:
                 return createUniqueName(name,nameList, number+1)
         
         def getFloorLevels(building):
             from topologicpy.Vertex import Vertex
+            from topologicpy.Cell import Cell
             from topologicpy.CellComplex import CellComplex
-            from topologicpy.Dictionary import Dictionary
 
-            d = CellComplex.Decompose(building)
-            bhf = d['bottomHorizontalFaces']
-            ihf = d['internalHorizontalFaces']
-            thf = d ['topHorizontalFaces']
-            hf = bhf+ihf+thf
+            if isinstance(building, topologic.CellComplex):
+                d = CellComplex.Decompose(building)
+                bhf = d['bottomHorizontalFaces']
+                ihf = d['internalHorizontalFaces']
+                thf = d ['topHorizontalFaces']
+                hf = bhf+ihf+thf
+            elif isinstance(building, topologic.Cell):
+                d = Cell.Decompose(building)
+                bhf = d['bottomHorizontalFaces']
+                thf = d ['topHorizontalFaces']
+                hf = bhf+thf
+            else:
+                return None
             floorLevels = [Vertex.Z(Topology.Centroid(f)) for f in hf]
             floorLevels = list(set(floorLevels))
             floorLevels.sort()
@@ -231,7 +246,6 @@ class EnergyModel:
         else:
             print("EnergyModel.ByTopology - Error: The ddy file is not initialized. Returning None.")
             return None
-
         osBuilding = osModel.getBuilding()
         if not floorLevels:
             floorLevels = getFloorLevels(building)
@@ -248,7 +262,6 @@ class EnergyModel:
             osBuildingStory.setNominalZCoordinate(floorLevels[storyNumber])
             osBuildingStory.setNominalFloortoFloorHeight(osBuilding.nominalFloortoFloorHeight().get())
         osBuilding.setNorthAxis(northAxis)
-
         heatingScheduleConstant = openstudio.model.ScheduleConstant(osModel)
         heatingScheduleConstant.setValue(heatingTemp)
         coolingScheduleConstant = openstudio.model.ScheduleConstant(osModel)
@@ -256,12 +269,15 @@ class EnergyModel:
         osThermostat = openstudio.model.ThermostatSetpointDualSetpoint(osModel)
         osThermostat.setHeatingSetpointTemperatureSchedule(heatingScheduleConstant)
         osThermostat.setCoolingSetpointTemperatureSchedule(coolingScheduleConstant)
-
         osBuildingStorys = list(osModel.getBuildingStorys())
         osBuildingStorys.sort(key=lambda x: x.nominalZCoordinate().get())
         osSpaces = []
         spaceNames = []
-        for spaceNumber, buildingCell in enumerate(Topology.SubTopologies(building, "Cell")):
+        if isinstance(building, topologic.CellComplex):
+            building_cells = Topology.SubTopologies(building, "Cell")
+        elif isinstance(building, topologic.Cell):
+            building_cells = [building]
+        for spaceNumber, buildingCell in enumerate(building_cells):
             osSpace = openstudio.model.Space(osModel)
             osSpaceZ = buildingCell.CenterOfMass().Z()
             osBuildingStory = osBuildingStorys[0]
@@ -273,8 +289,12 @@ class EnergyModel:
                     osBuildingStory = x
                 break
             osSpace.setBuildingStory(osBuildingStory)
-            cellDictionary = buildingCell.GetDictionary()
-            if cellDictionary:
+            cellDictionary = Topology.Dictionary(buildingCell)
+            if not cellDictionary == None:
+                keys = Dictionary.Keys(cellDictionary)
+            else:
+                keys = []
+            if len(keys) > 0:
                 if spaceTypeKey:
                     keyType = getKeyName(cellDictionary, spaceTypeKey)
                 else:
@@ -298,7 +318,7 @@ class EnergyModel:
                 if osSpaceName:
                     osSpace.setName(osSpaceName)
             else:
-                osSpaceName = osBuildingStory.name().get() + "_SPACE_" + str(spaceNumber)
+                osSpaceName = "SPACE_" + "{:04d}".format(spaceNumber)
                 osSpace.setName(osSpaceName)
                 sp_ = osModel.getSpaceTypeByName(defaultSpaceType)
                 if sp_.is_initialized():
@@ -311,14 +331,13 @@ class EnergyModel:
                     for vertex in Topology.SubTopologies(buildingFace.ExternalBoundary(), "Vertex"):
                         osFacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
                     osSurface = openstudio.model.Surface(osFacePoints, osModel)
-                    faceNormal = topologic.FaceUtility.NormalAtParameters(buildingFace, 0.5, 0.5)
+                    faceNormal = Face.Normal(buildingFace)
                     osFaceNormal = openstudio.Vector3d(faceNormal[0], faceNormal[1], faceNormal[2])
                     osFaceNormal.normalize()
                     if osFaceNormal.dot(osSurface.outwardNormal()) < 1e-6:
                         osSurface.setVertices(list(reversed(osFacePoints)))
                     osSurface.setSpace(osSpace)
-                    faceCells = []
-                    _ = topologic.FaceUtility.AdjacentCells(buildingFace, building, faceCells)
+                    faceCells = Topology.AdjacentTopologies(buildingFace, building, topologyType="cell")
                     if len(faceCells) == 1: #Exterior Surfaces
                         osSurface.setOutsideBoundaryCondition("Outdoors")
                         if (math.degrees(math.acos(osSurface.outwardNormal().dot(openstudio.Vector3d(0, 0, 1)))) > 135) or (math.degrees(math.acos(osSurface.outwardNormal().dot(openstudio.Vector3d(0, 0, 1)))) < 45):
@@ -345,7 +364,7 @@ class EnergyModel:
                                     for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
                                         osSubSurfacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
                                     osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
-                                    apertureFaceNormal = topologic.FaceUtility.NormalAtParameters(apertureFace, 0.5, 0.5)
+                                    apertureFaceNormal = Face.Normal(apertureFace)
                                     osSubSurfaceNormal = openstudio.Vector3d(apertureFaceNormal[0], apertureFaceNormal[1], apertureFaceNormal[2])
                                     osSubSurfaceNormal.normalize()
                                     if osSubSurfaceNormal.dot(osSubSurface.outwardNormal()) < 1e-6:
@@ -384,7 +403,7 @@ class EnergyModel:
                                 for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
                                     osSubSurfacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
                                 osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
-                                apertureFaceNormal = topologic.FaceUtility.NormalAtParameters(apertureFace, 0.5, 0.5)
+                                apertureFaceNormal = Face.Normal(apertureFace)
                                 osSubSurfaceNormal = openstudio.Vector3d(apertureFaceNormal[0], apertureFaceNormal[1], apertureFaceNormal[2])
                                 osSubSurfaceNormal.normalize()
                                 if osSubSurfaceNormal.dot(osSubSurface.outwardNormal()) < 1e-6:
@@ -393,10 +412,10 @@ class EnergyModel:
                                 osSubSurface.setSurface(osSurface)
 
             osThermalZone = openstudio.model.ThermalZone(osModel)
-            osThermalZone.setVolume(topologic.CellUtility.Volume(buildingCell))
+            osThermalZone.setVolume(Cell.Volume(buildingCell))
             osThermalZone.setName(osSpace.name().get() + "_THERMAL_ZONE")
             osThermalZone.setUseIdealAirLoads(True)
-            osThermalZone.setVolume(topologic.CellUtility.Volume(buildingCell))
+            osThermalZone.setVolume(Cell.Volume(buildingCell))
             osThermalZone.setThermostatSetpointDualSetpoint(osThermostat)
             osSpace.setThermalZone(osThermalZone)
 
@@ -413,7 +432,7 @@ class EnergyModel:
                 for aVertex in Topology.SubTopologies(shadingFace.ExternalBoundary(), "Vertex"):
                     facePoints.append(openstudio.Point3d(aVertex.X(), aVertex.Y(), aVertex.Z()))
                 aShadingSurface = openstudio.model.ShadingSurface(facePoints, osModel)
-                faceNormal = topologic.FaceUtility.NormalAtParameters(shadingFace, 0.5, 0.5)
+                faceNormal = Face.Normal(shadingFace)
                 osFaceNormal = openstudio.Vector3d(faceNormal[0], faceNormal[1], faceNormal[2])
                 osFaceNormal.normalize()
                 if osFaceNormal.dot(aShadingSurface.outwardNormal()) < 0:
@@ -496,7 +515,7 @@ class EnergyModel:
     @staticmethod
     def ExportToGbXML(model, path, overwrite=False):
         """
-            Exports the input OSM model to a gbxml file.
+            DEPRECATED. Please do NOT use. Instead use EnergyModel.ExportToGBXML.
 
         Parameters
         ----------
@@ -513,12 +532,51 @@ class EnergyModel:
             True if the file is written successfully. False otherwise.
 
         """
+        from os.path import exists
+        
+        print("EnergyModel.ExportToGbXML - Warning: This method is deprecated. Please do NOT use. Instead use EnergyModel.ExportToGBXML.")
+        # Make sure the file extension is .xml
         ext = path[len(path)-4:len(path)]
         if ext.lower() != ".xml":
             path = path+".xml"
-        if(exists(path) and (overwrite == False)):
-            print("EnergyModel.ExportToGbXML - Error: Could not export the file because it already exists and overwrite is set to False. Returning None.")
+        
+        if not overwrite and exists(path):
+            print("EnergyModel.ExportToGbXML - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
             return None
+
+        return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, openstudio.openstudioutilitiescore.toPath(path))
+    
+    @staticmethod
+    def ExportToGBXML(model, path, overwrite=False):
+        """
+            Exports the input OSM model to a GBXML file.
+
+        Parameters
+        ----------
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+        path : str
+            The path for saving the file.
+        overwrite : bool, optional
+            If set to True any file with the same name is over-written. The default is False.
+
+        Returns
+        -------
+        bool
+            True if the file is written successfully. False otherwise.
+
+        """
+        from os.path import exists
+        
+        # Make sure the file extension is .xml
+        ext = path[len(path)-4:len(path)]
+        if ext.lower() != ".xml":
+            path = path+".xml"
+        
+        if not overwrite and exists(path):
+            print("EnergyModel.ExportToGbXML - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
+
         return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, openstudio.openstudioutilitiescore.toPath(path))
 
     
@@ -542,9 +600,16 @@ class EnergyModel:
             True if the file is written successfully. False otherwise.
 
         """
+        from os.path import exists
+        
+        # Make sure the file extension is .osm
         ext = path[len(path)-4:len(path)]
         if ext.lower() != ".osm":
             path = path+".osm"
+        
+        if not overwrite and exists(path):
+            print("EnergyModel.ExportToOSM - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
         osCondition = False
         osPath = openstudio.openstudioutilitiescore.toPath(path)
         osCondition = model.save(osPath, overwrite)
@@ -553,7 +618,25 @@ class EnergyModel:
     @staticmethod
     def GbXMLString(model):
         """
-            Returns the gbxml string of the input OSM model.
+            DEPRECATED. Please do NOT use. Instead use EnergyModel.GBXMLString.
+
+        Parameters
+        ----------
+        model : openstudio.openstudiomodelcore.Model
+            The input OSM model.
+
+        Returns
+        -------
+        str
+            The gbxml string.
+
+        """
+        return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXMLString(model)
+    
+    @staticmethod
+    def GBXMLString(model):
+        """
+            Returns the GBXML string of the input OSM model.
 
         Parameters
         ----------
@@ -910,13 +993,13 @@ class EnergyModel:
             for i in range(len(surfaceVertices)-1):
                 sv = topologic.Vertex.ByCoordinates(surfaceVertices[i].x(), surfaceVertices[i].y(), surfaceVertices[i].z())
                 ev = topologic.Vertex.ByCoordinates(surfaceVertices[i+1].x(), surfaceVertices[i+1].y(), surfaceVertices[i+1].z())
-                edge = Edge.ByStartVertexEndVertex(sv, ev)
+                edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=0.0001, verbose=False)
                 if not edge:
                     continue
                 surfaceEdges.append(edge)
             sv = topologic.Vertex.ByCoordinates(surfaceVertices[len(surfaceVertices)-1].x(), surfaceVertices[len(surfaceVertices)-1].y(), surfaceVertices[len(surfaceVertices)-1].z())
             ev = topologic.Vertex.ByCoordinates(surfaceVertices[0].x(), surfaceVertices[0].y(), surfaceVertices[0].z())
-            edge = Edge.ByStartVertexEndVertex(sv, ev)
+            edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=0.0001, verbose=False)
             surfaceEdges.append(edge)
             surfaceWire = Wire.ByEdges(surfaceEdges)
             internalBoundaries = []

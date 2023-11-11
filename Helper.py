@@ -71,6 +71,111 @@ class Helper:
                 base = onestep(cur,y,base)
             iterated_list.append(y)
         return iterated_list
+    
+    @staticmethod
+    def K_Means(data, k=4, maxIterations=100):
+        import random
+        def euclidean_distance(p, q):
+            return sum((pi - qi) ** 2 for pi, qi in zip(p, q)) ** 0.5
+
+        # Initialize k centroids randomly
+        centroids = random.sample(data, k)
+
+        for _ in range(maxIterations):
+            # Assign each data point to the nearest centroid
+            clusters = [[] for _ in range(k)]
+            for point in data:
+                distances = [euclidean_distance(point, centroid) for centroid in centroids]
+                nearest_centroid_index = distances.index(min(distances))
+                clusters[nearest_centroid_index].append(point)
+
+            # Compute the new centroids as the mean of the points in each cluster
+            new_centroids = []
+            for cluster in clusters:
+                if not cluster:
+                    # If a cluster is empty, keep the previous centroid
+                    new_centroids.append(centroids[clusters.index(cluster)])
+                else:
+                    new_centroids.append([sum(dim) / len(cluster) for dim in zip(*cluster)])
+
+            # Check if the centroids have converged
+            if new_centroids == centroids:
+                break
+
+            centroids = new_centroids
+
+        return {'clusters': clusters, 'centroids': centroids}
+    
+    @staticmethod
+    def MergeByThreshold(l, threshold=0.0001):
+        """
+        Merges the numbers in the input list so that numbers within the input threshold are averaged into one number.
+
+        Parameters
+        ----------
+        l : list
+            The input nested list.
+        threshold : float , optional
+            The desired merge threshold value. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The merged list. The list is sorted in ascending numeric order.
+
+        """
+        # Sort the list in ascending order
+        l.sort()
+        merged_list = []
+
+        # Initialize the first element in the merged list
+        merged_list.append(l[0])
+
+        # Merge numbers within the threshold
+        for i in range(1, len(l)):
+            if l[i] - merged_list[-1] <= threshold:
+                # Merge the current number with the last element in the merged list
+                merged_list[-1] = (merged_list[-1] + l[i]) / 2
+            else:
+                # If the current number is beyond the threshold, add it as a new element
+                merged_list.append(l[i])
+
+        return merged_list
+
+    @staticmethod
+    def Normalize(l, mantissa=4):
+        """
+        Normalizes the input list so that it is in the range 0 to 1
+
+        Parameters
+        ----------
+        l : list
+            The input nested list.
+        mantissa : int , optional
+            The desired mantissa value. The default is 4.
+
+        Returns
+        -------
+        list
+            The normalized list.
+
+        """
+        if l == None:
+            print("Helper.Normalize - Error: The input list is not valid. Returning None.")
+            return None
+        
+        # Make sure the list is numeric
+        l = [x for x in l if type(x) == int or type(x) == float]
+        if len(l) < 1:
+            print("Helper.Normalize - Error: The input list does not contain numeric values. Returning None.")
+            return None
+        min_val = min(l)
+        max_val = max(l)
+        if min_val == max_val:
+            normalized_list = [0 for x in l]
+        else:
+            normalized_list = [round((x - min_val) / (max_val - min_val), mantissa) for x in l]
+        return normalized_list
 
     @staticmethod
     def Repeat(l):
@@ -107,6 +212,27 @@ class Helper:
             for i in range(len(anItem), maxLength):
                 anItem.append(itemToAppend)
         return repeated_list
+
+    @staticmethod
+    def Sort(lA, lB):
+        """
+        Sorts the first input list according to the values in the second input list.
+
+        Parameters
+        ----------
+        lA : list
+            The first input list to be sorts
+        lB : list
+            The second input list to use for sorting the first input list.
+
+        Returns
+        -------
+        list
+            The sorted list.
+
+        """
+        lA.sort(key=dict(zip(lA, lB)).get)
+        return lA
 
     @staticmethod
     def Transpose(l):
@@ -162,7 +288,7 @@ class Helper:
             anItem = anItem[:minLength]
             returnList.append(anItem)
         return returnList
-
+    
     @staticmethod
     def Version():
         """
