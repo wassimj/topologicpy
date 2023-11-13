@@ -588,6 +588,53 @@ class Vertex(Topology):
         return enclosingCells
 
     @staticmethod
+    def Fuse(vertices: list, mantissa: int = 4, tolerance: float = 0.0001):
+        """
+        Fuses vertices within the list of input vertices if the distance between them is less than the input tolerance.
+
+        Parameters
+        ----------
+        vertices : list
+            The input list of topologic vertices.
+        mantissa : int , optional
+            The desired length of the mantissa for retrieving vertex coordinates. The default is 4.
+        tolerance : float , optional
+            The desired tolerance for computing if vertices need to be fused. Any vertices that are closer to each other than this tolerance will be fused. The default is 0.0001.
+        """
+        import numpy as np
+
+        if not isinstance(vertices, list):
+            print("Vertex.Fuse - Error: The input vertices parameter is not a valid list. Returning None.")
+            return None
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) == 0:
+            print("Vertex.Fuse - Error: The input vertices parameter does not contain any valid topologic vertices. Returning None.")
+            return None
+        
+        # Convert the list of topologic vertices to coordinate lists for efficient operations
+        points = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices]
+        
+        # Convert the list of points to a NumPy array for efficient operations
+        points = np.array(points)
+        
+        # Round the points to the specified tolerance
+        rounded_points = np.round(points / tolerance) * tolerance
+        
+        # Use a set to store unique rounded points
+        unique_rounded_points = set()
+        
+        # Create a list of unique points by iterating over the rounded points
+        unique_points = []
+        for point in rounded_points:
+            point_tuple = tuple(point)
+            if point_tuple not in unique_rounded_points:
+                unique_rounded_points.add(point_tuple)
+                unique_points.append(point)
+
+        unique_vertices = [Vertex.ByCoordinates(list(coords)) for coords in unique_points]
+        return unique_vertices
+    
+    @staticmethod
     def Index(vertex: topologic.Vertex, vertices: list, strict: bool = False, tolerance: float = 0.0001) -> int:
         """
         Returns index of the input vertex in the input list of vertices
@@ -739,7 +786,7 @@ class Vertex(Topology):
     @staticmethod
     def IsInside(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001) -> bool:
         """
-        DEPRECATED. DO NOT USE. INSTEAD USE Vertex.IsInternal
+        DEPRECATED. DO NOT USE. INSTEAD USE Vertex.IsInternal.
         """
         print("Vertex.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Vertex.IsInternal.")
         return Vertex.IsInternal(vertex=vertex, topology=topology, tolerance=tolerance)

@@ -5128,7 +5128,7 @@ class Topology():
 
     
     @staticmethod
-    def SelfMerge(topology):
+    def SelfMerge(topology, tolerance=0.0001):
         """
         Self merges the input topology to return the most logical topology type given the input data.
 
@@ -5136,6 +5136,8 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001
 
         Returns
         -------
@@ -5210,7 +5212,7 @@ class Topology():
                 if len(cells) > 1:
                     topA = cells[0]
                     topB = Cluster.ByTopologies(cells[1:])
-                    return_topology = Topology.Merge(topA, topB)
+                    return_topology = Topology.Merge(topA, topB, tolerance=tolerance)
                 else:
                     return_topology = cells[0]
         return return_topology
