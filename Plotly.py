@@ -805,7 +805,9 @@ class Plotly:
                     if vertexLabelKey or vertexGroupKey:
                         v_dictionaries.append(d)
                 data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
-
+        else:
+            intensities = None
+            
         if showEdges and topology.Type() > topologic.Vertex.Type():
             tp_edges = Topology.SubTopologies(topology, subTopologyType="edge")
             if not (tp_edges == None or tp_edges == []):
