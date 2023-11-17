@@ -600,77 +600,194 @@ class Graph:
                                node_label_header=node_label_header, node_X_header=node_X_header, node_Y_header=node_Y_header, node_Z_header=node_Z_header)
         
     @staticmethod
-    def ByCSVPath(graphs_file_path, edges_file_path, nodes_file_path,
-                  graph_id_header="graph_id", graph_label_header="label", num_nodes_header="num_nodes",
-                  src_header="src_id", dst_header="dst_id",
-                  node_id_header="node_id", node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
+    def ByCSVPath(path,
+                  graphIDHeader="graph_id", graphLabelHeader="label", graphFeaturesHeader="feat",
+                  edgeSRCHeader="src_id", edgeDSTHeader="dst_id", edgeLabelHeader="label", edgeTrainMaskHeader="train_mask", 
+                  edgeValidateMaskHeader="val_mask", edgeTestMaskHeader="test_mask", edgeFeaturesHeader="feat", edgeFeaturesKeys=[],
+                  nodeIDHeader="node_id", nodeLabelHeader="label", nodeTrainMaskHeader="train_mask", 
+                  nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask", nodeFeaturesHeader="feat", nodeXHeader="X", nodeYHeader="Y", nodeZHeader="Z",
+                  nodeFeaturesKeys=[]):
         """
-        Returns graphs according to the input CSV file paths. This method assumes the CSV files follow DGL's schema.
+        Returns graphs according to the input path. This method assumes the CSV files follow DGL's schema.
 
         Parameters
         ----------
-        graphs_file_path : str
-            The file path to the grpahs CSV file.
-        edges_file_path : str
-            The file path to the edges CSV file.
-        nodes_file_path : str
-            The file path to the nodes CSV file.
-        graph_id_header : str , optional
-            The header string used to specify the graph id. The default is "graph_id".
-        graph_label_header : str , optional
-            The header string used to specify the graph label. The default is "label".
-        num_nodes_header : str , optional
-            The header string used to specify the number of nodes. The default is "num_nodes".
-        src_header : str , optional
-            The header string used to specify the source of edges. The default is "src_id".
-        dst_header : str , optional
-            The header string used to specify the destination of edges. The default is "dst_id".
-        node_id_header : str , optional
-            The header string used to specify the node id. The default is "node_id".
-        node_label_header : str , optional
-            The header string used to specify the node label. The default is "label".
-        node_X_header : str , optional
-            The header string used to specify the node X Coordinate. The default is "X".
-        node_Y_header : str , optional
-            The header string used to specify the node Y Coordinate. The default is "Y".
-        node_Z_header : str , optional
-            The header string used to specify the node Y Coordinate. The default is "Z".
+        path : str
+            The path to the folder containing "graphs.csv", "edges.csv", and "nodes.csv".
+        graphIDHeader : str , optional
+            The column header string used to specify the graph id. The default is "graph_id".
+        graphLabelHeader : str , optional
+            The column header string used to specify the graph label. The default is "label".
+        graphFeaturesHeader : str , optional
+            The column header string used to specify the graph features. The default is "feat".
+        edgeSRCHeader : str , optional
+            The column header string used to specify the source vertex id of edges. The default is "src_id".
+        edgeDSTHeader : str , optional
+            The column header string used to specify the destination vertex id of edges. The default is "dst_id".
+        edgeLabelHeader : str , optional
+            The column header string used to specify the label of edges. The default is "label".
+        edgeTrainMaskHeader : str , optional
+            The column header string used to specify the train mask of edges. The default is "train_mask".
+        edgeValidateMaskHeader : str , optional
+            The column header string used to specify the validate mask of edges. The default is "val_mask".
+        edgeTestMaskHeader : str , optional
+            The column header string used to specify the test mask of edges. The default is "test_mask".
+        edgeFeaturesHeader : str , optional
+            The column header string used to specify the features of edges. The default is "feat".
+        nodeIDHeader : str , optional
+            The column header string used to specify the id of nodes. The default is "node_id".
+        nodeLabelHeader : str , optional
+            The column header string used to specify the label of nodes. The default is "label".
+        nodeTrainMaskHeader : str , optional
+            The column header string used to specify the train mask of nodes. The default is "train_mask".
+        nodeValidateMaskHeader : str , optional
+            The column header string used to specify the validate mask of nodes. The default is "val_mask".
+        nodeTestMaskHeader : str , optional
+            The column header string used to specify the test mask of nodes. The default is "test_mask".
+        nodeFeaturesHeader : str , optional
+            The column header string used to specify the features of nodes. The default is "feat".
+        nodeXHeader : str , optional
+            The column header string used to specify the X coordinate of nodes. The default is "X".
+        nodeYHeader : str , optional
+            The column header string used to specify the Y coordinate of nodes. The default is "Y".
+        nodeZHeader : str , optional
+            The column header string used to specify the Z coordinate of nodes. The default is "Z".
 
         Returns
         -------
         dict
-            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
+            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs", "labels", "features"
 
         """
-        if not graphs_file_path:
-            print("Graph.ByCSVPath - Error: the input graphs_file_path is not a valid path. Returning None.")
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import pandas as pd
+        import os
+        from os.path import exists, isdir
+
+        if not exists(path):
+            print("Graph.ByCSVPath - Error: the input path parameter does not exists. Returning None.")
             return None
-        if not edges_file_path:
-            print("Graph.ByCSVPath - Error: the input edges_file_path is not a valid path. Returning None.")
+        if not isdir(path):
+            print("Graph.ByCSVPath - Error: the input path parameter is not a folder. Returning None.")
             return None
-        if not nodes_file_path:
-            print("Graph.ByCSVPath - Error: the input edges_file_path is not a valid path. Returning None.")
+        graphs_path = os.path.join(path, "graphs.csv")
+        if not exists(graphs_path):
+            print("Graph.ByCSVPath - Error: a graphs.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
             return None
-        try:
-            graphs_file = open(graphs_file_path)
-        except:
-            print("Graph.ByCSVPath - Error: the graphs file is not a valid file. Returning None.")
+        edges_path = os.path.join(path, "edges.csv")
+        if not exists(edges_path):
+            print("Graph.ByCSVPath - Error: an edges.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
             return None
-        try:
-            edges_file = open(edges_file_path)
-        except:
-            print("Graph.ByCSVPath - Error: the edges file is not a valid file. Returning None.")
+        nodes_path = os.path.join(path, "nodes.csv")
+        if not exists(nodes_path):
+            print("Graph.ByCSVPath - Error: a nodes.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
             return None
-        try:
-            nodes_file = open(nodes_file_path)
-        except:
-            print("Graph.ByCSVPath - Error: the nodes file is not a valid file. Returning None.")
-            return None
-        return Graph.ByCSVFile(graphs_file, edges_file, nodes_file,
-                               graph_id_header=graph_id_header, graph_label_header=graph_label_header, num_nodes_header=num_nodes_header,
-                               src_header=src_header, dst_header=dst_header,
-                               node_label_header=node_label_header, node_X_header=node_X_header, node_Y_header=node_Y_header, node_Z_header=node_Z_header)
-    
+        # Read the CSV files into Pandas DataFrames
+        graphs_df = pd.read_csv(graphs_path)
+        edges_df = pd.read_csv(edges_path)
+        nodes_df = pd.read_csv(nodes_path)
+
+        # Group edges and nodes by their 'graph_id'
+        grouped_edges = edges_df.groupby(graphIDHeader)
+        grouped_nodes = nodes_df.groupby(graphIDHeader)
+
+        graphs = []
+        graph_labels = []
+        graph_features = []
+
+        if len(nodeFeaturesKeys) == 0:
+            node_keys = [nodeIDHeader, nodeLabelHeader, "mask", nodeFeaturesHeader]
+        else:
+            node_keys = [nodeIDHeader, nodeLabelHeader, "mask"]+nodeFeaturesKeys
+        if len(edgeFeaturesKeys) == 0:
+            edge_keys = [edgeLabelHeader, "mask", edgeFeaturesHeader]
+        else:
+            edge_keys = [edgeLabelHeader, "mask"]+edgeFeaturesKeys
+        # Iterate through the graphs DataFrame
+        for index, row in graphs_df.iterrows():
+            graph_labels.append(row[graphLabelHeader])
+            graph_features.append(row[graphFeaturesHeader])
+
+        vertices_ds = [] # A list to hold the vertices data structures until we can build the actual graphs
+        # Iterate through the grouped nodes DataFrames
+        for graph_id, group_node_df in grouped_nodes:
+            vertices = []
+            for index, row in group_node_df.iterrows():
+                node_id = row[nodeIDHeader]
+                label = row[nodeLabelHeader]
+                train_mask = row[nodeTrainMaskHeader]
+                val_mask = row[nodeValidateMaskHeader]
+                test_mask = row[nodeTestMaskHeader]
+                mask = 0
+                if [train_mask, val_mask, test_mask] == [True, False, False]:
+                    mask = 0
+                elif [train_mask, val_mask, test_mask] == [False, True, False]:
+                    mask = 1
+                elif [train_mask, val_mask, test_mask] == [False, False, True]:
+                    mask = 2
+                else:
+                    mask = 0
+                features = row[nodeFeaturesHeader]
+                x = row[nodeXHeader]
+                y = row[nodeYHeader]
+                z = row[nodeZHeader]
+                if len(nodeFeaturesKeys) == 0:
+                    values = [node_id, label, mask, features]
+                else:
+                    values = [node_id, label, mask]
+                    featureList = features.split(",")
+                    featureList = [float(s) for s in featureList]
+                    values = [node_id, label, mask]+featureList
+                d = Dictionary.ByKeysValues(node_keys, values)
+                v = Vertex.ByCoordinates(x,y,z)
+                v = Topology.SetDictionary(v, d)
+                vertices.append(v)
+            vertices_ds.append(vertices)
+        
+        edges_ds = [] # A list to hold the vertices data structures until we can build the actual graphs
+        # Access specific columns within the grouped DataFrame
+        for graph_id, group_edge_df in grouped_edges:
+            vertices = vertices_ds[graph_id]
+            edges = []
+            for index, row in group_edge_df.iterrows():
+                src_id = row[edgeSRCHeader]
+                dst_id = row[edgeDSTHeader]
+                label = row[nodeLabelHeader]
+                train_mask = row[edgeTrainMaskHeader]
+                val_mask = row[edgeValidateMaskHeader]
+                test_mask = row[edgeTestMaskHeader]
+                mask = 0
+                if [train_mask, val_mask, test_mask] == [True, False, False]:
+                    mask = 0
+                elif [train_mask, val_mask, test_mask] == [False, True, False]:
+                    mask = 1
+                elif [train_mask, val_mask, test_mask] == [False, False, True]:
+                    mask = 2
+                else:
+                    mask = 0
+                features = row[edgeFeaturesHeader]
+                if len(edgeFeaturesKeys) == 0:
+                    values = [label, mask, features]
+                else:
+                    featureList = features.split(",")
+                    featureList = [float(s) for s in featureList]
+                    values = [label, mask]+featureList
+                d = Dictionary.ByKeysValues(edge_keys, values)
+                edge = Edge.ByVertices([vertices[src_id], vertices[dst_id]])
+                edge = Topology.SetDictionary(edge, d)
+                edges.append(edge)
+            edges_ds.append(edges)
+        # Build the graphs
+        for i, vertices, in enumerate(vertices_ds):
+            edges = edges_ds[i]
+            graphs.append(Graph.ByVerticesEdges(vertices, edges))
+        
+        return {"graphs": graphs, "labels": graph_labels, "features": graph_features}
+            
+
     @staticmethod
     def ByCSVString(graphs_string, edges_string, nodes_string,
                     graph_id_header="graph_id", graph_label_header="label", num_nodes_header="num_nodes",
@@ -2975,6 +3092,27 @@ class Graph:
         return graph.Diameter()
     
     @staticmethod
+    def Dictionary(graph):
+        """
+        Returns the dictionary of the input graph.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+
+        Returns
+        -------
+        topologic.Dictionary
+            The dictionary of the input graph.
+
+        """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.Dictionary - Error: the input graph parameter is not a valid graph. Returning None.")
+            return None
+        return graph.GetDictionary()
+    
+    @staticmethod
     def Distance(graph, vertexA, vertexB, tolerance=0.0001):
         """
         Returns the shortest-path distance between the input vertices. See https://en.wikipedia.org/wiki/Distance_(graph_theory).
@@ -3075,222 +3213,80 @@ class Graph:
         edges = []
         _ = graph.Edges(vertices, tolerance, edges)
         return list(dict.fromkeys(edges)) # remove duplicates
-
+    
     @staticmethod
-    def ExportToCSV_GC(graphs, graphLabels, graphsPath, edgesPath, nodesPath,
-                       graphIDHeader="graph_id", graphLabelHeader="label",graphNumNodesHeader="num_nodes",
-                       edgeSRCHeader="src_id", edgeDSTHeader="dst_id", edgeLabelHeader="label", edgeLabelKey="label", defaultEdgeLabel=0,
-                       nodeLabelHeader="label", nodeLabelKey="label", defaultNodeLabel=0, overwrite=False):
+    def ExportToCSV(graph, path, graphLabel, graphFeatures="",  
+                       graphIDHeader="graph_id", graphLabelHeader="label", graphFeaturesHeader="feat",
+                       
+                       edgeLabelKey="label", defaultEdgeLabel=0, edgeFeaturesKeys=[],
+                       edgeSRCHeader="src_id", edgeDSTHeader="dst_id",
+                       edgeLabelHeader="label", edgeFeaturesHeader="feat",
+                       edgeTrainMaskHeader="train_mask", edgeValidateMaskHeader="val_mask", edgeTestMaskHeader="test_mask",
+                       edgeMaskKey=None,
+                       edgeTrainRatio=0.8, edgeValidateRatio=0.1, edgeTestRatio=0.1,
+                       bidirectional=True,
+
+                       nodeLabelKey="label", defaultNodeLabel=0, nodeFeaturesKeys=[],
+                       nodeIDHeader="node_id", nodeLabelHeader="label", nodeFeaturesHeader="feat",
+                       nodeTrainMaskHeader="train_mask", nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask",
+                       nodeMaskKey=None,
+                       nodeTrainRatio=0.8, nodeValidateRatio=0.1, nodeTestRatio=0.1,
+                       mantissa = 4, overwrite=False):
         """
-        Exports the input list of graphs into a set of CSV files compatible with DGL for Graph Classification.
+        Exports the input graph into a set of CSV files compatible with DGL.
 
         Parameters
         ----------
-        graphs : list
-            The input list of graphs.
-        graphLabels : list
-            The input list of graph labels. This must be list of ints where the minimum must be 0 and the maximum must be n where n is the number of graph categories.
-        graphsPaths : str
-            The desired path to the output graphs CSV file.
-        edgesPath : str
-            The desired path to the output edges CSV file.
-        nodesPath : str
-            The desired path to the output nodes CSV file.
+        graph : topologic.Graph
+            The input graph
+        path : str
+            The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
+        graphLabel : float or int
+            The input graph label. This can be an int (categorical) or a float (continous)
+        graphFeatures : str , optional
+            The input graph features. This is a single string of numeric features separated by commas. Example: "3.456, 2.011, 56.4". The defauly is "".
         graphIDHeader : str , optional
             The desired graph ID column header. The default is "graph_id".
         graphLabelHeader : str , optional
             The desired graph label column header. The default is "label".
-        graphNumNodesHeader : str , optional
-            The desired graph number of nodes column header. The default is "num_nodes".
+        graphFeaturesHeader : str , optional
+            The desired graph features column header. The default is "feat".
+        
+        edgeLabelKey : str , optional
+            The edge label dictionary key saved in each graph edge. The default is "label".
+        defaultEdgeLabel : int , optional
+            The default edge label to use if no edge label is found. The default is 0.
         edgeSRCHeader : str , optional
             The desired edge source column header. The default is "src_id".
         edgeDSTHeader : str , optional
             The desired edge destination column header. The default is "dst_id".
-        nodeLabelHeader : str , optional
-            The desired node label column header. The default is "label".
-        nodeLabelKey : str , optional
-            The node label dictionary key saved in each graph vertex. The default is "label".
-        defaultNodeLabel : int , optional
-            The default node label to use if no node label is found. The default is 0.
-        overwrite : bool , optional
-            If set to True, any existing files are overwritten. Otherwise, the input list of graphs is appended to the end of each file. The default is False.
-
-        Returns
-        -------
-        bool
-            True if the graphs have been successfully exported. False otherwise.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Helper import Helper
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Topology import Topology
-        import random
-        import pandas as pd
-        from os.path import exists
-        
-        
-        if not isinstance(graphs, list):
-            print("Graph.ExportToCSV_GC - Error: The input list of graphs is not a valid list. Returning None.")
-            return None
-        
-        if not isinstance(graphLabels, list):
-            print("Graph.ExportToCSV_GC - Error: The input list of labels is not a valid list. Returning None.")
-            return None
-        
-        graphs = [g for g in graphs if isinstance(g, topologic.Graph)]
-
-        if len(graphs) < 1:
-            print("Graph.ExportToCSV_GC - Error: The input list of graphs does not contain any valid graphs. Returning None.")
-            return None
-        if len(graphs) != len(graphLabels):
-            print("Graph.ExportToCSV_GC - Error: The input list of graphs and the input list of labels have different lengths. Returning None.")
-            return None
-        # Make sure the file extension is .csv
-        ext = graphsPath[len(graphsPath)-4:len(graphsPath)]
-        if ext.lower() != ".csv":
-            graphsPath = graphsPath+".csv"
-        
-        #if not overwrite and exists(graphsPath):
-            #print("DGL.ExportToCSV_GC - Error: a file already exists at the specified graphs path and overwrite is set to False. Returning None.")
-            #return None
-        
-        # Make sure the file extension is .csv
-        ext = edgesPath[len(edgesPath)-4:len(edgesPath)]
-        if ext.lower() != ".csv":
-            edgesPath = edgesPath+".csv"
-        
-        #if not overwrite and exists(edgesPath):
-            #print("DGL.ExportToCSV_GC - Error: a file already exists at the specified edges path and overwrite is set to False. Returning None.")
-            #return None
-        
-        # Make sure the file extension is .csv
-        ext = nodesPath[len(nodesPath)-4:len(nodesPath)]
-        if ext.lower() != ".csv":
-            nodesPath = nodesPath+".csv"
-        
-        #if not overwrite and exists(nodesPath):
-            #print("DGL.ExportToCSV_GC - Error: a file already exists at the specified nodes path and overwrite is set to False. Returning None.")
-            #return None
-
-        for graph_index, graph in enumerate(graphs):
-            graph_label = graphLabels[graph_index]
-            # Export Graph Properties
-            vertices = Graph.Vertices(graph)
-            # Shuffle the vertices
-            vertices = random.sample(vertices, len(vertices))
-            graph_num_nodes = len(vertices)
-            if overwrite == False:
-                graphs = pd.read_csv(graphsPath)
-                max_id = max(list(graphs[graphIDHeader]))
-                graph_id = max_id + graph_index + 1
-            else:
-                graph_id = graph_index
-            data = [[graph_id], [graph_label], [graph_num_nodes]]
-            data = Helper.Iterate(data)
-            data = Helper.Transpose(data)
-            df = pd.DataFrame(data, columns= [graphIDHeader, graphLabelHeader, graphNumNodesHeader])
-            if overwrite == False:
-                df.to_csv(graphsPath, mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(graphsPath, mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(graphsPath, mode='a', index = False, header=False)
-
-            # Export Edge Properties
-            edge_src = []
-            edge_dst = []
-            edge_graph_id = [] #Repetitive list of graph_id for each edge
-            node_data = []
-            node_columns = [graphIDHeader, nodeLabelHeader, "X", "Y", "Z"]
-            # All keys should be the same for all vertices, so we can get them from the first vertex
-            d = Topology.Dictionary(vertices[0])
-            if not d == None:
-                keys = Dictionary.Keys(d)
-            else:
-                keys = []
-            for key in keys:
-                if key != nodeLabelKey: #We have already saved that in its own column
-                    node_columns.append(key)
-            for i, v in enumerate(vertices):
-                # Might as well get the node labels since we are iterating through the vertices
-                d = Topology.Dictionary(v)
-                vLabel = Dictionary.ValueAtKey(d, nodeLabelKey)
-                if not(vLabel):
-                    vLabel = defaultNodeLabel		
-                single_node_data = [graph_id, vLabel, round(float(v.X()),5), round(float(v.Y()),5), round(float(v.Z()),5)]
-                keys = d.Keys()
-                for key in keys:
-                    if key != nodeLabelKey and (key in node_columns):
-                        value = Dictionary.ValueAtKey(d, key)
-                        if value == None:
-                            value = 'None'
-                        single_node_data.append(value)
-                node_data.append(single_node_data)
-                av = Graph.AdjacentVertices(graph, v)
-                for k in range(len(av)):
-                    vi = Vertex.Index(av[k], vertices)
-                    edge_graph_id.append(graph_id)
-                    edge_src.append(i)
-                    edge_dst.append(vi)
-            data = [edge_graph_id, edge_src, edge_dst]
-            data = Helper.Iterate(data)
-            data = Helper.Transpose(data)
-            df = pd.DataFrame(data, columns= [graphIDHeader, edgeSRCHeader, edgeDSTHeader])
-            if overwrite == False:
-                df.to_csv(edgesPath, mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(edgesPath, mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(edgesPath, mode='a', index = False, header=False)
-
-            # Export Node Properties
-            df = pd.DataFrame(node_data, columns= node_columns)
-
-            if overwrite == False:
-                df.to_csv(nodesPath, mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(nodesPath, mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(nodesPath, mode='a', index = False, header=False)
-        return True
-    
-    @staticmethod
-    def ExportToCSV_NC(graphs, graphLabels, path, edgeFeaturesKeys=[], nodeFeaturesKeys=[], graphIDHeader="graph_id", graphLabelHeader="label",graphNumNodesHeader="num_nodes", edgeLabelKey="label", defaultEdgeLabel=0, edgeSRCHeader="src_id", edgeDSTHeader="dst_id", edgeLabelHeader="label", edgeFeaturesHeader="feat", nodeLabelKey="label", defaultNodeLabel=0, nodeIDHeader="node_id", nodeLabelHeader="label", nodeFeaturesHeader="feat", trainRatio=0.8, validateRatio=0.1, testRatio=0.1, overwrite=False):
-        """
-        Exports the input list of graphs into a set of CSV files compatible with DGL for Graph Classification.
-
-        Parameters
-        ----------
-        graphs : list
-            The input list of graphs.
-        graphLabels : list
-            The input list of graph labels. This must be list of ints where the minimum must be 0 and the maximum must be n where n is the number of graph categories.
-        path : str
-            The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
-        edgeFeaturesKeys : list , optional
-            The list of features keys saved in the dicitonaries of edges. The default is [].
-        nodesFeaturesKeys : list , optional
-            The list of features keys saved in the dicitonaries of nodes. The default is [].
-        graphIDHeader : str , optional
-            The desired graph ID column header. The default is "graph_id".
-        graphLabelHeader : str , optional
-            The desired graph label column header. The default is "label".
-        graphNumNodesHeader : str , optional
-            The desired graph number of nodes column header. The default is "num_nodes".
-        edgeLabelKey : str , optional
-            The edge label dictionary key saved in each graph vertex. The default is "label".
-        defaultEdgeLabel : int , optional
-            The default nodedge label to use if no edge label is found. The default is 0.
-        edgeSRCHeader : str , optional
-            The desired edge source column header. The default is "src".
-        edgeDSTHeader : str , optional
-            The desired edge destination column header. The default is "dst".
         edgeFeaturesHeader : str , optional
             The desired edge features column header. The default is "feat".
+        edgeFeaturesKeys : list , optional
+            The list of feature dictionary keys saved in the dicitonaries of edges. The default is [].
+        edgeTrainMaskHeader : str , optional
+            The desired edge train mask column header. The default is "train_mask".
+        edgeValidateMaskHeader : str , optional
+            The desired edge validate mask column header. The default is "val_mask".
+        edgeTestMaskHeader : str , optional
+            The desired edge test mask column header. The default is "test_mask".
+        edgeMaskKey : str , optional
+            The dictionary key where the edge train, validate, test category is to be found. The value should be 0 for train
+            1 for validate, and 2 for test. If no key is found, the ratio of train/validate/test will be used. The default is "mask".
+        edgeTrainRatio : float , optional
+            The desired ratio of the edge data to use for training. The number must be between 0 and 1. The default is 0.8 which means 80% of the data will be used for training.
+            This value is ignored if an edgeMaskKey is foud.
+        edgeValidateRatio : float , optional
+            The desired ratio of the edge data to use for validation. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for validation.
+            This value is ignored if an edgeMaskKey is foud.
+        edgeTestRatio : float , optional
+            The desired ratio of the edge data to use for testing. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for testing.
+            This value is ignored if an edgeMaskKey is foud.
+        bidirectional : bool , optional
+            If set to True, a reversed edge will also be saved for each edge in the graph. Otherwise, it will not. The default is True.
+        
+        nodeFeaturesKeys : list , optional
+            The list of features keys saved in the dicitonaries of nodes. The default is [].
         nodeLabelKey : str , optional
             The node label dictionary key saved in each graph vertex. The default is "label".
         defaultNodeLabel : int , optional
@@ -3301,24 +3297,36 @@ class Graph:
             The desired node label column header. The default is "label".
         nodeFeaturesHeader : str , optional
             The desired node features column header. The default is "feat".
-        trainRatio : float , optional
-            The desired ratio of the data to use for training. The number must be between 0 and 1. The default is 0.8 which means 80% of the data will be used for training.
-        validateRatio : float , optional
-            The desired ratio of the data to use for validation. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for validation.
-        testRatio : float , optional
-            The desired ratio of the data to use for testing. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for testing.
+        nodeTrainMaskHeader : str , optional
+            The desired node train mask column header. The default is "train_mask".
+        nodeValidateMaskHeader : str , optional
+            The desired node validate mask column header. The default is "val_mask".
+        nodeTestMaskHeader : str , optional
+            The desired node test mask column header. The default is "test_mask".
+        nodeTrainRatio : float , optional
+            The desired ratio of the node data to use for training. The number must be between 0 and 1. The default is 0.8 which means 80% of the data will be used for training.
+            This value is ignored if an nodeMaskKey is foud.
+        nodeValidateRatio : float , optional
+            The desired ratio of the node data to use for validation. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for validation.
+            This value is ignored if an nodeMaskKey is foud.
+        nodeTestRatio : float , optional
+            The desired ratio of the node data to use for testing. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for testing.
+            This value is ignored if an nodeMaskKey is foud.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 4.
         overwrite : bool , optional
             If set to True, any existing files are overwritten. Otherwise, the input list of graphs is appended to the end of each file. The default is False.
 
         Returns
         -------
         bool
-            True if the graphs have been successfully exported. False otherwise.
+            True if the graph has been successfully exported. False otherwise.
         
         """
 
 
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Helper import Helper
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
@@ -3326,102 +3334,128 @@ class Graph:
         import math
         import random
         import pandas as pd
+        import os
         from os.path import exists
         
         
-        if not isinstance(graphs, list):
-            print("Graph.ExportToCSV_GC - Error: The input list of graphs is not a valid list. Returning None.")
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.ExportToCSV - Error: The input graph parameter is not a valid topologic graph. Returning None.")
             return None
         
-        if not isinstance(graphLabels, list):
-            print("Graph.ExportToCSV_GC - Error: The input list of labels is not a valid list. Returning None.")
+        if not exists(path):
+            try:
+                os.mkdir(path)
+            except:
+                print("Graph.ExportToCSV - Error: Could not create a folder at the specified path parameter. Returning None.")
+                return None
+        if overwrite == False:
+            if not exists(os.path.join(path, "graphs.csv")):
+                print("Graph.ExportToCSV - Error: Overwrite is set to False, but could not find a graphs.csv file at specified path parameter. Returning None.")
+                return None
+            if not exists(os.path.join(path, "edges.csv")):
+                print("Graph.ExportToCSV - Error: Overwrite is set to False, but could not find a graphs.csv file at specified path parameter. Returning None.")
+                return None
+            if not exists(os.path.join(path, "nodes.csv")):
+                print("Graph.ExportToCSV - Error: Overwrite is set to False, but could not find a graphs.csv file at specified path parameter. Returning None.")
+                return None
+        if abs(nodeTrainRatio  + nodeValidateRatio + nodeTestRatio - 1) > 0.001:
+            print("Graph.ExportToCSV - Error: The node train, validate, test ratios do not add up to 1. Returning None")
+            return None
+        if abs(edgeTrainRatio  + edgeValidateRatio + edgeTestRatio - 1) > 0.001:
+            print("Graph.ExportToCSV - Error: The edge train, validate, test ratios do not add up to 1. Returning None")
             return None
         
-        graphs = [g for g in graphs if isinstance(g, topologic.Graph)]
+        # Step 1: Export Graphs
+        if overwrite == False:
+            graphs = pd.read_csv(os.path.join(path,"graphs.csv"))
+            max_id = max(list(graphs[graphIDHeader]))
+            graph_id = max_id + 1
+        else:
+            graph_id = 0
+        data = [[graph_id], [graphLabel], [graphFeatures]]
+        columns = [graphIDHeader, graphLabelHeader, graphFeaturesHeader]
+        
+        # Write Graph Data to CSV file
+        data = Helper.Iterate(data)
+        data = Helper.Transpose(data)
+        df = pd.DataFrame(data, columns=columns)
+        if overwrite == False:
+            df.to_csv(os.path.join(path, "graphs.csv"), mode='a', index = False, header=False)
+        else:
+            df.to_csv(os.path.join(path, "graphs.csv"), mode='w+', index = False, header=True)
 
-        if len(graphs) < 1:
-            print("Graph.ExportToCSV_GC - Error: The input list of graphs does not contain any valid graphs. Returning None.")
+        # Step 2: Export Nodes
+        vertices = Graph.Vertices(graph)
+        if len(vertices) < 3:
+            print("Graph.ExportToCSV - Error: The graph is too small to be used. Returning None")
             return None
-        if len(graphs) != len(graphLabels):
-            print("Graph.ExportToCSV_GC - Error: The input list of graphs and the input list of labels have different lengths. Returning None.")
-            return None
-        # Make sure the file extension is .csv
-        ext = path[len(path)-4:len(path)]
-        if ext.lower() != ".csv":
-            path = path+".csv"
-        
-        if not overwrite and exists(path):
-            print("DGL.ExportToCSV_NC - Error: a file already exists at the specified graphs path and overwrite is set to False. Returning None.")
-            return None
-        
-        if abs(trainRatio  + validateRatio + testRatio - 1) > 0.001:
-            print("Graph.ExportToCSV_NC - Error: The train, validate, test ratios do not add up to 1. Returning None")
-            return None
-        for graph_index, graph in enumerate(graphs):
-            graph_label = graphLabels[graph_index]
-            # Export Graph Properties
-            vertices = Graph.Vertices(graph)
-            # Shuffle the vertices
-            vertices = random.sample(vertices, len(vertices))
-            train_max = math.floor(float(len(vertices))*trainRatio)
-            validate_max = math.floor(float(len(vertices))*validateRatio)
-            test_max = len(vertices) - train_max - validate_max
-            graph_num_nodes = len(vertices)
-            if overwrite == False:
-                graphs = pd.read_csv(os.path.join(path,"graphs.csv"))
-                max_id = max(list(graphs[graphIDHeader]))
-                graph_id = max_id + graph_index + 1
-            else:
-                graph_id = graph_index
-            data = [[graph_id], [graph_label], [graph_num_nodes]]
-            data = Helper.Iterate(data)
-            data = Helper.Transpose(data)
-            df = pd.DataFrame(data, columns= [graphIDHeader, graphLabelHeader, graphNumNodesHeader])
-            if overwrite == False:
-                df.to_csv(os.path.join(path, "graphs.csv"), mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(os.path.join(path, "graphs.csv"), mode='w+', index = False, header=True)
-                else:
-                    df.to_csv(os.path.join(path, "graphs.csv"), mode='a', index = False, header=False)
-
-            # Export Edge Properties
-            edge_graph_id = [] #Repetitive list of graph_id for each edge
-            edge_src = []
-            edge_dst = []
-            edge_lab = []
-            edge_feat = []
-            node_graph_id = [] #Repetitive list of graph_id for each vertex/node
-            node_labels = []
-            x_list = []
-            y_list = []
-            z_list = []
-            node_data = []
-            node_columns = [graphIDHeader, nodeIDHeader, nodeLabelHeader, "train_mask", "val_mask", "test_mask", nodeFeaturesHeader, "X", "Y", "Z"]
-            # All keys should be the same for all vertices, so we can get them from the first vertex
-            d = Topology.Dictionary(vertices[0])
-            '''
-            keys = d.Keys()
-            for key in keys:
-                if key != node_label_key: #We have already saved that in its own column
-                    node_columns.append(key)
-            '''
-            train = 0
-            test = 0
-            validate = 0
+        # Shuffle the vertices
+        vertices = random.sample(vertices, len(vertices))
+        node_train_max = math.floor(float(len(vertices))*nodeTrainRatio)
+        if node_train_max == 0:
+            node_train_max = 1
+        node_validate_max = math.floor(float(len(vertices))*nodeValidateRatio)
+        if node_validate_max == 0:
+            node_validate_max = 1
+        node_test_max = len(vertices) - node_train_max - node_validate_max
+        if node_test_max == 0:
+            node_test_max = 1
+        node_data = []
+        node_columns = [graphIDHeader, nodeIDHeader, nodeLabelHeader, nodeTrainMaskHeader, nodeValidateMaskHeader, nodeTestMaskHeader, nodeFeaturesHeader, "X", "Y", "Z"]
+        train = 0
+        test = 0
+        validate = 0
+        for i, v in enumerate(vertices):
+            # Get the node label
+            nd = Topology.Dictionary(v)
+            vLabel = Dictionary.ValueAtKey(nd, nodeLabelKey)
+            if vLabel == None:
+                vLabel = defaultNodeLabel
             
-            for i, v in enumerate(vertices):
-                if train < train_max:
+            # Get the train/validate/test mask value
+            flag = False
+            if not nodeMaskKey == None:
+                if not nd == None:
+                    keys = Dictionary.Keys(nd)
+                    print("keys", keys)
+                else:
+                    keys = []
+                    flag = True
+                if nodeMaskKey in keys:
+                    value = Dictionary.ValueAtKey(nd, nodeMaskKey)
+                    if not value in [0,1,2]:
+                        flag = True
+                    elif value == 0:
+                        train_mask = True
+                        validate_mask = False
+                        test_mask = False
+                        train = train + 1
+                    elif value == 1:
+                        train_mask = False
+                        validate_mask = True
+                        test_mask = False
+                        validate = validate + 1
+                    else:
+                        train_mask = False
+                        validate_mask = False
+                        test_mask = True
+                        test = test + 1
+                else:
+                    flag = True
+            else:
+                flag = True
+            if flag:
+                if train < node_train_max:
                     train_mask = True
                     validate_mask = False
                     test_mask = False
                     train = train + 1
-                elif validate < validate_max:
+                elif validate < node_validate_max:
                     train_mask = False
                     validate_mask = True
                     test_mask = False
                     validate = validate + 1
-                elif test < test_max:
+                elif test < node_test_max:
                     train_mask = False
                     validate_mask = False
                     test_mask = True
@@ -3431,66 +3465,123 @@ class Graph:
                     validate_mask = False
                     test_mask = False
                     train = train + 1
-                # Might as well get the node labels since we are iterating through the vertices
-                d = Topology.Dictionary(v)
-                vLabel = Dictionary.ValueAtKey(d, nodeLabelKey)
-                if vLabel == None:
-                    vLabel = defaultNodeLabel
-                # Might as well get the features since we are iterating through the vertices
-                features = ""
-                node_features_keys = Helper.Flatten(nodeFeaturesKeys)
-                for node_feature_key in node_features_keys:
-                    if len(features) > 0:
-                        features = features + ","+ str(round(float(Dictionary.ValueAtKey(d, node_feature_key)),5))
+            
+            # Get the features of the vertex
+            node_features = ""
+            node_features_keys = Helper.Flatten(nodeFeaturesKeys)
+            for node_feature_key in node_features_keys:
+                if len(node_features) > 0:
+                    node_features = node_features + ","+ str(round(float(Dictionary.ValueAtKey(nd, node_feature_key)),mantissa))
+                else:
+                    node_features = str(round(float(Dictionary.ValueAtKey(nd, node_feature_key)),mantissa))
+            single_node_data = [graph_id, i, vLabel, train_mask, validate_mask, test_mask, node_features, round(float(Vertex.X(v)),mantissa), round(float(Vertex.Y(v)),mantissa), round(float(Vertex.Z(v)),mantissa)]
+            node_data.append(single_node_data)
+
+        # Write Node Data to CSV file
+        df = pd.DataFrame(node_data, columns= node_columns)
+        if graph_id == 0:
+            df.to_csv(os.path.join(path, "nodes.csv"), mode='w+', index = False, header=True)
+        else:
+            df.to_csv(os.path.join(path, "nodes.csv"), mode='a', index = False, header=False)
+        
+        # Step 3: Export Edges
+        edge_data = []
+        edge_columns = [graphIDHeader, edgeSRCHeader, edgeDSTHeader, edgeLabelHeader, edgeTrainMaskHeader, edgeValidateMaskHeader, edgeTestMaskHeader, edgeFeaturesHeader]
+        train = 0
+        test = 0
+        validate = 0
+        edges = Graph.Edges(graph)
+        edge_train_max = math.floor(float(len(edges))*edgeTrainRatio)
+        edge_validate_max = math.floor(float(len(edges))*edgeValidateRatio)
+        edge_test_max = len(edges) - edge_train_max - edge_validate_max
+        for edge in edges:
+            # Get the edge label
+            ed = Topology.Dictionary(edge)
+            edge_label = Dictionary.ValueAtKey(ed, edgeLabelKey)
+            if edge_label == None:
+                edge_label = defaultEdgeLabel
+            # Get the train/validate/test mask value
+            flag = False
+            if not edgeMaskKey == None:
+                if not ed == None:
+                    keys = Dictionary.Keys(ed)
+                else:
+                    keys = []
+                    flag = True
+                if edgeMaskKey in keys:
+                    value = Dictionary.ValueAtKey(ed, edgeMaskKey)
+                    if not value in [0,1,2]:
+                        flag = True
+                    elif value == 0:
+                        train_mask = True
+                        validate_mask = False
+                        test_mask = False
+                        train = train + 1
+                    elif value == 1:
+                        train_mask = False
+                        validate_mask = True
+                        test_mask = False
+                        validate = validate + 1
                     else:
-                        features = str(round(float(Dictionary.ValueAtKey(d, node_feature_key)),5))
-                single_node_data = [graph_id, i, vLabel, train_mask, validate_mask, test_mask, features, round(float(Vertex.X(v)),5), round(float(Vertex.Y(v)),5), round(float(Vertex.Z(v)),5)]
-                node_data.append(single_node_data)
-                av = Graph.AdjacentVertices(graph, v)
-                for k in range(len(av)):
-                    vi = Vertex.Index(av[k], vertices)
-                    edge_graph_id.append(graph_id)
-                    edge_src.append(i)
-                    edge_dst.append(vi)
-                    edge = graph.Edge(v, av[k], 0.0001)
-                    ed = Topology.Dictionary(edge)
-                    edge_label = Dictionary.ValueAtKey(d, edgeLabelKey)
-                    if edge_label == None:
-                        edge_label = defaultEdgeLabel
-                    edge_lab.append(edge_label)
-                    edge_features = ""
-                    edge_features_keys = Helper.Flatten(edgeFeaturesKeys)
-                    for edge_feature_key in edge_features_keys:
-                        if len(edge_features) > 0:
-                            edge_features = edge_features + ","+ str(round(float(Dictionary.ValueAtKey(ed, edge_feature_key)),5))
-                        else:
-                            edge_features = str(round(float(Dictionary.ValueAtKey(ed, edge_feature_key)),5))
-                    edge_feat.append(edge_features)
-            data = [edge_graph_id, edge_src, edge_dst, edge_lab, edge_feat]
-            data = Helper.Iterate(data)
-            data = Helper.Transpose(data)
-            df = pd.DataFrame(data, columns= [graphIDHeader, edgeSRCHeader, edgeDSTHeader, edgeLabelHeader, edgeFeaturesHeader])
-            if overwrite == False:
-                df.to_csv(os.path.join(path, "edges.csv"), mode='a', index = False, header=False)
-            else:
-                if graph_index == 0:
-                    df.to_csv(os.path.join(path, "edges.csv"), mode='w+', index = False, header=True)
+                        train_mask = False
+                        validate_mask = False
+                        test_mask = True
+                        test = test + 1
                 else:
-                    df.to_csv(os.path.join(path, "edges.csv"), mode='a', index = False, header=False)
-
-            # Export Node Properties
-            df = pd.DataFrame(node_data, columns= node_columns)
-
-            if overwrite == False:
-                df.to_csv(os.path.join(path, "nodes.csv"), mode='a', index = False, header=False)
+                    flag = True
             else:
-                if graph_index == 0:
-                    df.to_csv(os.path.join(path, "nodes.csv"), mode='w+', index = False, header=True)
+                flag = True
+            if flag:
+                if train < edge_train_max:
+                    train_mask = True
+                    validate_mask = False
+                    test_mask = False
+                    train = train + 1
+                elif validate < edge_validate_max:
+                    train_mask = False
+                    validate_mask = True
+                    test_mask = False
+                    validate = validate + 1
+                elif test < edge_test_max:
+                    train_mask = False
+                    validate_mask = False
+                    test_mask = True
+                    test = test + 1
                 else:
-                    df.to_csv(os.path.join(path, "nodes.csv"), mode='a', index = False, header=False)
+                    train_mask = True
+                    validate_mask = False
+                    test_mask = False
+                    train = train + 1
+            # Get the edge features
+            edge_features = ""
+            edge_features_keys = Helper.Flatten(edgeFeaturesKeys)
+            for edge_feature_key in edge_features_keys:
+                if len(edge_features) > 0:
+                    edge_features = edge_features + ","+ str(round(float(Dictionary.ValueAtKey(ed, edge_feature_key)),mantissa))
+                else:
+                    edge_features = str(round(float(Dictionary.ValueAtKey(ed, edge_feature_key)), mantissa))
+            # Get the Source and Destination vertex indices
+            src = Vertex.Index(Edge.StartVertex(edge), vertices)
+            dst = Vertex.Index(Edge.EndVertex(edge), vertices)
+            single_edge_data = [graph_id, src, dst, edge_label, train_mask, validate_mask, test_mask, edge_features]
+            edge_data.append(single_edge_data)
+
+            if bidirectional == True:
+                single_edge_data = [graph_id, src, dst, edge_label, train_mask, validate_mask, test_mask, edge_features]
+                edge_data.append(single_edge_data)
+        df = pd.DataFrame(edge_data, columns=edge_columns)
+
+        if graph_id == 0:
+            df.to_csv(os.path.join(path, "edges.csv"), mode='w+', index = False, header=True)
+        else:
+            df.to_csv(os.path.join(path, "edges.csv"), mode='a', index = False, header=False)
+        
         # Write out the meta.yaml file
         yaml_file = open(os.path.join(path,"meta.yaml"), "w")
-        yaml_file.write('dataset_name: topologic_dataset\nedge_data:\n- file_name: edges.csv\nnode_data:\n- file_name: nodes.csv\ngraph_data:\n  file_name: graphs.csv')
+        if graph_id > 0:
+            yaml_file.write('dataset_name: topologic_dataset\nedge_data:\n- file_name: edges.csv\nnode_data:\n- file_name: nodes.csv\ngraph_data:\n  file_name: graphs.csv')
+        else:
+            yaml_file.write('dataset_name: topologic_dataset\nedge_data:\n- file_name: edges.csv\nnode_data:\n- file_name: nodes.csv')
         yaml_file.close()
         return True
     
@@ -3845,6 +3936,21 @@ class Graph:
         positions = [[p[0], p[1], 0] for p in positions]
         flat_graph = Graph.ByMeshData(positions, edges, v_dicts, e_dicts)
         return flat_graph
+
+    @staticmethod
+    def Guid(graph):
+        """
+        Returns the guid of the input graph
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        """
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.Guid - Error: the input graph parameter is not a valid graph. Returning None.")
+            return None
+        return graph.GetGUID()
 
     @staticmethod
     def IsBipartite(graph, tolerance=0.0001):
@@ -4730,6 +4836,40 @@ class Graph:
             return None
         graphVertex = Graph.NearestVertex(graph, vertex)
         _ = graph.RemoveVertices([graphVertex])
+        return graph
+
+    @staticmethod
+    def SetDictionary(graph, dictionary):
+        """
+        Sets the input graph's dictionary to the input dictionary
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        dictionary : topologic.Dictionary or dict
+            The input dictionary.
+
+        Returns
+        -------
+        topologic.Graph
+            The input graph with the input dictionary set in it.
+
+        """
+        from topologicpy.Dictionary import Dictionary
+
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.SetDictionary - Error: the input graph parameter is not a valid graph. Returning None.")
+            return None
+        if isinstance(dictionary, dict):
+            dictionary = Dictionary.ByPythonDictionary(dictionary)
+        if not isinstance(dictionary, topologic.Dictionary):
+            print("Graph.SetDictionary - Warning: the input dictionary parameter is not a valid dictionary. Returning original input.")
+            return graph
+        if len(dictionary.Keys()) < 1:
+            print("Graph.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
+            return graph
+        _ = graph.SetDictionary(dictionary)
         return graph
 
     @staticmethod
