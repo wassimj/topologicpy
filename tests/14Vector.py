@@ -28,7 +28,7 @@ assert angle == 90, "Vector.Angle. Should be 90"
 
 # Case 2 - AzimuthAltitude
 # test 1
-dictionary = Vector.AzimuthAltitude([1,0,0], mantissa=4)
+dictionary = Vector.AzimuthAltitude([1,0,0], mantissa=6)
 assert dictionary['azimuth'] == 90, "Vector.AzimuthAltitude. Azimuth Should be 90.0"
 assert dictionary['altitude'] == 0, "Vector.AzimuthAltitude. Altitude Should be 0.0"
 

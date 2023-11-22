@@ -53,6 +53,51 @@ class Dictionary(topologic.Dictionary):
             return None
         return Dictionary.ByKeysValues([key], [value])
     
+    
+    @staticmethod
+    def _ConvertValue(value):
+        """
+        Converts the input value to the proper attribute
+        """
+        from topologicpy.Topology import Topology
+        import json
+
+        def dict_to_json(py_dict):
+            """
+            Convert a Python dictionary to a JSON-formatted string.
+            """
+            return json.dumps(py_dict, indent=2)
+        
+        attr = topologic.StringAttribute("__NONE__")
+        if value == None:
+            attr = topologic.StringAttribute("__NONE__")
+        elif isinstance(value, bool):
+            if value == False:
+                attr = topologic.IntAttribute(0)
+            else:
+                attr = topologic.IntAttribute(1)
+        elif isinstance(value, int):
+            attr = topologic.IntAttribute(value)
+        elif isinstance(value, float):
+            attr = topologic.DoubleAttribute(value)
+        elif isinstance(value, topologic.Topology):
+            str_value = Topology.JSONString(value)
+            attr = topologic.StringAttribute(str_value)
+        elif isinstance(value, dict):
+            str_value = dict_to_json(value)
+            attr = topologic.StringAttribute(str_value)
+        elif isinstance(value, str):
+            attr = topologic.StringAttribute(value)
+        elif isinstance(value, tuple):
+            l = [Dictionary._ConvertValue(v) for v in list(value)]
+            attr = topologic.ListAttribute(l)
+        elif isinstance(value, list):
+            l = [Dictionary._ConvertValue(v) for v in value]
+            attr = topologic.ListAttribute(l)
+        else:
+            attr = topologic.StringAttribute("__NONE__")
+        return attr
+    
     @staticmethod
     def ByKeysValues(keys, values):
         """
@@ -71,6 +116,14 @@ class Dictionary(topologic.Dictionary):
             The created dictionary.
 
         """
+        import json
+        
+        def dict_to_json(py_dict):
+            """
+            Convert a Python dictionary to a JSON-formatted string.
+            """
+            return json.dumps(py_dict, indent=2)
+        
         if not isinstance(keys, list):
             print("Dictionary.ByKeysValues - Error: The input keys parameter is not a valid list. Returning None.")
             return None
@@ -87,50 +140,7 @@ class Dictionary(topologic.Dictionary):
                 stl_keys.append(keys[i])
             else:
                 stl_keys.append(str(keys[i]))
-            if isinstance(values[i], list) and len(values[i]) == 1:
-                value = values[i][0]
-            else:
-                value = values[i]
-            if value == None:
-                value = "__NONE__"
-            if isinstance(value, bool):
-                if value == False:
-                    stl_values.append(topologic.IntAttribute(0))
-                else:
-                    stl_values.append(topologic.IntAttribute(1))
-            elif isinstance(value, int):
-                stl_values.append(topologic.IntAttribute(value))
-            elif isinstance(value, float):
-                stl_values.append(topologic.DoubleAttribute(value))
-            elif isinstance(value, str):
-                stl_values.append(topologic.StringAttribute(value))
-            elif isinstance(value, tuple):
-                value = list(value)
-                l = []
-                for v in value:
-                    if isinstance(v, bool):
-                        l.append(topologic.IntAttribute(v))
-                    elif isinstance(v, int):
-                        l.append(topologic.IntAttribute(v))
-                    elif isinstance(v, float):
-                        l.append(topologic.DoubleAttribute(v))
-                    elif isinstance(v, str):
-                        l.append(topologic.StringAttribute(v))
-                stl_values.append(topologic.ListAttribute(l))
-            elif isinstance(value, list):
-                l = []
-                for v in value:
-                    if isinstance(v, bool):
-                        l.append(topologic.IntAttribute(v))
-                    elif isinstance(v, int):
-                        l.append(topologic.IntAttribute(v))
-                    elif isinstance(v, float):
-                        l.append(topologic.DoubleAttribute(v))
-                    elif isinstance(v, str):
-                        l.append(topologic.StringAttribute(v))
-                stl_values.append(topologic.ListAttribute(l))
-            else:
-                return None
+            stl_values.append(Dictionary._ConvertValue(values[i]))
         return topologic.Dictionary.ByKeysValues(stl_keys, stl_values)
     
     @staticmethod
@@ -348,16 +358,7 @@ class Dictionary(topologic.Dictionary):
 
         """
         listAttributes = listAttribute.ListValue()
-        returnList = []
-        for attr in listAttributes:
-            if isinstance(attr, IntAttribute):
-                returnList.append(attr.IntValue())
-            elif isinstance(attr, DoubleAttribute):
-                returnList.append(attr.DoubleValue())
-            elif isinstance(attr, StringAttribute):
-                returnList.append(attr.StringValue())
-            elif isinstance(attr, float) or isinstance(attr, int) or isinstance(attr, str) or isinstance(attr, dict):
-                returnList.append(attr)
+        returnList = [Dictionary._ConvertAttribute(attr) for attr in listAttributes]
         return returnList    
        
     @staticmethod
@@ -441,7 +442,8 @@ class Dictionary(topologic.Dictionary):
                     values.append(value)
                 else:
                     values.append(Dictionary.ValueAtKey(dictionary, k))
-            return Dictionary.ByKeysValues(keys, values)
+            d = Dictionary.ByKeysValues(keys, values)
+            return d
         
         if not isinstance(dictionary, topologic.Dictionary) and not isinstance(dictionary, dict):
             print("Dictionary.SetValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
@@ -458,6 +460,79 @@ class Dictionary(topologic.Dictionary):
         else:
             return None
  
+    @staticmethod
+    def _ConvertAttribute(attr):
+        """
+            Convert the found attribute into the proper value
+        """
+        from topologicpy.Topology import Topology
+        import json
+
+        def is_json_string(input_string):
+            """
+            Check if the input string is a valid JSON string.
+            """
+            try:
+                json.loads(input_string)
+                return True
+            except json.JSONDecodeError:
+                return False
+
+        def json_to_dict(json_string):
+            """
+            Convert a JSON-formatted string to a Python dictionary.
+            """
+            return json.loads(json_string)
+        
+        if isinstance(attr, IntAttribute):
+            return (attr.IntValue())
+        elif isinstance(attr, DoubleAttribute):
+            return (attr.DoubleValue())
+        elif isinstance(attr, StringAttribute):
+            temp_value = attr.StringValue()
+            topologies = None
+            try:
+                topologies = Topology.ByJSONString(temp_value)
+            except:
+                topologies = None
+            if temp_value == "__NONE__":
+                return None
+            elif isinstance(topologies, topologic.Topology):
+                return topologies
+            elif isinstance(topologies, list):
+                if len(topologies) > 1:
+                    return topologies
+                elif len(topologies) == 1:
+                    return topologies[0]
+            elif is_json_string(temp_value):
+                return json_to_dict(temp_value)
+            else:
+                return (temp_value)
+        elif isinstance(attr, ListAttribute):
+            return (Dictionary.ListAttributeValues(attr))
+        elif isinstance(attr, float) or isinstance(attr, int):
+            return attr
+        elif isinstance(attr, str):
+            topologies = Topology.ByJSONString(attr)
+            if attr == "__NONE__":
+                return None
+            elif len(topologies) > 1:
+                return topologies
+            elif len(topologies) == 1:
+                return topologies[0]
+            elif is_json_string(attr):
+                return json_to_dict(attr)
+            else:
+                return (attr)
+        elif isinstance(attr, tuple):
+            return Dictionary.ListAttributeValues([Dictionary._ConvertAttribute(x) for x in list(attr)])
+        elif isinstance(attr, list):
+            return Dictionary.ListAttributeValues([Dictionary._ConvertAttribute(x) for x in attr])
+        elif isinstance(attr, dict):
+            return attr
+        else:
+            return None
+    
     @staticmethod
     def ValueAtKey(dictionary, key):
         """
@@ -476,6 +551,10 @@ class Dictionary(topologic.Dictionary):
             The value found at the input key in the input dictionary.
 
         """
+        import json
+        from topologicpy.Topology import Topology
+        
+        
         if not isinstance(dictionary, topologic.Dictionary) and not isinstance(dictionary, dict):
             print("Dictionary.ValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
             return None
@@ -486,26 +565,10 @@ class Dictionary(topologic.Dictionary):
         else:
             return None
         
-        if isinstance(attr, IntAttribute):
-            return (attr.IntValue())
-        elif isinstance(attr, DoubleAttribute):
-            return (attr.DoubleValue())
-        elif isinstance(attr, StringAttribute):
-            temp_attr = attr.StringValue()
-            if temp_attr == "__NONE__":
-                return None
-            else:
-                return (attr.StringValue())
-        elif isinstance(attr, ListAttribute):
-            return (Dictionary.ListAttributeValues(attr))
-        elif isinstance(attr, float) or isinstance(attr, int) or isinstance(attr, str):
-            return attr
-        elif isinstance(attr, list):
-            return Dictionary.ListAttributeValues(attr)
-        elif isinstance(attr, dict):
-            return attr
-        else:
-            return None
+        return_value = Dictionary._ConvertAttribute(attr)
+        if return_value == None:
+            print("ValueAtKey - Attribute:", attr, "Key:", key, "Value:", return_value)
+        return return_value
         
     @staticmethod
     def Values(dictionary):
@@ -539,11 +602,13 @@ class Dictionary(topologic.Dictionary):
                 if isinstance(dictionary, dict):
                     attr = dictionary[key]
                 elif isinstance(dictionary, topologic.Dictionary):
-                    attr = dictionary.ValueAtKey(key)
+                    attr = Dictionary.ValueAtKey(dictionary,key)
                 else:
                     attr = None
             except:
                 return None
+            returnList.append(attr)
+            '''
             if isinstance(attr, topologic.IntAttribute):
                 returnList.append(attr.IntValue())
             elif isinstance(attr, topologic.DoubleAttribute):
@@ -562,6 +627,7 @@ class Dictionary(topologic.Dictionary):
                 returnList.append(Dictionary.ListAttributeValues(attr))
             else:
                 returnList.append("")
+            '''
         return returnList
     
     

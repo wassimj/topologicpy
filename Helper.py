@@ -143,7 +143,7 @@ class Helper:
         return merged_list
 
     @staticmethod
-    def Normalize(l, mantissa=4):
+    def Normalize(l, mantissa: int = 6):
         """
         Normalizes the input list so that it is in the range 0 to 1
 

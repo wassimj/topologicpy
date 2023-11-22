@@ -71,7 +71,7 @@ class Face(topologic.Face):
         return Face.AddInternalBoundaries(face, wires)
     
     @staticmethod
-    def Angle(faceA: topologic.Face, faceB: topologic.Face, mantissa: int = 4) -> float:
+    def Angle(faceA: topologic.Face, faceB: topologic.Face, mantissa: int = 6) -> float:
         """
         Returns the angle in degrees between the two input faces.
 
@@ -102,7 +102,7 @@ class Face(topologic.Face):
         return round((Vector.Angle(dirA, dirB)), mantissa)
 
     @staticmethod
-    def Area(face: topologic.Face, mantissa: int = 4) -> float:
+    def Area(face: topologic.Face, mantissa: int = 6) -> float:
         """
         Returns the area of the input face.
 
@@ -529,6 +529,7 @@ class Face(topologic.Face):
         elif len(returnList) == 1:
             return returnList[0]
         else:
+            print("Face.ByWire - Warning: Forced to triangulate the face. Returning list of faces.")
             return returnList
 
     @staticmethod
@@ -560,7 +561,7 @@ class Face(topologic.Face):
         try:
             face = topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList)
         except:
-            print("Face.ByWire - Error: The operation failed. Returning None.")
+            print("Face.ByWires - Error: The operation failed. Returning None.")
             face = None
         return face
 
@@ -704,7 +705,7 @@ class Face(topologic.Face):
         return Face.ByWire(wire)
 
     @staticmethod
-    def Compactness(face: topologic.Face, mantissa: int = 4) -> float:
+    def Compactness(face: topologic.Face, mantissa: int = 6) -> float:
         """
         Returns the compactness measure of the input face. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
@@ -739,7 +740,7 @@ class Face(topologic.Face):
         return round(compactness, mantissa)
 
     @staticmethod
-    def CompassAngle(face: topologic.Face, north: list = None, mantissa: int = 4) -> float:
+    def CompassAngle(face: topologic.Face, north: list = None, mantissa: int = 6) -> float:
         """
         Returns the horizontal compass angle in degrees between the normal vector of the input face and the input vector. The angle is measured in counter-clockwise fashion. Only the first two elements of the vectors are considered.
 
@@ -1253,7 +1254,7 @@ class Face(topologic.Face):
             if not isinstance(vertex, topologic.Vertex):
                 return False
             for edge in edges:
-                u = Edge.ParameterAtVertex(edge, vertex, mantissa=4)
+                u = Edge.ParameterAtVertex(edge, vertex, mantissa=6)
                 if not u:
                     continue
                 if 0<u<1:
@@ -1333,7 +1334,7 @@ class Face(topologic.Face):
         return medialAxis
 
     @staticmethod
-    def Normal(face: topologic.Face, outputType: str = "xyz", mantissa: int = 4) -> list:
+    def Normal(face: topologic.Face, outputType: str = "xyz", mantissa: int = 6) -> list:
         """
         Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
 
@@ -1355,7 +1356,7 @@ class Face(topologic.Face):
         return Face.NormalAtParameters(face, u=0.5, v=0.5, outputType=outputType, mantissa=mantissa)
 
     @staticmethod
-    def NormalAtParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5, outputType: str = "xyz", mantissa: int = 4) -> list:
+    def NormalAtParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5, outputType: str = "xyz", mantissa: int = 6) -> list:
         """
         Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
 
@@ -1450,7 +1451,7 @@ class Face(topologic.Face):
         return Edge.ByVertices([sv, ev], tolerance=tolerance, verbose=True)
 
     @staticmethod
-    def PlaneEquation(face: topologic.Face, mantissa: int = 4) -> dict:
+    def PlaneEquation(face: topologic.Face, mantissa: int = 6) -> dict:
         """
         Returns the a, b, c, d coefficients of the plane equation of the input face. The input face is assumed to be planar.
         
@@ -1562,7 +1563,7 @@ class Face(topologic.Face):
         return planarizedFace
 
     @staticmethod
-    def Project(faceA: topologic.Face, faceB: topologic.Face, direction : list = None, mantissa: int = 4) -> topologic.Face:
+    def Project(faceA: topologic.Face, faceB: topologic.Face, direction : list = None, mantissa: int = 6) -> topologic.Face:
         """
         Creates a projection of the first input face unto the second input face.
 
@@ -1905,7 +1906,7 @@ class Face(topologic.Face):
         return topologic.FaceUtility.VertexAtParameters(face, u, v)
     
     @staticmethod
-    def VertexParameters(face: topologic.Face, vertex: topologic.Vertex, outputType: str = "uv", mantissa: int = 4) -> list:
+    def VertexParameters(face: topologic.Face, vertex: topologic.Vertex, outputType: str = "uv", mantissa: int = 6) -> list:
         """
         Returns the *u* and *v* parameters of the input face at the location of the input vertex.
 

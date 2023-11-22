@@ -14,7 +14,7 @@ import numpy as np
 
 class Plotly:
     @staticmethod
-    def AddColorBar(figure, values=[], nTicks=5, xPosition=-0.15, width=15, outlineWidth=0, title="", subTitle="", units="", colorScale="viridis", mantissa=4):
+    def AddColorBar(figure, values=[], nTicks=5, xPosition=-0.15, width=15, outlineWidth=0, title="", subTitle="", units="", colorScale="viridis", mantissa: int = 6):
         """
         Adds a color bar to the input figure
 
@@ -396,7 +396,7 @@ class Plotly:
                        faceMinGroup=None, faceMaxGroup=None, 
                        showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
                        faceLegendGroup=3, 
-                       intensityKey=None, colorScale="Viridis", mantissa=4, tolerance=0.0001):
+                       intensityKey=None, colorScale="Viridis", mantissa=6, tolerance=0.0001):
         """
         Creates plotly face, edge, and vertex data.
 
@@ -957,7 +957,7 @@ class Plotly:
              marginRight=0,
              marginTop=40,
              marginBottom=0,
-             mantissa=4):
+             mantissa: int = 6):
         """
         Returns a Plotly Figure of the input matrix.
 
@@ -1381,7 +1381,7 @@ class Plotly:
              target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", showScale=False,
              
              cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
-             cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=4, tolerance=0.0001):
+             cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=6, tolerance=0.0001):
         """
         Creates a figure from the input topology.
 

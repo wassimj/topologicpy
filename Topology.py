@@ -1650,6 +1650,7 @@ class Topology():
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
         from topologicpy.Aperture import Aperture
+        from topologicpy.Helper import Helper
         from tqdm.auto import tqdm
         import time
 
@@ -1701,6 +1702,7 @@ class Topology():
             edges = [buildEdge(j_e, j_vertices, uuidKey="uuid") for j_e in j_edges]
             wires = [buildWire(j_w, j_edges, j_vertices, uuidKey="uuid") for j_w in j_wires]
             faces = [buildFace(j_f, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_f in j_faces]
+            faces = Helper.Flatten(faces)
             shells = [buildShell(j_s, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_s in j_shells]
             cells = [buildCell(j_c, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_c in j_cells]
             cellComplexes = [buildCellComplex(j_cc, j_cells, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid") for j_cc in j_cellComplexes]
@@ -1745,7 +1747,7 @@ class Topology():
             vertices = []
             for j_v in edge_vertices:
                 vertices.append(buildVertex(find_json_item(j_vertices, uuidKey, j_v)))
-            e = Edge.ByVertices(vertices, tolerance=0)
+            e = Edge.ByVertices(vertices, tolerance=tolerance)
             if e == None:
                 print("Topology.ByJSONString - Error: Could not build an edge. Returning None.")
                 return None
@@ -1801,9 +1803,9 @@ class Topology():
                     ib = Wire.Close(ib)
                 internal_boundaries.append(ib)
 
-            f = Face.ByWire(external_boundary)
+            f = Face.ByWires(external_boundary, internal_boundaries)
             if not isinstance(f, topologic.Face):
-                print("Topology.ByJSONString - Error: Could not build a face. Returning None.")
+                print("Topology.ByJSONString - Error: Could not build a face. Returning None.", f, "Ex Bound:", external_boundary)
                 return None
             area = Face.Area(f)
             if area == None:
@@ -1829,6 +1831,7 @@ class Topology():
             faces = []
             for j_f in shell_faces:
                 faces.append(buildFace(find_json_item(j_faces, uuidKey, j_f), j_wires, j_edges, j_vertices, uuidKey=uuidKey))
+            faces = Helper.Flatten(faces)
             s = Shell.ByFaces(faces)
             if s == None:
                 print("Topology.ByJSONString - Error: Could not build a shell. Returning None.")
@@ -1939,21 +1942,24 @@ class Topology():
         cellComplexes = []
 
         for jsonItem in jsondata:
-            topology_type = jsonItem['type']
-            if topology_type.lower() == "vertex":
-                j_vertices.append(jsonItem)
-            elif topology_type.lower() == "edge":
-                j_edges.append(jsonItem)
-            elif topology_type.lower() == "wire":
-                j_wires.append(jsonItem)
-            elif topology_type.lower() == "face":
-                j_faces.append(jsonItem)
-            elif topology_type.lower() == "shell":
-                j_shells.append(jsonItem)
-            elif topology_type.lower() == "cell":
-                j_cells.append(jsonItem)
-            elif topology_type.lower() == "cellcomplex":
-                j_cellComplexes.append(jsonItem)
+            try:
+                topology_type = jsonItem['type']
+                if topology_type.lower() == "vertex":
+                    j_vertices.append(jsonItem)
+                elif topology_type.lower() == "edge":
+                    j_edges.append(jsonItem)
+                elif topology_type.lower() == "wire":
+                    j_wires.append(jsonItem)
+                elif topology_type.lower() == "face":
+                    j_faces.append(jsonItem)
+                elif topology_type.lower() == "shell":
+                    j_shells.append(jsonItem)
+                elif topology_type.lower() == "cell":
+                    j_cells.append(jsonItem)
+                elif topology_type.lower() == "cellcomplex":
+                    j_cellComplexes.append(jsonItem)
+            except:
+                continue
 
         vertices = [buildVertex(j_v) for j_v in j_vertices]
         vertex_selectors = []
@@ -1983,6 +1989,7 @@ class Topology():
         for j_f in tqdm(j_faces):
             f = buildFace(j_f, j_wires, j_edges, j_vertices, uuidKey="uuid")
             faces.append(f)
+        faces = Helper.Flatten(faces)
         face_selectors = []
         all_face_apertures = []
         for f in faces:
@@ -3267,7 +3274,7 @@ class Topology():
         return topology
 
     @staticmethod
-    def JSONString(topologies):
+    def JSONString(topologies, mantissa: int = 6):
         """
         Exports the input list of topologies to a JSON string
 
@@ -3275,7 +3282,9 @@ class Topology():
         ----------
         topologies : list or topologic.Topology
             The input list of topologies or a single topology.
-
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        
         Returns
         -------
         bool
@@ -3291,8 +3300,6 @@ class Topology():
 
         def getUUID(topology, uuidKey="uuid"):
             d = Topology.Dictionary(topology)
-            if d == None:
-                print("Dictionary is None for", topology)
             if uuidKey not in Dictionary.Keys(d):
                 uuidOne = str(uuid.uuid1())
                 d = Dictionary.SetValueAtKey(d, uuidKey, uuidOne)
@@ -3306,7 +3313,7 @@ class Topology():
             uuidOne = getUUID(topology, uuidKey=uuidKey)
             returnDict['type'] = "Vertex"
             returnDict['uuid'] = uuidOne
-            returnDict['coordinates'] = [Vertex.X(topology), Vertex.Y(topology), Vertex.Z(topology)]
+            returnDict['coordinates'] = Vertex.Coordinates(topology, mantissa=mantissa)
             returnDict['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(topology))
             return returnDict
 
@@ -3315,6 +3322,7 @@ class Topology():
             uuidOne = getUUID(topology, uuidKey=uuidKey)
             returnDict['type'] = "Edge"
             returnDict['uuid'] = uuidOne
+            edge_vertices = Edge.Vertices(topology)
             returnDict['vertices'] = [getUUID(v, uuidKey=uuidKey) for v in Edge.Vertices(topology)]
             returnDict['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(topology))
             return returnDict
@@ -5235,11 +5243,18 @@ class Topology():
             The input topology with the input dictionary set in it.
 
         """
-        if not isinstance(topology, topologic.Topology):
+        from topologicpy.Dictionary import Dictionary
+
+        if not isinstance(topology, topologic.Topology) and not isinstance(topology, topologic.Graph):
+            print("Topology.SetDictionary - Error: the input topology parameter is not a valid topology or graph. Returning None.")
             return None
+        if isinstance(dictionary, dict):
+            dictionary = Dictionary.ByPythonDictionary(dictionary)
         if not isinstance(dictionary, topologic.Dictionary):
+            print("Topology.SetDictionary - Warning: the input dictionary parameter is not a valid dictionary. Returning original input.")
             return topology
         if len(dictionary.Keys()) < 1:
+            print("Topology.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
             return topology
         _ = topology.SetDictionary(dictionary)
         return topology
@@ -5417,7 +5432,7 @@ class Topology():
              target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", showScale=False,
              
              cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
-             cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=4, tolerance=0.0001):
+             cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=6, tolerance=0.0001):
         """
             Shows the input topology on screen.
 

@@ -6,7 +6,7 @@ import math
 
 class Cell(Topology):
     @staticmethod
-    def Area(cell: topologic.Cell, mantissa: int = 4) -> float:
+    def Area(cell: topologic.Cell, mantissa: int = 6) -> float:
         """
         Returns the surface area of the input cell.
 
@@ -443,7 +443,7 @@ class Cell(Topology):
         return Cell.ByWires(wires, close=close, triangulate=triangulate, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
-    def Compactness(cell: topologic.Cell, reference = "sphere", mantissa: int = 4) -> float:
+    def Compactness(cell: topologic.Cell, reference = "sphere", mantissa: int = 6) -> float:
         """
         Returns the compactness measure of the input cell. If the reference is "sphere", this is also known as 'sphericity' (https://en.wikipedia.org/wiki/Sphericity).
 
@@ -1622,7 +1622,7 @@ class Cell(Topology):
         return s
     
     @staticmethod
-    def SurfaceArea(cell: topologic.Cell, mantissa: int = 4) -> float:
+    def SurfaceArea(cell: topologic.Cell, mantissa: int = 6) -> float:
         """
         Returns the surface area of the input cell.
 
@@ -1732,7 +1732,7 @@ class Cell(Topology):
         return vertices
 
     @staticmethod
-    def Volume(cell: topologic.Cell, mantissa: int = 4) -> float:
+    def Volume(cell: topologic.Cell, mantissa: int = 6) -> float:
         """
         Returns the volume of the input cell.
 

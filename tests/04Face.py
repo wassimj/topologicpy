@@ -442,7 +442,7 @@ assert isinstance(vp1, topologic.Vertex), "Face.VertexByParameters. Should be to
 vps1 = Face.VertexParameters(c1, v11)                                                           # without optional inputs
 assert isinstance(vps1, list), "Face.VertexParameters. Should be list"
 # test 2
-vps2 = Face.VertexParameters(f1, v12, outputType='uv', mantissa = 2)         # with optional inputs
+vps2 = Face.VertexParameters(f1, v12, outputType='uv', mantissa=2)         # with optional inputs
 assert isinstance(vps2, list), "Face.VertexParameters. Should be list"
 
 # Case 36 - Vertices

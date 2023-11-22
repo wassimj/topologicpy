@@ -5,7 +5,7 @@ import math
 
 class Vector(list):
     @staticmethod
-    def Angle(vectorA, vectorB, mantissa=4):
+    def Angle(vectorA, vectorB, mantissa: int = 6):
         """
         Returns the angle in degrees between the two input vectors
 
@@ -38,7 +38,7 @@ class Vector(list):
         return round(math.degrees(np.arctan2(sinang, cosang)), mantissa)
     
     @staticmethod
-    def AzimuthAltitude(vector, mantissa=4):
+    def AzimuthAltitude(vector, mantissa: int = 6):
         """
         Returns a dictionary of azimuth and altitude angles in degrees for the input vector. North is assumed to be the positive Y axis [0,1,0]. Up is assumed to be the positive Z axis [0,0,1].
         Azimuth is calculated in a counter-clockwise fashion from North where 0 is North, 90 is East, 180 is South, and 270 is West. Altitude is calculated in a counter-clockwise fashing where -90 is straight down (negative Z axis), 0 is in the XY plane, and 90 is straight up (positive Z axis).
@@ -167,7 +167,7 @@ class Vector(list):
         return vector
 
     @staticmethod
-    def CompassAngle(vectorA, vectorB, mantissa=4, tolerance=0.0001):
+    def CompassAngle(vectorA, vectorB, mantissa=6, tolerance=0.0001):
         """
         Returns the horizontal compass angle in degrees between the two input vectors. The angle is measured in clockwise fashion.
         0 is along the positive Y-axis, 90 is along the positive X axis.
@@ -201,7 +201,7 @@ class Vector(list):
         return round(rad2deg((ang1 - ang2) % (2 * pi)), mantissa)
 
     @staticmethod
-    def Coordinates(vector, outputType="xyz", mantissa=4):
+    def Coordinates(vector, outputType="xyz", mantissa: int = 6):
         """
         Returns the coordinates of the input vector.
 
@@ -245,7 +245,7 @@ class Vector(list):
         return output
     
     @staticmethod
-    def Cross(vectorA, vectorB, mantissa=4, tolerance=0.0001):
+    def Cross(vectorA, vectorB, mantissa=6, tolerance=0.0001):
         """
         Returns the cross product of the two input vectors. The resulting vector is perpendicular to the plane defined by the two input vectors.
 
@@ -322,7 +322,7 @@ class Vector(list):
         return Vector.Angle(vectorA, vectorB) < tolerance
 
     @staticmethod
-    def Magnitude(vector, mantissa=4):
+    def Magnitude(vector, mantissa: int = 6):
         """
         Returns the magnitude of the input vector.
 

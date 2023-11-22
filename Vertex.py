@@ -294,7 +294,7 @@ class Vertex(Topology):
         return list(reversed(Vertex.CounterClockwise2D(vertices)))
     
     @staticmethod
-    def Coordinates(vertex: topologic.Vertex, outputType: str = "xyz", mantissa: int = 4) -> list:
+    def Coordinates(vertex: topologic.Vertex, outputType: str = "xyz", mantissa: int = 6) -> list:
         """
         Returns the coordinates of the input vertex.
 
@@ -393,7 +393,7 @@ class Vertex(Topology):
 
 
     @staticmethod
-    def Distance(vertex: topologic.Vertex, topology: topologic.Topology, includeCentroid: bool =True, mantissa: int = 4) -> float:
+    def Distance(vertex: topologic.Vertex, topology: topologic.Topology, includeCentroid: bool =True, mantissa: int = 6) -> float:
         """
         Returns the distance between the input vertex and the input topology. This method returns the distance to the closest sub-topology in the input topology, optionally including its centroid.
 
@@ -588,7 +588,7 @@ class Vertex(Topology):
         return enclosingCells
 
     @staticmethod
-    def Fuse(vertices: list, mantissa: int = 4, tolerance: float = 0.0001):
+    def Fuse(vertices: list, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Fuses vertices within the list of input vertices if the distance between them is less than the input tolerance.
 
@@ -1170,7 +1170,7 @@ class Vertex(Topology):
         return Vertex.ByCoordinates(x,y,z)
 
     @staticmethod
-    def Project(vertex: topologic.Vertex, face: topologic.Face, direction: bool = None, mantissa: int = 4, tolerance: float = 0.0001) -> topologic.Vertex:
+    def Project(vertex: topologic.Vertex, face: topologic.Face, direction: bool = None, mantissa: int = 6, tolerance: float = 0.0001) -> topologic.Vertex:
         """
         Returns a vertex that is the projection of the input vertex unto the input face.
 
@@ -1234,7 +1234,7 @@ class Vertex(Topology):
         return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 
     @staticmethod
-    def X(vertex: topologic.Vertex, mantissa: int = 4) -> float:
+    def X(vertex: topologic.Vertex, mantissa: int = 6) -> float:
         """
         Returns the X coordinate of the input vertex.
 
@@ -1256,7 +1256,7 @@ class Vertex(Topology):
         return round(vertex.X(), mantissa)
 
     @staticmethod
-    def Y(vertex: topologic.Vertex, mantissa: int = 4) -> float:
+    def Y(vertex: topologic.Vertex, mantissa: int = 6) -> float:
         """
         Returns the Y coordinate of the input vertex.
 
@@ -1278,7 +1278,7 @@ class Vertex(Topology):
         return round(vertex.Y(), mantissa)
 
     @staticmethod
-    def Z(vertex: topologic.Vertex, mantissa: int = 4) -> float:
+    def Z(vertex: topologic.Vertex, mantissa: int = 6) -> float:
         """
         Returns the Z coordinate of the input vertex.
 

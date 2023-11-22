@@ -783,7 +783,7 @@ class CellComplex(topologic.CellComplex):
         return vertices
 
     @staticmethod
-    def Volume(cellComplex: topologic.CellComplex, mantissa: int = 4) -> float:
+    def Volume(cellComplex: topologic.CellComplex, mantissa: int = 6) -> float:
         """
         Returns the volume of the input cellComplex.
 

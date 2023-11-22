@@ -1710,7 +1710,7 @@ class Wire(topologic.Wire):
         return False
 
     @staticmethod
-    def Length(wire: topologic.Wire, mantissa: int = 4) -> float:
+    def Length(wire: topologic.Wire, mantissa: int = 6) -> float:
         """
         Returns the length of the input wire.
 
@@ -1861,7 +1861,7 @@ class Wire(topologic.Wire):
         '''
 
     @staticmethod
-    def Project(wire: topologic.Wire, face: topologic.Face, direction: list = None, mantissa: int = 4) -> topologic.Wire:
+    def Project(wire: topologic.Wire, face: topologic.Face, direction: list = None, mantissa: int = 6) -> topologic.Wire:
         """
         Creates a projection of the input wire unto the input face.
 

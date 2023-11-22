@@ -5,7 +5,7 @@ from topologicpy.Vector import Vector
 
 class Edge():
     @staticmethod
-    def Angle(edgeA: topologic.Edge, edgeB: topologic.Edge, mantissa: int = 4, bracket: bool = False) -> float:
+    def Angle(edgeA: topologic.Edge, edgeB: topologic.Edge, mantissa: int = 6, bracket: bool = False) -> float:
         """
         Returns the angle in degrees between the two input edges.
 
@@ -283,7 +283,7 @@ class Edge():
         return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance)
 
     @staticmethod
-    def Direction(edge: topologic.Edge, mantissa: int = 4) -> list:
+    def Direction(edge: topologic.Edge, mantissa: int = 6) -> list:
         """
         Returns the direction of the input edge expressed as a list of three numbers.
 
@@ -532,7 +532,7 @@ class Edge():
 
 
     @staticmethod
-    def IsCollinear(edgeA: topologic.Edge, edgeB: topologic.Edge, mantissa: int = 4, angTolerance: float = 0.1, tolerance: float = 0.0001) -> bool:
+    def IsCollinear(edgeA: topologic.Edge, edgeB: topologic.Edge, mantissa: int = 6, angTolerance: float = 0.1, tolerance: float = 0.0001) -> bool:
         """
         Return True if the two input edges are collinear. Returns False otherwise.
 
@@ -575,7 +575,7 @@ class Edge():
         return False
     
     @staticmethod
-    def IsParallel(edgeA: topologic.Edge, edgeB: topologic.Edge, mantissa: int = 4, angTolerance: float = 0.1) -> bool:
+    def IsParallel(edgeA: topologic.Edge, edgeB: topologic.Edge, mantissa: int = 6, angTolerance: float = 0.1) -> bool:
         """
         Return True if the two input edges are parallel. Returns False otherwise.
 
@@ -608,7 +608,7 @@ class Edge():
         return False
 
     @staticmethod
-    def Length(edge: topologic.Edge, mantissa: int = 4) -> float:
+    def Length(edge: topologic.Edge, mantissa: int = 6) -> float:
         """
         Returns the length of the input edge.
 
@@ -762,7 +762,7 @@ class Edge():
         return Edge.ByVertices([sv, ev])
 
     @staticmethod
-    def ParameterAtVertex(edge: topologic.Edge, vertex: topologic.Vertex, mantissa: int = 4) -> float:
+    def ParameterAtVertex(edge: topologic.Edge, vertex: topologic.Vertex, mantissa: int = 6) -> float:
         """
         Returns the *u* parameter along the input edge based on the location of the input vertex.
 

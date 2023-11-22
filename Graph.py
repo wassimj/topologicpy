@@ -3231,7 +3231,7 @@ class Graph:
                        nodeTrainMaskHeader="train_mask", nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask",
                        nodeMaskKey=None,
                        nodeTrainRatio=0.8, nodeValidateRatio=0.1, nodeTestRatio=0.1,
-                       mantissa = 4, overwrite=False):
+                       mantissa=6, overwrite=False):
         """
         Exports the input graph into a set of CSV files compatible with DGL.
 

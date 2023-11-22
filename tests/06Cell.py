@@ -86,7 +86,7 @@ figure_cell_f = Plotly.FigureByData(data_cell_f)
 # Case 04 - Area
 
 # test 1
-area_cell0 = Cell.Area(cell_f, mantissa= 2)        # with optional inputs
+area_cell0 = Cell.Area(cell_f, mantissa=2)        # with optional inputs
 assert isinstance(area_cell0, float), "Cell.Area. Should be float"
 assert area_cell0 == 600.00, "Cell.Area. Should be 31.12"
 # test 2
