@@ -77,9 +77,21 @@ class CellComplex(topologic.CellComplex):
             topA = cells[0]
             topB = Cluster.ByTopologies(cells[1:])
             cellComplex = Topology.Merge(topA, topB)
-            if not isinstance(cellComplex, topologic.CellComplex):
-                print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning object of type topologic.Cluster instead of topologic.CellComplex.")
-                cellComplex = Cluster.ByTopologies(cells)
+        
+        if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning object of type topologic.Cluster instead of topologic.CellComplex.")
+            return Cluster.ByTopologies(cells)
+        else:
+            temp_cells = CellComplex.Cells(cellComplex)
+            if not isinstance(temp_cells, list):
+                print("CellComplex.ByCells - Error: The resulting object does not contain any cells. Returning None.")
+                return None
+            elif len(temp_cells) < 1:
+                print("CellComplex.ByCells - Error: Could not create a CellComplex. Returning None.")
+                return None
+            elif len(temp_cells) == 1:
+                print("CellComplex.ByCells - Warning: Resulting object contains only one cell. Returning object of type topologic.Cell instead of topologic.CellComplex.")
+                return(temp_cells[0])
         return cellComplex
     
     @staticmethod
