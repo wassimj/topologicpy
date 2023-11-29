@@ -276,6 +276,36 @@ class Vertex(Topology):
         return vertex
     
     @staticmethod
+    def Centroid(vertices):
+        """
+        Returns the centroid of the input list of vertices.
+
+        Parameters
+        -----------
+        vertices : list
+            The input list of vertices
+
+        Return
+        ----------
+        topologic.Vertex
+            The computed centroid of the input list of vertices
+        """
+
+        if not isinstance(vertices, list):
+            print("Vertex.Centroid - Error: The input vertices parameter is not a valid list. Returning None.")
+            return None
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) < 1:
+            print("Vertex.Centroid - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+            return None
+        if len(vertices) == 1:
+            return vertices[0]
+        cx = sum(Vertex.X(v) for v in vertices) / len(vertices)
+        cy = sum(Vertex.Y(v) for v in vertices) / len(vertices)
+        cz = sum(Vertex.Z(v) for v in vertices) / len(vertices)
+        return Vertex.ByCoordinates(cx, cy, cz)
+    
+    @staticmethod
     def Clockwise2D(vertices):
         """
         Sorts the input list of vertices in a clockwise fashion. This method assumes that the vertices are on the XY plane. The Z coordinate is ignored.

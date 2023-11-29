@@ -1789,7 +1789,7 @@ class Plotly:
         return figure
 
     @staticmethod
-    def Show(figure, camera=None, renderer="notebook", target=None, up=None):
+    def Show(figure, camera=[-1.25, -1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
         """
         Shows the input figure.
 
@@ -1799,12 +1799,12 @@ class Plotly:
             The input plotly figure.
         camera : list , optional
             The desired location of the camera. The default is [0,0,0].
-        renderer : str , optional
-            The desired rendered. See Plotly.Renderers(). The default is "notebook".
         target : list , optional
             The desired camera target. The default is [0,0,0].
         up : list , optional
             The desired up vector. The default is [0,0,1].
+        renderer : str , optional
+            The desired rendered. See Plotly.Renderers(). The default is "notebook".
         
         Returns
         -------
@@ -1820,7 +1820,7 @@ class Plotly:
         if not renderer.lower() in Plotly.Renderers():
             print("Plotly.Show - Error: The input renderer is not in the approved list of renderers. Returning None.")
             return None
-        if not camera == None:
+        if not camera == None and not target == None and not up == None:
             figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
         if renderer.lower() == "offline":
             import plotly.offline as ofl

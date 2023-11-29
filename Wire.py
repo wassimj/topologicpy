@@ -1192,6 +1192,15 @@ class Wire(topologic.Wire):
         return d
 
     @staticmethod
+    def EndVertex(wire: topologic.Wire) -> topologic.Vertex:
+        """
+        Returns the end vertex of the input wire. The wire must be manifold and open.
+
+        """
+        sv, ev = Wire.StartEndVertices(wire)
+        return ev
+    
+    @staticmethod
     def Flatten(wire: topologic.Wire, oldLocation: topologic.Vertex =None, newLocation: topologic.Vertex = None, direction: list = None):
         """
         Flattens the input wire such that its center of mass is located at the origin and the specified direction is pointed in the positive Z axis.
@@ -1501,6 +1510,33 @@ class Wire(topologic.Wire):
             if (Vertex.Distance(vertex, edge) <= tolerance):
                 return True
         return False
+    
+    @staticmethod
+    def IsManifold(wire: topologic.Wire) -> bool:
+        """
+        Returns True if the input wire is manifold. Returns False otherwise. A manifold wire is one where its vertices have a degree of 1 or 2.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+
+        Returns
+        -------
+        bool
+            True if the input wire is manifold. False otherwise.
+        """
+
+        from topologicpy.Vertex import Vertex
+        if not isinstance(wire, topologic.Wire):
+            print("Wire.IsManifold - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            return None
+        
+        vertices = Wire.Vertices(wire)
+        for v in vertices:
+            if Vertex.Degree(v, hostTopology=wire) > 2:
+                return False
+        return True
     
     @staticmethod
     def Isovist(wire: topologic.Wire, viewPoint: topologic.Vertex, obstaclesCluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
@@ -2568,6 +2604,46 @@ class Wire(topologic.Wire):
         return baseWire
 
     @staticmethod
+    def StartEndVertices(wire: topologic.Wire) -> list:
+        """
+        Returns the start and end vertices of the input wire. The wire must be manifold and open.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
+        if not Wire.IsManifold(wire):
+            print("Wire.StartEndVertices - Error: The input wire parameter is non-manifold. Returning None.")
+            return None
+        if Wire.IsClosed(wire):
+            print("Wire.StartEndVertices - Error: The input wire parameter is closed. Returning None.")
+            return None
+        vertices = Wire.Vertices(wire)
+        endPoints = [v for v in vertices if (Vertex.Degree(v, wire) == 1)]
+        if len(endPoints) < 2:
+            print("Wire.StartEndVertices - Error: Could not find the end vertices if the input wire parameter. Returning None.")
+            return None
+        edge1 = Topology.SuperTopologies(endPoints[0], wire, topologyType="edge")[0]
+        sv = Edge.StartVertex(edge1)
+        if (Topology.IsSame(endPoints[0], sv)):
+            wireStartVertex = endPoints[0]
+            wireEndVertex = endPoints[1]
+        else:
+            wireStartVertex = endPoints[1]
+            wireEndVertex = endPoints[0]
+        return [wireStartVertex, wireEndVertex]
+    
+    @staticmethod
+    def StartVertex(wire: topologic.Wire) -> topologic.Vertex:
+        """
+        Returns the start vertex of the input wire. The wire must be manifold and open.
+
+        """
+        sv, ev = Wire.StartEndVertices(wire)
+        return sv
+    
+    @staticmethod
     def Trapezoid(origin: topologic.Vertex = None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
         """
         Creates a trapezoid.
@@ -2654,6 +2730,74 @@ class Wire(topologic.Wire):
         baseWire = Topology.Rotate(baseWire, origin, 0, 1, 0, theta)
         baseWire = Topology.Rotate(baseWire, origin, 0, 0, 1, phi)
         return baseWire
+
+    @staticmethod
+    def VertexByParameter(wire: topologic.Wire, u: float = 0) -> topologic.Vertex:
+        """
+        Creates a vertex along the input wire offset by the input *u* parameter. The wire must be manifold.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+        u : float , optional
+            The *u* parameter along the input topologic Wire. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. The default is 0.
+
+        Returns
+        -------
+        topologic.Vertex
+            The vertex at the input u parameter
+
+        """
+        from topologicpy.Edge import Edge
+
+        if not isinstance(wire, topologic.Wire):
+            print("Wire.VertexAtParameter - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            return None
+        if u < 0 or u > 1:
+            print("Wire.VertexAtParameter - Error: The input u parameter is not within the valid range of [0,1]. Returning None.")
+            return None
+        if not Wire.IsManifold(wire):
+            print("Wire.VertexAtParameter - Error: The input wire parameter is non-manifold. Returning None.")
+            return None
+        
+        if u == 0:
+            return Wire.StartVertex(wire)
+        if u == 1:
+            return Wire.EndVertex(wire)
+        
+        edges = Wire.Edges(wire)
+        total_length = 0.0
+        edge_lengths = []
+        
+        # Compute the total length of the wire
+        for edge in edges:
+            e_length = Edge.Length(edge)
+            edge_lengths.append(e_length)
+            total_length += e_length
+
+        # Initialize variables for tracking the current edge and accumulated length
+        current_edge = None
+        accumulated_length = 0.0
+
+        # Iterate over the lines to find the appropriate segment
+        for i, edge in enumerate(edges):
+            edge_length = edge_lengths[i]
+
+            # Check if the desired point is on this line
+            if u * total_length <= accumulated_length + edge_length:
+                current_edge = edge
+                break
+            else:
+                accumulated_length += edge_length
+
+        # Calculate the residual u value for the current line
+        residual_u = (u * total_length - accumulated_length) / Edge.Length(current_edge)
+
+        # Compute the point at the parameter on the current line
+        vertex = Edge.VertexByParameter(current_edge, residual_u)
+
+        return vertex
 
     @staticmethod
     def Vertices(wire: topologic.Wire) -> list:

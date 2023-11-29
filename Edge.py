@@ -997,7 +997,7 @@ class Edge():
         return topologic.Vertex.ByCoordinates(origin.X()+vector[0], origin.Y()+vector[1], origin.Z()+vector[2])
     
     @staticmethod
-    def VertexByParameter(edge: topologic.Edge, parameter: float = 0.0) -> topologic.Vertex:
+    def VertexByParameter(edge: topologic.Edge, u: float = 0.0) -> topologic.Vertex:
         """
         Creates a vertex along the input edge offset by the input *u* parameter.
 
@@ -1005,7 +1005,7 @@ class Edge():
         ----------
         edge : topologic.Edge
             The input edge.
-        parameter : float , optional
+        u : float , optional
             The *u* parameter along the input topologic Edge. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. The default is 0.
 
         Returns
@@ -1018,13 +1018,13 @@ class Edge():
             print("Edge.VertexByParameter - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         vertex = None
-        if parameter == 0:
+        if u == 0:
             vertex = edge.StartVertex()
-        elif parameter == 1:
+        elif u == 1:
             vertex = edge.EndVertex()
         else:
             try:
-                vertex = topologic.EdgeUtility.PointAtParameter(edge, parameter)
+                vertex = topologic.EdgeUtility.PointAtParameter(edge, u)
             except:
                 print("Edge.VertexByParameter - Error: Could not create a vertex at the input parameter. Returning None.")
                 vertex = None

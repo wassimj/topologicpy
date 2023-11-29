@@ -116,13 +116,6 @@ class Dictionary(topologic.Dictionary):
             The created dictionary.
 
         """
-        import json
-        
-        def dict_to_json(py_dict):
-            """
-            Convert a Python dictionary to a JSON-formatted string.
-            """
-            return json.dumps(py_dict, indent=2)
         
         if not isinstance(keys, list):
             print("Dictionary.ByKeysValues - Error: The input keys parameter is not a valid list. Returning None.")
@@ -492,9 +485,12 @@ class Dictionary(topologic.Dictionary):
             temp_value = attr.StringValue()
             topologies = None
             try:
-                topologies = Topology.ByJSONString(temp_value)
+                topologies = Topology.ByJSONString(temp_value, progressBar=False)
             except:
                 topologies = None
+            if isinstance(topologies, list):
+                if len(topologies) == 0:
+                    topologies = None
             if temp_value == "__NONE__":
                 return None
             elif isinstance(topologies, topologic.Topology):
@@ -505,7 +501,8 @@ class Dictionary(topologic.Dictionary):
                 elif len(topologies) == 1:
                     return topologies[0]
             elif is_json_string(temp_value):
-                return json_to_dict(temp_value)
+                ret_value = json_to_dict(temp_value)
+                return ret_value
             else:
                 return (temp_value)
         elif isinstance(attr, ListAttribute):
@@ -564,10 +561,7 @@ class Dictionary(topologic.Dictionary):
             attr = dictionary.ValueAtKey(key)
         else:
             return None
-        
         return_value = Dictionary._ConvertAttribute(attr)
-        if return_value == None:
-            print("ValueAtKey - Attribute:", attr, "Key:", key, "Value:", return_value)
         return return_value
         
     @staticmethod

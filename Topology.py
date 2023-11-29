@@ -1621,7 +1621,7 @@ class Topology():
         return Topology.ByJSONString(jsonString, tolerance=tolerance)
     
     @staticmethod
-    def ByJSONString(string, tolerance=0.0001):
+    def ByJSONString(string, progressBar=False, tolerance=0.0001):
         """
         Imports the topology from a JSON string.
 
@@ -1629,6 +1629,8 @@ class Topology():
         ----------
         string : str
             The input JSON string.
+        progressBar : bool , optional
+            If set to True a tqdm progress bar is shown. If not, it will not be shown. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1941,25 +1943,46 @@ class Topology():
         cells = []
         cellComplexes = []
 
-        for jsonItem in jsondata:
-            try:
-                topology_type = jsonItem['type']
-                if topology_type.lower() == "vertex":
-                    j_vertices.append(jsonItem)
-                elif topology_type.lower() == "edge":
-                    j_edges.append(jsonItem)
-                elif topology_type.lower() == "wire":
-                    j_wires.append(jsonItem)
-                elif topology_type.lower() == "face":
-                    j_faces.append(jsonItem)
-                elif topology_type.lower() == "shell":
-                    j_shells.append(jsonItem)
-                elif topology_type.lower() == "cell":
-                    j_cells.append(jsonItem)
-                elif topology_type.lower() == "cellcomplex":
-                    j_cellComplexes.append(jsonItem)
-            except:
-                continue
+        if progressBar:
+            for jsonItem in tqdm(jsondata):
+                try:
+                    topology_type = jsonItem['type']
+                    if topology_type.lower() == "vertex":
+                        j_vertices.append(jsonItem)
+                    elif topology_type.lower() == "edge":
+                        j_edges.append(jsonItem)
+                    elif topology_type.lower() == "wire":
+                        j_wires.append(jsonItem)
+                    elif topology_type.lower() == "face":
+                        j_faces.append(jsonItem)
+                    elif topology_type.lower() == "shell":
+                        j_shells.append(jsonItem)
+                    elif topology_type.lower() == "cell":
+                        j_cells.append(jsonItem)
+                    elif topology_type.lower() == "cellcomplex":
+                        j_cellComplexes.append(jsonItem)
+                except:
+                    continue
+        else:
+            for jsonItem in jsondata:
+                try:
+                    topology_type = jsonItem['type']
+                    if topology_type.lower() == "vertex":
+                        j_vertices.append(jsonItem)
+                    elif topology_type.lower() == "edge":
+                        j_edges.append(jsonItem)
+                    elif topology_type.lower() == "wire":
+                        j_wires.append(jsonItem)
+                    elif topology_type.lower() == "face":
+                        j_faces.append(jsonItem)
+                    elif topology_type.lower() == "shell":
+                        j_shells.append(jsonItem)
+                    elif topology_type.lower() == "cell":
+                        j_cells.append(jsonItem)
+                    elif topology_type.lower() == "cellcomplex":
+                        j_cellComplexes.append(jsonItem)
+                except:
+                    continue
 
         vertices = [buildVertex(j_v) for j_v in j_vertices]
         vertex_selectors = []
@@ -1986,9 +2009,10 @@ class Topology():
             wire_selectors.append(s)
 
         faces = []
-        for j_f in tqdm(j_faces):
+        for j_f in j_faces:
             f = buildFace(j_f, j_wires, j_edges, j_vertices, uuidKey="uuid")
             faces.append(f)
+       
         faces = Helper.Flatten(faces)
         face_selectors = []
         all_face_apertures = []
@@ -2086,7 +2110,7 @@ class Topology():
         return data
 
     @staticmethod
-    def ByOBJString(string, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
+    def ByOBJString(string, transposeAxes = True, progressBar=False, tolerance=0.0001):
         """
         Creates a topology from the input Waverfront OBJ string. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
@@ -2096,6 +2120,8 @@ class Topology():
             The input OBJ string.
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up" 
+        progressBar : bool , optional
+            If set to True a tqdm progress bar is shown. If not, it will not be shown. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -2106,6 +2132,8 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
+        from tqdm.auto import tqdm
+
         def parse(lines):
             vertices = []
             faces = []
@@ -2145,10 +2173,6 @@ class Topology():
         lines = string.split("\n")
         if lines:
             if progressBar:
-                if renderer.lower() == "notebook":
-                    from tqdm.notebook import tqdm
-                else:
-                    from tqdm import tqdm
                 vertices, faces = parsetqdm(lines)
             else:
                 vertices, faces = parse(lines)
@@ -2161,7 +2185,7 @@ class Topology():
         return None
 
     @staticmethod
-    def ByOBJFile(file, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
+    def ByOBJFile(file, transposeAxes = True, progressBar=False, tolerance=0.0001):
         """
         Imports the topology from a Weverfront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
@@ -2170,7 +2194,9 @@ class Topology():
         file : file object
             The input OBJ file.
         transposeAxes : bool , optional
-            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+            If set to True the Z and Y coordinates are transposed so that Y points "up"
+        progressBar : bool , optional
+            If set to True a tqdm progress bar is shown. If not, it will not be shown. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -2184,12 +2210,12 @@ class Topology():
             print("Topology.ByOBJFile - Error: the input file parameter is not a valid file. Returning None.")
             return None
         obj_string = file.read()
-        topology = Topology.ByOBJString(obj_string)
+        topology = Topology.ByOBJString(obj_string, transposeAxes=transposeAxes, progressBar=progressBar, tolerance=tolerance)
         file.close()
         return topology
     
     @staticmethod
-    def ByOBJPath(path, transposeAxes = True, progressBar=False, renderer="notebook", tolerance=0.0001):
+    def ByOBJPath(path, transposeAxes = True, progressBar=False, tolerance=0.0001):
         """
         Imports the topology from a Weverfront OBJ file path. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
@@ -2198,7 +2224,9 @@ class Topology():
         path : str
             The file path to the OBJ file.
         transposeAxes : bool , optional
-            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+            If set to True the Z and Y coordinates are transposed so that Y points "up".
+        progressBar : bool , optional
+            If set to True a tqdm progress bar is shown. If not, it will not be shown. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -2216,7 +2244,7 @@ class Topology():
         except:
             print("Topology.ByOBJPath - Error: the OBJ file is not a valid file. Returning None.")
             return None
-        return Topology.ByOBJFile(file, transposeAxes=transposeAxes, progressBar=progressBar, renderer=renderer, tolerance=tolerance)
+        return Topology.ByOBJFile(file, transposeAxes=transposeAxes, progressBar=progressBar, tolerance=tolerance)
 
     @staticmethod
     def ByOCCTShape(occtShape):
@@ -4479,7 +4507,6 @@ class Topology():
                 else:
                     return False
             else:
-                #Topology.Show(wire, renderer="browser")
                 raise Exception("Topology.RemoveCollinearEdges - Error: This method only applies to manifold closed wires")
 
         #----------------------------------------------------------------------
