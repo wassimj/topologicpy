@@ -79,7 +79,7 @@ class Neo4j:
         return neo4jGraph.run(cypher).to_subgraph()
 
     @staticmethod
-    def SubGraphExportToGraph(subGraph):
+    def SubGraphExportToGraph(subGraph, tolerance=0.0001):
         """
         Exports the input neo4j graph to a topologic graph.
 
@@ -87,6 +87,8 @@ class Neo4j:
         ----------
         subGraph : Neo4j.SubGraph
             The input neo4j subgraph.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -149,7 +151,7 @@ class Neo4j:
                 values.append(node[key])
             sv = vertices[nodes.index(relationship.start_node)]
             ev = vertices[nodes.index(relationship.end_node)]
-            edge = Edge.ByVertices([sv, ev])
+            edge = Edge.ByVertices([sv, ev], tolerance=tolerance)
             if relationship.start_node['name']:
                 sv_name = relationship.start_node['name']
             else:
@@ -165,7 +167,7 @@ class Neo4j:
         return Graph.ByVerticesEdges(vertices,edges)
     
     @staticmethod
-    def ExportToGraph(neo4jGraph):
+    def ExportToGraph(neo4jGraph, tolerance=0.0001):
         """
         Exports the input neo4j graph to a topologic graph.
 
@@ -173,6 +175,8 @@ class Neo4j:
         ----------
         neo4jGraph : Neo4j.Graph
             The input neo4j graph.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -237,7 +241,7 @@ class Neo4j:
                 for relationship in relationships:
                     sv = vertices[nodes.index(relationship.start_node)]
                     ev = vertices[nodes.index(relationship.end_node)]
-                    edge = Edge.ByVertices([sv, ev])
+                    edge = Edge.ByVertices([sv, ev], tolerance=tolerance)
                     if relationship.start_node['name']:
                         sv_name = relationship.start_node['name']
                     else:

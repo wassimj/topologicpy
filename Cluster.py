@@ -224,7 +224,7 @@ class Cluster(topologic.Cluster):
         return faces
 
     @staticmethod
-    def FreeCells(cluster: topologic.Cluster) -> list:
+    def FreeCells(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free cells of the input cluster that are not part of a higher topology.
 
@@ -232,6 +232,8 @@ class Cluster(topologic.Cluster):
         ----------
         cluster : topologic.Cluster
             The input cluster.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -258,7 +260,7 @@ class Cluster(topologic.Cluster):
         if len(cellComplexesCells) == 0:
             return allCells
         cellComplexesCluster = Cluster.ByTopologies(cellComplexesCells)
-        resultingCluster = Topology.Boolean(allCellsCluster, cellComplexesCluster, operation="Difference")
+        resultingCluster = Topology.Boolean(allCellsCluster, cellComplexesCluster, operation="difference", tolerance=tolerance)
         if resultingCluster == None:
             return []
         if isinstance(resultingCluster, topologic.Cell):
@@ -269,7 +271,7 @@ class Cluster(topologic.Cluster):
         return result
     
     @staticmethod
-    def FreeShells(cluster: topologic.Cluster) -> list:
+    def FreeShells(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free shells of the input cluster that are not part of a higher topology.
 
@@ -277,6 +279,8 @@ class Cluster(topologic.Cluster):
         ----------
         cluster : topologic.Cluster
             The input cluster.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -302,7 +306,7 @@ class Cluster(topologic.Cluster):
         if len(cellsShells) == 0:
             return allShells
         cellsCluster = Cluster.ByTopologies(cellsShells)
-        resultingCluster = Topology.Boolean(allShellsCluster, cellsCluster, operation="Difference")
+        resultingCluster = Topology.Boolean(allShellsCluster, cellsCluster, operation="difference", tolerance=tolerance)
         if resultingCluster == None:
             return []
         if isinstance(resultingCluster, topologic.Shell):
@@ -313,7 +317,7 @@ class Cluster(topologic.Cluster):
         return result
     
     @staticmethod
-    def FreeFaces(cluster: topologic.Cluster) -> list:
+    def FreeFaces(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free faces of the input cluster that are not part of a higher topology.
 
@@ -321,6 +325,8 @@ class Cluster(topologic.Cluster):
         ----------
         cluster : topologic.Cluster
             The input cluster.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -346,7 +352,7 @@ class Cluster(topologic.Cluster):
         if len(shellFaces) == 0:
             return allFaces
         shellCluster = Cluster.ByTopologies(shellFaces)
-        resultingCluster = Topology.Boolean(allFacesCluster, shellCluster, operation="Difference")
+        resultingCluster = Topology.Boolean(allFacesCluster, shellCluster, operation="difference", tolerance=tolerance)
         if resultingCluster == None:
             return []
         if isinstance(resultingCluster, topologic.Face):
@@ -357,7 +363,7 @@ class Cluster(topologic.Cluster):
         return result
 
     @staticmethod
-    def FreeWires(cluster: topologic.Cluster) -> list:
+    def FreeWires(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free wires of the input cluster that are not part of a higher topology.
 
@@ -365,6 +371,8 @@ class Cluster(topologic.Cluster):
         ----------
         cluster : topologic.Cluster
             The input cluster.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -390,7 +398,7 @@ class Cluster(topologic.Cluster):
         if len(facesWires) == 0:
             return allWires
         facesCluster = Cluster.ByTopologies(facesWires)
-        resultingCluster = Topology.Boolean(allWiresCluster, facesCluster, operation="Difference")
+        resultingCluster = Topology.Boolean(allWiresCluster, facesCluster, operation="difference", tolerance=tolerance)
         if resultingCluster == None:
             return []
         if isinstance(resultingCluster, topologic.Wire):
@@ -401,7 +409,7 @@ class Cluster(topologic.Cluster):
         return result
     
     @staticmethod
-    def FreeEdges(cluster: topologic.Cluster) -> list:
+    def FreeEdges(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free edges of the input cluster that are not part of a higher topology.
 
@@ -409,6 +417,8 @@ class Cluster(topologic.Cluster):
         ----------
         cluster : topologic.Cluster
             The input cluster.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -434,7 +444,7 @@ class Cluster(topologic.Cluster):
         if len(wireEdges) == 0:
             return allEdges
         wireCluster = Cluster.ByTopologies(wireEdges)
-        resultingCluster = Topology.Boolean(allEdgesCluster, wireCluster, operation="Difference")
+        resultingCluster = Topology.Boolean(allEdgesCluster, wireCluster, operation="difference", tolerance=tolerance)
         if resultingCluster == None:
             return []
         if isinstance(resultingCluster, topologic.Edge):
@@ -445,7 +455,7 @@ class Cluster(topologic.Cluster):
         return result
     
     @staticmethod
-    def FreeVertices(cluster: topologic.Cluster) -> list:
+    def FreeVertices(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free vertices of the input cluster that are not part of a higher topology.
 
@@ -453,6 +463,8 @@ class Cluster(topologic.Cluster):
         ----------
         cluster : topologic.Cluster
             The input cluster.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -478,7 +490,7 @@ class Cluster(topologic.Cluster):
         if len(edgesVertices) == 0:
             return allVertices
         edgesCluster = Cluster.ByTopologies(edgesVertices)
-        resultingCluster = Topology.Boolean(allVerticesCluster, edgesCluster, operation="Difference")
+        resultingCluster = Topology.Boolean(allVerticesCluster, edgesCluster, operation="difference", tolerance=tolerance)
         if isinstance(resultingCluster, topologic.Vertex):
             return [resultingCluster]
         if resultingCluster == None:
@@ -761,30 +773,8 @@ class Cluster(topologic.Cluster):
         if perimeter:
             edges = Wire.Edges(wire)
         for comb in combs:
-            edges.append(Edge.ByVertices([vertices[comb[0]], vertices[comb[1]]]))
+            edges.append(Edge.ByVertices([vertices[comb[0]], vertices[comb[1]]], tolerance=tolerance))
         return Cluster.ByTopologies(edges)
-    
-    @staticmethod
-    def SelfMerge(topology):
-        """
-        Self merges the input topology to return the most logical topology type given the input data.
-
-        Parameters
-        ----------
-        topology : topologic.Topology
-            The input topology.
-
-        Returns
-        -------
-        topologic.Topology
-            The self-merged topology.
-
-        """
-        if not isinstance(topology, topologic.Topology):
-            print("Cluster.SelfMerge - Error: The input topology parameter is not a valid topologic topology. Returning None.")
-            return None
-        from topologicpy.Topology import Topology
-        return Topology.SelfMerge(topology)
     
     @staticmethod
     def Shells(cluster: topologic.Cluster) -> list:

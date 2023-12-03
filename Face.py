@@ -82,7 +82,7 @@ class Face(topologic.Face):
         faceB : topologic.Face
             The second input face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -111,7 +111,7 @@ class Face(topologic.Face):
         face : topologic.Face
             The input face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -130,7 +130,7 @@ class Face(topologic.Face):
         return area
 
     @staticmethod
-    def BoundingRectangle(topology: topologic.Topology, optimize: int = 0) -> topologic.Face:
+    def BoundingRectangle(topology: topologic.Topology, optimize: int = 0, tolerance: float = 0.0001) -> topologic.Face:
         """
         Returns a face representing a bounding rectangle of the input topology. The returned face contains a dictionary with key "zrot" that represents rotations around the Z axis. If applied the resulting face will become axis-aligned.
 
@@ -140,6 +140,8 @@ class Face(topologic.Face):
             The input topology.
         optimize : int , optional
             If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding rectangle. The default is 0.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         
         Returns
         -------
@@ -222,14 +224,14 @@ class Face(topologic.Face):
         vb4 = topologic.Vertex.ByCoordinates(minX, maxY, 0)
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
-        baseFace = Face.ByWire(baseWire)
+        baseFace = Face.ByWire(baseWire, tolerance=tolerance)
         baseFace = Topology.Rotate(baseFace, origin=origin, x=0,y=0,z=1, degree=-best_z)
         dictionary = Dictionary.ByKeysValues(["zrot"], [best_z])
         baseFace = Topology.SetDictionary(baseFace, dictionary)
         return baseFace
     
     @staticmethod
-    def ByEdges(edges: list) -> topologic.Face:
+    def ByEdges(edges: list, tolerance : float = 0.0001) -> topologic.Face:
         """
         Creates a face from the input list of edges.
 
@@ -237,6 +239,8 @@ class Face(topologic.Face):
         ----------
         edges : list
             The input list of edges.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -252,14 +256,14 @@ class Face(topologic.Face):
         if len(edges) < 1:
             print("Face.ByEdges - Error: The input edges parameter does not contain any valid edges. Returning None.")
             return None
-        wire = Wire.ByEdges(edges)
+        wire = Wire.ByEdges(edges, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
             print("Face.ByEdges - Error: Could not create the required wire. Returning None.")
             return None
-        return Face.ByWire(wire)
+        return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
-    def ByEdgesCluster(cluster: topologic.Cluster) -> topologic.Face:
+    def ByEdgesCluster(cluster: topologic.Cluster, tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a face from the input cluster of edges.
 
@@ -267,6 +271,8 @@ class Face(topologic.Face):
         ----------
         cluster : topologic.Cluster
             The input cluster of edges.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -282,10 +288,12 @@ class Face(topologic.Face):
         if len(edges) < 1:
             print("Face.ByEdgesCluster - Warning: The input cluster parameter does not contain any valid edges. Returning None.")
             return None
-        return Face.ByEdges(edges)
+        return Face.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
-    def ByOffset(face: topologic.Face, offset: float = 1.0, miter: bool = False, miterThreshold: float = None, offsetKey: str = None, miterThresholdKey: str = None, step: bool = True) -> topologic.Face:
+    def ByOffset(face: topologic.Face, offset: float = 1.0, miter: bool = False,
+                 miterThreshold: float = None, offsetKey: str = None,
+                 miterThresholdKey: str = None, step: bool = True, tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates an offset wire from the input wire.
 
@@ -305,7 +313,8 @@ class Face(topologic.Face):
             If specified, the dictionary of the vertices will be queried for this key to sepcify the desired miter threshold distance. The default is None.
         step : bool , optional
             If set to True, The transition between collinear edges with different offsets will be a step. Otherwise, it will be a continous edge. The default is True.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         Returns
         -------
         topologic.Wire
@@ -322,10 +331,10 @@ class Face(topologic.Face):
         offset_internal_boundaries = []
         for internal_boundary in internal_boundaries:
             offset_internal_boundaries.append(Wire.ByOffset(wire=internal_boundary, offset=offset, miter=miter, miterThreshold=miterThreshold, offsetKey=offsetKey, miterThresholdKey=miterThresholdKey, step=step))
-        return Face.ByWires(offset_external_boundary, offset_internal_boundaries)
+        return Face.ByWires(offset_external_boundary, offset_internal_boundaries, tolerance=tolerance)
     
     @staticmethod
-    def ByShell(shell: topologic.Shell, angTolerance: float = 0.1)-> topologic.Face:
+    def ByShell(shell: topologic.Shell, angTolerance: float = 0.1, tolerance: float = 0.0001)-> topologic.Face:
         """
         Creates a face by merging the faces of the input shell.
 
@@ -335,6 +344,8 @@ class Face(topologic.Face):
             The input shell.
         angTolerance : float , optional
             The desired angular tolerance. The default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -342,7 +353,6 @@ class Face(topologic.Face):
             The created face.
 
         """
-        from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Shell import Shell
         from topologicpy.Topology import Topology
@@ -356,7 +366,7 @@ class Face(topologic.Face):
         if not isinstance(shell, topologic.Shell):
             print("Face.ByShell - Warning: The input shell parameter is not a valid toplogic shell. Returning None.")
             return None
-        ext_boundary = Shell.ExternalBoundary(shell)
+        ext_boundary = Shell.ExternalBoundary(shell, tolerance=tolerance)
         ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
         if not Topology.IsPlanar(ext_boundary):
             ext_boundary = Wire.Planarize(ext_boundary)
@@ -367,7 +377,7 @@ class Face(topologic.Face):
             except:
                 try:
                     w = Wire.Planarize(ext_boundary)
-                    f = Face.ByWire(w)
+                    f = Face.ByWire(w, tolerance=tolerance)
                     return f
                 except:
                     print("Face.ByPlanarShell - Error: The wire could not be planarized. Returning None.")
@@ -459,7 +469,7 @@ class Face(topologic.Face):
         return Face.ByVertices(vertices)
 
     @staticmethod
-    def ByWire(wire: topologic.Wire) -> topologic.Face:
+    def ByWire(wire: topologic.Wire, tolerance: float=0.0001) -> topologic.Face:
         """
         Creates a face from the input closed wire.
 
@@ -467,6 +477,8 @@ class Face(topologic.Face):
         ----------
         wire : topologic.Wire
             The input wire.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -498,7 +510,7 @@ class Face(topologic.Face):
             return None
         
         edges = Wire.Edges(wire)
-        wire = Topology.SelfMerge(Cluster.ByTopologies(edges))
+        wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
         vertices = Wire.Vertices(wire)
         try:
             fList = topologic.Face.ByExternalBoundary(wire)
@@ -533,7 +545,7 @@ class Face(topologic.Face):
             return returnList
 
     @staticmethod
-    def ByWires(externalBoundary: topologic.Wire, internalBoundaries: list = []) -> topologic.Face:
+    def ByWires(externalBoundary: topologic.Wire, internalBoundaries: list = [], tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a face from the input external boundary (closed wire) and the input list of internal boundaries (closed wires).
 
@@ -543,6 +555,8 @@ class Face(topologic.Face):
             The input external boundary.
         internalBoundaries : list , optional
             The input list of internal boundaries (closed wires). The default is an empty list.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -559,7 +573,7 @@ class Face(topologic.Face):
         ibList = [x for x in internalBoundaries if isinstance(x, topologic.Wire) and Wire.IsClosed(x)]
         face = None
         try:
-            face = topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList)
+            face = topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList, tolerance)
         except:
             print("Face.ByWires - Error: The operation failed. Returning None.")
             face = None
@@ -567,7 +581,7 @@ class Face(topologic.Face):
 
 
     @staticmethod
-    def ByWiresCluster(externalBoundary: topologic.Wire, internalBoundariesCluster: topologic.Cluster = None) -> topologic.Face:
+    def ByWiresCluster(externalBoundary: topologic.Wire, internalBoundariesCluster: topologic.Cluster = None, tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a face from the input external boundary (closed wire) and the input cluster of internal boundaries (closed wires).
 
@@ -577,7 +591,9 @@ class Face(topologic.Face):
             The input external boundary (closed wire).
         internalBoundariesCluster : topologic.Cluster
             The input cluster of internal boundaries (closed wires). The default is None.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Face
@@ -599,7 +615,7 @@ class Face(topologic.Face):
             return None
         else:
             internalBoundaries = Cluster.Wires(internalBoundariesCluster)
-        return Face.ByWires(externalBoundary, internalBoundaries)
+        return Face.ByWires(externalBoundary, internalBoundaries, tolerance=tolerance)
     
     @staticmethod
     def NorthArrow(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, direction: list = [0,0,1], northAngle: float = 0.0,
@@ -638,7 +654,7 @@ class Face(topologic.Face):
         c = Face.Circle(origin=origin, radius=radius, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
         r = Face.Rectangle(origin=origin, width=radius*0.01,length=radius*1.2, placement="lowerleft")
         r = Topology.Translate(r, -0.005*radius,0,0)
-        arrow = Topology.Difference(c, r)
+        arrow = Topology.Difference(c, r, tolerance=tolerance)
         arrow = Topology.Rotate(arrow, Vertex.Origin(), 0,0,1,northAngle)
         if placement.lower() == "lowerleft":
             arrow = Topology.Translate(arrow, radius, radius, 0)
@@ -702,7 +718,7 @@ class Face(topologic.Face):
         wire = Wire.Circle(origin=origin, radius=radius, sides=sides, fromAngle=fromAngle, toAngle=toAngle, close=True, direction=direction, placement=placement, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
             return None
-        return Face.ByWire(wire)
+        return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
     def Compactness(face: topologic.Face, mantissa: int = 6) -> float:
@@ -714,7 +730,7 @@ class Face(topologic.Face):
         face : topologic.Face
             The input face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -792,7 +808,8 @@ class Face(topologic.Face):
         return edges
 
     @staticmethod
-    def Einstein(origin: topologic.Vertex = None, radius: float = 0.5, direction: list = [0,0,1], placement: str = "center") -> topologic.Face:
+    def Einstein(origin: topologic.Vertex = None, radius: float = 0.5, direction: list = [0,0,1],
+                 placement: str = "center", tolerance: float=0.0001) -> topologic.Face:
         """
         Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physist). See https://arxiv.org/abs/2303.10798
 
@@ -806,13 +823,22 @@ class Face(topologic.Face):
             The vector representing the up direction of the ellipse. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the hexagon determining the location of the tile. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         
+        Returns
+        --------
+            topologic.Face
+                The created Einstein tile.
+
         """
         from topologicpy.Wire import Wire
+
         wire = Wire.Einstein(origin=origin, radius=radius, direction=direction, placement=placement)
         if not isinstance(wire, topologic.Wire):
+            print("Face.Einstein - Error: Could not create base wire for the Einstein tile. Returning None.")
             return None
-        return Face.ByWire(wire)
+        return Face.ByWire(wire, tolerance=tolerance)
     
     @staticmethod
     def ExternalBoundary(face: topologic.Face) -> topologic.Wire:
@@ -875,7 +901,8 @@ class Face(topologic.Face):
         return True
     
     @staticmethod
-    def Flatten(face: topologic.Face, originA: topologic.Vertex = None, originB: topologic.Vertex = None, direction: list = None) -> topologic.Face:
+    def Flatten(face: topologic.Face, originA: topologic.Vertex = None,
+                originB: topologic.Vertex = None, direction: list = None, tolerance: float = 0.0001) -> topologic.Face:
         """
         Flattens the input face such that its center of mass is located at the origin and its normal is pointed in the positive Z axis.
 
@@ -889,7 +916,8 @@ class Face(topologic.Face):
             The new location at which to place the topology. If set to None, the world origin (0,0,0) is used. The default is None.
         direction : list , optional
             The direction, expressed as a list of [X,Y,Z] that signifies the direction of the face. If set to None, the normal at *u* 0.5 and *v* 0.5 is considered the direction of the face. The deafult is None.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         Returns
         -------
         topologic.Face
@@ -990,13 +1018,13 @@ class Face(topologic.Face):
             temp_v = bottomMost(leftMost(tempVertices))[0]
             tempVertices = rotate_vertices(tempVertices, temp_v)
             flatInternalBoundaries.append(Wire.ByVertices(tempVertices))
-        flatFace = Face.ByWires(flatExternalBoundary, flatInternalBoundaries)
+        flatFace = Face.ByWires(flatExternalBoundary, flatInternalBoundaries, tolerance=tolerance)
         dictionary = Dictionary.ByKeysValues(["xTran", "yTran", "zTran", "phi", "theta"], [cm.X(), cm.Y(), cm.Z(), phi, theta])
         flatFace = Topology.SetDictionary(flatFace, dictionary)
         return flatFace
 
     @staticmethod
-    def Harmonize(face: topologic.Face) -> topologic.Face:
+    def Harmonize(face: topologic.Face, tolerance: float = 0.0001) -> topologic.Face:
         """
         Returns a harmonized version of the input face such that the *u* and *v* origins are always in the upperleft corner.
 
@@ -1004,6 +1032,8 @@ class Face(topologic.Face):
         ----------
         face : topologic.Face
             The input face.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -1018,7 +1048,7 @@ class Face(topologic.Face):
 
         if not isinstance(face, topologic.Face):
             return None
-        flatFace = Face.Flatten(face)
+        flatFace = Face.Flatten(face, tolerance=tolerance)
         world_origin = Vertex.ByCoordinates(0,0,0)
         # Retrieve the needed transformations
         dictionary = Topology.Dictionary(flatFace)
@@ -1034,7 +1064,7 @@ class Face(topologic.Face):
         for ib in internalBoundaries:
             ibVertices = Wire.Vertices(ib)
             harmonizedIB.append(Wire.ByVertices(ibVertices))
-        harmonizedFace = Face.ByWires(harmonizedEB, harmonizedIB)
+        harmonizedFace = Face.ByWires(harmonizedEB, harmonizedIB, tolerance=tolerance)
         harmonizedFace = Topology.Rotate(harmonizedFace, origin=world_origin, x=0, y=1, z=0, degree=theta)
         harmonizedFace = Topology.Rotate(harmonizedFace, origin=world_origin, x=0, y=0, z=1, degree=phi)
         harmonizedFace = Topology.Translate(harmonizedFace, xTran, yTran, zTran)
@@ -1096,7 +1126,7 @@ class Face(topologic.Face):
         return v
 
     @staticmethod
-    def Invert(face: topologic.Face) -> topologic.Face:
+    def Invert(face: topologic.Face, tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a face that is an inverse (mirror) of the input face.
 
@@ -1104,6 +1134,8 @@ class Face(topologic.Face):
         ----------
         face : topologic.Face
             The input face.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -1121,9 +1153,9 @@ class Face(topologic.Face):
         inverted_wire = Wire.ByVertices(vertices)
         internal_boundaries = Face.InternalBoundaries(face)
         if not internal_boundaries:
-            inverted_face = Face.ByWire(inverted_wire)
+            inverted_face = Face.ByWire(inverted_wire, tolerance=tolerance)
         else:
-            inverted_face = Face.ByWires(inverted_wire, internal_boundaries)
+            inverted_face = Face.ByWires(inverted_wire, internal_boundaries, tolerance=tolerance)
         return inverted_face
 
     @staticmethod
@@ -1262,7 +1294,7 @@ class Face(topologic.Face):
             return False
 
         # Flatten the input face
-        flatFace = Face.Flatten(face)
+        flatFace = Face.Flatten(face, tolerance=tolerance)
         # Retrieve the needed transformations
         dictionary = Topology.Dictionary(flatFace)
         xTran = Dictionary.ValueAtKey(dictionary,"xTran")
@@ -1311,9 +1343,9 @@ class Face(topologic.Face):
         if externalVertices:
             theVertices = theVertices+extVertices
 
-        tempWire = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
+        tempWire = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges), tolerance=tolerance)
         if isinstance(tempWire, topologic.Wire) and angTolerance > 0:
-            tempWire = Topology.RemoveCollinearEdges(tempWire, angTolerance=angTolerance)
+            tempWire = Wire.RemoveCollinearEdges(tempWire, angTolerance=angTolerance)
         medialAxisEdges = Wire.Edges(tempWire)
         for v in theVertices:
             nv = Vertex.NearestVertex(v, tempWire, useKDTree=False)
@@ -1322,10 +1354,10 @@ class Face(topologic.Face):
                 if toLeavesOnly:
                     adjVertices = Topology.AdjacentTopologies(nv, tempWire)
                     if len(adjVertices) < 2:
-                        medialAxisEdges.append(Edge.ByVertices([nv, v]))
+                        medialAxisEdges.append(Edge.ByVertices([nv, v], tolerance=tolerance))
                 else:
-                    medialAxisEdges.append(Edge.ByVertices([nv, v]))
-        medialAxis = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges))
+                    medialAxisEdges.append(Edge.ByVertices([nv, v], tolerance=tolerance))
+        medialAxis = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges), tolerance=tolerance)
         if isinstance(medialAxis, topologic.Wire) and angTolerance > 0:
             medialAxis = Topology.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance)
         medialAxis = Topology.Rotate(medialAxis, origin=world_origin, x=0, y=1, z=0, degree=theta)
@@ -1345,7 +1377,7 @@ class Face(topologic.Face):
         outputType : string , optional
             The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. The default is "xyz".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -1371,7 +1403,7 @@ class Face(topologic.Face):
         outputType : string , optional
             The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. The default is "xyz".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -1515,7 +1547,8 @@ class Face(topologic.Face):
         return {"a": a, "b": b, "c": c, "d": d}
     
     @staticmethod
-    def Planarize(face: topologic.Face, origin: topologic.Vertex = None, direction: list = None) -> topologic.Face:
+    def Planarize(face: topologic.Face, origin: topologic.Vertex = None,
+                  direction: list = None, tolerance: float = 0.0001) -> topologic.Face:
         """
         Planarizes the input face such that its center of mass is located at the input origin and its normal is pointed in the input direction.
 
@@ -1527,7 +1560,9 @@ class Face(topologic.Face):
             The old location to use as the origin of the movement. If set to None, the center of mass of the input face is used. The default is None.
         direction : list , optional
             The direction, expressed as a list of [X,Y,Z] that signifies the direction of the face. If set to None, the normal at *u* 0.5 and *v* 0.5 is considered the direction of the face. The deafult is None.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Face
@@ -1546,7 +1581,7 @@ class Face(topologic.Face):
             origin = Topology.CenterOfMass(face)
         if not isinstance(direction, list):
             direction = Face.NormalAtParameters(face, 0.5, 0.5)
-        flatFace = Face.Flatten(face, oldLocation=origin, direction=direction)
+        flatFace = Face.Flatten(face, oldLocation=origin, direction=direction, tolerance=tolerance)
 
         world_origin = Vertex.ByCoordinates(0,0,0)
         # Retrieve the needed transformations
@@ -1563,7 +1598,8 @@ class Face(topologic.Face):
         return planarizedFace
 
     @staticmethod
-    def Project(faceA: topologic.Face, faceB: topologic.Face, direction : list = None, mantissa: int = 6) -> topologic.Face:
+    def Project(faceA: topologic.Face, faceB: topologic.Face, direction : list = None,
+                mantissa: int = 6, tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a projection of the first input face unto the second input face.
 
@@ -1576,7 +1612,9 @@ class Face(topologic.Face):
         direction : list, optional
             The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. The default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -1599,13 +1637,13 @@ class Face(topologic.Face):
         eb = faceA.ExternalBoundary()
         ib_list = []
         _ = faceA.InternalBoundaries(ib_list)
-        p_eb = Wire.Project(wire=eb, face = faceB, direction=direction, mantissa=mantissa)
+        p_eb = Wire.Project(wire=eb, face = faceB, direction=direction, mantissa=mantissa, tolerance=tolerance)
         p_ib_list = []
         for ib in ib_list:
-            temp_ib = Wire.Project(wire=ib, face = faceB, direction=direction, mantissa=mantissa)
+            temp_ib = Wire.Project(wire=ib, face = faceB, direction=direction, mantissa=mantissa, tolerance=tolerance)
             if temp_ib:
                 p_ib_list.append(temp_ib)
-        return Face.ByWires(p_eb, p_ib_list)
+        return Face.ByWires(p_eb, p_ib_list, tolerance=tolerance)
 
     @staticmethod
     def RectangleByPlaneEquation(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, placement: str = "center", equation: dict = None, tolerance: float = 0.0001) -> topologic.Face:
@@ -1651,10 +1689,12 @@ class Face(topologic.Face):
 
         """
         from topologicpy.Wire import Wire
+        
         wire = Wire.Rectangle(origin=origin, width=width, length=length, direction=direction, placement=placement, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
+            print("Face.Rectangle - Error: Could not create the base wire for the rectangle. Returning None.")
             return None
-        return Face.ByWire(wire)
+        return Face.ByWire(wire, tolerance=tolerance)
     
     @staticmethod
     def Skeleton(face, tolerance=0.001):
@@ -1662,14 +1702,12 @@ class Face(topologic.Face):
             Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
             This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
 
-
         Parameters
         ----------
         face : topologic.Face
             The input face.
-    
         tolerance : float , optional
-            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+            The desired tolerance. The default is 0.001. (This is set to a larger number than the usual 0.0001 as it was found to work better)
 
         Returns
         -------
@@ -1681,7 +1719,7 @@ class Face(topologic.Face):
         if not isinstance(face, topologic.Face):
             print("Face.Skeleton - Error: The input face is not a valid topologic face. Retruning None.")
             return None
-        return Wire.Roof(face, degree=0, tolerance=tolerance)
+        return Wire.Skeleton(face, tolerance=tolerance)
     
     @staticmethod
     def Square(origin: topologic.Vertex = None, size: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
@@ -1707,7 +1745,7 @@ class Face(topologic.Face):
             The created square.
 
         """
-        return Face.Rectangle(origin = origin, width = size, length = size, direction = direction, placement = placement, tolerance = tolerance)
+        return Face.Rectangle(origin=origin, width=size, length=size, direction=direction, placement=placement, tolerance=tolerance)
     
     @staticmethod
     def Star(origin: topologic.Vertex = None, radiusA: float = 1.0, radiusB: float = 0.4, rays: int = 5, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
@@ -1740,8 +1778,9 @@ class Face(topologic.Face):
         from topologicpy.Wire import Wire
         wire = Wire.Star(origin=origin, radiusA=radiusA, radiusB=radiusB, rays=rays, direction=direction, placement=placement, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
+            print("Face.Rectangle - Error: Could not create the base wire for the star. Returning None.")
             return None
-        return Face.ByWire(wire)
+        return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
     def Trapezoid(origin: topologic.Vertex = None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
@@ -1778,11 +1817,12 @@ class Face(topologic.Face):
         from topologicpy.Wire import Wire
         wire = Wire.Trapezoid(origin=origin, widthA=widthA, widthB=widthB, offsetA=offsetA, offsetB=offsetB, length=length, direction=direction, placement=placement, tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
+            print("Face.Rectangle - Error: Could not create the base wire for the trapezoid. Returning None.")
             return None
-        return Face.ByWire(wire)
+        return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
-    def Triangulate(face:topologic.Face) -> list:
+    def Triangulate(face:topologic.Face, tolerance: float = 0.0001) -> list:
         """
         Triangulates the input face and returns a list of faces.
 
@@ -1790,6 +1830,8 @@ class Face(topologic.Face):
         ----------
         face : topologic.Face
             The input face.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -1804,7 +1846,7 @@ class Face(topologic.Face):
 
         if not isinstance(face, topologic.Face):
             return None
-        flatFace = Face.Flatten(face)
+        flatFace = Face.Flatten(face, tolerance=tolerance)
         world_origin = Vertex.ByCoordinates(0,0,0)
         # Retrieve the needed transformations
         dictionary = Topology.Dictionary(flatFace)
@@ -1919,7 +1961,7 @@ class Face(topologic.Face):
         outputType : string , optional
             The string defining the desired output. This can be any subset or permutation of "uv". It is case insensitive. The default is "uv".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------

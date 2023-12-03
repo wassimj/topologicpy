@@ -17,10 +17,14 @@ from topologicpy.CellComplex import CellComplex
 from topologicpy.Topology import Topology
 import math
 # Object for test case
-f = Face.Rectangle()
+print("Start")
+w = Wire.Rectangle()
+f = Face.ByWire(w)
+#f = Face.Rectangle()
 
 
 # Case 1 - ByCoordinates
+print("Case 1")
 # test 1
 v0 = Vertex.ByCoordinates(0, 0, 0)          # create vertex
 assert isinstance(v0, topologic.Vertex), "Vertex.ByCoordinates. Should be topologic.Vertex"
@@ -37,6 +41,7 @@ v_list1 = [v1, v2, v3, v4, v5, v6]
 v_list2 = [v1, v2, v3]
 
 # Case 2 - AreIpsilateral
+print("Case 2")
 # test 1
 status = Vertex.AreIpsilateral(v_list1, face=f)
 assert status == False, "Vertex.AreIpsilateral. Should be False"
@@ -45,6 +50,7 @@ status = Vertex.AreIpsilateral(v_list2, face=f)
 assert status == True, "Vertex.AreIpsilateral. Should be False"
 
 # Case 3 - AreIpsilateralCluster
+print("Case 3")
 # test 1
 status = Vertex.AreIpsilateralCluster(Cluster.ByTopologies(v_list1), face=f)
 assert status == False, "Vertex.AreIpsilateral. Should be False"
@@ -53,6 +59,7 @@ status = Vertex.AreIpsilateralCluster(Cluster.ByTopologies(v_list2), face=f)
 assert status == True, "Vertex.AreIpsilateral. Should be False"
 
 # Case 4 - AreOnSameSide
+print("Case 4")
 # test 1
 status = Vertex.AreOnSameSide(v_list1, face=f)
 assert status == False, "Vertex.AreIpsilateral. Should be False"
@@ -61,6 +68,7 @@ status = Vertex.AreOnSameSide(v_list2, face=f)
 assert status == True, "Vertex.AreIpsilateral. Should be False"
 
 # Case 5 - AreOnSameSideCluster
+print("Case 5")
 # test 1
 status = Vertex.AreOnSameSideCluster(Cluster.ByTopologies(v_list1), face=f)
 assert status == False, "Vertex.AreIpsilateral. Should be False"
@@ -69,6 +77,7 @@ status = Vertex.AreOnSameSideCluster(Cluster.ByTopologies(v_list2), face=f)
 assert status == True, "Vertex.AreIpsilateral. Should be False"
 
 # Case 6 - Coordinates
+print("Case 6")
 # test 1
 coordinates = Vertex.Coordinates(v1, mantissa=0)
 assert coordinates == [0,10,1], "Vertex.Coordinates. Should be [0,10,1]"
@@ -92,6 +101,7 @@ coordinates = Vertex.Coordinates(v1, outputType = "z", mantissa=0)
 assert coordinates == [1], "Vertex.Coordinates. Should be [1.0]"
 
 # Case 7 - Distance
+print("Case 7")
 # test 1
 d = Vertex.Distance(v4, v5)
 assert d == 10, "Vertex.Distance. Should be 10"
@@ -108,6 +118,7 @@ epsilon = abs(d - 2.8284)
 assert epsilon < 0.001, "Vertex.Distance. Should very small"
 
 # Case 8 - EnclosingCell
+print("Case 8")
 # test 1
 cc = CellComplex.Prism(height=2)
 v9 = Vertex.ByCoordinates(0.7,0.8,0.5)
@@ -125,11 +136,13 @@ coordinates = Vertex.Coordinates(centroid)
 assert coordinates == [0.25, 0.25, 0.5], "EnclosingCell. Coordinates should be [0.5, 0.5, 0.5]"
 
 # Case 9 - Index
+print("Case 9")
 # test 1
 i = Vertex.Index(v3, v_list1)
 assert i == 2, "EnclosingCell. Index. i should be 2"
 
 # Case 10 - IsInternal
+print("Case 10")
 # test 1
 status = Vertex.IsInternal(v9, cc)
 assert status == False, "IsInternal. status should be False"
@@ -138,6 +151,7 @@ status = Vertex.IsInternal(v10, cc)
 assert status == True, "IsInternal. status should be True"
 
 # Case 11 - NearestVertex
+print("Case 11")
 # test 1
 cluster = Cluster.ByTopologies(v_list1)
 v = Vertex.NearestVertex(v_list1[2], cluster)
@@ -145,12 +159,14 @@ i = Vertex.Index(v, v_list1)
 assert i == 2, "NearestVertex. i must be 2"
 
 # Case 12 - Origin
+print("Case 12")
 # test 1
 origin = Vertex.Origin()
 coordinates = Vertex.Coordinates(origin)
 assert coordinates == [0,0,0], "Origin. coordinates should be [0,0,0]"
 
 # Case 13 - Project
+print("Case 13")
 # test 1
 v = Vertex.ByCoordinates(10,10,10)
 f = Face.Rectangle(width=20, length=20)
@@ -159,18 +175,20 @@ coordinates = Vertex.Coordinates(v_p)
 assert coordinates == [10,10,0], "Origin. coordinates should be [10,10,0]"
 
 # Case 14 - X
+print("Case 14")
 # test 1
 v = Vertex.ByCoordinates(10,20,30)
 assert Vertex.X(v) == 10, "Origin. x coordinate should be 10"
 
 # Case 15 - Y
+print("Case 15")
 # test 1
 v = Vertex.ByCoordinates(10,20,30)
 assert Vertex.Y(v) == 20, "Origin. y coordinate should be 20"
 
 # Case 16 - Z
+print("Case 16")
 # test 1
 v = Vertex.ByCoordinates(10,20,30)
 assert Vertex.Z(v) == 30, "Origin. z coordinate should be 30"
-
-
+print("End")

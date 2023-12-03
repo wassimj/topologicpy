@@ -16,9 +16,9 @@ class Speckle:
         return b
 
     @staticmethod
-    def mesh_to_speckle_mesh(topology) -> Mesh:
+    def mesh_to_speckle_mesh(topology, mantissa: int=6) -> Mesh:
 
-        geom = Topology.Geometry(topology)
+        geom = Topology.Geometry(topology, mantissa=mantissa)
         vertices = geom['vertices']
         faces = geom['faces']
         #m_verts: List[float] = []

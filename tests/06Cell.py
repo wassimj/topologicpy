@@ -16,6 +16,7 @@ from topologicpy.Cell import Cell
 from topologicpy.Topology import Topology
 from topologicpy.Plotly import Plotly
 
+print("Start")
 # Object for test case
 v0 = Vertex.ByCoordinates(0, 0, 0)          # create vertex
 v1 = Vertex.ByCoordinates(0, 10, 0)         # create vertex
@@ -42,7 +43,7 @@ shell_f = Shell.ByFaces(f_list)                 # create shell
 shell_open = Shell.ByFaces([face0])             # create shell
 
 # Case 1 - Box
-
+print("Case 1")
 # test 1
 list_dir = [0,0,1]
 cell_b0 = Cell.Box(origin = v0, width = 0.75, length = 0.75, height = 10, uSides = 1, vSides = 1,
@@ -56,8 +57,8 @@ data_cell_b0 = Plotly.DataByTopology(cell_b0)
 figure_cell_b0 = Plotly.FigureByData(data_cell_b0)
 #Plotly.Show(figure_cell_b0)                                                        # visualization
 
-# Case 02 - Prism
-
+# Case 2 - Prism
+print("Case 2")
 # test 1
 cell_prism = Cell.Prism()                                                                       # without optional inputs
 assert isinstance(cell_prism, topologic.Cell), "Cell.Prism. topologic.Cell"
@@ -70,8 +71,8 @@ data_cell_prism = Plotly.DataByTopology(cell_prism)
 figure_cell_prism = Plotly.FigureByData(data_cell_prism)
 #Plotly.Show(figure_cell_prism)                                                                 # visualization
 
-# Case 03 - ByFaces
-
+# Case 3 - ByFaces
+print("Case 3")
 # test 1
 cell_f = Cell.ByFaces(f_list, tolerance=0.001)                                          # with optional inputs
 assert isinstance(cell_f, topologic.Cell), "Cell.ByFaces. topologic.Cell"
@@ -83,8 +84,8 @@ data_cell_f = Plotly.DataByTopology(cell_f)
 figure_cell_f = Plotly.FigureByData(data_cell_f)
 #Plotly.Show(figure_cell_f)                                                              # visualization
 
-# Case 04 - Area
-
+# Case 4 - Area
+print("Case 4")
 # test 1
 area_cell0 = Cell.Area(cell_f, mantissa=2)        # with optional inputs
 assert isinstance(area_cell0, float), "Cell.Area. Should be float"
@@ -94,8 +95,8 @@ area_cell = Cell.Area(cell_f)                       # without optional inputs
 assert isinstance(area_cell, float), "Cell.Area. Should be float"
 assert area_cell == 600.0, "Cell.Area. Should be 6.0"
 
-# Case 05 - ByShell
-
+# Case 5 - ByShell
+print("Case 5")
 # test 1
 cell_s = Cell.ByShell(shell_f)
 assert isinstance(cell_s, topologic.Cell), "Cell.ByShell. topologic.Cell"
@@ -105,7 +106,7 @@ figure_cell_s = Plotly.FigureByData(data_cell_s)
 #Plotly.Show(figure_cell_s)                                                              # visualization
 
 # Case 06 - ByThickenedFace
-
+print("Case 6")
 # test 1
 cell_tf = Cell.ByThickenedFace(face0)                                                       # without optional inputs
 assert isinstance(cell_tf, topologic.Cell), "Cell.ByThickenedFace. topologic.Cell"
@@ -119,7 +120,7 @@ figure_cell_tf = Plotly.FigureByData(data_cell_tf)
 assert isinstance(cell_tf, topologic.Cell), "Cell.ByThickenedFace. topologic.Cell"
 
 # Case 07 - ByThickenedShell
-
+print("Case 7")
 # test 1
 cell_ts = Cell.ByThickenedShell(shell_open, direction=[0, 0, 1], thickness=2.0,
                                 bothSides=False, reverse=False, tolerance=0.001)            # with optional inputs
@@ -128,7 +129,7 @@ assert isinstance(cell_ts, topologic.Cell), "Cell.ByThickenedShell. topologic.Ce
 #Topology.Show(cell_ts, renderer="browser")                                                                # visualization
 
 # Case 08 - ByWires
-
+print("Case 8")
 # test 1
 cell_w = Cell.ByWires(w_list)                                                   # without optional inputs
 assert isinstance(cell_w, topologic.Cell), "Cell.ByWires. topologic.Cell"
@@ -141,7 +142,7 @@ figure_cell_w = Plotly.FigureByData(data_cell_w)
 #Plotly.Show(figure_cell_w)                                                                 # visualization
 
 # Case 09 - ByWiresCluster
-
+print("Case 9")
 # test 1
 cell_wc = Cell.ByWiresCluster(w_cluster)                                                    # without optional inputs
 assert isinstance(cell_wc, topologic.Cell), "Cell.ByWiresCluster. topologic.Cell"
@@ -154,7 +155,7 @@ figure_cell_wc = Plotly.FigureByData(data_cell_wc)
 #Plotly.Show(figure_cell_wc)                                                                 # visualization
 
 # Case 10 - Compactness
-
+print("Case 10")
 # test 1
 comp_cell = Cell.Compactness(cell_wc)                # without optional inputs
 assert isinstance(comp_cell, float), "Cell.Compactness. Should be float"
@@ -163,7 +164,7 @@ comp_cell1 = Cell.Compactness(cell_tf, mantissa=3)   # with optional inputs
 assert isinstance(comp_cell1, float), "Cell.Compactness. Should be float"
 
 # Case 11 - Cone
-
+print("Case 11")
 # test 1
 cell_c = Cell.Cone()                                                                        # without optional inputs
 assert isinstance(cell_c, topologic.Cell), "Cell.Cone. topologic.Cell"
@@ -177,7 +178,7 @@ figure_cell_c = Plotly.FigureByData(data_cell_c)
 #Plotly.Show(figure_cell_c)                                                                 # visualization
 
 # Case 12 - Cylinder
-
+print("Case 12")
 # test 1
 cell_cy = Cell.Cylinder()                                                                   # with optional inputs
 assert isinstance(cell_cy, topologic.Cell), "Cell.Cylinder. topologic.Cell"
@@ -191,13 +192,13 @@ figure_cell_cy = Plotly.FigureByData(data_cell_cy)
 #Plotly.Show(figure_cell_cy)                                                                 # visualization
 
 # Case 13 - Decompose
-
+print("Case 13")
 # test 1
 dec_cell = Cell.Decompose(cell_cy, tiltAngle=10, tolerance=0.0001) 
 assert isinstance(dec_cell, dict), "Cell.Decompose. dictionary"
 
 # Case 14 - Edges
-
+print("Case 14")
 # test 1
 e_cell = Cell.Edges(cell_c)
 assert isinstance(e_cell, list), "Cell.Edges. list"
@@ -206,7 +207,7 @@ e_cell1 = Cell.Edges(cell_cy)
 assert isinstance(e_cell1, list), "Cell.Edges. list"
 
 # Case 15 - ExternalBoundary
-
+print("Case 15")
 # test 1
 eb_cell = Cell.ExternalBoundary(cell_cy)
 assert isinstance(eb_cell, topologic.Shell), "ExternalBoundary. topologic.Shell"
@@ -216,7 +217,7 @@ figure_eb_cell = Plotly.FigureByData(data_eb_cell)
 #Plotly.Show(figure_eb_cell)                                                                 # visualization
 
 # Case 16 - Faces
-
+print("Case 16")
 # test 1
 f_cell = Cell.Faces(cell_s)
 assert isinstance(f_cell, list), "Cell.Faces. list"
@@ -225,7 +226,7 @@ f_cell1 = Cell.Faces(cell_cy)
 assert isinstance(f_cell1, list), "Cell.Faces. list"
 
 # Case 17 - Hyperboloid
-
+print("Case 17")
 # test 1
 cell_hp = Cell.Hyperboloid()                                                                         # without optional inputs
 assert isinstance(cell_hp, topologic.Cell), "Cell.Hyperboloid. topologic.Cell"
@@ -239,7 +240,7 @@ figure_cell_hp = Plotly.FigureByData(data_cell_hp)
 #Plotly.Show(figure_cell_hp)                                                                 # visualization
 
 # Case 18 - InternalBoundaries
-
+print("Case 18")
 # test 1
 ib_cell = Cell.InternalBoundaries(cell_hp)
 assert isinstance(ib_cell, list), "Cell.InternalBoundaries. list"
@@ -248,7 +249,7 @@ ib_cell1 = Cell.InternalBoundaries(cell_cy)
 assert isinstance(ib_cell1, list), "Cell.InternalBoundaries. list"
 
 # Case 19 - InternalVertex
-
+print("Case 19")
 # test 1
 iv_cell = Cell.InternalVertex(cell_s)                                                     # without optional inputs
 assert isinstance(iv_cell, topologic.Vertex), "Cell.Hyperboloid. topologic.Vertex"
@@ -257,7 +258,7 @@ iv_cell1 = Cell.InternalVertex(cell_c, tolerance=0.001)                         
 assert isinstance(iv_cell1, topologic.Vertex), "Cell.Hyperboloid. topologic.Vertex"
 
 # Case 20 - IsInternal
-
+print("Case 20")
 # test 1
 b_inside = Cell.IsInternal(cell_c, v2)                        # without optional inputs
 assert isinstance(b_inside, bool), "Cell.IsInternal. boolean"
@@ -266,7 +267,7 @@ b_inside1 = Cell.IsInternal(cell_cy, v2, tolerance=0.001)     # with optional in
 assert isinstance(b_inside1, bool), "Cell.IsInternal. boolean"
 
 # Case 21 - Pipe
-
+print("Case 21")
 # test 1
 pipe_cell_dict = Cell.Pipe(e0)                                           # without optional inputs
 assert isinstance(pipe_cell_dict, dict), "Cell.Pipe. dict"
@@ -281,7 +282,7 @@ pipe_cell = pipe_cell_dict['pipe']
 assert isinstance(pipe_cell, topologic.Cell), "Cell.Pipe. Should be a Cell"
 
 # Case 22 - Sets
-
+print("Case 22")
 # test 1
 cell_cy2 = Cell.Cylinder()
 vCy3 = Vertex.ByCoordinates(0,1,0)
@@ -300,7 +301,7 @@ cell_sets = Cell.Sets(list_sub,list_sup)
 assert isinstance(cell_sets, list), "Cell.Shells. list"
 
 # Case 23 - Shells
-
+print("Case 23")
 # test 1
 shell_cell = Cell.Shells(cell_cy)
 assert isinstance(shell_cell, list), "Cell.Shells. list"
@@ -311,7 +312,7 @@ assert len(shell_cell) == 1, "Cell.Shells. List length should be 1"
 assert isinstance(shell_cell1, list), "Cell.Shells. list"
 
 # Case 24 - Sphere
-
+print("Case 24")
 # test 1
 cell_sphere = Cell.Sphere()                                                                       # with optional inputs
 assert isinstance(cell_sphere, topologic.Cell), "Cell.Sphere. topologic.Cell"
@@ -325,7 +326,7 @@ figure_cell_sphere = Plotly.FigureByData(data_cell_sphere)
 #Plotly.Show(figure_cell_sphere)                                                                   # visualization
 
 # Case 25 - SurfaceArea
-
+print("Case 25")
 # test 1
 sa_cell = Cell.SurfaceArea(cell_f)                  # without optional inputs
 assert isinstance(sa_cell, float), "Cell.SurfaceArea. float"
@@ -335,7 +336,7 @@ sa_cell = Cell.SurfaceArea(cell_f, mantissa=3)      # with optional inputs
 assert isinstance(sa_cell, float), "Cell.SurfaceArea. float"
 
 # Case 26 - Torus
-
+print("Case 26")
 # test 1
 """TypeError: 'NoneType' object is not iterable"""
 cell_torus = Cell.Torus()                                                                    # without optional inputs
@@ -351,7 +352,7 @@ assert isinstance(cell_torus, topologic.Cell), "Cell.Torus. topologic.Cell"
 #Plotly.Show(figure_cell_torus)                                                               # visualization
 
 # Case 27 - Vertices
-
+print("Case 27")
 # test 1
 v_cell = Cell.Vertices(cell_hp)
 assert isinstance(v_cell, list), "Cell.Vertices. list"
@@ -362,14 +363,14 @@ assert len(v_cell) == 8, "Cell.Vertices. List length should be 8"
 assert isinstance(v_cell, list), "Cell.Vertices. list"
 
 # Case 28 - Volume
-
+print("Case 29")
 # test 1
 vol_cell = Cell.Volume(cell_f, mantissa=3)
 assert isinstance(vol_cell, float), "Cell.Volume. float"
 assert vol_cell == 1000.0, "Cell.Volume. Should be 1000.0"
 
 # Case 29 - Wires
-
+print("Case 29")
 # test 1
 w_cell = Cell.Wires(cell_c)
 assert isinstance(w_cell, list), "Cell.Wires. list"
@@ -378,3 +379,4 @@ assert isinstance(w_cell, list), "Cell.Wires. list"
 w_cell = Cell.Wires(cell_cy)
 assert isinstance(w_cell, list), "Cell.Wires. list"
 #print(len(w_cell))
+print("End")

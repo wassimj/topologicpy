@@ -15,7 +15,7 @@ class Cell(Topology):
         cell : topologic.Cell
             The cell.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -33,7 +33,10 @@ class Cell(Topology):
         return round(area, mantissa)
 
     @staticmethod
-    def Box(origin: topologic.Vertex = None, width: float = 1, length: float = 1, height: float = 1, uSides: int = 1, vSides:int = 1, wSides:int = 1, direction: list = [0,0,1], placement: str ="center") -> topologic.Cell:
+    def Box(origin: topologic.Vertex = None,
+            width: float = 1, length: float = 1, height: float = 1,
+            uSides: int = 1, vSides:int = 1, wSides:int = 1,
+            direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a box.
 
@@ -57,14 +60,18 @@ class Cell(Topology):
             The vector representing the up direction of the box. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Cell
             The created box.
 
         """
-        return Cell.Prism(origin=origin, width=width, length=length, height=height, uSides=uSides, vSides=vSides, wSides=wSides, direction=direction, placement=placement)
+        return Cell.Prism(origin=origin, width=width, length=length, height=height,
+                          uSides=uSides, vSides=vSides, wSides=wSides,
+                          direction=direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
     def ByFaces(faces: list, planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
@@ -99,7 +106,7 @@ class Cell(Topology):
         planarizedList = []
         enlargedList = []
         if planarize:
-            planarizedList = [Face.Planarize(f) for f in faceList]
+            planarizedList = [Face.Planarize(f, tolerance=tolerance) for f in faceList]
             enlargedList = [Face.ByOffset(f, offset=-tolerance*10) for f in planarizedList]
             cell = topologic.Cell.ByFaces(enlargedList, tolerance)
             faces = Topology.SubTopologies(cell, subTopologyType="face")
@@ -114,7 +121,7 @@ class Cell(Topology):
             for f in finalFaces:
                 vertices = Face.Vertices(f)
                 w = Wire.Cycles(Face.ExternalBoundary(f), maxVertices=len(vertices))[0]
-                finalFinalFaces.append(Face.ByWire(w))
+                finalFinalFaces.append(Face.ByWire(w, tolerance=tolerance))
             return topologic.Cell.ByFaces(finalFinalFaces, tolerance)
         else:
             return topologic.Cell.ByFaces(faces, tolerance)
@@ -198,8 +205,8 @@ class Cell(Topology):
             topEdge = Topology.Translate(bottomEdge, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
             sideEdge1 = Edge.ByVertices([bottomEdge.StartVertex(), topEdge.StartVertex()], tolerance=tolerance, verbose=False)
             sideEdge2 = Edge.ByVertices([bottomEdge.EndVertex(), topEdge.EndVertex()], tolerance=tolerance, verbose=False)
-            cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
-            cellFaces.append(Face.ByWire(cellWire))
+            cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]), tolerance=tolerance)
+            cellFaces.append(Face.ByWire(cellWire, tolerance=tolerance))
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
@@ -247,19 +254,19 @@ class Cell(Topology):
             bottomShell = shell
             topShell = Topology.Translate(shell, direction[0]*thickness, direction[1]*thickness, direction[2]*thickness)
         cellFaces = Shell.Faces(bottomShell) + Shell.Faces(topShell)
-        bottomWire = Shell.ExternalBoundary(bottomShell)
+        bottomWire = Shell.ExternalBoundary(bottomShell, tolerance=tolerance)
         bottomEdges = Wire.Edges(bottomWire)
         for bottomEdge in bottomEdges:
             topEdge = Topology.Translate(bottomEdge, direction[0]*thickness, direction[1]*thickness, direction[2]*thickness)
             sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)], tolerance=tolerance, verbose=False)
             sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)], tolerance=tolerance, verbose=False)
-            cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]))
-            cellFace = Face.ByWire(cellWire)
+            cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]), tolerance=tolerance)
+            cellFace = Face.ByWire(cellWire, tolerance=tolerance)
             cellFaces.append(cellFace)
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
     
     @staticmethod
-    def ByWires(wires: list, close: bool = False, triangulate: bool = True, planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
+    def ByWires(wires: list, close: bool = False, triangulate: bool = True, planarize: bool = False, mantissa: int = 6, tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a cell by lofting through the input list of wires.
 
@@ -271,6 +278,8 @@ class Cell(Topology):
             If set to True, the last wire in the list of input wires will be connected to the first wire in the list of input wires. The default is False.
         triangulate : bool , optional
             If set to True, the faces will be triangulated. The default is True.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -287,7 +296,7 @@ class Cell(Topology):
         """
 
         def cleanup(f):
-            flatFace = Face.Flatten(f)
+            flatFace = Face.Flatten(f, tolerance=tolerance)
             world_origin = Vertex.ByCoordinates(0,0,0)
             # Retrieve the needed transformations
             dictionary = Topology.Dictionary(flatFace)
@@ -318,14 +327,14 @@ class Cell(Topology):
         if len(wires) < 2:
             print("Cell.ByWires - Error: The input wires parameter contains less than two valid topologic wires. Returning None.")
             return None
-        faces = [Face.ByWire(wires[0]), Face.ByWire(wires[-1])]
+        faces = [Face.ByWire(wires[0], tolerance=tolerance), Face.ByWire(wires[-1], tolerance=tolerance)]
         if close == True:
-            faces.append(Face.ByWire(wires[0]))
+            faces.append(Face.ByWire(wires[0], tolerance=tolerance))
         if triangulate == True:
             triangles = []
             for face in faces:
                 if len(Topology.Vertices(face)) > 3:
-                    triangles += Face.Triangulate(face)
+                    triangles += Face.Triangulate(face, tolerance=tolerance)
                 else:
                     triangles += [face]
             faces = triangles
@@ -350,7 +359,7 @@ class Cell(Topology):
                     except:
                         try:
                             e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4])))
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4], tolerance=tolerance), tolerance=tolerance))
                         except:
                             pass
                     try:
@@ -358,13 +367,13 @@ class Cell(Topology):
                     except:
                         try:
                             e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, verbose=False)
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3])))
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3], tolerance=tolerance), tolerance=tolerance))
                         except:
                             pass
                     if e3 and e4:
                         e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
-                        faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4])))
-                        faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3])))
+                        faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
+                        faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
             else:
                 for j in range (len(w1_edges)):
                     e1 = w1_edges[j]
@@ -387,25 +396,22 @@ class Cell(Topology):
                             pass
                     if e3 and e4:
                         try:
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2, e3])))
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2, e3], tolerance=tolerance), tolerance=tolerance))
                         except:
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2, e4])))
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2, e4], tolerance=tolerance), tolerance=tolerance))
                     elif e3:
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2])))
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2], tolerance=tolerance), tolerance=tolerance))
                     elif e4:
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2])))
+                            faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2], tolerance=tolerance), tolerance=tolerance))
         cell = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
         if not cell:
-            cell = Shell.ByFaces(faces)
-            if cell:
-                geom = Topology.Geometry(cell)
+            shell = Shell.ByFaces(faces, tolerance=tolerance)
+            if isinstance(shell, topologic.Shell):
+                geom = Topology.Geometry(shell, mantissa=mantissa)
                 cell = Topology.ByGeometry(geom['vertices'], geom['edges'], geom['faces'])
-            elif not isinstance(cell, topologic.Cell):
-                cell = Shell.ByFaces(faces)
-                print("Cell.ByWires - Warning: Could not create a cell. Returning a shell.")
-                if not cell:
-                    print("Cell.ByWires - Warning: Could not create a cell. Returning a cluster.")
-                    cell = Cluster.ByTopologies(faces)
+            if not isinstance(cell, topologic.Cell):
+                print("Cell.ByWires - Error: Could not create a cell. Returning None.")
+                return None
         return cell
 
     @staticmethod
@@ -454,7 +460,7 @@ class Cell(Topology):
         reference : str , optional
             The desired reference to which to compare this compactness. The options are "sphere" and "cube". It is case insensitive. The default is "sphere".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Raises
         ------
@@ -535,13 +541,13 @@ class Cell(Topology):
                 return topologic.CellUtility.ByLoft([baseWire, topWire])
             vertices = []
             _ = wire.Vertices(None,vertices)
-            faces = [Face.ByWire(wire)]
+            faces = [Face.ByWire(wire, tolerance=tolerance)]
             for i in range(0, len(vertices)-1):
                 w = Wire.ByVertices([apex, vertices[i], vertices[i+1]])
-                f = Face.ByWire(w)
+                f = Face.ByWire(w, tolerance=tolerance)
                 faces.append(f)
             w = Wire.ByVertices([apex, vertices[-1], vertices[0]])
-            f = Face.ByWire(w)
+            f = Face.ByWire(w, tolerance=tolerance)
             faces.append(f)
             return Cell.ByFaces(faces, tolerance=tolerance)
         if not origin:
@@ -599,7 +605,7 @@ class Cell(Topology):
             for i in range(1, vSides):
                 baseZ = origin.Z() + zOffset + float(height)/float(vSides)*i
                 tool_origin = Vertex.ByCoordinates(baseX, baseY, baseZ)
-                cutting_planes.append(Face.ByWire(Wire.Rectangle(origin=tool_origin, width=size, length=size)))
+                cutting_planes.append(Face.ByWire(Wire.Rectangle(origin=tool_origin, width=size, length=size), tolerance=tolerance))
             cutting_planes_cluster = Cluster.ByTopologies(cutting_planes)
             shell = Cell.Shells(cone)[0]
             shell = shell.Slice(cutting_planes_cluster)
@@ -713,7 +719,7 @@ class Cell(Topology):
         circle_origin = Vertex.ByCoordinates(origin.X() + xOffset, origin.Y() + yOffset, origin.Z() + zOffset)
         
         baseWire = Wire.Circle(origin=circle_origin, radius=radius, sides=uSides, fromAngle=0, toAngle=360, close=True, direction=[0,0,1], placement="center", tolerance=tolerance)
-        baseFace = Face.ByWire(baseWire)
+        baseFace = Face.ByWire(baseWire, tolerance=tolerance)
         cylinder = Cell.ByThickenedFace(face=baseFace, thickness=height, bothSides=False, reverse=False,
                             tolerance=tolerance)
         if vSides > 1:
@@ -724,7 +730,7 @@ class Cell(Topology):
             for i in range(1, vSides):
                 baseZ = origin.Z() + zOffset + float(height)/float(vSides)*i
                 tool_origin = Vertex.ByCoordinates(baseX, baseY, baseZ)
-                cutting_planes.append(Face.ByWire(Wire.Rectangle(origin=tool_origin, width=size, length=size)))
+                cutting_planes.append(Face.ByWire(Wire.Rectangle(origin=tool_origin, width=size, length=size), tolerance=tolerance))
             cutting_planes_cluster = Cluster.ByTopologies(cutting_planes)
             cylinder = CellComplex.ExternalBoundary(cylinder.Slice(cutting_planes_cluster))
 
@@ -961,35 +967,35 @@ class Cell(Topology):
             The created hyperboloid.
 
         """
-
-        def createHyperboloid(baseVertices, topVertices, tolerance):
-            baseWire = Wire.ByVertices(baseVertices, close=True)
-            topWire = Wire.ByVertices(topVertices, close=True)
-            baseFace = Face.ByWire(baseWire)
-            topFace = Face.ByWire(topWire)
-            faces = [baseFace, topFace]
-            for i in range(0, len(baseVertices)-1):
-                w = Wire.ByVertices([baseVertices[i], topVertices[i], topVertices[i+1]], close=True)
-                f = Face.ByWire(w)
-                faces.append(f)
-                w = Wire.ByVertices([baseVertices[i+1], baseVertices[i], topVertices[i+1]], close=True)
-                f = Face.ByWire(w)
-                faces.append(f)
-            w = Wire.ByVertices([baseVertices[-1], topVertices[-1], topVertices[0]], close=True)
-            f = Face.ByWire(w)
-            faces.append(f)
-            w = Wire.ByVertices([baseVertices[0], baseVertices[-1], topVertices[0]], close=True)
-            f = Face.ByWire(w)
-            faces.append(f)
-            returnTopology = topologic.Cell.ByFaces(faces, tolerance)
-            if returnTopology == None:
-                returnTopology = topologic.Cluster.ByTopologies(faces)
-            return returnTopology
-        
+        from topologicpy.Cluster import Cluster
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
 
+        def createHyperboloid(baseVertices, topVertices, tolerance):
+            baseWire = Wire.ByVertices(baseVertices, close=True)
+            topWire = Wire.ByVertices(topVertices, close=True)
+            baseFace = Face.ByWire(baseWire, tolerance=tolerance)
+            topFace = Face.ByWire(topWire, tolerance=tolerance)
+            faces = [baseFace, topFace]
+            for i in range(0, len(baseVertices)-1):
+                w = Wire.ByVertices([baseVertices[i], topVertices[i], topVertices[i+1]], close=True)
+                f = Face.ByWire(w, tolerance=tolerance)
+                faces.append(f)
+                w = Wire.ByVertices([baseVertices[i+1], baseVertices[i], topVertices[i+1]], close=True)
+                f = Face.ByWire(w, tolerance=tolerance)
+                faces.append(f)
+            w = Wire.ByVertices([baseVertices[-1], topVertices[-1], topVertices[0]], close=True)
+            f = Face.ByWire(w, tolerance=tolerance)
+            faces.append(f)
+            w = Wire.ByVertices([baseVertices[0], baseVertices[-1], topVertices[0]], close=True)
+            f = Face.ByWire(w, tolerance=tolerance)
+            faces.append(f)
+            returnTopology = Cell.ByFaces(faces, tolerance=tolerance)
+            if returnTopology == None:
+                returnTopology = Cluster.ByTopologies(faces)
+            return returnTopology
+        
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(origin, topologic.Vertex):
@@ -1328,7 +1334,7 @@ class Cell(Topology):
     
     @staticmethod
     def Prism(origin: topologic.Vertex = None, width: float = 1, length: float = 1, height: float = 1, uSides: int = 1, vSides: int = 1, wSides: int = 1,
-                  direction: list = [0,0,1], placement: str ="center") -> topologic.Cell:
+                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Description
         ----------
@@ -1354,7 +1360,9 @@ class Cell(Topology):
             The vector representing the up direction of the prism. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Cell
@@ -1369,16 +1377,16 @@ class Cell(Topology):
             wRect = Wire.Rectangle(origin=origin, width=width*1.2, length=length*1.2, direction=[0, 0, 1], placement="center")
             sliceFaces = []
             for i in range(1, wSides):
-                sliceFaces.append(Topology.Translate(Face.ByWire(wRect), 0, 0, height/wSides*i - height*0.5))
+                sliceFaces.append(Topology.Translate(Face.ByWire(wRect, tolerance=tolerance), 0, 0, height/wSides*i - height*0.5))
             uRect = Wire.Rectangle(origin=origin, width=height*1.2, length=length*1.2, direction=[1, 0, 0], placement="center")
             for i in range(1, uSides):
-                sliceFaces.append(Topology.Translate(Face.ByWire(uRect), width/uSides*i - width*0.5, 0, 0))
+                sliceFaces.append(Topology.Translate(Face.ByWire(uRect, tolerance=tolerance), width/uSides*i - width*0.5, 0, 0))
             vRect = Wire.Rectangle(origin=origin, width=height*1.2, length=width*1.2, direction=[0, 1, 0], placement="center")
             for i in range(1, vSides):
-                sliceFaces.append(Topology.Translate(Face.ByWire(vRect), 0, length/vSides*i - length*0.5, 0))
+                sliceFaces.append(Topology.Translate(Face.ByWire(vRect, tolerance=tolerance), 0, length/vSides*i - length*0.5, 0))
             if len(sliceFaces) > 0:
                 sliceCluster = topologic.Cluster.ByTopologies(sliceFaces)
-                shell = Topology.Slice(topologyA=shell, topologyB=sliceCluster, tranDict=False)
+                shell = Topology.Slice(topologyA=shell, topologyB=sliceCluster, tranDict=False, tolerance=tolerance)
                 return Cell.ByShell(shell)
             return cell
         
@@ -1405,7 +1413,7 @@ class Cell(Topology):
         vb4 = Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z()+zOffset)
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
-        baseFace = Face.ByWire(baseWire)
+        baseFace = Face.ByWire(baseWire, tolerance=tolerance)
 
         prism = Cell.ByThickenedFace(baseFace, thickness=height, bothSides = False)
 
@@ -1430,7 +1438,7 @@ class Cell(Topology):
         prism = Topology.Rotate(prism, origin, 0, 0, 1, phi)
         return prism
     
-    def Roof(face, degree=45, angTolerance=2, tolerance=0.001):
+    def Roof(face, degree: float = 45, angTolerance: float = 2.0 , tolerance: float = 0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
             This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
@@ -1452,19 +1460,9 @@ class Cell(Topology):
             The created roof.
 
         """
-        from topologicpy import Polyskel
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
-        from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Helper import Helper
-        import topologic
-        import math
         
         shell = Shell.Roof(face=face, degree=degree, angTolerance=angTolerance, tolerance=tolerance)
         faces = Topology.Faces(shell) + [face]
@@ -1494,6 +1492,8 @@ class Cell(Topology):
             The classified list of input cells based on their encolsure within the input list of super cells.
 
         """
+        from topologicpy.Topology import Topology
+
         if not isinstance(cells, list):
             print("Cell.Sets - Error: The input cells parameter is not a valid list. Returning None.")
             return None
@@ -1524,7 +1524,7 @@ class Cell(Topology):
             sets.append([])
         for i in range(len(cells)):
             if unused[i]:
-                iv = Cell.InternalVertex(cells[i], tolerance)
+                iv = Topology.InternalVertex(cells[i], tolerance=tolerance)
                 for j in range(len(superCells)):
                     if (Cell.IsInternal(superCells[j], iv, tolerance)):
                         sets[j].append(cells[i])
@@ -1631,7 +1631,7 @@ class Cell(Topology):
         cell : topologic.Cell
             The cell.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -1741,7 +1741,7 @@ class Cell(Topology):
         cell : topologic.Cell
             The input cell.
         manitssa: int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------

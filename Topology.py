@@ -75,7 +75,7 @@ class WorkerProcess(Process):
             sink = Topology.ByBREPString(sink_item.sink_str)
             sinkKeys = []
             sinkValues = []
-            iv = Topology.RelevantSelector(sink, self.tolerance)
+            iv = Topology.InternalVertex(sink, tolerance=self.tolerance)
             for j, source_str in enumerate(self.sources):
                 source = Topology.ByBREPString(source_str)
                 flag = False
@@ -144,7 +144,7 @@ class MergingProcess(Process):
 
 class Topology():
     @staticmethod
-    def AddApertures(topology, apertures, exclusive=False, subTopologyType=None, tolerance=0.0001):
+    def AddApertures(topology, apertures, exclusive=False, subTopologyType=None, tolerance=0.001):
         """
         Adds the input list of apertures to the input topology or to its subtpologies based on the input subTopologyType.
 
@@ -159,7 +159,7 @@ class Topology():
         subTopologyType : string , optional
             The subtopology type to which to add the apertures. This can be "cell", "face", "edge", or "vertex". It is case insensitive. If set to None, the apertures will be added to the input topology. The default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. The default is 0.001. This is larger than the usual 0.0001 as it seems to work better.
 
         Returns
         -------
@@ -1183,7 +1183,7 @@ class Topology():
         vb4 = topologic.Vertex.ByCoordinates(minX, maxY, minZ)
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
-        baseFace = Face.ByWire(baseWire)
+        baseFace = Face.ByWire(baseWire, tolerance=tolerance)
         if abs(maxZ-minZ) < tolerance:
             box = baseFace
         else:
@@ -1275,8 +1275,8 @@ class Topology():
                 else:
                     return None
             if outputMode.lower() == "shell":
-                output = Shell.ByFaces(faces, tolerance)
-                if output:
+                output = Shell.ByFaces(faces, tolerance=tolerance) # This can return a list
+                if isinstance(output, topologic.Shell):
                     return output
                 else:
                     return None
@@ -1291,7 +1291,7 @@ class Topology():
                 return edges[0]
             output = Cluster.ByTopologies(edges)
             if outputMode.lower() == "wire":
-                output = Topology.SelfMerge(output)
+                output = Topology.SelfMerge(output, tolerance=tolerance)
                 if isinstance(output, topologic.Wire):
                     return output
                 else:
@@ -1304,12 +1304,12 @@ class Topology():
             for i in range(len(vertices)-1):
                 v1 = vertices[i]
                 v2 = vertices[i+1]
-                e1 = Edge.ByVertices([topVerts[v1], topVerts[v2]])
+                e1 = Edge.ByVertices([topVerts[v1], topVerts[v2]], tolerance=tolerance)
                 edges.append(e1)
             # connect the last vertex to the first one
             v1 = vertices[-1]
             v2 = vertices[0]
-            e1 = Edge.ByVertices([topVerts[v1], topVerts[v2]])
+            e1 = Edge.ByVertices([topVerts[v1], topVerts[v2]], tolerance=tolerance)
             edges.append(e1)
             return edges
         from topologicpy.Vertex import Vertex
@@ -1337,7 +1337,7 @@ class Topology():
             return None
         if (outputMode.lower == "wire") and (len(edges) > 0):
             for anEdge in edges:
-                topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]])
+                topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]], tolerance=tolerance)
                 topEdges.append(topEdge)
             if len(topEdges) > 0:
                 returnTopology = topologyByEdges(topEdges)
@@ -1345,9 +1345,9 @@ class Topology():
             for aFace in faces:
                 faceEdges = edgesByVertices(aFace, topVerts)
                 if len(faceEdges) > 2:
-                    faceWire = Wire.ByEdges(faceEdges)
+                    faceWire = Wire.ByEdges(faceEdges, tolerance=tolerance)
                     try:
-                        topFace = Face.ByWire(faceWire)
+                        topFace = Face.ByWire(faceWire, tolerance=tolerance)
                         topFaces.append(topFace)
                     except:
                         pass
@@ -1355,7 +1355,7 @@ class Topology():
                 returnTopology = topologyByFaces(topFaces, outputMode=outputMode, tolerance=tolerance)
         elif len(edges) > 0:
             for anEdge in edges:
-                topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]])
+                topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]], tolerance=tolerance)
                 topEdges.append(topEdge)
             if len(topEdges) > 0:
                 returnTopology = topologyByEdges(topEdges, outputMode=outputMode)
@@ -1727,7 +1727,7 @@ class Topology():
             if len(everything) == 1:
                 aperture = everything[0]
             else:
-                aperture = Topology.SelfMerge(Cluster.ByTopologies(everything))
+                aperture = Topology.SelfMerge(Cluster.ByTopologies(everything), tolerance=tolerance)
             return aperture
 
         def buildVertex(json_item):
@@ -1744,7 +1744,7 @@ class Topology():
                 _ = Aperture.ByTopologyContext(ap, context)
             return v
 
-        def buildEdge(json_item, j_vertices, uuidKey="uuid"):
+        def buildEdge(json_item, j_vertices, uuidKey="uuid", tolerance=0.0001):
             edge_vertices = json_item['vertices']
             vertices = []
             for j_v in edge_vertices:
@@ -1761,12 +1761,12 @@ class Topology():
                 _ = Aperture.ByTopologyContext(ap, context)
             return e
 
-        def buildWire(json_item, j_edges, j_vertices, uuidKey="uuid"):
+        def buildWire(json_item, j_edges, j_vertices, uuidKey="uuid", tolerance=0.0001):
             wire_edges = json_item['edges']
             edges = []
             for j_e in wire_edges:
-                edges.append(buildEdge(find_json_item(j_edges, uuidKey, j_e), j_vertices, uuidKey=uuidKey))
-            w = Wire.ByEdges(edges)
+                edges.append(buildEdge(find_json_item(j_edges, uuidKey, j_e), j_vertices, uuidKey=uuidKey, tolerance=tolerance))
+            w = Wire.ByEdges(edges, tolerance=tolerance)
             if w == None:
                 print("Topology.ByJSONString - Error: Could not build a wire. Returning None.")
                 return None
@@ -1778,14 +1778,14 @@ class Topology():
                 _ = Aperture.ByTopologyContext(ap, context)
             return w
 
-        def buildFace(json_item, j_wires, j_edges, j_vertices, uuidKey="uuid"):
+        def buildFace(json_item, j_wires, j_edges, j_vertices, uuidKey="uuid", tolerance=0.0001):
             face_wires = json_item['wires']
-            external_boundary = buildWire(find_json_item(j_wires, uuidKey, face_wires[0]), j_edges, j_vertices, uuidKey=uuidKey)
+            external_boundary = buildWire(find_json_item(j_wires, uuidKey, face_wires[0]), j_edges, j_vertices, uuidKey=uuidKey, tolerance=tolerance)
             if not isinstance(external_boundary, topologic.Wire):
                 print("Topology.ByJSONString - ERROR: Something went wrong with original external boundary. Returning None.")
                 return None
-            if not Topology.IsPlanar(external_boundary):
-                temp_boundary = Wire.Planarize(external_boundary)
+            if not Topology.IsPlanar(external_boundary, tolerance=tolerance):
+                temp_boundary = Wire.Planarize(external_boundary, tolerance=tolerance)
                 if temp_boundary == None or not isinstance(temp_boundary, topologic.Wire):
                     print("Topology.ByJSONString - Error: Something went wrong with external boundary. Returning None.")
                     return None
@@ -1805,7 +1805,7 @@ class Topology():
                     ib = Wire.Close(ib)
                 internal_boundaries.append(ib)
 
-            f = Face.ByWires(external_boundary, internal_boundaries)
+            f = Face.ByWires(external_boundary, internal_boundaries, tolerance=tolerance)
             if not isinstance(f, topologic.Face):
                 print("Topology.ByJSONString - Error: Could not build a face. Returning None.", f, "Ex Bound:", external_boundary)
                 return None
@@ -1815,7 +1815,7 @@ class Topology():
                 return None
             if Face.Area(f) < 0:
                 external_boundary = Wire.Invert(external_boundary)
-            f = Face.ByWires(external_boundary, internal_boundaries)
+            f = Face.ByWires(external_boundary, internal_boundaries, tolerance=tolerance)
             if f == None:
                 print("Topology.ByJSONString - Error: Could not build a face. Returning None.")
                 return None
@@ -1828,14 +1828,14 @@ class Topology():
                     _ = Aperture.ByTopologyContext(ap, context)
             return f
 
-        def buildShell(json_item, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid"):
+        def buildShell(json_item, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid", tolerance=0.0001):
             shell_faces = json_item['faces']
             faces = []
             for j_f in shell_faces:
                 faces.append(buildFace(find_json_item(j_faces, uuidKey, j_f), j_wires, j_edges, j_vertices, uuidKey=uuidKey))
             faces = Helper.Flatten(faces)
-            s = Shell.ByFaces(faces)
-            if s == None:
+            s = Shell.ByFaces(faces, tolerance=tolerance) # This can return a list
+            if not isinstance(s, topologic.Shell):
                 print("Topology.ByJSONString - Error: Could not build a shell. Returning None.")
                 return None
             d = json_item['dictionary']
@@ -1847,20 +1847,20 @@ class Topology():
                     _ = Aperture.ByTopologyContext(ap, context)
             return s
 
-        def buildCell(json_item, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid"):
+        def buildCell(json_item, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid", tolerance=0.0001):
             cell_shells = json_item['shells']
             shells = []
-            external_boundary = buildShell(find_json_item(j_shells, uuidKey, cell_shells[0]), j_faces, j_wires, j_edges, j_vertices, uuidKey=uuidKey)
+            external_boundary = buildShell(find_json_item(j_shells, uuidKey, cell_shells[0]), j_faces, j_wires, j_edges, j_vertices, uuidKey=uuidKey, tolerance=tolerance)
             internal_boundaries = []
             for j_s in cell_shells[1:]:
-                internal_boundaries.append(buildShell(find_json_item(j_shells, uuidKey, j_s), j_faces, j_wires, j_edges, j_vertices, uuidKey=uuidKey))
+                internal_boundaries.append(buildShell(find_json_item(j_shells, uuidKey, j_s), j_faces, j_wires, j_edges, j_vertices, uuidKey=uuidKey, tolerance=tolerance))
             c = Cell.ByShell(external_boundary)
             if c == None:
                 print("Topology.ByJSONString - Error: Could not build a cell. Returning None.")
                 return None
             for ib in internal_boundaries:
                 ib_c = Cell.ByShell(ib)
-                c = Topology.Difference(c, ib_c)
+                c = Topology.Difference(c, ib_c, tolerance=tolerance)
             d = json_item['dictionary']
             c = Topology.SetDictionary(c, Dictionary.ByPythonDictionary(d))
             apertures = [buildAperture(j_ap) for j_ap in json_item['apertures']]
@@ -1869,12 +1869,12 @@ class Topology():
                 _ = Aperture.ByTopologyContext(ap, context)
             return c
 
-        def buildCellComplex(json_item, j_cells, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid"):
+        def buildCellComplex(json_item, j_cells, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid", tolerance=0.0001):
             cc_cells = json_item['cells']
             cells = []
             for j_c in cc_cells:
-                cells.append(buildCell(find_json_item(j_cells, uuidKey, j_c), j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey=uuidKey))
-            cc = CellComplex.ByCells(cells)
+                cells.append(buildCell(find_json_item(j_cells, uuidKey, j_c), j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey=uuidKey, tolerance=tolerance))
+            cc = CellComplex.ByCells(cells, tolerance=tolerance)
             if cc == None:
                 print("Topology.ByJSONString - Error: Could not build a cellcomplex. Returning None.")
                 return None
@@ -1895,7 +1895,7 @@ class Topology():
             d = Topology.Dictionary(topology)
             d = Dictionary.SetValueAtKey(d, 'apertures', apertures_uuid)
             topology = Topology.SetDictionary(topology, d)
-            s = Topology.InternalVertex(topology)
+            s = Topology.InternalVertex(topology, tolerance=tolerance)
             s = Topology.SetDictionary(s, d)
             return topology, s, topology_apertures
 
@@ -2185,7 +2185,7 @@ class Topology():
         return None
 
     @staticmethod
-    def ByOBJFile(file, transposeAxes = True, progressBar=False, tolerance=0.0001):
+    def ByOBJFile(file, transposeAxes=True, progressBar=False, tolerance=0.0001):
         """
         Imports the topology from a Weverfront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
@@ -2215,7 +2215,7 @@ class Topology():
         return topology
     
     @staticmethod
-    def ByOBJPath(path, transposeAxes = True, progressBar=False, tolerance=0.0001):
+    def ByOBJPath(path, transposeAxes=True, progressBar=False, tolerance=0.0001):
         """
         Imports the topology from a Weverfront OBJ file path. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
@@ -2584,7 +2584,7 @@ class Topology():
             if len(aCategory) > 0:
                 for index in aCategory:
                     tempList.append(faces[index])
-                returnList.append(Topology.SelfMerge(Cluster.ByTopologies(tempList)))
+                returnList.append(Topology.SelfMerge(Cluster.ByTopologies(tempList), tolerance=tolerance))
         return returnList
 
     @staticmethod
@@ -2692,20 +2692,20 @@ class Topology():
                         ep = hull.points[simplex[i+1]]
                         sv = Vertex.ByCoordinates(sp[0], sp[1], sp[2])
                         ev = Vertex.ByCoordinates(ep[0], ep[1], ep[2])
-                        edges.append(Edge.ByVertices([sv, ev]))
+                        edges.append(Edge.ByVertices([sv, ev], tolerance=tolerance))
                     sp = hull.points[simplex[-1]]
                     ep = hull.points[simplex[0]]
                     sv = Vertex.ByCoordinates(sp[0], sp[1], sp[2])
                     ev = Vertex.ByCoordinates(ep[0], ep[1], ep[2])
-                    edges.append(Edge.ByVertices([sv, ev]))
-                    faces.append(Face.ByWire(Wire.ByEdges(edges)))
+                    edges.append(Edge.ByVertices([sv, ev], tolerance=tolerance))
+                    faces.append(Face.ByWire(Wire.ByEdges(edges), tolerance=tolerance), tolerance=tolerance)
             try:
                 c = Cell.ByFaces(faces, tolerance=tolerance)
                 return c
             except:
-                returnTopology = Topology.SelfMerge(Cluster.ByTopologies(faces))
+                returnTopology = Topology.SelfMerge(Cluster.ByTopologies(faces), tolerance=tolerance)
                 if returnTopology.Type() == 16:
-                    return Shell.ExternalBoundary(returnTopology)
+                    return Shell.ExternalBoundary(returnTopology, tolerance=tolerance)
         if not isinstance(topology, topologic.Topology):
             print("Topology.ConvexHull - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
@@ -2869,7 +2869,7 @@ class Topology():
         return topologyA
     
     @staticmethod
-    def Explode(topology, origin=None, scale=1.25, typeFilter=None, axes="xyz"):
+    def Explode(topology, origin=None, scale=1.25, typeFilter=None, axes="xyz", tolerance=0.0001):
         """
         Explodes the input topology. See https://en.wikipedia.org/wiki/Exploded-view_drawing.
 
@@ -2885,6 +2885,8 @@ class Topology():
             The type of the subtopologies to explode. This can be any of "vertex", "edge", "face", or "cell". If set to None, a subtopology one level below the type of the input topology will be used. The default is None.
         axes : str , optional
             Sets what axes are to be used for exploding the topology. This can be any permutation or substring of "xyz". It is not case sensitive. The default is "xyz".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         
         Returns
         -------
@@ -2964,7 +2966,7 @@ class Topology():
         else:
             topologies = Topology.SubTopologies(topology, subTopologyType=typeFilter.lower())
         for aTopology in topologies:
-            c = Topology.RelevantSelector(aTopology)
+            c = Topology.InternalVertex(aTopology, tolerance=tolerance)
             oldX = c.X()
             oldY = c.Y()
             oldZ = c.Z()
@@ -3143,7 +3145,7 @@ class Topology():
         return False
 
     @staticmethod
-    def Fix(topology, topologyType="CellComplex"):
+    def Fix(topology, topologyType: str ="CellComplex", tolerance: float = 0.0001):
         """
         Attempts to fix the input topology to matched the desired output type.
 
@@ -3153,6 +3155,8 @@ class Topology():
             The input topology
         topologyType : str , optional
             The desired output topology type. This must be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. The default is "CellComplex"
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         
         Returns
         -------
@@ -3178,10 +3182,10 @@ class Topology():
         if a_type == b_type:
             return topology
         if b_type == "cluster":
-            topology = Topology.SelfMerge(topology)
+            topology = Topology.SelfMerge(topology, tolerance=tolerance)
             return Cluster.ByTopologies([topology])
         if b_type == "cellcomplex":
-            topology = Topology.SelfMerge(topology)
+            topology = Topology.SelfMerge(topology, tolerance=tolerance)
             if Topology.TypeAsString(topology).lower() == "cellcomplex":
                 return topology
             cells = Topology.Cells(topology)
@@ -3198,7 +3202,7 @@ class Topology():
             if len(faces) < 3:
                 print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
                 return topology
-            return_topology = CellComplex.ByFaces(faces)
+            return_topology = CellComplex.ByFaces(faces, tolerance=tolerance)
             if return_topology == None:
                 print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
                 return topology
@@ -3207,7 +3211,7 @@ class Topology():
             print("6 Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
             return topology
         if b_type == "cell":
-            topology = Topology.SelfMerge(topology)
+            topology = Topology.SelfMerge(topology, tolerance=tolerance)
             if Topology.TypeAsString(topology).lower() == "cell":
                 return topology
             if Topology.TypeAsString(topology).lower() == "cellComplex":
@@ -3216,9 +3220,9 @@ class Topology():
             if len(faces) < 3:
                 print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
                 return topology
-            return_topology = Cell.ByFaces(faces)
+            return_topology = Cell.ByFaces(faces, tolerance=tolerance)
             if return_topology == None:
-                return_topology = CellComplex.ByFaces(faces)
+                return_topology = CellComplex.ByFaces(faces, tolerance=tolerance)
                 #print("Return Topology:", return_topology)
                 if return_topology == None:
                     print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
@@ -3235,7 +3239,7 @@ class Topology():
             print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
             return topology
         if b_type == "shell":
-            topology = Topology.SelfMerge(topology)
+            topology = Topology.SelfMerge(topology, tolerance=tolerance)
             if Topology.TypeAsString(topology).lower() == "shell":
                 return topology
             faces = Topology.Faces(topology)
@@ -3248,46 +3252,46 @@ class Topology():
             print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
             return topology
         if b_type == "face":
-            topology = Topology.SelfMerge(topology)
+            topology = Topology.SelfMerge(topology, tolerance=tolerance)
             if Topology.TypeAsString(topology).lower() == "face":
                 return topology
             wires = Topology.Wires(topology)
             if len(wires) < 1:
                 print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
                 return topology
-            return_topology = Face.ByWire(wires[0])
+            return_topology = Face.ByWire(wires[0], tolerance=tolerance)
             if Topology.TypeAsString(return_topology).lower() == "face":
                 return return_topology
             print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
             return topology
         if b_type == "wire":
-            topology = Topology.SelfMerge(topology)
+            topology = Topology.SelfMerge(topology, tolerance=tolerance)
             if Topology.TypeAsString(topology).lower() == "wire":
                 return topology
             edges = Topology.Edges(topology)
             if len(edges) < 2:
                 print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
                 return topology
-            return_topology = Wire.ByEdges(edges)
+            return_topology = Wire.ByEdges(edges, tolerance=tolerance)
             if Topology.TypeAsString(return_topology).lower() == "wire":
                 return return_topology
             print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
             return topology
         if b_type == "edge":
-            topology = Topology.SelfMerge(topology)
+            topology = Topology.SelfMerge(topology, tolerance=tolerance)
             if Topology.TypeAsString(topology).lower() == "edge":
                 return topology
             vertices = Topology.Vertices(topology)
             if len(vertices) < 2:
                 print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
                 return topology
-            return_topology = Edge.ByVertices(vertices)
+            return_topology = Edge.ByVertices(vertices, tolerance=tolerance)
             if Topology.TypeAsString(return_topology).lower() == "edge":
                 return return_topology
             print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
             return topology
         if b_type == "vertex":
-            topology = Topology.SelfMerge(topology)
+            topology = Topology.SelfMerge(topology, tolerance=tolerance)
             if Topology.TypeAsString(topology).lower() == "vertex":
                 return topology
             vertices = Topology.Vertices(topology)
@@ -3552,7 +3556,7 @@ class Topology():
         return json_string
     
     @staticmethod
-    def OBJString(topology, transposeAxes=True):
+    def OBJString(topology, transposeAxes=True, mantissa=6, tolerance=0.0001):
         """
         Returns the Wavefront string of the input topology. This is very experimental and outputs a simple solid topology.
 
@@ -3561,7 +3565,11 @@ class Topology():
         topology : topologic.Topology
             The input topology.
         transposeAxes : bool , optional
-            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+            If set to True the Z and Y coordinates are transposed so that Y points "up"
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -3580,7 +3588,7 @@ class Topology():
         lines = []
         version = Helper.Version()
         lines.append("# topologicpy "+version)
-        d = Topology.Geometry(topology)
+        d = Topology.Geometry(topology, mantissa=mantissa)
         vertices = d['vertices']
         faces = d['faces']
         tVertices = []
@@ -3771,7 +3779,7 @@ class Topology():
         return flat_topology
     
     @staticmethod
-    def Geometry(topology):
+    def Geometry(topology, mantissa=6):
         """
         Returns the geometry (mesh data format) of the input topology as a dictionary of vertices, edges, and faces.
 
@@ -3779,6 +3787,8 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -3786,6 +3796,7 @@ class Topology():
             A dictionary containing the vertices, edges, and faces data. The keys found in the dictionary are "vertices", "edges", and "faces".
 
         """
+        from topologicpy.Vertex import Vertex
         
         def getSubTopologies(topology, subTopologyClass):
             topologies = []
@@ -3828,9 +3839,9 @@ class Topology():
             _ = topology.Vertices(None, topVerts)
         for aVertex in topVerts:
             try:
-                vertices.index([aVertex.X(), aVertex.Y(), aVertex.Z()]) # Vertex already in list
+                vertices.index(Vertex.Coordinates(aVertex, mantissa=mantissa)) # Vertex already in list
             except:
-                vertices.append([aVertex.X(), aVertex.Y(), aVertex.Z()]) # Vertex not in list, add it.
+                vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa)) # Vertex not in list, add it.
         topEdges = []
         if (topology.Type() == 2): #Input is an Edge, just add it and process it
             topEdges.append(topology)
@@ -3841,14 +3852,14 @@ class Topology():
             sv = anEdge.StartVertex()
             ev = anEdge.EndVertex()
             try:
-                svIndex = vertices.index([sv.X(), sv.Y(), sv.Z()])
+                svIndex = vertices.index(Vertex.Coordinates(sv, mantissa=mantissa))
             except:
-                vertices.append([sv.X(), sv.Y(), sv.Z()])
+                vertices.append(Vertex.Coordinates(sv, mantissa=mantissa))
                 svIndex = len(vertices)-1
             try:
-                evIndex = vertices.index([ev.X(), ev.Y(), ev.Z()])
+                evIndex = vertices.index(Vertex.Coordinates(ev, mantissa=mantissa))
             except:
-                vertices.append([ev.X(), ev.Y(), ev.Z()])
+                vertices.append(Vertex.Coordinates(ev, mantissa=mantissa))
                 evIndex = len(vertices)-1
             e.append(svIndex)
             e.append(evIndex)
@@ -3870,9 +3881,9 @@ class Topology():
                     f = []
                     for aVertex in faceVertices:
                         try:
-                            fVertexIndex = vertices.index([aVertex.X(), aVertex.Y(), aVertex.Z()])
+                            fVertexIndex = vertices.index(Vertex.Coordinates(aVertex, mantissa=mantissa))
                         except:
-                            vertices.append([aVertex.X(), aVertex.Y(), aVertex.Z()])
+                            vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa))
                             fVertexIndex = len(vertices)-1
                         f.append(fVertexIndex)
                     faces.append(f)
@@ -3883,9 +3894,9 @@ class Topology():
                 f = []
                 for aVertex in faceVertices:
                     try:
-                        fVertexIndex = vertices.index([aVertex.X(), aVertex.Y(), aVertex.Z()])
+                        fVertexIndex = vertices.index(Vertex.Coordinates(aVertex, mantissa=mantissa))
                     except:
-                        vertices.append([aVertex.X(), aVertex.Y(), aVertex.Z()])
+                        vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa))
                         fVertexIndex = len(vertices)-1
                     f.append(fVertexIndex)
                 faces.append(f)
@@ -3914,9 +3925,9 @@ class Topology():
             return(topology.Type())
 
     @staticmethod
-    def InternalVertex(topology, tolerance=0.0001):
+    def InternalVertex(topology, tolerance: float = 0.0001):
         """
-        Returns an vertex guaranteed to be inside the input topology.
+        Returns a vertex guaranteed to be inside the input topology.
 
         Parameters
         ----------
@@ -3944,20 +3955,20 @@ class Topology():
         classType = topology.Type()
         if isinstance(topology, topologic.CellComplex): #CellComplex
             tempCell = Topology.Cells(topology)[0]
-            vst = Cell.InternalVertex(tempCell, tolerance)
+            vst = Cell.InternalVertex(tempCell, tolerance=tolerance)
         elif isinstance(topology, topologic.Cell): #Cell
-            vst = Cell.InternalVertex(topology, tolerance)
+            vst = Cell.InternalVertex(topology, tolerance=tolerance)
         elif isinstance(topology, topologic.Shell): #Shell
             tempFace = Topology.Faces(topology)[0]
-            vst = Face.InternalVertex(tempFace, tolerance)
+            vst = Face.InternalVertex(tempFace, tolerance=tolerance)
         elif isinstance(topology, topologic.Face): #Face
-            vst = Face.InternalVertex(topology, tolerance)
+            vst = Face.InternalVertex(topology, tolerance=tolerance)
         elif isinstance(topology, topologic.Wire): #Wire
             if topology.IsClosed():
                 internalBoundaries = []
                 try:
                     tempFace = topologic.Face.ByExternalInternalBoundaries(topology, internalBoundaries)
-                    vst = Face.InternalVertex(tempFace, tolerance)
+                    vst = Face.InternalVertex(tempFace, tolerance=tolerance)
                 except:
                     vst = Topology.Centroid(topology)
             else:
@@ -4132,7 +4143,7 @@ class Topology():
     @staticmethod
     def IsSame(topologyA, topologyB):
         """
-        Returns True of the input topologies are the same topology. Returns False otherwise.
+        Returns True if the input topologies are the same topology. Returns False otherwise.
 
         Parameters
         ----------
@@ -4156,7 +4167,7 @@ class Topology():
         return topologic.Topology.IsSame(topologyA, topologyB)
     
     @staticmethod
-    def MergeAll(topologies):
+    def MergeAll(topologies, tolerance=0.0001):
         """
         Merge all the input topologies.
 
@@ -4164,6 +4175,8 @@ class Topology():
         ----------
         topologies : list
             The list of input topologies.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -4173,6 +4186,7 @@ class Topology():
         """
 
         from topologicpy.Cluster import Cluster
+
         if not isinstance(topologies, list):
             print("Topology.MergeAll - Error: the input topologies parameter is not a valid list. Returning None.")
             return None
@@ -4181,7 +4195,7 @@ class Topology():
         if len(topologyList) < 1:
             print("Topology.MergeAll - Error: the input topologyList does not contain any valid topologies. Returning None.")
             return None
-        return Topology.SelfMerge(Cluster.ByTopologies(topologyList))
+        return Topology.SelfMerge(Cluster.ByTopologies(topologyList), tolerance=tolerance)
             
     @staticmethod
     def OCCTShape(topology):
@@ -4428,48 +4442,6 @@ class Topology():
             print("Topology.Place - ERROR: (Topologic>TopologyUtility.Place) operation failed. Returning None.")
             newTopology = None
         return newTopology
-    
-    @staticmethod
-    def RelevantSelector(topology, tolerance=0.0001):
-        """
-        Returns the relevant selector (vertex) of the input topology
-
-        Parameters
-        ----------
-        topology : topologic.Topology
-            The input topology.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        topologic.Vertex
-            The relevant selector.
-
-        """
-        from topologicpy.Edge import Edge
-        from topologicpy.Face import Face
-        from topologicpy.Cell import Cell
-
-        if topology.Type() == topologic.Vertex.Type():
-            return topology
-        elif topology.Type() == topologic.Edge.Type():
-            return Edge.VertexByParameter(topology, 0.5)
-        elif topology.Type() == topologic.Wire.Type():
-            e = Topology.Edges(topology)[0]
-            return Edge.VertexByParameter(e, 0.5)
-        elif topology.Type() == topologic.Face.Type():
-            return Face.InternalVertex(topology, tolerance)
-        elif topology.Type() == topologic.Shell.Type():
-            f = Topology.Faces(topology)[0]
-            return Face.InternalVertex(f, tolerance)
-        elif topology.Type() == topologic.Cell.Type():
-            return Cell.InternalVertex(topology, tolerance)
-        elif topology.Type() == topologic.CellComplex.Type():
-            c = Topology.Cells(topology)[0]
-            return Cell.InternalVertex(c, tolerance)
-        else:
-            return topology.CenterOfMass()
 
     @staticmethod
     def RemoveCollinearEdges(topology, angTolerance=0.1, tolerance=0.0001):
@@ -4491,7 +4463,9 @@ class Topology():
             The input topology with the collinear edges removed.
 
         """
-        
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+
         def toDegrees(ang):
             import math
             return ang * 180 / math.pi
@@ -4507,7 +4481,8 @@ class Topology():
                 else:
                     return False
             else:
-                raise Exception("Topology.RemoveCollinearEdges - Error: This method only applies to manifold closed wires")
+                return False
+                #raise Exception("Topology.RemoveCollinearEdges - Error: This method only applies to manifold closed wires")
 
         #----------------------------------------------------------------------
         def get_redundant_vertices(vertices, wire, angTol):
@@ -4541,9 +4516,9 @@ class Topology():
                     cleanedVertices.append(vertices[i])
             edges = []
             for i in range(len(cleanedVertices)-1):
-                edges.append(topologic.Edge.ByStartVertexEndVertex(cleanedVertices[i], cleanedVertices[i+1]))
-            edges.append(topologic.Edge.ByStartVertexEndVertex(cleanedVertices[-1], cleanedVertices[0]))
-            return topologic.Wire.ByEdges(edges)
+                edges.append(Edge.ByStartVertexEndVertex(cleanedVertices[i], cleanedVertices[i+1], tolerance=tolerance))
+            edges.append(Edge.ByStartVertexEndVertex(cleanedVertices[-1], cleanedVertices[0], tolerance=tolerance))
+            return Wire.ByEdges(edges, tolerance=tolerance)
             #return topologic.WireUtility.RemoveCollinearEdges(wire, angTol) #This is an angle Tolerance
         
         returnTopology = topology
@@ -4652,7 +4627,7 @@ class Topology():
         clusters = Topology.ClusterFaces(topology, tolerance=tolerance)
         faces = []
         for aCluster in clusters:
-            aCluster = Topology.SelfMerge(aCluster)
+            aCluster = Topology.SelfMerge(aCluster, tolerance=tolerance)
             if isinstance(aCluster, topologic.Shell):
                 shells = [aCluster]
             else:
@@ -4671,8 +4646,8 @@ class Topology():
                 for aShell in shells:
                     junk_faces = Shell.Faces(aShell)
                     if len(junk_faces) > 2:
-                        aFace = Face.ByShell(aShell, angTolerance)
-                    aFace = Face.ByShell(aShell, angTolerance)
+                        aFace = Face.ByShell(aShell, angTolerance=angTolerance)
+                    aFace = Face.ByShell(aShell, angTolerance=angTolerance)
                     if isinstance(aFace, topologic.Face):
                         faces.append(aFace)
                     else:
@@ -4709,7 +4684,7 @@ class Topology():
                     except:
                         pass
                     finalIbList.append(temp_ib)
-            finalFaces.append(Face.ByWires(eb, finalIbList))
+            finalFaces.append(Face.ByWires(eb, finalIbList), tolerance=tolerance)
         faces = finalFaces
         if len(faces) == 1:
             return faces[0]
@@ -4734,7 +4709,7 @@ class Topology():
         return returnTopology
 
     @staticmethod
-    def RemoveEdges(topology, edges=[]):
+    def RemoveEdges(topology, edges=[], tolerance=0.0001):
         """
         Removes the input list of faces from the input topology
 
@@ -4744,6 +4719,8 @@ class Topology():
             The input topology.
         edges : list
             The input list of edges.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -4789,10 +4766,10 @@ class Topology():
                 return None
             elif len(remaining_edges) == 1:
                 return remaining_edges[0]
-            return Topology.SelfMerge(Cluster.ByTopologies(remaining_edges))
+            return Topology.SelfMerge(Cluster.ByTopologies(remaining_edges), tolerance=tolerance)
 
     @staticmethod
-    def RemoveFaces(topology, faces=[]):
+    def RemoveFaces(topology, faces=[], tolerance=0.0001):
         """
         Removes the input list of faces from the input topology
 
@@ -4802,6 +4779,8 @@ class Topology():
             The input topology.
         faces : list
             The input list of faces.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -4833,7 +4812,7 @@ class Topology():
             return None
         elif len(remaining_faces) == 1:
             return remaining_faces[0]
-        return Topology.SelfMerge(Cluster.ByTopologies(remaining_faces))
+        return Topology.SelfMerge(Cluster.ByTopologies(remaining_faces), tolerance=tolerance)
     
     @staticmethod
     def RemoveFacesBySelectors(topology, selectors=[], tolerance = 0.0001):
@@ -4879,7 +4858,7 @@ class Topology():
         return Topology.RemoveFaces(topology, faces = to_remove)
 
     @staticmethod
-    def RemoveVertices(topology, vertices=[]):
+    def RemoveVertices(topology, vertices=[], tolerance=0.0001):
         """
         Removes the input list of vertices from the input topology
 
@@ -4889,6 +4868,8 @@ class Topology():
             The input topology.
         vertices : list
             The input list of vertices.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -4934,7 +4915,7 @@ class Topology():
                 return None
             elif len(remaining_vertices) == 1:
                 return remaining_vertices[0]
-            return Topology.SelfMerge(Cluster.ByTopologies(remaining_vertices))
+            return Topology.SelfMerge(Cluster.ByTopologies(remaining_vertices), tolerance=tolerance)
     
     @staticmethod
     def Cleanup(topology=None):
@@ -4960,7 +4941,7 @@ class Topology():
         return topology
 
     @staticmethod
-    def ReplaceVertices(topology, verticesA=[], verticesB=[], tolerance=0.0001):
+    def ReplaceVertices(topology, verticesA=[], verticesB=[], mantissa=6, tolerance=0.0001):
         """
         Replaces the vertices in the first input list with the vertices in the second input list and rebuilds the input topology. The two lists must be of the same length.
 
@@ -4972,7 +4953,9 @@ class Topology():
             The first input list of vertices.
         verticesB : list
             The second input list of vertices.
-        tolerance : float, optional
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -4985,7 +4968,7 @@ class Topology():
             print("Error - Topology.ReplaceVertices: VerticesA and VerticesB must be the same length")
             return None
         from topologicpy.Vertex import Vertex
-        geom = Topology.Geometry(topology)
+        geom = Topology.Geometry(topology, mantissa=mantissa)
         g_verts = geom['vertices']
         g_edges = geom['edges']
         g_faces = geom['faces']
@@ -5000,7 +4983,7 @@ class Topology():
         return new_topology
 
     @staticmethod
-    def Rotate(topology, origin=None, x=0, y=0, z=1, degree=0, angTolerance=0.001):
+    def Rotate(topology, origin=None, x=0, y=0, z=1, degree=0, angTolerance=0.001, tolerance=0.0001):
         """
         Rotates the input topology
 
@@ -5020,6 +5003,8 @@ class Topology():
             The angle of rotation in degrees. The default is 0.
         angTolerance : float , optional
             The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -5056,6 +5041,7 @@ class Topology():
 
         if not isinstance(topology, topologic.Topology):
             print("Topology.Rotate - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+            print("The topology is", topology)
             return None
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
@@ -5076,7 +5062,7 @@ class Topology():
                     rot_vertices.append(rotate_vertex_3d(v, axis, degree, origin))
                 rot_vertices = [Vertex.ByCoordinates(rot_v) for rot_v in rot_vertices]
                 new_topology = Topology.ReplaceVertices(topology, verticesA=Topology.Vertices(topology), verticesB=rot_vertices)
-                new_topology = Topology.SelfMerge(new_topology)
+                new_topology = Topology.SelfMerge(new_topology, tolerance=tolerance)
                 return new_topology
         return returnTopology
     
@@ -5646,8 +5632,13 @@ class Topology():
                        faceMinGroup=faceMinGroup, faceMaxGroup=faceMaxGroup, 
                        showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel, faceLegendRank=faceLegendRank,
                        faceLegendGroup=faceLegendGroup, 
-                       intensityKey=intensityKey, colorScale=colorScale, tolerance=tolerance)
-        figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
+                       intensityKey=intensityKey, colorScale=colorScale, mantissa=mantissa, tolerance=tolerance)
+        figure = Plotly.FigureByData(data=data, width=width, height=height,
+                                     xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,
+                                     backgroundColor=backgroundColor,
+                                     marginLeft=marginLeft, marginRight=marginRight,
+                                     marginTop=marginTop, marginBottom=marginBottom,
+                                     tolerance=tolerance)
         if showScale:
             figure = Plotly.AddColorBar(figure, values=cbValues, nTicks=cbTicks, xPosition=cbX, width=cbWidth, outlineWidth=cbOutlineWidth, title=cbTitle, subTitle=cbSubTitle, units=cbUnits, colorScale=colorScale, mantissa=mantissa)
         Plotly.Show(figure=figure, renderer=renderer, camera=camera, target=target, up=up)
@@ -5803,7 +5794,7 @@ class Topology():
                     except:
                         returnTopology = None
         else:
-            returnTopology = Topology.SelfMerge(topologic.Cluster.ByTopologies(topologies))
+            returnTopology = Topology.SelfMerge(topologic.Cluster.ByTopologies(topologies), tolerance=tolerance)
         if not returnTopology:
             return topologic.Cluster.ByTopologies(topologies)
         if returnTopology.Type() == topologic.Shell.Type():
@@ -6181,7 +6172,7 @@ class Topology():
         return superTopologies
     
     @staticmethod
-    def SymmetricDifference(topologyA, topologyB, tranDict=False):
+    def SymmetricDifference(topologyA, topologyB, tranDict=False, tolerance: float = 0.0001):
         """
         Return the symmetric difference (XOR) of the two input topologies. See https://en.wikipedia.org/wiki/Symmetric_difference.
 
@@ -6193,7 +6184,9 @@ class Topology():
             The second input topology.
         tranDict : bool , opetional
             If set to True, the dictionaries of the input topologies are transferred to the resulting topology.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Topology
@@ -6202,9 +6195,9 @@ class Topology():
         """
         topologyC = None
         try:
-            topologyC = topologyA.XOR(topologyB, tranDict)
+            topologyC = topologyA.XOR(topologyB, tranDict, tolerance)
         except:
-            print("ERROR: (Topologic>Topology.SymmetricDifference) operation failed. Returning None.")
+            print("Topology.SymmetricDifference - ERROR: Operation failed. Returning None.")
             topologyC = None
         return topologyC
     
@@ -6510,7 +6503,7 @@ class Topology():
         selectors = []
         for aFace in topologyFaces:
             if len(Topology.Vertices(aFace)) > 3:
-                triFaces = Face.Triangulate(aFace)
+                triFaces = Face.Triangulate(aFace, tolerance=tolerance)
             else:
                 triFaces = [aFace]
             for triFace in triFaces:
@@ -6518,19 +6511,19 @@ class Topology():
                     selectors.append(Topology.SetDictionary(Face.Centroid(triFace), Topology.Dictionary(aFace)))
                 faceTriangles.append(triFace)
         if t == 8 or t == 16: # Face or Shell
-            shell = Shell.ByFaces(faceTriangles, tolerance)
+            shell = Shell.ByFaces(faceTriangles, tolerance=tolerance)
             if transferDictionaries:
-                shell = Topology.TransferDictionariesBySelectors(shell, selectors, tranFaces=True)
+                shell = Topology.TransferDictionariesBySelectors(shell, selectors, tranFaces=True, tolerance=tolerance)
             return shell
         elif t == 32: # Cell
             cell = Cell.ByFaces(faceTriangles, tolerance=tolerance)
             if transferDictionaries:
-                cell = Topology.TransferDictionariesBySelectors(cell, selectors, tranFaces=True)
+                cell = Topology.TransferDictionariesBySelectors(cell, selectors, tranFaces=True, tolerance=tolerance)
             return cell
         elif t == 64: #CellComplex
-            cellComplex = CellComplex.ByFaces(faceTriangles, tolerance)
+            cellComplex = CellComplex.ByFaces(faceTriangles, tolerance=tolerance)
             if transferDictionaries:
-                cellComplex = Topology.TransferDictionariesBySelectors(cellComplex, selectors, tranFaces=True)
+                cellComplex = Topology.TransferDictionariesBySelectors(cellComplex, selectors, tranFaces=True, tolerance=tolerance)
             return cellComplex
 
     

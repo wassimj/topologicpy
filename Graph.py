@@ -302,7 +302,7 @@ class Graph:
         for vertex in vertices:
             graph_vertices, nv = addIfUnique(graph_vertices, vertex, tolerance)
             new_vertices.append(nv)
-        new_edge = Edge.ByVertices([new_vertices[0], new_vertices[1]])
+        new_edge = Edge.ByVertices([new_vertices[0], new_vertices[1]], tolerance=tolerance)
         if transferEdgeDictionaries == True:
             _ = Topology.SetDictionary(new_edge, Topology.Dictionary(edge))
         graph_edges.append(new_edge)
@@ -534,86 +534,22 @@ class Graph:
         size = maxValue - minValue
         values = [(v-minValue)/size for v in values]
         return values
-
-
-    @staticmethod
-    def ByCSVFile(graphs_file, edges_file, nodes_file,
-                  graph_id_header="graph_id", graph_label_header="label", num_nodes_header="num_nodes",
-                  src_header="src_id", dst_header="dst_id",
-                  node_id_header="node_id", node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
-        """
-        Returns graphs according to the input CSV files. This method assumes the CSV files follow DGL's schema.
-
-        Parameters
-        ----------
-        graphs_file : file
-            The grpahs CSV file.
-        edges_file : file
-            The edges CSV file.
-        nodes_file : file
-            The nodes CSV file.
-        graph_id_header : str , optional
-            The header string used to specify the graph id. The default is "graph_id".
-        graph_label_header : str , optional
-            The header string used to specify the graph label. The default is "label".
-        num_nodes_header : str , optional
-            The header string used to specify the number of nodes. The default is "num_nodes".
-        src_header : str , optional
-            The header string used to specify the source of edges. The default is "src_id".
-        dst_header : str , optional
-            The header string used to specify the destination of edges. The default is "dst_id".
-        node_id_header : str , optional
-            The header string used to specify the node id. The default is "node_id".
-        node_label_header : str , optional
-            The header string used to specify the node label. The default is "label".
-        node_X_header : str , optional
-            The header string used to specify the node X Coordinate. The default is "X".
-        node_Y_header : str , optional
-            The header string used to specify the node Y Coordinate. The default is "Y".
-        node_Z_header : str , optional
-            The header string used to specify the node Y Coordinate. The default is "Z".
-
-        Returns
-        -------
-        dict
-            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
-
-        """
-        if not graphs_file:
-            print("Graph.ByCSVFile - Error: The input graphs file is not a valid file. Returning None.")
-            return None
-        if not edges_file:
-            print("Graph.ByCSVFile - Error: The input edges file is not a valid file. Returning None.")
-            return None
-        if not nodes_file:
-            print("Graph.ByCSVFile - Error: The input nodes file is not a valid file. Returning None.")
-            return None
-        graphs_string = graphs_file.read()
-        graphs_file.close()
-        edges_string = edges_file.read()
-        edges_file.close()
-        nodes_string = nodes_file.read()
-        nodes_file.close()
-        return Graph.ByCSVString(graphs_string, edges_string, nodes_string,
-                               graph_id_header=graph_id_header, graph_label_header=graph_label_header, num_nodes_header=num_nodes_header,
-                               src_header=src_header, dst_header=dst_header,
-                               node_label_header=node_label_header, node_X_header=node_X_header, node_Y_header=node_Y_header, node_Z_header=node_Z_header)
         
     @staticmethod
     def ByCSVPath(path,
-                  graphIDHeader="graph_id", graphLabelHeader="label", graphFeaturesHeader="feat",
+                  graphIDHeader="graph_id", graphLabelHeader="label", graphFeaturesHeader="feat", graphFeaturesKeys=[],
                   edgeSRCHeader="src_id", edgeDSTHeader="dst_id", edgeLabelHeader="label", edgeTrainMaskHeader="train_mask", 
                   edgeValidateMaskHeader="val_mask", edgeTestMaskHeader="test_mask", edgeFeaturesHeader="feat", edgeFeaturesKeys=[],
                   nodeIDHeader="node_id", nodeLabelHeader="label", nodeTrainMaskHeader="train_mask", 
                   nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask", nodeFeaturesHeader="feat", nodeXHeader="X", nodeYHeader="Y", nodeZHeader="Z",
-                  nodeFeaturesKeys=[]):
+                  nodeFeaturesKeys=[], tolerance=0.0001):
         """
-        Returns graphs according to the input path. This method assumes the CSV files follow DGL's schema.
+        Returns graphs according to the input folder path. This method assumes the CSV files follow DGL's schema.
 
         Parameters
         ----------
         path : str
-            The path to the folder containing "graphs.csv", "edges.csv", and "nodes.csv".
+            The path to the folder containing the .yaml and .csv files for graphs, edges, and nodes.
         graphIDHeader : str , optional
             The column header string used to specify the graph id. The default is "graph_id".
         graphLabelHeader : str , optional
@@ -634,6 +570,8 @@ class Graph:
             The column header string used to specify the test mask of edges. The default is "test_mask".
         edgeFeaturesHeader : str , optional
             The column header string used to specify the features of edges. The default is "feat".
+        edgeFeaturesKeys : list , optional
+            The list of dicitonary keys to use to index the edge features. The length of this list must match the length of edge features. The default is [].
         nodeIDHeader : str , optional
             The column header string used to specify the id of nodes. The default is "node_id".
         nodeLabelHeader : str , optional
@@ -652,7 +590,9 @@ class Graph:
             The column header string used to specify the Y coordinate of nodes. The default is "Y".
         nodeZHeader : str , optional
             The column header string used to specify the Z coordinate of nodes. The default is "Z".
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         dict
@@ -666,6 +606,25 @@ class Graph:
         import pandas as pd
         import os
         from os.path import exists, isdir
+        import yaml
+        import glob
+
+        def find_yaml_files(folder_path):
+            yaml_files = glob.glob(f"{folder_path}/*.yaml")
+            return yaml_files
+
+        def read_yaml(file_path):
+            with open(file_path, 'r') as file:
+                data = yaml.safe_load(file)
+                edge_data = data.get('edge_data', [])
+                node_data = data.get('node_data', [])
+                graph_data = data.get('graph_data', {})
+
+                edges_path = edge_data[0].get('file_name') if edge_data else None
+                nodes_path = node_data[0].get('file_name') if node_data else None
+                graphs_path = graph_data.get('file_name')
+
+            return graphs_path, edges_path, nodes_path
 
         if not exists(path):
             print("Graph.ByCSVPath - Error: the input path parameter does not exists. Returning None.")
@@ -673,15 +632,24 @@ class Graph:
         if not isdir(path):
             print("Graph.ByCSVPath - Error: the input path parameter is not a folder. Returning None.")
             return None
-        graphs_path = os.path.join(path, "graphs.csv")
+        
+        yaml_files = find_yaml_files(path)
+        if len(yaml_files) < 1:
+            print("Graph.ByCSVPath - Error: the input path parameter does not contain any valid YAML files. Returning None.")
+            return None
+        yaml_file = yaml_files[0]
+        yaml_file_path = os.path.join(path, yaml_file)
+
+        graphs_path, edges_path, nodes_path = read_yaml(yaml_file_path)
+        graphs_path = os.path.join(path, graphs_path)
         if not exists(graphs_path):
             print("Graph.ByCSVPath - Error: a graphs.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
             return None
-        edges_path = os.path.join(path, "edges.csv")
+        edges_path = os.path.join(path, edges_path)
         if not exists(edges_path):
             print("Graph.ByCSVPath - Error: an edges.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
             return None
-        nodes_path = os.path.join(path, "nodes.csv")
+        nodes_path = os.path.join(path, nodes_path)
         if not exists(nodes_path):
             print("Graph.ByCSVPath - Error: a nodes.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
             return None
@@ -695,6 +663,7 @@ class Graph:
         grouped_nodes = nodes_df.groupby(graphIDHeader)
 
         graphs = []
+        graph_ids = []
         graph_labels = []
         graph_features = []
 
@@ -706,8 +675,13 @@ class Graph:
             edge_keys = [edgeLabelHeader, "mask", edgeFeaturesHeader]
         else:
             edge_keys = [edgeLabelHeader, "mask"]+edgeFeaturesKeys
+        if len(graphFeaturesKeys) == 0:
+            graph_keys = [graphIDHeader, graphLabelHeader, graphFeaturesHeader]
+        else:
+            graph_keys = [graphIDHeader, graphLabelHeader]+graphFeaturesKeys
         # Iterate through the graphs DataFrame
         for index, row in graphs_df.iterrows():
+            graph_ids.append(row[graphIDHeader])
             graph_labels.append(row[graphLabelHeader])
             graph_features.append(row[graphFeaturesHeader])
 
@@ -746,15 +720,14 @@ class Graph:
                 v = Topology.SetDictionary(v, d)
                 vertices.append(v)
             vertices_ds.append(vertices)
-        
         edges_ds = [] # A list to hold the vertices data structures until we can build the actual graphs
         # Access specific columns within the grouped DataFrame
         for graph_id, group_edge_df in grouped_edges:
             vertices = vertices_ds[graph_id]
             edges = []
             for index, row in group_edge_df.iterrows():
-                src_id = row[edgeSRCHeader]
-                dst_id = row[edgeDSTHeader]
+                src_id = int(row[edgeSRCHeader])
+                dst_id = int(row[edgeDSTHeader])
                 label = row[nodeLabelHeader]
                 train_mask = row[edgeTrainMaskHeader]
                 val_mask = row[edgeValidateMaskHeader]
@@ -776,193 +749,34 @@ class Graph:
                     featureList = [float(s) for s in featureList]
                     values = [label, mask]+featureList
                 d = Dictionary.ByKeysValues(edge_keys, values)
-                edge = Edge.ByVertices([vertices[src_id], vertices[dst_id]])
+                edge = Edge.ByVertices([vertices[src_id], vertices[dst_id]], tolerance=tolerance)
                 edge = Topology.SetDictionary(edge, d)
                 edges.append(edge)
             edges_ds.append(edges)
         # Build the graphs
         for i, vertices, in enumerate(vertices_ds):
             edges = edges_ds[i]
-            graphs.append(Graph.ByVerticesEdges(vertices, edges))
+            g = Graph.ByVerticesEdges(vertices, edges)
+            if len(graphFeaturesKeys) == 0:
+                    values = [graph_ids[i], graph_labels[i], graph_features[i]]
+            else:
+                values = [graph_ids[i], graph_labels[i]]
+                featureList = graph_features[i].split(",")
+                featureList = [float(s) for s in featureList]
+                values = [graph_ids[i], graph_labels[i]]+featureList
+            l1 = len(graph_keys)
+            l2 = len(values)
+            if not l1 == l2:
+                print("Error", l1, l2, graph_keys, values)
+                return None
+            d = Dictionary.ByKeysValues(graph_keys, values)
+            g = Graph.SetDictionary(g, d)
+            graphs.append(g)
         
         return {"graphs": graphs, "labels": graph_labels, "features": graph_features}
-            
-
-    @staticmethod
-    def ByCSVString(graphs_string, edges_string, nodes_string,
-                    graph_id_header="graph_id", graph_label_header="label", num_nodes_header="num_nodes",
-                    src_header="src_id", dst_header="dst_id",
-                    node_id_header="node_id", node_label_header="label", node_X_header="X", node_Y_header="Y", node_Z_header="Z"):
-        """
-        Returns graphs according to the input CSV strings. This method assumes the CSV strings follow DGL's schema.
-
-        Parameters
-        ----------
-        graphs_file_path : str
-            The file path to the grpahs CSV file.
-        edges_file_path : str
-            The file path to the edges CSV file.
-        nodes_file_path : str
-            The file path to the nodes CSV file.
-        graph_id_header : str , optional
-            The header string used to specify the graph id. The default is "graph_id".
-        graph_label_header : str , optional
-            The header string used to specify the graph label. The default is "label".
-        num_nodes_header : str , optional
-            The header string used to specify the number of nodes. The default is "num_nodes".
-        src_header : str , optional
-            The header string used to specify the source of edges. The default is "src_id".
-        dst_header : str , optional
-            The header string used to specify the destination of edges. The default is "dst_id".
-        node_id_header : str , optional
-            The header string used to specify the node id. The default is "node_id".
-        node_label_header : str , optional
-            The header string used to specify the node label. The default is "label".
-        node_X_header : str , optional
-            The header string used to specify the node X Coordinate. The default is "X".
-        node_Y_header : str , optional
-            The header string used to specify the node Y Coordinate. The default is "Y".
-        node_Z_header : str , optional
-            The header string used to specify the node Y Coordinate. The default is "Z".
-
-        Returns
-        -------
-        dict
-            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        import pandas as pd
-        
-        if not graphs_string:
-            print("Graph.ByCSVString - Error: the input graphs_string is not a valid string. Returning None.")
-            return None
-        if not edges_string:
-            print("Graph.ByCSVString - Error: the input edges_string is not a valid string. Returning None.")
-            return None
-        if not nodes_string:
-            print("Graph.ByCSVString - Error: the input nodes_string is not a valid string. Returning None.")
-            return None
-        # Using split by line
-        lines = graphs_string.split('\n')[0:-1]
-        header_row = lines[0]
-        lines = lines[1:]
-        lines = [l for l in lines if lines != None or lines != ""]
-        columns = header_row.split(',')
-        pd_graphs = pd.DataFrame([row.split(',')[0:len(columns)] for row in lines], 
-                        columns=columns)
-        
-        lines = edges_string.split('\n')[0:-1]
-        header_row = lines[0]
-        lines = lines[1:]
-        lines = [l for l in lines if lines != None or lines != ""]
-        columns = header_row.split(',')
-        edges = pd.DataFrame([row.split(',')[0:len(columns)] for row in lines], 
-                        columns=columns)
-
-        lines = nodes_string.split('\n')[0:-1]
-        header_row = lines[0]
-        lines = lines[1:]
-        lines = [l for l in lines if lines[-1] != None or lines[-1] != ""]
-        columns = header_row.split(',')
-        nodes = pd.DataFrame([row.split(',')[0:len(columns)] for row in lines], 
-                        columns=columns)
-        graphs = []
-        labels = []
-        graph_ids = []
-
-        # Create a graph for each graph ID from the edges table.
-        # First process the graphs table into two dictionaries with graph IDs as keys.
-        # The label and number of nodes are values.
-        label_dict = {}
-        num_nodes_dict = {}
-        for _, row in pd_graphs.iterrows():
-            label_dict[row[graph_id_header]] = row[graph_label_header]
-            num_nodes_dict[row[graph_id_header]] = row[num_nodes_header]
-        # For the edges, first group the table by graph IDs.
-        edges_group = edges.groupby(graph_id_header)
-        # For the nodes, first group the table by graph IDs.
-        nodes_group = nodes.groupby(graph_id_header)
-        # For each graph ID...
-        for graph_id in tqdm(edges_group.groups, desc="Importing Graphs", leave=False):
-            graph_dict = {}
-            graph_dict[src_header] = []
-            graph_dict[dst_header] = []
-            graph_dict[node_label_header] = {}
-            graph_dict["node_features"] = []
-            num_nodes = num_nodes_dict[graph_id]
-            graph_label = label_dict[graph_id]
-            if graph_label.isnumeric():
-                graph_label = int(graph_label)
-            else:
-                graph_label = float(graph_label)
-            labels.append(graph_label)
-
-            # Find the nodes and their labels and features
-            nodes_of_id = nodes_group.get_group(graph_id)
-            rows = nodes_of_id.shape[0]
-            node_ids = [None for n in range(rows)]
-            node_labels = [None for n in range(rows)]
-            node_XCoords = [None for n in range(rows)]
-            node_YCoords = [None for n in range(rows)]
-            node_ZCoords = [None for n in range(rows)]
-            headers = list(nodes_of_id.columns.values)
-            for header in headers:
-                if node_id_header.lower() in header.lower():
-                    node_ids = nodes_of_id[header].values
-                if node_label_header.lower() in header.lower():
-                    node_labels = nodes_of_id[header].values
-                elif node_X_header.lower() in header.lower():
-                    node_XCoords = nodes_of_id[header].values
-                elif node_Y_header.lower() in header.lower():
-                    node_YCoords = nodes_of_id[header].values
-                elif node_Z_header.lower() in header.lower():
-                    node_ZCoords = nodes_of_id[header].values
-
-            vertices = []
-            for i in range(len(node_XCoords)):
-                v = Vertex.ByCoordinates(float(node_XCoords[i]), float(node_YCoords[i]), float(node_ZCoords[i]))
-                node_label = 0
-                try:
-                    node_label = int(node_labels[i])
-                except:
-                    try:
-                        node_label = float(node_labels[i])
-                    except:
-                        node_label = node_labels[i]
-                node_id = 0
-                try:
-                    node_id = int(node_ids[i])
-                except:
-                    try:
-                        node_id = float(node_ids[i])
-                    except:
-                        node_id = node_ids[i]
-                d = Dictionary.ByKeysValues([node_id_header, node_label_header], [node_id,node_label])
-                v = Topology.SetDictionary(v, d)
-                vertices.append(v)
-            
-             # Find the edges as well as the number of nodes and its label.
-            edges_of_id = edges_group.get_group(graph_id)
-            src = edges_of_id[src_header].values
-            dst = edges_of_id[dst_header].values
-            edges = []
-            for i in range(len(src)):
-                sv = vertices[int(src[i])]
-                ev = vertices[int(dst[i])]
-                edges.append(Edge.ByVertices([sv, ev]))
-            graphs.append(Graph.ByVerticesEdges(vertices, edges))
-            graph_ids.append(int(graph_id))
-        graphs.sort(key=dict(zip(graphs, graph_ids)).get)
-        labels.sort(key=dict(zip(labels, graph_ids)).get)
-        graph_ids.sort()
-        return {"graphs":graphs, "labels":labels, "ids":graph_ids}
     
     @staticmethod
-    def ByDGCNNFile(file, key="label"):
+    def ByDGCNNFile(file, key: str = "label", tolerance: float = 0.0001):
         """
         Creates a graph from a DGCNN File.
 
@@ -972,7 +786,9 @@ class Graph:
             The input file.
         key : str , optional
             The desired key for storing the node label. The default is "label".
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         dict
@@ -985,10 +801,10 @@ class Graph:
             return None
         dgcnn_string = file.read()
         file.close()
-        return Graph.ByDGCNNString(dgcnn_string, key=key)
+        return Graph.ByDGCNNString(dgcnn_string, key=key, tolerance=tolerance)
     
     @staticmethod
-    def ByDGCNNPath(path, key="label"):
+    def ByDGCNNPath(path, key: str = "label", tolerance: float = 0.0001):
         """
         Creates a graph from a DGCNN path.
 
@@ -998,7 +814,9 @@ class Graph:
             The input file path.
         key : str , optional
             The desired key for storing the node label. The default is "label".
-
+        tolerance : str , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         dict
@@ -1013,10 +831,10 @@ class Graph:
         except:
             print("Graph.ByDGCNNPath - Error: the DGCNN file is not a valid file. Returning None.")
             return None
-        return Graph.ByDGCNNFile(file, key=key)
+        return Graph.ByDGCNNFile(file, key=key, tolerance=tolerance)
     
     @staticmethod
-    def ByDGCNNString(string, key="label"):
+    def ByDGCNNString(string, key: str ="label", tolerance: float = 0.0001):
         """
         Creates a graph from a DGCNN string.
 
@@ -1026,6 +844,8 @@ class Graph:
             The input string.
         key : str , optional
             The desired key for storing the node label. The default is "label".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -1071,23 +891,29 @@ class Graph:
                 adj_vertices = line[2:]
                 for adj_vertex in adj_vertices:
                     ev = vertices[int(adj_vertex)]
-                    e = Edge.ByStartVertexEndVertex(sv, ev)
+                    e = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance)
                     edges.append(e)
             index+=n_nodes
             graphs.append(topologic.Graph.ByVerticesEdges(vertices, edges))
         return {'graphs':graphs, 'labels':labels}
     
     @staticmethod
-    def ByMeshData(vertices, edges, vertexDictionaries=None, edgeDictionaries=None):
+    def ByMeshData(vertices, edges, vertexDictionaries=None, edgeDictionaries=None, tolerance=0.0001):
         """
         Creates a graph from the input mesh data
 
         Parameters
         ----------
-        vertices : The list of [x,y,z] coordinates of the vertices/
-        edges : the list of [i,j] indices into the vertices list to signify and edge that connects vertices[i] to vertices[j].
-        vertexDictionaries : The python dictionaries of the vertices (in the same order as the list of vertices).
-        edgeDictionaries : The python dictionaries of the edges (in the same order as the list of edges).
+        vertices : list
+            The list of [x,y,z] coordinates of the vertices/
+        edges : list
+            the list of [i,j] indices into the vertices list to signify and edge that connects vertices[i] to vertices[j].
+        vertexDictionaries : list , optional
+            The python dictionaries of the vertices (in the same order as the list of vertices).
+        edgeDictionaries : list , optional
+            The python dictionaries of the edges (in the same order as the list of edges).
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -1115,7 +941,7 @@ class Graph:
         for i, e in enumerate(edges):
             sv = g_vertices[e[0]]
             ev = g_vertices[e[1]]
-            g_e = Edge.ByVertices([sv, ev])
+            g_e = Edge.ByVertices([sv, ev], tolerance=tolerance)
             if not edgeDictionaries == None:
                 if isinstance(edgeDictionaries[i], dict):
                     d = Dictionary.ByPythonDictionary(edgeDictionaries[i])
@@ -1170,6 +996,7 @@ class Graph:
 
         """
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Edge import Edge
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
@@ -1296,12 +1123,12 @@ class Graph:
                             sharedt = Topology.SharedFaces(cells[i], cells[j])
                             if len(sharedt) > 0:
                                 if useInternalVertex == True:
-                                    v1 = topologic.CellUtility.InternalVertex(cells[i], tolerance)
-                                    v2 = topologic.CellUtility.InternalVertex(cells[j], tolerance)
+                                    v1 = Topology.InternalVertex(cells[i], tolerance=tolerance)
+                                    v2 = Topology.InternalVertex(cells[j], tolerance=tolerance)
                                 else:
                                     v1 = cells[i].CenterOfMass()
                                     v2 = cells[j].CenterOfMass()
-                                e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                 mDict = mergeDictionaries(sharedt)
                                 if not mDict == None:
                                     keys = (Dictionary.Keys(mDict) or [])+["relationship"]
@@ -1342,12 +1169,12 @@ class Graph:
                                         break
                                 if apertureExists:
                                     if useInternalVertex == True:
-                                        v1 = topologic.CellUtility.InternalVertex(cells[i], tolerance)
-                                        v2 = topologic.CellUtility.InternalVertex(cells[j], tolerance)
+                                        v1 = Topology.InternalVertex(cells[i], tolerance=tolerance)
+                                        v2 = Topology.InternalVertex(cells[j], tolerance=tolerance)
                                     else:
                                         v1 = cells[i].CenterOfMass()
                                         v2 = cells[j].CenterOfMass()
-                                    e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                    e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                     mDict = mergeDictionaries(apTopList)
                                     if mDict:
                                         e.SetDictionary(mDict)
@@ -1369,8 +1196,8 @@ class Graph:
                     outposts = []
                 for outpost in outposts:
                     if useInternalVertex == True:
-                        vop = Topology.InternalVertex(outpost, tolerance)
-                        vcc = Topology.InternalVertex(topology, tolerance)
+                        vop = Topology.InternalVertex(outpost, tolerance=tolerance)
+                        vcc = Topology.InternalVertex(topology, tolerance=tolerance)
                     else:
                         vop = Topology.CenterOfMass(outpost)
                         vcc = Topology.CenterOfMass(topology)
@@ -1382,7 +1209,7 @@ class Graph:
                     else:
                         _ = vcc.SetDictionary(d1)
                     vertices.append(vcc)
-                    tempe = topologic.Edge.ByStartVertexEndVertex(vcc, vop)
+                    tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
@@ -1393,7 +1220,7 @@ class Graph:
             if (viaSharedTopologies == True) or (viaSharedApertures == True) or (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
                 for aCell in cells:
                     if useInternalVertex == True:
-                        vCell = topologic.CellUtility.InternalVertex(aCell, tolerance)
+                        vCell = Topology.InternalVertex(aCell, tolerance=tolerance)
                     else:
                         vCell = aCell.CenterOfMass()
                     d1 = aCell.GetDictionary()
@@ -1441,7 +1268,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Topologies"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1462,7 +1289,7 @@ class Graph:
                                     else:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
-                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
                                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
@@ -1481,7 +1308,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1500,7 +1327,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Topologies"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1521,7 +1348,7 @@ class Graph:
                                     else:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
-                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
                                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
@@ -1541,7 +1368,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1562,14 +1389,14 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
 
             for aCell in cells:
                 if useInternalVertex == True:
-                    vCell = topologic.CellUtility.InternalVertex(aCell, tolerance)
+                    vCell = Topology.InternalVertex(aCell, tolerance=tolerance)
                 else:
                     vCell = aCell.CenterOfMass()
                 d1 = aCell.GetDictionary()
@@ -1587,7 +1414,7 @@ class Graph:
             vertices = []
             edges = []
             if useInternalVertex == True:
-                vCell = topologic.CellUtility.InternalVertex(Topology.Copy(topology), tolerance)
+                vCell = Topology.InternalVertex(Topology.Copy(topology), tolerance=tolerance)
             else:
                 vCell = topology.CenterOfMass()
             d1 = topology.GetDictionary()
@@ -1618,7 +1445,7 @@ class Graph:
                         vop = Topology.InternalVertex(outpost, tolerance)
                     else:
                         vop = Topology.CenterOfMass(outpost)
-                    tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vop)
+                    tempe = Edge.ByStartVertexEndVertex(vCell, vop, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
@@ -1645,7 +1472,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Topologies"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1666,7 +1493,7 @@ class Graph:
                                     else:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
-                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
                                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
@@ -1686,7 +1513,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1707,7 +1534,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vCell, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1737,12 +1564,12 @@ class Graph:
                             sharedt = Topology.SharedEdges(topFaces[i], topFaces[j])
                             if len(sharedt) > 0:
                                 if useInternalVertex == True:
-                                    v1 = Face.InternalVertex(topFaces[i], tolerance)
-                                    v2 = Face.InternalVertex(topFaces[j], tolerance)
+                                    v1 = Topology.InternalVertex(topFaces[i], tolerance=tolerance)
+                                    v2 = Topology.InternalVertex(topFaces[j], tolerance=tolerance)
                                 else:
                                     v1 = topFaces[i].CenterOfMass()
                                     v2 = topFaces[j].CenterOfMass()
-                                e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                 mDict = mergeDictionaries(sharedt)
                                 if mDict:
                                     e.SetDictionary(mDict)
@@ -1776,12 +1603,12 @@ class Graph:
                                     for ap in apList:
                                         apTopList.append(ap.Topology())
                                     if useInternalVertex == True:
-                                        v1 = Face.InternalVertex(topFaces[i], tolerance)
-                                        v2 = Face.InternalVertex(topFaces[j], tolerance)
+                                        v1 = Topology.InternalVertex(topFaces[i], tolerance=tolerance)
+                                        v2 = Topology.InternalVertex(topFaces[j], tolerance=tolerance)
                                     else:
                                         v1 = topFaces[i].CenterOfMass()
                                         v2 = topFaces[j].CenterOfMass()
-                                    e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                    e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                     mDict = mergeDictionaries(apTopList)
                                     if mDict:
                                         e.SetDictionary(mDict)
@@ -1792,7 +1619,7 @@ class Graph:
             if (viaSharedTopologies == True) or (viaSharedApertures == True) or (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
                 for aFace in topFaces:
                     if useInternalVertex == True:
-                        vFace = Face.InternalVertex(aFace, tolerance)
+                        vFace = Topology.InternalVertex(aFace, tolerance=tolerance)
                     else:
                         vFace = aFace.CenterOfMass()
                     _ = vFace.SetDictionary(aFace.GetDictionary())
@@ -1832,7 +1659,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Topologies"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1853,7 +1680,7 @@ class Graph:
                                     else:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
-                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
                                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
@@ -1872,7 +1699,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1890,7 +1717,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1911,7 +1738,7 @@ class Graph:
                                     else:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
-                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
                                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
@@ -1931,7 +1758,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1952,7 +1779,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -2000,7 +1827,7 @@ class Graph:
                     else:
                         _ = vcc.SetDictionary(d1)
                     vertices.append(vcc)
-                    tempe = topologic.Edge.ByStartVertexEndVertex(vcc, vop)
+                    tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
@@ -2014,7 +1841,7 @@ class Graph:
             edges = []
 
             if useInternalVertex == True:
-                vFace = Face.InternalVertex(topology, tolerance)
+                vFace = Topology.InternalVertex(topology, tolerance=tolerance)
             else:
                 vFace = topology.CenterOfMass()
             d1 = topology.GetDictionary()
@@ -2045,7 +1872,7 @@ class Graph:
                         vop = Topology.InternalVertex(outpost, tolerance)
                     else:
                         vop = Topology.CenterOfMass(outpost)
-                    tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vop)
+                    tempe = Edge.ByStartVertexEndVertex(vFace, vop, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
@@ -2075,7 +1902,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Topologies"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -2096,7 +1923,7 @@ class Graph:
                                     else:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
-                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
                                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
@@ -2116,7 +1943,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -2137,7 +1964,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vFace, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -2173,7 +2000,7 @@ class Graph:
                                     v2 = topologic.EdgeUtility.PointAtParameter(topEdges[j], 0.5)
                                 except:
                                     v2 = topEdges[j].CenterOfMass()
-                                e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                 mDict = mergeDictionaries(sharedt)
                                 if mDict:
                                     e.SetDictionary(mDict)
@@ -2211,7 +2038,7 @@ class Graph:
                                         v2 = topologic.EdgeUtility.PointAtParameter(topEdges[j], 0.5)
                                     except:
                                         v2 = topEdges[j].CenterOfMass()
-                                    e = topologic.Edge.ByStartVertexEndVertex(v1, v2)
+                                    e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                     apTopologies = []
                                     for ap in apList:
                                         apTopologies.append(ap.Topology())
@@ -2270,7 +2097,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Topologies"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -2291,7 +2118,7 @@ class Graph:
                                     else:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
-                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
                                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
@@ -2310,7 +2137,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -2318,7 +2145,7 @@ class Graph:
                         for exteriorTopology in exteriorTopologies:
                             vst = exteriorTopology
                             vertices.append(exteriorTopology)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Topologies"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -2339,7 +2166,7 @@ class Graph:
                                     else:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
-                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
                                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
@@ -2359,7 +2186,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -2381,7 +2208,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -2429,7 +2256,7 @@ class Graph:
                     else:
                         _ = vcc.SetDictionary(d1)
                     vertices.append(vcc)
-                    tempe = topologic.Edge.ByStartVertexEndVertex(vcc, vop)
+                    tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
@@ -2480,7 +2307,7 @@ class Graph:
                         vop = Topology.InternalVertex(outpost, tolerance)
                     else:
                         vop = Topology.CenterOfMass(outpost)
-                    tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vop)
+                    tempe = Edge.ByStartVertexEndVertex(vEdge, vop, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
@@ -2510,7 +2337,7 @@ class Graph:
                             else:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Topologies"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -2531,7 +2358,7 @@ class Graph:
                                     else:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
-                                    tempe = topologic.Edge.ByStartVertexEndVertex(vst, vst2)
+                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
                                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
@@ -2552,7 +2379,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             _ = vst.SetDictionary(exteriorAperture.Topology().GetDictionary())
                             vertices.append(vst)
-                            tempe = topologic.Edge.ByStartVertexEndVertex(vEdge, vst)
+                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -2581,7 +2408,7 @@ class Graph:
                     else:
                         _ = vst.SetDictionary(d1)
                     vertices.append(vst)
-                    tempe = topologic.Edge.ByStartVertexEndVertex(topology, vst)
+                    tempe = Edge.ByStartVertexEndVertex(topology, vst, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
@@ -2606,7 +2433,7 @@ class Graph:
                         vop = Topology.InternalVertex(outpost, tolerance)
                     else:
                         vop = Topology.CenterOfMass(outpost)
-                    tempe = topologic.Edge.ByStartVertexEndVertex(topology, vop)
+                    tempe = Edge.ByStartVertexEndVertex(topology, vop, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
@@ -3313,7 +3140,7 @@ class Graph:
             The desired ratio of the node data to use for testing. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for testing.
             This value is ignored if an nodeMaskKey is foud.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
         overwrite : bool , optional
             If set to True, any existing files are overwritten. Otherwise, the input list of graphs is appended to the end of each file. The default is False.
 
@@ -3586,7 +3413,7 @@ class Graph:
         return True
     
     @staticmethod
-    def Flatten(graph, layout="spring", k=0.8, seed=None, iterations=50, rootVertex=None):
+    def Flatten(graph, layout="spring", k=0.8, seed=None, iterations=50, rootVertex=None, tolerance=0.0001):
         """
         Flattens the input graph.
 
@@ -3934,7 +3761,7 @@ class Graph:
             raise NotImplementedError(f"{layout} is not implemented yet. Please choose from ['radial', 'spring', 'tree']")
         positions = positions.tolist()
         positions = [[p[0], p[1], 0] for p in positions]
-        flat_graph = Graph.ByMeshData(positions, edges, v_dicts, e_dicts)
+        flat_graph = Graph.ByMeshData(positions, edges, v_dicts, e_dicts, tolerance=tolerance)
         return flat_graph
 
     @staticmethod
@@ -4098,7 +3925,7 @@ class Graph:
         return vertices
     
     @staticmethod
-    def LongestPath(graph, vertexA, vertexB, vertexKey=None, edgeKey=None, costKey=None, timeLimit=10):
+    def LongestPath(graph, vertexA, vertexB, vertexKey=None, edgeKey=None, costKey=None, timeLimit=10, tolerance=0.0001):
         """
         Returns the longest path that connects the input vertices.
 
@@ -4118,6 +3945,8 @@ class Graph:
             If not None, the total cost of the longest_path will be stored in its dictionary under this key. The default is None. 
         timeLimit : int , optional
             The time limit in second. The default is 10 seconds.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -4186,7 +4015,7 @@ class Graph:
         new_edges = []
         for edge in Topology.Edges(temp_path):
             new_edges.append(g_edges[Edge.Index(edge, g_edges)])
-        longest_path = Topology.SelfMerge(Cluster.ByTopologies(new_edges))
+        longest_path = Topology.SelfMerge(Cluster.ByTopologies(new_edges), tolerance=tolerance)
         if not costKey == None:
             lengths.sort()
             d = Dictionary.ByKeysValues([costKey], [cost])
@@ -4445,7 +4274,12 @@ class Graph:
             ev = Edge.EndVertex(edge)
             if len(Graph.Vertices(mst)) > 0:
                 if not Graph.Path(mst, Graph.NearestVertex(mst, sv), Graph.NearestVertex(mst, ev)):
-                    mst = Graph.AddEdge(mst, edge, transferVertexDictionaries=False, transferEdgeDictionaries=True)
+                    d = Topology.Dictionary(edge)
+                    if len(Dictionary.Keys(d)) > 0:
+                        tranEdgeDicts = True
+                    else:
+                        tranEdgeDicts = False
+                    mst = Graph.AddEdge(mst, edge, transferVertexDictionaries=False, transferEdgeDictionaries=tranEdgeDicts)
         return mst
 
     @staticmethod
@@ -5000,7 +4834,7 @@ class Graph:
     @staticmethod
     def Show(graph, vertexColor="black", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, showVertexLegend=False, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, showEdgeLegend=False, colorScale='viridis', renderer="notebook",
              width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0,
-             camera=None, target=None, up=None):
+             camera=None, target=None, up=None, tolerance=0.0001):
         """
         Shows the graph using Plotly.
 
@@ -5084,6 +4918,9 @@ class Graph:
             The desired camera target. The default is [0,0,0].
         up : list , optional
             The desired up vector. The default is [0,0,1].
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         None
@@ -5097,7 +4934,7 @@ class Graph:
         
         data= Plotly.DataByGraph(graph, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLegend=showEdgeLegend, colorScale=colorScale)
         fig = Plotly.FigureByData(data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor,
-                                  marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
+                                  marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom, tolerance=tolerance)
         Plotly.Show(fig, renderer=renderer, camera=camera, target=target, up=up)
 
     @staticmethod
@@ -5374,7 +5211,7 @@ class Graph:
         else:
             viewpointsB = [x for x in viewpointsB if isinstance(x, topologic.Vertex)]
 
-        boundaryFace = Face.ByWires(boundary, obstacles)
+        boundaryFace = Face.ByWires(boundary, obstacles, tolerance=tolerance)
         edges = []
         matrix = []
         if not viewpointsB:
@@ -5390,9 +5227,9 @@ class Graph:
                     if not Topology.IsSame(viewpointsA[i], viewpointsB[j]) and matrix[i][j] == 0:
                         matrix[i][j] = 1
                         matrix[j][i] = 1
-                        e = Edge.ByVertices([viewpointsA[i], viewpointsB[j]])
+                        e = Edge.ByVertices([viewpointsA[i], viewpointsB[j]], tolerance=tolerance)
                         if e:
-                            e = Topology.Boolean(e, boundaryFace, "intersect", False)
+                            e = Topology.Boolean(e, boundaryFace, operation="intersect", tolerance=tolerance)
                             if isinstance(e, topologic.Edge):
                                 edges = addEdge(e, edges, viewpointsA, viewpointsB, 0.0001)
                             elif isinstance(e, topologic.Cluster):
@@ -5407,9 +5244,9 @@ class Graph:
                     if not Topology.IsSame(viewpointsA[i], viewpointsB[j]) and matrix[i][j] == 0:
                         matrix[i][j] = 1
                         matrix[j][i] = 1
-                        e = Edge.ByVertices([viewpointsA[i], viewpointsB[j]])
+                        e = Edge.ByVertices([viewpointsA[i], viewpointsB[j]], tolerance=tolerance)
                         if e:
-                            e = Topology.Boolean(e, boundaryFace, "intersect", False)
+                            e = Topology.Boolean(e, boundaryFace, "intersect", tolerance=tolerance)
                             if isinstance(e, topologic.Edge):
                                 edges = addEdge(e, edges, viewpointsA, viewpointsB, 0.0001)
                             elif isinstance(e, topologic.Cluster):
@@ -5418,6 +5255,6 @@ class Graph:
                                     for tempEdge in tempEdges:
                                         edges = addEdge(tempEdge, edges, viewpointsA, viewpointsB, 0.0001)
         cluster = Cluster.ByTopologies(viewpointsA+viewpointsB)
-        cluster = Topology.SelfMerge(cluster)
+        cluster = Topology.SelfMerge(cluster, tolerance=tolerance)
         viewpoints = Cluster.Vertices(cluster)
         return Graph.ByVerticesEdges(viewpoints, edges)

@@ -4,8 +4,10 @@ import math
 
 class CellComplex(topologic.CellComplex):
     @staticmethod
-    def Box(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, height: float = 1.0, uSides: int = 2, vSides: int = 2, wSides: int = 2,
-                         direction: list = [0,0,1], placement: str = "center") -> topologic.CellComplex:
+    def Box(origin: topologic.Vertex = None,
+            width: float = 1.0, length: float = 1.0, height: float = 1.0,
+            uSides: int = 2, vSides: int = 2, wSides: int = 2,
+            direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Creates a box with internal cells.
 
@@ -29,15 +31,19 @@ class CellComplex(topologic.CellComplex):
             The vector representing the up direction of the box. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.CellComplex
             The created box.
 
         """
-        return CellComplex.Prism(origin=origin, width=width, length=length, height=height, uSides=uSides, vSides=vSides, wSides=wSides,
-                         direction=direction, placement=placement)
+        return CellComplex.Prism(origin=origin,
+                                 width=width, length=length, height=height,
+                                 uSides=uSides, vSides=vSides, wSides=wSides,
+                                 direction=direction, placement=placement, tolerance=tolerance)
     
     @staticmethod
     def ByCells(cells: list, tolerance: float = 0.0001) -> topologic.CellComplex:
@@ -76,7 +82,7 @@ class CellComplex(topologic.CellComplex):
         except:
             topA = cells[0]
             topB = Cluster.ByTopologies(cells[1:])
-            cellComplex = Topology.Merge(topA, topB)
+            cellComplex = Topology.Merge(topA, topB, tranDict=False, tolerance=tolerance)
         
         if not isinstance(cellComplex, topologic.CellComplex):
             print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning object of type topologic.Cluster instead of topologic.CellComplex.")
@@ -156,7 +162,7 @@ class CellComplex(topologic.CellComplex):
             for i in range(1,len(faces)):
                 newCellComplex = None
                 try:
-                    newCellComplex = cellComplex.Merge(faces[i], False)
+                    newCellComplex = cellComplex.Merge(faces[i], False, tolerance)
                 except:
                     print("CellComplex.ByFaces - Warning: Failed to merge face #"+str(i)+". Skipping.")
                 if newCellComplex:
@@ -223,8 +229,9 @@ class CellComplex(topologic.CellComplex):
             The created cellcomplex.
 
         """
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
         if not isinstance(wires, list):
@@ -234,22 +241,22 @@ class CellComplex(topologic.CellComplex):
         if len(wires) < 2:
             print("CellComplex.ByWires - Error: The input wires parameter contains less than two valid wires. Returning None.")
             return None
-        faces = [topologic.Face.ByExternalBoundary(wires[0]), topologic.Face.ByExternalBoundary(wires[-1])]
+        faces = [Face.ByWire(wires[0], tolerance=tolerance), Face.ByWire(wires[-1], tolerance=tolerance)]
         if triangulate == True:
             triangles = []
             for face in faces:
                 if len(Topology.Vertices(face)) > 3:
-                    triangles += Face.Triangulate(face)
+                    triangles += Face.Triangulate(face, tolerance=tolerance)
                 else:
                     triangles += [face]
             faces = triangles
         for i in range(len(wires)-1):
             wire1 = wires[i]
             wire2 = wires[i+1]
-            f = topologic.Face.ByExternalBoundary(wire2)
+            f = Face.ByWire(wire2, tolerance=tolerance)
             if triangulate == True:
                 if len(Topology.Vertices(face)) > 3:
-                    triangles = Face.Triangulate(face)
+                    triangles = Face.Triangulate(face, tolerance=tolerance)
                 else:
                     triangles = [face]
                 faces += triangles
@@ -268,14 +275,14 @@ class CellComplex(topologic.CellComplex):
                 e3 = None
                 e4 = None
                 try:
-                    e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
+                    e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance)
                 except:
                     try:
-                        e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
-                        f = topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e4]))
+                        e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance)
+                        f = Face.ByExternalBoundary(Wire.ByEdges([e1, e2, e4], tolerance=tolerance))
                         if triangulate == True:
                             if len(Topology.Vertices(face)) > 3:
-                                triangles = Face.Triangulate(face)
+                                triangles = Face.Triangulate(face, tolerance=tolerance)
                             else:
                                 triangles = [face]
                             faces += triangles
@@ -284,14 +291,14 @@ class CellComplex(topologic.CellComplex):
                     except:
                         pass
                 try:
-                    e4 = topologic.Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex())
+                    e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance)
                 except:
                     try:
-                        e3 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex())
-                        f = topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e2, e3]))
+                        e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance)
+                        f = Face.ByWire(Wire.ByEdges([e1, e2, e3], tolerance=tolerance), tolerance=tolerance)
                         if triangulate == True:
                             if len(Topology.Vertices(face)) > 3:
-                                triangles = Face.Triangulate(face)
+                                triangles = Face.Triangulate(face, tolerance=tolerance)
                             else:
                                 triangles = [face]
                             faces += triangles
@@ -301,19 +308,19 @@ class CellComplex(topologic.CellComplex):
                         pass
                 if e3 and e4:
                     if triangulate == True:
-                        e5 = topologic.Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex())
-                        faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e5, e4])))
-                        faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e2, e5, e3])))
+                        e5 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex(), tolerance=tolerance)
+                        faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
+                        faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
                     else:
-                        try:
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e4, e2, e3])))
-                        except:
-                            faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e3, e2, e4])))
+                        f = Face.ByWire(Wire.ByEdges([e1, e4, e2, e3], tolerance=tolerance), tolerance=tolerance) or Face.ByWire(Wire.ByEdges([e1, e3, e2, e4], tolerance=tolerance), tolerance=tolerance)
+                        if f:
+                            faces.append(f)
+
                 elif e3:
-                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e3, e2])))
+                    faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2], tolerance=tolerance), tolerance=tolerance))
                 elif e4:
-                    faces.append(topologic.Face.ByExternalBoundary(topologic.Wire.ByEdges([e1, e4, e2])))
-        return CellComplex.ByFaces(faces, tolerance)
+                    faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2], tolerance=tolerance), tolerance=tolerance))
+        return CellComplex.ByFaces(faces, tolerance=tolerance)
 
     @staticmethod
     def ByWiresCluster(cluster: topologic.Cluster, triangulate: bool = True, tolerance: float = 0.0001) -> topologic.CellComplex:
@@ -637,8 +644,10 @@ class CellComplex(topologic.CellComplex):
         return faces
     
     @staticmethod
-    def Prism(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, height: float = 1.0, uSides: int = 2, vSides: int = 2, wSides: int = 2,
-                         direction: list = [0,0,1], placement: str = "center") -> topologic.CellComplex:
+    def Prism(origin: topologic.Vertex = None,
+              width: float = 1.0, length: float = 1.0, height: float = 1.0,
+              uSides: int = 2, vSides: int = 2, wSides: int = 2,
+              direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Creates a prismatic cellComplex with internal cells.
 
@@ -662,7 +671,9 @@ class CellComplex(topologic.CellComplex):
             The vector representing the up direction of the prism. The default is [0,0,1].
         placement : str , optional
             The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.CellComplex
@@ -717,13 +728,13 @@ class CellComplex(topologic.CellComplex):
             all_faces = uFaces+vFaces+wFaces
             if len(all_faces) > 0:
                 f_clus = Cluster.ByTopologies(uFaces+vFaces+wFaces)
-                return Topology.Slice(topology, f_clus)
+                return Topology.Slice(topology, f_clus, tolerance=tolerance)
             else:
                 return topologic.CellComplex.ByCells([topology])
         if not isinstance(origin, topologic.Vertex):
             origin = Vertex.ByCoordinates(0,0,0)
 
-        c = Cell.Prism(origin=origin, width=width, length=length, height=height, uSides=1, vSides=1, wSides=1, placement=placement)
+        c = Cell.Prism(origin=origin, width=width, length=length, height=height, uSides=1, vSides=1, wSides=1, placement=placement, tolerance=tolerance)
         prism = slice(c, uSides=uSides, vSides=vSides, wSides=wSides)
         if prism:
             x1 = origin.X()
@@ -804,7 +815,7 @@ class CellComplex(topologic.CellComplex):
         cellComplex : topologic.CellComplex
             The input cellComplex.
         manitssa: int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------

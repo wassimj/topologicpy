@@ -16,7 +16,7 @@ class Edge():
         edgeB : topologic Edge
             The second input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
         bracket : bool
             If set to True, the returned angle is bracketed between 0 and 180. The default is False.
 
@@ -105,7 +105,7 @@ class Edge():
         return bisectingEdge
 
     @staticmethod
-    def ByFaceNormal(face: topologic.Face, origin: topologic.Vertex = None, length: float = 1.0) -> topologic.Edge:
+    def ByFaceNormal(face: topologic.Face, origin: topologic.Vertex = None, length: float = 1.0, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Creates a straight edge representing the normal to the input face.
 
@@ -117,7 +117,9 @@ class Edge():
             The desired origin of the edge. If set to None, the centroid of the face is chosen as the origin of the edge. The default is None.
         length : float , optional
             The desired length of the edge. The default is 1.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         edge : topologic.Edge
@@ -138,7 +140,7 @@ class Edge():
             return None
         n = Face.Normal(face)
         v2 = Topology.Translate(origin, n[0], n[1], n[2])
-        edge = topologic.Edge.ByStartVertexEndVertex(origin, v2)
+        edge = Edge.ByStartVertexEndVertex(origin, v2, tolerance=tolerance)
         if not isinstance(edge, topologic.Edge):
             print("Edge.ByFaceNormal - Error: Could not create an edge. Returning None.")
             return None
@@ -251,7 +253,7 @@ class Edge():
         if len(vertexList) < 2:
             print("Edge.ByVertices - Error: The input vertices parameter has less than two vertices. Returning None.")
             return None
-        return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance, verbose)
+        return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance=tolerance, verbose=verbose)
     
     @staticmethod
     def ByVerticesCluster(cluster: topologic.Cluster, tolerance: float = 0.0001) -> topologic.Edge:
@@ -280,7 +282,7 @@ class Edge():
         if len(vertexList) < 2:
             print("Edge.ByVerticesCluster - Error: The input cluster parameter contains less than two vertices. Returning None.")
             return None
-        return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance)
+        return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance=tolerance)
 
     @staticmethod
     def Direction(edge: topologic.Edge, mantissa: int = 6) -> list:
@@ -292,7 +294,7 @@ class Edge():
         edge : topologic.Edge
             The input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -543,7 +545,7 @@ class Edge():
         edgeB : topologic.Edge
             The second input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
         angTolerance : float , optional
             The angular tolerance used for the test. The default is 0.1.
         tolerance : float , optional
@@ -586,7 +588,7 @@ class Edge():
         edgeB : topologic.Edge
             The second input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
         angTolerance : float , optional
             The angular tolerance used for the test. The default is 0.1.
 
@@ -617,7 +619,7 @@ class Edge():
         edge : topologic.Edge
             The input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -733,7 +735,7 @@ class Edge():
         return Vector.Normalize([-dy, dx, 0])
 
     @staticmethod
-    def Normalize(edge: topologic.Edge, useEndVertex: bool = False) -> topologic.Edge:
+    def Normalize(edge: topologic.Edge, useEndVertex: bool = False, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Creates a normalized edge that has the same direction as the input edge, but a length of 1.
 
@@ -743,7 +745,9 @@ class Edge():
             The input edge.
         useEndVertex : bool , optional
             If True the normalized edge end vertex will be placed at the end vertex of the input edge. Otherwise, the normalized edge start vertex will be placed at the start vertex of the input edge. The default is False.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Edge
@@ -759,7 +763,7 @@ class Edge():
         else:
             sv = Edge.VertexByDistance(edge, 1.0, edge.StartVertex())
             ev = edge.EndVertex()
-        return Edge.ByVertices([sv, ev])
+        return Edge.ByVertices([sv, ev], tolerance=tolerance)
 
     @staticmethod
     def ParameterAtVertex(edge: topologic.Edge, vertex: topologic.Vertex, mantissa: int = 6) -> float:
@@ -773,7 +777,7 @@ class Edge():
         vertex : topologic.Vertex
             The input vertex.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -795,7 +799,7 @@ class Edge():
         return round(parameter, mantissa)
 
     @staticmethod
-    def Reverse(edge: topologic.Edge) -> topologic.Edge:
+    def Reverse(edge: topologic.Edge, tolerance: float = 0.0001) -> topologic.Edge:
         """
         Creates an edge that has the reverse direction of the input edge.
 
@@ -803,6 +807,8 @@ class Edge():
         ----------
         edge : topologic.Edge
             The input edge.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -813,7 +819,7 @@ class Edge():
         if not isinstance(edge, topologic.Edge):
             print("Edge.Reverse - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
-        return Edge.ByVertices([edge.EndVertex(), edge.StartVertex()])
+        return Edge.ByVertices([edge.EndVertex(), edge.StartVertex()], tolerance=tolerance)
     
     @staticmethod
     def SetLength(edge: topologic.Edge , length: float = 1.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001) -> topologic.Edge:

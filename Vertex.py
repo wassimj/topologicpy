@@ -335,7 +335,7 @@ class Vertex(Topology):
         outputType : string, optional
             The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". The default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -423,7 +423,8 @@ class Vertex(Topology):
 
 
     @staticmethod
-    def Distance(vertex: topologic.Vertex, topology: topologic.Topology, includeCentroid: bool =True, mantissa: int = 6) -> float:
+    def Distance(vertex: topologic.Vertex, topology: topologic.Topology, includeCentroid: bool =True,
+                 mantissa: int = 6) -> float:
         """
         Returns the distance between the input vertex and the input topology. This method returns the distance to the closest sub-topology in the input topology, optionally including its centroid.
 
@@ -435,9 +436,9 @@ class Vertex(Topology):
             The input topology.
         includeCentroid : bool
             If set to True, the centroid of the input topology will be considered in finding the nearest subTopology to the input vertex. The default is True.
-        mantissa: int , optional
-            The desired length of the mantissa. The default is 4.
-
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        
         Returns
         -------
         float
@@ -505,7 +506,7 @@ class Vertex(Topology):
             return distance_point_to_line(a,svp, evp)
         
         def distance_to_face(vertex, face, includeCentroid):
-            v_proj = Vertex.Project(vertex, face)
+            v_proj = Vertex.Project(vertex, face, mantissa=mantissa)
             if not Face.IsInternal(face, v_proj):
                 vertices = Topology.Vertices(topology)
                 distances = [distance_to_vertex(vertex, v) for v in vertices]
@@ -627,7 +628,7 @@ class Vertex(Topology):
         vertices : list
             The input list of topologic vertices.
         mantissa : int , optional
-            The desired length of the mantissa for retrieving vertex coordinates. The default is 4.
+            The desired length of the mantissa for retrieving vertex coordinates. The default is 6.
         tolerance : float , optional
             The desired tolerance for computing if vertices need to be fused. Any vertices that are closer to each other than this tolerance will be fused. The default is 0.0001.
         """
@@ -1067,7 +1068,7 @@ class Vertex(Topology):
         face : topologic.Face
             The input face.
         mantissa: int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -1200,7 +1201,7 @@ class Vertex(Topology):
         return Vertex.ByCoordinates(x,y,z)
 
     @staticmethod
-    def Project(vertex: topologic.Vertex, face: topologic.Face, direction: bool = None, mantissa: int = 6, tolerance: float = 0.0001) -> topologic.Vertex:
+    def Project(vertex: topologic.Vertex, face: topologic.Face, direction: bool = None, mantissa: int = 6) -> topologic.Vertex:
         """
         Returns a vertex that is the projection of the input vertex unto the input face.
 
@@ -1223,11 +1224,8 @@ class Vertex(Topology):
             The projected vertex.
 
         """
-        from topologicpy.Edge import Edge
         from topologicpy.Face import Face
-        from topologicpy.Topology import Topology
-        from topologicpy.Vector import Vector
-
+        
         def project_point_onto_plane(point, plane_coeffs):
             """
             Project a point onto a plane defined by its equation coefficients (a, b, c, d).
@@ -1249,9 +1247,9 @@ class Vertex(Topology):
                 distance = (a * x + b * y + c * z + d) / (a**2 + b**2 + c**2)
             
             # Calculate the coordinates of the projected point
-            x_proj = x - distance * a
-            y_proj = y - distance * b
-            z_proj = z - distance * c
+            x_proj = round(x - distance * a, mantissa)
+            y_proj = round(y - distance * b, mantissa)
+            z_proj = round(z - distance * c, mantissa)
             
             return [x_proj, y_proj, z_proj]
 
@@ -1273,7 +1271,7 @@ class Vertex(Topology):
         vertex : topologic.Vertex
             The input vertex.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -1295,7 +1293,7 @@ class Vertex(Topology):
         vertex : topologic.Vertex
             The input vertex.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -1317,7 +1315,7 @@ class Vertex(Topology):
         vertex : topologic.Vertex
             The input vertex.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------

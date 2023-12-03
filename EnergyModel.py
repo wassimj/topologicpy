@@ -962,12 +962,14 @@ class EnergyModel:
         return list(OrderedDict( (x,1) for x in tableNames ).keys()) #Making a unique list and keeping its order
 
     @staticmethod
-    def Topologies(model):
+    def Topologies(model, tolerance=0.0001):
         """
         Parameters
         ----------
         model : openstudio.openstudiomodelcore.Model
             The input OSM model.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -993,17 +995,17 @@ class EnergyModel:
             for i in range(len(surfaceVertices)-1):
                 sv = topologic.Vertex.ByCoordinates(surfaceVertices[i].x(), surfaceVertices[i].y(), surfaceVertices[i].z())
                 ev = topologic.Vertex.ByCoordinates(surfaceVertices[i+1].x(), surfaceVertices[i+1].y(), surfaceVertices[i+1].z())
-                edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=0.0001, verbose=False)
+                edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance, verbose=False)
                 if not edge:
                     continue
                 surfaceEdges.append(edge)
             sv = topologic.Vertex.ByCoordinates(surfaceVertices[len(surfaceVertices)-1].x(), surfaceVertices[len(surfaceVertices)-1].y(), surfaceVertices[len(surfaceVertices)-1].z())
             ev = topologic.Vertex.ByCoordinates(surfaceVertices[0].x(), surfaceVertices[0].y(), surfaceVertices[0].z())
-            edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=0.0001, verbose=False)
+            edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance, verbose=False)
             surfaceEdges.append(edge)
-            surfaceWire = Wire.ByEdges(surfaceEdges)
+            surfaceWire = Wire.ByEdges(surfaceEdges, tolerance=tolerance)
             internalBoundaries = []
-            surfaceFace = Face.ByWires(surfaceWire, internalBoundaries)
+            surfaceFace = Face.ByWires(surfaceWire, internalBoundaries, tolerance=tolerance)
             return surfaceFace
         
         def addApertures(face, apertures):
@@ -1080,12 +1082,12 @@ class EnergyModel:
                 addApertures(aFace, apertures)
                 spaceFaces.append(aFace)
             spaceFaces = [x for x in spaceFaces if isinstance(x, topologic.Face)]
-            spaceCell = Cell.ByFaces(spaceFaces)
+            spaceCell = Cell.ByFaces(spaceFaces, tolerance=tolerance)
             if not spaceCell:
-                spaceCell = Shell.ByFaces(spaceFaces)
-            if not spaceCell:
+                spaceCell = Shell.ByFaces(spaceFaces, tolerance=tolerance)
+            if not isinstance(spaceCell, topologic.Cell):
                 spaceCell = Cluster.ByTopologies(spaceFaces)
-            if spaceCell: #debugging
+            if isinstance(spaceCell, topologic.Topology): #debugging
                 # Set Dictionary for Cell
                 keys = []
                 values = []

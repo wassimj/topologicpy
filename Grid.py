@@ -72,7 +72,7 @@ class Grid(topologic.Cluster):
                 tempVec = Vector.Multiply(uuVector, u, tolerance)
                 v1 = Vertex.ByCoordinates(uOrigin.X()+tempVec[0], uOrigin.Y()+tempVec[1], uOrigin.Z()+tempVec[2])
                 v2 = Vertex.ByCoordinates(v1.X()+vVector[0], v1.Y()+vVector[1], v1.Z()+vVector[2])
-                e = Edge.ByVertices([v1, v2])
+                e = Edge.ByVertices([v1, v2], tolerance=tolerance)
                 if clip and isinstance(face, topologic.Face):
                     e = e.Intersect(face, False)
                 if e:
@@ -94,7 +94,7 @@ class Grid(topologic.Cluster):
                 tempVec = Vector.Multiply(uvVector, v, tolerance)
                 v1 = Vertex.ByCoordinates(vOrigin.X()+tempVec[0], vOrigin.Y()+tempVec[1], vOrigin.Z()+tempVec[2])
                 v2 = Vertex.ByCoordinates(v1.X()+uVector[0], v1.Y()+uVector[1], v1.Z()+uVector[2])
-                e = Edge.ByVertices([v1, v2])
+                e = Edge.ByVertices([v1, v2], tolerance=tolerance)
                 if clip and isinstance(face, topologic.Face):
                     e = e.Intersect(face, False)
                 if e:
@@ -115,7 +115,7 @@ class Grid(topologic.Cluster):
         return grid
     
     @staticmethod
-    def EdgesByParameters(face, uRange=[0,0.25,0.5,0.75,1.0], vRange=[0,0.25,0.5,0.75,1.0], clip=False):
+    def EdgesByParameters(face, uRange=[0,0.25,0.5,0.75,1.0], vRange=[0,0.25,0.5,0.75,1.0], clip=False, tolerance=0.0001):
         """
         Creates a grid (cluster of edges).
 
@@ -129,7 +129,9 @@ class Grid(topologic.Cluster):
             A list of *v* parameters for the *v* grid lines. The default is [0,0.25,0.5, 0.75, 1.0].
         clip : bool , optional
             If True the grid will be clipped by the shape of the input face. The default is False.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Cluster
@@ -159,7 +161,7 @@ class Grid(topologic.Cluster):
         for u in uRange:
             v1 = Face.VertexByParameters(face, u, 0)
             v2 = Face.VertexByParameters(face, u, 1)
-            e = Edge.ByVertices([v1, v2])
+            e = Edge.ByVertices([v1, v2], tolerance=tolerance)
             if clip and isinstance(face, topologic.Face):
                 e = e.Intersect(face, False)
             if e:
@@ -177,7 +179,7 @@ class Grid(topologic.Cluster):
         for v in vRange:
             v1 = Face.VertexByParameters(face, 0, v)
             v2 = Face.VertexByParameters(face, 1, v)
-            e = Edge.ByVertices([v1, v2])
+            e = Edge.ByVertices([v1, v2], tolerance=tolerance)
             if clip and isinstance(face, topologic.Face):
                 e = e.Intersect(face, False)
             if e:

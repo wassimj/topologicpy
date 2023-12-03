@@ -41,7 +41,7 @@ class Plotly:
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         mantissa : int , optional
-            The desired length of the mantissa for the values listed on the color bar. The default is 4.
+            The desired length of the mantissa for the values listed on the color bar. The default is 6.
         Returns
         -------
         plotly.graph_objs._figure.Figure
@@ -502,7 +502,7 @@ class Plotly:
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -677,7 +677,10 @@ class Plotly:
             return eData
 
 
-        def faceData(vertices, faces, dictionaries=None, color="white", opacity=0.5, labelKey=None, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Faces", legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="Viridis"):
+        def faceData(vertices, faces, dictionaries=None, color="white",
+                     opacity=0.5, labelKey=None, groupKey=None,
+                     minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Faces",
+                     legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="Viridis"):
             x = []
             y = []
             z = []
@@ -816,7 +819,7 @@ class Plotly:
                     for tp_edge in tp_edges:
                         e_dictionaries.append(Topology.Dictionary(tp_edge))
                 e_cluster = Cluster.ByTopologies(tp_edges)
-                geo = Topology.Geometry(e_cluster)
+                geo = Topology.Geometry(e_cluster, mantissa=mantissa)
                 vertices = geo['vertices']
                 edges = geo['edges']
                 data.append(edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, width=edgeWidth, labelKey=edgeLabelKey, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
@@ -827,7 +830,7 @@ class Plotly:
                 f_dictionaries = []
                 all_triangles = []
                 for tp_face in tp_faces:
-                    shell = Topology.Triangulate(tp_face, transferDictionaries = False)
+                    shell = Topology.Triangulate(tp_face, transferDictionaries = False, tolerance=tolerance)
                     if isinstance(shell, topologic.Face):
                         triangles = [shell]
                     else:
@@ -841,7 +844,7 @@ class Plotly:
                         all_triangles.append(tri)
                 if len(all_triangles) > 0:
                     f_cluster = Cluster.ByTopologies(all_triangles)
-                    geo = Topology.Geometry(f_cluster)
+                    geo = Topology.Geometry(f_cluster, mantissa=mantissa)
                     vertices = geo['vertices']
                     faces = geo['faces']
                     data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensities, colorScale=colorScale))
@@ -1199,7 +1202,12 @@ class Plotly:
 
 
     @staticmethod
-    def FigureByData(data, width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0):
+    def FigureByData(data, width=950, height=500,
+                     xAxis=False, yAxis=False, zAxis=False,
+                     axisSize=1, backgroundColor='rgba(0,0,0,0)',
+                     marginLeft=0, marginRight=0,
+                     marginTop=20, marginBottom=0,
+                     tolerance = 0.0001):
         """
         Creates a plotly figure.
 
@@ -1235,6 +1243,8 @@ class Plotly:
             The size in pixels of the top margin. The default value is 20.
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         
         Returns
         -------
@@ -1254,15 +1264,15 @@ class Plotly:
         v3 = Vertex.ByCoordinates(0,0,axisSize)
 
         if xAxis:
-            xEdge = Edge.ByVertices([v0,v1])
+            xEdge = Edge.ByVertices([v0,v1], tolerance=tolerance)
             xData = Plotly.DataByTopology(xEdge, edgeColor="red", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="X-Axis")
             data = data + xData
         if yAxis:
-            yEdge = Edge.ByVertices([v0,v2])
+            yEdge = Edge.ByVertices([v0,v2], tolerance=tolerance)
             yData = Plotly.DataByTopology(yEdge, edgeColor="green", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="Y-Axis")
             data = data + yData
         if zAxis:
-            zEdge = Edge.ByVertices([v0,v3])
+            zEdge = Edge.ByVertices([v0,v3], tolerance=tolerance)
             zData = Plotly.DataByTopology(zEdge, edgeColor="blue", edgeWidth=6, showFaces=False, showEdges=True, showVertices=False, edgeLegendLabel="Z-Axis")
             data = data + zData
 
@@ -1539,7 +1549,7 @@ class Plotly:
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         mantissa : int , optional
-            The desired length of the mantissa for the values listed on the colorbar. The default is 4.
+            The desired length of the mantissa for the values listed on the colorbar. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1568,7 +1578,12 @@ class Plotly:
                        showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel, faceLegendRank=faceLegendRank,
                        faceLegendGroup=faceLegendGroup, 
                        intensityKey=intensityKey, colorScale=colorScale, tolerance=tolerance)
-        figure = Plotly.FigureByData(data=data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor, marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom)
+        figure = Plotly.FigureByData(data=data, width=width, height=height,
+                                     xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,
+                                     backgroundColor=backgroundColor,
+                                     marginLeft=marginLeft, marginRight=marginRight,
+                                     marginTop=marginTop, marginBottom=marginBottom,
+                                     tolerance=tolerance)
         if showScale:
             figure = Plotly.AddColorBar(figure, values=cbValues, nTicks=cbTicks, xPosition=cbX, width=cbWidth, outlineWidth=cbOutlineWidth, title=cbTitle, subTitle=cbSubTitle, units=cbUnits, colorScale=colorScale, mantissa=mantissa)
         return figure
