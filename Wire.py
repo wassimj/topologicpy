@@ -402,9 +402,9 @@ class Wire(topologic.Wire):
                             subtractEdges = subtractEdges+edges
 
             if len(subtractEdges) > 0:
-                newWire = Topology.Boolean(newWire, Cluster.ByTopologies(subtractEdges), operation="difference")
+                newWire = Topology.Boolean(newWire, Cluster.ByTopologies(subtractEdges), operation="difference", tolerance=tolerance)
                 if len(cleanMiterEdges) > 0:
-                    newWire = Topology.Boolean(newWire, Cluster.ByTopologies(cleanMiterEdges), operation="merge")
+                    newWire = Topology.Boolean(newWire, Cluster.ByTopologies(cleanMiterEdges), operation="merge", tolerance=tolerance)
 
         newWire = Topology.Rotate(newWire, origin=world_origin, x=0, y=1, z=0, degree=theta)
         newWire = Topology.Rotate(newWire, origin=world_origin, x=0, y=0, z=1, degree=phi)
@@ -2686,6 +2686,144 @@ class Wire(topologic.Wire):
             baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0,0,1], dirB=direction)
         return baseWire
 
+    @staticmethod
+    def VertexDistance(wire: topologic.Wire, vertex: topologic.Vertex, origin: topologic.Vertex = None, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Returns the distance, computed along the input wire of the input vertex from the input origin vertex.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+        vertex : topologic.Vertex
+            The input vertex
+        origin : topologic.Vertex , optional
+            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input wire. The default is None.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        float
+            The distance of the input vertex from the input origin along the input wire.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
+        if not isinstance(wire, topologic.Wire):
+            print("Wire.VertexDistance - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            print("Wire.VertexDistance - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
+            return None
+        wire_length = Wire.Length(wire)
+        if wire_length < tolerance:
+            print("Wire.VertexDistance: The input wire parameter is a degenerate topologic wire. Returning None.")
+            return None
+        if origin == None:
+            origin = Wire.StartVertex(wire)
+        if not isinstance(origin, topologic.Vertex):
+            print("Wire.VertexDistance - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not Topology.IsInternal(wire, vertex, tolerance=tolerance):
+            print("Wire.VertexDistance: The input vertex parameter is not internal to the input wire parameter. Returning None.")
+            return None
+        
+        def distance_from_start(wire, v):
+            total_distance = 0.0
+            found = False
+            # Iterate over the edges of the wire
+            for edge in Wire.Edges(wire):
+                if Topology.IsInternal(edge, v, tolerance=tolerance):
+                    total_distance += Vertex.Distance(Edge.StartVertex(edge), v)
+                    found = True
+                    break
+                total_distance += Edge.Length(edge)
+            if found == False:
+                return None
+            return total_distance
+        
+        d1 = distance_from_start(wire, vertex)
+        d2 = distance_from_start(wire, origin)
+        if d1 == None:
+            print("Wire.VertexDistance - Error: The input vertex parameter is not internal to the input wire parameter. Returning None.")
+            return None
+        if d2 == None:
+            print("Wire.VertexDistance - Error: The input origin parameter is not internal to the input wire parameter. Returning None.")
+            return None
+        return round(abs(d2-d1), mantissa)
+
+    @staticmethod
+    def VertexByDistance(wire: topologic.Wire, distance: float = 0.0, origin: topologic.Vertex = None, tolerance = 0.0001) -> topologic.Vertex:
+        """
+        Creates a vertex along the input wire offset by the input distance from the input origin.
+
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The input edge.
+        distance : float , optional
+            The offset distance. The default is 0.
+        origin : topologic.Vertex , optional
+            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. The default is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        topologic.Vertex
+            The created vertex.
+
+        """
+        from topologicpy.Vertex import Vertex
+
+        if not isinstance(wire, topologic.Wire):
+            print("Wire.VertexByDistance - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            return None
+        wire_length = Wire.Length(wire)
+        if wire_length < tolerance:
+            print("Wire.VertexByDistance: The input wire parameter is a degenerate topologic wire. Returning None.")
+            return None
+        if abs(distance) < tolerance:
+            return Wire.StartVertex(wire)
+        if abs(distance - wire_length) < tolerance:
+            return Wire.EndVertex(wire)
+        if abs(distance) > wire_length:
+            print("Wire.VertexByDistance - Error: The input distance parameter is larger than the wire's length. Returning None.")
+            return None
+        if not Wire.IsManifold(wire):
+            print("Wire.VertexAtParameter - Error: The input wire parameter is non-manifold. Returning None.")
+            return None
+        if origin == None:
+            origin = Wire.StartVertex(wire)
+        if not isinstance(origin, topologic.Vertex):
+            print("Wire.VertexByDistance - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not Wire.IsInternal(wire, origin, tolerance=tolerance):
+            print("Wire.VertexByDistance - Error: The input origin parameter is not internal to the input wire parameter. Returning None.")
+            return None
+        if distance < 0:
+            if Wire.VertexDistance(wire, Wire.StartVertex(wire), origin) < abs(distance):
+                print("Wire.VertexByDistance - Error: The resulting vertex would fall outside the wire. Returning None.")
+                return None
+        else:
+            if Wire.VertexDistance(wire, Wire.EndVertex(wire), origin) < distance:
+                print("Wire.VertexByDistance - Error: The resulting vertex would fall outside the wire. Returning None.")
+                return None
+        
+        if Vertex.Distance(Wire.StartVertex(wire), origin) < tolerance:
+            u = distance/wire_length
+        elif Vertex.Distance(Wire.EndVertex(wire), origin) < tolerance:
+            u = 1 - distance/wire_length
+        else:
+            d = Wire.VertexDistance(wire, origin) + distance
+            u = d/wire_length
+        return Wire.VertexByParameter(wire, u=u)
+    
     @staticmethod
     def VertexByParameter(wire: topologic.Wire, u: float = 0) -> topologic.Vertex:
         """

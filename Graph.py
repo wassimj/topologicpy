@@ -2464,12 +2464,12 @@ class Graph:
             vertices, edges = processVertex(item)
         elif isinstance(topology, topologic.Cluster):
             c_cellComplexes = Topology.CellComplexes(topology)
-            c_cells = Cluster.FreeCells(topology)
-            c_shells = Cluster.FreeShells(topology)
-            c_faces = Cluster.FreeFaces(topology)
-            c_wires = Cluster.FreeWires(topology)
-            c_edges = Cluster.FreeEdges(topology)
-            c_vertices = Cluster.FreeVertices(topology)
+            c_cells = Cluster.FreeCells(topology, tolerance=tolerance)
+            c_shells = Cluster.FreeShells(topology, tolerance=tolerance)
+            c_faces = Cluster.FreeFaces(topology, tolerance=tolerance)
+            c_wires = Cluster.FreeWires(topology, tolerance=tolerance)
+            c_edges = Cluster.FreeEdges(topology, tolerance=tolerance)
+            c_vertices = Cluster.FreeVertices(topology, tolerance=tolerance)
             others = c_cellComplexes+c_cells+c_shells+c_faces+c_wires+c_edges+c_vertices
             parameters = [others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance]
 

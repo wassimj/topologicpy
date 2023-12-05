@@ -984,7 +984,7 @@ class Topology():
             elif hidimC >= topologic.Vertex.Type():
                 sinkVertices = Topology.Vertices(topologyC)
             if len(sourceVertices) > 0 and len(sinkVertices) > 0:
-                _ = Topology.TransferDictionaries(sourceVertices, sinkVertices, tolerance)
+                _ = Topology.TransferDictionaries(sourceVertices, sinkVertices, tolerance=tolerance)
 
             if topologyA.Type() == topologic.Edge.Type():
                 sourceEdges += [topologyA]
@@ -999,7 +999,7 @@ class Topology():
             elif hidimC >= topologic.Edge.Type():
                 sinkEdges = Topology.Edges(topologyC)
             if len(sourceEdges) > 0 and len(sinkEdges) > 0:
-                _ = Topology.TransferDictionaries(sourceEdges, sinkEdges, tolerance)
+                _ = Topology.TransferDictionaries(sourceEdges, sinkEdges, tolerance=tolerance)
 
             if topologyA.Type() == topologic.Face.Type():
                 sourceFaces += [topologyA]
@@ -1014,7 +1014,7 @@ class Topology():
             elif hidimC >= topologic.Face.Type():
                 sinkFaces += Topology.Faces(topologyC)
             if len(sourceFaces) > 0 and len(sinkFaces) > 0:
-                _ = Topology.TransferDictionaries(sourceFaces, sinkFaces, tolerance)
+                _ = Topology.TransferDictionaries(sourceFaces, sinkFaces, tolerance=tolerance)
 
             if topologyA.Type() == topologic.Cell.Type():
                 sourceCells += [topologyA]
@@ -1029,7 +1029,7 @@ class Topology():
             elif hidimC >= topologic.Cell.Type():
                 sinkCells = Topology.Cells(topologyC)
             if len(sourceCells) > 0 and len(sinkCells) > 0:
-                _ = Topology.TransferDictionaries(sourceCells, sinkCells, tolerance)
+                _ = Topology.TransferDictionaries(sourceCells, sinkCells, tolerance=tolerance)
         return topologyC
 
     
@@ -6172,36 +6172,6 @@ class Topology():
         return superTopologies
     
     @staticmethod
-    def SymmetricDifference(topologyA, topologyB, tranDict=False, tolerance: float = 0.0001):
-        """
-        Return the symmetric difference (XOR) of the two input topologies. See https://en.wikipedia.org/wiki/Symmetric_difference.
-
-        Parameters
-        ----------
-        topologyA : topologic.Topology
-            The first input topology.
-        topologyB : topologic.Topology
-            The second input topology.
-        tranDict : bool , opetional
-            If set to True, the dictionaries of the input topologies are transferred to the resulting topology.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-        
-        Returns
-        -------
-        topologic.Topology
-            The symmetric difference of the two input topologies.
-
-        """
-        topologyC = None
-        try:
-            topologyC = topologyA.XOR(topologyB, tranDict, tolerance)
-        except:
-            print("Topology.SymmetricDifference - ERROR: Operation failed. Returning None.")
-            topologyC = None
-        return topologyC
-    
-    @staticmethod
     def TransferDictionaries(sources, sinks, tolerance=0.0001, numWorkers=None):
         """
         Transfers the dictionaries from the list of sources to the list of sinks.
@@ -6286,8 +6256,8 @@ class Topology():
             If True transfer dictionaries to the cells of the input topology.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
-        numWorkers : int, optional
-            Number of workers run in parallel to process. The default is twice the number of cpu cores in the host computer.
+        numWorkers : int , optional
+            Number of workers run in parallel to process. The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
 
         Returns
         -------
@@ -6320,28 +6290,28 @@ class Topology():
                 sinkVertices.append(topology)
             elif hidimSink >= topologic.Vertex.Type():
                 topology.Vertices(None, sinkVertices)
-            _ = Topology.TransferDictionaries(selectors, sinkVertices, tolerance, numWorkers)
+            _ = Topology.TransferDictionaries(selectors, sinkVertices, tolerance=tolerance, numWorkers=numWorkers)
         if tranEdges == True:
             sinkEdges = []
             if topology.Type() == topologic.Edge.Type():
                 sinkEdges.append(topology)
             elif hidimSink >= topologic.Edge.Type():
                 topology.Edges(None, sinkEdges)
-                _ = Topology.TransferDictionaries(selectors, sinkEdges, tolerance, numWorkers)
+                _ = Topology.TransferDictionaries(selectors, sinkEdges, tolerance=tolerance, numWorkers=numWorkers)
         if tranFaces == True:
             sinkFaces = []
             if topology.Type() == topologic.Face.Type():
                 sinkFaces.append(topology)
             elif hidimSink >= topologic.Face.Type():
                 topology.Faces(None, sinkFaces)
-            _ = Topology.TransferDictionaries(selectors, sinkFaces, tolerance, numWorkers)
+            _ = Topology.TransferDictionaries(selectors, sinkFaces, tolerance=tolerance, numWorkers=numWorkers)
         if tranCells == True:
             sinkCells = []
             if topology.Type() == topologic.Cell.Type():
                 sinkCells.append(topology)
             elif hidimSink >= topologic.Cell.Type():
                 topology.Cells(None, sinkCells)
-            _ = Topology.TransferDictionaries(selectors, sinkCells, tolerance, numWorkers)
+            _ = Topology.TransferDictionaries(selectors, sinkCells, tolerance=tolerance, numWorkers=numWorkers)
         return topology
 
     
@@ -6487,10 +6457,10 @@ class Topology():
             cellComplexes = Topology.SubTopologies(topology, subTopologyType="cellcomplex") or []
             for cc in cellComplexes:
                 temp_topologies.append(Topology.Triangulate(cc, transferDictionaries=transferDictionaries, tolerance=tolerance))
-            cells = Cluster.FreeCells(topology) or []
+            cells = Cluster.FreeCells(topology, tolerance=tolerance) or []
             for c in cells:
                 temp_topologies.append(Topology.Triangulate(c, transferDictionaries=transferDictionaries, tolerance=tolerance))
-            shells = Cluster.FreeShells(topology) or []
+            shells = Cluster.FreeShells(topology, tolerance=tolerance) or []
             for s in shells:
                 temp_topologies.append(Topology.Triangulate(s, transferDictionaries=transferDictionaries, tolerance=tolerance))
             if len(temp_topologies) > 0:

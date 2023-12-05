@@ -1601,8 +1601,8 @@ class Shell(Topology):
             if isinstance(component, topologic.Cluster):
                 component = Topology.SelfMerge(component, tolerance=tolerance)
                 if isinstance(component, topologic.Cluster):
-                    separators.append(Cluster.FreeEdges(component))
-                    wires.append(Cluster.FreeWires(component))
+                    separators.append(Cluster.FreeEdges(component, tolerance=tolerance))
+                    wires.append(Cluster.FreeWires(component, tolerance=tolerance))
                 if isinstance(component, topologic.Edge):
                     separators.append(component)
                 if isinstance(component, topologic.Wire):
