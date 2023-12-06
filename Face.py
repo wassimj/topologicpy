@@ -364,10 +364,13 @@ class Face(topologic.Face):
             return returnList
         
         if not isinstance(shell, topologic.Shell):
-            print("Face.ByShell - Warning: The input shell parameter is not a valid toplogic shell. Returning None.")
+            print("Face.ByShell - Error: The input shell parameter is not a valid toplogic shell. Returning None.")
             return None
         ext_boundary = Shell.ExternalBoundary(shell, tolerance=tolerance)
         ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
+        if not isinstance(ext_boundary, topologic.Topology):
+            print("Face.ByShell - Error: Could not derive the external boundary of the input shell parameter. Returning None.")
+            return None
         if not Topology.IsPlanar(ext_boundary):
             ext_boundary = Wire.Planarize(ext_boundary)
 
@@ -380,7 +383,7 @@ class Face(topologic.Face):
                     f = Face.ByWire(w, tolerance=tolerance)
                     return f
                 except:
-                    print("Face.ByPlanarShell - Error: The wire could not be planarized. Returning None.")
+                    print("Face.ByShell - Error: The wire could not be planarized. Returning None.")
                     return None
         elif isinstance(ext_boundary, topologic.Cluster):
             wires = []

@@ -296,6 +296,8 @@ class Cluster(topologic.Cluster):
             return None
         allShells = []
         _ = cluster.Shells(None, allShells)
+        if len(allShells) < 1:
+            return []
         allShellsCluster = Cluster.ByTopologies(allShells)
         cells = []
         _ = cluster.Cells(None, cells)

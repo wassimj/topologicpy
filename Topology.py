@@ -4521,6 +4521,8 @@ class Topology():
             return Wire.ByEdges(edges, tolerance=tolerance)
             #return topologic.WireUtility.RemoveCollinearEdges(wire, angTol) #This is an angle Tolerance
         
+        if not isinstance(topology, topologic.Topology):
+            return None
         returnTopology = topology
         t = topology.Type()
         if (t == 1) or (t == 2) or (t == 128): #Vertex or Edge or Cluster, return the original topology
@@ -4593,7 +4595,7 @@ class Topology():
         return topology.RemoveContents(contents)
     
     @staticmethod
-    def RemoveCoplanarFaces(topology, planarize=False, angTolerance=0.1, tolerance=0.0001):
+    def RemoveCoplanarFaces(topology, angTolerance=0.1, tolerance=0.0001):
         """
         Removes coplanar faces in the input topology
 
@@ -4601,8 +4603,6 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
-        planarize : bool , optional
-            If set to True, the algorithm will attempt to planarize the final merged faces. Otherwise, it will triangulate any final nonplanar faces. The default is False.
         angTolerance : float , optional
             The desired angular tolerance for removing coplanar faces. The default is 0.1.
         tolerance : float , optional
@@ -4619,94 +4619,39 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
+
         if not isinstance(topology, topologic.Topology):
+            print("Topology.RemoveCoplanarFace - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
         t = topology.Type()
         if (t == 1) or (t == 2) or (t == 4) or (t == 8) or (t == 128):
             return topology
-        clusters = Topology.ClusterFaces(topology, tolerance=tolerance)
+        clusters = Topology.ClusterFaces(topology)
         faces = []
-        for aCluster in clusters:
-            aCluster = Topology.SelfMerge(aCluster, tolerance=tolerance)
-            if isinstance(aCluster, topologic.Shell):
-                shells = [aCluster]
+        for cluster in clusters:
+            if isinstance(cluster, topologic.Face):
+                faces.append(cluster)
             else:
-                shells = Cluster.Shells(aCluster)
-            tempFaces = Topology.SubTopologies(aCluster, subTopologyType="Face")
-            if not shells or len(shells) < 1:
-                if isinstance(aCluster, topologic.Shell):
-                    shells = [aCluster]
-                else:
-                    temp_shell = Shell.ByFaces(tempFaces)
-                    if isinstance(temp_shell, list):
-                        shells = temp_shell
-                    else:
-                        shells = [temp_shell]
-            if len(shells) > 0:
-                for aShell in shells:
-                    junk_faces = Shell.Faces(aShell)
-                    if len(junk_faces) > 2:
-                        aFace = Face.ByShell(aShell, angTolerance=angTolerance)
-                    aFace = Face.ByShell(aShell, angTolerance=angTolerance)
-                    if isinstance(aFace, topologic.Face):
-                        faces.append(aFace)
-                    else:
-                        for f in Shell.Faces(aShell):
-                            faces.append(f)
-                    for tempFace in tempFaces:
-                        isInside = False
-                        for tempShell in shells:
-                            if Topology.IsInternal(tempShell, Face.InternalVertex(tempFace), tolerance=tolerance):
-                                isInside = True
-                                break;
-                        if not isInside:
-                            faces.append(tempFace)
-            else:
-                cFaces = Cluster.Faces(aCluster)
-                if cFaces:
-                    for aFace in cFaces:
-                        faces.append(aFace)
-        returnTopology = None
-        finalFaces = []
-        for aFace in faces:
-            eb = Face.ExternalBoundary(aFace)
-            ibList = Face.InternalBoundaries(aFace)
-            try:
-                eb = Topology.RemoveCollinearEdges(eb, angTolerance=angTolerance)
-            except:
-                pass
-            finalIbList = []
-            if ibList:
-                for ib in ibList:
-                    temp_ib = ib
-                    try:
-                        temp_ib = Topology.RemoveCollinearEdges(ib, angTolerance=angTolerance)
-                    except:
-                        pass
-                    finalIbList.append(temp_ib)
-            finalFaces.append(Face.ByWires(eb, finalIbList), tolerance=tolerance)
-        faces = finalFaces
-        if len(faces) == 1:
-            return faces[0]
-        if t == 16:
-            returnTopology = topologic.Shell.ByFaces(faces, tolerance)
-            if not returnTopology:
-                returnTopology = topologic.Cluster.ByTopologies(faces, False)
-        elif t == 32:
-            returnTopology = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
-            if not returnTopology:
-                returnTopology = topologic.Shell.ByFaces(faces, tolerance)
-            if not returnTopology:
-                returnTopology = topologic.Cluster.ByTopologies(faces, False)
-        elif t == 64:
-            returnTopology = topologic.CellComplex.ByFaces(faces, tolerance, False)
-            if not returnTopology:
-                returnTopology = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
-            if not returnTopology:
-                returnTopology = topologic.Shell.ByFaces(faces, tolerance)
-            if not returnTopology:
-                returnTopology = topologic.Cluster.ByTopologies(faces, False)
-        return returnTopology
+                free_faces = Cluster.FreeFaces(cluster)
+                for f in free_faces:
+                    faces.append(f)
+                free_shells = Cluster.FreeShells(cluster)
+                for shell in free_shells:
+                    f = Face.ByShell(shell, angTolerance=angTolerance, tolerance=tolerance)
+                    if isinstance(f, topologic.Face):
+                        faces.append(f)
+        new_topology = Topology.SelfMerge(Cluster.ByTopologies(faces), tolerance=tolerance)
+        str = "Cluster"
+        if isinstance(topology, topologic.Shell):
+            str = "Shell"
+        elif isinstance(topology, topologic.Cell):
+            str = "Cell"
+        elif isinstance(topology, topologic.CellComplex):
+            str = "CellComplex"
+        else:
+            return new_topology
+        fixed_topology = Topology.Fix(new_topology, topologyType=str, tolerance=tolerance)
+        return fixed_topology
 
     @staticmethod
     def RemoveEdges(topology, edges=[], tolerance=0.0001):

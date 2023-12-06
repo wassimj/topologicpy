@@ -255,6 +255,7 @@ class Shell(Topology):
             remainder = faceList[1:]
             cluster = topologic.Cluster.ByTopologies(remainder, False)
             shell = Topology.Merge(shell, cluster, tranDict=False, tolerance=tolerance)
+            print("Shell", shell)
             if isinstance(shell, topologic.Shell):
                 return shell
             else:
@@ -596,11 +597,9 @@ class Shell(Topology):
             if len(faces) == 1:
                 obEdges.append(anEdge)
         returnTopology = None
-        try:
-            returnTopology = Wire.ByEdges(obEdges, tolerance=tolerance)
-        except:
-            returnTopology = topologic.Cluster.ByTopologies(obEdges)
-            returnTopology = Topology.SelfMerge(returnTopology, tolerance=tolerance)
+        returnTopology = Wire.ByEdges(obEdges, tolerance=tolerance)
+        if not isinstance(returnTopology, topologic.Wire):
+            returnTopology = Topology.SelfMerge(topologic.Cluster.ByTopologies(obEdges), tolerance=tolerance)
         return returnTopology
 
     @staticmethod
@@ -1368,7 +1367,7 @@ class Shell(Topology):
         if not shell:
             shell = Cluster.ByTopologies(final_faces)
         try:
-            shell = Topology.RemoveCoplanarFaces(shell, angTolerance=angTolerance)
+            shell = Topology.RemoveCoplanarFaces(shell, angTolerance=angTolerance, tolerance=tolerance)
         except:
             pass
         xTran = Dictionary.ValueAtKey(d,"xTran")
