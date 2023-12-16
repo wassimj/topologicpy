@@ -1135,7 +1135,7 @@ class Vertex(Topology):
         return round(d/e, mantissa)
     
     @staticmethod
-    def PlaneEquation(vertices):
+    def PlaneEquation(vertices, mantissa: int = 6):
         """
         Returns the equation of the average plane passing through a list of vertices.
 
@@ -1143,6 +1143,8 @@ class Vertex(Topology):
         -----------
         vertices : list
             The input list of vertices
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
 
         Return
         -----------
@@ -1173,9 +1175,13 @@ class Vertex(Topology):
 
         # Calculate the constant D using the centroid and the normal vector
         d = -np.dot(normal_vector, centroid)
+        d = round(d, mantissa)
 
         # Create the plane equation in the form Ax + By + Cz + D = 0
         a, b, c = normal_vector
+        a = round(a, mantissa)
+        b = round(b, mantissa)
+        c = round(c, mantissa)
 
         return {"a":a, "b":b, "c":c, "d":d}
     
@@ -1257,7 +1263,7 @@ class Vertex(Topology):
             return None
         if not isinstance(face, topologic.Face):
             return None
-        eq = Face.PlaneEquation(face)
+        eq = Face.PlaneEquation(face, mantissa= mantissa)
         pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]])
         return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 

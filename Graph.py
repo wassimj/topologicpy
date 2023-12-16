@@ -534,7 +534,86 @@ class Graph:
         size = maxValue - minValue
         values = [(v-minValue)/size for v in values]
         return values
+    
+    @staticmethod
+    def ByAdjacencyMatrixCSVPath(path):
+        """
+        Returns graphs according to the input path. This method assumes the CSV files follow an adjacency matrix schema.
+
+        Parameters
+        ----------
+        path : str
+            The file path to the adjacency matrix CSV file.
         
+        Returns
+        -------
+        topologic.Graph
+            The created graph.
+        
+        """
+        import pandas as pd
+        # Read the adjacency matrix from CSV file using pandas
+        adjacency_matrix_df = pd.read_csv(path, header=None)
+        
+        # Convert DataFrame to a nested list
+        adjacency_matrix = adjacency_matrix_df.values.tolist()
+        return Graph.ByAdjacencyMatrix(adjacencyMatrix=adjacency_matrix)
+
+    @staticmethod
+    def ByAdjacencyMatrix(adjacencyMatrix, xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5):
+        """
+        Returns graphs according to the input folder path. This method assumes the CSV files follow DGL's schema.
+
+        Parameters
+        ----------
+        adjacencyMatrix : list
+            The adjacency matrix expressed as a nested list of 0s and 1s.
+        xMin : float, optional
+            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
+        yMin : float, optional
+            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
+        zMin : float, optional
+            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
+        xMax : float, optional
+            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
+        yMax : float, optional
+            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
+        zMax : float, optional
+            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+        
+        Returns
+        -------
+        topologic.Graph
+            The created graph.
+        
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        import  random
+
+        if not isinstance(adjacencyMatrix, list):
+            print("Graph.BYAdjacencyMatrix - Error: The input adjacencyMatrix parameter is not a valid list. Returning None.")
+            return None
+        # Add vertices with random coordinates
+        vertices = []
+        for i in range(len(adjacencyMatrix)):
+            x, y, z = random.randrange(xMin,xMax), random.randrange(yMin,yMax), random.randrange(zMin,zMax)
+            vertices.append(Vertex.ByCoordinates(x, y, z))
+
+        # Add edges based on the adjacency matrix
+        edges = []
+        for i in range(len(adjacencyMatrix)):
+            for j in range(i + 1, len(adjacencyMatrix[i])):
+                if adjacencyMatrix[i][j] == 1:
+                    edges.append(Edge.ByVertices([vertices[i], vertices[j]]))
+
+        # Create the graph using vertices and edges
+        if len(vertices) == 0:
+            print("Graph.BYAdjacencyMatrix - Error: The graph does not contain any vertices. Returning None.")
+            return None
+        
+        return Graph.ByVerticesEdges(vertices, edges)
+
     @staticmethod
     def ByCSVPath(path,
                   graphIDHeader="graph_id", graphLabelHeader="label", graphFeaturesHeader="feat", graphFeaturesKeys=[],
@@ -608,7 +687,9 @@ class Graph:
         from os.path import exists, isdir
         import yaml
         import glob
-
+        import random
+        import numbers
+    
         def find_yaml_files(folder_path):
             yaml_files = glob.glob(f"{folder_path}/*.yaml")
             return yaml_files
@@ -641,31 +722,40 @@ class Graph:
         yaml_file_path = os.path.join(path, yaml_file)
 
         graphs_path, edges_path, nodes_path = read_yaml(yaml_file_path)
-        graphs_path = os.path.join(path, graphs_path)
-        if not exists(graphs_path):
-            print("Graph.ByCSVPath - Error: a graphs.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
-            return None
-        edges_path = os.path.join(path, edges_path)
+        if not graphs_path == None:
+            graphs_path = os.path.join(path, graphs_path)
+        print("graphs_path", graphs_path)
+        if graphs_path == None:
+            print("Graph.ByCSVPath - Warning: a graphs.csv file does not exist inside the folder specified by the input path parameter. Will assume the dataset includes only one graph.")
+            graphs_df = pd.DataFrame()
+            graph_ids=[0]
+            graph_labels=[0]
+            graph_features=[None]
+        else:
+            graphs_df = pd.read_csv(graphs_path)
+            graph_ids = []
+            graph_labels = []
+            graph_features = []
+
+        if not edges_path == None:
+            edges_path = os.path.join(path, edges_path)
         if not exists(edges_path):
             print("Graph.ByCSVPath - Error: an edges.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
             return None
-        nodes_path = os.path.join(path, nodes_path)
+        edges_path = os.path.join(path, edges_path)
+        edges_df = pd.read_csv(edges_path)
+        grouped_edges = edges_df.groupby(graphIDHeader)
+        if not nodes_path == None:
+            nodes_path = os.path.join(path, nodes_path)
         if not exists(nodes_path):
             print("Graph.ByCSVPath - Error: a nodes.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
             return None
-        # Read the CSV files into Pandas DataFrames
-        graphs_df = pd.read_csv(graphs_path)
-        edges_df = pd.read_csv(edges_path)
         nodes_df = pd.read_csv(nodes_path)
-
-        # Group edges and nodes by their 'graph_id'
-        grouped_edges = edges_df.groupby(graphIDHeader)
+        # Group nodes and nodes by their 'graph_id'
         grouped_nodes = nodes_df.groupby(graphIDHeader)
 
-        graphs = []
-        graph_ids = []
-        graph_labels = []
-        graph_features = []
+       
+       
 
         if len(nodeFeaturesKeys) == 0:
             node_keys = [nodeIDHeader, nodeLabelHeader, "mask", nodeFeaturesHeader]
@@ -689,7 +779,10 @@ class Graph:
         # Iterate through the grouped nodes DataFrames
         for graph_id, group_node_df in grouped_nodes:
             vertices = []
+            verts = [] #This is a list of x,y,z tuples to make sure the vertices have unique locations.
+            n_verts = 0
             for index, row in group_node_df.iterrows():
+                n_verts += 1
                 node_id = row[nodeIDHeader]
                 label = row[nodeLabelHeader]
                 train_mask = row[nodeTrainMaskHeader]
@@ -708,23 +801,43 @@ class Graph:
                 x = row[nodeXHeader]
                 y = row[nodeYHeader]
                 z = row[nodeZHeader]
-                if len(nodeFeaturesKeys) == 0:
-                    values = [node_id, label, mask, features]
-                else:
-                    values = [node_id, label, mask]
-                    featureList = features.split(",")
-                    featureList = [float(s) for s in featureList]
-                    values = [node_id, label, mask]+featureList
-                d = Dictionary.ByKeysValues(node_keys, values)
+                if not isinstance(x, numbers.Number):
+                    x = random.randrange(0,1000)
+                if not isinstance(y, numbers.Number):
+                    y = random.randrange(0,1000)
+                if not isinstance(z, numbers.Number):
+                    z = random.randrange(0,1000)
+                while [x,y,z] in verts:
+                    x = x + random.randrange(10000,30000,1000)
+                    y = y + random.randrange(4000,6000, 100)
+                    z = z + random.randrange(70000,90000, 1000)
+                verts.append([x,y,z])
                 v = Vertex.ByCoordinates(x,y,z)
-                v = Topology.SetDictionary(v, d)
-                vertices.append(v)
+                if isinstance(v, topologic.Vertex):
+                    if len(nodeFeaturesKeys) == 0:
+                        values = [node_id, label, mask, features]
+                    else:
+                        values = [node_id, label, mask]
+                        featureList = features.split(",")
+                        featureList = [float(s) for s in featureList]
+                        values = [node_id, label, mask]+featureList
+                    d = Dictionary.ByKeysValues(node_keys, values)
+                    if isinstance(d, topologic.Dictionary):
+                        v = Topology.SetDictionary(v, d)
+                    else:
+                        print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created vertex.")
+                    vertices.append(v)
+                else:
+                    print("Graph.ByCSVPath - Warning: Failed to create and add a vertex to the list of vertices.")
+            print(n_verts, "vs", len(vertices))
             vertices_ds.append(vertices)
         edges_ds = [] # A list to hold the vertices data structures until we can build the actual graphs
         # Access specific columns within the grouped DataFrame
         for graph_id, group_edge_df in grouped_edges:
-            vertices = vertices_ds[graph_id]
+            #vertices = vertices_ds[graph_id]
             edges = []
+            es = [] # a list to check for duplicate edges
+            duplicate_edges = 0
             for index, row in group_edge_df.iterrows():
                 src_id = int(row[edgeSRCHeader])
                 dst_id = int(row[edgeDSTHeader])
@@ -748,31 +861,56 @@ class Graph:
                     featureList = features.split(",")
                     featureList = [float(s) for s in featureList]
                     values = [label, mask]+featureList
-                d = Dictionary.ByKeysValues(edge_keys, values)
-                edge = Edge.ByVertices([vertices[src_id], vertices[dst_id]], tolerance=tolerance)
-                edge = Topology.SetDictionary(edge, d)
-                edges.append(edge)
+                if not (src_id == dst_id) and not [src_id, dst_id] in es and not [dst_id, src_id] in es:
+                    es.append([src_id, dst_id])
+                    edge = Edge.ByVertices([vertices[src_id], vertices[dst_id]], tolerance=tolerance)
+                    if isinstance(edge, topologic.Edge):
+                        d = Dictionary.ByKeysValues(edge_keys, values)
+                        if isinstance(d, topologic.Dictionary):
+                            edge = Topology.SetDictionary(edge, d)
+                        else:
+                            print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created edge.")
+                        edges.append(edge)
+                    else:
+                        print("Graph.ByCSVPath - Warning: Failed to create and add an edge to the list of edges.")
+                else:
+                    duplicate_edges += 1
+            if duplicate_edges > 0:
+                print("Graph.ByCSVPath - Warning: Found", duplicate_edges, "duplicate edges in graph id:", graph_id)
             edges_ds.append(edges)
+        
         # Build the graphs
+        graphs = []
         for i, vertices, in enumerate(vertices_ds):
             edges = edges_ds[i]
+            print("2. Length of Vertices:", len(vertices))
+            print("2. Length of Edges:", len(edges))
             g = Graph.ByVerticesEdges(vertices, edges)
-            if len(graphFeaturesKeys) == 0:
+            temp_v = Graph.Vertices(g)
+            temp_e = Graph.Edges(g)
+            print("3. Length of Vertices:", len(temp_v))
+            print("3. Length of Edges:", len(temp_e))
+            if isinstance(g, topologic.Graph):
+                if len(graphFeaturesKeys) == 0:
                     values = [graph_ids[i], graph_labels[i], graph_features[i]]
+                else:
+                    values = [graph_ids[i], graph_labels[i]]
+                    featureList = graph_features[i].split(",")
+                    featureList = [float(s) for s in featureList]
+                    values = [graph_ids[i], graph_labels[i]]+featureList
+                l1 = len(graph_keys)
+                l2 = len(values)
+                if not l1 == l2:
+                    print("Graph.ByCSVPath - Error: The length of the keys and values lists do not match. Returning None.")
+                    return None
+                d = Dictionary.ByKeysValues(graph_keys, values)
+                if isinstance(d, topologic.Dictionary):
+                    g = Graph.SetDictionary(g, d)
+                else:
+                    print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created graph.")
+                graphs.append(g)
             else:
-                values = [graph_ids[i], graph_labels[i]]
-                featureList = graph_features[i].split(",")
-                featureList = [float(s) for s in featureList]
-                values = [graph_ids[i], graph_labels[i]]+featureList
-            l1 = len(graph_keys)
-            l2 = len(values)
-            if not l1 == l2:
-                print("Error", l1, l2, graph_keys, values)
-                return None
-            d = Dictionary.ByKeysValues(graph_keys, values)
-            g = Graph.SetDictionary(g, d)
-            graphs.append(g)
-        
+                print("Graph.ByCSVPath - Error: Failed to create and add a graph to the list of graphs.")
         return {"graphs": graphs, "labels": graph_labels, "features": graph_features}
     
     @staticmethod
@@ -3041,6 +3179,35 @@ class Graph:
         _ = graph.Edges(vertices, tolerance, edges)
         return list(dict.fromkeys(edges)) # remove duplicates
     
+    @staticmethod
+    def ExportToAdjacencyMatrixCSV(adjacencyMatrix, path):
+        """
+        Exports the input graph into a set of CSV files compatible with DGL.
+
+        Parameters
+        ----------
+        path : str
+            The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
+        import pandas as pd
+
+        Returns
+        -------
+        bool
+            True if the graph has been successfully exported. False otherwise.
+
+        """
+        import pandas as pd
+        
+        # Convert the adjacency matrix (nested list) to a DataFrame
+        adjacency_matrix_df = pd.DataFrame(adjacencyMatrix)
+
+        # Export the DataFrame to a CSV file
+        try:
+            adjacency_matrix_df.to_csv(path, index=False, header=False)
+            return True
+        except:
+            return False
+
     @staticmethod
     def ExportToCSV(graph, path, graphLabel, graphFeatures="",  
                        graphIDHeader="graph_id", graphLabelHeader="label", graphFeaturesHeader="feat",

@@ -10,6 +10,94 @@ import numpy as np
 
 class Wire(topologic.Wire):
     @staticmethod
+    def Arc(origin: topologic.Vertex = None, length: float = 1, height: float=0.5, sides: int = 16, close: bool = True, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001):
+        """
+        Creates an arc. The base chord will be parallel to the x-axis and the height will point in the positive y-axis direction. 
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
+        length : float , optional
+            The length of the base chord of the arch. The default is 1.
+        height : float , optional
+            The perpendicular distance from the chord to the cricumference of the circle. The default is 0.5.
+        sides : int , optional
+            The number of sides of the circle. The default is 16.
+        close : bool , optional
+            If set to True, the arc will be closed by connecting the last vertex to the first vertex. Otherwise, it will be left open.
+        direction : list , optional
+            The vector representing the up direction of the arc. The default is [0,0,1].
+        placement : str , optional
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright".
+            It is case insensitive. If "center", the origin will be placed at the mnid-point of the arc.The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Wire
+            The created circle.
+
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        import math
+
+        h = abs(height)
+        l = abs(length)
+        if l < tolerance:
+            print("Wire.Arc - Error: The chord length parameter is less than the desired tolerance. Returning None.")
+            return None
+        if h < tolerance:
+            print("Wire.Arc - Error: The height parameter is less than the desired tolerance. Returning None.")
+            return None
+        if sides < 2:
+            print("Wire.Arc - Error: The input sides parameter should not be lass than 2. Returning None.")
+            return None
+        if h > l/2:
+            print("Wire.Arc - Error: The input height parameter should not be larger than the input length parameter. Returning None.")
+            return None
+        if abs(h - l/2) < tolerance:
+            radius = h
+            fromAngle = 0
+            toAngle = 180
+        else:
+            radius = (h**2 + (l/2)**2) / (2 * h)
+            spx = math.sqrt( radius**2 - (length/2)**2)
+            fromAngle = math.degrees(math.asin(spx / radius))
+            toAngle = 180-fromAngle
+        baseWire = Wire.Circle(origin=Vertex.ByCoordinates(0, 0, 0), radius=radius, fromAngle=fromAngle, toAngle=toAngle, sides=sides, close=close, direction=[0,0,1])
+        baseWire = Topology.Translate(baseWire, -(radius-h), 0, 0)
+        baseWire = Topology.Rotate(baseWire, degree=90)
+        if height < 0:
+            baseWire = Topology.Rotate(baseWire, degree=180)
+            if placement.lower() == "lowerleft":
+                baseWire = Topology.Translate(baseWire, l/2, h, 0)
+            elif placement.lower() == "upperleft":
+                baseWire = Topology.Translate(baseWire, l/2, 0, 0)
+            elif placement.lower() == "lowerright":
+                baseWire = Topology.Translate(baseWire, -l/2, 0, 0)
+            elif placement.lower() == "upperright":
+                baseWire = Topology.Translate(baseWire, -l/2, h, 0)
+        else:
+            if placement.lower() == "lowerleft":
+                baseWire = Topology.Translate(baseWire, l/2, 0, 0)
+            elif placement.lower() == "upperleft":
+                baseWire = Topology.Translate(baseWire, l/2, -h, 0)
+            elif placement.lower() == "lowerright":
+                baseWire = Topology.Translate(baseWire, -l/2, 0, 0)
+            elif placement.lower() == "upperright":
+                baseWire = Topology.Translate(baseWire, -l/2, -h, 0)
+        
+        if direction != [0,0,1]:
+            baseWire = Topology.Orient(baseWire, origin=Vertex.ByCoordinates(0,0,0), dirA=[0,0,1], dirB=direction)
+        if isinstance(origin, topologic.Vertex):
+            baseWire = Topology.Translate(baseWire, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+        return baseWire
+    
+    @staticmethod
     def BoundingRectangle(topology: topologic.Topology, optimize: int = 0, tolerance=0.0001) -> topologic.Wire:
         """
         Returns a wire representing a bounding rectangle of the input topology. The returned wire contains a dictionary with key "zrot" that represents rotations around the Z axis. If applied the resulting wire will become axis-aligned.
@@ -1863,7 +1951,7 @@ class Wire(topologic.Wire):
         return Wire.ByVertices(vertices)
     
     @staticmethod
-    def Planarize(wire: topologic.Wire, tolerance: float = 0.0001) -> topologic.Wire:
+    def Planarize(wire: topologic.Wire, origin: topologic.Vertex = None, mantissa: int = 6, tolerance: float = 0.0001) -> topologic.Wire:
         """
         Returns a planarized version of the input wire.
 
@@ -1872,7 +1960,11 @@ class Wire(topologic.Wire):
         wire : topologic.Wire
             The input wire.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001
+            The desired tolerance. The default is 0.0001.
+        origin : topologic.Vertex , optional
+            The desired origin of the plane unto which the planar wire will be projected. If set to None, the centroid of the input wire will be chosen. The default is None.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -1887,24 +1979,33 @@ class Wire(topologic.Wire):
         from topologicpy.Topology import Topology
 
         if not isinstance(wire, topologic.Wire):
+            print("Wire.Planarize - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not isinstance(origin, topologic.Vertex):
+            print("Wire.Planarize - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         
         vertices = Topology.Vertices(wire)
-        w = Wire.ByVertices([Topology.Centroid(wire), vertices[0], vertices[1]])
-        f = Face.ByWire(w, tolerance=tolerance)
         edges = Topology.Edges(wire)
+        plane_equation = Vertex.PlaneEquation(vertices, mantissa=mantissa)
+        rect = Face.RectangleByPlaneEquation(origin=origin , equation=plane_equation, tolerance=tolerance)
+        new_vertices = [Vertex.Project(v, rect, mantissa=mantissa) for v in vertices]
+        new_vertices = Vertex.Fuse(new_vertices, mantissa=mantissa, tolerance=tolerance)
         new_edges = []
         for edge in edges:
             sv = Edge.StartVertex(edge)
             ev = Edge.EndVertex(edge)
-            new_sv = Vertex.Project(sv, f)
-            if Vertex.Distance(sv, new_sv) < tolerance:
-                new_sv = sv
-            new_ev = Vertex.Project(ev, f)
-            if Vertex.Distance(ev, new_ev) < tolerance:
-                new_ev = ev
-            new_edge = Edge.ByVertices([new_sv, new_ev], tolerance=tolerance)
-            new_edges.append(new_edge)
+            sv1 = Vertex.Project(sv, rect)
+            i = Vertex.Index(sv1, new_vertices, tolerance=tolerance)
+            if i:
+                sv1 = new_vertices[i]
+            ev1 = Vertex.Project(ev, rect)
+            i = Vertex.Index(ev1, new_vertices, tolerance=tolerance)
+            if i:
+                ev1 = new_vertices[i]
+            new_edges.append(Edge.ByVertices([sv1, ev1]))
         return Topology.SelfMerge(Cluster.ByTopologies(new_edges), tolerance=tolerance)
 
     @staticmethod

@@ -251,11 +251,7 @@ class Shell(Topology):
             return None
         shell = topologic.Shell.ByFaces(faceList, tolerance)
         if not isinstance(shell, topologic.Shell):
-            shell = faceList[0]
-            remainder = faceList[1:]
-            cluster = topologic.Cluster.ByTopologies(remainder, False)
-            shell = Topology.Merge(shell, cluster, tranDict=False, tolerance=tolerance)
-            print("Shell", shell)
+            shell = Topology.SelfMerge(shell)
             if isinstance(shell, topologic.Shell):
                 return shell
             else:
@@ -1195,6 +1191,52 @@ class Shell(Topology):
         shell = Topology.Translate(shell, origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset)
         return shell
 
+
+    @staticmethod
+    def Planarize(shell: topologic.Shell, origin: topologic.Vertex = None, mantissa: int = 6, tolerance: float = 0.0001) -> topologic.Shell:
+        """
+        Returns a planarized version of the input shell.
+
+        Parameters
+        ----------
+        shell : topologic.Shell
+            The input shell.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+        origin : topologic.Vertex , optional
+            The desired origin of the plane unto which the planar shell will be projected. If set to None, the centroid of the input shell will be chosen. The default is None.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+
+        Returns
+        -------
+        topologic.Shell
+            The planarized shell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
+        if not isinstance(shell, topologic.Shell):
+            print("Shell.Planarize - Error: The input wire parameter is not a valid topologic shell. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not isinstance(origin, topologic.Vertex):
+            print("Shell.Planarize - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        
+        vertices = Topology.Vertices(shell)
+        faces = Topology.Faces(shell)
+        plane_equation = Vertex.PlaneEquation(vertices, mantissa=mantissa)
+        rect = Face.RectangleByPlaneEquation(origin=origin , equation=plane_equation, tolerance=tolerance)
+        new_vertices = [Vertex.Project(v, rect, mantissa=mantissa) for v in vertices]
+        new_shell = Topology.ReplaceVertices(shell, verticesA=vertices, verticesB=new_vertices)
+        new_faces = Topology.Faces(new_shell)
+        return Topology.SelfMerge(Cluster.ByTopologies(new_faces), tolerance=tolerance)
+    
     @staticmethod
     def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0,
                   uSides: int = 2, vSides: int = 2, direction: list = [0,0,1],

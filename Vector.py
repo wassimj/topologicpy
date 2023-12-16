@@ -276,7 +276,7 @@ class Vector(list):
         vecB = np.array(vectorB)
         vecC = list(np.cross(vecA, vecB))
         if Vector.Magnitude(vecC) < tolerance:
-            return None
+            return [0,0,0]
         return [round(vecC[0], mantissa), round(vecC[1], mantissa), round(vecC[2], mantissa)]
 
     @staticmethod
@@ -304,7 +304,7 @@ class Vector(list):
         return [1,0,0]
     
     @staticmethod
-    def IsCollinear(vectorA, vectorB, tolerance=0.1):
+    def IsCollinear(vectorA, vectorB, angTolerance=0.1):
         """
         Returns True if the input vectors are collinear. Returns False otherwise.
 
@@ -314,6 +314,8 @@ class Vector(list):
             The first input vector.
         vectorB : list
             The second input vector.
+        angTolerance : float, optional
+            The desired angular tolerance. The default is 0.1
 
         Returns
         -------
@@ -321,7 +323,7 @@ class Vector(list):
             Returns True if the input vectors are collinear. Returns False otherwise.
         """
 
-        return Vector.Angle(vectorA, vectorB) < tolerance
+        return Vector.Angle(vectorA, vectorB) < angTolerance
 
     @staticmethod
     def Magnitude(vector, mantissa: int = 6):

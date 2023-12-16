@@ -334,7 +334,7 @@ class Face(topologic.Face):
         return Face.ByWires(offset_external_boundary, offset_internal_boundaries, tolerance=tolerance)
     
     @staticmethod
-    def ByShell(shell: topologic.Shell, angTolerance: float = 0.1, tolerance: float = 0.0001)-> topologic.Face:
+    def ByShell(shell: topologic.Shell, origin: topologic.Vertex = None, angTolerance: float = 0.1, tolerance: float = 0.0001)-> topologic.Face:
         """
         Creates a face by merging the faces of the input shell.
 
@@ -353,6 +353,7 @@ class Face(topologic.Face):
             The created face.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Shell import Shell
         from topologicpy.Topology import Topology
@@ -366,39 +367,52 @@ class Face(topologic.Face):
         if not isinstance(shell, topologic.Shell):
             print("Face.ByShell - Error: The input shell parameter is not a valid toplogic shell. Returning None.")
             return None
-        ext_boundary = Shell.ExternalBoundary(shell, tolerance=tolerance)
+        
+        if origin == None:
+            origin = Vertex.Origin()
+        if not isinstance(origin, topologic.Vertex):
+            print("Shell.Planarize - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        
+        planar_shell = Shell.Planarize(shell)
+        normal = Face.Normal(Topology.Faces(planar_shell)[0])
+        planar_shell = Topology.Flatten(planar_shell, origin=origin, vector=normal)
+        vertices = Shell.Vertices(planar_shell)
+        new_vertices = []
+        for v in vertices:
+            x, y, z = Vertex.Coordinates(v)
+            new_v = Vertex.ByCoordinates(x,y,0)
+            new_vertices.append(new_v)
+        planar_shell = Topology.SelfMerge(Topology.ReplaceVertices(planar_shell, verticesA=vertices, verticesB=new_vertices))
+        ext_boundary = Shell.ExternalBoundary(planar_shell, tolerance=tolerance)
         ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
         if not isinstance(ext_boundary, topologic.Topology):
             print("Face.ByShell - Error: Could not derive the external boundary of the input shell parameter. Returning None.")
             return None
-        if not Topology.IsPlanar(ext_boundary):
-            ext_boundary = Wire.Planarize(ext_boundary)
 
         if isinstance(ext_boundary, topologic.Wire):
+            if not Topology.IsPlanar(ext_boundary, tolerance=tolerance):
+                ext_boundary = Wire.Planarize(ext_boundary, origin=origin, tolerance=tolerance)
+            ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
             try:
-                return topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(ext_boundary, angTolerance))
+                return Face.ByWire(ext_boundary)
             except:
-                try:
-                    w = Wire.Planarize(ext_boundary)
-                    f = Face.ByWire(w, tolerance=tolerance)
-                    return f
-                except:
-                    print("Face.ByShell - Error: The wire could not be planarized. Returning None.")
-                    return None
-        elif isinstance(ext_boundary, topologic.Cluster):
+                normal = Face.Normal(Topology.Faces(ext_boundary)[0])
+                planar_shell = Topology.Flatten(planar_shell, vector=normal)
+                print("Face.ByShell - Error: The operation failed. Returning None.")
+                return None
+        elif isinstance(ext_boundary, topologic.Cluster): # The shell has holes.
             wires = []
             _ = ext_boundary.Wires(None, wires)
             faces = []
             areas = []
-            for aWire in wires:
-                try:
-                    aFace = topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(aWire, angTolerance))
-                except:
-                    aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance)))
+            for wire in wires:
+                #wire = Wire.Planarize(Wire.RemoveCollinearEdges(Wire.Planarize(wire, origin=origin, tolerance=tolerance), angTolerance), origin=origin, tolerance=tolerance)
+                aFace = Face.ByWire(wire, tolerance=tolerance)
                 if not isinstance(aFace, topologic.Face):
-                    print("Face.ByShell - Error: The operation failed. Returning None.")
+                    print("2. Face.ByShell - Error: The operation failed. Returning None.")
                     return None
-                anArea = Face.Area(aFace)
+                anArea = abs(Face.Area(aFace))
                 faces.append(aFace)
                 areas.append(anArea)
             max_index = areas.index(max(areas))
@@ -408,14 +422,14 @@ class Face(topologic.Face):
             for int_boundary in int_boundaries:
                 temp_wires = []
                 _ = int_boundary.Wires(None, temp_wires)
-                int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance))
+                int_wires.append(temp_wires[0])
             temp_wires = []
             _ = ext_boundary.Wires(None, temp_wires)
             ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
-            try:
-                return topologic.Face.ByExternalInternalBoundaries(ext_wire, int_wires)
-            except:
-                return topologic.Face.ByExternalInternalBoundaries(Wire.Planarize(ext_wire), planarizeList(int_wires))
+            face = Face.ByWires(ext_wire, int_wires)
+            face = Topology.Orient(face, origin=origin, dirA=[0,0,1], dirB=normal)
+            #face = Topology.Translate(face, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+            return face
         else:
             return None
     
@@ -1309,7 +1323,6 @@ class Face(topologic.Face):
         # Create a Vertex at the world's origin (0,0,0)
         world_origin = Vertex.ByCoordinates(0,0,0)
 
-        faceVertices = Face.Vertices(flatFace)
         faceEdges = Face.Edges(flatFace)
         vertices = []
         resolution = 10 - resolution
@@ -1513,41 +1526,7 @@ class Face(topologic.Face):
         if len(vertices) < 3:
             print("Face.PlaneEquation - Error: The input face has less than 3 vertices. Returning None.")
             return None
-        #if len(vertices) == 3:
-            #if Vertex.AreCollinear(vertices, tolerance=0.01):
-                #print("Face.PlaneEquation - Error: The face is degenerate. Could not sample 3 non-collinear vertices. Returning None.")
-                #Topology.Show(face)
-                #return None
-        #start = time.time()
-        #end = time.time()
-        #duration = (end - start)
-        new_vertices = [Face.VertexByParameters(face, u=0.1,v=0.1), Face.VertexByParameters(face, u=0.9,v=0.2), Face.VertexByParameters(face, u=0.5,v=0.8)]
-        #while Vertex.AreCollinear(new_vertices) and duration < 20:
-            #new_vertices = [Topology.Centroid(face)]+random.sample(vertices, 2)
-            #end = time.time()
-            #duration = (end - start)
-            #if duration > 19:
-                #print("Face.PlaneEquation - Warning: Finding three non-collinear vertices is taking a long time", duration)
-        #if Vertex.AreCollinear(new_vertices):
-            #print("Face.PlaneEquation - Error: Could not sample 3 non-collinear vertices. Returning None.")
-            #clus = Cluster.ByTopologies([face]+new_vertices)
-            #print(new_vertices)
-            #Topology.Show(clus, vertexSize=5)
-            #return None
-        v1, v2, v3 = new_vertices[0:3]
-        x1, y1, z1 = Vertex.Coordinates(v1)
-        x2, y2, z2 = Vertex.Coordinates(v2)
-        x3, y3, z3 = Vertex.Coordinates(v3)
-        vector1 = [x2 - x1, y2 - y1, z2 - z1]
-        vector2 = [x3 - x1, y3 - y1, z3 - z1]
-
-        cross_product = [vector1[1] * vector2[2] - vector1[2] * vector2[1], -1 * (vector1[0] * vector2[2] - vector1[2] * vector2[0]), vector1[0] * vector2[1] - vector1[1] * vector2[0]]
-
-        a = round(cross_product[0], mantissa)
-        b = round(cross_product[1], mantissa)
-        c = round(cross_product[2], mantissa)
-        d = round(- (cross_product[0] * x1 + cross_product[1] * y1 + cross_product[2] * z1), mantissa)
-        return {"a": a, "b": b, "c": c, "d": d}
+        return Vertex.PlaneEquation(vertices, mantissa=mantissa)
     
     @staticmethod
     def Planarize(face: topologic.Face, origin: topologic.Vertex = None,

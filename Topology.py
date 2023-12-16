@@ -2470,7 +2470,7 @@ class Topology():
         return topology.Centroid()
     
     @staticmethod
-    def ClusterFaces(topology, tolerance=0.0001):
+    def ClusterFaces(topology, angTolerance=2, tolerance=0.0001):
         """
         Clusters the faces of the input topology by their direction.
 
@@ -2478,7 +2478,70 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
-        tolerance : float , optional
+        angTolerance : float , optional
+            The desired angular tolerance. The default is 0.1.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of clusters of faces where faces in the same cluster have the same direction.
+
+        """
+        from topologicpy.Vector import Vector
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+
+        faces = Topology.SubTopologies(topology, subTopologyType="face")
+        face_normals = []
+        for face in faces:
+            face_normals.append(Face.Normal(face))
+        bins = []
+        for face_normal in face_normals:
+            minAngle = angTolerance * 100
+            for bin in bins:
+                ang = Vector.Angle(bin, face_normal)
+                if ang < minAngle:
+                    minAngle = ang
+            if minAngle > angTolerance:
+                bins.append(face_normal)
+        num_bins = len(bins)
+        # Convert face_normals to a numpy array for efficient computation
+        face_normals_array = np.array(face_normals)
+
+        # Compute the bounds for each bin along each dimension
+        bin_bounds = [np.linspace(-1, 1, num_bins + 1) for _ in range(3)]
+
+        # Assign each face to a bin based on its normal
+        bin_indices = [np.digitize(face_normal, bounds) - 1 for face_normal, bounds in zip(face_normals_array.T, bin_bounds)]
+        # Combine the indices along the three dimensions to get a single bin index for each face
+        cluster_labels = bin_indices[0] * (num_bins**2) + bin_indices[1] * num_bins + bin_indices[2]
+        cluster_labels = list(cluster_labels)
+        bins = list(set(cluster_labels))
+        clusters = []
+        for bin in bins:
+            clusters.append([])
+        for i, face in enumerate(faces):
+            ind = bins.index(cluster_labels[i])
+            clusters[ind].append(face)
+        final_clusters = []
+        for cluster in clusters:
+            final_clusters.append(Topology.SelfMerge(Cluster.ByTopologies(cluster), tolerance=tolerance))
+        return final_clusters
+    
+    @staticmethod
+    def ClusterFaces_orig(topology, angTolerance=0.1, tolerance=0.0001):
+        """
+        Clusters the faces of the input topology by their direction.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        angTolerance : float , optional
+            The desired angular tolerance. The default is 0.1.
+        tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -2489,6 +2552,7 @@ class Topology():
         """
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
+
         def angle_between(v1, v2):
             u1 = v1 / norm(v1)
             u2 = v2 / norm(v2)
@@ -2576,7 +2640,7 @@ class Topology():
         for aFace in faces:
             normals.append(Face.NormalAtParameters(aFace, 0.5, 0.5, "XYZ", 3))
         # build a matrix of similarity
-        mat = buildSimilarityMatrix(normals, tolerance)
+        mat = buildSimilarityMatrix(normals, angTolerance)
         categories = categorizeIntoClusters(mat)
         returnList = []
         for aCategory in categories:
@@ -3215,7 +3279,7 @@ class Topology():
             if Topology.TypeAsString(topology).lower() == "cell":
                 return topology
             if Topology.TypeAsString(topology).lower() == "cellComplex":
-                return Cell.Complex.ExternalBoundary(topology)
+                return CellComplex.ExternalBoundary(topology)
             faces = Topology.Faces(topology)
             if len(faces) < 3:
                 print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
@@ -3741,7 +3805,7 @@ class Topology():
         topology : topologic.Topology
             The input topology.
         origin : topologic.Vertex , optional
-            The input origin. If set to None, the center of mass of the input topology will be place the world origin. The default is None.
+            The input origin. If set to None, (0,0,0) will be used to place the world origin. The default is None.
         vector : list , optional
             The input direction vector. The input topology will be rotated such that this vector is pointed in the positive Z axis.
 
@@ -3752,12 +3816,13 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
+
         if not isinstance(topology, topologic.Topology):
             print("Topology.Flatten - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         world_origin = Vertex.ByCoordinates(0,0,0)
         if origin == None:
-            origin = topology.CenterOfMass()
+            origin = Vertex.Origin()
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -4361,7 +4426,7 @@ class Topology():
         topology : topologic.Topology
             The input topology.
         origin : topologic.Vertex , optional
-            The input origin. If set to None, the center of mass of the input topology will be used to locate the input topology. The default is None.
+            The input origin. If set to None, (0,0,0) will be used to locate the input topology. The default is None.
         dirA : list , optional
             The first input direction vector. The input topology will be rotated such that this vector is parallel to the input dirB vector. The default is [0,0,1].
         dirB : list , optional
@@ -4380,7 +4445,7 @@ class Topology():
             print("Topology.Orient - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if not isinstance(origin, topologic.Vertex):
-            origin = topology.CenterOfMass()
+            origin = Vertex.Origin()
         topology = Topology.Flatten(topology, origin=origin, vector=dirA)
         x1 = origin.X()
         y1 = origin.Y()
@@ -4614,33 +4679,49 @@ class Topology():
             The input topology with coplanar faces merged into one face.
 
         """
-        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
-        from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
-
         if not isinstance(topology, topologic.Topology):
             print("Topology.RemoveCoplanarFace - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
         t = topology.Type()
-        if (t == 1) or (t == 2) or (t == 4) or (t == 8) or (t == 128):
+        if (t == 1) or (t == 2) or (t == 4) or (t == 8):
             return topology
-        clusters = Topology.ClusterFaces(topology)
+        freeTopologies = []
+        if t == 128: #Cluster
+            freeTopologies = []
+            freeTopologies += Cluster.FreeVertices(topology)
+            freeTopologies += Cluster.FreeEdges(topology)
+            freeTopologies += Cluster.FreeWires(topology)
+        clusters = Topology.ClusterFaces(topology, angTolerance=angTolerance, tolerance=tolerance)
         faces = []
-        for cluster in clusters:
-            if isinstance(cluster, topologic.Face):
-                faces.append(cluster)
-            else:
-                free_faces = Cluster.FreeFaces(cluster)
+        for obj in clusters:
+            if isinstance(obj, topologic.Face):
+                faces.append(obj)
+            elif isinstance(obj, topologic.Shell):
+                f = Face.ByShell(obj, angTolerance=angTolerance, tolerance=tolerance)
+                if isinstance(f, topologic.Face):
+                    faces.append(f)
+                else: # Operation failed, just add the original faces
+                    faces += Shell.Faces(obj)
+            elif isinstance(obj, topologic.Cluster):
+                free_faces = Cluster.FreeFaces(obj)
                 for f in free_faces:
                     faces.append(f)
-                free_shells = Cluster.FreeShells(cluster)
+                free_shells = Cluster.FreeShells(obj)
                 for shell in free_shells:
                     f = Face.ByShell(shell, angTolerance=angTolerance, tolerance=tolerance)
                     if isinstance(f, topologic.Face):
                         faces.append(f)
-        new_topology = Topology.SelfMerge(Cluster.ByTopologies(faces), tolerance=tolerance)
+                    else: # Operation failed, just add the original faces
+                        faces += Shell.Faces(shell)
+        if len(faces) < 1:
+            return None
+        new_topology = Cluster.ByTopologies(faces+freeTopologies)
+        return new_topology
+        #new_topology = Topology.SelfMerge(Cluster.ByTopologies(faces+freeTopologies), tolerance=tolerance)
+        '''
         str = "Cluster"
         if isinstance(topology, topologic.Shell):
             str = "Shell"
@@ -4652,6 +4733,9 @@ class Topology():
             return new_topology
         fixed_topology = Topology.Fix(new_topology, topologyType=str, tolerance=tolerance)
         return fixed_topology
+        '''
+        
+        
 
     @staticmethod
     def RemoveEdges(topology, edges=[], tolerance=0.0001):
@@ -6425,21 +6509,25 @@ class Topology():
                 if transferDictionaries:
                     selectors.append(Topology.SetDictionary(Face.Centroid(triFace), Topology.Dictionary(aFace)))
                 faceTriangles.append(triFace)
+        
         if t == 8 or t == 16: # Face or Shell
-            shell = Shell.ByFaces(faceTriangles, tolerance=tolerance)
-            if transferDictionaries:
-                shell = Topology.TransferDictionariesBySelectors(shell, selectors, tranFaces=True, tolerance=tolerance)
-            return shell
+            return_topology = Shell.ByFaces(faceTriangles, tolerance=tolerance)
+            if transferDictionaries and not return_topology == None:
+                return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
         elif t == 32: # Cell
-            cell = Cell.ByFaces(faceTriangles, tolerance=tolerance)
-            if transferDictionaries:
-                cell = Topology.TransferDictionariesBySelectors(cell, selectors, tranFaces=True, tolerance=tolerance)
-            return cell
+            return_topology = Cell.ByFaces(faceTriangles, tolerance=tolerance)
+            if transferDictionaries and not return_topology == None:
+                return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
         elif t == 64: #CellComplex
-            cellComplex = CellComplex.ByFaces(faceTriangles, tolerance=tolerance)
-            if transferDictionaries:
-                cellComplex = Topology.TransferDictionariesBySelectors(cellComplex, selectors, tranFaces=True, tolerance=tolerance)
-            return cellComplex
+            return_topology = CellComplex.ByFaces(faceTriangles, tolerance=tolerance)
+            if transferDictionaries and not return_topology == None:
+                return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
+        
+        if return_topology == None:
+            return_topology = Topology.SelfMerge(Cluster.ByTopologies(faceTriangles))
+            return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
+        
+        return return_topology
 
     
     @staticmethod
