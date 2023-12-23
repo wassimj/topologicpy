@@ -2,7 +2,7 @@ import sys
 import os, re
 from sys import platform
 
-__version__ = '0.4.54'
+__version__ = '0.4.55'
 __version_info__ = tuple([ int(num) for num in __version__.split('.')])
 
 if platform == 'win32':
