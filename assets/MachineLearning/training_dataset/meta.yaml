@@ -1,4 +1,4 @@
-dataset_name: topologic_dataset
+dataset_name: topologic_training_dataset
 edge_data:
 - file_name: edges.csv
 node_data:
