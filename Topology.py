@@ -1326,9 +1326,9 @@ class Topology():
         topVerts = []
         topEdges = []
         topFaces = []
-        vertices = [v for v in vertices if not v == []]
-        edges = [e for e in edges if not e == []]
-        faces = [f for f in faces if not f == []]
+        vertices = [v for v in vertices if not len(v) == 0]
+        edges = [e for e in edges if not len(e) == 0]
+        faces = [f for f in faces if not len(f) == 0]
         if len(vertices) > 0:
             for aVertex in vertices:
                 v = Vertex.ByCoordinates(aVertex[0], aVertex[1], aVertex[2])
