@@ -84,9 +84,7 @@ class WorkerProcess(Process):
                 else:
                     flag = Topology.IsInternal(source, iv, self.tolerance)
                 if flag:
-                    #d = Topology.Dictionary(source)
                     d = Dictionary.ByPythonDictionary(self.so_dicts[j])
-                    # print(Dictionary.Keys(d), Dictionary.Values(d))
                     if d == None:
                         continue
                     stlKeys = d.Keys()
@@ -3272,7 +3270,7 @@ class Topology():
                 return topology
             if Topology.TypeAsString(return_topology).lower() == "cellcomplex":
                 return return_topology
-            print("6 Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
+            print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
             return topology
         if b_type == "cell":
             topology = Topology.SelfMerge(topology, tolerance=tolerance)
@@ -3796,7 +3794,7 @@ class Topology():
                 otherTopologies.append(aTopology)
         return {"filtered": filteredTopologies, "other": otherTopologies}
 
-    def Flatten(topology, origin=None, vector=[0,0,1]):
+    def Flatten(topology, origin=None, direction=[0,0,1]):
         """
         Flattens the input topology such that the input origin is located at the world origin and the input topology is rotated such that the input vector is pointed in the positive Z axis.
 
@@ -3805,7 +3803,7 @@ class Topology():
         topology : topologic.Topology
             The input topology.
         origin : topologic.Vertex , optional
-            The input origin. If set to None, (0,0,0) will be used to place the world origin. The default is None.
+            The input origin. If set to None, The object's centroid will be used to place the world origin. The default is None.
         vector : list , optional
             The input direction vector. The input topology will be rotated such that this vector is pointed in the positive Z axis.
 
@@ -3816,19 +3814,20 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
 
         if not isinstance(topology, topologic.Topology):
             print("Topology.Flatten - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        world_origin = Vertex.ByCoordinates(0,0,0)
+        world_origin = Vertex.Origin()
         if origin == None:
-            origin = Vertex.Origin()
+            origin = Topology.Centroid(topology)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
-        x2 = origin.X() + vector[0]
-        y2 = origin.Y() + vector[1]
-        z2 = origin.Z() + vector[2]
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1    
@@ -3841,6 +3840,8 @@ class Topology():
         flat_topology = Topology.Translate(topology, -origin.X(), -origin.Y(), -origin.Z())
         flat_topology = Topology.Rotate(flat_topology, world_origin, 0, 0, 1, -phi)
         flat_topology = Topology.Rotate(flat_topology, world_origin, 0, 1, 0, -theta)
+        d = Dictionary.ByKeysValues(['phi', 'theta', 'x', 'y', 'z'], [phi, theta, origin.X(), origin.Y(), origin.Z()])
+        flat_topology = Topology.SetDictionary(flat_topology, d)
         return flat_topology
     
     @staticmethod
@@ -4426,7 +4427,7 @@ class Topology():
         topology : topologic.Topology
             The input topology.
         origin : topologic.Vertex , optional
-            The input origin. If set to None, (0,0,0) will be used to locate the input topology. The default is None.
+            The input origin. If set to None, The object's centroid will be used to locate the input topology. The default is None.
         dirA : list , optional
             The first input direction vector. The input topology will be rotated such that this vector is parallel to the input dirB vector. The default is [0,0,1].
         dirB : list , optional
@@ -4445,8 +4446,8 @@ class Topology():
             print("Topology.Orient - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if not isinstance(origin, topologic.Vertex):
-            origin = Vertex.Origin()
-        topology = Topology.Flatten(topology, origin=origin, vector=dirA)
+            origin = Topology.Centroid(topology)
+        topology = Topology.Flatten(topology, origin=origin, direction=dirA)
         x1 = origin.X()
         y1 = origin.Y()
         z1 = origin.Z()
@@ -4504,7 +4505,7 @@ class Topology():
         try:
             newTopology = Topology.Translate(topology, x, y, z)
         except:
-            print("Topology.Place - ERROR: (Topologic>TopologyUtility.Place) operation failed. Returning None.")
+            print("Topology.Place - Error: (Topologic>TopologyUtility.Place) operation failed. Returning None.")
             newTopology = None
         return newTopology
 
@@ -4528,115 +4529,44 @@ class Topology():
             The input topology with the collinear edges removed.
 
         """
-        from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
-
-        def toDegrees(ang):
-            import math
-            return ang * 180 / math.pi
-
-        # From https://gis.stackexchange.com/questions/387237/deleting-collinear-vertices-from-polygon-feature-class-using-arcpy
-        def are_collinear(v2, wire, tolerance=0.5):
-            edges = []
-            _ = v2.Edges(wire, edges)
-            if len(edges) == 2:
-                ang = toDegrees(topologic.EdgeUtility.AngleBetween(edges[0], edges[1]))
-                if -tolerance <= ang <= tolerance:
-                    return True
-                else:
-                    return False
-            else:
-                return False
-                #raise Exception("Topology.RemoveCollinearEdges - Error: This method only applies to manifold closed wires")
-
-        #----------------------------------------------------------------------
-        def get_redundant_vertices(vertices, wire, angTol):
-            """get redundant vertices from a line shape vertices"""
-            indexes_of_vertices_to_remove = []
-            start_idx, middle_index, end_index = 0, 1, 2
-            for i in range(len(vertices)):
-                v1, v2, v3 = vertices[start_idx:end_index + 1]
-                if are_collinear(v2, wire, angTol):
-                    indexes_of_vertices_to_remove.append(middle_index)
-
-                start_idx += 1
-                middle_index += 1
-                end_index += 1
-                if end_index == len(vertices):
-                    break
-            if are_collinear(vertices[0], wire, angTol):
-                indexes_of_vertices_to_remove.append(0)
-            return indexes_of_vertices_to_remove
-
-        def processWire(wire, angTol):
-            vertices = []
-            _ = wire.Vertices(None, vertices)
-            redundantIndices = get_redundant_vertices(vertices, wire, angTol)
-            # Check if first vertex is also collinear
-            if are_collinear(vertices[0], wire, angTol):
-                redundantIndices.append(0)
-            cleanedVertices = []
-            for i in range(len(vertices)):
-                if (i in redundantIndices) == False:
-                    cleanedVertices.append(vertices[i])
-            edges = []
-            for i in range(len(cleanedVertices)-1):
-                edges.append(Edge.ByStartVertexEndVertex(cleanedVertices[i], cleanedVertices[i+1], tolerance=tolerance))
-            edges.append(Edge.ByStartVertexEndVertex(cleanedVertices[-1], cleanedVertices[0], tolerance=tolerance))
-            return Wire.ByEdges(edges, tolerance=tolerance)
-            #return topologic.WireUtility.RemoveCollinearEdges(wire, angTol) #This is an angle Tolerance
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
         
         if not isinstance(topology, topologic.Topology):
             return None
-        returnTopology = topology
+        return_topology = topology
         t = topology.Type()
-        if (t == 1) or (t == 2) or (t == 128): #Vertex or Edge or Cluster, return the original topology
-            return returnTopology
-        elif (t == 4): #wire
-            returnTopology = processWire(topology, angTolerance)
-            return returnTopology
-        elif (t == 8): #Face
-            extBoundary = processWire(topology.ExternalBoundary(), angTolerance)
-            internalBoundaries = []
-            _ = topology.InternalBoundaries(internalBoundaries)
-            cleanIB = []
-            for ib in internalBoundaries:
-                cleanIB.append(processWire(ib, angTolerance))
-            try:
-                returnTopology = topologic.Face.ByExternalInternalBoundaries(extBoundary, cleanIB)
-            except:
-                returnTopology = topology
-            return returnTopology
-        faces = []
-        _ = topology.Faces(None, faces)
-        stl_final_faces = []
-        for aFace in faces:
-            extBoundary = processWire(aFace.ExternalBoundary(), angTolerance)
-            internalBoundaries = []
-            _ = aFace.InternalBoundaries(internalBoundaries)
-            cleanIB = []
-            for ib in internalBoundaries:
-                cleanIB.append(processWire(ib, angTolerance))
-            stl_final_faces.append(topologic.Face.ByExternalInternalBoundaries(extBoundary, cleanIB))
-        returnTopology = topology
-        if t == 16: # Shell
-            try:
-                returnTopology = topologic.Shell.ByFaces(stl_final_faces, tolerance)
-            except:
-                returnTopology = topology
-        elif t == 32: # Cell
-            try:
-                returnTopology = topologic.Cell.ByFaces(stl_final_faces, tolerance=tolerance)
-            except:
-                returnTopology = topology
-        elif t == 64: #CellComplex
-            try:
-                returnTopology = topologic.CellComplex.ByFaces(stl_final_faces, tolerance)
-            except:
-                returnTopology = topology
-        return returnTopology
+        if isinstance(topology, topologic.Vertex) or isinstance(topology, topologic.Edge): #Vertex or Edge or Cluster, return the original topology
+            return return_topology
+        elif isinstance(topology, topologic.Wire):
+            return_topology = Wire.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance)
+            return return_topology
+        elif isinstance(topology, topologic.Face):
+            return_topology = Face.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance)
+            return return_topology
+        elif isinstance(topology, topologic.Shell):
+            return_topology = Shell.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance)
+            return return_topology
+        elif isinstance(topology, topologic.Cell):
+            return_topology = Cell.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance)
+            return return_topology
+        elif isinstance(topology, topologic.CellComplex):
+            return_topology = CellComplex.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance)
+            return return_topology
+        elif isinstance(topology, topologic.Cluster):
+            topologies = []
+            topologies += Cluster.FreeVertices(topology)
+            topologies += Cluster.FreeEdges(topology)
+            faces = Topology.Faces(topology)
+            for face in faces:
+                topologies.append(Face.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance))
+            return_topology = Topology.SelfMerge(Cluster.ByTopologies(topologies))
+        return return_topology
 
-    
     @staticmethod
     def RemoveContent(topology, contents):
         """
@@ -4660,7 +4590,7 @@ class Topology():
         return topology.RemoveContents(contents)
     
     @staticmethod
-    def RemoveCoplanarFaces(topology, angTolerance=0.1, tolerance=0.0001):
+    def RemoveCoplanarFaces(topology, epsilon=0.01, tolerance=0.0001):
         """
         Removes coplanar faces in the input topology
 
@@ -4670,6 +4600,8 @@ class Topology():
             The input topology.
         angTolerance : float , optional
             The desired angular tolerance for removing coplanar faces. The default is 0.1.
+        epsilon : float , optional
+            The desired espilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -4679,63 +4611,95 @@ class Topology():
             The input topology with coplanar faces merged into one face.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
+        import numpy as np
+
         if not isinstance(topology, topologic.Topology):
             print("Topology.RemoveCoplanarFace - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
         t = topology.Type()
         if (t == 1) or (t == 2) or (t == 4) or (t == 8):
             return topology
-        freeTopologies = []
-        if t == 128: #Cluster
-            freeTopologies = []
-            freeTopologies += Cluster.FreeVertices(topology)
-            freeTopologies += Cluster.FreeEdges(topology)
-            freeTopologies += Cluster.FreeWires(topology)
-        clusters = Topology.ClusterFaces(topology, angTolerance=angTolerance, tolerance=tolerance)
-        faces = []
-        for obj in clusters:
-            if isinstance(obj, topologic.Face):
-                faces.append(obj)
-            elif isinstance(obj, topologic.Shell):
-                f = Face.ByShell(obj, angTolerance=angTolerance, tolerance=tolerance)
-                if isinstance(f, topologic.Face):
-                    faces.append(f)
-                else: # Operation failed, just add the original faces
-                    faces += Shell.Faces(obj)
-            elif isinstance(obj, topologic.Cluster):
-                free_faces = Cluster.FreeFaces(obj)
-                for f in free_faces:
-                    faces.append(f)
-                free_shells = Cluster.FreeShells(obj)
-                for shell in free_shells:
-                    f = Face.ByShell(shell, angTolerance=angTolerance, tolerance=tolerance)
+
+        def calculate_plane_equation_coefficients(vertices):
+            tp_vertices = [Vertex.ByCoordinates(list(coords)) for coords in vertices]
+            eq = Vertex.PlaneEquation(tp_vertices)
+            return eq['a'], eq['b'], eq['c'], eq['d']
+
+        def faces_on_same_plane(face1, face2, epsilon=1e-6):
+            vertices = Face.Vertices(face1)
+            distances = []
+            for v in vertices:
+                distances.append(Vertex.PerpendicularDistance(v, face=face2, mantissa=6))
+            d = sum(distances)/len(distances)
+            return d <= epsilon
+
+        def cluster_faces_on_planes(faces, epsilon=1e-6):
+
+            # Create a dictionary to store bins based on plane equations
+            bins = {}
+
+            # Iterate through each face
+            for i, face in enumerate(faces):
+                # Check if a bin already exists for the plane equation
+                found_bin = False
+                for bin_face in bins.values():
+                    if faces_on_same_plane(face, bin_face[0], epsilon=epsilon):
+                        bin_face.append(face)
+                        found_bin = True
+                        break
+
+                # If no bin is found, create a new bin
+                if not found_bin:
+                    bins[i] = [face]
+
+            # Convert bins to a list of lists
+            return list(bins.values())
+
+        faces = Topology.Faces(topology)
+        face_clusters = cluster_faces_on_planes(faces, epsilon=epsilon)
+        final_faces = []
+        for face_cluster in face_clusters:
+            t = Topology.SelfMerge(Cluster.ByTopologies(face_cluster))
+            if isinstance(t, topologic.Face):
+                #final_faces.append(Face.RemoveCollinearEdges(t))
+                final_faces.append(t)
+            elif isinstance(t, topologic.Shell):
+                    f = Face.ByShell(t)
                     if isinstance(f, topologic.Face):
-                        faces.append(f)
-                    else: # Operation failed, just add the original faces
-                        faces += Shell.Faces(shell)
-        if len(faces) < 1:
-            return None
-        new_topology = Cluster.ByTopologies(faces+freeTopologies)
-        return new_topology
-        #new_topology = Topology.SelfMerge(Cluster.ByTopologies(faces+freeTopologies), tolerance=tolerance)
-        '''
-        str = "Cluster"
-        if isinstance(topology, topologic.Shell):
-            str = "Shell"
+                        final_faces.append(f)
+                    else:
+                        print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
+                        final_faces += Shell.Faces(shell)
+            else: # It is a cluster
+                shells = Topology.Shells(t)
+                for shell in shells:
+                    f = Face.ByShell(shell)
+                    if isinstance(f, topologic.Face):
+                        final_faces.append(f)
+                    else:
+                        print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
+                        final_faces += Shell.Faces(shell)
+                if len(shells) == 0:
+                    faces = Topology.Faces(t)
+                    final_faces += faces
+                faces = Cluster.FreeFaces(t)
+                final_faces += faces
+        return_topology = None
+        if isinstance(topology, topologic.CellComplex):
+            return_topology = CellComplex.ByFaces(final_faces, tolerance=tolerance)
         elif isinstance(topology, topologic.Cell):
-            str = "Cell"
-        elif isinstance(topology, topologic.CellComplex):
-            str = "CellComplex"
-        else:
-            return new_topology
-        fixed_topology = Topology.Fix(new_topology, topologyType=str, tolerance=tolerance)
-        return fixed_topology
-        '''
-        
-        
+            return_topology = Cell.ByFaces(final_faces, tolerance=tolerance)
+        elif isinstance(topology, topologic.Shell):
+            return_topology = Shell.ByFaces(final_faces, tolerance=tolerance)
+        if not isinstance(return_topology, topologic.Topology):
+            return_topology = Cluster.ByTopologies(final_faces)
+        return return_topology
 
     @staticmethod
     def RemoveEdges(topology, edges=[], tolerance=0.0001):
@@ -5196,7 +5160,8 @@ class Topology():
 
         """
         from topologicpy.Cluster import Cluster
-
+        if not isinstance(topology, topologic.Topology):
+            return None #return Silently
         if topology.Type() != 128:
             topology = Cluster.ByTopologies([topology])
         resultingTopologies = []
@@ -5448,7 +5413,7 @@ class Topology():
     
     
     @staticmethod
-    def Show(topology,
+    def Show(*topologies,
              showVertices=True, vertexSize=1.1, vertexColor="black", 
              vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], 
              vertexMinGroup=None, vertexMaxGroup=None, 
@@ -5461,7 +5426,7 @@ class Topology():
              showEdgeLegend=False, edgeLegendLabel="Topology Edges", edgeLegendRank=2, 
              edgeLegendGroup=2, 
 
-             showFaces=True, faceOpacity=0.5, faceColor="white",
+             showFaces=True, faceOpacity=0.5, faceColor="#FAFAFA",
              faceLabelKey=None, faceGroupKey=None, faceGroups=[], 
              faceMinGroup=None, faceMaxGroup=None, 
              showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
@@ -5480,8 +5445,8 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic.Topology
-            The input topology. This must contain faces and or edges.
+        topologies : topologic.Topology or list
+            The input topology. This must contain faces and or edges. If the input is a list, a cluster is first created
 
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
@@ -5556,7 +5521,7 @@ class Topology():
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
-            The default is "white".
+            The default is "#FAFAFA".
         faceLabelKey : str , optional
             The dictionary key to use to display the face label. The default is None.
         faceGroupKey : str , optional
@@ -5641,7 +5606,22 @@ class Topology():
         None
 
         """
+
+        from topologicpy.Cluster import Cluster
         from topologicpy.Plotly import Plotly
+        from topologicpy.Helper import Helper
+        
+        if isinstance(topologies, tuple):
+            topologies = Helper.Flatten(list(topologies))
+        if isinstance(topologies, list):
+            new_topologies = [t for t in topologies if isinstance(t, topologic.Topology)]
+        if len(new_topologies) == 0:
+            print("Topology.Show - Error: the input topologies parameter does not contain any valid topology. Returning None.")
+            return None
+        if len(new_topologies) == 1:
+            topology = new_topologies[0]
+        else:
+            topology = Cluster.ByTopologies(new_topologies)
         if not isinstance(topology, topologic.Topology):
             print("Topology.Show - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
@@ -6525,7 +6505,8 @@ class Topology():
         
         if return_topology == None:
             return_topology = Topology.SelfMerge(Cluster.ByTopologies(faceTriangles))
-            return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
+            if transferDictionaries == True:
+                return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
         
         return return_topology
 

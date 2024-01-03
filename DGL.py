@@ -2234,7 +2234,10 @@ class DGL:
             validate_ds = DGL.DatasetByGraphs({'graphs': graph_sublists[1], 'labels' :labels_sublists[1]})
         if split[2] > 0 and len(graph_sublists[2]) > 0:
             test_ds = DGL.DatasetByGraphs({'graphs': graph_sublists[2], 'labels' :labels_sublists[2]})
-
+        # Print label shapes for debugging
+        print("Train Labels Shapes:", [labels.shape for labels in labels_sublists[0]])
+        print("Validate Labels Shapes:", [labels.shape for labels in labels_sublists[1]])
+        print("Test Labels Shapes:", [labels.shape for labels in labels_sublists[2]])
         return {
             "train_ds" : train_ds,
             "validate_ds" : validate_ds,

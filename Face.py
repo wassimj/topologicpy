@@ -356,7 +356,9 @@ class Face(topologic.Face):
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
         
         def planarizeList(wireList):
             returnList = []
@@ -369,14 +371,20 @@ class Face(topologic.Face):
             return None
         
         if origin == None:
-            origin = Vertex.Origin()
+            origin = Topology.Centroid(shell)
         if not isinstance(origin, topologic.Vertex):
-            print("Shell.Planarize - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            print("Face.ByShell - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
-        
+        world_origin = Vertex.Origin()
         planar_shell = Shell.Planarize(shell)
         normal = Face.Normal(Topology.Faces(planar_shell)[0])
-        planar_shell = Topology.Flatten(planar_shell, origin=origin, vector=normal)
+        planar_shell = Topology.Flatten(planar_shell, origin=origin, direction=normal)
+        d = Topology.Dictionary(planar_shell)
+        phi = Dictionary.ValueAtKey(d, 'phi')
+        theta = Dictionary.ValueAtKey(d, 'theta')
+        x_tran = Dictionary.ValueAtKey(d, 'x')
+        y_tran = Dictionary.ValueAtKey(d, 'y')
+        z_tran = Dictionary.ValueAtKey(d, 'z')
         vertices = Shell.Vertices(planar_shell)
         new_vertices = []
         for v in vertices:
@@ -395,10 +403,12 @@ class Face(topologic.Face):
                 ext_boundary = Wire.Planarize(ext_boundary, origin=origin, tolerance=tolerance)
             ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
             try:
-                return Face.ByWire(ext_boundary)
+                face = Face.ByWire(ext_boundary)
+                face = Topology.Rotate(face, world_origin, 0, 1, 0, theta)
+                face = Topology.Rotate(face, world_origin, 0, 0, 1, phi)
+                face = Topology.Translate(face, x_tran, y_tran, z_tran)
+                return face
             except:
-                normal = Face.Normal(Topology.Faces(ext_boundary)[0])
-                planar_shell = Topology.Flatten(planar_shell, vector=normal)
                 print("Face.ByShell - Error: The operation failed. Returning None.")
                 return None
         elif isinstance(ext_boundary, topologic.Cluster): # The shell has holes.
@@ -407,10 +417,9 @@ class Face(topologic.Face):
             faces = []
             areas = []
             for wire in wires:
-                #wire = Wire.Planarize(Wire.RemoveCollinearEdges(Wire.Planarize(wire, origin=origin, tolerance=tolerance), angTolerance), origin=origin, tolerance=tolerance)
                 aFace = Face.ByWire(wire, tolerance=tolerance)
                 if not isinstance(aFace, topologic.Face):
-                    print("2. Face.ByShell - Error: The operation failed. Returning None.")
+                    print("Face.ByShell - Error: The operation failed. Returning None.")
                     return None
                 anArea = abs(Face.Area(aFace))
                 faces.append(aFace)
@@ -422,13 +431,15 @@ class Face(topologic.Face):
             for int_boundary in int_boundaries:
                 temp_wires = []
                 _ = int_boundary.Wires(None, temp_wires)
-                int_wires.append(temp_wires[0])
+                int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance))
             temp_wires = []
             _ = ext_boundary.Wires(None, temp_wires)
             ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
             face = Face.ByWires(ext_wire, int_wires)
-            face = Topology.Orient(face, origin=origin, dirA=[0,0,1], dirB=normal)
-            #face = Topology.Translate(face, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+           
+            face = Topology.Rotate(face, world_origin, 0, 1, 0, theta)
+            face = Topology.Rotate(face, world_origin, 0, 0, 1, phi)
+            face = Topology.Translate(face, x_tran, y_tran, z_tran)
             return face
         else:
             return None
@@ -523,8 +534,12 @@ class Face(topologic.Face):
             print("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
         if not Wire.IsClosed(wire):
-            print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
-            return None
+            print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Attempting to close it.")
+            wire = Wire.Close(wire)
+            wire = Wire.Planarize(wire)
+            if not Wire.IsClosed(wire):
+                print("Face.ByWire - Error: Could not close the input wire parameter. Giving up and returning None.")
+                return None
         
         edges = Wire.Edges(wire)
         wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
@@ -1064,14 +1079,17 @@ class Face(topologic.Face):
         from topologicpy.Dictionary import Dictionary
 
         if not isinstance(face, topologic.Face):
+            print("Face.Harmonize - Error: The input face parameter is not a valid face. Returning None.")
             return None
-        flatFace = Face.Flatten(face, tolerance=tolerance)
-        world_origin = Vertex.ByCoordinates(0,0,0)
+        normal = Face.Normal(face)
+        origin = Topology.Centroid(face)
+        flatFace = Topology.Flatten(face, origin=origin, direction=normal)
+        world_origin = Vertex.Origin()
         # Retrieve the needed transformations
         dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
-        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
-        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        xTran = Dictionary.ValueAtKey(dictionary,"x")
+        yTran = Dictionary.ValueAtKey(dictionary,"y")
+        zTran = Dictionary.ValueAtKey(dictionary,"z")
         phi = Dictionary.ValueAtKey(dictionary,"phi")
         theta = Dictionary.ValueAtKey(dictionary,"theta")
         vertices = Wire.Vertices(Face.ExternalBoundary(flatFace))
@@ -1311,17 +1329,19 @@ class Face(topologic.Face):
             return False
 
         # Flatten the input face
-        flatFace = Face.Flatten(face, tolerance=tolerance)
+        origin = Topology.Centroid(face)
+        normal = Face.Normal(face)
+        flatFace = Topology.Flatten(face, origin=origin, direction=normal)
         # Retrieve the needed transformations
         dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
-        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
-        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        xTran = Dictionary.ValueAtKey(dictionary,"x")
+        yTran = Dictionary.ValueAtKey(dictionary,"y")
+        zTran = Dictionary.ValueAtKey(dictionary,"z")
         phi = Dictionary.ValueAtKey(dictionary,"phi")
         theta = Dictionary.ValueAtKey(dictionary,"theta")
 
         # Create a Vertex at the world's origin (0,0,0)
-        world_origin = Vertex.ByCoordinates(0,0,0)
+        world_origin = Vertex.Origin()
 
         faceEdges = Face.Edges(flatFace)
         vertices = []
@@ -1560,17 +1580,17 @@ class Face(topologic.Face):
         if not isinstance(face, topologic.Face):
             return None
         if not isinstance(origin, topologic.Vertex):
-            origin = Topology.CenterOfMass(face)
+            origin = Topology.Centroid(face)
         if not isinstance(direction, list):
-            direction = Face.NormalAtParameters(face, 0.5, 0.5)
-        flatFace = Face.Flatten(face, oldLocation=origin, direction=direction, tolerance=tolerance)
+            normal = Face.Normal(face)
+        flatFace = Topology.Flatten(face, origin=origin, direction=normal)
 
         world_origin = Vertex.ByCoordinates(0,0,0)
         # Retrieve the needed transformations
         dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
-        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
-        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        xTran = Dictionary.ValueAtKey(dictionary,"x")
+        yTran = Dictionary.ValueAtKey(dictionary,"y")
+        zTran = Dictionary.ValueAtKey(dictionary,"z")
         phi = Dictionary.ValueAtKey(dictionary,"phi")
         theta = Dictionary.ValueAtKey(dictionary,"theta")
 
@@ -1677,6 +1697,35 @@ class Face(topologic.Face):
             print("Face.Rectangle - Error: Could not create the base wire for the rectangle. Returning None.")
             return None
         return Face.ByWire(wire, tolerance=tolerance)
+    
+    @staticmethod
+    def RemoveCollinearEdges(face: topologic.Face, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
+        """
+        Removes any collinear edges in the input face.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        angTolerance : float , optional
+            The desired angular tolerance. The default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Face
+            The created face without any collinear edges.
+
+        """
+        from topologicpy.Wire import Wire
+
+        if not isinstance(face, topologic.Face):
+            print("Face.RemoveCollinearEdges - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+        eb = Wire.RemoveCollinearEdges(Face.Wire(face), angTolerance=angTolerance, tolerance=tolerance)
+        ib = [Wire.RemoveCollinearEdges(w, angTolerance=angTolerance, tolerance=tolerance) for w in Face.InternalBoundaries(face)]
+        return Face.ByWires(eb, ib)
     
     @staticmethod
     def Skeleton(face, tolerance=0.001):
@@ -1823,43 +1872,17 @@ class Face(topologic.Face):
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
+        from topologicpy.Shell import Shell
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
         if not isinstance(face, topologic.Face):
+            print("Face.Triangulate - Error: The input face parameter is not a valid face. Returning None.")
             return None
-        flatFace = Face.Flatten(face, tolerance=tolerance)
-        world_origin = Vertex.ByCoordinates(0,0,0)
-        # Retrieve the needed transformations
-        dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
-        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
-        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
-        phi = Dictionary.ValueAtKey(dictionary,"phi")
-        theta = Dictionary.ValueAtKey(dictionary,"theta")
-    
-        faceTriangles = []
-        for i in range(0,5,1):
-            try:
-                _ = topologic.FaceUtility.Triangulate(flatFace, float(i)*0.1, faceTriangles)
-                break
-            except:
-                continue
-        if len(faceTriangles) < 1:
-            return [face]
-        finalFaces = []
-        for f in faceTriangles:
-            f = Topology.Rotate(f, origin=world_origin, x=0, y=1, z=0, degree=theta)
-            f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
-            f = Topology.Translate(f, xTran, yTran, zTran)
-            if Face.Angle(face, f) > 90:
-                wire = Face.ExternalBoundary(f)
-                wire = Wire.Invert(wire)
-                f = topologic.Face.ByExternalBoundary(wire)
-                finalFaces.append(f)
-            else:
-                finalFaces.append(f)
-        return finalFaces
+        vertices = Topology.Vertices(face)
+        shell = Shell.Delaunay(vertices=vertices, face=face, tolerance=tolerance)
+        triangles = Topology.Faces(shell)
+        return triangles
 
     @staticmethod
     def TrimByWire(face: topologic.Face, wire: topologic.Wire, reverse: bool = False) -> topologic.Face:

@@ -273,18 +273,6 @@ assert isinstance(ft1, bool), "Face.FacingToward. Should be Boolean"
 ft2 = Face.FacingToward(cF1)                                                 # without optional inputs
 assert isinstance(ft2, bool), "Face.FacingToward. Should be Boolean"
 
-# Case 20 - Flatten
-print("Case 20")
-# creating Face
-RecF = Face.Rectangle(v1, 5, 5, [45, 90, 15])                    # create face
-CirF = Face.Circle(v5, 3, 16, direction= [1, 0, 0])                  # create face
-#test 1
-ff1 = Face.Flatten(CirF)
-assert isinstance(ff1, topologic.Face), "Face.Flatten. Should be topologic.Face"
-#test 2
-ff2 = Face.Flatten(RecF)
-assert isinstance(ff2, topologic.Face), "Face.Flatten. Should be topologic.Face"
-
 # Case 21 - Harmonize
 print("Case 21")
 #test 1

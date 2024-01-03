@@ -275,10 +275,10 @@ class CellComplex(topologic.CellComplex):
                 e3 = None
                 e4 = None
                 try:
-                    e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance)
+                    e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance, verbose=False)
                 except:
                     try:
-                        e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance)
+                        e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance, verbose=False)
                         f = Face.ByExternalBoundary(Wire.ByEdges([e1, e2, e4], tolerance=tolerance))
                         if triangulate == True:
                             if len(Topology.Vertices(face)) > 3:
@@ -291,10 +291,10 @@ class CellComplex(topologic.CellComplex):
                     except:
                         pass
                 try:
-                    e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance)
+                    e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance, verbose=False)
                 except:
                     try:
-                        e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance)
+                        e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance, verbose=False)
                         f = Face.ByWire(Wire.ByEdges([e1, e2, e3], tolerance=tolerance), tolerance=tolerance)
                         if triangulate == True:
                             if len(Topology.Vertices(face)) > 3:
@@ -308,7 +308,7 @@ class CellComplex(topologic.CellComplex):
                         pass
                 if e3 and e4:
                     if triangulate == True:
-                        e5 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex(), tolerance=tolerance)
+                        e5 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex(), tolerance=tolerance, verbose=False)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
                         faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
                     else:
@@ -759,6 +759,37 @@ class CellComplex(topologic.CellComplex):
             print("CellComplex.Prism - Error: Could not create a prism. Returning None.")
             return None
 
+    @staticmethod
+    def RemoveCollinearEdges(cellComplex: topologic.CellComplex, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
+        """
+        Removes any collinear edges in the input cellComplex.
+
+        Parameters
+        ----------
+        cellComplex : topologic.CellComplex
+            The input cellComplex.
+        angTolerance : float , optional
+            The desired angular tolerance. The default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.CellComplex
+            The created cellComplex without any collinear edges.
+
+        """
+        from topologicpy.Cell import Cell
+
+        if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.RemoveCollinearEdges - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
+            return None
+        cells = CellComplex.Cells(cellComplex)
+        clean_cells = []
+        for cell in cells:
+            clean_cells.append(Cell.RemoveCollinearEdges(cell, angTolerance=angTolerance, tolerance=tolerance))
+        return CellComplex.ByCells(clean_cells, tolerance=tolerance)
+    
     @staticmethod
     def Shells(cellComplex: topologic.CellComplex) -> list:
         """

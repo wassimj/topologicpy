@@ -391,7 +391,7 @@ class Plotly:
                        edgeMinGroup=None, edgeMaxGroup=None, 
                        showEdgeLegend=False, edgeLegendLabel="Topology Edges", edgeLegendRank=2, 
                        edgeLegendGroup=2,
-                       showFaces=True, faceOpacity=0.5, faceColor="white",
+                       showFaces=True, faceOpacity=0.5, faceColor="#FAFAFA",
                        faceLabelKey=None, faceGroupKey=None, faceGroups=[], 
                        faceMinGroup=None, faceMaxGroup=None, 
                        showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
@@ -478,7 +478,7 @@ class Plotly:
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
-            The default is "white".
+            The default is "#FAFAFA".
         faceLabelKey : str , optional
             The dictionary key to use to display the face label. The default is None.
         faceGroupKey : str , optional
@@ -677,7 +677,7 @@ class Plotly:
             return eData
 
 
-        def faceData(vertices, faces, dictionaries=None, color="white",
+        def faceData(vertices, faces, dictionaries=None, color="#FAFAFA",
                      opacity=0.5, labelKey=None, groupKey=None,
                      minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Faces",
                      legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="Viridis"):
@@ -786,7 +786,7 @@ class Plotly:
         data = []
         
         if showVertices:
-            tp_vertices = Topology.SubTopologies(topology, subTopologyType="vertex")
+            tp_vertices = Topology.Vertices(topology)
             if not (tp_vertices == None or tp_vertices == []):
                 vertices = []
                 v_dictionaries = []
@@ -812,7 +812,7 @@ class Plotly:
             intensities = None
             
         if showEdges and topology.Type() > topologic.Vertex.Type():
-            tp_edges = Topology.SubTopologies(topology, subTopologyType="edge")
+            tp_edges = Topology.Edges(topology)
             if not (tp_edges == None or tp_edges == []):
                 e_dictionaries = []
                 if edgeLabelKey or edgeGroupKey:
@@ -825,16 +825,15 @@ class Plotly:
                 data.append(edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, width=edgeWidth, labelKey=edgeLabelKey, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
         
         if showFaces and topology.Type() >= topologic.Face.Type():
-            tp_faces = Topology.SubTopologies(topology, subTopologyType="face")
+            if isinstance(topology, topologic.Face):
+                tp_faces = [topology]
+            else:
+                tp_faces = Topology.Faces(topology)
             if not(tp_faces == None or tp_faces == []):
                 f_dictionaries = []
                 all_triangles = []
                 for tp_face in tp_faces:
-                    shell = Topology.Triangulate(tp_face, transferDictionaries = False, tolerance=tolerance)
-                    if isinstance(shell, topologic.Face):
-                        triangles = [shell]
-                    else:
-                        triangles = Topology.SubTopologies(shell, subTopologyType="face")
+                    triangles = Face.Triangulate(tp_face, tolerance=tolerance)
                     for tri in triangles:
                         if faceLabelKey or faceGroupKey:
                             d = Topology.Dictionary(tp_face)
@@ -1378,7 +1377,7 @@ class Plotly:
              showEdgeLegend=False, edgeLegendLabel="Topology Edges", edgeLegendRank=2, 
              edgeLegendGroup=2, 
 
-             showFaces=True, faceOpacity=0.5, faceColor="white",
+             showFaces=True, faceOpacity=0.5, faceColor="#FAFAFA",
              faceLabelKey=None, faceGroupKey=None, faceGroups=[], 
              faceMinGroup=None, faceMaxGroup=None, 
              showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
@@ -1473,7 +1472,7 @@ class Plotly:
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
-            The default is "white".
+            The default is "#FAFAFA".
         faceLabelKey : str , optional
             The dictionary key to use to display the face label. The default is None.
         faceGroupKey : str , optional

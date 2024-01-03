@@ -93,8 +93,10 @@ class Cell(Topology):
             The created cell.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         if not isinstance(faces, list):
             print("Cell.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
@@ -103,15 +105,41 @@ class Cell(Topology):
         if len(faceList) < 1:
             print("Cell.ByFaces - Error: The input faces parameter does not contain valid faces. Returning None.")
             return None
+        # Try the default method
+        cell = topologic.Cell.ByFaces(faceList, tolerance)
+        if isinstance(cell, topologic.Cell):
+            return cell
+        
+        # Fuse all the vertices first and rebuild the faces
+        all_vertices = []
+        wires = []
+        for f in faceList:
+            w = Face.Wire(f)
+            wires.append(w)
+            all_vertices += Topology.Vertices(w)
+        all_vertices = Vertex.Fuse(all_vertices, tolerance=tolerance)
+        new_faces = []
+        for w in wires:
+            face_vertices = []
+            for v in Topology.Vertices(w):
+                index = Vertex.Index(v, all_vertices, tolerance=tolerance)
+                if not index == None:
+                    face_vertices.append(all_vertices[index])
+            new_w = Wire.ByVertices(face_vertices)
+            if isinstance(new_w, topologic.Wire):
+                new_f = Face.ByWire(new_w)
+                if isinstance(new_f, topologic.Face):
+                    new_faces.append(new_f)
+        faceList = new_faces
         planarizedList = []
         enlargedList = []
         if planarize:
             planarizedList = [Face.Planarize(f, tolerance=tolerance) for f in faceList]
             enlargedList = [Face.ByOffset(f, offset=-tolerance*10) for f in planarizedList]
             cell = topologic.Cell.ByFaces(enlargedList, tolerance)
-            faces = Topology.SubTopologies(cell, subTopologyType="face")
+            faceList = Topology.SubTopologies(cell, subTopologyType="face")
             finalFaces = []
-            for f in faces:
+            for f in faceList:
                 centroid = Topology.Centroid(f)
                 n = Face.Normal(f)
                 v = Topology.Translate(centroid, n[0]*0.01,n[1]*0.01,n[2]*0.01)
@@ -121,10 +149,22 @@ class Cell(Topology):
             for f in finalFaces:
                 vertices = Face.Vertices(f)
                 w = Wire.Cycles(Face.ExternalBoundary(f), maxVertices=len(vertices))[0]
-                finalFinalFaces.append(Face.ByWire(w, tolerance=tolerance))
-            return topologic.Cell.ByFaces(finalFinalFaces, tolerance)
+                f1 = Face.ByWire(w, tolerance=tolerance)
+                if isinstance(f1, topologic.Face):
+                    finalFinalFaces.append(f1)
+            cell = topologic.Cell.ByFaces(finalFinalFaces, tolerance)
+            if cell == None:
+                print("1. Cell.ByFaces - Error: The operation failed. Returning None.")
+                return None
+            else:
+                return cell
         else:
-            return topologic.Cell.ByFaces(faces, tolerance)
+            cell = topologic.Cell.ByFaces(faces, tolerance)
+            if cell == None:
+                print("2. Cell.ByFaces - Error: The operation failed. Returning None.")
+                return None
+            else:
+                return cell
 
     @staticmethod
     def ByShell(shell: topologic.Shell, planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
@@ -294,23 +334,6 @@ class Cell(Topology):
             The created cell.
 
         """
-
-        def cleanup(f):
-            flatFace = Face.Flatten(f, tolerance=tolerance)
-            world_origin = Vertex.ByCoordinates(0,0,0)
-            # Retrieve the needed transformations
-            dictionary = Topology.Dictionary(flatFace)
-            xTran = Dictionary.ValueAtKey(dictionary,"xTran")
-            yTran = Dictionary.ValueAtKey(dictionary,"yTran")
-            zTran = Dictionary.ValueAtKey(dictionary,"zTran")
-            phi = Dictionary.ValueAtKey(dictionary,"phi")
-            theta = Dictionary.ValueAtKey(dictionary,"theta")
-
-            f = Topology.Rotate(f, origin=world_origin, x=0, y=1, z=0, degree=theta)
-            f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
-            f = Topology.Translate(f, xTran, yTran, zTran)
-            return f
-        
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
@@ -319,6 +342,24 @@ class Cell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+
+        def cleanup(f):
+            origin = Topology.Centroid(f)
+            normal = Face.Normal(f)
+            flatFace = Topology.Flatten(f, origin=origin, direction=normal)
+            world_origin = Vertex.ByCoordinates(0,0,0)
+            # Retrieve the needed transformations
+            dictionary = Topology.Dictionary(flatFace)
+            xTran = Dictionary.ValueAtKey(dictionary,"x")
+            yTran = Dictionary.ValueAtKey(dictionary,"y")
+            zTran = Dictionary.ValueAtKey(dictionary,"z")
+            phi = Dictionary.ValueAtKey(dictionary,"phi")
+            theta = Dictionary.ValueAtKey(dictionary,"theta")
+
+            f = Topology.Rotate(f, origin=world_origin, x=0, y=1, z=0, degree=theta)
+            f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
+            f = Topology.Translate(f, xTran, yTran, zTran)
+            return f
 
         if not isinstance(wires, list):
             print("Cell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
@@ -1437,8 +1478,40 @@ class Cell(Topology):
         prism = Topology.Rotate(prism, origin, 0, 1, 0, theta)
         prism = Topology.Rotate(prism, origin, 0, 0, 1, phi)
         return prism
+
+    @staticmethod
+    def RemoveCollinearEdges(cell: topologic.Cell, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
+        """
+        Removes any collinear edges in the input cell.
+
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The input cell.
+        angTolerance : float , optional
+            The desired angular tolerance. The default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Cell
+            The created cell without any collinear edges.
+
+        """
+        from topologicpy.Face import Face
+
+        if not isinstance(cell, topologic.Cell):
+            print("Cell.RemoveCollinearEdges - Error: The input cell parameter is not a valid cell. Returning None.")
+            return None
+        faces = Cell.Faces(cell)
+        clean_faces = []
+        for face in faces:
+            clean_faces.append(Face.RemoveCollinearEdges(face, angTolerance=angTolerance, tolerance=tolerance))
+        return Cell.ByFaces(clean_faces, tolerance=tolerance)
     
-    def Roof(face, degree: float = 45, angTolerance: float = 2.0 , tolerance: float = 0.001):
+    @staticmethod
+    def Roof(face, degree: float = 45, epsilon: float = 0.01 , tolerance: float = 0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
             This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
@@ -1449,8 +1522,8 @@ class Cell(Topology):
             The input face.
         degree : float , optioal
             The desired angle in degrees of the roof. The default is 45.
-        angTolerance : float , optional
-            The desired angular tolerance. The default is 2. (This is set to a larger number as it was found to work better)
+        epsilon : float , optional
+            The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
 
@@ -1464,7 +1537,7 @@ class Cell(Topology):
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
         
-        shell = Shell.Roof(face=face, degree=degree, angTolerance=angTolerance, tolerance=tolerance)
+        shell = Shell.Roof(face=face, degree=degree, espilon=epsilon, tolerance=tolerance)
         faces = Topology.Faces(shell) + [face]
         cell = Cell.ByFaces(faces, tolerance=tolerance)
         if not cell:
