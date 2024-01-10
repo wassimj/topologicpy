@@ -1051,7 +1051,7 @@ class Face(topologic.Face):
             tempVertices = rotate_vertices(tempVertices, temp_v)
             flatInternalBoundaries.append(Wire.ByVertices(tempVertices))
         flatFace = Face.ByWires(flatExternalBoundary, flatInternalBoundaries, tolerance=tolerance)
-        dictionary = Dictionary.ByKeysValues(["xTran", "yTran", "zTran", "phi", "theta"], [cm.X(), cm.Y(), cm.Z(), phi, theta])
+        dictionary = Dictionary.ByKeysValues(["x", "y", "z", "phi", "theta"], [cm.X(), cm.Y(), cm.Z(), phi, theta])
         flatFace = Topology.SetDictionary(flatFace, dictionary)
         return flatFace
 
@@ -1277,7 +1277,6 @@ class Face(topologic.Face):
         except:
             print("Face.IsInternal - Warning: Could not determine if vertex is inside face. Returning False.")
             clus = Cluster.ByTopologies([vertex, face])
-            Topology.Show(clus, renderer="browser")
             status = False
         return status
     

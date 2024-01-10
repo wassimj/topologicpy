@@ -2241,9 +2241,9 @@ class Wire(topologic.Wire):
         roof = face_to_skeleton(flat_face, degree)
         if not roof:
             return None
-        xTran = Dictionary.ValueAtKey(d,"xTran")
-        yTran = Dictionary.ValueAtKey(d,"yTran")
-        zTran = Dictionary.ValueAtKey(d,"zTran")
+        xTran = Dictionary.ValueAtKey(d,"x")
+        yTran = Dictionary.ValueAtKey(d,"y")
+        zTran = Dictionary.ValueAtKey(d,"z")
         phi = Dictionary.ValueAtKey(d,"phi")
         theta = Dictionary.ValueAtKey(d,"theta")
         roof = Topology.Rotate(roof, origin=Vertex.Origin(), x=0, y=1, z=0, degree=theta)

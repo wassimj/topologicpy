@@ -1452,9 +1452,9 @@ class Shell(Topology):
             shell = Topology.RemoveCoplanarFaces(shell, epsilon=epsilon, tolerance=tolerance)
         except:
             pass
-        xTran = Dictionary.ValueAtKey(d,"xTran")
-        yTran = Dictionary.ValueAtKey(d,"yTran")
-        zTran = Dictionary.ValueAtKey(d,"zTran")
+        xTran = Dictionary.ValueAtKey(d,"x")
+        yTran = Dictionary.ValueAtKey(d,"y")
+        zTran = Dictionary.ValueAtKey(d,"z")
         phi = Dictionary.ValueAtKey(d,"phi")
         theta = Dictionary.ValueAtKey(d,"theta")
         shell = Topology.Rotate(shell, origin=Vertex.Origin(), x=0, y=1, z=0, degree=theta)
