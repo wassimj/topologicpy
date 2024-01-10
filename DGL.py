@@ -1,4 +1,3 @@
-
 import topologicpy
 import topologic
 from topologicpy.Dictionary import Dictionary
@@ -9,6 +8,7 @@ from datetime import datetime
 import copy
 import sys
 import subprocess
+os.environ["DGLBACKEND"] = "pytorch"
 
 try:
     import numpy as np
@@ -85,9 +85,8 @@ except:
         print("DGL - Error: Could not import tqdm")
 
 class _Dataset(DGLDataset):
-    def __init__(self, graphs, labels, node_attr_key):
+    def __init__(self, graphs, labels, node_attr_key, edge_attr_key):
         super().__init__(name='GraphDGL')
-        self.graphs = graphs
         if isinstance(labels[0], str):
             if labels[0].isnumeric():
                 self.labels = torch.LongTensor([int(label) for label in labels])
@@ -98,8 +97,24 @@ class _Dataset(DGLDataset):
         else:
             self.labels = torch.DoubleTensor(labels)
         self.node_attr_key = node_attr_key
-        # as all graphs have same length of node features then we get dim_nfeats from first graph in the list
-        self.dim_nfeats = graphs[0].ndata[node_attr_key].shape[1]
+        self.edge_attr_key = edge_attr_key
+        # as all graphs are assumed to have the same length of node features then we get dim_nfeats from first graph in the list
+        try:
+            self.dim_nfeats = (graphs[0].ndata[node_attr_key].shape)[1]
+        except:
+            self.dim_nfeats = 1
+        if self.dim_nfeats == 1:
+            for graph in graphs:
+                graph.ndata[node_attr_key] = torch.unsqueeze(graph.ndata[node_attr_key], 1)
+        # as all graphs are assumed to have the same length of edge features then we get dim_efeats from first graph in the list
+        try:
+            self.dim_efeats = (graphs[0].edata[edge_attr_key].shape)[1]
+        except:
+            self.dim_efeats = 1
+        if self.dim_efeats == 1:
+            for graph in graphs:
+                graph.edata[edge_attr_key] = torch.unsqueeze(graph.edata[edge_attr_key], 1)
+        self.graphs = graphs        
         # to get the number of classes for graphs
         self.gclasses = len(set(labels))
 
@@ -243,11 +258,11 @@ class _GINConv(nn.Module):
         self.final = nn.Linear(dim[-1], num_classes)
 
         # Pooling layer
-        if pooling.lower() == "avgpooling":
+        if "av" in pooling.lower():
             self.pooling_layer = dgl.nn.AvgPooling()
-        elif pooling.lower() == "maxpooling":
+        elif "max" in pooling.lower():
             self.pooling_layer = dgl.nn.MaxPooling()
-        elif pooling.lower() == "sumpooling":
+        elif "sum" in pooling.lower():
             self.pooling_layer = dgl.nn.SumPooling()
         else:
             raise NotImplementedError
@@ -284,11 +299,11 @@ class _GraphConv(nn.Module):
         self.final = GraphConv(dim[-1], num_classes)
 
         # Pooling layer
-        if pooling.lower() == "avgpooling":
+        if "av" in pooling.lower():
             self.pooling_layer = dgl.nn.AvgPooling()
-        elif pooling.lower() == "maxpooling":
+        elif "max" in pooling.lower():
             self.pooling_layer = dgl.nn.MaxPooling()
-        elif pooling.lower() == "sumpooling":
+        elif "sum" in pooling.lower():
             self.pooling_layer = dgl.nn.SumPooling()
         else:
             raise NotImplementedError
@@ -324,11 +339,11 @@ class _SAGEConv(nn.Module):
         self.final = nn.Linear(dim[-1], num_classes)
 
         # Pooling layer
-        if pooling.lower() == "avgpooling":
+        if "av" in pooling.lower():
             self.pooling_layer = dgl.nn.AvgPooling()
-        elif pooling.lower() == "maxpooling":
+        elif "max" in pooling.lower():
             self.pooling_layer = dgl.nn.MaxPooling()
-        elif pooling.lower() == "sumpooling":
+        elif "sum" in pooling.lower():
             self.pooling_layer = dgl.nn.SumPooling()
         else:
             raise NotImplementedError
@@ -364,11 +379,11 @@ class _TAGConv(nn.Module):
         self.final = nn.Linear(dim[-1], num_classes)
 
         # Pooling layer
-        if pooling.lower() == "avgpooling":
+        if "av" in pooling.lower():
             self.pooling_layer = dgl.nn.AvgPooling()
-        elif pooling.lower() == "maxpooling":
+        elif "max" in pooling.lower():
             self.pooling_layer = dgl.nn.MaxPooling()
-        elif pooling.lower() == "sumpooling":
+        elif "sum" in pooling.lower():
             self.pooling_layer = dgl.nn.SumPooling()
         else:
             raise NotImplementedError
@@ -405,11 +420,11 @@ class _GraphConvReg(nn.Module):
         self.final = nn.Linear(dim[-1], 1)
 
         # Pooling layer
-        if pooling.lower() == "avgpooling":
+        if "av" in pooling.lower():
             self.pooling_layer = dgl.nn.AvgPooling()
-        elif pooling.lower() == "maxpooling":
+        elif "max" in pooling.lower():
             self.pooling_layer = dgl.nn.MaxPooling()
-        elif pooling.lower() == "sumpooling":
+        elif "sum" in pooling.lower():
             self.pooling_layer = dgl.nn.SumPooling()
         else:
             raise NotImplementedError
@@ -429,7 +444,7 @@ class _GraphConvReg(nn.Module):
         return h
 
 
-class _RegressorHoldout:
+class _GraphRegressorHoldout:
     def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
@@ -561,7 +576,7 @@ class _RegressorHoldout:
                 path = path+".pt"
             torch.save(self.model, path)
 
-class _RegressorKFold:
+class _GraphRegressorKFold:
     def __init__(self, hparams, trainingDataset, testingDataset=None):
         self.trainingDataset = trainingDataset
         self.testingDataset = testingDataset
@@ -766,7 +781,7 @@ class _RegressorKFold:
                 path = path+".pt"
             torch.save(self.model, path)
 
-class _ClassifierHoldout:
+class _GraphClassifierHoldout:
     def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
@@ -774,24 +789,27 @@ class _ClassifierHoldout:
         self.validationDataset = validationDataset
         self.testingDataset = testingDataset
         self.hparams = hparams
+        gclasses = trainingDataset.gclasses
+        nfeats = trainingDataset.dim_nfeats
+       
         if hparams.conv_layer_type.lower() == 'classic':
-            self.model = _Classic(trainingDataset.dim_nfeats, hparams.hl_widths, 
-                            trainingDataset.gclasses).to(device)
+            self.model = _Classic(nfeats, hparams.hl_widths, 
+                            gclasses).to(device)
         elif hparams.conv_layer_type.lower() == 'ginconv':
-            self.model = _GINConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
-                            trainingDataset.gclasses, hparams.pooling).to(device)
+            self.model = _GINConv(nfeats, hparams.hl_widths, 
+                            gclasses, hparams.pooling).to(device)
         elif hparams.conv_layer_type.lower() == 'graphconv':
-            self.model = _GraphConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
-                            trainingDataset.gclasses, hparams.pooling).to(device)
+            self.model = _GraphConv(nfeats, hparams.hl_widths, 
+                            gclasses, hparams.pooling).to(device)
         elif hparams.conv_layer_type.lower() == 'sageconv':
-            self.model = _SAGEConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
-                            trainingDataset.gclasses, hparams.pooling).to(device)
+            self.model = _SAGEConv(nfeats, hparams.hl_widths, 
+                            gclasses, hparams.pooling).to(device)
         elif hparams.conv_layer_type.lower() == 'tagconv':
-            self.model = _TAGConv(trainingDataset.dim_nfeats, hparams.hl_widths, 
-                            trainingDataset.gclasses, hparams.pooling).to(device)
+            self.model = _TAGConv(nfeats, hparams.hl_widths, 
+                            gclasses, hparams.pooling).to(device)
         elif hparams.conv_layer_type.lower() == 'gcn':
-            self.model = _Classic(trainingDataset.dim_nfeats, hparams.hl_widths, 
-                            trainingDataset.gclasses).to(device)
+            self.model = _Classic(nfeats, hparams.hl_widths, 
+                            gclasses).to(device)
         else:
             raise NotImplementedError
 
@@ -865,7 +883,8 @@ class _ClassifierHoldout:
                 self.optimizer.zero_grad()
 
                 # Perform forward pass
-                pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+                pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float())
+                
                 # Compute loss
                 if self.hparams.loss_function.lower() == "negative log likelihood":
                     logp = F.log_softmax(pred, 1)
@@ -932,7 +951,7 @@ class _ClassifierHoldout:
                 path = path+".pt"
             torch.save(self.model, path)
 
-class _ClassifierKFold:
+class _GraphClassifierKFold:
     def __init__(self, hparams, trainingDataset, testingDataset=None):
         self.trainingDataset = trainingDataset
         self.testingDataset = testingDataset
@@ -1060,7 +1079,8 @@ class _ClassifierKFold:
 
                 # Iterate over the DataLoader for training data
                 for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
-
+                    if batched_graph.ndata[self.node_attr_key].dim() == 1:
+                        batched_graph.ndata[self.node_attr_key] = torch.unsqueeze(batched_graph.ndata[self.node_attr_key], 1)
                     # Make sure the model is in training mode
                     self.model.train()
                     
@@ -1156,10 +1176,177 @@ class _ClassifierKFold:
             if ext.lower() != ".pt":
                 path = path+".pt"
             torch.save(self.model, path)
-    
+
+
+class GCN_NC(nn.Module):
+    def __init__(self, in_feats, h_feats, num_classes):
+        super(GCN_NC, self).__init__()
+        self.conv1 = GraphConv(in_feats, h_feats)
+        self.conv2 = GraphConv(h_feats, num_classes)
+
+    def forward(self, g, in_feat):
+        h = self.conv1(g, in_feat)
+        h = F.relu(h)
+        h = self.conv2(g, h)
+        return h
+
+class _NodeClassifier:
+    def __init__(self, hparams, dataset):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        self.hparams = hparams
+        '''
+        if hparams.conv_layer_type.lower() == 'classic':
+            self.model = _Classic(dataset.dim_nfeats, hparams.hl_widths, 
+                            dataset.gclasses).to(device)
+        elif hparams.conv_layer_type.lower() == 'ginconv':
+            self.model = _GINConv(dataset.dim_nfeats, hparams.hl_widths, 
+                            dataset.gclasses, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'graphconv':
+            self.model = _GraphConv(dataset.dim_nfeats, hparams.hl_widths, 
+                            dataset.gclasses, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'sageconv':
+            self.model = _SAGEConv(dataset.dim_nfeats, hparams.hl_widths, 
+                            dataset.gclasses, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'tagconv':
+            self.model = _TAGConv(dataset.dim_nfeats, hparams.hl_widths, 
+                            dataset.gclasses, hparams.pooling).to(device)
+        elif hparams.conv_layer_type.lower() == 'gcn':
+            self.model = _Classic(dataset.dim_nfeats, hparams.hl_widths, 
+                            dataset.gclasses).to(device)
+        else:
+            raise NotImplementedError
+        '''
+        g = DGL.DatasetGraphs(dataset)[0]
+        self.model = GCN_NC(g.ndata["feat"].shape[1], 16, dataset.num_classes)
+        
+        if hparams.optimizer_str.lower() == "adadelta":
+            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adagrad":
+            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
+                                            lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
+        elif hparams.optimizer_str.lower() == "adam":
+            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
+                                            lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
+        self.use_gpu = hparams.use_gpu
+        '''
+        self.training_loss_list = []
+        self.validation_loss_list = []
+        self.training_accuracy_list = []
+        self.validation_accuracy_list = []
+        self.node_attr_key = trainingDataset.node_attr_key
+
+        # train, validate, test split
+        num_train = int(len(trainingDataset) * (hparams.split[0]))
+        num_validate = int(len(trainingDataset) * (hparams.split[1]))
+        num_test = len(trainingDataset) - num_train - num_validate
+        idx = torch.randperm(len(trainingDataset))
+        train_sampler = SubsetRandomSampler(idx[:num_train])
+        validate_sampler = SubsetRandomSampler(idx[num_train:num_train+num_validate])
+        test_sampler = SubsetRandomSampler(idx[num_train+num_validate:num_train+num_validate+num_test])
+        
+        if validationDataset:
+            self.train_dataloader = GraphDataLoader(trainingDataset, 
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+            self.validate_dataloader = GraphDataLoader(validationDataset,
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+        else:
+            self.train_dataloader = GraphDataLoader(trainingDataset, sampler=train_sampler, 
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+            self.validate_dataloader = GraphDataLoader(trainingDataset, sampler=validate_sampler,
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+        
+        if testingDataset:
+            self.test_dataloader = GraphDataLoader(testingDataset,
+                                                    batch_size=len(testingDataset),
+                                                    drop_last=False)
+        else:
+            self.test_dataloader = GraphDataLoader(trainingDataset, sampler=test_sampler,
+                                                    batch_size=hparams.batch_size,
+                                                    drop_last=False)
+        '''
+    def train(self):
+        #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device("cpu")
+        # Init the loss and accuracy reporting lists
+        self.training_accuracy_list = []
+        self.training_loss_list = []
+        self.validation_accuracy_list = []
+        self.validation_loss_list = []
+
+        # Run the training loop for defined number of epochs
+        for _ in tqdm(range(self.hparams.epochs), desc='Epochs', initial=1, leave=False):
+            temp_loss_list = []
+            temp_train_acc_list = []
+            temp_val_acc_list = []
+            temp_test_acc_list = []
+            # Iterate over the DataLoader for training data
+            for batched_graph, labels in tqdm(self.train_dataloader, desc='Training', leave=False):
+                features = batched_graph.ndata["feat"]
+                labels = batched_graph.ndata["label"]
+                train_mask = batched_graph.ndata["train_mask"]
+                val_mask = batched_graph.ndata["val_mask"]
+                test_mask = batched_graph.ndata["test_mask"]
+                # Make sure the model is in training mode
+                self.model.train()
+
+                
+
+                # Perform forward pass
+                #pred = self.model(batched_graph, batched_graph.ndata[self.node_attr_key].float()).to(device)
+                logits = self.model(g, features)
+                pred = logits.argmax(1)
+                # Compute loss
+                if self.hparams.loss_function.lower() == "negative log likelihood":
+                    logp = F.log_softmax(pred, 1)
+                    loss = F.nll_loss(logits[train_mask], labels[train_mask])
+                elif self.hparams.loss_function.lower() == "cross entropy":
+                    loss = F.cross_entropy(logits[train_mask], labels[train_mask])
+
+                # Compute accuracy on training/validation/test
+                train_acc = (pred[train_mask] == labels[train_mask]).float().mean()
+                val_acc = (pred[val_mask] == labels[val_mask]).float().mean()
+                test_acc = (pred[test_mask] == labels[test_mask]).float().mean()
+                # Save the best validation accuracy and the corresponding test accuracy.
+                if best_val_acc < val_acc:
+                    best_val_acc = val_acc
+                    best_test_acc = test_acc
+                # Save loss information for reporting
+                temp_loss_list.append(loss.item())
+                temp_train_acc_list.append(train_acc)
+                temp_val_acc_list.append(val_acc)
+                temp_test_acc_list.append(test_acc)
+
+                # Zero the gradients
+                self.optimizer.zero_grad()
+                # Perform backward pass
+                loss.backward()
+                # Perform optimization
+                self.optimizer.step()
+
+            self.training_accuracy_list.append(np.mean(temp_train_acc_list).item())
+            #self.training_loss_list.append(np.mean(temp_loss_list).item())
+            self.validation_accuracy_list.append(np.mean(temp_val_acc_list).item())
+            self.testing_accuracy_list.append(np.mean(temp_test_acc_list).item())
+            #self.validation_loss_list.append(self.validation_loss)
+            
+    def save(self, path):
+        if path:
+            # Make sure the file extension is .pt
+            ext = path[len(path)-3:len(path)]
+            if ext.lower() != ".pt":
+                path = path+".pt"
+            torch.save(self.model, path)
+
+
 class DGL:
     @staticmethod
-    def Accuracy(actual, predicted, mantissa=4):
+    def Accuracy(actual, predicted, mantissa: int = 6):
         """
         Computes the accuracy of the input predictions based on the input labels. This is to be used only with classification not with regression.
 
@@ -1170,7 +1357,7 @@ class DGL:
         predicted : list
             The input list of predicted values.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -1199,7 +1386,7 @@ class DGL:
         return {"accuracy":accuracy, "correct":correct, "mask":mask, "size":size, "wrong":wrong}
     
     @staticmethod
-    def RMSE(actual, predicted, mantissa=4):
+    def RMSE(actual, predicted, mantissa: int = 6):
         """
         WARNING: This method is DEPRECATED. Please use DGL.Performance(actual, predicted, mantissa)
         Computes the accuracy based on the mean squared error of the input predictions based on the input actual values. This is to be used only with regression not with classification.
@@ -1211,7 +1398,7 @@ class DGL:
         predicted : list
             The input list of predicted values.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
         
         Returns
         -------
@@ -1225,7 +1412,7 @@ class DGL:
         mse = F.mse_loss(torch.tensor(predicted), torch.tensor(actual))
         return round(torch.sqrt(mse).item(), mantissa)
     
-    def Performance(actual, predicted, mantissa=4):
+    def Performance(actual, predicted, mantissa: int = 6):
         """
         Computes regression model performance measures. This is to be used only with regression not with classification.
 
@@ -1236,7 +1423,7 @@ class DGL:
         predicted : list
             The input list of predicted values.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
         
         Returns
         -------
@@ -1282,7 +1469,7 @@ class DGL:
                 }
     
     @staticmethod
-    def DatasetBalance(dataset, labels=None, method="undersampling", key="node_attr"):
+    def DatasetBalance(dataset, labels=None, method="undersampling", nodeATTRKey="feat"):
         """
         Balances the input dataset using the specified method.
     
@@ -1294,8 +1481,8 @@ class DGL:
             The input list of labels. If set to None, all labels in the dataset will be considered and balanced.
         method : str, optional
             The method of sampling. This can be "undersampling" or "oversampling". It is case insensitive. The defaul is "undersampling".
-        key : str
-            The key used for the node attributes.
+        key : str , optional
+            The key used for the node attributes. The default is "feat".
         
         Returns
         -------
@@ -1323,10 +1510,10 @@ class DGL:
             graph, label = dataset[index]
             graphs.append(graph)
             labels.append(label.item())
-        return DGL.DatasetByGraphs(dictionary={'graphs': graphs, 'labels': labels}, key=key)
+        return DGL.DatasetByGraphs(dictionary={'graphs': graphs, 'labels': labels}, nodeATTRKey=nodeATTRKey)
     
     @staticmethod
-    def GraphByTopologicGraph(topologicGraph, bidirectional=True, key=None, categories=[], node_attr_key="node_attr", tolerance=0.0001):
+    def GraphByTopologicGraph(topologicGraph, bidirectional=True, key=None, categories=[], nodeATTRKey="feat", tolerance=0.0001):
         """
         Returns a DGL graph by the input topologic graph.
 
@@ -1340,8 +1527,8 @@ class DGL:
             The dictionary key where the node label is stored.
         categories : list
             The list of categories of node features.
-        node_attr_key : str
-            The dictionary key of the node attributes.
+        node_attr_key : str , optional
+            The dictionary key of the node features. The default is "feat".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1398,285 +1585,15 @@ class DGL:
         # Create a graph
         dgl_graph = dgl.graph((src, dst), num_nodes=num_nodes)
         
-        # Setting the node features as node_attr_key using onehotencoding of vlabel
-        dgl_graph.ndata[node_attr_key] = torch.stack(graph_dict["node_features"])
+        # Setting the node features as nodeATTRKey
+        dgl_graph.ndata[nodeATTRKey] = torch.stack(graph_dict["node_features"])
         
         if bidirectional:
             dgl_graph = dgl.add_reverse_edges(dgl_graph)
         return dgl_graph
     
     @staticmethod
-    def GraphsByImportedCSV(graphs_file_path, edges_file_path,
-                              nodes_file_path, graph_id_header="graph_id",
-                              graph_label_header="label", num_nodes_header="num_nodes", src_header="src",
-                              dst_header="dst", node_label_header="label", node_attr_key="node_attr",
-                              categories=[], bidirectional=True):
-        """
-        DEPRECATED. DO NOT USE. PLEASE USE GraphsByCSVPath
-        Returns DGL graphs according to the input CSV file paths.
-
-        Parameters
-        ----------
-        graphs_file_path : str
-            The file path to the grpahs CSV file.
-        edges_file_path : str
-            The file path to the edges CSV file.
-        nodes_file_path : str
-            The file path to the nodes CSV file.
-        graph_id_header : str , optional
-            The header string used to specify the graph id. The default is "graph_id".
-        graph_label_header : str , optional
-            The header string used to specify the graph label. The default is "label".
-        num_nodes_header : str , optional
-            The header string used to specify the number of nodes. The default is "num_nodes".
-        src_header : str , optional
-            The header string used to specify the source of edges. The default is "src".
-        dst_header : str , optional
-            The header string used to specify the destination of edges. The default is "dst".
-        node_label_header : str , optional
-            The header string used to specify the node label. The default is "label".
-        node_attr_key : str , optional
-            The key string used to specify the node attributes. The default is "node_attr".
-        categories : list
-            The list of categories.
-        bidirectional : bool , optional
-            If set to True, the output DGL graph is forced to be bi-directional. The default is True.
-
-        Returns
-        -------
-        dict
-            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
-
-        """
-        print("DGL.ByImportedCSV - WARNING: This method is deprecated. Please do not use. Instead use DGL.ByCSVPath.")
-        return DGL.GraphsByCSVPath(graphs_file_path=graphs_file_path, edges_file_path=edges_file_path,
-                              nodes_file_path=nodes_file_path, graph_id_header=graph_id_header,
-                              graph_label_header=graph_label_header, num_nodes_header=num_nodes_header, src_header=src_header,
-                              dst_header=dst_header, node_label_header=node_label_header, node_attr_key=node_attr_key,
-                              categories=categories, bidirectional=bidirectional)
-
-    @staticmethod
-    def GraphsByCSVPath(graphsPath, edgesPath, nodesPath,
-                        graphIDHeader="graph_id", graphLabelHeader="label", graphNUMNODESHeader="num_nodes", graphCategories=[],
-                        edgeSRCHeader="src_id", edgeDSTHeader="dst_id",
-                        nodeIDHeader="node_id", nodeLabelHeader="label", nodeATTRKey="node_attr",
-                        bidirectional=True):
-        """
-        Returns DGL graphs according to the input CSV file paths.
-
-        Parameters
-        ----------
-        graphsPath : str
-            The file path to the grpahs CSV file.
-        edgesPath : str
-            The file path to the edges CSV file.
-        nodesPath : str
-            The file path to the nodes CSV file.
-        graphIDHeader : str , optional
-            The header string used to specify the graph id. The default is "graph_id".
-        graphLabelHeader : str , optional
-            The header string used to specify the graph label. The default is "label".
-        graphNUMNODESHeader : str , optional
-            The header string used to specify the number of nodes. The default is "num_nodes".
-        graphCategories : list
-            The list of all possible graph categories (graph labels).
-        edgeSRCHeader : str , optional
-            The header string used to specify the source of edges. The default is "src_id".
-        edgeDSTHeader : str , optional
-            The header string used to specify the destination of edges. The default is "dst_id".
-        nodeIDHeader : str , optional
-            The header string used to specify the node id. The default is "node_id". This is NOT used yet.
-        nodeLabelHeader : str , optional
-            The header string used to specify the node label. The default is "label".
-        nodeATTRKey : str , optional
-            The key string used to specify the node attributes. The default is "node_attr".
-        bidirectional : bool , optional
-            If set to True, the output DGL graph is forced to be bi-directional. The default is True.
-
-        Returns
-        -------
-        dict
-            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
-
-        """
-
-        graphs = pd.read_csv(graphsPath)
-        edges = pd.read_csv(edgesPath)
-        nodes = pd.read_csv(nodesPath)
-        dgl_graphs = []
-        labels = []
-
-        # Create a graph for each graph ID from the edges table.
-        # First process the graphs table into two dictionaries with graph IDs as keys.
-        # The label and number of nodes are values.
-        label_dict = {}
-        num_nodes_dict = {}
-        for _, row in graphs.iterrows():
-            label_dict[row[graphIDHeader]] = row[graphLabelHeader]
-            num_nodes_dict[row[graphIDHeader]] = row[graphNUMNODESHeader]
-        # For the edges, first group the table by graph IDs.
-        edges_group = edges.groupby(graphIDHeader)
-        # For the nodes, first group the table by graph IDs.
-        nodes_group = nodes.groupby(graphIDHeader)
-        # For each graph ID...
-        for graph_id in edges_group.groups:
-            graph_dict = {}
-            graph_dict[edgeSRCHeader] = []
-            graph_dict[edgeDSTHeader] = []
-            graph_dict[nodeLabelHeader] = {}
-            graph_dict["node_features"] = []
-            num_nodes = num_nodes_dict[graph_id]
-            graph_label = label_dict[graph_id]
-            labels.append(graph_label)
-
-            # Find the edges as well as the number of nodes and its label.
-            edges_of_id = edges_group.get_group(graph_id)
-            src = edges_of_id[edgeSRCHeader].to_numpy()
-            dst = edges_of_id[edgeDSTHeader].to_numpy()
-
-            # Find the nodes and their labels and features
-            nodes_of_id = nodes_group.get_group(graph_id)
-            node_labels = nodes_of_id[nodeLabelHeader]
-            #graph_dict["node_labels"][graph_id] = node_labels
-
-            for node_label in node_labels:
-                graph_dict["node_features"].append(torch.tensor(DGL.OneHotEncode(node_label, graphCategories)))
-            # Create a graph and add it to the list of graphs and labels.
-            dgl_graph = dgl.graph((src, dst), num_nodes=num_nodes)
-            # Setting the node features as node_attr_key using onehotencoding of node_label
-            dgl_graph.ndata[nodeATTRKey] = torch.stack(graph_dict["node_features"])
-            if bidirectional:
-                dgl_graph = dgl.add_reverse_edges(dgl_graph)        
-            dgl_graphs.append(dgl_graph)
-        return {"graphs":dgl_graphs, "labels":labels}
-
-    @staticmethod
-    def GraphsByImportedDGCNN(path, categories=[], bidirectional=True):
-        """
-        DEPRECATED. DO NOT USE. PLEASE USE GraphsByCSVPath
-        Returns the Graphs from the imported DGCNN file.
-
-        Parameters
-        ----------
-        file_path : str
-            The file path to the DGCNN text file.
-        categories : list
-            The list of node categories expected in the imported DGCNN file. This is used to one-hot-encode the node features.
-        bidirectional : bool , optional
-            If set to True, the output DGL graph is forced to be bi-directional. The defaults is True.
-
-        Returns
-        -------
-        dict
-            A dictionary object that contains the imported graphs and their corresponding labels. The dictionary has the following keys and values:
-            - "graphs" (list): The list of DGL graphs
-            - "labels" (list): The list of graph labels
-
-        """
-        print("DGL.ByImportedDGCNN - WARNING: This method is deprecated. Please do not use. Instead use DGL.ByDGCNNPath.")
-        return DGL.GraphsByDGCNNPath(path=path, categories=categories, bidirectional=bidirectional)
-
-    @staticmethod
-    def GraphsByDGCNNPath(path, categories=[], bidirectional=True):
-        """
-        Returns the Graphs from the input DGCNN file path.
-
-        Parameters
-        ----------
-        file : file object
-            The input DGCNN text file.
-        categories : list
-            The list of node categories expected in the imported DGCNN file. This is used to one-hot-encode the node features.
-        bidirectional : bool , optional
-            If set to True, the output DGL graph is forced to be bi-directional. The defaults is True.
-
-        Returns
-        -------
-        dict
-            A dictionary object that contains the imported graphs and their corresponding labels. The dictionary has the following keys and values:
-            - "graphs" (list): The list of DGL graphs
-            - "labels" (list): The list of graph labels
-
-        """
-        if not path:
-            return None
-        try:
-            file = open(path)
-        except:
-            print("DGL.GraphsByDGCNNPath - Error: the DGCNN file is not a valid file. Returning None.")
-            return None
-        return DGL.GraphsByDGCNNFile(file=file, categories=categories, bidirectional=bidirectional)
-
-    @staticmethod
-    def GraphsByDGCNNFile(file, categories=[], bidirectional=True):
-        """
-        Returns the Graphs from the input DGCNN file.
-
-        Parameters
-        ----------
-        file : file object
-            The input DGCNN text file.
-        categories : list
-            The list of node categories expected in the imported DGCNN file. This is used to one-hot-encode the node features.
-        bidirectional : bool , optional
-            If set to True, the output DGL graph is forced to be bi-directional. The defaults is True.
-
-        Returns
-        -------
-        dict
-            A dictionary object that contains the imported graphs and their corresponding labels. The dictionary has the following keys and values:
-            - "graphs" (list): The list of DGL graphs
-            - "labels" (list): The list of graph labels
-
-        """
-
-        if not file:
-            return None
-        graphs = []
-        labels = []
-        lines = []
-        for lineo, line in enumerate(file):
-            lines.append(line)
-        n_graphs = int(lines[0])
-        index = 1
-        for i in range(n_graphs):
-            graph_dict = {}
-            graph_dict["src"] = []
-            graph_dict["dst"] = []
-            graph_dict["node_labels"] = {}
-            graph_dict["node_features"] = []
-            line = lines[index].split()
-            n_nodes = int(line[0])
-            graph_dict["num_nodes"] = n_nodes
-            graph_label = int(line[1])
-            labels.append(graph_label)
-            index+=1
-            for j in range(n_nodes):
-                line = lines[index+j].split()
-                node_label = int(line[0])
-                graph_dict["node_labels"][j] = node_label
-                graph_dict["node_features"].append(torch.tensor(DGL.OneHotEncode(node_label, categories)))
-                adj_vertices = line[2:]
-                for adj_vertex in adj_vertices:
-                    graph_dict["src"].append(j)
-                    graph_dict["dst"].append(int(adj_vertex))
-
-            # Create DDGL graph
-            src = np.array(graph_dict["src"])
-            dst = np.array(graph_dict["dst"])
-            # Create a graph
-            dgl_graph = dgl.graph((src, dst), num_nodes=graph_dict["num_nodes"])
-            # Setting the node features as 'node_attr' using onehotencoding of vlabel
-            dgl_graph.ndata['node_attr'] = torch.stack(graph_dict["node_features"])
-            if bidirectional:
-                dgl_graph = dgl.add_reverse_edges(dgl_graph)        
-            graphs.append(dgl_graph)
-            index+=n_nodes
-        file.close()
-        return {"graphs":graphs, "labels":labels}
-    
-    @staticmethod
-    def CategoryDistribution(labels, categories=None, mantissa=4):
+    def CategoryDistribution(labels, categories=None, mantissa: int = 6):
         """
         Returns the category distribution in the input list of labels. This is useful to determine if the dataset is balanced or not.
 
@@ -1685,9 +1602,9 @@ class DGL:
         labels : list
             The input list of labels.
         categories : list , optional
-            The list of node categories expected in the imported DGCNN file. If not specified, the categories are computed directly from the labels. The default is None.
+            The list of node categories. If not specified, the categories are computed directly from the labels. The default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -1769,13 +1686,13 @@ class DGL:
         from sklearn import metrics
         import numpy
         if not isinstance(actual, list):
-            print("DGL.CondfusionMatrix - ERROR: The actual input is not a list. Returning None")
+            print("DGL.ConfusionMatrix - ERROR: The actual input is not a list. Returning None")
             return None
         if not isinstance(predicted, list):
-            print("DGL.CondfusionMatrix - ERROR: The predicted input is not a list. Returning None")
+            print("DGL.ConfusionMatrix - ERROR: The predicted input is not a list. Returning None")
             return None
         if len(actual) != len(predicted):
-            print("DGL.CondfusionMatrix - ERROR: The two input lists do not have the same length. Returning None")
+            print("DGL.ConfusionMatrix - ERROR: The two input lists do not have the same length. Returning None")
             return None
         if normalize:
             cm = numpy.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true"))
@@ -1784,7 +1701,7 @@ class DGL:
         return cm
     
     @staticmethod
-    def DatasetByGraphs(dictionary, nodeATTRKey="node_attr"):
+    def DatasetByGraphs(dictionary, nodeATTRKey="feat", edgeATTRKey="feat"):
         """
         Returns a DGL Dataset from the input DGL graphs.
 
@@ -1803,76 +1720,108 @@ class DGL:
         """
         graphs = dictionary['graphs']
         labels = dictionary['labels']
-        return _Dataset(graphs, labels, nodeATTRKey)
+        return _Dataset(graphs, labels, nodeATTRKey, edgeATTRKey)
     
     @staticmethod
-    def DatasetByImportedCSV_NC(folderPath):
+    def DatasetByCSVPath(path, numberOfGraphClasses=0, nodeATTRKey='feat', edgeATTRKey='feat', nodeOneHotEncode=False, nodeFeaturesCategories=[], edgeOneHotEncode=False, edgeFeaturesCategories=[], addSelfLoop=False):
         """
-        UNDER CONSTRUCTION. DO NOT USE.
+        Returns DGL dataset according to the input CSV folder path. The folder must contain "graphs.csv", "edges.csv", "nodes.csv", and "meta.yml" files according to DGL conventions.
 
         Parameters
         ----------
-        folderPath : str
-            The path to folder containing the input CSV files. In that folder there should be graphs.csv, edges.csv, and vertices.csv
+        path : str
+            The  path to the folder containing the necessary CSV and YML files.
 
         Returns
         -------
-        DGLDataset
-            The returns DGL dataset.
+        DGL.Dataset
+            The DGL dataset
 
         """
-        return dgl.data.CSVDataset(folderPath, force_reload=True)
-    
-    @staticmethod
-    def DatasetByCSVPath(graphsPath, edgesPath, nodesPath,
-                        graphIDHeader="graph_id", graphLabelHeader="label", graphNUMNODESHeader="num_nodes", graphCategories=[],
-                        edgeSRCHeader="src_id", edgeDSTHeader="dst_id",
-                        nodeIDHeader="node_id", nodeLabelHeader="label", nodeATTRKey="node_attr",
-                        bidirectional=True):
-        """
-        Returns DGL dataset according to the input CSV file paths.
+        import os
 
-        Parameters
-        ----------
-        graphsPath : str
-            The file path to the grpahs CSV file.
-        edgesPath : str
-            The file path to the edges CSV file.
-        nodesPath : str
-            The file path to the nodes CSV file.
-        graphIDHeader : str , optional
-            The header string used to specify the graph id. The default is "graph_id".
-        graphLabelHeader : str , optional
-            The header string used to specify the graph label. The default is "label".
-        graphNUMNODESHeader : str , optional
-            The header string used to specify the number of nodes. The default is "num_nodes".
-        graphCategories : list
-            The list of all possible graph categories (graph labels).
-        edgeSRCHeader : str , optional
-            The header string used to specify the source of edges. The default is "src_id".
-        edgeDSTHeader : str , optional
-            The header string used to specify the destination of edges. The default is "dst_id".
-        nodeIDHeader : str , optional
-            The header string used to specify the node id. The default is "node_id". This is NOT used yet.
-        nodeLabelHeader : str , optional
-            The header string used to specify the node label. The default is "label".
-        nodeATTRKey : str , optional
-            The key string used to specify the node attributes. The default is "node_attr".
-        bidirectional : bool , optional
-            If set to True, the output DGL graph is forced to be bi-directional. The default is True.
+        if not isinstance(path, str):
+            print("DGL.DatasetByCSVPath - Error: The input path parameter is not a valid string. Returning None.")
+            return None
+        if not os.path.exists(path):
+            print("DGL.DatasetByCSVPath - Error: The input path parameter does not exists. Returning None.")
+            return None
 
-        Returns
-        -------
-        dict
-            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs" and "labels"
+        dataset = dgl.data.CSVDataset(path, force_reload=True)
+        if not isinstance(dataset, dgl.data.CSVDataset):
+            print("DGL.DatasetByCSVPath - Error: Could not create a dataset. Returning None.")
+            return None
+        graphs = DGL.DatasetGraphs(dataset)
+        #graphs = DGL.DatasetGraphs(dataset)
+        if len(graphs) == 1:
+            labels = [0]
+        else:
+            labels = DGL.DatasetGraphLabels(dataset)
+        dictionary = {'graphs': graphs, 'labels': labels}
+        dataset = DGL.DatasetByGraphs(dictionary, nodeATTRKey=nodeATTRKey, edgeATTRKey=edgeATTRKey)
+        return dataset
+        '''
+        if len(graphs) < 1:
+            print("DGL.DatasetByCSVPath - Error: The dataset does not contain any graphs. Returning None.")
+            return None
+        try:
+            dim_nfeats = (graphs[0].ndata[nodeATTRKey].shape)[1]
+        except:
+            dim_nfeats = 1
+        dataset.dim_nfeats = dim_nfeats
+        try:
+            dim_efeats = (graphs[0].edata[edgeATTRKey].shape)[1]
+        except:
+            dim_efeats = 1
+        dataset.dim_efeats = dim_efeats
+        dataset.gclasses = numberOfGraphClasses
+        dataset.node_attr_key = nodeATTRKey
+        for graph in graphs:
+            if dim_nfeats == 1:
+                graph.ndata[nodeATTRKey] = torch.unsqueeze(graph.ndata[nodeATTRKey], 1)
+            if dim_efeats == 1:
+                graph.edata[edgeATTRKey] = torch.unsqueeze(graph.edata[edgeATTRKey], 1)
+            if nodeOneHotEncode == True:
+                nodes_features = graph.ndata[nodeATTRKey].tolist()
+                #if not len(nodes_features) == len(nodeFeaturesCategories):
+                    #print("Node Features", nodes_features)
+                    #print("Node Features Categories", nodeFeaturesCategories)
+                    #print("DGL.DatasetByCSVPath - Error: The list of node features and the list of nodesFeaturesCategories are not equal in length. Returning None.")
+                    #return None
+                new_nodes_features = []
+                for i, node_features in enumerate(nodes_features):
+                    temp_list = []
+                    for j, node_feature in enumerate(node_features):
+                        temp_list += DGL.OneHotEncode(node_feature, nodeFeaturesCategories[j])
+                    new_nodes_features.append(temp_list)
+                graph.ndata[nodeATTRKey] = torch.tensor(new_nodes_features)
+                graph.ndata[nodeATTRKey] = graph.ndata[nodeATTRKey].to(dtype=torch.float32)
+            if edgeOneHotEncode == True:
+                edges_features = graph.edata[edgeATTRKey].tolist()
+                if not len(edges_features) == len(edgeFeaturesCategories):
+                    print("DGL.DatasetByCSVPath - Error: The list of node features and the list of nodesFeaturesCategories are not equal in length. Returning None.")
+                    return None
+                new_edges_features = []
+                for i, edge_features in enumerate(edges_features):
+                    temp_list = []
+                    for j, edgeFeature in enumerate(edge_features):
+                        temp_list += DGL.OneHotEncode(edgeFeature, edgeFeaturesCategories[i][j])
+                    new_edges_features.append(temp_list)
+                graph.edata[edgeATTRKey] = torch.tensor(new_edges_features)
+                graph.edata[edgeATTRKey] = graph.edata[edgeATTRKey].to(dtype=torch.float32)
+            if addSelfLoop == True:
+                graph = dgl.add_self_loop(graph)
+        #return dataset
+        graphs = DGL.DatasetGraphs(dataset)
+        if len(graphs) == 1:
+            labels = [0]
+        else:
+            labels = DGL.DatasetGraphLabels(dataset)
+        dictionary = {'graphs': graphs, 'labels': labels}
+        dataset = DGL.DatasetByGraphs(dictionary, nodeATTRKey=nodeATTRKey, edgeATTRKey=edgeATTRKey)
+        return dataset
+        '''
 
-        """
-        graphs = DGL.GraphsByCSVPath(graphsPath=graphsPath, edgesPath=edgesPath, nodesPath=nodesPath,
-                                     graphIDHeader=graphIDHeader, graphLabelHeader=graphLabelHeader, graphNUMNODESHeader=graphNUMNODESHeader, graphCategories=graphCategories,
-                                     edgeSRCHeader=edgeSRCHeader, edgeDSTHeader=edgeDSTHeader,
-                                     nodeIDHeader=nodeIDHeader, nodeLabelHeader=nodeLabelHeader, nodeATTRKey=nodeATTRKey,
-                                     bidirectional=bidirectional)
-        return DGL.DatasetByGraphs(graphs, nodeATTRKey=nodeATTRKey)
     
     @staticmethod
     def DatasetBySample(name="ENZYMES"):
@@ -1894,16 +1843,16 @@ class DGL:
         dataset = dgl.data.TUDataset(name)
         dgl_graphs, dgl_labels = zip(*[dataset[i] for i in range(len(dataset.graph_lists))])
         if name == 'ENZYMES':
-            node_attr_key = 'node_attr'
+            nodeATTRKey = 'node_attr'
         elif name == 'DD':
-            node_attr_key = 'node_labels'
+            nodeATTRKey = 'node_labels'
         elif name == 'COLLAB':
-            node_attr_key = '_ID'
+            nodeATTRKey = '_ID'
         elif name == 'MUTAG':
-            node_attr_key = 'node_labels'
+            nodeATTRKey = 'node_labels'
         else:
             raise NotImplementedError
-        return _Dataset(dgl_graphs, dgl_labels, node_attr_key)
+        return _Dataset(dgl_graphs, dgl_labels, nodeATTRKey)
     
     @staticmethod
     def DatasetBySample_NC(name="Cora"):
@@ -1961,7 +1910,7 @@ class DGL:
                 aGraph = aGraph[0]
             graphs.append(aGraph)
         return graphs
-    
+
     @staticmethod
     def GraphEdgeData(graph):
         """
@@ -2077,7 +2026,7 @@ class DGL:
         return returnList
     
     @staticmethod
-    def DatasetLabels(dataset):
+    def DatasetGraphLabels(dataset, graphLabelHeader="label"):
         """
         Returns the labels of the graphs in the input dataset
 
@@ -2085,19 +2034,66 @@ class DGL:
         ----------
         dataset : DGLDataset
             The input dataset
+        graphLabelHeader: str , optional
+            The key string under which the graph labels are stored. The default is "label".
+        
+        Returns
+        -------
+        list
+            The list of graph labels.
+        """
+        import torch
+
+        try:
+            _ = dataset[1]
+        except:
+            dataset = [dataset[0]]
+        graph_labels = []
+        for g in dataset:
+            try:
+                graph_info = g[1]
+                label = graph_info[graphLabelHeader]
+            except:
+                label = g[1]
+            if isinstance(label, torch.LongTensor):
+                graph_labels.append(int(label))
+            else:
+                graph_labels.append(float(label))
+        return graph_labels
+    
+    @staticmethod
+    def DatasetGraphFeatures(dataset, graphFeaturesHeader="feat"):
+        """
+        Returns the labels of the graphs in the input dataset
+
+        Parameters
+        ----------
+        dataset : DGLDataset
+            The input dataset
+        graphFeaturesHeader: str , optional
+            The key string under which the graph features are stored. The default is "feat".
         
         Returns
         -------
         list
             The list of labels.
         """
-        labels = dataset[1]
-        if isinstance(labels, torch.LongTensor):
-            return [int(g[1]) for g in dataset]
-        return [float(g[1]) for g in dataset]
+        import torch
+        try:
+            _ = dataset[1]
+        except:
+            dataset = [dataset[0]]
+
+        graph_features = []
+        for g in dataset:
+            graph_info = g[1]
+            features = graph_info[graphFeaturesHeader].tolist()
+            features = [float(f) for f in features]
+            graph_features.append(features)
+        return graph_features
     
     @staticmethod
-    def DatasetMerge(datasets, key="node_attr"):
+    def DatasetMerge(datasets, nodeATTRKey="feat", graphLabelHeader="label"):
         """
         Merges the input list of datasets into one dataset
 
@@ -2116,8 +2112,9 @@ class DGL:
         labels = []
         for ds in datasets:
             graphs += DGL.DatasetGraphs(ds)
-            labels += DGL.DatasetLabels(ds)
-        return DGL.DatasetByGraphs(graphs, labels, key=key)
+            labels += DGL.DatasetGraphLabels(ds, graphLabelHeader=graphLabelHeader)
+        dictionary = {'graphs': graphs, 'labels': labels}
+        return DGL.DatasetByGraphs(dictionary, nodeATTRKey=nodeATTRKey)
     
     @staticmethod
     def GraphNodeData(graph):
@@ -2138,7 +2135,7 @@ class DGL:
         return graph.ndata
     
     @staticmethod
-    def DatasetRemoveCategory(dataset, label, key="node_attr"):
+    def DatasetRemoveCategory(dataset, label, nodeATTRKey="feat", graphLabelHeader="label"):
         """
         Removes graphs from the input dataset that have the input label
 
@@ -2159,17 +2156,18 @@ class DGL:
         """
 
         graphs = DGL.DatasetGraphs(dataset)
-        labels = DGL.DatasetLabels(dataset)
+        labels = DGL.DatasetGraphLabels(dataset)
         new_graphs = []
         new_labels = []
         for i in range(len(labels)):
             if not labels[i] == label:
                 new_graphs.append(graphs[i])
                 new_labels.append(labels[i])
-        return DGL.DatasetByGraphs(new_graphs, new_labels, key)
+        dictionary = {'graphs': new_graphs, 'labels': new_labels}
+        return DGL.DatasetByGraphs(dictionary, nodeATTRKey)
     
     @staticmethod
-    def DatasetSplit(dataset, fracList=[0.8, 0.1, 0.1], shuffle=False, randomState=None, key="node_attr"):
+    def DatasetSplit(dataset, split=[0.8, 0.1, 0.1], shuffle=False, randomState=None, graphLabelHeader="label", nodeATTRKey="feat", edgeATTRKey="feat"):
         """
         Splits the dataset into training, validation, and testing datasets.
 
@@ -2177,7 +2175,7 @@ class DGL:
         ----------
         dataset : DGLDataset
             The input dataset
-        fracList : list , optional
+        split : list , optional
             A list of length 3 containing the fraction to use for training, validation and test. If None, we will use [0.8, 0.1, 0.1]. The default is [0.8, 0.1, 0.1]
         randomState :  int or array_like , optional
             Random seed used to initialize the pseudo-random number generator. Can be any integer between 0 and 2**32 - 1 inclusive, an array (or other sequence) of such integers, or None (the default). If seed is None, then RandomState will try to read data from /dev/urandom (or the Windows analogue) if available or seed from the clock otherwise.
@@ -2190,34 +2188,62 @@ class DGL:
             - "test_ds" (DGLDataset)
 
         """
+        import random
+        import math
 
-        if not 0 <= fracList[0] <= 1:
+        def split_list(original_list, split):
+            sublists = []
+            prev_index = 0
+            for fraction in split:
+                next_index = prev_index + math.ceil( (len(original_list) * fraction) )
+                sublists.append( original_list[prev_index : next_index] )
+                prev_index = next_index
+            return sublists
+        
+        if not 0 <= split[0] <= 1:
+            print("DGL.DatasetSplit - Error: The first number in the fracList input parameter is not between 0 and 1. Returning None.")
             return None
-        if not 0 <= fracList[1] <= 1:
+        if not 0 <= split[1] <= 1:
+            print("DGL.DatasetSplit - Error: The second number in the fracList input parameter is not between 0 and 1. Returning None.")
             return None
-        if not 0 <= fracList[2] <= 1:
+        if not 0 <= split[2] <= 1:
+            print("DGL.DatasetSplit - Error: The third number in the fracList input parameter is not between 0 and 1. Returning None.")
             return None
-        if sum(fracList) > 1:
+        if sum(split) > 1:
+            print("DGL.DatasetSplit - Error: The numbers in the fracList input parameter add up to more than 1. Returning None.")
             return None
-        datasets = dgl.data.utils.split_dataset(dataset, frac_list=fracList, shuffle=shuffle, random_state=randomState)
-        if fracList[0] > 0:
-            train_ds = DGL.DatasetByGraphs({'graphs': DGL.DatasetGraphs(datasets[0]), 'labels' :DGL.DatasetLabels(datasets[0])}, key=key)
-        else:
-            train_ds = None
-        if fracList[1] > 0:
-            validate_ds = DGL.DatasetByGraphs({'graphs': DGL.DatasetGraphs(datasets[1]), 'labels' :DGL.DatasetLabels(datasets[1])}, key=key)
-        else:
-            validate_ds = None
-        if fracList[2] > 0:
-            test_ds = DGL.DatasetByGraphs({'graphs': DGL.DatasetGraphs(datasets[2]), 'labels' :DGL.DatasetLabels(datasets[2])}, key=key)
-        else:
-            test_ds = None
+        
+        graphs = DGL.DatasetGraphs(dataset)
+        labels = DGL.DatasetGraphLabels(dataset, graphLabelHeader=graphLabelHeader)
+        if shuffle == True:
+            temp = list(zip(graphs, labels))
+            random.shuffle(temp)
+            graphs, labels = zip(*temp)
+            # graphs and labels come out as tuples, and so must be converted to lists.
+            graphs, labels = list(graphs), list(labels)
 
+        #datasets = dgl.data.utils.split_dataset(dataset, frac_list=fracList, shuffle=shuffle, random_state=randomState)
+        graph_sublists = split_list(graphs, split)
+        labels_sublists = split_list(labels, split)
+        train_ds = None
+        validate_ds = None
+        test_ds = None
+        if  split[0] > 0 and len(graph_sublists[0]) > 0:
+            train_ds = DGL.DatasetByGraphs({'graphs':  graph_sublists[0], 'labels' :labels_sublists[0]})
+        if split[1] > 0 and len(graph_sublists[1]) > 0:
+            validate_ds = DGL.DatasetByGraphs({'graphs': graph_sublists[1], 'labels' :labels_sublists[1]})
+        if split[2] > 0 and len(graph_sublists[2]) > 0:
+            test_ds = DGL.DatasetByGraphs({'graphs': graph_sublists[2], 'labels' :labels_sublists[2]})
+        # Print label shapes for debugging
+        print("Train Labels Shapes:", [labels.shape for labels in labels_sublists[0]])
+        print("Validate Labels Shapes:", [labels.shape for labels in labels_sublists[1]])
+        print("Test Labels Shapes:", [labels.shape for labels in labels_sublists[2]])
         return {
             "train_ds" : train_ds,
             "validate_ds" : validate_ds,
             "test_ds" : test_ds
         }
+    
     @staticmethod
     def Optimizer(name="Adam", amsgrad=True, betas=(0.9,0.999), eps=0.000001, lr=0.001, maximize=False, weightDecay=0.0, rho=0.9, lr_decay=0.0):
         """
@@ -2254,7 +2280,7 @@ class DGL:
         return {"name":name, "amsgrad":amsgrad, "betas":betas, "eps":eps, "lr": lr, "maximize":maximize, "weight_decay":weightDecay, "rho":rho, "lr_decay":lr_decay}
     
     @staticmethod
-    def ModelClassify(model, dataset, node_attr_key="node_attr"):
+    def ModelClassify(model, dataset, nodeATTRKey="feat"):
         """
         Predicts the classification the labels of the input dataset.
 
@@ -2264,8 +2290,8 @@ class DGL:
             The input DGL dataset.
         model : Model
             The input trained model.
-        node_attr_key : str , optional
-            The key used for node attributes. The default is "node_attr".
+        nodeATTRKey : str , optional
+            The key used for node attributes. The default is "feat".
 
         Returns
         -------
@@ -2283,7 +2309,7 @@ class DGL:
         probabilities = []
         for item in tqdm(dataset, desc='Classifying', leave=False):
             graph = item[0]
-            pred = model(graph, graph.ndata[node_attr_key].float())
+            pred = model(graph, graph.ndata[nodeATTRKey].float())
             labels.append(pred.argmax(1).item())
             probability = (torch.nn.functional.softmax(pred, dim=1).tolist())
             probability = probability[0]
@@ -2294,7 +2320,7 @@ class DGL:
         return {"predictions":labels, "probabilities":probabilities}
     
     @staticmethod
-    def ModelPredict(model, dataset, node_attr_key="node_attr"):
+    def ModelPredict(model, dataset, nodeATTRKey="feat"):
         """
         Predicts the value of the input dataset.
 
@@ -2304,8 +2330,8 @@ class DGL:
             The input DGL dataset.
         model : Model
             The input trained model.
-        node_attr_key : str , optional
-            The key used for node attributes. The default is "node_attr".
+        nodeATTRKey : str , optional
+            The key used for node attributes. The default is "feat".
     
         Returns
         -------
@@ -2319,7 +2345,7 @@ class DGL:
         values = []
         for item in tqdm(dataset, desc='Predicting', leave=False):
             graph = item[0]
-            pred = model(graph, graph.ndata[node_attr_key].float())
+            pred = model(graph, graph.ndata[nodeATTRKey].float())
             values.append(round(pred.item(), 3))
         return values
     
@@ -2395,14 +2421,14 @@ class DGL:
             testPredictions.append(test_predictions.tolist())
         
         return {
-            "alllabels": Helper.Flatten(allLabels),
-            "allpredictions" : Helper.Flatten(allPredictions),
-            "trainlabels" : Helper.Flatten(trainLabels),
-            "trainpredictions" : Helper.Flatten(trainPredictions),
-            "validationlabels" : Helper.Flatten(valLabels),
-            "validationpredictions" : Helper.Flatten(valPredictions),
-            "testlabels" : Helper.Flatten(testLabels),
-            "testpredictions" : Helper.Flatten(testPredictions)
+            "alllabels": allLabels,
+            "allpredictions" : allPredictions,
+            "trainlabels" : trainLabels,
+            "trainpredictions" : trainPredictions,
+            "validationlabels" : valLabels,
+            "validationpredictions" : valPredictions,
+            "testlabels" : testLabels,
+            "testpredictions" : testPredictions
             
         }
 
@@ -2533,14 +2559,14 @@ class DGL:
         model = None
         if hparams.model_type.lower() == "classifier":
             if hparams.cv_type.lower() == "holdout":
-                model = _ClassifierHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
+                model = _GraphClassifierHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
             elif "k" in hparams.cv_type.lower():
-                model = _ClassifierKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
+                model = _GraphClassifierKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
         elif hparams.model_type.lower() == "regressor":
             if hparams.cv_type.lower() == "holdout":
-                model = _RegressorHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
+                model = _GraphRegressorHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
             elif "k" in hparams.cv_type.lower():
-                model = _RegressorKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
+                model = _GraphRegressorKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
         else:
             raise NotImplementedError
         return model
@@ -2717,7 +2743,7 @@ class DGL:
         return data
 
     @staticmethod
-    def GraphsByBINPath(path, labelKey="value", key='node_attr'):
+    def GraphsByBINPath(path, graphLabelKey="label"):
         """
         Returns the Graphs from the input BIN file path.
 
@@ -2725,10 +2751,8 @@ class DGL:
         ----------
         path : str
             The input BIN file path.
-        labelKey : str , optional
-            The label key to use. The default is "value".
-        key : str , optional
-            The node attributes key. The default is 'node_attr'.
+        graphLabelKey : str , optional
+            The graph label key to use. The default is "label".
 
         Returns
         -------
@@ -2739,7 +2763,7 @@ class DGL:
 
         """
         graphs, label_dict = load_graphs(path)
-        labels = label_dict[labelKey].tolist()
+        labels = label_dict[graphLabelKey].tolist()
         return {"graphs" : graphs, "labels": labels}
     
     @staticmethod
@@ -2809,7 +2833,7 @@ class DGL:
         return status
     
     @staticmethod
-    def Precision(actual, predicted, mantissa=4):
+    def Precision(actual, predicted, mantissa: int = 6):
         """
         Returns the precision of the predicted values vs. the actual values. See https://en.wikipedia.org/wiki/Precision_and_recall
 
@@ -2820,7 +2844,7 @@ class DGL:
         predicted : list
             The input list of predicted values.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -2848,7 +2872,7 @@ class DGL:
         return round(total_true_positives / (total_true_positives + total_false_positives), mantissa)
     
     @staticmethod
-    def Recall(actual, predicted, mantissa=4):
+    def Recall(actual, predicted, mantissa: int = 6):
         """
         Returns the recall metric of the predicted values vs. the actual values. See https://en.wikipedia.org/wiki/Precision_and_recall
 
@@ -2859,7 +2883,7 @@ class DGL:
         predicted : list
             The input list of predicted values.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -2918,7 +2942,7 @@ class DGL:
         import time
         import datetime
         start = time.time()
-        regressor = _RegressorHoldout(hparams, trainingDataset, validationDataset, testingDataset)
+        regressor = _GraphRegressorHoldout(hparams, trainingDataset, validationDataset, testingDataset)
         regressor.train()
         accuracy = regressor.validate()
     

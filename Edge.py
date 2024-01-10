@@ -140,7 +140,7 @@ class Edge():
             return None
         n = Face.Normal(face)
         v2 = Topology.Translate(origin, n[0], n[1], n[2])
-        edge = Edge.ByStartVertexEndVertex(origin, v2, tolerance=tolerance)
+        edge = Edge.ByStartVertexEndVertex(origin, v2, tolerance=tolerance, verbose=False)
         if not isinstance(edge, topologic.Edge):
             print("Edge.ByFaceNormal - Error: Could not create an edge. Returning None.")
             return None

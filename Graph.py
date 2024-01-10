@@ -5399,6 +5399,11 @@ class Graph:
                             e = Topology.Boolean(e, boundaryFace, operation="intersect", tolerance=tolerance)
                             if isinstance(e, topologic.Edge):
                                 edges = addEdge(e, edges, viewpointsA, viewpointsB, 0.0001)
+                            elif isinstance(e, topologic.Cluster):
+                                tempEdges = Cluster.Edges(e)
+                                if tempEdges:
+                                    for tempEdge in tempEdges:
+                                        edges = addEdge(tempEdge, edges, viewpointsA, viewpointsB, 0.0001)
 
         except:
             for i in range(len(viewpointsA)):

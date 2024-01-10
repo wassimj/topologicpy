@@ -459,6 +459,7 @@ class Shell(Topology):
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -485,21 +486,22 @@ class Shell(Topology):
             return None
 
         # Create a Vertex at the world's origin (0,0,0)
-        world_origin = Vertex.ByCoordinates(0,0,0)
+        world_origin = Vertex.Origin()
 
         if isinstance(face, topologic.Face):
-            flatFace = Face.Flatten(face, tolerance=tolerance)
+            # Flatten the face
+            origin = Topology.Centroid(face)
+            normal = Face.Normal(face)
+            flatFace = Topology.Flatten(face, origin=origin, direction=normal)
             faceVertices = Face.Vertices(face)
             vertices += faceVertices
             # Retrieve the needed transformations
             dictionary = Topology.Dictionary(flatFace)
-            xTran = Dictionary.ValueAtKey(dictionary,"xTran")
-            yTran = Dictionary.ValueAtKey(dictionary,"yTran")
-            zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+            xTran = Dictionary.ValueAtKey(dictionary,"x")
+            yTran = Dictionary.ValueAtKey(dictionary,"y")
+            zTran = Dictionary.ValueAtKey(dictionary,"z")
             phi = Dictionary.ValueAtKey(dictionary,"phi")
             theta = Dictionary.ValueAtKey(dictionary,"theta")
-
-            
 
             # Create a cluster of the input vertices
             verticesCluster = Cluster.ByTopologies(vertices)
@@ -528,13 +530,17 @@ class Shell(Topology):
             faces.append(Face.ByWire(Wire.ByVertices(tempTriangleVertices), tolerance=tolerance))
 
         shell = Shell.ByFaces(faces, tolerance=tolerance)
-        if shell == None:
-            print("Shell.Delaunay - WARNING: Could not create Shell. Returning a Cluster of Faces.")
-            shell = Cluster.ByTopologies(faces)
+        #if shell == None:
+            #print("Shell.Delaunay - WARNING: Could not create Shell. Returning a Cluster of Faces.")
+            #shell = Cluster.ByTopologies(faces)
         if isinstance(face, topologic.Face):
-            edges = Shell.Edges(shell)
-            edgesCluster = Cluster.ByTopologies(edges)
-            shell = Topology.Boolean(flatFace,edgesCluster, operation="slice", tolerance=tolerance)
+            # Get the internal boundaries of the face
+            wires = Face.InternalBoundaries(flatFace)
+            ibList = []
+            if len(wires) > 0:
+                ibList = [Face.ByWire(w) for w in wires]
+                cluster = Cluster.ByTopologies(ibList)
+                shell = Topology.Difference(shell, cluster)
             shell = Topology.Rotate(shell, origin=world_origin, x=0, y=1, z=0, degree=theta)
             shell = Topology.Rotate(shell, origin=world_origin, x=0, y=0, z=1, degree=phi)
             shell = Topology.Translate(shell, xTran, yTran, zTran)
@@ -1311,7 +1317,39 @@ class Shell(Topology):
         shell = Topology.Rotate(shell, origin, 0, 0, 1, phi)
         return shell
 
-    def Roof(face, degree: float = 45, angTolerance: float = 2.0, tolerance: float = 0.001):
+    @staticmethod
+    def RemoveCollinearEdges(shell: topologic.Shell, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
+        """
+        Removes any collinear edges in the input shell.
+
+        Parameters
+        ----------
+        shell : topologic.Shell
+            The input shell.
+        angTolerance : float , optional
+            The desired angular tolerance. The default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Shell
+            The created shell without any collinear edges.
+
+        """
+        from topologicpy.Face import Face
+
+        if not isinstance(shell, topologic.Shell):
+            print("Shell.RemoveCollinearEdges - Error: The input shell parameter is not a valid shell. Returning None.")
+            return None
+        faces = Shell.Faces(shell)
+        clean_faces = []
+        for face in faces:
+            clean_faces.append(Face.RemoveCollinearEdges(face, angTolerance=angTolerance, tolerance=tolerance))
+        return Shell.ByFaces(clean_faces, tolerance=tolerance)
+    
+    @staticmethod
+    def Roof(face, degree: float = 45, epsilon: float = 0.01, tolerance: float = 0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
             This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
@@ -1322,8 +1360,8 @@ class Shell(Topology):
             The input face.
         degree : float , optioal
             The desired angle in degrees of the roof. The default is 45.
-        angTolerance : float , optional
-            The desired angular tolerance. The default is 2. (This is set to a larger number as it was found to work better)
+        epsilon : float , optional
+            The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
 
@@ -1360,7 +1398,9 @@ class Shell(Topology):
             return None
         if degree < tolerance:
             return None
-        flat_face = Face.Flatten(face, tolerance=tolerance)
+        origin = Topology.Centroid(face)
+        normal = Face.Normal(face)
+        flat_face = Topology.Flatten(face, origin=origin, direction=normal)
         d = Topology.Dictionary(flat_face)
         roof = Wire.Roof(flat_face, degree=degree, tolerance=tolerance)
         if not roof:
@@ -1409,7 +1449,7 @@ class Shell(Topology):
         if not shell:
             shell = Cluster.ByTopologies(final_faces)
         try:
-            shell = Topology.RemoveCoplanarFaces(shell, angTolerance=angTolerance, tolerance=tolerance)
+            shell = Topology.RemoveCoplanarFaces(shell, epsilon=epsilon, tolerance=tolerance)
         except:
             pass
         xTran = Dictionary.ValueAtKey(d,"xTran")
@@ -1758,12 +1798,14 @@ class Shell(Topology):
             return None
 
         # Flatten the input face
-        flatFace = Face.Flatten(face, tolerance=tolerance)
+        origin = Topology.Centroid(face)
+        normal = Face.Normal(face)
+        flatFace = Topology.Flatten(face, origin=origin, direction=normal)
         # Retrieve the needed transformations
         dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"xTran")
-        yTran = Dictionary.ValueAtKey(dictionary,"yTran")
-        zTran = Dictionary.ValueAtKey(dictionary,"zTran")
+        xTran = Dictionary.ValueAtKey(dictionary,"x")
+        yTran = Dictionary.ValueAtKey(dictionary,"y")
+        zTran = Dictionary.ValueAtKey(dictionary,"z")
         phi = Dictionary.ValueAtKey(dictionary,"phi")
         theta = Dictionary.ValueAtKey(dictionary,"theta")
 

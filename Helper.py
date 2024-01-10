@@ -5,7 +5,7 @@ import math
 
 class Helper:
     @staticmethod
-    def Flatten(l):
+    def Flatten(listA):
         """
         Flattens the input nested list.
 
@@ -21,22 +21,22 @@ class Helper:
 
         """
 
-        if not isinstance(l, list):
-            return [l]
+        if not isinstance(listA, list):
+            return [listA]
         flat_list = []
-        for item in l:
+        for item in listA:
             flat_list = flat_list + Helper.Flatten(item)
         return flat_list
 
     @staticmethod
-    def Iterate(l):
+    def Iterate(listA):
         """
         Iterates the input nested list so that each sublist has the same number of members. To fill extra members, the shorter lists are iterated from their first member.
         For example Iterate([[1,2,3],['m','n','o','p'],['a','b','c','d','e']]) yields [[1, 2, 3, 1, 2], ['m', 'n', 'o', 'p', 'm'], ['a', 'b', 'c', 'd', 'e']]
 
         Parameters
         ----------
-        l : list
+        listA : list
             The input nested list.
 
         Returns
@@ -56,13 +56,13 @@ class Helper:
                 base = base[1:]+[base[0]]  # rotate
             return base
 
-        maxLength = len(l[0])
+        maxLength = len(listA[0])
         iterated_list = []
-        for aSubList in l:
+        for aSubList in listA:
             newLength = len(aSubList)
             if newLength > maxLength:
                 maxLength = newLength
-        for anItem in l:
+        for anItem in listA:
             for i in range(len(anItem), maxLength):
                 anItem.append(None)
             y=[]
@@ -107,13 +107,13 @@ class Helper:
         return {'clusters': clusters, 'centroids': centroids}
     
     @staticmethod
-    def MergeByThreshold(l, threshold=0.0001):
+    def MergeByThreshold(listA, threshold=0.0001):
         """
         Merges the numbers in the input list so that numbers within the input threshold are averaged into one number.
 
         Parameters
         ----------
-        l : list
+        listA : list
             The input nested list.
         threshold : float , optional
             The desired merge threshold value. The default is 0.0001.
@@ -125,31 +125,31 @@ class Helper:
 
         """
         # Sort the list in ascending order
-        l.sort()
+        listA.sort()
         merged_list = []
 
         # Initialize the first element in the merged list
-        merged_list.append(l[0])
+        merged_list.append(listA[0])
 
         # Merge numbers within the threshold
-        for i in range(1, len(l)):
-            if l[i] - merged_list[-1] <= threshold:
+        for i in range(1, len(listA)):
+            if listA[i] - merged_list[-1] <= threshold:
                 # Merge the current number with the last element in the merged list
-                merged_list[-1] = (merged_list[-1] + l[i]) / 2
+                merged_list[-1] = (merged_list[-1] + listA[i]) / 2
             else:
                 # If the current number is beyond the threshold, add it as a new element
-                merged_list.append(l[i])
+                merged_list.append(listA[i])
 
         return merged_list
 
     @staticmethod
-    def Normalize(l, mantissa: int = 6):
+    def Normalize(listA, mantissa: int = 6):
         """
         Normalizes the input list so that it is in the range 0 to 1
 
         Parameters
         ----------
-        l : list
+        listA : list
             The input nested list.
         mantissa : int , optional
             The desired mantissa value. The default is 4.
@@ -160,12 +160,12 @@ class Helper:
             The normalized list.
 
         """
-        if l == None:
+        if not isinstance(listA, list):
             print("Helper.Normalize - Error: The input list is not valid. Returning None.")
             return None
         
         # Make sure the list is numeric
-        l = [x for x in l if type(x) == int or type(x) == float]
+        l = [x for x in listA if type(x) == int or type(x) == float]
         if len(l) < 1:
             print("Helper.Normalize - Error: The input list does not contain numeric values. Returning None.")
             return None
@@ -178,14 +178,14 @@ class Helper:
         return normalized_list
 
     @staticmethod
-    def Repeat(l):
+    def Repeat(listA):
         """
         Repeats the input nested list so that each sublist has the same number of members. To fill extra members, the last item in the shorter lists are repeated and appended.
         For example Iterate([[1,2,3],['m','n','o','p'],['a','b','c','d','e']]) yields [[1, 2, 3, 3, 3], ['m', 'n', 'o', 'p', 'p'], ['a', 'b', 'c', 'd', 'e']]
 
         Parameters
         ----------
-        l : list
+        listA : list
             The input nested list.
 
         Returns
@@ -194,9 +194,9 @@ class Helper:
             The repeated list.
 
         """
-        if not isinstance(l, list):
+        if not isinstance(listA, list):
             return None
-        repeated_list = [x for x in l if isinstance(x, list)]
+        repeated_list = [x for x in listA if isinstance(x, list)]
         if len(repeated_list) < 1:
             return None
         maxLength = len(repeated_list[0])
@@ -214,16 +214,27 @@ class Helper:
         return repeated_list
 
     @staticmethod
-    def Sort(lA, lB):
+    def Sort(listA, *otherLists, reverseFlags=None):
         """
-        Sorts the first input list according to the values in the second input list.
+        Sorts the first input list according to the values in the subsequent input lists in order. For example,
+        your first list can be a list of topologies and the next set of lists can be their volume, surface area, and z level.
+        The list of topologies will then be sorted first by volume, then by surface, and lastly by z level. You can choose
+        to reverse the order of sorting by including a list of TRUE/FALSE values in the reverseFlags input parameter.
+        For example, if you wish to sort the volume in reverse order (from large to small), but sort the other parameters
+        normally, you would include the following list for reverseFlag: [True, False, False].
 
         Parameters
         ----------
-        lA : list
+        listA : list
             The first input list to be sorts
-        lB : list
-            The second input list to use for sorting the first input list.
+        *otherLists : any number of lists to use for sorting listA, optional.
+            Any number of lists that are used to sort the listA input parameter. The order of these input
+            parameters determines the order of sorting (from left to right). If no lists are included, the input list will be sorted as is.
+        reverseFlags : list, optional.
+            The list of booleans (TRUE/FALSE) to indicated if sorting based on a particular list should be conducted in reverse order.
+            The length of the reverseFlags list should match the number of the lists in the input otherLists parameter. If set to None,
+            a default list of FALSE values is created to match the number of the lists in the input otherLists parameter. The default
+            is None.
 
         Returns
         -------
@@ -231,17 +242,45 @@ class Helper:
             The sorted list.
 
         """
-        lA.sort(key=dict(zip(lA, lB)).get)
-        return lA
+       
+        # If reverseFlags is not provided, assume all lists should be sorted in ascending order
+        if reverseFlags is None:
+            reverseFlags = [False] * len(otherLists)
+        if not isinstance(otherLists, tuple):
+            print("Helper.Sort - Error: No other lists to use for sorting have been provided. Returning None.")
+            return None
+        if len(otherLists) < 1:
+            print("Helper.Sort - Error: The otherLists input parameter does not contain any valid lists. Returning None.")
+            return None
+        if not len(reverseFlags) == len(otherLists):
+            print("Helper.Sort - Error: The length of the reverseFlags input parameter is not equal to the number of input lists. Returning None.")
+            return None
+        # Convert other_lists to numeric and reverse if needed.
+        sorting_lists = []
+        for i, a_list in enumerate(otherLists):
+            temp_list = []
+            temp_set = list(set(a_list))
+            temp_set = sorted(temp_set)
+            if reverseFlags[i] == True:
+                temp_set.reverse()
+            for item in a_list:
+                temp_list.append(temp_set.index(item))
+            sorting_lists.append(temp_list)
+    
+        combined_lists = list(zip(listA, *sorting_lists))
+        # Sort the combined list based on all the elements and reverse the lists as needed
+        combined_lists.sort(key=lambda x: tuple((-val) if reverse else val for val, reverse in zip(x[1:], reverseFlags)))
+        sorted_listA = [item[0] for item in combined_lists]
+        return sorted_listA
 
     @staticmethod
-    def Transpose(l):
+    def Transpose(listA):
         """
-        Transposes (swaps rows and columns) the input list.
+        Transposes the input list (swaps rows and columns).
 
         Parameters
         ----------
-        l : list
+        listA : list
             The input list.
 
         Returns
@@ -250,26 +289,26 @@ class Helper:
             The transposed list.
 
         """
-        if not isinstance(l, list):
+        if not isinstance(listA, list):
             return None
-        length = len(l[0])
+        length = len(listA[0])
         transposed_list = []
         for i in range(length):
             tempRow = []
-            for j in range(len(l)):
-                tempRow.append(l[j][i])
+            for j in range(len(listA)):
+                tempRow.append(listA[j][i])
             transposed_list.append(tempRow)
         return transposed_list
     
     @staticmethod
-    def Trim(l):
+    def Trim(listA):
         """
         Trims the input nested list so that each sublist has the same number of members. All lists are trimmed to match the length of the shortest list.
         For example Trim([[1,2,3],['m','n','o','p'],['a','b','c','d','e']]) yields [[1, 2, 3], ['m', 'n', 'o'], ['a', 'b', 'c']]
 
         Parameters
         ----------
-        l : list
+        listA : list
             The input nested list.
 
         Returns
@@ -278,13 +317,13 @@ class Helper:
             The repeated list.
 
         """
-        minLength = len(l[0])
+        minLength = len(listA[0])
         returnList = []
-        for aSubList in l:
+        for aSubList in listA:
             newLength = len(aSubList)
             if newLength < minLength:
                 minLength = newLength
-        for anItem in l:
+        for anItem in listA:
             anItem = anItem[:minLength]
             returnList.append(anItem)
         return returnList
