@@ -4660,7 +4660,7 @@ class Topology():
         return topology.RemoveContents(contents)
     
     @staticmethod
-    def RemoveCoplanarFaces(topology, angTolerance=0.1, tolerance=0.0001):
+    def RemoveCoplanarFaces(topology, epsilon=0.01, tolerance=0.0001):
         """
         Removes coplanar faces in the input topology
 
@@ -4670,6 +4670,8 @@ class Topology():
             The input topology.
         angTolerance : float , optional
             The desired angular tolerance for removing coplanar faces. The default is 0.1.
+        epsilon : float , optional
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -4679,61 +4681,95 @@ class Topology():
             The input topology with coplanar faces merged into one face.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
+        import numpy as np
+
         if not isinstance(topology, topologic.Topology):
             print("Topology.RemoveCoplanarFace - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
         t = topology.Type()
         if (t == 1) or (t == 2) or (t == 4) or (t == 8):
             return topology
-        freeTopologies = []
-        if t == 128: #Cluster
-            freeTopologies = []
-            freeTopologies += Cluster.FreeVertices(topology)
-            freeTopologies += Cluster.FreeEdges(topology)
-            freeTopologies += Cluster.FreeWires(topology)
-        clusters = Topology.ClusterFaces(topology, angTolerance=angTolerance, tolerance=tolerance)
-        faces = []
-        for obj in clusters:
-            if isinstance(obj, topologic.Face):
-                faces.append(obj)
-            elif isinstance(obj, topologic.Shell):
-                f = Face.ByShell(obj, angTolerance=angTolerance, tolerance=tolerance)
-                if isinstance(f, topologic.Face):
-                    faces.append(f)
-                else: # Operation failed, just add the original faces
-                    faces += Shell.Faces(obj)
-            elif isinstance(obj, topologic.Cluster):
-                free_faces = Cluster.FreeFaces(obj)
-                for f in free_faces:
-                    faces.append(f)
-                free_shells = Cluster.FreeShells(obj)
-                for shell in free_shells:
-                    f = Face.ByShell(shell, angTolerance=angTolerance, tolerance=tolerance)
+
+        def calculate_plane_equation_coefficients(vertices):
+            tp_vertices = [Vertex.ByCoordinates(list(coords)) for coords in vertices]
+            eq = Vertex.PlaneEquation(tp_vertices)
+            return eq['a'], eq['b'], eq['c'], eq['d']
+
+        def faces_on_same_plane(face1, face2, epsilon=1e-6):
+            vertices = Face.Vertices(face1)
+            distances = []
+            for v in vertices:
+                distances.append(Vertex.PerpendicularDistance(v, face=face2, mantissa=6))
+            d = sum(distances)/len(distances)
+            return d <= epsilon
+
+        def cluster_faces_on_planes(faces, epsilon=1e-6):
+
+            # Create a dictionary to store bins based on plane equations
+            bins = {}
+
+            # Iterate through each face
+            for i, face in enumerate(faces):
+                # Check if a bin already exists for the plane equation
+                found_bin = False
+                for bin_face in bins.values():
+                    if faces_on_same_plane(face, bin_face[0], epsilon=epsilon):
+                        bin_face.append(face)
+                        found_bin = True
+                        break
+
+                # If no bin is found, create a new bin
+                if not found_bin:
+                    bins[i] = [face]
+
+            # Convert bins to a list of lists
+            return list(bins.values())
+
+        faces = Topology.Faces(topology)
+        face_clusters = cluster_faces_on_planes(faces, epsilon=epsilon)
+        final_faces = []
+        for face_cluster in face_clusters:
+            t = Topology.SelfMerge(Cluster.ByTopologies(face_cluster))
+            if isinstance(t, topologic.Face):
+                #final_faces.append(Face.RemoveCollinearEdges(t))
+                final_faces.append(t)
+            elif isinstance(t, topologic.Shell):
+                    f = Face.ByShell(t)
                     if isinstance(f, topologic.Face):
-                        faces.append(f)
-                    else: # Operation failed, just add the original faces
-                        faces += Shell.Faces(shell)
-        if len(faces) < 1:
-            return None
-        new_topology = Cluster.ByTopologies(faces+freeTopologies)
-        return new_topology
-        #new_topology = Topology.SelfMerge(Cluster.ByTopologies(faces+freeTopologies), tolerance=tolerance)
-        '''
-        str = "Cluster"
-        if isinstance(topology, topologic.Shell):
-            str = "Shell"
+                        final_faces.append(f)
+                    else:
+                        print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
+                        final_faces += Shell.Faces(shell)
+            else: # It is a cluster
+                shells = Topology.Shells(t)
+                for shell in shells:
+                    f = Face.ByShell(shell)
+                    if isinstance(f, topologic.Face):
+                        final_faces.append(f)
+                    else:
+                        print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
+                        final_faces += Shell.Faces(shell)
+                if len(shells) == 0:
+                    faces = Topology.Faces(t)
+                    final_faces += faces
+                faces = Cluster.FreeFaces(t)
+                final_faces += faces
+        return_topology = None
+        if isinstance(topology, topologic.CellComplex):
+            return_topology = CellComplex.ByFaces(final_faces, tolerance=tolerance)
         elif isinstance(topology, topologic.Cell):
-            str = "Cell"
-        elif isinstance(topology, topologic.CellComplex):
-            str = "CellComplex"
-        else:
-            return new_topology
-        fixed_topology = Topology.Fix(new_topology, topologyType=str, tolerance=tolerance)
-        return fixed_topology
-        '''
+            return_topology = Cell.ByFaces(final_faces, tolerance=tolerance)
+        elif isinstance(topology, topologic.Shell):
+            return_topology = Shell.ByFaces(final_faces, tolerance=tolerance)
+        if not isinstance(return_topology, topologic.Topology):
+            return_topology = Cluster.ByTopologies(final_faces)
+        return return_topology
         
         
 
