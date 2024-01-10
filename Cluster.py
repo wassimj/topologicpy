@@ -727,6 +727,72 @@ class Cluster(topologic.Cluster):
         return t_clusters
 
     @staticmethod
+    def MergeCells(cells, tolerance=0.0001):
+        """
+        Creates a cluster that contains cellComplexes where it can create them plus any additional free cells.
+
+        Parameters
+        ----------
+        cells : list
+            The input list of cells.
+
+        Returns
+        -------
+        topologic.cluster
+            The created mystic rose (cluster of edges).
+
+        """
+
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Topology import Topology
+
+        def find_cell_complexes(cells, adjacency_test, tolerance=0.0001):
+            cell_complexes = []
+            remaining_cells = set(cells)
+
+            def explore_complex(cell_complex, remaining, tolerance=0.0001):
+                new_cells = set()
+                for cell in remaining:
+                    if any(adjacency_test(cell, existing_cell, tolerance=tolerance) for existing_cell in cell_complex):
+                        new_cells.add(cell)
+                return new_cells
+
+            while remaining_cells:
+                current_cell = remaining_cells.pop()
+                current_complex = {current_cell}
+                current_complex.update(explore_complex(current_complex, remaining_cells, tolerance=tolerance))
+                cell_complexes.append(current_complex)
+                remaining_cells -= current_complex
+
+            return cell_complexes
+
+        # Example adjacency test function (replace this with your actual implementation)
+        def adjacency_test(cell1, cell2, tolerance=0.0001):
+            return isinstance(Topology.Merge(cell1, cell2, tolerance=tolerance), topologic.CellComplex)
+
+        if not isinstance(cells, list):
+            print("Cluster.MergeCells - Error: The input cells parameter is not a valid list of cells. Returning None.")
+            return None
+        cells = [cell for cell in cells if isinstance(cell, topologic.Cell)]
+        if len(cells) < 1:
+            print("Cluster.MergeCells - Error: The input cells parameter does not contain any valid cells. Returning None.")
+            return None
+        
+        complexes = find_cell_complexes(cells, adjacency_test)
+        cellComplexes = []
+        cells = []
+        for aComplex in complexes:
+            aComplex = list(aComplex)
+            if len(aComplex) > 1:
+                cc = CellComplex.ByCells(aComplex, verbose=False)
+                if isinstance(cc, topologic.CellComplex):
+                    cellComplexes.append(cc)
+            elif len(aComplex) == 1:
+                if isinstance(aComplex[0], topologic.Cell):
+                    cells.append(aComplex[0])
+        return Cluster.ByTopologies(cellComplexes+cells)
+    
+    @staticmethod
     def MysticRose(wire: topologic.Wire = None, origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, perimeter: bool = True, direction: list = [0,0,1], placement:str = "center", tolerance: float = 0.0001) -> topologic.Cluster:
         """
         Creates a mystic rose.
