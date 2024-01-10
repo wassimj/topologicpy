@@ -522,10 +522,10 @@ class Face(topologic.Face):
 
         def triangulateWire(wire):
             wire = Topology.RemoveCollinearEdges(wire)
-            vertices = Wire.Vertices(wire)
+            vertices = Topology.Vertices(wire)
             shell = Shell.Delaunay(vertices)
-            if isinstance(shell, topologic.Shell):
-                return Shell.Faces(shell)
+            if isinstance(shell, topologic.Topology):
+                return Topology.Faces(shell)
             else:
                 return []
         if not isinstance(wire, topologic.Wire):
@@ -1876,7 +1876,6 @@ class Face(topologic.Face):
             return None
         vertices = Topology.Vertices(face)
         if len(vertices) == 3: # Already a triangle
-            print("Face.Triangulate - Warning: The input face parameter is a triangle. Returning original input face as a list of one face.")
             return [face]
         #flatFace = Face.Flatten(face)
         #if not isinstance(flatFace, topologic.Face):
