@@ -456,14 +456,11 @@ class Shell(Topology):
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        from topologicpy.Helper import Helper
         from random import sample
         import sys
         import subprocess
@@ -527,7 +524,10 @@ class Shell(Topology):
             tempTriangleVertices.append(vertices[simplex[0]])
             tempTriangleVertices.append(vertices[simplex[1]])
             tempTriangleVertices.append(vertices[simplex[2]])
-            faces.append(Face.ByWire(Wire.ByVertices(tempTriangleVertices), tolerance=tolerance))
+            tempFace = Face.ByWire(Wire.ByVertices(tempTriangleVertices), tolerance=tolerance)
+            tempCentroid = Topology.Centroid(tempFace)
+            if Face.IsInternal(flatFace, tempCentroid):
+                faces.append(tempFace)
 
         shell = Shell.ByFaces(faces, tolerance=tolerance)
         #if shell == None:
