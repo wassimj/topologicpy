@@ -735,11 +735,13 @@ class Cluster(topologic.Cluster):
         ----------
         cells : list
             The input list of cells.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.cluster
-            The created mystic rose (cluster of edges).
+        topologic.Cluster
+            The created cluster with merged cells as possible.
 
         """
 
