@@ -834,14 +834,13 @@ class Plotly:
                 all_triangles = []
                 for tp_face in tp_faces:
                     triangles = Face.Triangulate(tp_face, tolerance=tolerance)
-                    for tri in triangles:
-                        if faceLabelKey or faceGroupKey:
-                            d = Topology.Dictionary(tp_face)
-                            f_dictionaries.append(d)
-                            if d:
-                                _ = Topology.SetDictionary(tri, d)
-                        c = Topology.Centroid(tri)
-                        if Face.IsInternal(tp_face, c):
+                    if isinstance(triangles, list):
+                        for tri in triangles:
+                            if faceLabelKey or faceGroupKey:
+                                d = Topology.Dictionary(tp_face)
+                                f_dictionaries.append(d)
+                                if d:
+                                    _ = Topology.SetDictionary(tri, d)
                             all_triangles.append(tri)
                 if len(all_triangles) > 0:
                     f_cluster = Cluster.ByTopologies(all_triangles)

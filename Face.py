@@ -497,7 +497,7 @@ class Face(topologic.Face):
         return Face.ByVertices(vertices)
 
     @staticmethod
-    def ByWire(wire: topologic.Wire, tolerance: float=0.0001) -> topologic.Face:
+    def ByWire(wire: topologic.Wire, tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a face from the input closed wire.
 
@@ -505,8 +505,6 @@ class Face(topologic.Face):
         ----------
         wire : topologic.Wire
             The input wire.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -534,23 +532,22 @@ class Face(topologic.Face):
             print("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
         if not Wire.IsClosed(wire):
-            print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Attempting to close it.")
-            wire = Wire.Close(wire)
-            wire = Wire.Planarize(wire)
-            if not Wire.IsClosed(wire):
-                print("Face.ByWire - Error: Could not close the input wire parameter. Giving up and returning None.")
-                return None
+            print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
+            return None
         
         edges = Wire.Edges(wire)
-        wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
+        wire = Topology.SelfMerge(Cluster.ByTopologies(edges))
         vertices = Wire.Vertices(wire)
-        try:
-            fList = topologic.Face.ByExternalBoundary(wire)
-        except:
-            if len(vertices) > 3:
-                fList = triangulateWire(wire)
-            else:
-                fList = []
+        fList = []
+        if isinstance(wire, topologic.Wire):
+            try:
+                fList = topologic.Face.ByExternalBoundary(wire)
+            except:
+                print("Face.ByWire - Warning: Could not create face by external boundary. Trying other methods.")
+                if len(vertices) > 3:
+                    fList = triangulateWire(wire)
+                else:
+                    fList = []
         
         if not isinstance(fList, list):
             fList = [fList]
@@ -573,7 +570,6 @@ class Face(topologic.Face):
         elif len(returnList) == 1:
             return returnList[0]
         else:
-            print("Face.ByWire - Warning: Forced to triangulate the face. Returning list of faces.")
             return returnList
 
     @staticmethod
@@ -1879,9 +1875,57 @@ class Face(topologic.Face):
             print("Face.Triangulate - Error: The input face parameter is not a valid face. Returning None.")
             return None
         vertices = Topology.Vertices(face)
-        shell = Shell.Delaunay(vertices=vertices, face=face, tolerance=tolerance)
-        triangles = Topology.Faces(shell)
-        return triangles
+        if len(vertices) == 3: # Already a triangle
+            print("Face.Triangulate - Warning: The input face parameter is a triangle. Returning original input face as a list of one face.")
+            return [face]
+        #flatFace = Face.Flatten(face)
+        #if not isinstance(flatFace, topologic.Face):
+            #Topology.ExportToBREP(face, "C:/Users/sarwj/Downloads/troubleFace.brep")
+        #print("Tri 2", flatFace)
+
+        #world_origin = Vertex.ByCoordinates(0,0,0)
+        # Retrieve the needed transformations
+        #dictionary = Topology.Dictionary(flatFace)
+        #xTran = Dictionary.ValueAtKey(dictionary,"x")
+        #yTran = Dictionary.ValueAtKey(dictionary,"y")
+        #zTran = Dictionary.ValueAtKey(dictionary,"z")
+        #phi = Dictionary.ValueAtKey(dictionary,"phi")
+        #theta = Dictionary.ValueAtKey(dictionary,"theta")
+    
+        vertices = Topology.Vertices(face)
+        #print("Number of vertices:", len(vertices))
+        shell = Shell.Delaunay(vertices=vertices, face=face)
+        shell_faces = Topology.Faces(shell)
+        if not shell_faces:
+            return []
+        #for shell_face in shell_faces:
+            #c = Topology.Centroid(shell_face)
+            #if Face.IsInternal(face, c):
+                #faceTriangles.append(shell_face)
+
+        '''
+        for i in range(0,5,1):
+            try:
+                _ = topologic.FaceUtility.Triangulate(flatFace, float(i)*0.1, faceTriangles)
+                break
+            except:
+                continue
+        '''
+        if len(shell_faces) < 1:
+            return []
+        #finalFaces = []
+        #for f in faceTriangles:
+            #f = Topology.Rotate(f, origin=world_origin, x=0, y=1, z=0, degree=theta)
+            #f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
+            #f = Topology.Translate(f, xTran, yTran, zTran)
+            #if Face.Angle(face, f) > 90:
+               # wire = Face.ExternalBoundary(f)
+                #wire = Wire.Invert(wire)
+               # f = topologic.Face.ByExternalBoundary(wire)
+               # finalFaces.append(f)
+            #else:
+                #finalFaces.append(f)
+        return shell_faces
 
     @staticmethod
     def TrimByWire(face: topologic.Face, wire: topologic.Wire, reverse: bool = False) -> topologic.Face:

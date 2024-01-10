@@ -46,7 +46,7 @@ class CellComplex(topologic.CellComplex):
                                  direction=direction, placement=placement, tolerance=tolerance)
     
     @staticmethod
-    def ByCells(cells: list, tolerance: float = 0.0001) -> topologic.CellComplex:
+    def ByCells(cells: list, tolerance: float = 0.0001, verbose: bool = True) -> topologic.CellComplex:
         """
         Creates a cellcomplex by merging the input cells.
 
@@ -67,14 +67,17 @@ class CellComplex(topologic.CellComplex):
         from topologicpy.Topology import Topology
 
         if not isinstance(cells, list):
-            print("CellComplex.ByCells - Error: The input cells parameter is not a valid list. Returning None.")
+            if verbose:
+                print("CellComplex.ByCells - Error: The input cells parameter is not a valid list. Returning None.")
             return None
         cells = [x for x in cells if isinstance(x, topologic.Cell)]
         if len(cells) < 1:
-            print("CellComplex.ByCells - Error: The input cells parameter does not contain any valid cells. Returning None.")
+            if verbose:
+                print("CellComplex.ByCells - Error: The input cells parameter does not contain any valid cells. Returning None.")
             return None
         elif len(cells) == 1:
-            print("CellComplex.ByCells - Warning: The input cells parameter contains only one valid cells. Returning object of type topologic.Cell instead of topologic.CellComplex.")
+            if verbose:
+                print("CellComplex.ByCells - Warning: The input cells parameter contains only one valid cells. Returning object of type topologic.Cell instead of topologic.CellComplex.")
             return cells[0]
         cellComplex = None
         try:
@@ -85,18 +88,22 @@ class CellComplex(topologic.CellComplex):
             cellComplex = Topology.Merge(topA, topB, tranDict=False, tolerance=tolerance)
         
         if not isinstance(cellComplex, topologic.CellComplex):
-            print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning object of type topologic.Cluster instead of topologic.CellComplex.")
+            if verbose:
+                print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning object of type topologic.Cluster instead of topologic.CellComplex.")
             return Cluster.ByTopologies(cells)
         else:
             temp_cells = CellComplex.Cells(cellComplex)
             if not isinstance(temp_cells, list):
-                print("CellComplex.ByCells - Error: The resulting object does not contain any cells. Returning None.")
+                if verbose:
+                    print("CellComplex.ByCells - Error: The resulting object does not contain any cells. Returning None.")
                 return None
             elif len(temp_cells) < 1:
-                print("CellComplex.ByCells - Error: Could not create a CellComplex. Returning None.")
+                if verbose:
+                    print("CellComplex.ByCells - Error: Could not create a CellComplex. Returning None.")
                 return None
             elif len(temp_cells) == 1:
-                print("CellComplex.ByCells - Warning: Resulting object contains only one cell. Returning object of type topologic.Cell instead of topologic.CellComplex.")
+                if verbose:
+                    print("CellComplex.ByCells - Warning: Resulting object contains only one cell. Returning object of type topologic.Cell instead of topologic.CellComplex.")
                 return(temp_cells[0])
         return cellComplex
     

@@ -530,9 +530,9 @@ class Shell(Topology):
                 faces.append(tempFace)
 
         shell = Shell.ByFaces(faces, tolerance=tolerance)
-        #if shell == None:
-            #print("Shell.Delaunay - WARNING: Could not create Shell. Returning a Cluster of Faces.")
-            #shell = Cluster.ByTopologies(faces)
+        if shell == None:
+            print("Shell.Delaunay - WARNING: Could not create Shell. Returning a Cluster of Faces.")
+            shell = Cluster.ByTopologies(faces)
         if isinstance(face, topologic.Face):
             # Get the internal boundaries of the face
             wires = Face.InternalBoundaries(flatFace)
