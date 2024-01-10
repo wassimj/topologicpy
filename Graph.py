@@ -4183,6 +4183,12 @@ class Graph:
         for edge in Topology.Edges(temp_path):
             new_edges.append(g_edges[Edge.Index(edge, g_edges)])
         longest_path = Topology.SelfMerge(Cluster.ByTopologies(new_edges), tolerance=tolerance)
+        sv = Topology.Vertices(longest_path)[0]
+        if Vertex.Distance(sv, vertexB) < tolerance: # Wire is reversed. Re-reverse it
+            if isinstance(longest_path, topologic.Edges):
+                longest_path = Edge.Reverse(longest_path)
+            if isinstance(longest_path, topologic.Wire):
+                longest_path = Wire.Reverse(longest_path)
         if not costKey == None:
             lengths.sort()
             d = Dictionary.ByKeysValues([costKey], [cost])
@@ -4874,7 +4880,7 @@ class Graph:
         return graph
 
     @staticmethod
-    def ShortestPath(graph, vertexA, vertexB, vertexKey="", edgeKey="Length"):
+    def ShortestPath(graph, vertexA, vertexB, vertexKey="", edgeKey="Length", tolerance=0.0001):
         """
         Returns the shortest path that connects the input vertices.
 
@@ -4890,13 +4896,19 @@ class Graph:
             The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
         edgeKey : string , optional
             The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. The default is "length".
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Wire
             The shortest path between the input vertices.
 
         """
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
         if not isinstance(graph, topologic.Graph):
             print("Graph.ShortestPath - Error: The input graph is not a valid graph. Returning None.")
             return None
@@ -4910,7 +4922,16 @@ class Graph:
             if edgeKey.lower() == "length":
                 edgeKey = "Length"
         try:
-            return graph.ShortestPath(vertexA, vertexB, vertexKey, edgeKey)
+            gsv = Graph.NearestVertex(graph, vertexA, tolerance)
+            gev = Graph.NearestVertex(graph, vertexB, tolerance)
+            shortest_path = graph.ShortestPath(gsv, gev, vertexKey, edgeKey)
+            sv = Topology.Vertices(shortest_path)[0]
+            if Vertex.Distance(sv, gev) < tolerance: # Path is reversed. Correct it.
+                if isinstance(shortest_path, topologic.Edges):
+                    shortest_path = Edge.Reverse(shortest_path)
+                if isinstance(shortest_path, topologic.Wire):
+                    shortest_path = Wire.Reverse(shortest_path)
+                return shortest_path
         except:
             return None
 
@@ -4936,62 +4957,49 @@ class Graph:
             The search time limit in seconds. The default is 10 seconds
         pathLimit: int , optional
             The number of found paths limit. The default is 10 paths.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Wire
+        list
             The list of shortest paths between the input vertices.
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
-        def nearestVertex(g, v, tolerance):
-            vertices = Graph.Vertices(g)
-            for aVertex in vertices:
-                d = Vertex.Distance(v, aVertex)
-                if d < tolerance:
-                    return aVertex
-            return None
         
-        def isUnique(paths, wire):
+        def isUnique(paths, path):
+            if path == None:
+                return False
             if len(paths) < 1:
                 return True
             for aPath in paths:
                 copyPath = topologic.Topology.DeepCopy(aPath)
-                dif = copyPath.Difference(wire, False)
+                dif = copyPath.Difference(path, False)
                 if dif == None:
                     return False
             return True
         
         if not isinstance(graph, topologic.Graph):
-            print("Graph.ShortestPaths - Error: The input graph is not a valid graph. Returning None.")
+            print("Graph.ShortestPaths - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
         if not isinstance(vertexA, topologic.Vertex):
-            print("Graph.ShortestPaths - Error: The input vertexA is not a valid vertex. Returning None.")
+            print("Graph.ShortestPaths - Error: The input vertexA parameter is not a valid vertex. Returning None.")
             return None
         if not isinstance(vertexB, topologic.Vertex):
-            print("Graph.ShortestPaths - Error: The input vertexB is not a valid vertex. Returning None.")
+            print("Graph.ShortestPaths - Error: The input vertexB parameter is not a valid vertex. Returning None.")
             return None
         shortestPaths = []
         end = time.time() + timeLimit
         while time.time() < end and len(shortestPaths) < pathLimit:
-            gsv = nearestVertex(graph, vertexA, tolerance)
-            gev = nearestVertex(graph, vertexB, tolerance)
             if (graph != None):
                 if edgeKey:
                     if edgeKey.lower() == "length":
                         edgeKey = "Length"
-                wire = graph.ShortestPath(gsv,gev,vertexKey,edgeKey) # Find the first shortest path
-                wireVertices = []
-                flag = False
-                try:
-                    wireVertices = Wire.Vertices(wire)
-                    flag = True
-                except:
-                    flag = False
-                if (flag):
-                    if isUnique(shortestPaths, wire):
-                        shortestPaths.append(wire)
+                shortest_path = Graph.ShortestPath(graph, vertexA, vertexB, vertexKey=vertexKey, edgeKey=edgeKey, tolerance=tolerance) # Find the first shortest path
+                if isUnique(shortestPaths, shortest_path):
+                    shortestPaths.append(shortest_path)
                 vertices = Graph.Vertices(graph)
                 random.shuffle(vertices)
                 edges = Graph.Edges(graph)
@@ -5399,11 +5407,6 @@ class Graph:
                             e = Topology.Boolean(e, boundaryFace, operation="intersect", tolerance=tolerance)
                             if isinstance(e, topologic.Edge):
                                 edges = addEdge(e, edges, viewpointsA, viewpointsB, 0.0001)
-                            elif isinstance(e, topologic.Cluster):
-                                tempEdges = Cluster.Edges(e)
-                                if tempEdges:
-                                    for tempEdge in tempEdges:
-                                        edges = addEdge(tempEdge, edges, viewpointsA, viewpointsB, 0.0001)
 
         except:
             for i in range(len(viewpointsA)):

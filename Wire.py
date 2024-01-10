@@ -2135,6 +2135,34 @@ class Wire(topologic.Wire):
         else:
             return wire
 
+    @staticmethod
+    def Reverse(wire):
+        """
+        Creates a wire that has the reverse direction of the input wire. The wire must be manifold.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+
+        Returns
+        -------
+        topologic.Wire
+            The reversed wire.
+
+        """
+        from topologicpy.Topology import Topology
+        if not isinstance(wire, topologic.Wire):
+            print("Wire.Reverse - Error: The input wire parameter is not a valid wire. Returning None")
+            return None
+        if not Wire.IsManifold(wire):
+            print("Wire.Reverse - Error: The input wire parameter is not a manifold wire. Returning None")
+            return None
+        vertices = Topology.Vertices(wire)
+        vertices.reverse()
+        return Wire.ByVertices(vertices, close=Wire.IsClosed(wire))
+
+    @staticmethod
     def Roof(face, degree=45, tolerance=0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
