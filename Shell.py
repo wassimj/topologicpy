@@ -526,14 +526,15 @@ class Shell(Topology):
             tempTriangleVertices.append(vertices[simplex[2]])
             tempFace = Face.ByWire(Wire.ByVertices(tempTriangleVertices), tolerance=tolerance)
             tempCentroid = Topology.Centroid(tempFace)
-            if Face.IsInternal(flatFace, tempCentroid):
-                faces.append(tempFace)
+            faces.append(tempFace)
 
         shell = Shell.ByFaces(faces, tolerance=tolerance)
         if shell == None:
-            print("Shell.Delaunay - WARNING: Could not create Shell. Returning a Cluster of Faces.")
             shell = Cluster.ByTopologies(faces)
+        
         if isinstance(face, topologic.Face):
+            edges = Topology.Edges(shell)
+            shell = Topology.Slice(flatFace, Cluster.ByTopologies(edges))
             # Get the internal boundaries of the face
             wires = Face.InternalBoundaries(flatFace)
             ibList = []

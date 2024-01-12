@@ -775,7 +775,7 @@ class Cluster(topologic.Cluster):
         if not isinstance(cells, list):
             print("Cluster.MergeCells - Error: The input cells parameter is not a valid list of cells. Returning None.")
             return None
-        cells = [cell for cell in cells if isinstance(cell, topologic.Cell)]
+        #cells = [cell for cell in cells if isinstance(cell, topologic.Cell)]
         if len(cells) < 1:
             print("Cluster.MergeCells - Error: The input cells parameter does not contain any valid cells. Returning None.")
             return None
