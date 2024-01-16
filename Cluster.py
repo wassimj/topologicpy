@@ -177,6 +177,191 @@ class Cluster(topologic.Cluster):
         _ = cluster.Cells(None, cells)
         return cells
 
+
+    @staticmethod
+    def DBSCAN(topologies, selectors=None, keys=["x", "y", "z"], epsilon: float = 0.5, minSamples: int = 2):
+        """
+        Clusters the input vertices based on the Density-Based Spatial Clustering of Applications with Noise (DBSCAN) method. See https://en.wikipedia.org/wiki/DBSCAN
+
+        Parameters
+        ----------
+        topologies : list
+            The input list of topologies to be clustered.
+        selectors : list , optional
+            If the list of topologies are not vertices then please provide a corresponding list of selectors (vertices) that represent the topologies for clustering. For example, these can be the centroids of the topologies.
+            If set to None, the list of topologies is expected to be a list of vertices. The default is None.
+        keys : list, optional
+            The keys in the embedded dictionaries in the topologies. If specified, the values at these keys will be added to the dimensions to be clustered. The values must be numeric. If you wish the x, y, z location to be included,
+            make sure the keys list includes "X", "Y", and/or "Z" (case insensitive). The default is ["x", "y", "z"]
+        epsilon : float , optional
+            The maximum radius around a data point within which other points are considered to be part of the same sense region (cluster). The default is 0.5. 
+        minSamples : int , optional
+            The minimum number of points required to form a dense region (cluster). The default is 2.
+
+        Returns
+        -------
+        list, list
+            The list of clusters and the list of vertices considered to be noise if any (otherwise returns None).
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        import numpy as np
+        from scipy.spatial.distance import pdist, squareform
+
+        def dbscan_3d_indices(data, eps, min_samples):
+            """
+            DBSCAN clustering algorithm for 3D points.
+
+            Parameters:
+            - data: NumPy array, input data points with X, Y, and Z coordinates.
+            - eps: float, maximum distance between two samples for one to be considered as in the neighborhood of the other.
+            - min_samples: int, the number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
+
+            Returns:
+            - clusters: List of lists, each list containing the indices of points in a cluster.
+            - noise: List of indices, indices of points labeled as noise.
+            """
+
+            # Compute pairwise distances
+            dists = squareform(pdist(data))
+
+            # Initialize labels and cluster ID
+            labels = np.full(data.shape[0], -1)
+            cluster_id = 0
+
+            # Iterate through each point
+            for i in range(data.shape[0]):
+                if labels[i] != -1:
+                    continue  # Skip already processed points
+
+                # Find neighbors within epsilon distance
+                neighbors = np.where(dists[i] < eps)[0]
+
+                if len(neighbors) < min_samples:
+                    # Label as noise
+                    labels[i] = -1
+                else:
+                    # Expand cluster
+                    cluster_id += 1
+                    expand_cluster_3d_indices(labels, dists, i, neighbors, cluster_id, eps, min_samples)
+
+            # Organize indices into clusters and noise
+            clusters = [list(np.where(labels == cid)[0]) for cid in range(1, cluster_id + 1)]
+            noise = list(np.where(labels == -1)[0])
+
+            return clusters, noise
+
+        def expand_cluster_3d_indices(labels, dists, point_index, neighbors, cluster_id, eps, min_samples):
+            """
+            Expand the cluster around a core point for 3D points.
+
+            Parameters:
+            - labels: NumPy array, cluster labels for each data point.
+            - dists: NumPy array, pairwise distances between data points.
+            - point_index: int, index of the core point.
+            - neighbors: NumPy array, indices of neighbors.
+            - cluster_id: int, current cluster ID.
+            - eps: float, maximum distance between two samples for one to be considered as in the neighborhood of the other.
+            - min_samples: int, the number of samples (or total weight) in a neighborhood for a point to be considered as a core point.
+            """
+            labels[point_index] = cluster_id
+
+            i = 0
+            while i < len(neighbors):
+                current_neighbor = neighbors[i]
+
+                if labels[current_neighbor] == -1:
+                    labels[current_neighbor] = cluster_id
+
+                    new_neighbors = np.where(dists[current_neighbor] < eps)[0]
+                    if len(new_neighbors) >= min_samples:
+                        neighbors = np.concatenate([neighbors, new_neighbors])
+
+                elif labels[current_neighbor] == 0:
+                    labels[current_neighbor] = cluster_id
+
+                i += 1
+        
+        if not isinstance(topologies, list):
+            print("Cluster.DBSCAN - Error: The input vertices parameter is not a valid list. Returning None.")
+            return None, None
+        topologyList = [t for t in topologies if isinstance(t, topologic.Topology)]
+        if len(topologyList) < 1:
+            print("Cluster.DBSCAN - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+            return None, None
+        if len(topologyList) < minSamples:
+            print("Cluster.DBSCAN - Error: The input minSamples parameter cannot be larger than the number of vertices. Returning None.")
+            return None, None
+        
+        if not isinstance(selectors, list):
+            check_vertices = [t for t in topologyList if not isinstance(t, topologic.Vertex)]
+            if len(check_vertices) > 0:
+                print("Cluster.DBSCAN - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a topologic.Vertex. Returning None.")
+                return None, None
+        else:
+            selectors = [s for s in selectors if isinstance(s, topologic.Vertex)]
+            if len(selectors) < 1:
+                check_vertices = [t for t in topologyList if not isinstance(t, topologic.Vertex)]
+                if len(check_vertices) > 0:
+                    print("Cluster.DBSCAN - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic.Vertex. Returning None.")
+                    return None, None
+            if not len(selectors) == len(topologyList):
+                print("Cluster.DBSCAN - Error: The input topologies and selectors parameters do not have the same length. Returning None.")
+                return None, None
+        if not isinstance(keys, list):
+            print("Cluster.DBSCAN - Error: The input keys parameter is not a valid list. Returning None.")
+            return None
+        
+
+        data = []
+        if selectors == None:
+            for t in topologyList:
+                elements = []
+                if keys:
+                    d = Topology.Dictionary(t)
+                    for key in keys:
+                        if key.lower() == "x":
+                            value = Vertex.X(t)
+                        elif key.lower() == "y":
+                            value = Vertex.Y(t)
+                        elif key.lower() == "z":
+                            value = Vertex.Z(t)
+                        else:
+                            value = Dictionary.ValueAtKey(d, key)
+                        if value != None:
+                            elements.append(value)
+                data.append(elements)
+        else:
+            for i, s in enumerate(selectors):
+                elements = []
+                if keys:
+                    d = Topology.Dictionary(topologyList[i])
+                    for key in keys:
+                        if key.lower() == "x":
+                            value = Vertex.X(s)
+                        elif key.lower() == "y":
+                            value = Vertex.Y(s)
+                        elif key.lower() == "z":
+                            value = Vertex.Z(s)
+                        else:
+                            value = Dictionary.ValueAtKey(d, key)
+                        if value != None:
+                            elements.append(value)
+                data.append(elements)
+        #coords = [[Vertex.X(v), Vertex.Y(v), Vertex.Z(v)] for v in vertexList]
+        clusters, noise = dbscan_3d_indices(np.array(data), epsilon, minSamples)
+        tp_clusters = []
+        for cluster in clusters:
+            tp_clusters.append(Cluster.ByTopologies([topologyList[i] for i in cluster]))
+        vert_group = []
+        tp_noise = None
+        if len(noise) > 0:
+            tp_noise = Cluster.ByTopologies([topologyList[i] for i in noise])
+        return tp_clusters, tp_noise
+
     @staticmethod
     def Edges(cluster: topologic.Cluster) -> list:
         """
@@ -626,15 +811,16 @@ class Cluster(topologic.Cluster):
             if len(check_vertices) > 0:
                 print("Cluster.K_Means - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a topologic.Vertex. Returning None.")
                 return None
-        selectors = [s for s in selectors if isinstance(s, topologic.Vertex)]
-        if len(selectors) < 1:
-            check_vertices = [v for v in topologies if not isinstance(v, topologic.Vertex)]
-            if len(check_vertices) > 0:
-                print("Cluster.K_Means - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic.Vertex. Returning None.")
+        else:
+            selectors = [s for s in selectors if isinstance(s, topologic.Vertex)]
+            if len(selectors) < 1:
+                check_vertices = [v for v in topologies if not isinstance(v, topologic.Vertex)]
+                if len(check_vertices) > 0:
+                    print("Cluster.K_Means - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic.Vertex. Returning None.")
+                    return None
+            if not len(selectors) == len(topologies):
+                print("Cluster.K_Means - Error: The input topologies and selectors parameters do not have the same length. Returning None.")
                 return None
-        if not len(selectors) == len(topologies):
-            print("Cluster.K_Means - Error: The input topologies and selectors parameters do not have the same length. Returning None.")
-            return None
         if not isinstance(keys, list):
             print("Cluster.K_Means - Error: The input keys parameter is not a valid list. Returning None.")
             return None
