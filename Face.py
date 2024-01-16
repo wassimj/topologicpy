@@ -1877,20 +1877,21 @@ class Face(topologic.Face):
         vertices = Topology.Vertices(face)
         if len(vertices) == 3: # Already a triangle
             return [face]
-        #flatFace = Face.Flatten(face)
+        flatFace = Face.Flatten(face)
         #if not isinstance(flatFace, topologic.Face):
             #Topology.ExportToBREP(face, "C:/Users/sarwj/Downloads/troubleFace.brep")
         #print("Tri 2", flatFace)
 
-        #world_origin = Vertex.ByCoordinates(0,0,0)
+        world_origin = Vertex.ByCoordinates(0,0,0)
         # Retrieve the needed transformations
-        #dictionary = Topology.Dictionary(flatFace)
-        #xTran = Dictionary.ValueAtKey(dictionary,"x")
-        #yTran = Dictionary.ValueAtKey(dictionary,"y")
-        #zTran = Dictionary.ValueAtKey(dictionary,"z")
-        #phi = Dictionary.ValueAtKey(dictionary,"phi")
-        #theta = Dictionary.ValueAtKey(dictionary,"theta")
+        dictionary = Topology.Dictionary(flatFace)
+        xTran = Dictionary.ValueAtKey(dictionary,"x")
+        yTran = Dictionary.ValueAtKey(dictionary,"y")
+        zTran = Dictionary.ValueAtKey(dictionary,"z")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
     
+        '''
         vertices = Topology.Vertices(face)
         #print("Number of vertices:", len(vertices))
         shell = Shell.Delaunay(vertices=vertices, face=face)
@@ -1903,28 +1904,29 @@ class Face(topologic.Face):
                 #faceTriangles.append(shell_face)
 
         '''
+        shell_faces = []
         for i in range(0,5,1):
             try:
-                _ = topologic.FaceUtility.Triangulate(flatFace, float(i)*0.1, faceTriangles)
+                _ = topologic.FaceUtility.Triangulate(flatFace, float(i)*0.1, shell_faces)
                 break
             except:
                 continue
-        '''
+        
         if len(shell_faces) < 1:
             return []
-        #finalFaces = []
-        #for f in faceTriangles:
-            #f = Topology.Rotate(f, origin=world_origin, x=0, y=1, z=0, degree=theta)
-            #f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
-            #f = Topology.Translate(f, xTran, yTran, zTran)
-            #if Face.Angle(face, f) > 90:
-               # wire = Face.ExternalBoundary(f)
-                #wire = Wire.Invert(wire)
-               # f = topologic.Face.ByExternalBoundary(wire)
-               # finalFaces.append(f)
-            #else:
-                #finalFaces.append(f)
-        return shell_faces
+        finalFaces = []
+        for f in shell_faces:
+            f = Topology.Rotate(f, origin=world_origin, x=0, y=1, z=0, degree=theta)
+            f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
+            f = Topology.Translate(f, xTran, yTran, zTran)
+            if Face.Angle(face, f) > 90:
+                wire = Face.ExternalBoundary(f)
+                wire = Wire.Invert(wire)
+                f = topologic.Face.ByExternalBoundary(wire)
+                finalFaces.append(f)
+            else:
+                finalFaces.append(f)
+        return finalFaces
 
     @staticmethod
     def TrimByWire(face: topologic.Face, wire: topologic.Wire, reverse: bool = False) -> topologic.Face:
