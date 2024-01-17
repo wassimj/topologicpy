@@ -786,7 +786,10 @@ class Plotly:
         data = []
         
         if showVertices:
-            tp_vertices = Topology.Vertices(topology)
+            if topology.Type() == topologic.Vertex.Type():
+                tp_vertices = [topology]
+            else:
+                tp_vertices = Topology.Vertices(topology)
             if not (tp_vertices == None or tp_vertices == []):
                 vertices = []
                 v_dictionaries = []
