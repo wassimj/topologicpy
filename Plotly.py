@@ -812,7 +812,10 @@ class Plotly:
             intensities = None
             
         if showEdges and topology.Type() > topologic.Vertex.Type():
-            tp_edges = Topology.Edges(topology)
+            if topology.Type() == topologic.Edge.Type():
+                tp_edges = [topology]
+            else:
+                tp_edges = Topology.Edges(topology)
             if not (tp_edges == None or tp_edges == []):
                 e_dictionaries = []
                 if edgeLabelKey or edgeGroupKey:

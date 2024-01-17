@@ -664,7 +664,7 @@ class Shell(Topology):
             return None
         faces = Shell.Faces(shell)
         for f in faces:
-            if Face.IsInternal(fface=f, vertex=vertex, tolerance=tolerance):
+            if Face.IsInternal(face=f, vertex=vertex, tolerance=tolerance):
                 return True
         return False
     

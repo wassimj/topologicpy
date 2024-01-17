@@ -1306,7 +1306,7 @@ class Wire(topologic.Wire):
         return ev
     
     @staticmethod
-    def Interpolate(wires: list, n: int = 5, outputType: str = "default", replication: str = "default", tolerance: float = 0.0001) -> topologic.Topology:
+    def Interpolate(wires: list, n: int = 5, outputType: str = "default", mapping: str = "default", tolerance: float = 0.0001) -> topologic.Topology:
         """
         Creates *n* number of wires that interpolate between wireA and wireB.
 
@@ -1323,8 +1323,8 @@ class Wire(topologic.Wire):
                 - "Default" or "Contours" (wires are not connected)
                 - "Raster or "Zigzag" or "Toolpath" (the wire ends are connected to create a continous path)
                 - "Grid" (the wire ends are connected to create a grid). 
-        replication : str , optional
-            The desired type of replication for wires with different number of vertices. It is case insensitive. The default is "default". The options are:
+        mapping : str , optional
+            The desired type of mapping for wires with different number of vertices. It is case insensitive. The default is "default". The options are:
                 - "Default" or "Repeat" which repeats the last vertex of the wire with the least number of vertices
                 - "Nearest" which maps the vertices of one wire to the nearest vertex of the next wire creating a list of equal number of vertices.
         tolerance : float , optional
@@ -1351,36 +1351,31 @@ class Wire(topologic.Wire):
         if outputType == "raster" or outputType == "zigzag" or outputType == "toolpath":
             outputType = "zigzag"
         
-        replication = replication.lower()
-        if replication not in ["default", "nearest", "repeat"]:
+        mapping = mapping.lower()
+        if mapping not in ["default", "nearest", "repeat"]:
+            print("Wire.Interpolate - Error: The mapping input parameter is not recognized. Returning None.")
             return None
         
         def nearestVertex(v, vertices):
             distances = [Vertex.Distance(v, vertex) for vertex in vertices]
             return vertices[distances.index(sorted(distances)[0])]
         
-        def replicate(vertices, replication="default"):
+        def replicate(vertices, mapping="default"):
             vertices = Helper.Repeat(vertices)
             finalList = vertices
-            if replication == "nearest":
+            if mapping == "nearest":
                 finalList = [vertices[0]]
                 for i in range(len(vertices)-1):
                     loopA = vertices[i]
                     loopB = vertices[i+1]
                     nearestVertices = []
                     for j in range(len(loopA)):
-                        #clusB = Cluster.ByTopologies(loopB)
-                        #nv = Vertex.NearestVertex(loopA[j], clusB, useKDTree=False)
                         nv = nearestVertex(loopA[j], loopB)
                         nearestVertices.append(nv)
                     finalList.append(nearestVertices)
             return finalList
         
-        def process(verticesA, verticesB, n=5, outputType="contours", replication="repeat"):
-            #if outputType == "zigzag" and Wire.IsClosed(wireA):
-                #verticesA.append(verticesA[0])
-            #verticesA, verticesB = replicate(verticesA=verticesA, verticesB=verticesB, replication=replication)
-            
+        def process(verticesA, verticesB, n=5):
             contours = [verticesA]
             for i in range(1, n+1):
                 u = float(i)/float(n+1)
@@ -1397,14 +1392,14 @@ class Wire(topologic.Wire):
         vertices = []
         for wire in wires:
             vertices.append(Topology.SubTopologies(wire, subTopologyType="vertex"))
-        vertices = replicate(vertices, replication=replication)
+        vertices = replicate(vertices, mapping=mapping)
         contours = []
         
         finalWires = []
         for i in range(len(vertices)-1):
             verticesA = vertices[i]
             verticesB = vertices[i+1]
-            contour = process(verticesA=verticesA, verticesB=verticesB, n=n, outputType=outputType, replication=replication)
+            contour = process(verticesA=verticesA, verticesB=verticesB, n=n)
             contours += contour
             for c in contour:
                 finalWires.append(Wire.ByVertices(c, Wire.IsClosed(wires[i])))
