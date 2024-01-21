@@ -8,35 +8,77 @@ import random
 import time
 import sys
 import subprocess
-try:
-    from tqdm.auto import tqdm
-except:
-    call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-    subprocess.run(call)
-    try:
-        from tqdm.auto import tqdm
-    except:
-        print("Graph - Error: Could not import tqdm")
+import os
 
 try:
     import numpy as np
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'numpy', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Graph - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
     try:
         import numpy as np
+        print("Graph - numpy library installed correctly.")
     except:
-        print("Graph - Error: Could not import numpy")
+        raise Exception("Graph - Error: Could not import numpy.")
+
+try:
+    import pandas as pd
+except:
+    print("Graph - Installing required pandas library.")
+    try:
+        os.system("pip install pandas")
+    except:
+        os.system("pip install pandas --user")
+    try:
+        import pandas as pd
+        print("Graph - pandas library installed correctly.")
+    except:
+        raise Exception("Graph - Error: Could not import pandas.")
+
+try:
+    from tqdm.auto import tqdm
+except:
+    print("Graph - Installing required tqdm library.")
+    try:
+        os.system("pip install tqdm")
+    except:
+        os.system("pip install tqdm --user")
+    try:
+        from tqdm.auto import tqdm
+        print("Graph - tqdm library installed correctly.")
+    except:
+        raise Exception("Graph - Error: Could not import tqdm.")
 
 try:
     from pyvis.network import Network
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'pyvis', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Graph - Installing required pyvis library.")
+    try:
+        os.system("pip install pyvis")
+    except:
+        os.system("pip install pyvis --user")
     try:
         from pyvis.network import Network
+        print("Graph - pyvis library installed correctly.")
     except:
-        print("Graph - Error: Could not import pyvis")
+        raise Exception("Graph - Error: Could not import pyvis")
+
+try:
+    import networkx as nx
+except:
+    print("Graph - Installing required networkx library.")
+    try:
+        os.system("pip install networkx")
+    except:
+        os.system("pip install networkx --user")
+    try:
+        import networkx as nx
+        print("Graph - networkx library installed correctly.")
+    except:
+        raise Exception("Graph - Error: Could not import networkx.")
 
 class _Tree:
     def __init__(self, node="", *children):
@@ -472,16 +514,6 @@ class Graph:
                         returnList[index] = returnList[index]+1
             return returnList
 
-        try:
-            from tqdm.auto import tqdm
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from tqdm.auto import tqdm
-            except:
-                print("Graph.BetweenessCentrality - Error: Could not import tqdm")
-
         if not isinstance(graph, topologic.Graph):
             print("Graph.BetweenessCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
@@ -551,7 +583,7 @@ class Graph:
             The created graph.
         
         """
-        import pandas as pd
+
         # Read the adjacency matrix from CSV file using pandas
         adjacency_matrix_df = pd.read_csv(path, header=None)
         
@@ -682,7 +714,6 @@ class Graph:
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        import pandas as pd
         import os
         from os.path import exists, isdir
         import yaml
@@ -2791,18 +2822,6 @@ class Graph:
             The closeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
 
         """
-        import sys
-        import subprocess
-
-        try:
-            from tqdm.auto import tqdm
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from tqdm.auto import tqdm
-            except:
-                print("DGL - Error: Could not import tqdm")
 
         if not isinstance(graph, topologic.Graph):
             print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
@@ -3188,7 +3207,6 @@ class Graph:
         ----------
         path : str
             The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
-        import pandas as pd
 
         Returns
         -------
@@ -3196,7 +3214,6 @@ class Graph:
             True if the graph has been successfully exported. False otherwise.
 
         """
-        import pandas as pd
         
         # Convert the adjacency matrix (nested list) to a DataFrame
         adjacency_matrix_df = pd.DataFrame(adjacencyMatrix)
@@ -3327,7 +3344,6 @@ class Graph:
         import os
         import math
         import random
-        import pandas as pd
         import os
         from os.path import exists
         
@@ -4517,16 +4533,6 @@ class Graph:
         if not isinstance(graph, topologic.Graph):
             print("Graph.NetworkXGraph - Error: The input graph is not a valid graph. Returning None.")
             return None
-        try:
-            import networkx as nx
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'networkx', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                import networkx as nx
-            except:
-                print("Graph.NetworkXGraph - ERROR: Could not import networkx. Returning None.")
-                return None
 
         nxGraph = nx.Graph()
         vertices = Graph.Vertices(graph)
@@ -5342,17 +5348,6 @@ class Graph:
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        import sys
-        import subprocess
-        try:
-            from tqdm.auto import tqdm
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from tqdm.auto import tqdm
-            except:
-                print("Graph.VisibilityGraph - Error: Could not import tqdm")
         
         def addEdge(edge, edges, viewpointsA, viewpointsB, tolerance=0.0001):
             # Add edge to edges only if its end points are in vertices

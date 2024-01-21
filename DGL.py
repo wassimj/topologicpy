@@ -1,33 +1,36 @@
-import topologicpy
-import topologic
-from topologicpy.Dictionary import Dictionary
 import os
 import random
-import time
-from datetime import datetime
 import copy
-import sys
-import subprocess
 os.environ["DGLBACKEND"] = "pytorch"
 
 try:
     import numpy as np
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'numpy', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("DGL - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
     try:
         import numpy as np
+        print("DGL - numpy library installed correctly.")
     except:
-        print("DGL - Error: Could not import numpy.")
+        raise Exception("DGL - Error: Could not import numpy.")
+
 try:
     import pandas as pd
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'pandas', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("DGL - Installing required pandas library.")
+    try:
+        os.system("pip install pandas")
+    except:
+        os.system("pip install pandas --user")
     try:
         import pandas as pd
+        print("DGL - pandas library installed correctly.")
     except:
-        print("DGL - Error: Could not import pandas")
+        raise Exception("DGL - Error: Could not import pandas.")
+
 try:
     import torch
     import torch.nn as nn
@@ -35,16 +38,21 @@ try:
     from torch.utils.data.sampler import SubsetRandomSampler
     from torch.utils.data import DataLoader, ConcatDataset
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'torch', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("DGL - Installing required torch library.")
+    try:
+        os.system("pip install torch")
+    except:
+        os.system("pip install torch --user")
     try:
         import torch
         import torch.nn as nn
         import torch.nn.functional as F
         from torch.utils.data.sampler import SubsetRandomSampler
         from torch.utils.data import DataLoader, ConcatDataset
+        print("DGL - torch library installed correctly.")
     except:
-        print("DGL - Error: Could not import torch")
+        raise Exception("DGL - Error: Could not import torch.")
+
 try:
     import dgl
     from dgl.data import DGLDataset
@@ -52,37 +60,54 @@ try:
     from dgl.nn import GINConv, GraphConv, SAGEConv, TAGConv
     from dgl import save_graphs, load_graphs
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'dgl', 'dglgo', '-f', 'https://data.dgl.ai/wheels/repo.html', '--upgrade', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("DGL - Installing required dgl library.")
+    try:
+        os.system("pip install dgl -f https://data.dgl.ai/wheels/repo.html")
+        os.system("pip install dglgo -f https://data.dgl.ai/wheels-test/repo.html")
+    except:
+        os.system("pip install dgl -f https://data.dgl.ai/wheels/repo.html --user")
+        os.system("pip install dglgo -f https://data.dgl.ai/wheels-test/repo.html --user")
     try:
         import dgl
         from dgl.data import DGLDataset
-        from dgl.nn import GraphConv
+        from dgl.dataloading import GraphDataLoader
+        from dgl.nn import GINConv, GraphConv, SAGEConv, TAGConv
         from dgl import save_graphs, load_graphs
+        print("DGL - dgl library installed correctly.")
     except:
-        print("DGL - Error: Could not import dgl")
+        raise Exception("DGL - Error: Could not import dgl. The installation of the correct version of the dgl library is not trivial and is highly dependent on your hardward and software configuration. Please consult the dgl installation instructions.")
+
 try:
     import sklearn
     from sklearn.model_selection import KFold
     from sklearn.metrics import accuracy_score
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'scikit-learn', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("DGL - Installing required scikit-learn (sklearn) library.")
+    try:
+        os.system("pip install scikit-learn")
+    except:
+        os.system("pip install scikit-learn --user")
     try:
         import sklearn
         from sklearn.model_selection import KFold
         from sklearn.metrics import accuracy_score
+        print("DGL - scikit-learn (sklearn) library installed correctly.")
     except:
-        print("DGL - Error: Could not import sklearn")
+        raise Exception("DGL - Error: Could not import scikit-learn (sklearn).")
+
 try:
     from tqdm.auto import tqdm
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("DGL - Installing required tqdm library.")
+    try:
+        os.system("pip install tqdm")
+    except:
+        os.system("pip install tqdm --user")
     try:
         from tqdm.auto import tqdm
+        print("DGL - tqdm library installed correctly.")
     except:
-        print("DGL - Error: Could not import tqdm")
+        raise Exception("DGL - Error: Could not import tqdm.")
 
 class _Dataset(DGLDataset):
     def __init__(self, graphs, labels, node_attr_key, edge_attr_key):

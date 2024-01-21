@@ -1,5 +1,35 @@
 import topologicpy
 import topologic
+import os
+
+try:
+    import numpy as np
+except:
+    print("Cluster - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy as np
+        print("Cluster - numpy library installed correctly.")
+    except:
+        raise Exception("Cluster - Error: Could not import numpy.")
+
+try:
+    from scipy.spatial.distance import pdist, squareform
+except:
+    print("Cluster - Installing required scipy library.")
+    try:
+        os.system("pip install scipy")
+    except:
+        os.system("pip install scipy --user")
+    try:
+        from scipy.spatial.distance import pdist, squareform
+        print("Cluster - scipy library installed correctly.")
+    except:
+        raise Exception("Cluster - Error: Could not import scipy.")
+
 class Cluster(topologic.Cluster):
     @staticmethod
     def ByFormula(formula, xRange=None, yRange=None, xString="X", yString="Y"):

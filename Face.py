@@ -3,6 +3,21 @@ import topologic
 from topologicpy.Vector import Vector
 from topologicpy.Wire import Wire
 import math
+import os
+
+try:
+    import numpy as np
+except:
+    print("Face - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy as np
+        print("Face - numpy library installed correctly.")
+    except:
+        raise Exception("Face - Error: Could not import numpy.")
 
 class Face(topologic.Face):
     @staticmethod
@@ -1644,7 +1659,6 @@ class Face(topologic.Face):
 
     @staticmethod
     def RectangleByPlaneEquation(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, placement: str = "center", equation: dict = None, tolerance: float = 0.0001) -> topologic.Face:
-        import numpy as np
         from topologicpy.Vertex import Vertex
         # Extract coefficients of the plane equation
         a = equation['a']

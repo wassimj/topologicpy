@@ -6,7 +6,6 @@ from topologicpy.Cluster import Cluster
 from topologicpy.Topology import Topology
 import math
 import itertools
-import numpy as np
 
 class Wire(topologic.Wire):
     @staticmethod

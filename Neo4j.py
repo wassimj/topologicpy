@@ -1,21 +1,24 @@
 import topologic
 import time
 import random
-import sys, subprocess
+import os
 
 try:
     import py2neo
     from py2neo import NodeMatcher,RelationshipMatcher
     from py2neo.data import spatial as sp
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'py2neo', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Neo4j - Installing required py2neo library.")
+    try:
+        os.system("pip install py2neo")
+    except:
+        os.system("pip install py2neo --user")
     try:
         import py2neo
         from py2neo import NodeMatcher,RelationshipMatcher
         from py2neo.data import spatial as sp
     except:
-        print("Neo4j - Error: Could not import pandas")
+        raise Exception("Neo4j - Error: Could not import py2neo")
 
 class Neo4j:
 

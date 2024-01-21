@@ -1,6 +1,20 @@
 import topologic
-import warnings
 import math
+import os
+
+try:
+    import numpy as np
+except:
+    print("CellComplex - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy as np
+        print("CellComplex - numpy library installed correctly.")
+    except:
+        raise Exception("CellComplex - Error: Could not import numpy.")
 
 class CellComplex(topologic.CellComplex):
     @staticmethod

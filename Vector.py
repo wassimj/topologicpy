@@ -1,7 +1,23 @@
-import numpy as np
-import numpy.linalg as la
-from numpy import pi, arctan2, rad2deg
 import math
+import os
+
+try:
+    import numpy as np
+    import numpy.linalg as la
+    from numpy import pi, arctan2, rad2deg
+except:
+    print("Vector - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy as np
+        import numpy.linalg as la
+        from numpy import pi, arctan2, rad2deg
+        print("Vector - numpy library installed successfully.")
+    except:
+        raise Exception("Vector - Error: Could not import numpy.")
 
 class Vector(list):
     @staticmethod

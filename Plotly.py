@@ -1,7 +1,6 @@
 import topologicpy
 import topologic
-import plotly
-import plotly.graph_objects as go
+
 from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
 from topologicpy.Wire import Wire
@@ -10,7 +9,48 @@ from topologicpy.Cell import Cell
 from topologicpy.CellComplex import CellComplex
 from topologicpy.Cluster import Cluster
 from topologicpy.Topology import Topology
-import numpy as np
+import os
+
+try:
+    import numpy
+except:
+    print("Plotly - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy
+    except:
+        raise Exception("Plotly - Error: Could not import numpy.")
+
+try:
+    import pandas as pd
+except:
+    print("Plotly - Installing required pandas library.")
+    try:
+        os.system("pip install pandas")
+    except:
+        os.system("pip install pandas --user")
+    try:
+        import pandas as pd
+    except:
+        raise Exception("Plotly - Error: Could not import pandas.")
+
+try:
+    import plotly
+    import plotly.graph_objects as go
+except:
+    print("Plotly - Installing required plotly library.")
+    try:
+        os.system("pip install plotly")
+    except:
+        os.system("pip install plotly --user")
+    try:
+        import plotly
+        import plotly.graph_objects as go
+    except:
+        raise Exception("Plotly - Error: Could not import plotly.")
 
 class Plotly:
     @staticmethod
@@ -168,7 +208,6 @@ class Plotly:
             A pandas dataFrame
 
         """
-        import pandas as pd
 
         if isinstance(data[labels[0]][0], int):
             xAxis_list = list(range(1,data[labels[0]][0]+1))
@@ -837,7 +876,6 @@ class Plotly:
                 tp_faces = Topology.Faces(topology)
             if not(tp_faces == None or tp_faces == []):
                 # rebuild faces to remove any degenerate faces
-                p = Topology.ByBREPPath("C:/Users/sarwj/Downloads/0119/aCellComplex.brep")
                 new_faces = []
                 for i, f in enumerate(tp_faces):
                     eb = Face.ExternalBoundary(f)
@@ -1382,7 +1420,7 @@ class Plotly:
         names : list
             The input list of names.
         """
-        import pandas as pd
+
         import plotly.express as px
         dlist = list(map(list, zip(*data)))
         df = pd.DataFrame(dlist, columns=data['names'])

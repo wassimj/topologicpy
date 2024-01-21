@@ -3,17 +3,33 @@ import topologicpy
 import topologic
 from topologicpy.Topology import Topology
 import math
-import sys
-import subprocess
+import os
 try:
     from tqdm.auto import tqdm
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Shell - Installing required tqdm library.")
+    try:
+        os.system("pip install tqdm")
+    except:
+        os.system("pip install tqdm --user")
     try:
         from tqdm.auto import tqdm
+        print("Shell - tqdm library installed correctly.")
     except:
-        print("Shell - Error: Could not import tqdm")
+        raise Exception("Shell - Error: Could not import tqdm.")
+
+try:
+    from scipy.spatial import Delaunay
+except:
+    print("Shell - Install required scipy library.")
+    try:
+        os.system("pip install scipy")
+    except:
+        os.system("pip install scipy --user")
+    try:
+        from scipy.spatial import Delaunay
+    except:
+        raise Exception("Shell - Error: Could not import scipy.")
 
 class Shell(Topology):
     @staticmethod
@@ -462,19 +478,7 @@ class Shell(Topology):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from random import sample
-        import sys
-        import subprocess
-
-        try:
-            from scipy.spatial import Delaunay
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'scipy', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from scipy.spatial import Delaunay
-            except:
-                print("Shell.Delaunay - ERROR: Could not import scipy. Returning None.")
-                return None
+        
         
         if not isinstance(vertices, list):
             return None

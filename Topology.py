@@ -1,5 +1,3 @@
-#from base64 import b16encode
-#from tkinter import N
 import topologicpy
 import topologic
 from topologicpy.Aperture import Aperture
@@ -8,13 +6,58 @@ from topologicpy.Dictionary import Dictionary
 import uuid
 import json
 import os
-import numpy as np
-from numpy import arctan, pi, signbit
-from numpy.linalg import norm
-import math
 
+import math
 from collections import namedtuple
 from multiprocessing import Process, Queue
+
+try:
+    import numpy as np
+    from numpy import arctan, pi, signbit
+    from numpy.linalg import norm
+except:
+    print("Topology - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy as np
+        from numpy import arctan, pi, signbit
+        from numpy.linalg import norm
+        print("Topology - numpy library installed successfully.")
+    except:
+        raise Exception("Topology - Error: Could not import numpy.")
+
+try:
+    import ifcopenshell
+    import ifcopenshell.geom
+except:
+    print("Topology - Installing required ifcopenshell library.")
+    try:
+        os.system("pip install ifcopenshell")
+    except:
+        os.system("pip install ifcopenshell --user")
+    try:
+        import ifcopenshell
+        import ifcopenshell.geom
+        print("Topology - ifcopenshell library installed successfully.")
+    except:
+        raise Exception("Topology - Error: Could not import ifcopenshell.")
+
+try:
+    from scipy.spatial import ConvexHull
+except:
+    print("Topology - Installing required scipy library.")
+    try:
+        os.system("pip install scipy")
+    except:
+        os.system("pip install scipy --user")
+    try:
+        from scipy.spatial import ConvexHull
+        print("Topology - scipy library installed successfully.")
+    except:
+        raise Exception ("Topology - Error: Could not import scipy.")
 
 QueueItem = namedtuple('QueueItem', ['ID', 'sinkKeys', 'sinkValues'])
 SinkItem = namedtuple('SinkItem', ['ID', 'sink_str'])
@@ -2719,20 +2762,7 @@ class Topology():
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
-        from topologicpy.Cluster import Cluster
-        import sys
-        import subprocess
-
-        try:
-            from scipy.spatial import ConvexHull
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'scipy', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from scipy.spatial import ConvexHull
-            except:
-                print("Topology.ConvexHull - Error: Could not import scipy. Returning None.")
-                return None
+        from topologicpy.Cluster import Cluster        
         
         def convexHull3D(item, tolerance, option):
             if item:
