@@ -5015,7 +5015,7 @@ class Graph:
     @staticmethod
     def Show(graph, vertexColor="black", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, showVertexLegend=False, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, showEdgeLegend=False, colorScale='viridis', renderer="notebook",
              width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0,
-             camera=None, target=None, up=None, tolerance=0.0001):
+             camera=[-1.25, -1.25, 1.25], center=[0, 0, 0], up=[0, 0, 1], projection="perspective", tolerance=0.0001):
         """
         Shows the graph using Plotly.
 
@@ -5094,11 +5094,14 @@ class Graph:
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera. The default is [0,0,0].
-        target : list , optional
-            The desired camera target. The default is [0,0,0].
+            The desired location of the camera). The default is [-1.25,-1.25,1.25].
+        center : list , optional
+            The desired center (camera target). The default is [0,0,0].
         up : list , optional
             The desired up vector. The default is [0,0,1].
+        projection : str , optional
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
+
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -5116,7 +5119,7 @@ class Graph:
         data= Plotly.DataByGraph(graph, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLegend=showEdgeLegend, colorScale=colorScale)
         fig = Plotly.FigureByData(data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor,
                                   marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom, tolerance=tolerance)
-        Plotly.Show(fig, renderer=renderer, camera=camera, target=target, up=up)
+        Plotly.Show(fig, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
 
     @staticmethod
     def Size(graph):

@@ -5439,7 +5439,7 @@ class Topology():
              width=950, height=500,
              xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)',
              marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[-1.25, -1.25, 1.25],
-             target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", showScale=False,
+             center=[0, 0, 0], up=[0, 0, 1], projection="perspective", renderer="notebook", showScale=False,
              
              cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
              cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=6, tolerance=0.0001):
@@ -5570,11 +5570,13 @@ class Topology():
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera). The default is [0,0,0].
+            The desired location of the camera). The default is [-1.25,-1.25,1.25].
         center : list , optional
             The desired center (camera target). The default is [0,0,0].
         up : list , optional
             The desired up vector. The default is [0,0,1].
+        projection : str , optional
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
         renderer : str , optional
             The desired renderer. See Plotly.Renderers(). The default is "notebook".
         intensityKey : str , optional
@@ -5613,11 +5615,14 @@ class Topology():
         from topologicpy.Cluster import Cluster
         from topologicpy.Plotly import Plotly
         from topologicpy.Helper import Helper
+        from topologicpy.Graph import Graph
         
         if isinstance(topologies, tuple):
             topologies = Helper.Flatten(list(topologies))
         if isinstance(topologies, list):
             new_topologies = [t for t in topologies if isinstance(t, topologic.Topology)]
+            graphs = [Graph.Topology(g) for g in topologies if isinstance(g, topologic.Graph)]
+            new_topologies += graphs
         if len(new_topologies) == 0:
             print("Topology.Show - Error: the input topologies parameter does not contain any valid topology. Returning None.")
             return None
@@ -5653,7 +5658,7 @@ class Topology():
                                      tolerance=tolerance)
         if showScale:
             figure = Plotly.AddColorBar(figure, values=cbValues, nTicks=cbTicks, xPosition=cbX, width=cbWidth, outlineWidth=cbOutlineWidth, title=cbTitle, subTitle=cbSubTitle, units=cbUnits, colorScale=colorScale, mantissa=mantissa)
-        Plotly.Show(figure=figure, renderer=renderer, camera=camera, target=target, up=up)
+        Plotly.Show(figure=figure, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
 
     @staticmethod
     def SortBySelectors(topologies, selectors, exclusive=False, tolerance=0.0001):

@@ -40,6 +40,7 @@ except:
 try:
     import plotly
     import plotly.graph_objects as go
+    import plotly.offline as ofl
 except:
     print("Plotly - Installing required plotly library.")
     try:
@@ -49,6 +50,7 @@ except:
     try:
         import plotly
         import plotly.graph_objects as go
+        import plotly.offline as ofl
     except:
         raise Exception("Plotly - Error: Could not import plotly.")
 
@@ -1450,8 +1452,7 @@ class Plotly:
              
              width=950, height=500,
              xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)',
-             marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25],
-             target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", showScale=False,
+             marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, showScale=False,
              
              cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
              cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=6, tolerance=0.0001):
@@ -1582,7 +1583,7 @@ class Plotly:
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera). The default is [0,0,0].
+            The desired location of the camera). The default is [-1.25,-1.25,1.25].
         center : list , optional
             The desired center (camera target). The default is [0,0,0].
         up : list , optional
@@ -1831,7 +1832,7 @@ class Plotly:
         return True
     
     @staticmethod
-    def SetCamera(figure, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1]):
+    def SetCamera(figure, camera=[-1.25, -1.25, 1.25], center=[0, 0, 0], up=[0, 0, 1], projection="perspective"):
         """
         Sets the camera for the input figure.
 
@@ -1840,11 +1841,13 @@ class Plotly:
         figure : plotly.graph_objs._figure.Figure
             The input plotly figure.
         camera : list , optional
-            The desired location of the camera. The default is [0,0,0].
-        target : list , optional
-            The desired camera target. The default is [0,0,0].
+            The desired location of the camera. The default is [-1.25,-1.25,1.25].
+        center : list , optional
+            The desired center (camera target). The default is [0,0,0].
         up : list , optional
             The desired up vector. The default is [0,0,1].
+        projection : str , optional
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
         
         Returns
         -------
@@ -1853,21 +1856,27 @@ class Plotly:
 
         """
         if not isinstance(camera, list):
-            camera = [1.25, 1.25, 1.25]
-        if not isinstance(target, list):
-            target = [0,0,0]
+            camera = [-1.25, -1.25, 1.25]
+        if not isinstance(center, list):
+            center = [0,0,0]
         if not isinstance(up, list):
             up = [0,0,1]
+        projection = projection.lower()
+        if projection in "orthographic":
+            projection = "orthographic"
+        else:
+            projection = "perspective"
         scene_camera = dict(
         up=dict(x=up[0], y=up[1], z=up[2]),
         eye=dict(x=camera[0], y=camera[1], z=camera[2]),
-        center=dict(x=target[0], y=target[1], z=target[2])
+        center=dict(x=center[0], y=center[1], z=center[2]),
+        projection=dict(type=projection)
         )
         figure.update_layout(scene_camera=scene_camera)
         return figure
 
     @staticmethod
-    def Show(figure, camera=[-1.25, -1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
+    def Show(figure, camera=[-1.25, -1.25, 1.25], center=[0, 0, 0], up=[0, 0, 1], renderer="notebook", projection="perspective"):
         """
         Shows the input figure.
 
@@ -1877,12 +1886,15 @@ class Plotly:
             The input plotly figure.
         camera : list , optional
             The desired location of the camera. The default is [0,0,0].
-        target : list , optional
-            The desired camera target. The default is [0,0,0].
+        center : list , optional
+            The desired center (camera target). The default is [0,0,0].
         up : list , optional
             The desired up vector. The default is [0,0,1].
         renderer : str , optional
             The desired rendered. See Plotly.Renderers(). The default is "notebook".
+        projection : str, optional
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
+
         
         Returns
         -------
@@ -1898,10 +1910,9 @@ class Plotly:
         if not renderer.lower() in Plotly.Renderers():
             print("Plotly.Show - Error: The input renderer is not in the approved list of renderers. Returning None.")
             return None
-        if not camera == None and not target == None and not up == None:
-            figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
+        if not camera == None and not center == None and not up == None:
+            figure = Plotly.SetCamera(figure, camera=camera, center=center, up=up, projection=projection)
         if renderer.lower() == "offline":
-            import plotly.offline as ofl
             ofl.plot(figure)
         else:
             figure.show(renderer=renderer)
