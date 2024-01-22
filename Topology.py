@@ -1506,20 +1506,7 @@ class Topology():
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
         import uuid
-        import sys
-        import subprocess
-
-        try:
-            import ifcopenshell
-            import ifcopenshell.geom
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'ifcopenshell', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                import ifcopenshell
-                import ifcopenshell.geom
-            except:
-                print("Topology.ByIFCFile - ERROR: Could not import ifcopenshell")
+        
         if not file:
             print("Topology.ByIFCFile - Error: the input file parameter is not a valid file. Returning None.")
             return None
@@ -1581,18 +1568,6 @@ class Topology():
             The created list of topologies.
         
         """
-        import sys, subprocess
-        try:
-            import ifcopenshell
-            import ifcopenshell.geom
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'ifcopenshell', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                import ifcopenshell
-                import ifcopenshell.geom
-            except:
-                print("Topology.ByIFCPath - ERROR: Could not import ifcopenshell")
 
         if not path:
             print("Topology.ByIFCPath - Error: the input path parameter is not a valid path. Returning None.")
@@ -4647,7 +4622,6 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
-        import numpy as np
 
         if not isinstance(topology, topologic.Topology):
             print("Topology.RemoveCoplanarFace - Error: The input topology parameter is not a valid topologic topology. Returning None.")
@@ -5036,7 +5010,6 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
-        import numpy as np
 
         def rotate_vertex_3d(vertex, axis, angle_degrees, origin):
             vertex = np.array(vertex)  # Vertex to be rotated

@@ -20,6 +20,7 @@ except:
 
 try:
     from scipy.spatial import Delaunay
+    from scipy.spatial import Voronoi
 except:
     print("Shell - Install required scipy library.")
     try:
@@ -28,6 +29,7 @@ except:
         os.system("pip install scipy --user")
     try:
         from scipy.spatial import Delaunay
+        from scipy.spatial import Voronoi
     except:
         raise Exception("Shell - Error: Could not import scipy.")
 
@@ -1778,19 +1780,6 @@ class Shell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        import sys
-        import subprocess
-
-        try:
-            from scipy.spatial import Voronoi
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'scipy', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from scipy.spatial import Voronoi
-            except:
-                print("Shell.Voronoi - ERROR: Could not import scipy. Returning None.")
-                return None
         
         if not isinstance(face, topologic.Face):
             cluster = Cluster.ByTopologies(vertices)

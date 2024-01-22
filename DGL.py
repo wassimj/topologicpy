@@ -78,7 +78,7 @@ except:
         raise Exception("DGL - Error: Could not import dgl. The installation of the correct version of the dgl library is not trivial and is highly dependent on your hardward and software configuration. Please consult the dgl installation instructions.")
 
 try:
-    import sklearn
+    from sklearn import metrics
     from sklearn.model_selection import KFold
     from sklearn.metrics import accuracy_score
 except:
@@ -88,7 +88,7 @@ except:
     except:
         os.system("pip install scikit-learn --user")
     try:
-        import sklearn
+        from sklearn import metrics
         from sklearn.model_selection import KFold
         from sklearn.metrics import accuracy_score
         print("DGL - scikit-learn (sklearn) library installed correctly.")
@@ -1456,8 +1456,6 @@ class DGL:
             The dictionary containing the performance measures. The keys in the dictionary are: 'mae', 'mape', 'mse', 'r', 'r2', 'rmse', .
         """
         
-        import numpy as np
-
         if not isinstance(actual, list):
             print("DGL.Performance - ERROR: The actual input is not a list. Returning None")
             return None
@@ -1708,8 +1706,7 @@ class DGL:
             The created confusion matrix.
 
         """
-        from sklearn import metrics
-        import numpy
+
         if not isinstance(actual, list):
             print("DGL.ConfusionMatrix - ERROR: The actual input is not a list. Returning None")
             return None

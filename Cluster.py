@@ -238,9 +238,6 @@ class Cluster(topologic.Cluster):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
-        import numpy as np
-        from scipy.spatial.distance import pdist, squareform
-
         def dbscan_3d_indices(data, eps, min_samples):
             """
             DBSCAN clustering algorithm for 3D points.
