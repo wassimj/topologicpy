@@ -3,17 +3,35 @@ import topologicpy
 import topologic
 from topologicpy.Topology import Topology
 import math
-import sys
-import subprocess
+import os
 try:
     from tqdm.auto import tqdm
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Shell - Installing required tqdm library.")
+    try:
+        os.system("pip install tqdm")
+    except:
+        os.system("pip install tqdm --user")
     try:
         from tqdm.auto import tqdm
+        print("Shell - tqdm library installed correctly.")
     except:
-        print("Shell - Error: Could not import tqdm")
+        raise Exception("Shell - Error: Could not import tqdm.")
+
+try:
+    from scipy.spatial import Delaunay
+    from scipy.spatial import Voronoi
+except:
+    print("Shell - Install required scipy library.")
+    try:
+        os.system("pip install scipy")
+    except:
+        os.system("pip install scipy --user")
+    try:
+        from scipy.spatial import Delaunay
+        from scipy.spatial import Voronoi
+    except:
+        raise Exception("Shell - Error: Could not import scipy.")
 
 class Shell(Topology):
     @staticmethod
@@ -456,28 +474,13 @@ class Shell(Topology):
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        from topologicpy.Helper import Helper
         from random import sample
-        import sys
-        import subprocess
-
-        try:
-            from scipy.spatial import Delaunay
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'scipy', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from scipy.spatial import Delaunay
-            except:
-                print("Shell.Delaunay - ERROR: Could not import scipy. Returning None.")
-                return None
+        
         
         if not isinstance(vertices, list):
             return None
@@ -527,13 +530,17 @@ class Shell(Topology):
             tempTriangleVertices.append(vertices[simplex[0]])
             tempTriangleVertices.append(vertices[simplex[1]])
             tempTriangleVertices.append(vertices[simplex[2]])
-            faces.append(Face.ByWire(Wire.ByVertices(tempTriangleVertices), tolerance=tolerance))
+            tempFace = Face.ByWire(Wire.ByVertices(tempTriangleVertices), tolerance=tolerance)
+            tempCentroid = Topology.Centroid(tempFace)
+            faces.append(tempFace)
 
         shell = Shell.ByFaces(faces, tolerance=tolerance)
-        #if shell == None:
-            #print("Shell.Delaunay - WARNING: Could not create Shell. Returning a Cluster of Faces.")
-            #shell = Cluster.ByTopologies(faces)
+        if shell == None:
+            shell = Cluster.ByTopologies(faces)
+        
         if isinstance(face, topologic.Face):
+            edges = Topology.Edges(shell)
+            shell = Topology.Slice(flatFace, Cluster.ByTopologies(edges))
             # Get the internal boundaries of the face
             wires = Face.InternalBoundaries(flatFace)
             ibList = []
@@ -663,7 +670,7 @@ class Shell(Topology):
             return None
         faces = Shell.Faces(shell)
         for f in faces:
-            if Face.IsInternal(fface=f, vertex=vertex, tolerance=tolerance):
+            if Face.IsInternal(face=f, vertex=vertex, tolerance=tolerance):
                 return True
         return False
     
@@ -1361,7 +1368,7 @@ class Shell(Topology):
         degree : float , optioal
             The desired angle in degrees of the roof. The default is 45.
         epsilon : float , optional
-            The desired espilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)
+            The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
 
@@ -1452,9 +1459,9 @@ class Shell(Topology):
             shell = Topology.RemoveCoplanarFaces(shell, epsilon=epsilon, tolerance=tolerance)
         except:
             pass
-        xTran = Dictionary.ValueAtKey(d,"xTran")
-        yTran = Dictionary.ValueAtKey(d,"yTran")
-        zTran = Dictionary.ValueAtKey(d,"zTran")
+        xTran = Dictionary.ValueAtKey(d,"x")
+        yTran = Dictionary.ValueAtKey(d,"y")
+        zTran = Dictionary.ValueAtKey(d,"z")
         phi = Dictionary.ValueAtKey(d,"phi")
         theta = Dictionary.ValueAtKey(d,"theta")
         shell = Topology.Rotate(shell, origin=Vertex.Origin(), x=0, y=1, z=0, degree=theta)
@@ -1773,19 +1780,6 @@ class Shell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        import sys
-        import subprocess
-
-        try:
-            from scipy.spatial import Voronoi
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'scipy', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from scipy.spatial import Voronoi
-            except:
-                print("Shell.Voronoi - ERROR: Could not import scipy. Returning None.")
-                return None
         
         if not isinstance(face, topologic.Face):
             cluster = Cluster.ByTopologies(vertices)

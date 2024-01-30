@@ -1,5 +1,4 @@
-import sys
-import subprocess
+import os
 
 try:
     import honeybee.facetype
@@ -10,8 +9,11 @@ try:
     from honeybee.aperture import Aperture as HBAperture
     from honeybee.door import Door as HBDoor
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'honeybee', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Honeybee - Installing required honeybee library.")
+    try:
+        os.system("pip install honeybee")
+    except:
+        os.system("pip install honeybee --user")
     try:
         import honeybee.facetype
         from honeybee.face import Face as HBFace
@@ -21,8 +23,7 @@ except:
         from honeybee.aperture import Aperture as HBAperture
         from honeybee.door import Door as HBDoor
     except:
-        print("Honeybee - ERROR: Could not import honeybee")
-
+        raise Exception("Honeybee - ERROR: Could not import honeybee")
 
 try:
     import honeybee_energy.lib.constructionsets as constr_set_lib
@@ -33,8 +34,11 @@ try:
     from honeybee_energy.load.setpoint import Setpoint
     from honeybee_energy.load.hotwater import  ServiceHotWater
 except:
-    call = [sys.executable, '-m', 'pip', 'install', '-U', 'honeybee-energy[standards]', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Honeybee - Installing required honeybee-energy library.")
+    try:
+        os.system("pip install -U honeybee-energy[standards]")
+    except:
+        os.system("pip install -U honeybee-energy[standards] --user")
     try:
         import honeybee_energy.lib.constructionsets as constr_set_lib
         import honeybee_energy.lib.programtypes as prog_type_lib
@@ -44,42 +48,50 @@ except:
         from honeybee_energy.load.setpoint import Setpoint
         from honeybee_energy.load.hotwater import  ServiceHotWater
     except:
-        print("Honeybee - ERROR: Could not import honeybee-energy")
+        raise Exception("Honeybee - Error: Could not import honeybee-energy")
 
 try:
     from honeybee_radiance.sensorgrid import SensorGrid
 except:
-    call = [sys.executable, '-m', 'pip', 'install', '-U', 'honeybee-radiance', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Honeybee - Installing required honeybee-radiance library.")
+    try:
+        os.system("pip install -U honeybee-radiance")
+    except:
+        os.system("pip install -U honeybee-radiance --user")
     try:
         from honeybee_radiance.sensorgrid import SensorGrid
     except:
-        print("Honeybee - ERROR: Could not import honeybee-radiance")
+        raise Exception("Honeybee - Error: Could not import honeybee-radiance")
 
 try:
     from ladybug.dt import Time
 except:
-    call = [sys.executable, '-m', 'pip', 'install', '-U', 'ladybug', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Honeybee - Installing required ladybug library.")
+    try:
+        os.system("pip install -U ladybug")
+    except:
+        os.system("pip install -U ladybug --user")
     try:
         from ladybug.dt import Time
     except:
-        print("Honeybee - ERROR: Could not import ladybug")
+        raise Exception("Honeybee - Error: Could not import ladybug")
 
 try:
     from ladybug_geometry.geometry3d.face import Face3D
     from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
 except:
-    call = [sys.executable, '-m', 'pip', 'install', '-U', 'ladybug-geometry', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Honeybee - Installing required ladybug-geometry library.")
+    try:
+        os.system("pip install -U ladybug-geometry")
+    except:
+        os.system("pip install -U ladybug-geometry --user")
     try:
         from ladybug_geometry.geometry3d.face import Face3D
         from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
     except:
-        print("Honeybee - ERROR: Could not import ladybug-geometry")
+        raise Exception("Honeybee - Error: Could not import ladybug-geometry")
 
 import json
-from topologicpy.Dictionary import Dictionary
 import topologic
 
 class Honeybee:

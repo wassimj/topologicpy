@@ -3,6 +3,21 @@ import topologic
 from topologicpy.Face import Face
 from topologicpy.Topology import Topology
 import collections
+import os
+
+try:
+    import numpy as np
+except:
+    print("Vertex - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy as np
+        print("Vertex - numpy library installed successfully.")
+    except:
+        raise Exception("Vertex - Error: Could not import numpy.")
 
 class Vertex(Topology):
     @staticmethod
@@ -445,7 +460,6 @@ class Vertex(Topology):
             The distance between the input vertex and the input topology.
 
         """
-        import numpy as np
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         import math
@@ -632,7 +646,6 @@ class Vertex(Topology):
         tolerance : float , optional
             The desired tolerance for computing if vertices need to be fused. Any vertices that are closer to each other than this tolerance will be fused. The default is 0.0001.
         """
-        import numpy as np
 
         if not isinstance(vertices, list):
             print("Vertex.Fuse - Error: The input vertices parameter is not a valid list. Returning None.")
@@ -1152,7 +1165,7 @@ class Vertex(Topology):
             The dictionary containing the values of a,b,c,d for the plane equation in the form of ax+by+cz+d=0.
             The keys in the dictionary are ["a", "b", "c". "d"]
         """
-        import numpy as np
+
         vertices = [Vertex.Coordinates(v) for v in vertices]
         # Convert vertices to a NumPy array for easier calculations
         vertices = np.array(vertices)

@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
-
-
 import logging
 import heapq
 from itertools import *
 from collections import namedtuple
-import sys
-import subprocess
+import os
 
 try:
 	from euclid3 import *
 except:
-	call = [sys.executable, '-m', 'pip', 'install', 'euclid3', '-t', sys.path[0]]
-	subprocess.run(call)
+	print("Polyskel - Installing required euclid3 library.")
+	try:
+		os.system("pip install euclid3")
+	except:
+		os.system("pip install euclid3 --user")
 	try:
 		from euclid3 import *
 	except:
-		print("Polyskel - ERROR: Could not import euclid3.")
+		raise Exception("Polyskel - ERROR: Could not import euclid3.")
 
 log = logging.getLogger("__name__")
 

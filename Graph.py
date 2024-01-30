@@ -8,35 +8,77 @@ import random
 import time
 import sys
 import subprocess
-try:
-    from tqdm.auto import tqdm
-except:
-    call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-    subprocess.run(call)
-    try:
-        from tqdm.auto import tqdm
-    except:
-        print("Graph - Error: Could not import tqdm")
+import os
 
 try:
     import numpy as np
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'numpy', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Graph - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
     try:
         import numpy as np
+        print("Graph - numpy library installed correctly.")
     except:
-        print("Graph - Error: Could not import numpy")
+        raise Exception("Graph - Error: Could not import numpy.")
+
+try:
+    import pandas as pd
+except:
+    print("Graph - Installing required pandas library.")
+    try:
+        os.system("pip install pandas")
+    except:
+        os.system("pip install pandas --user")
+    try:
+        import pandas as pd
+        print("Graph - pandas library installed correctly.")
+    except:
+        raise Exception("Graph - Error: Could not import pandas.")
+
+try:
+    from tqdm.auto import tqdm
+except:
+    print("Graph - Installing required tqdm library.")
+    try:
+        os.system("pip install tqdm")
+    except:
+        os.system("pip install tqdm --user")
+    try:
+        from tqdm.auto import tqdm
+        print("Graph - tqdm library installed correctly.")
+    except:
+        raise Exception("Graph - Error: Could not import tqdm.")
 
 try:
     from pyvis.network import Network
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'pyvis', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("Graph - Installing required pyvis library.")
+    try:
+        os.system("pip install pyvis")
+    except:
+        os.system("pip install pyvis --user")
     try:
         from pyvis.network import Network
+        print("Graph - pyvis library installed correctly.")
     except:
-        print("Graph - Error: Could not import pyvis")
+        raise Exception("Graph - Error: Could not import pyvis")
+
+try:
+    import networkx as nx
+except:
+    print("Graph - Installing required networkx library.")
+    try:
+        os.system("pip install networkx")
+    except:
+        os.system("pip install networkx --user")
+    try:
+        import networkx as nx
+        print("Graph - networkx library installed correctly.")
+    except:
+        raise Exception("Graph - Error: Could not import networkx.")
 
 class _Tree:
     def __init__(self, node="", *children):
@@ -472,16 +514,6 @@ class Graph:
                         returnList[index] = returnList[index]+1
             return returnList
 
-        try:
-            from tqdm.auto import tqdm
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from tqdm.auto import tqdm
-            except:
-                print("Graph.BetweenessCentrality - Error: Could not import tqdm")
-
         if not isinstance(graph, topologic.Graph):
             print("Graph.BetweenessCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
@@ -551,7 +583,7 @@ class Graph:
             The created graph.
         
         """
-        import pandas as pd
+
         # Read the adjacency matrix from CSV file using pandas
         adjacency_matrix_df = pd.read_csv(path, header=None)
         
@@ -682,7 +714,6 @@ class Graph:
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        import pandas as pd
         import os
         from os.path import exists, isdir
         import yaml
@@ -2791,18 +2822,6 @@ class Graph:
             The closeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
 
         """
-        import sys
-        import subprocess
-
-        try:
-            from tqdm.auto import tqdm
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from tqdm.auto import tqdm
-            except:
-                print("DGL - Error: Could not import tqdm")
 
         if not isinstance(graph, topologic.Graph):
             print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
@@ -3188,7 +3207,6 @@ class Graph:
         ----------
         path : str
             The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
-        import pandas as pd
 
         Returns
         -------
@@ -3196,7 +3214,6 @@ class Graph:
             True if the graph has been successfully exported. False otherwise.
 
         """
-        import pandas as pd
         
         # Convert the adjacency matrix (nested list) to a DataFrame
         adjacency_matrix_df = pd.DataFrame(adjacencyMatrix)
@@ -3327,7 +3344,6 @@ class Graph:
         import os
         import math
         import random
-        import pandas as pd
         import os
         from os.path import exists
         
@@ -4183,6 +4199,12 @@ class Graph:
         for edge in Topology.Edges(temp_path):
             new_edges.append(g_edges[Edge.Index(edge, g_edges)])
         longest_path = Topology.SelfMerge(Cluster.ByTopologies(new_edges), tolerance=tolerance)
+        sv = Topology.Vertices(longest_path)[0]
+        if Vertex.Distance(sv, vertexB) < tolerance: # Wire is reversed. Re-reverse it
+            if isinstance(longest_path, topologic.Edges):
+                longest_path = Edge.Reverse(longest_path)
+            if isinstance(longest_path, topologic.Wire):
+                longest_path = Wire.Reverse(longest_path)
         if not costKey == None:
             lengths.sort()
             d = Dictionary.ByKeysValues([costKey], [cost])
@@ -4511,16 +4533,6 @@ class Graph:
         if not isinstance(graph, topologic.Graph):
             print("Graph.NetworkXGraph - Error: The input graph is not a valid graph. Returning None.")
             return None
-        try:
-            import networkx as nx
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'networkx', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                import networkx as nx
-            except:
-                print("Graph.NetworkXGraph - ERROR: Could not import networkx. Returning None.")
-                return None
 
         nxGraph = nx.Graph()
         vertices = Graph.Vertices(graph)
@@ -4874,7 +4886,7 @@ class Graph:
         return graph
 
     @staticmethod
-    def ShortestPath(graph, vertexA, vertexB, vertexKey="", edgeKey="Length"):
+    def ShortestPath(graph, vertexA, vertexB, vertexKey="", edgeKey="Length", tolerance=0.0001):
         """
         Returns the shortest path that connects the input vertices.
 
@@ -4890,13 +4902,19 @@ class Graph:
             The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
         edgeKey : string , optional
             The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. The default is "length".
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic.Wire
             The shortest path between the input vertices.
 
         """
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
         if not isinstance(graph, topologic.Graph):
             print("Graph.ShortestPath - Error: The input graph is not a valid graph. Returning None.")
             return None
@@ -4910,7 +4928,16 @@ class Graph:
             if edgeKey.lower() == "length":
                 edgeKey = "Length"
         try:
-            return graph.ShortestPath(vertexA, vertexB, vertexKey, edgeKey)
+            gsv = Graph.NearestVertex(graph, vertexA, tolerance)
+            gev = Graph.NearestVertex(graph, vertexB, tolerance)
+            shortest_path = graph.ShortestPath(gsv, gev, vertexKey, edgeKey)
+            sv = Topology.Vertices(shortest_path)[0]
+            if Vertex.Distance(sv, gev) < tolerance: # Path is reversed. Correct it.
+                if isinstance(shortest_path, topologic.Edges):
+                    shortest_path = Edge.Reverse(shortest_path)
+                if isinstance(shortest_path, topologic.Wire):
+                    shortest_path = Wire.Reverse(shortest_path)
+                return shortest_path
         except:
             return None
 
@@ -4936,62 +4963,49 @@ class Graph:
             The search time limit in seconds. The default is 10 seconds
         pathLimit: int , optional
             The number of found paths limit. The default is 10 paths.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Wire
+        list
             The list of shortest paths between the input vertices.
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
-        def nearestVertex(g, v, tolerance):
-            vertices = Graph.Vertices(g)
-            for aVertex in vertices:
-                d = Vertex.Distance(v, aVertex)
-                if d < tolerance:
-                    return aVertex
-            return None
         
-        def isUnique(paths, wire):
+        def isUnique(paths, path):
+            if path == None:
+                return False
             if len(paths) < 1:
                 return True
             for aPath in paths:
                 copyPath = topologic.Topology.DeepCopy(aPath)
-                dif = copyPath.Difference(wire, False)
+                dif = copyPath.Difference(path, False)
                 if dif == None:
                     return False
             return True
         
         if not isinstance(graph, topologic.Graph):
-            print("Graph.ShortestPaths - Error: The input graph is not a valid graph. Returning None.")
+            print("Graph.ShortestPaths - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
         if not isinstance(vertexA, topologic.Vertex):
-            print("Graph.ShortestPaths - Error: The input vertexA is not a valid vertex. Returning None.")
+            print("Graph.ShortestPaths - Error: The input vertexA parameter is not a valid vertex. Returning None.")
             return None
         if not isinstance(vertexB, topologic.Vertex):
-            print("Graph.ShortestPaths - Error: The input vertexB is not a valid vertex. Returning None.")
+            print("Graph.ShortestPaths - Error: The input vertexB parameter is not a valid vertex. Returning None.")
             return None
         shortestPaths = []
         end = time.time() + timeLimit
         while time.time() < end and len(shortestPaths) < pathLimit:
-            gsv = nearestVertex(graph, vertexA, tolerance)
-            gev = nearestVertex(graph, vertexB, tolerance)
             if (graph != None):
                 if edgeKey:
                     if edgeKey.lower() == "length":
                         edgeKey = "Length"
-                wire = graph.ShortestPath(gsv,gev,vertexKey,edgeKey) # Find the first shortest path
-                wireVertices = []
-                flag = False
-                try:
-                    wireVertices = Wire.Vertices(wire)
-                    flag = True
-                except:
-                    flag = False
-                if (flag):
-                    if isUnique(shortestPaths, wire):
-                        shortestPaths.append(wire)
+                shortest_path = Graph.ShortestPath(graph, vertexA, vertexB, vertexKey=vertexKey, edgeKey=edgeKey, tolerance=tolerance) # Find the first shortest path
+                if isUnique(shortestPaths, shortest_path):
+                    shortestPaths.append(shortest_path)
                 vertices = Graph.Vertices(graph)
                 random.shuffle(vertices)
                 edges = Graph.Edges(graph)
@@ -5001,7 +5015,7 @@ class Graph:
     @staticmethod
     def Show(graph, vertexColor="black", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, showVertexLegend=False, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, showEdgeLegend=False, colorScale='viridis', renderer="notebook",
              width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0,
-             camera=None, target=None, up=None, tolerance=0.0001):
+             camera=[-1.25, -1.25, 1.25], center=[0, 0, 0], up=[0, 0, 1], projection="perspective", tolerance=0.0001):
         """
         Shows the graph using Plotly.
 
@@ -5080,11 +5094,14 @@ class Graph:
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera. The default is [0,0,0].
-        target : list , optional
-            The desired camera target. The default is [0,0,0].
+            The desired location of the camera). The default is [-1.25,-1.25,1.25].
+        center : list , optional
+            The desired center (camera target). The default is [0,0,0].
         up : list , optional
             The desired up vector. The default is [0,0,1].
+        projection : str , optional
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
+
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -5102,7 +5119,7 @@ class Graph:
         data= Plotly.DataByGraph(graph, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLegend=showEdgeLegend, colorScale=colorScale)
         fig = Plotly.FigureByData(data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor,
                                   marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom, tolerance=tolerance)
-        Plotly.Show(fig, renderer=renderer, camera=camera, target=target, up=up)
+        Plotly.Show(fig, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
 
     @staticmethod
     def Size(graph):
@@ -5334,17 +5351,6 @@ class Graph:
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        import sys
-        import subprocess
-        try:
-            from tqdm.auto import tqdm
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from tqdm.auto import tqdm
-            except:
-                print("Graph.VisibilityGraph - Error: Could not import tqdm")
         
         def addEdge(edge, edges, viewpointsA, viewpointsB, tolerance=0.0001):
             # Add edge to edges only if its end points are in vertices
@@ -5399,11 +5405,6 @@ class Graph:
                             e = Topology.Boolean(e, boundaryFace, operation="intersect", tolerance=tolerance)
                             if isinstance(e, topologic.Edge):
                                 edges = addEdge(e, edges, viewpointsA, viewpointsB, 0.0001)
-                            elif isinstance(e, topologic.Cluster):
-                                tempEdges = Cluster.Edges(e)
-                                if tempEdges:
-                                    for tempEdge in tempEdges:
-                                        edges = addEdge(tempEdge, edges, viewpointsA, viewpointsB, 0.0001)
 
         except:
             for i in range(len(viewpointsA)):

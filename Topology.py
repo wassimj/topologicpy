@@ -1,5 +1,3 @@
-#from base64 import b16encode
-#from tkinter import N
 import topologicpy
 import topologic
 from topologicpy.Aperture import Aperture
@@ -8,13 +6,58 @@ from topologicpy.Dictionary import Dictionary
 import uuid
 import json
 import os
-import numpy as np
-from numpy import arctan, pi, signbit
-from numpy.linalg import norm
-import math
 
+import math
 from collections import namedtuple
 from multiprocessing import Process, Queue
+
+try:
+    import numpy as np
+    from numpy import arctan, pi, signbit
+    from numpy.linalg import norm
+except:
+    print("Topology - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy as np
+        from numpy import arctan, pi, signbit
+        from numpy.linalg import norm
+        print("Topology - numpy library installed successfully.")
+    except:
+        raise Exception("Topology - Error: Could not import numpy.")
+
+try:
+    import ifcopenshell
+    import ifcopenshell.geom
+except:
+    print("Topology - Installing required ifcopenshell library.")
+    try:
+        os.system("pip install ifcopenshell")
+    except:
+        os.system("pip install ifcopenshell --user")
+    try:
+        import ifcopenshell
+        import ifcopenshell.geom
+        print("Topology - ifcopenshell library installed successfully.")
+    except:
+        raise Exception("Topology - Error: Could not import ifcopenshell.")
+
+try:
+    from scipy.spatial import ConvexHull
+except:
+    print("Topology - Installing required scipy library.")
+    try:
+        os.system("pip install scipy")
+    except:
+        os.system("pip install scipy --user")
+    try:
+        from scipy.spatial import ConvexHull
+        print("Topology - scipy library installed successfully.")
+    except:
+        raise Exception ("Topology - Error: Could not import scipy.")
 
 QueueItem = namedtuple('QueueItem', ['ID', 'sinkKeys', 'sinkValues'])
 SinkItem = namedtuple('SinkItem', ['ID', 'sink_str'])
@@ -1463,20 +1506,7 @@ class Topology():
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
         import uuid
-        import sys
-        import subprocess
-
-        try:
-            import ifcopenshell
-            import ifcopenshell.geom
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'ifcopenshell', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                import ifcopenshell
-                import ifcopenshell.geom
-            except:
-                print("Topology.ByIFCFile - ERROR: Could not import ifcopenshell")
+        
         if not file:
             print("Topology.ByIFCFile - Error: the input file parameter is not a valid file. Returning None.")
             return None
@@ -1538,18 +1568,6 @@ class Topology():
             The created list of topologies.
         
         """
-        import sys, subprocess
-        try:
-            import ifcopenshell
-            import ifcopenshell.geom
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'ifcopenshell', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                import ifcopenshell
-                import ifcopenshell.geom
-            except:
-                print("Topology.ByIFCPath - ERROR: Could not import ifcopenshell")
 
         if not path:
             print("Topology.ByIFCPath - Error: the input path parameter is not a valid path. Returning None.")
@@ -2719,20 +2737,7 @@ class Topology():
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
-        from topologicpy.Cluster import Cluster
-        import sys
-        import subprocess
-
-        try:
-            from scipy.spatial import ConvexHull
-        except:
-            call = [sys.executable, '-m', 'pip', 'install', 'scipy', '-t', sys.path[0]]
-            subprocess.run(call)
-            try:
-                from scipy.spatial import ConvexHull
-            except:
-                print("Topology.ConvexHull - Error: Could not import scipy. Returning None.")
-                return None
+        from topologicpy.Cluster import Cluster        
         
         def convexHull3D(item, tolerance, option):
             if item:
@@ -4601,7 +4606,7 @@ class Topology():
         angTolerance : float , optional
             The desired angular tolerance for removing coplanar faces. The default is 0.1.
         epsilon : float , optional
-            The desired espilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -4617,7 +4622,6 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
-        import numpy as np
 
         if not isinstance(topology, topologic.Topology):
             print("Topology.RemoveCoplanarFace - Error: The input topology parameter is not a valid topologic topology. Returning None.")
@@ -5006,7 +5010,6 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
-        import numpy as np
 
         def rotate_vertex_3d(vertex, axis, angle_degrees, origin):
             vertex = np.array(vertex)  # Vertex to be rotated
@@ -5436,7 +5439,7 @@ class Topology():
              width=950, height=500,
              xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)',
              marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[-1.25, -1.25, 1.25],
-             target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", showScale=False,
+             center=[0, 0, 0], up=[0, 0, 1], projection="perspective", renderer="notebook", showScale=False,
              
              cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
              cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=6, tolerance=0.0001):
@@ -5567,11 +5570,13 @@ class Topology():
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera). The default is [0,0,0].
+            The desired location of the camera). The default is [-1.25,-1.25,1.25].
         center : list , optional
             The desired center (camera target). The default is [0,0,0].
         up : list , optional
             The desired up vector. The default is [0,0,1].
+        projection : str , optional
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
         renderer : str , optional
             The desired renderer. See Plotly.Renderers(). The default is "notebook".
         intensityKey : str , optional
@@ -5610,11 +5615,14 @@ class Topology():
         from topologicpy.Cluster import Cluster
         from topologicpy.Plotly import Plotly
         from topologicpy.Helper import Helper
+        from topologicpy.Graph import Graph
         
         if isinstance(topologies, tuple):
             topologies = Helper.Flatten(list(topologies))
         if isinstance(topologies, list):
             new_topologies = [t for t in topologies if isinstance(t, topologic.Topology)]
+            graphs = [Graph.Topology(g) for g in topologies if isinstance(g, topologic.Graph)]
+            new_topologies += graphs
         if len(new_topologies) == 0:
             print("Topology.Show - Error: the input topologies parameter does not contain any valid topology. Returning None.")
             return None
@@ -5650,7 +5658,7 @@ class Topology():
                                      tolerance=tolerance)
         if showScale:
             figure = Plotly.AddColorBar(figure, values=cbValues, nTicks=cbTicks, xPosition=cbX, width=cbWidth, outlineWidth=cbOutlineWidth, title=cbTitle, subTitle=cbSubTitle, units=cbUnits, colorScale=colorScale, mantissa=mantissa)
-        Plotly.Show(figure=figure, renderer=renderer, camera=camera, target=target, up=up)
+        Plotly.Show(figure=figure, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
 
     @staticmethod
     def SortBySelectors(topologies, selectors, exclusive=False, tolerance=0.0001):

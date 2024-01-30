@@ -1,7 +1,6 @@
 import topologicpy
 import topologic
-import plotly
-import plotly.graph_objects as go
+
 from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
 from topologicpy.Wire import Wire
@@ -10,7 +9,50 @@ from topologicpy.Cell import Cell
 from topologicpy.CellComplex import CellComplex
 from topologicpy.Cluster import Cluster
 from topologicpy.Topology import Topology
-import numpy as np
+import os
+
+try:
+    import numpy
+except:
+    print("Plotly - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy
+    except:
+        raise Exception("Plotly - Error: Could not import numpy.")
+
+try:
+    import pandas as pd
+except:
+    print("Plotly - Installing required pandas library.")
+    try:
+        os.system("pip install pandas")
+    except:
+        os.system("pip install pandas --user")
+    try:
+        import pandas as pd
+    except:
+        raise Exception("Plotly - Error: Could not import pandas.")
+
+try:
+    import plotly
+    import plotly.graph_objects as go
+    import plotly.offline as ofl
+except:
+    print("Plotly - Installing required plotly library.")
+    try:
+        os.system("pip install plotly")
+    except:
+        os.system("pip install plotly --user")
+    try:
+        import plotly
+        import plotly.graph_objects as go
+        import plotly.offline as ofl
+    except:
+        raise Exception("Plotly - Error: Could not import plotly.")
 
 class Plotly:
     @staticmethod
@@ -168,7 +210,6 @@ class Plotly:
             A pandas dataFrame
 
         """
-        import pandas as pd
 
         if isinstance(data[labels[0]][0], int):
             xAxis_list = list(range(1,data[labels[0]][0]+1))
@@ -786,7 +827,10 @@ class Plotly:
         data = []
         
         if showVertices:
-            tp_vertices = Topology.Vertices(topology)
+            if topology.Type() == topologic.Vertex.Type():
+                tp_vertices = [topology]
+            else:
+                tp_vertices = Topology.Vertices(topology)
             if not (tp_vertices == None or tp_vertices == []):
                 vertices = []
                 v_dictionaries = []
@@ -812,7 +856,10 @@ class Plotly:
             intensities = None
             
         if showEdges and topology.Type() > topologic.Vertex.Type():
-            tp_edges = Topology.Edges(topology)
+            if topology.Type() == topologic.Edge.Type():
+                tp_edges = [topology]
+            else:
+                tp_edges = Topology.Edges(topology)
             if not (tp_edges == None or tp_edges == []):
                 e_dictionaries = []
                 if edgeLabelKey or edgeGroupKey:
@@ -830,17 +877,36 @@ class Plotly:
             else:
                 tp_faces = Topology.Faces(topology)
             if not(tp_faces == None or tp_faces == []):
+                # rebuild faces to remove any degenerate faces
+                new_faces = []
+                for i, f in enumerate(tp_faces):
+                    eb = Face.ExternalBoundary(f)
+                    eb = Topology.RemoveCollinearEdges(eb)
+                    if not eb == None:
+                        ibList = Face.InternalBoundaries(f)
+                        ibList = [Wire.RemoveCollinearEdges(ib) for ib in ibList]
+                        ibList = [ib for ib in ibList if not ib == None]
+                        new_f = Face.ByWires(eb, ibList)
+                        if isinstance(new_f, topologic.Face):
+                            if faceLabelKey or faceGroupKey:
+                                d = Topology.Dictionary(tp_faces[i])
+                                keys = Dictionary.Keys(d)
+                                if len(keys) > 0:
+                                    new_f = Topology.SetDictionary(new_f, d)
+                            new_faces.append(new_f)
+                
                 f_dictionaries = []
                 all_triangles = []
-                for tp_face in tp_faces:
+                for tp_face in new_faces:
                     triangles = Face.Triangulate(tp_face, tolerance=tolerance)
-                    for tri in triangles:
-                        if faceLabelKey or faceGroupKey:
-                            d = Topology.Dictionary(tp_face)
-                            f_dictionaries.append(d)
-                            if d:
-                                _ = Topology.SetDictionary(tri, d)
-                        all_triangles.append(tri)
+                    if isinstance(triangles, list):
+                        for tri in triangles:
+                            if faceLabelKey or faceGroupKey:
+                                d = Topology.Dictionary(tp_face)
+                                f_dictionaries.append(d)
+                                if d:
+                                    _ = Topology.SetDictionary(tri, d)
+                            all_triangles.append(tri)
                 if len(all_triangles) > 0:
                     f_cluster = Cluster.ByTopologies(all_triangles)
                     geo = Topology.Geometry(f_cluster, mantissa=mantissa)
@@ -1356,7 +1422,7 @@ class Plotly:
         names : list
             The input list of names.
         """
-        import pandas as pd
+
         import plotly.express as px
         dlist = list(map(list, zip(*data)))
         df = pd.DataFrame(dlist, columns=data['names'])
@@ -1386,8 +1452,7 @@ class Plotly:
              
              width=950, height=500,
              xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)',
-             marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[1.25, 1.25, 1.25],
-             target=[0, 0, 0], up=[0, 0, 1], renderer="notebook", showScale=False,
+             marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, showScale=False,
              
              cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
              cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=6, tolerance=0.0001):
@@ -1518,7 +1583,7 @@ class Plotly:
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera). The default is [0,0,0].
+            The desired location of the camera). The default is [-1.25,-1.25,1.25].
         center : list , optional
             The desired center (camera target). The default is [0,0,0].
         up : list , optional
@@ -1767,7 +1832,7 @@ class Plotly:
         return True
     
     @staticmethod
-    def SetCamera(figure, camera=[1.25, 1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1]):
+    def SetCamera(figure, camera=[-1.25, -1.25, 1.25], center=[0, 0, 0], up=[0, 0, 1], projection="perspective"):
         """
         Sets the camera for the input figure.
 
@@ -1776,11 +1841,13 @@ class Plotly:
         figure : plotly.graph_objs._figure.Figure
             The input plotly figure.
         camera : list , optional
-            The desired location of the camera. The default is [0,0,0].
-        target : list , optional
-            The desired camera target. The default is [0,0,0].
+            The desired location of the camera. The default is [-1.25,-1.25,1.25].
+        center : list , optional
+            The desired center (camera target). The default is [0,0,0].
         up : list , optional
             The desired up vector. The default is [0,0,1].
+        projection : str , optional
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
         
         Returns
         -------
@@ -1789,21 +1856,27 @@ class Plotly:
 
         """
         if not isinstance(camera, list):
-            camera = [1.25, 1.25, 1.25]
-        if not isinstance(target, list):
-            target = [0,0,0]
+            camera = [-1.25, -1.25, 1.25]
+        if not isinstance(center, list):
+            center = [0,0,0]
         if not isinstance(up, list):
             up = [0,0,1]
+        projection = projection.lower()
+        if projection in "orthographic":
+            projection = "orthographic"
+        else:
+            projection = "perspective"
         scene_camera = dict(
         up=dict(x=up[0], y=up[1], z=up[2]),
         eye=dict(x=camera[0], y=camera[1], z=camera[2]),
-        center=dict(x=target[0], y=target[1], z=target[2])
+        center=dict(x=center[0], y=center[1], z=center[2]),
+        projection=dict(type=projection)
         )
         figure.update_layout(scene_camera=scene_camera)
         return figure
 
     @staticmethod
-    def Show(figure, camera=[-1.25, -1.25, 1.25], target=[0, 0, 0], up=[0, 0, 1], renderer="notebook"):
+    def Show(figure, camera=[-1.25, -1.25, 1.25], center=[0, 0, 0], up=[0, 0, 1], renderer="notebook", projection="perspective"):
         """
         Shows the input figure.
 
@@ -1813,12 +1886,15 @@ class Plotly:
             The input plotly figure.
         camera : list , optional
             The desired location of the camera. The default is [0,0,0].
-        target : list , optional
-            The desired camera target. The default is [0,0,0].
+        center : list , optional
+            The desired center (camera target). The default is [0,0,0].
         up : list , optional
             The desired up vector. The default is [0,0,1].
         renderer : str , optional
             The desired rendered. See Plotly.Renderers(). The default is "notebook".
+        projection : str, optional
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
+
         
         Returns
         -------
@@ -1834,10 +1910,9 @@ class Plotly:
         if not renderer.lower() in Plotly.Renderers():
             print("Plotly.Show - Error: The input renderer is not in the approved list of renderers. Returning None.")
             return None
-        if not camera == None and not target == None and not up == None:
-            figure = Plotly.SetCamera(figure, camera=camera, target=target, up=up)
+        if not camera == None and not center == None and not up == None:
+            figure = Plotly.SetCamera(figure, camera=camera, center=center, up=up, projection=projection)
         if renderer.lower() == "offline":
-            import plotly.offline as ofl
             ofl.plot(figure)
         else:
             figure.show(renderer=renderer)

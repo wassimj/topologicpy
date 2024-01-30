@@ -1,40 +1,43 @@
 import topologicpy
 import topologic
-from topologicpy.Topology import Topology
-from topologicpy.Dictionary import Dictionary
 
 import shutil
 import math
 from collections import OrderedDict
 import os
 from os.path import exists
-import json
 from datetime import datetime
-import time
-import sys
-import subprocess
+
+
 try:
     from tqdm.auto import tqdm
 except:
-    import sys, subprocess
-    call = [sys.executable, '-m', 'pip', 'install', 'tqdm', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("EnergyModel - Installing required tqdm library.")
+    try:
+        os.system("pip install tqdm")
+    except:
+        os.system("pip install tqdm --user")
     try:
         from tqdm.auto import tqdm
+        print("EnergyModel - tqdm library installed correctly.")
     except:
-        print("EnergyModel - ERROR: Could not import tqdm")
+        raise Exception("EnergyModel - Error: Could not import tqdm.")
 
 try:
     import openstudio
     openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
 except:
-    call = [sys.executable, '-m', 'pip', 'install', 'openstudio', '-t', sys.path[0]]
-    subprocess.run(call)
+    print("EnergyModel - Installing required openstudio library.")
+    try:
+        os.system("pip install openstudio")
+    except:
+        os.system("pip install openstudio --user")
     try:
         import openstudio
         openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+        print("EnergyModel - openstudio library installed correctly.")
     except:
-        print("EnergyModel - ERROR: Could not import openstudio")
+        raise Exception("EnergyModel - Error: Could not import openstudio.")
 
 class EnergyModel:
     '''

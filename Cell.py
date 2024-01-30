@@ -3,7 +3,22 @@ import topologic
 from topologicpy.Wire import Wire
 from topologicpy.Topology import Topology
 import math
+import os
 
+try:
+    import numpy as np
+except:
+    print("Cell - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy as np
+        print("Cell - numpy library installed correctly.")
+    except:
+        raise Exception("Cell - Error: Could not import numpy.")
+    
 class Cell(Topology):
     @staticmethod
     def Area(cell: topologic.Cell, mantissa: int = 6) -> float:
@@ -1537,7 +1552,7 @@ class Cell(Topology):
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
         
-        shell = Shell.Roof(face=face, degree=degree, espilon=epsilon, tolerance=tolerance)
+        shell = Shell.Roof(face=face, degree=degree, epsilon=epsilon, tolerance=tolerance)
         faces = Topology.Faces(shell) + [face]
         cell = Cell.ByFaces(faces, tolerance=tolerance)
         if not cell:

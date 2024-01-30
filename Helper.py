@@ -1,7 +1,22 @@
 import topologicpy
-import numpy as np
-import numpy.linalg as la
 import math
+import os
+
+try:
+    import numpy as np
+    import numpy.linalg as la
+except:
+    print("Helper - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy as np
+        import numpy.linalg as la
+        print("Helper - numpy library installed correctly.")
+    except:
+        raise Exception("Helper - Error: Could not import numpy.")
 
 class Helper:
     @staticmethod
