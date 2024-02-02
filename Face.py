@@ -374,6 +374,7 @@ class Face(topologic.Face):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
         
         def planarizeList(wireList):
             returnList = []
@@ -390,6 +391,21 @@ class Face(topologic.Face):
         if not isinstance(origin, topologic.Vertex):
             print("Face.ByShell - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
+        
+        # Try the simple method first
+        face = None
+        ext_boundary = Wire.RemoveCollinearEdges(Shell.ExternalBoundary(shell))
+        if isinstance(ext_boundary, topologic.Wire):
+            face = Face.ByWire(ext_boundary)
+        elif isinstance(ext_boundary, topologic.Cluster):
+            wires = Topology.Wires(ext_boundary)
+            faces = [Face.ByWire(w) for w in wires]
+            areas = [Face.Area(f) for f in faces]
+            wires = Helper.Sort(wires, areas, reverseFlags=[True])
+            face = Face.ByWires(wires[0], wires[1:])
+
+        if isinstance(face, topologic.Face):
+            return face
         world_origin = Vertex.Origin()
         planar_shell = Shell.Planarize(shell)
         normal = Face.Normal(Topology.Faces(planar_shell)[0])
@@ -1892,9 +1908,6 @@ class Face(topologic.Face):
         if len(vertices) == 3: # Already a triangle
             return [face]
         flatFace = Face.Flatten(face)
-        #if not isinstance(flatFace, topologic.Face):
-            #Topology.ExportToBREP(face, "C:/Users/sarwj/Downloads/troubleFace.brep")
-        #print("Tri 2", flatFace)
 
         world_origin = Vertex.ByCoordinates(0,0,0)
         # Retrieve the needed transformations
@@ -1905,19 +1918,6 @@ class Face(topologic.Face):
         phi = Dictionary.ValueAtKey(dictionary,"phi")
         theta = Dictionary.ValueAtKey(dictionary,"theta")
     
-        '''
-        vertices = Topology.Vertices(face)
-        #print("Number of vertices:", len(vertices))
-        shell = Shell.Delaunay(vertices=vertices, face=face)
-        shell_faces = Topology.Faces(shell)
-        if not shell_faces:
-            return []
-        #for shell_face in shell_faces:
-            #c = Topology.Centroid(shell_face)
-            #if Face.IsInternal(face, c):
-                #faceTriangles.append(shell_face)
-
-        '''
         shell_faces = []
         for i in range(0,5,1):
             try:

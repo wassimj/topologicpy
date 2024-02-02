@@ -483,7 +483,7 @@ class Edge():
         return None
 
     @staticmethod
-    def Intersect2D(edgeA: topologic.Edge, edgeB: topologic.Edge) -> topologic.Vertex:
+    def Intersect2D(edgeA: topologic.Edge, edgeB: topologic.Edge, verbose: bool = True) -> topologic.Vertex:
         """
         Returns the intersection of the two input edges as a topologic.Vertex. This works only in the XY plane. Z coordinates are ignored.
 
@@ -493,6 +493,8 @@ class Edge():
             The first input edge.
         edgeB : topologic.Edge
             The second input edge.
+        verbose : bool , optional
+            If set to True, error and warning messages are displayed. Otherwise they are not. The default is True.
 
         Returns
         -------
@@ -501,10 +503,12 @@ class Edge():
 
         """
         if not isinstance(edgeA, topologic.Edge):
-            print("Edge.Intersect2D - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+            if verbose == True:
+                print("Edge.Intersect2D - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
             return None
         if not isinstance(edgeB, topologic.Edge):
-            print("Edge.Intersect2D - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
+            if verbose == True:
+                print("Edge.Intersect2D - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
@@ -525,7 +529,8 @@ class Edge():
         if (determinant == 0):
             # The lines are parallel. This is simplified
             # by returning a pair of FLT_MAX
-            print("Edge.Intersect2D - Warning: The input edgeA and edgeB parameters are parallel edges. Returning None.")
+            if verbose == True:
+                print("Edge.Intersect2D - Warning: The input edgeA and edgeB parameters are parallel edges. Returning None.")
             return None
         else:
             x = (b2*c1 - b1*c2)/determinant
@@ -766,7 +771,7 @@ class Edge():
         return Edge.ByVertices([sv, ev], tolerance=tolerance)
 
     @staticmethod
-    def ParameterAtVertex(edge: topologic.Edge, vertex: topologic.Vertex, mantissa: int = 6) -> float:
+    def ParameterAtVertex(edge: topologic.Edge, vertex: topologic.Vertex, mantissa: int = 6, verbose: bool = True) -> float:
         """
         Returns the *u* parameter along the input edge based on the location of the input vertex.
 
@@ -778,6 +783,8 @@ class Edge():
             The input vertex.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
+        verbose : bool , optional
+            If set to True, error and warning messages are printed. Otherwise, they are not. The default is True.
 
         Returns
         -------
@@ -786,10 +793,12 @@ class Edge():
 
         """
         if not isinstance(edge, topologic.Edge):
-            print("Edge.ParameterAtVertex - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if verbose:
+                print("Edge.ParameterAtVertex - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
-            print("Edge.ParameterAtVertex - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
+            if verbose:
+                print("Edge.ParameterAtVertex - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         parameter = None
         try:

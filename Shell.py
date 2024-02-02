@@ -578,7 +578,7 @@ class Shell(Topology):
     @staticmethod
     def ExternalBoundary(shell: topologic.Shell, tolerance: float = 0.0001) -> topologic.Wire:
         """
-        Returns the external boundary (closed wire) of the input shell.
+        Returns the external boundary of the input shell.
 
         Parameters
         ----------
@@ -589,12 +589,14 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Wire
-            The external boundary (closed wire) of the input shell.
+        topologic.Wire or topologic.Cluster
+            The external boundary of the input shell. If the shell has holes, the return value will be a cluster of wires.
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+
         if not isinstance(shell, topologic.Shell):
             return None
         edges = []
@@ -605,11 +607,7 @@ class Shell(Topology):
             _ = anEdge.Faces(shell, faces)
             if len(faces) == 1:
                 obEdges.append(anEdge)
-        returnTopology = None
-        returnTopology = Wire.ByEdges(obEdges, tolerance=tolerance)
-        if not isinstance(returnTopology, topologic.Wire):
-            returnTopology = Topology.SelfMerge(topologic.Cluster.ByTopologies(obEdges), tolerance=tolerance)
-        return returnTopology
+        return Topology.SelfMerge(Cluster.ByTopologies(obEdges), tolerance=tolerance)
 
     @staticmethod
     def Faces(shell: topologic.Shell) -> list:

@@ -4630,11 +4630,6 @@ class Topology():
         if (t == 1) or (t == 2) or (t == 4) or (t == 8):
             return topology
 
-        def calculate_plane_equation_coefficients(vertices):
-            tp_vertices = [Vertex.ByCoordinates(list(coords)) for coords in vertices]
-            eq = Vertex.PlaneEquation(tp_vertices)
-            return eq['a'], eq['b'], eq['c'], eq['d']
-
         def faces_on_same_plane(face1, face2, epsilon=1e-6):
             vertices = Face.Vertices(face1)
             distances = []
