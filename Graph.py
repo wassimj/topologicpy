@@ -1078,7 +1078,7 @@ class Graph:
     @staticmethod
     def ByIFCFile(file, includeTypes=[], excludeTypes=[], includeRels=[], excludeRels=[], xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5):
         """
-        Create a Graph from an IFC file.
+        Create a Graph from an IFC file. This code is partially based on code from Bruno Postle.
 
         Parameters
         ----------
@@ -1288,7 +1288,7 @@ class Graph:
     @staticmethod
     def ByIFCPath(path, includeTypes=[], excludeTypes=[], includeRels=[], excludeRels=[], xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5):
         """
-        Create a Graph from an IFC path.
+        Create a Graph from an IFC path. This code is partially based on code from Bruno Postle.
 
         Parameters
         ----------
