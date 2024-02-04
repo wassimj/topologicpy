@@ -755,7 +755,6 @@ class Graph:
         graphs_path, edges_path, nodes_path = read_yaml(yaml_file_path)
         if not graphs_path == None:
             graphs_path = os.path.join(path, graphs_path)
-        print("graphs_path", graphs_path)
         if graphs_path == None:
             print("Graph.ByCSVPath - Warning: a graphs.csv file does not exist inside the folder specified by the input path parameter. Will assume the dataset includes only one graph.")
             graphs_df = pd.DataFrame()
@@ -784,9 +783,6 @@ class Graph:
         nodes_df = pd.read_csv(nodes_path)
         # Group nodes and nodes by their 'graph_id'
         grouped_nodes = nodes_df.groupby(graphIDHeader)
-
-       
-       
 
         if len(nodeFeaturesKeys) == 0:
             node_keys = [nodeIDHeader, nodeLabelHeader, "mask", nodeFeaturesHeader]
@@ -860,7 +856,6 @@ class Graph:
                     vertices.append(v)
                 else:
                     print("Graph.ByCSVPath - Warning: Failed to create and add a vertex to the list of vertices.")
-            print(n_verts, "vs", len(vertices))
             vertices_ds.append(vertices)
         edges_ds = [] # A list to hold the vertices data structures until we can build the actual graphs
         # Access specific columns within the grouped DataFrame
@@ -1065,7 +1060,265 @@ class Graph:
             index+=n_nodes
             graphs.append(topologic.Graph.ByVerticesEdges(vertices, edges))
         return {'graphs':graphs, 'labels':labels}
-    
+
+
+    @staticmethod
+    def ByIFCFile(file, includeTypes=[], excludeTypes=[], includeRels=[], excludeRels=[], xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5):
+        """
+        Create a Graph from an IFC file.
+
+        Parameters
+        ----------
+        file : file
+            The input IFC file
+        includeTypes : list , optional
+            A list of IFC object types to include in the graph. The default is [] which means all object types are included.
+        excludeTypes : list , optional
+            A list of IFC object types to exclude from the graph. The default is [] which mean no object type is excluded.
+        includeRels : list , optional
+            A list of IFC relationship types to include in the graph. The default is [] which means all relationship types are included.
+        excludeRels : list , optional
+            A list of IFC relationship types to exclude from the graph. The default is [] which mean no relationship type is excluded.
+        xMin : float, optional
+            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
+        yMin : float, optional
+            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
+        zMin : float, optional
+            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
+        xMax : float, optional
+            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
+        yMax : float, optional
+            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
+        zMax : float, optional
+            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+        
+        Returns
+        -------
+        topologic.Graph
+            The created graph.
+        
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Graph import Graph
+        from topologicpy.Dictionary import Dictionary
+        import ifcopenshell
+        import ifcopenshell.util.placement
+        import ifcopenshell.util.element
+        import ifcopenshell.util.shape
+        import ifcopenshell.geom
+        import sys
+        import random
+
+        def vertexAtKeyValue(vertices, key, value):
+            for v in vertices:
+                d = Topology.Dictionary(v)
+                d_value = Dictionary.ValueAtKey(d, key)
+                if value == d_value:
+                    return v
+            return None
+
+        def IFCObjects(ifc_file, include=[], exclude=[]):
+            include = [s.lower() for s in include]
+            exclude = [s.lower() for s in exclude]
+            all_objects = ifc_file.by_type('IfcProduct')
+            return_objects = []
+            for obj in all_objects:
+                is_a = obj.is_a().lower()
+                if is_a in exclude:
+                    continue
+                if is_a in include or len(include) == 0:
+                    return_objects.append(obj)
+            return return_objects
+
+        def IFCObjectTypes(ifc_file):
+            products = IFCObjects(ifc_file)
+            obj_types = []
+            for product in products:
+                obj_types.append(product.is_a())  
+            obj_types = list(set(obj_types))
+            obj_types.sort()
+            return obj_types
+
+        def IFCRelationshipTypes(ifc_file):
+            rel_types = [ifc_rel.is_a() for ifc_rel in ifc_file.by_type("IfcRelationship")]
+            rel_types = list(set(rel_types))
+            rel_types.sort()
+            return rel_types
+
+        def IFCRelationships(ifc_file, include=[], exclude=[]):
+            include = [s.lower() for s in include]
+            exclude = [s.lower() for s in exclude]
+            rel_types = [ifc_rel.is_a() for ifc_rel in ifc_file.by_type("IfcRelationship")]
+            rel_types = list(set(rel_types))
+            relationships = []
+            for ifc_rel in ifc_file.by_type("IfcRelationship"):
+                rel_type = ifc_rel.is_a().lower()
+                if rel_type in exclude:
+                    continue
+                if rel_type in include or len(include) == 0:
+                    relationships.append(ifc_rel)
+            return relationships
+
+        def vertexByIFCObject(ifc_object, object_types, restrict=False):
+            settings = ifcopenshell.geom.settings()
+            settings.set(settings.USE_BREP_DATA,False)
+            settings.set(settings.SEW_SHELLS,True)
+            settings.set(settings.USE_WORLD_COORDS,True)
+            try:
+                shape = ifcopenshell.geom.create_shape(settings, ifc_object)
+            except:
+                shape = None
+            if shape or restrict == False: #Only add vertices of entities that have 3D geometries.
+                obj_id = ifc_object.id()
+                psets = ifcopenshell.util.element.get_psets(ifc_object)
+                obj_type = ifc_object.is_a()
+                obj_type_id = object_types.index(obj_type)
+                name = "Untitled"
+                LongName = "Untitled"
+                try:
+                    name = ifc_object.Name
+                except:
+                    name = "Untitled"
+                try:
+                    LongName = ifc_object.LongName
+                except:
+                    LongName = name
+
+                if name == None:
+                    name = "Untitled"
+                if LongName == None:
+                    LongName = "Untitled"
+                label = str(obj_id)+" "+LongName+" ("+obj_type+" "+str(obj_type_id)+")"
+                try:
+                    grouped_verts = ifcopenshell.util.shape.get_vertices(shape.geometry)
+                    vertices = [Vertex.ByCoordinates(list(coords)) for coords in grouped_verts]
+                    centroid = Vertex.Centroid(vertices)
+                except:
+                    x = random.uniform(xMin,xMax)
+                    y = random.uniform(yMin,yMax)
+                    z = random.uniform(zMin,zMax)
+                    centroid = Vertex.ByCoordinates(x,y,z)
+                d = Dictionary.ByKeysValues(["id","psets", "type", "type_id", "name", "label"], [obj_id, psets, obj_type, obj_type_id, name, label])
+                centroid = Topology.SetDictionary(centroid, d)
+                return centroid
+            return None
+
+        def edgesByIFCRelationships(ifc_relationships, ifc_types, vertices):
+            tuples = []
+            edges = []
+
+            for ifc_rel in ifc_relationships:
+                source = None
+                destinations = []
+                if ifc_rel.is_a("IfcRelAggregates"):
+                    source = ifc_rel.RelatingObject
+                    destinations = ifc_rel.RelatedObjects
+                if ifc_rel.is_a("IfcRelNests"):
+                    source = ifc_rel.RelatingObject
+                    destinations = ifc_rel.RelatedObjects
+                if ifc_rel.is_a("IfcRelAssignsToGroup"):
+                    source = ifc_rel.RelatingGroup
+                    destinations = ifc_rel.RelatedObjects
+                if ifc_rel.is_a("IfcRelConnectsPathElements"):
+                    source = ifc_rel.RelatingElement
+                    destinations = [ifc_rel.RelatedElement]
+                if ifc_rel.is_a("IfcRelConnectsStructuralMember"):
+                    source = ifc_rel.RelatingStructuralMember
+                    destinations = [ifc_rel.RelatedStructuralConnection]
+                if ifc_rel.is_a("IfcRelContainedInSpatialStructure"):
+                    source = ifc_rel.RelatingStructure
+                    destinations = ifc_rel.RelatedElements
+                if ifc_rel.is_a("IfcRelFillsElement"):
+                    source = ifc_rel.RelatingOpeningElement
+                    destinations = [ifc_rel.RelatedBuildingElement]
+                if ifc_rel.is_a("IfcRelSpaceBoundary"):
+                    source = ifc_rel.RelatingSpace
+                    destinations = [ifc_rel.RelatedBuildingElement]
+                if ifc_rel.is_a("IfcRelVoidsElement"):
+                    source = ifc_rel.RelatingBuildingElement
+                    destinations = [ifc_rel.RelatedOpeningElement]
+                if source:
+                    sv = vertexAtKeyValue(vertices, key="id", value=source.id())
+                    if sv:
+                        si = Vertex.Index(sv, vertices)
+                        for destination in destinations:
+                            if destination == None:
+                                continue
+                            ev = vertexAtKeyValue(vertices, key="id", value=destination.id())
+                            if ev:
+                                ei = Vertex.Index(ev, vertices)
+                                if not([si,ei] in tuples or [ei,si] in tuples):
+                                    tuples.append([si,ei])
+                                    e = Edge.ByVertices([sv,ev])
+                                    d = Dictionary.ByKeysValues(["id", "name", "type"], [ifc_rel.id(), ifc_rel.Name, ifc_rel.is_a()])
+                                    e = Topology.SetDictionary(e, d)
+                                    edges.append(e)
+            return edges
+        
+        ifc_types = IFCObjectTypes(file)
+        ifc_objects = IFCObjects(file, include=includeTypes, exclude=excludeTypes)
+        vertices = []
+        for ifc_object in ifc_objects:
+            v = vertexByIFCObject(ifc_object, ifc_types)
+            if v:
+                vertices.append(v)
+        if len(vertices) > 0:
+            ifc_relationships = IFCRelationships(file, include=includeRels, exclude=excludeRels)
+            edges = edgesByIFCRelationships(ifc_relationships, ifc_types, vertices)
+            g = Graph.ByVerticesEdges(vertices, edges)
+        else:
+            g = None
+        return g
+
+    @staticmethod
+    def ByIFCPath(path, includeTypes=[], excludeTypes=[], includeRels=[], excludeRels=[], xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5):
+        """
+        Create a Graph from an IFC path.
+
+        Parameters
+        ----------
+        path : str
+            The input IFC file path.
+        includeTypes : list , optional
+            A list of IFC object types to include in the graph. The default is [] which means all object types are included.
+        excludeTypes : list , optional
+            A list of IFC object types to exclude from the graph. The default is [] which mean no object type is excluded.
+        includeRels : list , optional
+            A list of IFC relationship types to include in the graph. The default is [] which means all relationship types are included.
+        excludeRels : list , optional
+            A list of IFC relationship types to exclude from the graph. The default is [] which mean no relationship type is excluded.
+        xMin : float, optional
+            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
+        yMin : float, optional
+            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
+        zMin : float, optional
+            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
+        xMax : float, optional
+            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
+        yMax : float, optional
+            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
+        zMax : float, optional
+            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+        
+        Returns
+        -------
+        topologic.Graph
+            The created graph.
+        
+        """
+        import ifcopenshell
+        if not path:
+            print("Graph.ByIFCPath - Error: the input path is not a valid path. Returning None.")
+            return None
+        ifc_file = ifcopenshell.open(path)
+        if not ifc_file:
+            print("Graph.ByIFCPath - Error: Could not open the IFC file. Returning None.")
+            return None
+        return Graph.ByIFCFile(ifc_file, includeTypes=includeTypes, excludeTypes=excludeTypes, includeRels=includeRels, excludeRels=excludeRels, xMin=xMin, yMin=yMin, zMin=zMin, xMax=xMax, yMax=yMax, zMax=zMax)
+
+
     @staticmethod
     def ByMeshData(vertices, edges, vertexDictionaries=None, edgeDictionaries=None, tolerance=0.0001):
         """
