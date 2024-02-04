@@ -30,7 +30,7 @@ except:
     except:
         raise Exception("Cluster - Error: Could not import scipy.")
 
-class Cluster(topologic.Cluster):
+class Cluster(Topology):
     @staticmethod
     def ByFormula(formula, xRange=None, yRange=None, xString="X", yString="Y"):
         """

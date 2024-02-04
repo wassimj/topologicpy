@@ -1,7 +1,7 @@
 import topologic
 import math
 import os
-
+from topologicpy.Topology import Topology
 try:
     import numpy as np
 except:
@@ -16,7 +16,7 @@ except:
     except:
         raise Exception("CellComplex - Error: Could not import numpy.")
 
-class CellComplex(topologic.CellComplex):
+class CellComplex(Topology):
     @staticmethod
     def Box(origin: topologic.Vertex = None,
             width: float = 1.0, length: float = 1.0, height: float = 1.0,

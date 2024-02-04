@@ -1,7 +1,7 @@
-import topologicpy
 import topologic
 from topologicpy.Vector import Vector
 from topologicpy.Wire import Wire
+from topologicpy.Topology import Topology
 import math
 import os
 
@@ -19,7 +19,7 @@ except:
     except:
         raise Exception("Face - Error: Could not import numpy.")
 
-class Face(topologic.Face):
+class Face(Topology):
     @staticmethod
     def AddInternalBoundaries(face: topologic.Face, wires: list) -> topologic.Face:
         """

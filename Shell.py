@@ -1,9 +1,8 @@
-#from types import NoneType
-import topologicpy
 import topologic
 from topologicpy.Topology import Topology
 import math
 import os
+
 try:
     from tqdm.auto import tqdm
 except:

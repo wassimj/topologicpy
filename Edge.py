@@ -1,9 +1,9 @@
-import topologicpy
 import topologic
 from topologicpy.Vertex import Vertex
 from topologicpy.Vector import Vector
+from topologicpy.Topology import Topology
 
-class Edge():
+class Edge(Topology):
     @staticmethod
     def Angle(edgeA: topologic.Edge, edgeB: topologic.Edge, mantissa: int = 6, bracket: bool = False) -> float:
         """

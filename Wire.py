@@ -1,13 +1,11 @@
 from binascii import a2b_base64
 from re import A
-import topologicpy
 import topologic
-from topologicpy.Cluster import Cluster
 from topologicpy.Topology import Topology
 import math
 import itertools
 
-class Wire(topologic.Wire):
+class Wire(Topology):
     @staticmethod
     def Arc(origin: topologic.Vertex = None, length: float = 1, height: float=0.5, sides: int = 16, close: bool = True, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001):
         """
