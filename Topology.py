@@ -2084,6 +2084,8 @@ class Topology():
                 toplevelTopologies.append(ev)
 
         for tp in toplevelTopologies:
+            # This is a hack because sometimes the imported topologies get weird. I think it is an opencascade bug.
+            tp = Topology.ByBREPString(Topology.BREPString(tp))
             if len(vertex_selectors) > 0:
                 _ = Topology.TransferDictionariesBySelectors(tp, vertex_selectors, tranVertices=True, tolerance=tolerance)
             if len(edge_selectors) > 0:
@@ -2780,7 +2782,7 @@ class Topology():
                     sv = Vertex.ByCoordinates(sp[0], sp[1], sp[2])
                     ev = Vertex.ByCoordinates(ep[0], ep[1], ep[2])
                     edges.append(Edge.ByVertices([sv, ev], tolerance=tolerance))
-                    faces.append(Face.ByWire(Wire.ByEdges(edges), tolerance=tolerance), tolerance=tolerance)
+                    faces.append(Face.ByWire(Wire.ByEdges(edges, tolerance=tolerance), tolerance=tolerance))
             try:
                 c = Cell.ByFaces(faces, tolerance=tolerance)
                 return c
@@ -2976,6 +2978,7 @@ class Topology():
             The exploded topology.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Cluster import Cluster
         from topologicpy.Graph import Graph
 
@@ -3067,7 +3070,7 @@ class Topology():
             xT = newX - oldX
             yT = newY - oldY
             zT = newZ - oldZ
-            newTopology = Topology.Translate(aTopology, xT, yT, zT)
+            newTopology = Topology.Translate(aTopology, xT*300, yT, zT)
             newTopologies.append(newTopology)
         return Cluster.ByTopologies(newTopologies)
     
@@ -4710,7 +4713,10 @@ class Topology():
         elif isinstance(topology, topologic.Cell):
             return_topology = Cell.ByFaces(final_faces, tolerance=tolerance)
         elif isinstance(topology, topologic.Shell):
-            return_topology = Shell.ByFaces(final_faces, tolerance=tolerance)
+            if len(final_faces) == 1:
+                return_topology = final_faces[0]
+            else:
+                return_topology = Shell.ByFaces(final_faces, tolerance=tolerance)
         if not isinstance(return_topology, topologic.Topology):
             return_topology = Cluster.ByTopologies(final_faces)
         return return_topology
@@ -5749,6 +5755,7 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
 
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
@@ -5772,7 +5779,7 @@ class Topology():
                 returnTopology = Shell.ByWires(topologies,triangulate=triangulate, tolerance=tolerance)
             except:
                 try:
-                    returnTopology = topologic.Cluster.ByTopologies(topologies)
+                    returnTopology = Cluster.ByTopologies(topologies)
                 except:
                     returnTopology = None
         elif topology.Type() == topologic.Wire.Type():
@@ -5794,7 +5801,7 @@ class Topology():
                             returnTopology = Shell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
                         except:
                             try:
-                                returnTopology = topologic.Cluster.ByTopologies(topologies)
+                                returnTopology = Cluster.ByTopologies(topologies)
                             except:
                                 returnTopology = None
             else:
@@ -5803,7 +5810,7 @@ class Topology():
                     returnTopology = Shell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
                 except:
                     try:
-                        returnTopology = topologic.Cluster.ByTopologies(topologies)
+                        returnTopology = Cluster.ByTopologies(topologies)
                     except:
                         returnTopology = None
         elif topology.Type() == topologic.Face.Type():
@@ -5817,16 +5824,16 @@ class Topology():
                     returnTopology = Shell.ByWires(external_wires, triangulate=triangulate, tolerance=tolerance)
                 except:
                     try:
-                        returnTopology = topologic.Cluster.ByTopologies(topologies)
+                        returnTopology = Cluster.ByTopologies(topologies)
                     except:
                         returnTopology = None
         else:
-            returnTopology = Topology.SelfMerge(topologic.Cluster.ByTopologies(topologies), tolerance=tolerance)
+            returnTopology = Topology.SelfMerge(Cluster.ByTopologies(topologies), tolerance=tolerance)
         if not returnTopology:
-            return topologic.Cluster.ByTopologies(topologies)
+            return Cluster.ByTopologies(topologies)
         if returnTopology.Type() == topologic.Shell.Type():
             try:
-                new_t = topologic.Cell.ByShell(returnTopology)
+                new_t = Cell.ByShell(returnTopology)
                 if new_t:
                     returnTopology = new_t
             except:

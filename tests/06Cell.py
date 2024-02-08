@@ -319,11 +319,7 @@ assert isinstance(cell_sphere, topologic.Cell), "Cell.Sphere. topologic.Cell"
 # test 2
 cell_sphere = Cell.Sphere(origin=v3, radius=3, uSides=32, vSides=16,
                             direction = [0,0,1], placement='bottom', tolerance=0.001)             # with optional inputs
-assert isinstance(cell_sphere, topologic.Cell), "Cell.Sphere. topologic.Cell"
-# plot geometry
-data_cell_sphere = Plotly.DataByTopology(cell_sphere)
-figure_cell_sphere = Plotly.FigureByData(data_cell_sphere)
-#Plotly.Show(figure_cell_sphere)                                                                   # visualization
+assert isinstance(cell_sphere, topologic.Cell), "Cell.Sphere. topologic.Cell"                                                                 # visualization
 
 # Case 25 - SurfaceArea
 print("Case 25")

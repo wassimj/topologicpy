@@ -690,7 +690,7 @@ class Shell(Topology):
     @staticmethod
     def IsOnBoundary(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
-        Returns True if the input vertex is inside the input shell. Returns False otherwise. Inside is defined as being inside one of the shell's faces
+        Returns True if the input vertex is on the boundary of the input shell. Returns False otherwise. On the boundary is defined as being on the boundary of one of the shell's external or internal boundaries
 
         Parameters
         ----------
@@ -715,12 +715,18 @@ class Shell(Topology):
         if not isinstance(vertex, topologic.Vertex):
             return None
         boundary = Shell.ExternalBoundary(shell, tolerance=tolerance)
-        return Wire.IsInternal(wire=boundary, vertex=vertex, tolerance=tolerance)
+        if Wire.IsInternal(wire=boundary, vertex=vertex, tolerance=tolerance):
+            return True
+        internal_boundaries = Shell.InternalBoundaries(shell, tolerance=tolerance)
+        for ib in internal_boundaries:
+            if Wire.IsInternal(wire=ib, vertex=vertex, tolerance=tolerance):
+                return True
+        return False
     
     @staticmethod
     def IsOutside(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
-        Returns True if the input vertex is inside the input shell. Returns False otherwise. Inside is defined as being inside one of the shell's faces
+        Returns True if the input vertex is outside the input shell. Returns False otherwise. Outside is defined as being outside all of the shell's faces
 
         Parameters
         ----------
@@ -737,12 +743,11 @@ class Shell(Topology):
             Returns True if the input vertex is inside the input shell. Returns False otherwise.
 
         """
-        from topologicpy.Wire import Wire
         if not isinstance(shell, topologic.Shell):
             return None
         if not isinstance(vertex, topologic.Vertex):
             return None
-        return not Wire.IsInternal(shell=shell, vertex=vertex, tolerance=tolerance)
+        return not Shell.IsInternal(shell=shell, vertex=vertex, tolerance=tolerance)
     
     @staticmethod
     def HyperbolicParaboloidRectangularDomain(origin: topologic.Vertex = None, llVertex: topologic.Vertex = None, lrVertex: topologic.Vertex =None, ulVertex: topologic.Vertex =None, urVertex: topologic.Vertex = None,

@@ -276,11 +276,11 @@ assert isinstance(ft2, bool), "Face.FacingToward. Should be Boolean"
 # Case 21 - Harmonize
 print("Case 21")
 #test 1
-hF1 = Face.Harmonize(RecF)
+hF1 = Face.Harmonize(rec4)
 assert isinstance(hF1, topologic.Face), "Face.Harmonize. Should be topologic.Face"
 #test 2
-hF2 = Face.Harmonize(CirF)
-assert isinstance(CirF, topologic.Face), "Face.Harmonize. Should be topologic.Face"
+hF2 = Face.Harmonize(rec5)
+assert isinstance(hF2, topologic.Face), "Face.Harmonize. Should be topologic.Face"
 
 # Case 22 - ExternalBoundary
 print("Case 22")

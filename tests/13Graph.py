@@ -445,5 +445,21 @@ assert isinstance(graphV2, list), "Graph.Vertices. Should be list"
 # case 40 - VisibilityGraph
 print("Case 40")
 Bound1 = Wire.Rectangle(v0, 50, 50)
-graphVG1 = Graph.VisibilityGraph(Bound1, obstacles=None, viewpointsA=None, viewpointsB=None, tolerance=0.001)
+Bound2 = Wire.Rectangle(v0, 25, 25)
+Bound2 = Topology.Rotate(Bound2, origin=Topology.Centroid(Bound2), x=0, y=0, z=1, degree=45)
+f = Face.ByWires(Bound1, [Bound2])
+va = Topology.Vertices(Bound1)
+graphVG1 = Graph.VisibilityGraph(f, viewpointsA=va, viewpointsB=[])
+Topology.Show(graphVG1, renderer="offline")
 assert isinstance(graphVG1, topologic.Graph), "Graph.VisibilityGraph. Should be topologic.Graph"
+
+# case 40 - NavigationGraph
+print("Case 40")
+Bound1 = Wire.Rectangle(v0, 50, 50)
+Bound2 = Wire.Rectangle(v0, 25, 25)
+Bound2 = Topology.Rotate(Bound2, origin=Topology.Centroid(Bound2), x=0, y=0, z=1, degree=45)
+f = Face.ByWires(Bound1, [Bound2])
+va = Topology.Vertices(Bound1)
+graphNG1 = Graph.NavigationGraph(f, viewpointsA=va, viewpointsB=[], tolerance=0.001)
+Topology.Show(graphNG1, renderer="offline")
+assert isinstance(graphVG1, topologic.Graph), "Graph.NavigationGraph. Should be topologic.Graph"

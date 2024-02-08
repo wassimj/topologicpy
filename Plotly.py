@@ -888,26 +888,26 @@ class Plotly:
                 tp_faces = Topology.Faces(topology)
             if not(tp_faces == None or tp_faces == []):
                 # rebuild faces to remove any degenerate faces
-                new_faces = []
-                for i, f in enumerate(tp_faces):
-                    eb = Face.ExternalBoundary(f)
-                    eb = Topology.RemoveCollinearEdges(eb)
-                    if not eb == None:
-                        ibList = Face.InternalBoundaries(f)
-                        ibList = [Wire.RemoveCollinearEdges(ib) for ib in ibList]
-                        ibList = [ib for ib in ibList if not ib == None]
-                        new_f = Face.ByWires(eb, ibList)
-                        if isinstance(new_f, topologic.Face):
-                            if faceLabelKey or faceGroupKey:
-                                d = Topology.Dictionary(tp_faces[i])
-                                keys = Dictionary.Keys(d)
-                                if len(keys) > 0:
-                                    new_f = Topology.SetDictionary(new_f, d)
-                            new_faces.append(new_f)
+                #new_faces = []
+                #for i, f in enumerate(tp_faces):
+                    #eb = Face.ExternalBoundary(f)
+                    #eb = Topology.RemoveCollinearEdges(eb)
+                    #if not eb == None:
+                        #ibList = Face.InternalBoundaries(f)
+                        #ibList = [Wire.RemoveCollinearEdges(ib) for ib in ibList]
+                        #ibList = [ib for ib in ibList if not ib == None]
+                        #new_f = Face.ByWires(eb, ibList, verbose=False)
+                        #if isinstance(new_f, topologic.Face):
+                            #if faceLabelKey or faceGroupKey:
+                                #d = Topology.Dictionary(tp_faces[i])
+                                #keys = Dictionary.Keys(d)
+                                #if len(keys) > 0:
+                                    #new_f = Topology.SetDictionary(new_f, d)
+                            #new_faces.append(new_f)
                 
                 f_dictionaries = []
                 all_triangles = []
-                for tp_face in new_faces:
+                for tp_face in tp_faces:
                     triangles = Face.Triangulate(tp_face, tolerance=tolerance)
                     if isinstance(triangles, list):
                         for tri in triangles:

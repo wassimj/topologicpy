@@ -1957,7 +1957,7 @@ class Wire(Topology):
         projected_edges = []
 
         if large_face:
-            if (large_face.Type() == Face.Type()):
+            if (large_face.Type() == topologic.Face.Type()):
                 for edge in edges:
                     if edge:
                         if (edge.Type() == topologic.Edge.Type()):
@@ -2142,6 +2142,37 @@ class Wire(Topology):
                 return wire
         else:
             return wire
+
+    def Reverse(wire, tolerance: float = 0.0001):
+        """
+        Creates a wire that has the reverse direction of the input wire.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Wire
+            The reversed wire.
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not isinstance(wire, topologic.Wire):
+            print("Wire.Reverse - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+        if not Wire.IsManifold(wire):
+            print("Wire.Reverse - Error: The input wire parameter is not a manifold wire. Returning None.")
+            return None
+        
+        vertices = Topology.Vertices(wire)
+        vertices.reverse()
+        new_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
+        return new_wire
 
     def Roof(face, degree=45, tolerance=0.001):
         """

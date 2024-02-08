@@ -490,9 +490,43 @@ class Graph:
         return paths
 
     @staticmethod
+    def AverageClusteringCoefficient(graph, mantissa=6):
+        """
+        Returns the average clustering coefficient of the input graph. See https://en.wikipedia.org/wiki/Clustering_coefficient.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+
+        Returns
+        -------
+        float
+            The average clustering coefficient of the input graph.
+
+        """
+        from topologicpy.Vertex import Vertex
+        import topologic
+
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        vertices = Graph.Vertices(graph)
+        if len(vertices) < 1:
+            print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is a NULL graph. Returning None.")
+            return None
+        if len(vertices) == 1:
+            return 0.0
+        lcc = Graph.LocalClusteringCoefficient(graph, vertices)
+        acc = round(sum(lcc)/float(len(lcc)), mantissa)
+        return acc
+
+    @staticmethod
     def BetweenessCentrality(graph, vertices=None, sources=None, destinations=None, tolerance=0.001):
         """
-            Returns the betweeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Centrality.
+            Returns the betweeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Betweenness_centrality.
 
         Parameters
         ----------
@@ -642,7 +676,7 @@ class Graph:
         # Add vertices with random coordinates
         vertices = []
         for i in range(len(adjacencyMatrix)):
-            x, y, z = random.randrange(xMin,xMax), random.randrange(yMin,yMax), random.randrange(zMin,zMax)
+            x, y, z = random.uniform(xMin,xMax), random.uniform(yMin,yMax), random.uniform(zMin,zMax)
             vertices.append(Vertex.ByCoordinates(x, y, z))
 
         # Add edges based on the adjacency matrix
@@ -3071,7 +3105,7 @@ class Graph:
     @staticmethod
     def ClosenessCentrality(graph, vertices=None, tolerance = 0.0001):
         """
-        Return the closeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the closeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Centrality.
+        Return the closeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the closeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Closeness_centrality.
 
         Parameters
         ----------
@@ -4213,6 +4247,59 @@ class Graph:
         flat_graph = Graph.ByMeshData(positions, edges, v_dicts, e_dicts, tolerance=tolerance)
         return flat_graph
 
+
+    @staticmethod
+    def GlobalClusteringCoefficient(graph):
+        """
+        Returns the global clustering coefficient of the input graph. See https://en.wikipedia.org/wiki/Clustering_coefficient.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        Returns
+        -------
+        int
+            The computed global clustering coefficient.
+
+        """
+        import topologic
+
+        def global_clustering_coefficient(adjacency_matrix):
+            total_triangles = 0
+            total_possible_triangles = 0
+
+            num_nodes = len(adjacency_matrix)
+
+            for i in range(num_nodes):
+                neighbors = [j for j, value in enumerate(adjacency_matrix[i]) if value == 1]
+                num_neighbors = len(neighbors)
+                num_triangles = 0
+                if num_neighbors >= 2:
+                    # Count the number of connections between the neighbors
+                    for i in range(num_neighbors):
+                        for j in range(i + 1, num_neighbors):
+                            if adjacency_matrix[neighbors[i]][neighbors[j]] == 1:
+                                num_triangles += 1
+                    
+                    # Update total triangles and possible triangles
+                    total_triangles += num_triangles
+                    total_possible_triangles += num_neighbors * (num_neighbors - 1) // 2
+                    
+
+            # Calculate the global clustering coefficient
+            print("Total Triangles:", total_triangles )
+            print("Total Possible Triangles:", total_possible_triangles )
+            global_clustering_coeff = 3.0 * total_triangles / total_possible_triangles if total_possible_triangles > 0 else 0.0
+
+            return global_clustering_coeff
+
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        adjacency_matrix = Graph.AdjacencyMatrix(graph)
+        return global_clustering_coefficient(adjacency_matrix)
+    
     @staticmethod
     def Guid(graph):
         """
@@ -4372,6 +4459,79 @@ class Graph:
         vertices = []
         _ = graph.IsolatedVertices(vertices)
         return vertices
+    
+    @staticmethod
+    def LocalClusteringCoefficient(graph, vertices=None, mantissa=6):
+        """
+        Returns the local clustering coefficient of the input list of vertices within the input graph. See https://en.wikipedia.org/wiki/Clustering_coefficient.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertices : list , optional
+            The input list of vertices. If set to None, the local clustering coefficient of all vertices will be computed.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        
+        Returns
+        -------
+        list
+            The list of local clustering coefficient. The order of the list matches the order of the list of input vertices.
+
+        """
+        from topologicpy.Vertex import Vertex
+        import topologic
+
+        def local_clustering_coefficient(adjacency_matrix, node):
+            """
+            Compute the local clustering coefficient for a given node in a graph represented by an adjacency matrix.
+
+            Parameters:
+            - adjacency_matrix: 2D list representing the adjacency matrix of the graph
+            - node: Node for which the local clustering coefficient is computed
+
+            Returns:
+            - Local clustering coefficient for the given node
+            """
+            neighbors = [i for i, value in enumerate(adjacency_matrix[node]) if value == 1]
+            num_neighbors = len(neighbors)
+
+            if num_neighbors < 2:
+                # If the node has less than 2 neighbors, the clustering coefficient is undefined
+                return 0.0
+
+            # Count the number of connections between the neighbors
+            num_connections = 0
+            for i in range(num_neighbors):
+                for j in range(i + 1, num_neighbors):
+                    if adjacency_matrix[neighbors[i]][neighbors[j]] == 1:
+                        num_connections += 1
+            # Calculate the local clustering coefficient
+            local_clustering_coeff = 2.0 * num_connections / (num_neighbors * (num_neighbors - 1))
+
+            return local_clustering_coeff
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        if vertices == None:
+            vertices = Graph.Vertices(graph)
+        if isinstance(vertices, topologic.Vertex):
+            vertices = [vertices]
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) < 1:
+            print("Graph.LocalClusteringCoefficient - Error: The input vertices parameter does not contain valid vertices. Returning None.")
+            return None
+        g_vertices = Graph.Vertices(graph)
+        adjacency_matrix = Graph.AdjacencyMatrix(graph)
+        lcc = []
+        for v in vertices:
+            i = Vertex.Index(v, g_vertices)
+            if not i == None:
+                lcc.append(round(local_clustering_coefficient(adjacency_matrix, i), mantissa))
+            else:
+                lcc.append(None)
+        return lcc
     
     @staticmethod
     def LongestPath(graph, vertexA, vertexB, vertexKey=None, edgeKey=None, costKey=None, timeLimit=10, tolerance=0.0001):
@@ -4736,6 +4896,86 @@ class Graph:
                         tranEdgeDicts = False
                     mst = Graph.AddEdge(mst, edge, transferVertexDictionaries=False, transferEdgeDictionaries=tranEdgeDicts)
         return mst
+
+    @staticmethod
+    def NavigationGraph(face, viewpointsA=None, viewpointsB=None, tolerance=0.0001):
+        """
+        Creates a 2D navigation graph.
+
+        Parameters
+        ----------
+        face : topologic.Face
+            The input boundary. View edges will be clipped to this face. The holes in the face are used as the obstacles
+        viewpointsA : list
+            The first input list of viewpoints (vertices). Visibility edges will connect these veritces to viewpointsB.
+        viewpointsB : list
+            The input list of viewpoints (vertices). Visibility edges will connect these vertices to viewpointsA.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Graph
+            The visibility graph.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Graph import Graph
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
+        if not isinstance(face, topologic.Face):
+            print("Graph.VisibilityGraph - Error: The input face parameter is not a valid face. Returning None")
+            return None
+        if viewpointsA == None:
+            viewpointsA = Topology.Vertices(face)
+        if viewpointsB == None:
+            viewpointsB = Topology.Vertices(face)
+        
+        if not isinstance(viewpointsA, list):
+            print("Graph.VisibilityGraph - Error: The input viewpointsA parameter is not a valid list. Returning None")
+            return None
+        if not isinstance(viewpointsB, list):
+            print("Graph.VisibilityGraph - Error: The input viewpointsB parameter is not a valid list. Returning None")
+            return None
+        viewpointsA = [v for v in viewpointsA if isinstance(v, topologic.Vertex)]
+        if len(viewpointsA) < 1:
+            print("Graph.VisibilityGraph - Error: The input viewpointsA parameter does not contain any vertices. Returning None")
+            return None
+        viewpointsB = [v for v in viewpointsB if isinstance(v, topologic.Vertex)]
+        if len(viewpointsB) < 1: #Nothing to look at, so return a graph made of viewpointsA
+            return Graph.ByVerticesEdges(viewpointsA, [])
+        
+        i_boundaries = Face.InternalBoundaries(face)
+        obstacles = []
+        for i_boundary in i_boundaries:
+            if isinstance(i_boundary, topologic.Wire):
+                obstacles.append(Face.ByWire(i_boundary))
+        obstacle_cluster = Cluster.ByTopologies(obstacles)
+        
+        final_edges = []
+        for i in tqdm(range(len(viewpointsA))):
+            va = viewpointsA[i]
+            for j in range(len(viewpointsB)):
+                vb = viewpointsB[j]
+                if Vertex.Distance(va, vb) > tolerance:
+                    edge = Edge.ByVertices([va,vb])
+                    result = Topology.Difference(edge, obstacle_cluster)
+                    if isinstance(result, topologic.Cluster):
+                        final_edges += Topology.Edges(result)
+                    if isinstance(result, topologic.Edge):
+                        final_edges.append(result)
+        # Slice the face with the edges
+        sliced_face = Topology.Slice(face, Cluster.ByTopologies(final_edges))
+        final_edges = Topology.Edges(sliced_face)
+        if len(final_edges) > 0:
+            final_vertices = Topology.Vertices(Cluster.ByTopologies(final_edges))
+            g = Graph.ByVerticesEdges(final_vertices, final_edges)
+            return g
+        return None
+
 
     @staticmethod
     def NearestVertex(graph, vertex):
@@ -5194,12 +5434,12 @@ class Graph:
             if edgeKey.lower() == "length":
                 edgeKey = "Length"
         try:
-            gsv = Graph.NearestVertex(graph, vertexA, tolerance)
-            gev = Graph.NearestVertex(graph, vertexB, tolerance)
+            gsv = Graph.NearestVertex(graph, vertexA)
+            gev = Graph.NearestVertex(graph, vertexB)
             shortest_path = graph.ShortestPath(gsv, gev, vertexKey, edgeKey)
             sv = Topology.Vertices(shortest_path)[0]
             if Vertex.Distance(sv, gev) < tolerance: # Path is reversed. Correct it.
-                if isinstance(shortest_path, topologic.Edges):
+                if isinstance(shortest_path, topologic.Edge):
                     shortest_path = Edge.Reverse(shortest_path)
                 if isinstance(shortest_path, topologic.Wire):
                     shortest_path = Wire.Reverse(shortest_path)
@@ -5595,10 +5835,10 @@ class Graph:
         ----------
         face : topologic.Face
             The input boundary. View edges will be clipped to this face. The holes in the face are used as the obstacles
-        viewpointsA : list
-            The first input list of viewpoints (vertices). Visibility edges will connect these veritces to viewpointsB.
-        viewpointsB : list
-            The input list of viewpoints (vertices). Visibility edges will connect these vertices to viewpointsA.
+        viewpointsA : list , optional
+            The first input list of viewpoints (vertices). Visibility edges will connect these veritces to viewpointsB. If set to None, this parameters will be set to all vertices of the input face. The default is None.
+        viewpointsB : list , optional
+            The input list of viewpoints (vertices). Visibility edges will connect these vertices to viewpointsA. If set to None, this parameters will be set to all vertices of the input face. The default is None.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -5614,9 +5854,29 @@ class Graph:
         from topologicpy.Graph import Graph
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        import sys
 
-        eb = Face.ByWire(Face.ExternalBoundary(face))
+        if not isinstance(face, topologic.Face):
+            print("Graph.VisibilityGraph - Error: The input face parameter is not a valid face. Returning None")
+            return None
+        if viewpointsA == None:
+            viewpointsA = Topology.Vertices(face)
+        if viewpointsB == None:
+            viewpointsB = Topology.Vertices(face)
+        
+        if not isinstance(viewpointsA, list):
+            print("Graph.VisibilityGraph - Error: The input viewpointsA parameter is not a valid list. Returning None")
+            return None
+        if not isinstance(viewpointsB, list):
+            print("Graph.VisibilityGraph - Error: The input viewpointsB parameter is not a valid list. Returning None")
+            return None
+        viewpointsA = [v for v in viewpointsA if isinstance(v, topologic.Vertex)]
+        if len(viewpointsA) < 1:
+            print("Graph.VisibilityGraph - Error: The input viewpointsA parameter does not contain any vertices. Returning None")
+            return None
+        viewpointsB = [v for v in viewpointsB if isinstance(v, topologic.Vertex)]
+        if len(viewpointsB) < 1: #Nothing to look at, so return a graph made of viewpointsA
+            return Graph.ByVerticesEdges(viewpointsA, [])
+        
         i_boundaries = Face.InternalBoundaries(face)
         obstacles = []
         for i_boundary in i_boundaries:
