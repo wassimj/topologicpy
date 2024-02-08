@@ -1319,6 +1319,48 @@ class Wire(Topology):
         return ev
     
     @staticmethod
+    def InteriorAngles(wire: topologic.Wire, mantissa: int = 6) -> list:
+        """
+        Returns the interior angles of the input wire in degrees. The wire must be 2D, manifold and closed.
+        
+        Parameters
+        ----------
+        wireA : topologic.Wire
+            The first input wire.
+        
+        Returns
+        -------
+        list
+            The list of interior angles.
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+        from topologicpy.Vector import Vector
+
+        if not isinstance(wire, topologic.Wire):
+            print("Wire.InteriorAngles - Error: The input wire parameter is not a valid wire. Returning None")
+            return None
+        if not Wire.IsManifold(wire):
+            print("Wire.InteriorAngles - Error: The input wire parameter is non-manifold. Returning None")
+            return None
+        if not Wire.IsClosed(wire):
+            print("Wire.InteriorAngles - Error: The input wire parameter is not closed. Returning None")
+            return None
+        
+        vertices = Topology.Vertices(wire)
+        angles = []
+        for i, v in enumerate(vertices):
+            edges = Topology.SuperTopologies(v, wire, topologyType="edge")
+            e1 = edges[0]
+            e2 = edges[1]
+            if i == 0:
+                e2 = Edge.Reverse(e2)
+            a = round(360 - Vector.CompassAngle(Edge.Direction(e1), Edge.Direction(e2)), mantissa)
+            angles.append(a)
+        return angles
+
+    @staticmethod
     def Interpolate(wires: list, n: int = 5, outputType: str = "default", mapping: str = "default", tolerance: float = 0.0001) -> topologic.Topology:
         """
         Creates *n* number of wires that interpolate between wireA and wireB.
