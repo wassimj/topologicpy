@@ -1349,7 +1349,7 @@ class Wire(Topology):
         return exterior_angles
     
     @staticmethod
-    def InteriorAngles(wire: topologic.Wire, mantissa: int = 6) -> list:
+    def InteriorAngles(wire: topologic.Wire, tolerance: float = 0.0001, mantissa: int = 6) -> list:
         """
         Returns the interior angles of the input wire in degrees. The wire must be planar, manifold, and closed.
         
@@ -1357,16 +1357,22 @@ class Wire(Topology):
         ----------
         wire : topologic.Wire
             The input wire.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         
         Returns
         -------
         list
             The list of interior angles.
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
+        from topologicpy.Dictionary import Dictionary
 
         if not isinstance(wire, topologic.Wire):
             print("Wire.InteriorAngles - Error: The input wire parameter is not a valid wire. Returning None")
@@ -1379,17 +1385,29 @@ class Wire(Topology):
             return None
         
         f = Face.Flatten(Face.ByWire(wire))
-        w = Face.ExternalBoundary(f)
-        vertices = Topology.Vertices(w)
+        world_origin = Vertex.ByCoordinates(0,0,0)
+        # Retrieve the needed transformations
+        dictionary = Topology.Dictionary(f)
+        xTran = Dictionary.ValueAtKey(dictionary,"x")
+        yTran = Dictionary.ValueAtKey(dictionary,"y")
+        zTran = Dictionary.ValueAtKey(dictionary,"z")
+        phi = Dictionary.ValueAtKey(dictionary,"phi")
+        theta = Dictionary.ValueAtKey(dictionary,"theta")
+
+        w = Topology.Translate(wire, -xTran, -yTran, -zTran)
+        w = Topology.Rotate(w, world_origin, 0, 0, 1, -phi)
+        w = Topology.Rotate(w, world_origin, 0, 1, 0, -theta)
         angles = []
-        for i, v in enumerate(vertices):
-            edges = Topology.SuperTopologies(v, w, topologyType="edge")
-            e1 = edges[0]
-            e2 = edges[1]
-            if i == 0:
-                e2 = Edge.Reverse(e2)
+        edges = Topology.Edges(w)
+        for i in range(len(edges)-1):
+            e1 = edges[i]
+            e2 = edges[i+1]
             a = round(360 - Vector.CompassAngle(Edge.Direction(e1), Edge.Direction(e2)), mantissa)
             angles.append(a)
+        e1 = edges[len(edges)-1]
+        e2 = edges[0]
+        a = round(360 - Vector.CompassAngle(Edge.Direction(e1), Edge.Direction(e2)), mantissa)
+        angles = [a]+angles
         return angles
 
     @staticmethod

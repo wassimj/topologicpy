@@ -950,7 +950,7 @@ class Face(Topology):
         from topologicpy.Wire import Wire
 
         if not isinstance(face, topologic.Face):
-            print("Face.InteriorAngles - Error: The input face parameter is not a valid face. Returning None.")
+            print("Face.ExteriorAngles - Error: The input face parameter is not a valid face. Returning None.")
             return None
         eb = Face.ExternalBoundary(face)
         return_list = Wire.ExteriorAngles(eb, mantissa=mantissa)
@@ -959,7 +959,7 @@ class Face(Topology):
             ib_i_a_list = []
             if len(internal_boundaries) > 0:
                 for ib in internal_boundaries:
-                    ib_interior_angles = Wire.InteriorAngles(eb, mantissa=mantissa)
+                    ib_interior_angles = Wire.InteriorAngles(ib, mantissa=mantissa)
                     ib_i_a_list.append(ib_interior_angles)
             if len(ib_i_a_list) > 0:
                 return_list = [return_list]+[ib_i_a_list]
@@ -1232,7 +1232,7 @@ class Face(Topology):
             ib_i_a_list = []
             if len(internal_boundaries) > 0:
                 for ib in internal_boundaries:
-                    ib_interior_angles = Wire.ExteriorAngles(eb, mantissa=mantissa)
+                    ib_interior_angles = Wire.ExteriorAngles(ib, mantissa=mantissa)
                     ib_i_a_list.append(ib_interior_angles)
             if len(ib_i_a_list) > 0:
                 return_list = [return_list]+[ib_i_a_list]

@@ -4921,6 +4921,7 @@ class Graph:
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Graph import Graph
         from topologicpy.Cluster import Cluster
@@ -4945,16 +4946,30 @@ class Graph:
             print("Graph.VisibilityGraph - Error: The input viewpointsA parameter does not contain any vertices. Returning None")
             return None
         viewpointsB = [v for v in viewpointsB if isinstance(v, topologic.Vertex)]
-        if len(viewpointsB) < 1: #Nothing to look at, so return a graph made of viewpointsA
-            return Graph.ByVerticesEdges(viewpointsA, [])
+        #if len(viewpointsB) < 1: #Nothing to navigate to, so return a graph made of viewpointsA
+            #return Graph.ByVerticesEdges(viewpointsA, [])
         
+        # Add obstuse angles of external boundary to viewpoints
+        e_boundary = Face.ExternalBoundary(face)
+        if isinstance(e_boundary, topologic.Wire):
+            vertices = Topology.Vertices(e_boundary)
+            interior_angles = Wire.InteriorAngles(e_boundary)
+            for i, ang in enumerate(interior_angles):
+                if ang > 180:
+                    viewpointsA.append(vertices[i])
+                    viewpointsB.append(vertices[i])
         i_boundaries = Face.InternalBoundaries(face)
         obstacles = []
         for i_boundary in i_boundaries:
             if isinstance(i_boundary, topologic.Wire):
                 obstacles.append(Face.ByWire(i_boundary))
+                vertices = Topology.Vertices(i_boundary)
+                interior_angles = Wire.InteriorAngles(i_boundary)
+                for i, ang in enumerate(interior_angles):
+                    if ang < 180:
+                        viewpointsA.append(vertices[i])
+                        viewpointsB.append(vertices[i])
         obstacle_cluster = Cluster.ByTopologies(obstacles)
-        
         final_edges = []
         for i in tqdm(range(len(viewpointsA))):
             va = viewpointsA[i]
@@ -4963,13 +4978,17 @@ class Graph:
                 if Vertex.Distance(va, vb) > tolerance:
                     edge = Edge.ByVertices([va,vb])
                     result = Topology.Difference(edge, obstacle_cluster)
-                    if isinstance(result, topologic.Cluster):
-                        final_edges += Topology.Edges(result)
+                    if not result == None:
+                        result2 = Topology.Difference(result, face)
+                        if isinstance(result2, topologic.Edge) or isinstance(result2, topologic.Cluster):
+                            result = result2
                     if isinstance(result, topologic.Edge):
-                        final_edges.append(result)
-        # Slice the face with the edges
-        sliced_face = Topology.Slice(face, Cluster.ByTopologies(final_edges))
-        final_edges = Topology.Edges(sliced_face)
+                        sv = Edge.StartVertex(result)
+                        ev = Edge.EndVertex(result)
+                        if (not Vertex.Index(sv, viewpointsA+viewpointsB) == None) and (not Vertex.Index(ev, viewpointsA+viewpointsB) == None):
+                            final_edges.append(result)
+        face_edges = Topology.Edges(face)
+        final_edges += face_edges
         if len(final_edges) > 0:
             final_vertices = Topology.Vertices(Cluster.ByTopologies(final_edges))
             g = Graph.ByVerticesEdges(final_vertices, final_edges)
