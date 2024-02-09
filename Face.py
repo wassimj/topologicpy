@@ -926,6 +926,46 @@ class Face(Topology):
         return Face.ByWire(wire, tolerance=tolerance)
     
     @staticmethod
+    def ExteriorAngles(face: topologic.Face, includeInternalBoundaries=False, mantissa: int = 6) -> list:
+        """
+        Returns the exterior angles of the input face in degrees. The face must be planar.
+        
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        includeInternalBoundaries : bool , optional
+            If set to True and if the face has internal boundaries (holes), the returned list will be a nested list where the first list is the list
+            of exterior angles of the external boundary and the second list will contain lists of the exterior angles of each of the
+            internal boundaries (holes). For example: [[270,270,270,270], [[270,270,270,270],[300,300,300]]]. If not, the returned list will be
+            a simple list of interior angles of the external boundary. For example: [270,270,270,270]. Please note that that the interior angles of the
+            internal boundaries are considered to be those interior to the original face. Thus, they are exterior to the internal boundary.
+        
+        Returns
+        -------
+        list
+            The list of exterior angles.
+        """
+        
+        from topologicpy.Wire import Wire
+
+        if not isinstance(face, topologic.Face):
+            print("Face.InteriorAngles - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+        eb = Face.ExternalBoundary(face)
+        return_list = Wire.ExteriorAngles(eb, mantissa=mantissa)
+        if includeInternalBoundaries:
+            internal_boundaries = Face.InternalBoundaries(face)
+            ib_i_a_list = []
+            if len(internal_boundaries) > 0:
+                for ib in internal_boundaries:
+                    ib_interior_angles = Wire.InteriorAngles(eb, mantissa=mantissa)
+                    ib_i_a_list.append(ib_interior_angles)
+            if len(ib_i_a_list) > 0:
+                return_list = [return_list]+[ib_i_a_list]
+        return return_list
+
+    @staticmethod
     def ExternalBoundary(face: topologic.Face) -> topologic.Wire:
         """
         Returns the external boundary (closed wire) of the input face.
@@ -1158,6 +1198,46 @@ class Face(Topology):
         harmonizedFace = Topology.Translate(harmonizedFace, xTran, yTran, zTran)
         return harmonizedFace
 
+    @staticmethod
+    def InteriorAngles(face: topologic.Face, includeInternalBoundaries=False, mantissa: int = 6) -> list:
+        """
+        Returns the interior angles of the input face in degrees. The face must be planar.
+        
+        Parameters
+        ----------
+        face : topologic.Face
+            The input face.
+        includeInternalBoundaries : bool , optional
+            If set to True and if the face has internal boundaries (holes), the returned list will be a nested list where the first list is the list
+            of interior angles of the external boundary and the second list will contain lists of the interior angles of each of the
+            internal boundaries (holes). For example: [[90,90,90,90], [[90,90,90,90],[60,60,60]]]. If not, the returned list will be
+            a simple list of interior angles of the external boundary. For example: [90,90,90,90]. Please note that that the interior angles of the
+            internal boundaries are considered to be those interior to the original face. Thus, they are exterior to the internal boundary.
+        
+        Returns
+        -------
+        list
+            The list of interior angles.
+        """
+        
+        from topologicpy.Wire import Wire
+
+        if not isinstance(face, topologic.Face):
+            print("Face.InteriorAngles - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+        eb = Face.ExternalBoundary(face)
+        return_list = Wire.InteriorAngles(eb, mantissa=mantissa)
+        if includeInternalBoundaries:
+            internal_boundaries = Face.InternalBoundaries(face)
+            ib_i_a_list = []
+            if len(internal_boundaries) > 0:
+                for ib in internal_boundaries:
+                    ib_interior_angles = Wire.ExteriorAngles(eb, mantissa=mantissa)
+                    ib_i_a_list.append(ib_interior_angles)
+            if len(ib_i_a_list) > 0:
+                return_list = [return_list]+[ib_i_a_list]
+        return return_list
+    
     @staticmethod
     def InternalBoundaries(face: topologic.Face) -> list:
         """

@@ -1319,14 +1319,44 @@ class Wire(Topology):
         return ev
     
     @staticmethod
-    def InteriorAngles(wire: topologic.Wire, mantissa: int = 6) -> list:
+    def ExteriorAngles(wire: topologic.Wire, mantissa: int = 6) -> list:
         """
-        Returns the interior angles of the input wire in degrees. The wire must be 2D, manifold and closed.
+        Returns the exterior angles of the input wire in degrees. The wire must be planar, manifold, and closed.
         
         Parameters
         ----------
-        wireA : topologic.Wire
-            The first input wire.
+        wire : topologic.Wire
+            The input wire.
+        
+        Returns
+        -------
+        list
+            The list of interior angles.
+        """        
+
+        if not isinstance(wire, topologic.Wire):
+            print("Wire.InteriorAngles - Error: The input wire parameter is not a valid wire. Returning None")
+            return None
+        if not Wire.IsManifold(wire):
+            print("Wire.InteriorAngles - Error: The input wire parameter is non-manifold. Returning None")
+            return None
+        if not Wire.IsClosed(wire):
+            print("Wire.InteriorAngles - Error: The input wire parameter is not closed. Returning None")
+            return None
+        
+        interior_angles = Wire.InteriorAngles(wire)
+        exterior_angles = [round(360-a, mantissa) for a in interior_angles]
+        return exterior_angles
+    
+    @staticmethod
+    def InteriorAngles(wire: topologic.Wire, mantissa: int = 6) -> list:
+        """
+        Returns the interior angles of the input wire in degrees. The wire must be planar, manifold, and closed.
+        
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
         
         Returns
         -------
@@ -1334,7 +1364,7 @@ class Wire(Topology):
             The list of interior angles.
         """
         from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
 
@@ -1348,10 +1378,12 @@ class Wire(Topology):
             print("Wire.InteriorAngles - Error: The input wire parameter is not closed. Returning None")
             return None
         
-        vertices = Topology.Vertices(wire)
+        f = Face.Flatten(Face.ByWire(wire))
+        w = Face.ExternalBoundary(f)
+        vertices = Topology.Vertices(w)
         angles = []
         for i, v in enumerate(vertices):
-            edges = Topology.SuperTopologies(v, wire, topologyType="edge")
+            edges = Topology.SuperTopologies(v, w, topologyType="edge")
             e1 = edges[0]
             e2 = edges[1]
             if i == 0:
