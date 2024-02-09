@@ -3033,6 +3033,7 @@ class Topology():
         if not isinstance(axes, str):
             print("Topology.Explode - Error: the input axes parameter is not a valid string. Returning None.")
             return None
+        topology = Topology.ByBREPString(Topology.BREPString(topology))
         axes = axes.lower()
         x_flag = "x" in axes
         y_flag = "y" in axes
