@@ -934,6 +934,90 @@ class Cell(Topology):
         return d
 
     @staticmethod
+    def Dodecahedron(origin: topologic.Vertex = None, radius: float = 0.5,
+                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+        """
+        Description
+        ----------
+        Creates a dodecahedron. See https://en.wikipedia.org/wiki/Dodecahedron.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The origin location of the dodecahedron. The default is None which results in the dodecahedron being placed at (0,0,0).
+        radius : float , optional
+            The radius of the dodecahedron. The default is 0.5.
+        direction : list , optional
+            The vector representing the up direction of the dodecahedron. The default is [0,0,1].
+        placement : str , optional
+            The description of the placement of the origin of the dodecahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        topologic.Cell
+            The created dodecahedron.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            print("Cell.Dodecahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        pen = Face.Circle(sides=5, radius=0.5)
+        pentagons = [pen]
+        edges = Topology.Edges(pen)
+        for edge in edges:
+            o = Topology.Centroid(edge)
+            direction = Edge.Direction(edge)
+            pentagons.append(Topology.Rotate(pen, origin=o, x=direction[0], y=direction[1], z=direction[2], degree=116.565))
+
+        cluster = Cluster.ByTopologies(pentagons)
+        vertices = Topology.Vertices(cluster)
+        zList = [Vertex.Z(v) for v in vertices]
+        zList = list(set(zList))
+        zList.sort()
+        zOffset = zList[1]+zList[2]
+        cluster2 = Topology.Rotate(cluster, origin=Vertex.Origin(), x=1,y=0,z=0,degree=180)
+        cluster2 = Topology.Translate(cluster2, 0, 0, zOffset)
+        pentagons += Topology.Faces(cluster2)
+        dodecahedron = Cell.ByFaces(pentagons)
+        centroid = Topology.Centroid(dodecahedron)
+        dodecahedron = Topology.Translate(dodecahedron, -Vertex.X(centroid), -Vertex.Y(centroid), -Vertex.Z(centroid))
+        vertices = Topology.Vertices(dodecahedron)
+        centroid = Topology.Centroid(dodecahedron)
+        d = Vertex.Distance(centroid, vertices[0])
+        p = Cell.Prism(origin=origin, width=radius*2, length=radius*2, height=radius*2)
+        s = Cell.Sphere(origin=origin, radius=radius)
+        dodecahedron = Topology.Scale(dodecahedron, origin=centroid, x=radius/d, y=radius/d, z=radius/d)
+        dodecahedron = Topology.Translate(dodecahedron, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+        x1 = origin.X()
+        y1 = origin.Y()
+        z1 = origin.Z()
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1    
+        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
+        if dist < 0.0001:
+            theta = 0
+        else:
+            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
+        dodecahedron = Topology.Rotate(dodecahedron, origin, 0, 1, 0, theta)
+        dodecahedron = Topology.Rotate(dodecahedron, origin, 0, 0, 1, phi)
+        return dodecahedron
+
+    @staticmethod
     def Edges(cell: topologic.Cell) -> list:
         """
         Returns the edges of the input cell.
@@ -1272,7 +1356,91 @@ class Cell(Topology):
         except:
             print("Cell.IsOutside - Error: Could not determine if the input vertex is outside the input cell. Returning None.")
             return None
-   
+    
+    @staticmethod
+    def Octahedron(origin: topologic.Vertex = None, radius: float = 0.5,
+                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+        """
+        Description
+        ----------
+        Creates an octahedron. See https://en.wikipedia.org/wiki/Octahedron.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The origin location of the octahedron. The default is None which results in the octahedron being placed at (0,0,0).
+        radius : float , optional
+            The radius of the octahedron. The default is 0.5.
+        direction : list , optional
+            The vector representing the up direction of the octahedron. The default is [0,0,1].
+        placement : str , optional
+            The description of the placement of the origin of the octahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        topologic.Cell
+            The created octahedron.
+
+        """
+        
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            print("CellComplex.Octahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "center":
+            zOffset = 0
+        elif placement.lower() == "lowerleft":
+            xOffset = radius/math.sqrt(2)
+            yOffset = radius/math.sqrt(2)
+            zOffset = radius
+        elif placement.lower() == "bottom":
+            zOffset = radius
+        vb1 = Vertex.ByCoordinates(origin.X()-radius/math.sqrt(2)+xOffset,origin.Y()-radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
+        vb2 = Vertex.ByCoordinates(origin.X()+radius/math.sqrt(2)+xOffset,origin.Y()-radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
+        vb3 = Vertex.ByCoordinates(origin.X()+radius/math.sqrt(2)+xOffset,origin.Y()+radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
+        vb4 = Vertex.ByCoordinates(origin.X()-radius/math.sqrt(2)+xOffset,origin.Y()+radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
+        top = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+radius+zOffset)
+        bottom = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()-radius+zOffset)
+        f1 = Face.ByVertices([top,vb1,vb2])
+        f2 = Face.ByVertices([top,vb2,vb3])
+        f3 = Face.ByVertices([top,vb3,vb4])
+        f4 = Face.ByVertices([top,vb4,vb1])
+        f5 = Face.ByVertices([bottom,vb1,vb2])
+        f6 = Face.ByVertices([bottom,vb2,vb3])
+        f7 = Face.ByVertices([bottom,vb3,vb4])
+        f8 = Face.ByVertices([bottom,vb4,vb1])
+
+        octahedron = Cell.ByFaces([f1,f2,f3,f4,f5,f6,f7,f8], tolerance=tolerance)
+
+        x1 = origin.X()
+        y1 = origin.Y()
+        z1 = origin.Z()
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1    
+        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
+        if dist < 0.0001:
+            theta = 0
+        else:
+            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
+        octahedron = Topology.Rotate(octahedron, origin, 0, 1, 0, theta)
+        octahedron = Topology.Rotate(octahedron, origin, 0, 0, 1, phi)
+        return octahedron
+    
     @staticmethod
     def Pipe(edge: topologic.Edge, profile: topologic.Wire = None, radius: float = 0.5, sides: int = 16, startOffset: float = 0, endOffset: float = 0, endcapA: topologic.Topology = None, endcapB: topologic.Topology = None) -> dict:
         """
@@ -1743,7 +1911,91 @@ class Cell(Topology):
 
         """
         return Cell.Area(cell=cell, mantissa=mantissa)
+    
+    @staticmethod
+    def Tetrahedron(origin: topologic.Vertex = None, radius: float = 0.5,
+                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+        """
+        Description
+        ----------
+        Creates a tetrahedron. See https://en.wikipedia.org/wiki/Tetrahedron.
 
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The origin location of the tetrahedron. The default is None which results in the tetrahedron being placed at (0,0,0).
+        radius : float , optional
+            The radius of the tetrahedron. The default is 0.5.
+        direction : list , optional
+            The vector representing the up direction of the tetrahedron. The default is [0,0,1].
+        placement : str , optional
+            The description of the placement of the origin of the tetrahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        topologic.Cell
+            The created tetrahedron.
+
+        """
+        
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        import math
+
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            print("Cell.Tetrahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "center":
+            zOffset = 0
+        elif placement.lower() == "lowerleft":
+            xOffset = radius*0.5
+            yOffset = radius*0.5
+            zOffset = radius*0.5
+        elif placement.lower() == "bottom":
+            zOffset = radius*0.5
+        vb1 = Vertex.ByCoordinates(origin.X()+math.sqrt(8/9)*0.5, origin.Y(), origin.Z()-1/6)
+        vb2 = Vertex.ByCoordinates(origin.X()-math.sqrt(2/9)*0.5, origin.Y()+math.sqrt(2/3)*0.5, origin.Z()-1/6)
+        vb3 = Vertex.ByCoordinates(origin.X()-math.sqrt(2/9)*0.5, origin.Y()-math.sqrt(2/3)*0.5, origin.Z()-1/6)
+        vb4 = Vertex.ByCoordinates(origin.X(),origin.Y(),origin.Z()+0.5)
+        f1 = Face.ByVertices([vb1,vb2,vb3])
+        f2 = Face.ByVertices([vb4,vb1,vb2])
+        f3 = Face.ByVertices([vb4,vb2,vb3])
+        f4 = Face.ByVertices([vb4,vb3,vb1])
+
+        tetrahedron = Cell.ByFaces([f1,f2,f3,f4])
+        tetrahedron = Topology.Scale(tetrahedron, origin=origin, x=radius*2, y=radius*2, z=radius*2)
+        if placement.lower() == "lowerleft":
+            tetrahedron = Topology.Translate(tetrahedron, math.sqrt(2/9)*radius, math.sqrt(2/3)*radius, 1/3*radius)
+        elif placement.lower() == "bottom":
+            tetrahedron = Topology.Translate(tetrahedron, 0, 0, 1/3*radius)
+
+        x1 = origin.X()
+        y1 = origin.Y()
+        z1 = origin.Z()
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1    
+        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
+        if dist < 0.0001:
+            theta = 0
+        else:
+            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
+        tetrahedron = Topology.Rotate(tetrahedron, origin, 0, 1, 0, theta)
+        tetrahedron = Topology.Rotate(tetrahedron, origin, 0, 0, 1, phi)
+        return tetrahedron
+    
     @staticmethod
     def Torus(origin: topologic.Vertex = None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
         """

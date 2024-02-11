@@ -3033,7 +3033,9 @@ class Topology():
         if not isinstance(axes, str):
             print("Topology.Explode - Error: the input axes parameter is not a valid string. Returning None.")
             return None
-        topology = Topology.ByBREPString(Topology.BREPString(topology))
+        if isinstance(topology, topologic.Topology):
+            # Hack to fix a weird bug that seems to be a problem with OCCT memory handling.
+            topology = Topology.ByBREPString(Topology.BREPString(topology))
         axes = axes.lower()
         x_flag = "x" in axes
         y_flag = "y" in axes
@@ -3071,7 +3073,7 @@ class Topology():
             xT = newX - oldX
             yT = newY - oldY
             zT = newZ - oldZ
-            newTopology = Topology.Translate(aTopology, xT*300, yT, zT)
+            newTopology = Topology.Translate(aTopology, xT, yT, zT)
             newTopologies.append(newTopology)
         return Cluster.ByTopologies(newTopologies)
     

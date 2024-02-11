@@ -682,6 +682,90 @@ class CellComplex(Topology):
         return faces
     
     @staticmethod
+    def Octahedron(origin: topologic.Vertex = None, radius: float = 0.5,
+                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.CellComplex:
+        """
+        Description
+        ----------
+        Creates an octahedron. See https://en.wikipedia.org/wiki/Octahedron.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The origin location of the octahedron. The default is None which results in the octahedron being placed at (0,0,0).
+        radius : float , optional
+            The radius of the octahedron. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the octahedron. The default is [0,0,1].
+        placement : str , optional
+            The description of the placement of the origin of the octahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        topologic.CellComplex
+            The created octahedron. The octahedron will have two cells in it.
+
+        """
+        
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            print("CellComplex.Octahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "center":
+            zOffset = 0
+        elif placement.lower() == "lowerleft":
+            xOffset = radius/math.sqrt(2)
+            yOffset = radius/math.sqrt(2)
+            zOffset = radius
+        elif placement.lower() == "bottom":
+            zOffset = radius
+        vb1 = Vertex.ByCoordinates(origin.X()-radius/math.sqrt(2)+xOffset,origin.Y()-radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
+        vb2 = Vertex.ByCoordinates(origin.X()+radius/math.sqrt(2)+xOffset,origin.Y()-radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
+        vb3 = Vertex.ByCoordinates(origin.X()+radius/math.sqrt(2)+xOffset,origin.Y()+radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
+        vb4 = Vertex.ByCoordinates(origin.X()-radius/math.sqrt(2)+xOffset,origin.Y()+radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
+        top = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+radius+zOffset)
+        bottom = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()-radius+zOffset)
+        f0 = Face.ByVertices([vb1,vb2,vb3,vb4])
+        f1 = Face.ByVertices([top,vb1,vb2])
+        f2 = Face.ByVertices([top,vb2,vb3])
+        f3 = Face.ByVertices([top,vb3,vb4])
+        f4 = Face.ByVertices([top,vb4,vb1])
+        f5 = Face.ByVertices([bottom,vb1,vb2])
+        f6 = Face.ByVertices([bottom,vb2,vb3])
+        f7 = Face.ByVertices([bottom,vb3,vb4])
+        f8 = Face.ByVertices([bottom,vb4,vb1])
+
+        octahedron = CellComplex.ByFaces([f0,f1,f2,f3,f4,f5,f6,f7,f8], tolerance=tolerance)
+
+        x1 = origin.X()
+        y1 = origin.Y()
+        z1 = origin.Z()
+        x2 = origin.X() + direction[0]
+        y2 = origin.Y() + direction[1]
+        z2 = origin.Z() + direction[2]
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1    
+        dist = math.sqrt(dx**2 + dy**2 + dz**2)
+        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
+        if dist < 0.0001:
+            theta = 0
+        else:
+            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
+        octahedron = Topology.Rotate(octahedron, origin, 0, 1, 0, theta)
+        octahedron = Topology.Rotate(octahedron, origin, 0, 0, 1, phi)
+        return octahedron
+    @staticmethod
     def Prism(origin: topologic.Vertex = None,
               width: float = 1.0, length: float = 1.0, height: float = 1.0,
               uSides: int = 2, vSides: int = 2, wSides: int = 2,
