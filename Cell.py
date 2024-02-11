@@ -998,23 +998,7 @@ class Cell(Topology):
         s = Cell.Sphere(origin=origin, radius=radius)
         dodecahedron = Topology.Scale(dodecahedron, origin=centroid, x=radius/d, y=radius/d, z=radius/d)
         dodecahedron = Topology.Translate(dodecahedron, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + direction[0]
-        y2 = origin.Y() + direction[1]
-        z2 = origin.Z() + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        dodecahedron = Topology.Rotate(dodecahedron, origin, 0, 1, 0, theta)
-        dodecahedron = Topology.Rotate(dodecahedron, origin, 0, 0, 1, phi)
+        dodecahedron = Topology.Orient(dodecahedron, origin=origin, dirA=[0,0,1], dirB=direction, tolerance=tolerance)
         return dodecahedron
 
     @staticmethod
@@ -1203,6 +1187,97 @@ class Cell(Topology):
         hyperboloid = Topology.Rotate(hyperboloid, origin, 0, 0, 1, phi)
         return hyperboloid
     
+    @staticmethod
+    def Icosahedron(origin: topologic.Vertex = None, radius: float = 0.5,
+                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+        """
+        Description
+        ----------
+        Creates an icosahedron. See https://en.wikipedia.org/wiki/Icosahedron.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The origin location of the icosahedron. The default is None which results in the icosahedron being placed at (0,0,0).
+        radius : float , optional
+            The radius of the icosahedron. The default is 0.5.
+        direction : list , optional
+            The vector representing the up direction of the icosahedron. The default is [0,0,1].
+        placement : str , optional
+            The description of the placement of the origin of the icosahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        topologic.Cell
+            The created icosahedron.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        import math
+
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            print("Cell.Dodecahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        rect1 = Wire.Rectangle(width=(1+math.sqrt(5))/2, length=1)
+        rect2 = Wire.Rectangle(width=1, length=(1+math.sqrt(5))/2)
+        rect2 = Topology.Rotate(rect2, x=1,y=0,z=0, degree=90)
+        rect3 = Wire.Rectangle(width=1, length=(1+math.sqrt(5))/2)
+        rect3 = Topology.Rotate(rect3, x=0,y=1,z=0, degree=90)
+        vertices = Topology.Vertices(rect1)
+        v1, v2, v3, v4 = vertices
+        vertices = Topology.Vertices(rect2)
+        v5, v6, v7, v8 = vertices
+        vertices = Topology.Vertices(rect3)
+        v9, v10, v11, v12 = vertices
+        f1 = Face.ByVertices([v1,v8,v4])
+        f2 = Face.ByVertices([v1,v4,v5])
+        f3 = Face.ByVertices([v3,v2,v6])
+        f4 = Face.ByVertices([v2,v3,v7])
+        f5 = Face.ByVertices([v10,v9,v2])
+        f6 = Face.ByVertices([v10,v9,v1])
+        f7 = Face.ByVertices([v12,v11,v4])
+        f8 = Face.ByVertices([v12,v11,v3])
+        f9 = Face.ByVertices([v8,v7,v9])
+        f10 = Face.ByVertices([v8,v7,v12])
+        f11 = Face.ByVertices([v5,v6,v10])
+        f12 = Face.ByVertices([v5,v6,v11])
+        f13 = Face.ByVertices([v8,v1,v9])
+        f14 = Face.ByVertices([v9,v2,v7])
+        f15 = Face.ByVertices([v7,v3,v12])
+        f16 = Face.ByVertices([v8,v12,v4])
+        f17 = Face.ByVertices([v1,v5,v10])
+        f18 = Face.ByVertices([v10,v2,v6])
+        f19 = Face.ByVertices([v6,v3,v11])
+        f20 = Face.ByVertices([v11,v4,v5])
+
+        icosahedron = Cell.ByFaces([f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,
+                        f11,f12,f13,f14,f15,f16,f17,f18,f19,f20], tolerance=tolerance)
+        sf = 1.051*0.5 # To insribe it in a sphere of radius 0.5
+        icosahedron = Topology.Scale(icosahedron, origin=Vertex.Origin(), x=sf, y=sf, z=sf)
+        sf = radius/0.5
+        icosahedron = Topology.Scale(icosahedron, origin=Vertex.Origin(), x=sf, y=sf, z=sf)
+        xList = [Vertex.X(v) for v in Topology.Vertices(icosahedron)]
+        xMin = min(xList)
+        yList = [Vertex.Y(v) for v in Topology.Vertices(icosahedron)]
+        yMin = min(yList)
+        zList = [Vertex.Z(v) for v in Topology.Vertices(icosahedron)]
+        zMin = min(zList)
+        if placement == "bottom":
+            icosahedron = Topology.Translate(icosahedron, 0, 0, zMin)
+        elif placement == "lowerleft":
+            icosahedron = Topology.Translate(icosahedron, xMin, yMin, zMin)
+        icosahedron = Topology.Place(icosahedron, originA=Vertex.Origin(), originB=origin)
+        icosahedron = Topology.Orient(icosahedron, origin=origin, dirA=[0,0,1], dirB=direction, tolerance=tolerance)
+        return icosahedron
+
+
     @staticmethod
     def InternalBoundaries(cell: topologic.Cell) -> list:
         """
@@ -1394,23 +1469,13 @@ class Cell(Topology):
         if not isinstance(origin, topologic.Vertex):
             print("CellComplex.Octahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
-        xOffset = 0
-        yOffset = 0
-        zOffset = 0
-        if placement.lower() == "center":
-            zOffset = 0
-        elif placement.lower() == "lowerleft":
-            xOffset = radius/math.sqrt(2)
-            yOffset = radius/math.sqrt(2)
-            zOffset = radius
-        elif placement.lower() == "bottom":
-            zOffset = radius
-        vb1 = Vertex.ByCoordinates(origin.X()-radius/math.sqrt(2)+xOffset,origin.Y()-radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
-        vb2 = Vertex.ByCoordinates(origin.X()+radius/math.sqrt(2)+xOffset,origin.Y()-radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
-        vb3 = Vertex.ByCoordinates(origin.X()+radius/math.sqrt(2)+xOffset,origin.Y()+radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
-        vb4 = Vertex.ByCoordinates(origin.X()-radius/math.sqrt(2)+xOffset,origin.Y()+radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
-        top = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+radius+zOffset)
-        bottom = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()-radius+zOffset)
+        
+        vb1 = Vertex.ByCoordinates(-radius/math.sqrt(2),origin.Y()-radius/math.sqrt(2),origin.Z())
+        vb2 = Vertex.ByCoordinates(radius/math.sqrt(2),origin.Y()-radius/math.sqrt(2),origin.Z())
+        vb3 = Vertex.ByCoordinates(radius/math.sqrt(2),origin.Y()+radius/math.sqrt(2),origin.Z())
+        vb4 = Vertex.ByCoordinates(-radius/math.sqrt(2),origin.Y()+radius/math.sqrt(2),origin.Z())
+        top = Vertex.ByCoordinates(0, 0, radius)
+        bottom = Vertex.ByCoordinates(0, 0, -radius)
         f1 = Face.ByVertices([top,vb1,vb2])
         f2 = Face.ByVertices([top,vb2,vb3])
         f3 = Face.ByVertices([top,vb3,vb4])
@@ -1421,24 +1486,19 @@ class Cell(Topology):
         f8 = Face.ByVertices([bottom,vb4,vb1])
 
         octahedron = Cell.ByFaces([f1,f2,f3,f4,f5,f6,f7,f8], tolerance=tolerance)
-
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + direction[0]
-        y2 = origin.Y() + direction[1]
-        z2 = origin.Z() + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        octahedron = Topology.Rotate(octahedron, origin, 0, 1, 0, theta)
-        octahedron = Topology.Rotate(octahedron, origin, 0, 0, 1, phi)
+        octahedron = Topology.Rotate(octahedron, degree=45)
+        xList = [Vertex.X(v) for v in Topology.Vertices(octahedron)]
+        xMin = min(xList)
+        yList = [Vertex.Y(v) for v in Topology.Vertices(octahedron)]
+        yMin = min(yList)
+        zList = [Vertex.Z(v) for v in Topology.Vertices(octahedron)]
+        zMin = min(zList)
+        if placement == "bottom":
+            octahedron = Topology.Translate(octahedron, 0, 0, zMin)
+        elif placement == "lowerleft":
+            octahedron = Topology.Translate(octahedron, xMin, yMin, zMin)
+        octahedron = Topology.Place(octahedron, originA=Vertex.Origin(), originB=origin)
+        octahedron = Topology.Orient(octahedron, origin=origin, dirA=[0,0,1], dirB=direction)
         return octahedron
     
     @staticmethod
@@ -1977,23 +2037,7 @@ class Cell(Topology):
         elif placement.lower() == "bottom":
             tetrahedron = Topology.Translate(tetrahedron, 0, 0, 1/3*radius)
 
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + direction[0]
-        y2 = origin.Y() + direction[1]
-        z2 = origin.Z() + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        tetrahedron = Topology.Rotate(tetrahedron, origin, 0, 1, 0, theta)
-        tetrahedron = Topology.Rotate(tetrahedron, origin, 0, 0, 1, phi)
+        tetrahedron = Topology.Orient(tetrahedron, origin=origin, dirA=[0,0,1], dirB=direction, tolerance=tolerance) 
         return tetrahedron
     
     @staticmethod

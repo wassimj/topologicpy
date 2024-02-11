@@ -718,23 +718,13 @@ class CellComplex(Topology):
         if not isinstance(origin, topologic.Vertex):
             print("CellComplex.Octahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
-        xOffset = 0
-        yOffset = 0
-        zOffset = 0
-        if placement.lower() == "center":
-            zOffset = 0
-        elif placement.lower() == "lowerleft":
-            xOffset = radius/math.sqrt(2)
-            yOffset = radius/math.sqrt(2)
-            zOffset = radius
-        elif placement.lower() == "bottom":
-            zOffset = radius
-        vb1 = Vertex.ByCoordinates(origin.X()-radius/math.sqrt(2)+xOffset,origin.Y()-radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
-        vb2 = Vertex.ByCoordinates(origin.X()+radius/math.sqrt(2)+xOffset,origin.Y()-radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
-        vb3 = Vertex.ByCoordinates(origin.X()+radius/math.sqrt(2)+xOffset,origin.Y()+radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
-        vb4 = Vertex.ByCoordinates(origin.X()-radius/math.sqrt(2)+xOffset,origin.Y()+radius/math.sqrt(2)+yOffset,origin.Z()+zOffset)
-        top = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+radius+zOffset)
-        bottom = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()-radius+zOffset)
+        
+        vb1 = Vertex.ByCoordinates(-radius/math.sqrt(2),origin.Y()-radius/math.sqrt(2),origin.Z())
+        vb2 = Vertex.ByCoordinates(radius/math.sqrt(2),origin.Y()-radius/math.sqrt(2),origin.Z())
+        vb3 = Vertex.ByCoordinates(radius/math.sqrt(2),origin.Y()+radius/math.sqrt(2),origin.Z())
+        vb4 = Vertex.ByCoordinates(-radius/math.sqrt(2),origin.Y()+radius/math.sqrt(2),origin.Z())
+        top = Vertex.ByCoordinates(0, 0, radius)
+        bottom = Vertex.ByCoordinates(0, 0, -radius)
         f0 = Face.ByVertices([vb1,vb2,vb3,vb4])
         f1 = Face.ByVertices([top,vb1,vb2])
         f2 = Face.ByVertices([top,vb2,vb3])
@@ -746,25 +736,21 @@ class CellComplex(Topology):
         f8 = Face.ByVertices([bottom,vb4,vb1])
 
         octahedron = CellComplex.ByFaces([f0,f1,f2,f3,f4,f5,f6,f7,f8], tolerance=tolerance)
-
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + direction[0]
-        y2 = origin.Y() + direction[1]
-        z2 = origin.Z() + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        octahedron = Topology.Rotate(octahedron, origin, 0, 1, 0, theta)
-        octahedron = Topology.Rotate(octahedron, origin, 0, 0, 1, phi)
+        octahedron = Topology.Rotate(octahedron, degree=45)
+        xList = [Vertex.X(v) for v in Topology.Vertices(octahedron)]
+        xMin = min(xList)
+        yList = [Vertex.Y(v) for v in Topology.Vertices(octahedron)]
+        yMin = min(yList)
+        zList = [Vertex.Z(v) for v in Topology.Vertices(octahedron)]
+        zMin = min(zList)
+        if placement == "bottom":
+            octahedron = Topology.Translate(octahedron, 0, 0, zMin)
+        elif placement == "lowerleft":
+            octahedron = Topology.Translate(octahedron, xMin, yMin, zMin)
+        octahedron = Topology.Place(octahedron, originA=Vertex.Origin(), originB=origin)
+        octahedron = Topology.Orient(octahedron, origin=origin, directionA=[0,0,1], directionB=direction)
         return octahedron
+    
     @staticmethod
     def Prism(origin: topologic.Vertex = None,
               width: float = 1.0, length: float = 1.0, height: float = 1.0,
