@@ -694,7 +694,7 @@ class CellComplex(Topology):
         origin : topologic.Vertex , optional
             The origin location of the octahedron. The default is None which results in the octahedron being placed at (0,0,0).
         radius : float , optional
-            The radius of the octahedron. The default is 1.
+            The radius of the octahedron's circumscribed sphere. The default is 0.5.
         direction : list , optional
             The vector representing the up direction of the octahedron. The default is [0,0,1].
         placement : str , optional
@@ -705,7 +705,7 @@ class CellComplex(Topology):
         Returns
         -------
         topologic.CellComplex
-            The created octahedron. The octahedron will have two cells in it.
+            The created octahedron.
 
         """
         
@@ -719,13 +719,12 @@ class CellComplex(Topology):
             print("CellComplex.Octahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         
-        vb1 = Vertex.ByCoordinates(-radius/math.sqrt(2),origin.Y()-radius/math.sqrt(2),origin.Z())
-        vb2 = Vertex.ByCoordinates(radius/math.sqrt(2),origin.Y()-radius/math.sqrt(2),origin.Z())
-        vb3 = Vertex.ByCoordinates(radius/math.sqrt(2),origin.Y()+radius/math.sqrt(2),origin.Z())
-        vb4 = Vertex.ByCoordinates(-radius/math.sqrt(2),origin.Y()+radius/math.sqrt(2),origin.Z())
-        top = Vertex.ByCoordinates(0, 0, radius)
-        bottom = Vertex.ByCoordinates(0, 0, -radius)
-        f0 = Face.ByVertices([vb1,vb2,vb3,vb4])
+        vb1 = Vertex.ByCoordinates(-0.5,0,0)
+        vb2 = Vertex.ByCoordinates(0,-0.5,0)
+        vb3 = Vertex.ByCoordinates(0.5,0,0)
+        vb4 = Vertex.ByCoordinates(0,0.5,0)
+        top = Vertex.ByCoordinates(0, 0, 0.5)
+        bottom = Vertex.ByCoordinates(0, 0, -0.5)
         f1 = Face.ByVertices([top,vb1,vb2])
         f2 = Face.ByVertices([top,vb2,vb3])
         f3 = Face.ByVertices([top,vb3,vb4])
@@ -734,21 +733,16 @@ class CellComplex(Topology):
         f6 = Face.ByVertices([bottom,vb2,vb3])
         f7 = Face.ByVertices([bottom,vb3,vb4])
         f8 = Face.ByVertices([bottom,vb4,vb1])
+        f9 = Face.ByVertices([vb1,vb2,vb3,vb4])
 
-        octahedron = CellComplex.ByFaces([f0,f1,f2,f3,f4,f5,f6,f7,f8], tolerance=tolerance)
-        octahedron = Topology.Rotate(octahedron, degree=45)
-        xList = [Vertex.X(v) for v in Topology.Vertices(octahedron)]
-        xMin = min(xList)
-        yList = [Vertex.Y(v) for v in Topology.Vertices(octahedron)]
-        yMin = min(yList)
-        zList = [Vertex.Z(v) for v in Topology.Vertices(octahedron)]
-        zMin = min(zList)
+        octahedron = CellComplex.ByFaces([f1,f2,f3,f4,f5,f6,f7,f8,f9], tolerance=tolerance)
+        octahedron = Topology.Scale(octahedron, origin=Vertex.Origin(), x=radius/0.5, y=radius/0.5, z=radius/0.5)
         if placement == "bottom":
-            octahedron = Topology.Translate(octahedron, 0, 0, zMin)
+            octahedron = Topology.Translate(octahedron, 0, 0, radius)
         elif placement == "lowerleft":
-            octahedron = Topology.Translate(octahedron, xMin, yMin, zMin)
+            octahedron = Topology.Translate(octahedron, radius, radius, radius)
         octahedron = Topology.Place(octahedron, originA=Vertex.Origin(), originB=origin)
-        octahedron = Topology.Orient(octahedron, origin=origin, directionA=[0,0,1], directionB=direction)
+        octahedron = Topology.Orient(octahedron, origin=origin, dirA=[0,0,1], dirB=direction)
         return octahedron
     
     @staticmethod
