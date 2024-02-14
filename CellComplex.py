@@ -967,7 +967,73 @@ class CellComplex(Topology):
             if not volume == None:
                 volume += Cell.Volume(cell)
         return round(volume, mantissa)
+    
+    @staticmethod
+    def Voronoi(vertices: list, cell: topologic.Cell = None, tolerance: float = 0.0001):
+        """
+        Partitions the input cell based on the Voronoi method. See https://en.wikipedia.org/wiki/Voronoi_diagram.
 
+        Parameters
+        ----------
+        vertices: list
+            The input list of vertices to use for voronoi partitioning.
+        cell : topologic.Cell , optional
+            The input cell. If set to None, an axes-aligned bounding cell is created from the list of vertices. The default is None.
+        tolerance : float , optional
+            the desired tolerance. The default is 0.0001.
+        
+
+        Returns
+        -------
+        float
+            The volume of the input cellComplex.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from scipy.spatial import Voronoi as SCIVoronoi
+        import numpy as np
+
+        def fracture_with_voronoi(points):
+            # Compute Voronoi tessellation
+            vor = SCIVoronoi(points)
+            verts = []
+            faces = []
+            for v in vor.vertices:
+                verts.append(Vertex.ByCoordinates(list(v)))
+            for region in vor.ridge_vertices:
+                temp_list = []
+                if -1 not in region and len(region) > 0:
+                    for item in region:
+                        temp_list.append(verts[item])
+                    f = Face.ByVertices(temp_list)
+                    if isinstance(f, topologic.Face):
+                        faces.append(f)
+            return Cluster.ByTopologies(faces)
+        
+
+        if cell == None:
+            cell = Topology.BoundingBox(Cluster.ByTopologies(vertices))
+        if not isinstance(cell, topologic.Cell):
+            print("CellComplex.Voronoi - Error: The input cell parameter is not a valid cell. Returning None.")
+            return None
+        vertices = [v for v in vertices if Cell.IsInternal(cell, v)]
+        if len(vertices) < 1:
+            print("CellComplex.Voronoi - Error: The input vertices paramter does not contain any vertices that are inside the input cell parameter. Returning None.")
+            return None
+        cell_vertices = Topology.Vertices(cell)
+        all_vertices = cell_vertices + vertices
+        voronoi_points = np.array([Vertex.Coordinates(v) for v in all_vertices])
+        cluster = fracture_with_voronoi(voronoi_points)
+        cellComplex = Topology.Slice(cell, cluster)
+        if not isinstance(cellComplex, topologic.CellComplex):
+            print("CellComplex.Voronoi - Error: the operation failed. Returning None.")
+            return None
+        return cellComplex
+    
     @staticmethod
     def Wires(cellComplex: topologic.CellComplex) -> list:
         """
