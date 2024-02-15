@@ -5462,7 +5462,7 @@ class Graph:
                     shortest_path = Edge.Reverse(shortest_path)
                 if isinstance(shortest_path, topologic.Wire):
                     shortest_path = Wire.Reverse(shortest_path)
-                return shortest_path
+            return shortest_path
         except:
             return None
 
