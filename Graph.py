@@ -4983,12 +4983,14 @@ class Graph:
                         if isinstance(result2, topologic.Edge) or isinstance(result2, topologic.Cluster):
                             result = result2
                     if isinstance(result, topologic.Edge):
-                        sv = Edge.StartVertex(result)
-                        ev = Edge.EndVertex(result)
-                        if (not Vertex.Index(sv, viewpointsA+viewpointsB) == None) and (not Vertex.Index(ev, viewpointsA+viewpointsB) == None):
-                            final_edges.append(result)
-        face_edges = Topology.Edges(face)
-        final_edges += face_edges
+                        if abs(Edge.Length(result) - Edge.Length(edge)) < tolerance:
+                            sv = Edge.StartVertex(result)
+                            ev = Edge.EndVertex(result)
+                            if (not Vertex.Index(sv, viewpointsA+viewpointsB) == None) and (not Vertex.Index(ev, viewpointsA+viewpointsB) == None):
+                                final_edges.append(result)
+        if len(i_boundaries) > 0:
+            holes_edges = Topology.Edges(Cluster.ByTopologies(i_boundaries))
+            final_edges += holes_edges
         if len(final_edges) > 0:
             final_vertices = Topology.Vertices(Cluster.ByTopologies(final_edges))
             g = Graph.ByVerticesEdges(final_vertices, final_edges)
@@ -5149,7 +5151,7 @@ class Graph:
     @staticmethod
     def PyvisGraph(graph, path, overwrite=True, height=900, backgroundColor="white", fontColor="black", notebook=False,
                    vertexSize=6, vertexSizeKey=None, vertexColor="black", vertexColorKey=None, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=None, minVertexGroup=None, maxVertexGroup=None, 
-                   edgeWeight=0, edgeWeightKey=None, showNeighbours=True, selectMenu=True, filterMenu=True, colorScale="viridis"):
+                   edgeLabelKey=None, edgeWeight=0, edgeWeightKey=None, showNeighbours=True, selectMenu=True, filterMenu=True, colorScale="viridis"):
         """
         Displays a pyvis graph. See https://pyvis.readthedocs.io/.
 
@@ -5192,6 +5194,8 @@ class Graph:
             The desired default weight of the edge. This determines its thickness. The default is 0.
         edgeWeightKey : str, optional
             If not set to None, the edge weight will be derived from the dictionary value set at this key. If set to "length" or "distance", the weight of the edge will be determined by its geometric length. The default is None.
+        edgeLabelKey : str , optional
+            If not set to None, the edge label will be derived from the dictionary value set at this key. The default is None.
         showNeighbors : bool , optional
             If set to True, a list of neighbors is shown when you hover over a vertex. The default is True.
         selectMenu : bool , optional
@@ -5269,6 +5273,12 @@ class Graph:
         net.add_nodes(nodes, label=node_labels, title=node_titles, color=colors)
 
         for e in edges:
+            edge_label = ""
+            if not edgeLabelKey == None:
+                d = Topology.Dictionary(e)
+                edge_label = Dictionary.ValueAtKey(d, edgeLabelKey)
+                if edge_label == None:
+                    edge_label = ""
             w = edgeWeight
             if not edgeWeightKey == None:
                 d = Topology.Dictionary(e)
@@ -5282,7 +5292,7 @@ class Graph:
             ev = Edge.EndVertex(e)
             svi = Vertex.Index(sv, vertices)
             evi = Vertex.Index(ev, vertices)
-            net.add_edge(svi, evi, weight=w)
+            net.add_edge(svi, evi, weight=w, label=edge_label)
         net.inherit_edge_colors(False)
         
         # add neighbor data to node hover data and compute vertexSize
