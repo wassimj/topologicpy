@@ -1500,7 +1500,7 @@ class Topology():
         return Topology.ByBREPFile(file)
     
     @staticmethod
-    def ByIFCFile(file, transferDictionaries=False):
+    def ByIFCFile(file, transferDictionaries=False, includeTypes=[], excludeTypes=[]):
         """
         Create a topology by importing it from an IFC file.
 
@@ -1510,6 +1510,10 @@ class Topology():
             The input IFC file.
         transferDictionaries : bool , optional
             If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won't. The default is False.
+        includeTypes : list , optional
+            The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].
+        excludeTypes : list , optional
+            The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. The default is [].
         
         Returns
         -------
@@ -1525,6 +1529,8 @@ class Topology():
         if not file:
             print("Topology.ByIFCFile - Error: the input file parameter is not a valid file. Returning None.")
             return None
+        includeTypes = [s.lower() for s in includeTypes]
+        excludeTypes = [s.lower() for s in excludeTypes]
         topologies = []
         settings = ifcopenshell.geom.settings()
         settings.set(settings.DISABLE_TRIANGULATION, True)
@@ -1535,38 +1541,43 @@ class Topology():
         if iterator.initialize():
             while True:
                 shape = iterator.get()
-                brep = shape.geometry.brep_data
-                topology = Topology.ByBREPString(brep)
-                if transferDictionaries:
-                        keys = []
-                        values = []
-                        keys.append("TOPOLOGIC_color")
-                        values.append([1.0,1.0,1.0,1.0])
-                        keys.append("TOPOLOGIC_id")
-                        values.append(str(uuid.uuid4()))
-                        keys.append("TOPOLOGIC_name")
-                        values.append(shape.name)
-                        keys.append("TOPOLOGIC_type")
-                        values.append(Topology.TypeAsString(topology))
-                        keys.append("IFC_id")
-                        values.append(str(shape.id))
-                        keys.append("IFC_guid")
-                        values.append(str(shape.guid))
-                        keys.append("IFC_unique_id")
-                        values.append(str(shape.unique_id))
-                        keys.append("IFC_name")
-                        values.append(shape.name)
-                        keys.append("IFC_type")
-                        values.append(shape.type)
-                        d = Dictionary.ByKeysValues(keys, values)
-                        topology = Topology.SetDictionary(topology, d)
-                topologies.append(topology)
+                is_a = shape.type.lower()
+                if (is_a in includeTypes or len(includeTypes) == 0) and (not is_a in excludeTypes):
+                    try:
+                        brep = shape.geometry.brep_data
+                        topology = Topology.SelfMerge(Topology.ByBREPString(brep))
+                        if transferDictionaries:
+                            keys = []
+                            values = []
+                            keys.append("TOPOLOGIC_color")
+                            values.append([1.0,1.0,1.0,1.0])
+                            keys.append("TOPOLOGIC_id")
+                            values.append(str(uuid.uuid4()))
+                            keys.append("TOPOLOGIC_name")
+                            values.append(shape.name)
+                            keys.append("TOPOLOGIC_type")
+                            values.append(Topology.TypeAsString(topology))
+                            keys.append("IFC_id")
+                            values.append(str(shape.id))
+                            keys.append("IFC_guid")
+                            values.append(str(shape.guid))
+                            keys.append("IFC_unique_id")
+                            values.append(str(shape.unique_id))
+                            keys.append("IFC_name")
+                            values.append(shape.name)
+                            keys.append("IFC_type")
+                            values.append(shape.type)
+                            d = Dictionary.ByKeysValues(keys, values)
+                            topology = Topology.SetDictionary(topology, d)
+                        topologies.append(topology)
+                    except:
+                        pass
                 if not iterator.next():
                     break
         return topologies
 
     @staticmethod
-    def ByIFCPath(path, transferDictionaries=False):
+    def ByIFCPath(path, transferDictionaries=False, includeTypes=[], excludeTypes=[]):
         """
         Create a topology by importing it from an IFC file path.
 
@@ -1576,7 +1587,10 @@ class Topology():
             The path to the IFC file.
         transferDictionaries : bool , optional
             If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won't. The default is False.
-        
+        includeTypes : list , optional
+            The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].
+        excludeTypes : list , optional
+            The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. The default is [].
         Returns
         -------
         list
@@ -1595,7 +1609,7 @@ class Topology():
         if not file:
             print("Topology.ByIFCPath - Error: the input file parameter is not a valid file. Returning None.")
             return None
-        return Topology.ByIFCFile(file, transferDictionaries=transferDictionaries)
+        return Topology.ByIFCFile(file, transferDictionaries=transferDictionaries, includeTypes=includeTypes, excludeTypes=excludeTypes)
     
     '''
     @staticmethod

@@ -4969,7 +4969,10 @@ class Graph:
                     if ang < 180:
                         viewpointsA.append(vertices[i])
                         viewpointsB.append(vertices[i])
-        obstacle_cluster = Cluster.ByTopologies(obstacles)
+        if len(obstacles) > 0:
+            obstacle_cluster = Cluster.ByTopologies(obstacles)
+        else:
+            obstacle_cluster = None
         final_edges = []
         for i in tqdm(range(len(viewpointsA))):
             va = viewpointsA[i]
@@ -4977,7 +4980,10 @@ class Graph:
                 vb = viewpointsB[j]
                 if Vertex.Distance(va, vb) > tolerance:
                     edge = Edge.ByVertices([va,vb])
-                    result = Topology.Difference(edge, obstacle_cluster)
+                    if not obstacle_cluster == None:
+                        result = Topology.Difference(edge, obstacle_cluster)
+                    else:
+                        result = edge
                     if not result == None:
                         result2 = Topology.Difference(result, face)
                         if isinstance(result2, topologic.Edge) or isinstance(result2, topologic.Cluster):
@@ -5752,6 +5758,8 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        
         def vertexInList(vertex, vertexList):
             if vertex and vertexList:
                 if isinstance(vertex, topologic.Vertex) and isinstance(vertexList, list):
@@ -5781,7 +5789,11 @@ class Graph:
             if not vertexInList(vertex, vertices):
                 vertices.append(vertex)
                 if parent:
-                    edges.append(Graph.Edge(graph, parent, vertex, tolerance))
+                    edge = Graph.Edge(graph, parent, vertex, tolerance)
+                    ev = Edge.EndVertex(edge)
+                    if Vertex.Distance(parent, ev) < tolerance:
+                        edge = Edge.Reverse(edge)
+                    edges.append(edge)
             if parent == None:
                 parent = vertex
             children = getChildren(vertex, parent, graph, vertices)
