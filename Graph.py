@@ -4898,7 +4898,7 @@ class Graph:
         return mst
 
     @staticmethod
-    def NavigationGraph(face, viewpointsA=None, viewpointsB=None, tolerance=0.0001):
+    def NavigationGraph(face, viewpointsA=None, viewpointsB=None, tolerance=0.0001, progressBar=True):
         """
         Creates a 2D navigation graph.
 
@@ -4912,6 +4912,8 @@ class Graph:
             The input list of viewpoints (vertices). Visibility edges will connect these vertices to viewpointsA.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        tqdm : bool , optional
+            If set to True, a tqdm progress bar is shown. Otherwise, it is not. The default is True.
 
         Returns
         -------
@@ -4973,11 +4975,26 @@ class Graph:
             obstacle_cluster = Cluster.ByTopologies(obstacles)
         else:
             obstacle_cluster = None
+        used = []
+        for i in range(len(viewpointsA)):
+            temp_row = []
+            for j in range(len(viewpointsB)):
+                temp_row.append(0)
+            used.append(temp_row)
+
         final_edges = []
-        for i in tqdm(range(len(viewpointsA))):
+        if progressBar:
+            the_range = tqdm(range(len(viewpointsA)))
+        else:
+            the_range = range(len(viewpointsA))
+        for i in the_range:
             va = viewpointsA[i]
+            index_b = Vertex.Index(va, viewpointsB)
             for j in range(len(viewpointsB)):
                 vb = viewpointsB[j]
+                index_a = Vertex.Index(vb, viewpointsA)
+                if used[i][j] == 1 or used[j][i] == 1:
+                    continue
                 if Vertex.Distance(va, vb) > tolerance:
                     edge = Edge.ByVertices([va,vb])
                     if not obstacle_cluster == None:
@@ -4994,6 +5011,9 @@ class Graph:
                             ev = Edge.EndVertex(result)
                             if (not Vertex.Index(sv, viewpointsA+viewpointsB) == None) and (not Vertex.Index(ev, viewpointsA+viewpointsB) == None):
                                 final_edges.append(result)
+                used[i][j] = 1
+                if not index_a == None and not index_b == None:
+                    used[j][i] = 1
         if len(i_boundaries) > 0:
             holes_edges = Topology.Edges(Cluster.ByTopologies(i_boundaries))
             final_edges += holes_edges
@@ -5306,7 +5326,7 @@ class Graph:
             for i, node in enumerate(net.nodes):
                 if showNeighbours == True:
                     neighbors = list(net.neighbors(node["id"]))
-                    neighbor_labels = [str(net.nodes[n]["id"])+": "+net.nodes[n]["label"] for n in neighbors]
+                    neighbor_labels = [str(net.nodes[n]["id"])+": "+str(net.nodes[n]["label"]) for n in neighbors]
                     node["title"] = str(node["id"])+": "+node["title"]+"\n"
                     node["title"] += "Neighbors:\n" + "\n".join(neighbor_labels)
                 vs = vertexSize
