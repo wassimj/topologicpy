@@ -153,13 +153,13 @@ class Cluster(Topology):
         from topologicpy.Helper import Helper
         #assert isinstance(topologies, list), "Cluster.ByTopologies - Error: Input is not a list"
         if len(args) == 0:
-            print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+            print("1. Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
             return None
         if len(args) == 1:
             topologies = args[0]
             if isinstance(topologies, list):
                 if len(topologies) == 0:
-                    print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+                    print("2. Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
                     return None
                 else:
                     topologyList = [x for x in topologies if isinstance(x, topologic.Topology)]
@@ -477,6 +477,8 @@ class Cluster(Topology):
             return None
         allCells = []
         _ = cluster.Cells(None, allCells)
+        if len(allCells) < 1:
+            return []
         allCellsCluster = Cluster.ByTopologies(allCells)
         freeCells = []
         cellComplexes = []
@@ -572,6 +574,8 @@ class Cluster(Topology):
             return None
         allFaces = []
         _ = cluster.Faces(None, allFaces)
+        if len(allFaces) < 1:
+            return []
         allFacesCluster = Cluster.ByTopologies(allFaces)
         shells = []
         _ = cluster.Shells(None, shells)
@@ -618,6 +622,8 @@ class Cluster(Topology):
             return None
         allWires = []
         _ = cluster.Wires(None, allWires)
+        if len(allWires) < 1:
+            return []
         allWiresCluster = Cluster.ByTopologies(allWires)
         faces = []
         _ = cluster.Faces(None, faces)
@@ -664,6 +670,8 @@ class Cluster(Topology):
             return None
         allEdges = []
         _ = cluster.Edges(None, allEdges)
+        if len(allEdges) < 1:
+            return []
         allEdgesCluster = Cluster.ByTopologies(allEdges)
         wires = []
         _ = cluster.Wires(None, wires)
@@ -710,6 +718,8 @@ class Cluster(Topology):
             return None
         allVertices = []
         _ = cluster.Vertices(None, allVertices)
+        if len(allVertices) < 1:
+            return []
         allVerticesCluster = Cluster.ByTopologies(allVertices)
         edges = []
         _ = cluster.Edges(None, edges)

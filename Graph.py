@@ -5943,7 +5943,10 @@ class Graph:
         for i_boundary in i_boundaries:
             if isinstance(i_boundary, topologic.Wire):
                 obstacles.append(Face.ByWire(i_boundary))
-        obstacle_cluster = Cluster.ByTopologies(obstacles)
+        if len(obstacles) > 0:
+            obstacle_cluster = Cluster.ByTopologies(obstacles)
+        else:
+            obstacle_cluster = None
 
         def intersects_obstacles(edge, obstacle_cluster, tolerance=0.0001):
             result = Topology.Difference(edge, obstacle_cluster)
