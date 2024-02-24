@@ -579,7 +579,7 @@ class CellComplex(Topology):
         Parameters
         ----------
         vertices: list , optional 
-            The input list of vertices to use for voronoi partitioning. If set to None, the algorithm uses the vertices of the input cell parameter.
+            The input list of vertices to use for delaunay triangulation. If set to None, the algorithm uses the vertices of the input cell parameter.
             if both are set to none, a unit cube centered around the origin is used.
         tolerance : float , optional
             the desired tolerance. The default is 0.0001.
@@ -587,7 +587,7 @@ class CellComplex(Topology):
         Returns
         -------
         topologic.CellComplex
-            The created voronoi cellComplex.
+            The created delaunay cellComplex.
 
         """
         from topologicpy.Vertex import Vertex
