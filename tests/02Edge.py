@@ -10,6 +10,7 @@ from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
 from topologicpy.Cluster import Cluster
 print("Start")
+print("24 Cases")
 # Object for test case
 v0 = Vertex.ByCoordinates(0, 0, 0)          # create vertex
 v1 = Vertex.ByCoordinates(0, 10, 0)         # create vertex

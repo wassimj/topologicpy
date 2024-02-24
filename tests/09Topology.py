@@ -21,6 +21,8 @@ from topologicpy.Matrix import Matrix
 from topologicpy.Graph import Graph
 from topologicpy.Plotly import  Plotly
 
+print("Start")
+print("65 Cases")
 # Object for test
 v0 = Vertex.ByCoordinates(0, 0, 0)                                                                   # create vertex
 v1 = Vertex.ByCoordinates(0, 10, 0)                                                                 # create vertex
@@ -157,70 +159,53 @@ assert isinstance(aper2, list), "Topology.Apertures. Should be list"
 # case 8 - Boolean
 print("Case 8")
 # test 1 - Union
-print("  Test 1")
 Union1 = Topology.Boolean(box1, box4)                                                      # without optional inputs                                         
 # test 2 - Union
-print("  Test 2")
 Union2 = Topology.Boolean(prism1, prism3, operation= 'union',                 # with optional inputs
                                               tranDict=False, tolerance= 0.0005)
 # test 3 - Difference
-print("  Test 3")
 diff1 = Topology.Boolean(box1, box4, operation= 'difference')
 # test 4 -Difference
-print("  Test 4")
 diff2 = Topology.Boolean(prism1, prism3, operation= 'difference',                 # with optional inputs     
                                               tranDict=False, tolerance= 0.0005)
 
 # test 5 - Intersect
-print("  Test 5")
 intrsct1 = Topology.Boolean(box1, box4, operation= 'intersect')
 
 # test 6 - Intersect
-print("  Test 6")
 intrsct2 = Topology.Boolean(box1, box4, operation= 'intersect',              # with optional inputs
                                                tranDict=False, tolerance= 0.0001)   
 
 # test 7 - Intersect
-print("  Test 7")
 intrsct3 = Topology.Boolean(box1, box4, operation= 'intersect',              # with optional inputs
                                                tranDict=False, tolerance= 0.0001)   
 
 # test 8 - symdif
-print("  Test 8")
 symdif1 = Topology.Boolean(box1, box4, operation= 'symdif')
 # test 9 - symdif
-print("  Test 9")
 symdif2 = Topology.Boolean(box1, box4, operation= 'symdif',              # with optional inputs
                                                tranDict=False, tolerance= 0.0001)
 # test 10 - symdif
-print("  Test 10")
 symdif3 = Topology.Boolean(box1, box4, operation= 'symdif',              # with optional inputs
                                                tranDict=False, tolerance= 0.0001)
 # test 11 - merge
-print("  Test 11")
 merge1 = Topology.Boolean(box1, box4,  operation= 'merge')
 # test 12 - merge
-print("  Test 12")
 merge2 = Topology.Boolean(prism1, prism3, operation= 'merge', 
                                                tranDict=False, tolerance=0.0005)
 # test 13 - slice
-print("  Test 13")
 slice1 = Topology.Boolean(box2, box1, operation= 'slice')
 # test 6.2 - slice
 slice2 = Topology.Boolean(prism1, prism3, operation= 'slice',
                                             tranDict=False, tolerance=0.0005)
 # test 14 - impose
-print("  Test 14")
 impo1 = Topology.Boolean(box2, box1, operation= 'impose')
 # test 15 - impose
-print("  Test 15")
 impo2 = Topology.Boolean(prism1, prism3, operation= 'impose',
                                             tranDict=False, tolerance=0.0005)
 # test 16 - imprint
-print("  Test 16")
 impr1 = Topology.Boolean(box2, box1, operation= 'imprint')
 # test 17 - imprint
-print("  Test 17")
 impr2 = Topology.Boolean(prism1, prism3, operation= 'imprint',
                                             tranDict=False, tolerance=0.0005)
 
@@ -811,3 +796,4 @@ assert topology_id2 == 2, "Topology.TypeID. Should be 2"
 topology_id3 = Topology.TypeID("cell")
 assert isinstance(topology_id3, int), "Topology.TypeID. Should be integer"
 assert topology_id3 == 32, "Topology.TypeID. Should be 32"
+print("End")

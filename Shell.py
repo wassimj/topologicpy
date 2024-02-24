@@ -495,7 +495,8 @@ class Shell(Topology):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from random import sample
-        
+        from scipy.spatial import Delaunay as SCIDelaunay
+        import numpy as np
         
         if not isinstance(vertices, list):
             return None
@@ -536,7 +537,7 @@ class Shell(Topology):
             tempFlatVertices.append(Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), 0))
             points.append([Vertex.X(v), Vertex.Y(v)])
         #flatVertices = tempFlatVertices
-        delaunay = Delaunay(points)
+        delaunay = SCIDelaunay(points)
         simplices = delaunay.simplices
 
         faces = []
@@ -546,7 +547,6 @@ class Shell(Topology):
             tempTriangleVertices.append(vertices[simplex[1]])
             tempTriangleVertices.append(vertices[simplex[2]])
             tempFace = Face.ByWire(Wire.ByVertices(tempTriangleVertices), tolerance=tolerance)
-            tempCentroid = Topology.Centroid(tempFace)
             faces.append(tempFace)
 
         shell = Shell.ByFaces(faces, tolerance=tolerance)
@@ -1049,8 +1049,8 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Topology
-            The wire if a single hole or a cluster of wires if more than one hole.
+        list
+            The list of internal boundaries
 
         """
         from topologicpy.Cluster import Cluster
@@ -1063,7 +1063,10 @@ class Shell(Topology):
             _ = anEdge.Faces(shell, faces)
             if len(faces) > 1:
                 ibEdges.append(anEdge)
-        return Topology.SelfMerge(Cluster.ByTopologies(ibEdges), tolerance=tolerance)
+        returnTopology = Topology.SelfMerge(Cluster.ByTopologies(ibEdges), tolerance=tolerance)
+        wires = Topology.Wires(returnTopology)
+        return wires
+
     
     @staticmethod
     def IsClosed(shell: topologic.Shell) -> bool:

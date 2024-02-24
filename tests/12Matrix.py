@@ -16,8 +16,10 @@ from topologicpy.Cell import Cell
 from topologicpy.Grid import Grid
 from topologicpy.Matrix import Matrix
 
-
+print("Start")
+print("7 Cases")
 # Case 1 - ByRotation
+print("Case 1")
 # test 1
 mat_rot = Matrix.ByRotation(rx=0, ry=0, rz=0, order='xyz')
 assert isinstance(mat_rot, list), "Matrix.ByRotation. list"
@@ -36,6 +38,7 @@ assert len(mat_rot2[0]) == 4, "Matrix.ByRotation. List length should be 4"
 
 
 # Case 2 - ByScaling
+print("Case 2")
 # test 1
 mat_scal = Matrix.ByScaling(sx=4, sy=4, sz=4)
 assert isinstance(mat_scal, list), "Matrix.ByScaling. list"
@@ -48,6 +51,7 @@ assert len(mat_scal1) == 4, "Matrix.ByRotation. List length should be 4"
 assert len(mat_scal1[0]) == 4, "Matrix.ByRotation. List length should be 4"
 
 # Case 3 - Add
+print("Case 3")
 # test 1
 mat_add = Matrix.Add(mat_rot,mat_scal)
 assert isinstance(mat_add, list), "Matrix.Add. list"
@@ -66,6 +70,7 @@ assert len(mat_add2[0]) == 4, "Matrix.ByRotation. List length should be 4"
 
 
 # Case 4 - ByTranslation
+print("Case 4")
 # test 1
 mat_tansl = Matrix.ByTranslation(tx=3, ty=4, tz=2)
 assert isinstance(mat_tansl, list), "Matrix.ByTranslation. list"
@@ -79,6 +84,7 @@ assert len(mat_tansl1[0]) == 4, "Matrix.ByRotation. List length should be 4"
 
 
 # Case 5 - Multiply
+print("Case 5")
 # test 1
 mat_mul = Matrix.Multiply(mat_add,mat_tansl)
 assert isinstance(mat_mul, list), "Matrix.Multiply. list"
@@ -96,6 +102,7 @@ assert len(mat_mul2) == 4, "Matrix.ByRotation. List length should be 4"
 assert len(mat_mul2[0]) == 4, "Matrix.ByRotation. List length should be 4"
 
 # Case 6 - Subtract
+print("Case 6")
 # test 1
 mat_sub = Matrix.Subtract(mat_scal,mat_rot)
 assert isinstance(mat_sub, list), "Matrix.Subtract. list"
@@ -113,6 +120,7 @@ assert len(mat_sub2) == 4, "Matrix.ByRotation. List length should be 4"
 assert len(mat_sub2[0]) == 4, "Matrix.ByRotation. List length should be 4"
 
 # Case 7 - Transpose
+print("Case 7")
 # test 1
 mat_transp = Matrix.Transpose(mat_sub)
 assert isinstance(mat_transp, list), "Matrix.Transpose. list"
@@ -128,3 +136,4 @@ mat_transp2 = Matrix.Transpose(mat_scal)
 assert isinstance(mat_transp2, list), "Matrix.Transpose. list"
 assert len(mat_transp2) == 4, "Matrix.ByRotation. List length should be 4"
 assert len(mat_transp2[0]) == 4, "Matrix.ByRotation. List length should be 4"
+print("End")

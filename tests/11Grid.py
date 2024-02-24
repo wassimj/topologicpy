@@ -14,7 +14,8 @@ from topologicpy.Face import Face
 from topologicpy.Shell import Shell
 from topologicpy.Cell import Cell
 from topologicpy.Grid import Grid
-
+print("Start")
+print("3 Cases")
 # Object for test case
 v0 = Vertex.ByCoordinates(0, 0, 0)          # create vertex
 v1 = Vertex.ByCoordinates(0, 10, 0)         # create vertex
@@ -38,6 +39,7 @@ face5 = Face.ByVertices([v1,v5,v4,v0,v1])     # create face
 f_list = [face0,face1,face2,face3,face4,face5]  # create list
 
 # Case 1 - EdgesByDistances
+print("Case 1")
 # test 1
 clus_ed = Grid.EdgesByDistances()
 assert isinstance(clus_ed, topologic.Cluster), "Grid.ByDistances. topologic.Cluster"
@@ -51,6 +53,7 @@ clus_ed2 = Grid.EdgesByDistances(face=face5, uOrigin=v1, vOrigin=v2, uRange=[-0.
 assert isinstance(clus_ed2, topologic.Cluster), "Grid.ByDistances. topologic.Cluster"
 
 # Case 2 - EdgesByParameters
+print("Case 2")
 # test 1
 clus_ep = Grid.EdgesByParameters(face1)
 assert isinstance(clus_ep, topologic.Cluster), "Grid.ByParameters. topologic.Cluster"
@@ -60,6 +63,7 @@ clus_ep1 = Grid.EdgesByParameters(face2, uRange=[0, 0.25, 0.5, 0.75, 1.0],
 assert isinstance(clus_ep1, topologic.Cluster), "Grid.ByParameters. topologic.Cluster"
 
 # Case 3 - VerticesByDistances
+print("Case 3")
 # test 1
 clus_vd = Grid.VerticesByDistances()
 assert isinstance(clus_vd, topologic.Cluster), "Grid.VerticesByDistances. topologic.Cluster"
@@ -71,3 +75,4 @@ assert isinstance(clus_vd1, topologic.Cluster), "Grid.VerticesByDistances. topol
 clus_vd2 = Grid.VerticesByDistances(face=face4, origin=v1, uRange=[-0.5, -0.25, 0, 0.25, 0.5],
                                     vRange=[-0.5, -0.25, 0, 0.25, 0.5], clip=True, tolerance=0.001)
 assert isinstance(clus_vd2, topologic.Cluster), "Grid.VerticesByDistances. topologic.Cluster"
+print("End")

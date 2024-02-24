@@ -326,12 +326,12 @@ class Face(Topology):
                  miterThreshold: float = None, offsetKey: str = None,
                  miterThresholdKey: str = None, step: bool = True, tolerance: float = 0.0001) -> topologic.Face:
         """
-        Creates an offset wire from the input wire.
+        Creates an offset face from the input face.
 
         Parameters
         ----------
-        wire : topologic.Wire
-            The input wire.
+        face : topologic.Face
+            The input face.
         offset : float , optional
             The desired offset distance. The default is 1.0.
         miter : bool , optional
@@ -346,10 +346,11 @@ class Face(Topology):
             If set to True, The transition between collinear edges with different offsets will be a step. Otherwise, it will be a continous edge. The default is True.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
-        topologic.Wire
-            The created wire.
+        topologic.Face
+            The created face.
 
         """
         from topologicpy.Wire import Wire

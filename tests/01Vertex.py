@@ -18,6 +18,7 @@ from topologicpy.Topology import Topology
 import math
 # Object for test case
 print("Start")
+print("16 Cases")
 w = Wire.Rectangle()
 f = Face.ByWire(w)
 #f = Face.Rectangle()

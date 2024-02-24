@@ -195,7 +195,50 @@ class Cell(Topology):
                 return None
             else:
                 return cell
+    @staticmethod
+    def ByOffset(cell: topologic.Cell, offset: float = 1.0, tolerance: float = 0.0001) -> topologic.Face:
+        """
+        Creates an offset cell from the input cell.
 
+        Parameters
+        ----------
+        cell : topologic.Cell
+            The input cell.
+        offset : float , optional
+            The desired offset distance. The default is 1.0.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        topologic.Topology
+            The created offset topology. WARNING: This method may fail to create a cell if the offset creates self-intersecting faces. Always check the type being returned by this method.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Helper import Helper
+        from topologicpy.Topology import Topology
+        from topologicpy.Vector import Vector
+        from operator import add
+        import numpy as np
+
+        vertices = Topology.Vertices(cell)
+        new_vertices = []
+        for v in vertices:
+            faces = Topology.SuperTopologies(v, hostTopology=cell, topologyType="face")
+            normals = []
+            for face in faces:
+                normal = Vector.SetMagnitude(Face.Normal(face), offset)
+                normals.append(normal)
+            sum_normal = Vector.Sum(normals)
+            new_v = Topology.TranslateByDirectionDistance(v, direction=sum_normal, distance=Vector.Magnitude(sum_normal))
+            new_vertices.append(new_v)
+        new_cell = Topology.SelfMerge(Topology.ReplaceVertices(cell, Topology.Vertices(cell), new_vertices))
+        return new_cell
+    
     @staticmethod
     def ByShell(shell: topologic.Shell, planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
         """
@@ -533,11 +576,6 @@ class Cell(Topology):
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
 
-        Raises
-        ------
-        Exception
-            Raises an exception if the resulting surface area is negative. This can occur if the cell is degenerate or has flipped face normals.
-
         Returns
         -------
         float
@@ -559,7 +597,8 @@ class Cell(Topology):
             else:
                 compactness = 6*(volume**(2/3))/area
         else:
-            raise Exception("Error: Cell.Compactness: Cell surface area is not positive")
+            print("Cell.Compactness - Error: cell surface area is not positive. Returning None.")
+            return None
         return round(compactness, mantissa)
     
     @staticmethod

@@ -16,6 +16,7 @@ from topologicpy.Shell import Shell
 from topologicpy.Plotly import Plotly
 
 print("Start")
+print("41 Cases")
 # creating objects for test 
 # vertices
 v0 = Vertex.ByCoordinates(0, 0, 0)                 # create vertex

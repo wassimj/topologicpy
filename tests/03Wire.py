@@ -15,6 +15,7 @@ from topologicpy.Cluster import Cluster
 from topologicpy.Plotly import Plotly
 
 print("Start")
+print("23 Cases")
 #Objects for test case
 # Creating vertices by coordinates
 v1 = Vertex.ByCoordinates(0, 0, 0)                # create vertex

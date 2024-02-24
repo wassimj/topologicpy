@@ -5256,7 +5256,10 @@ class Topology():
             resultingTopologies.append(vertex)
         if len(resultingTopologies) == 1:
             return resultingTopologies[0]
-        return_topology = topology.SelfMerge()
+        try:
+            return_topology = topology.SelfMerge()
+        except:
+            return_topology = None
         if isinstance(return_topology, topologic.CellComplex):
             cells = Topology.Cells(return_topology)
             if isinstance(cells, list):

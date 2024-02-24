@@ -18,6 +18,8 @@ from topologicpy.Graph import Graph
 from topologicpy.Topology import Topology
 from topologicpy.Plotly import Plotly
 
+print("Start")
+print("41 Cases")
 # Object for test case
 v0 = Vertex.ByCoordinates(0, 0, 0)          # create vertex
 v1 = Vertex.ByCoordinates(0, 10, 0)         # create vertex
@@ -156,7 +158,6 @@ topology_graph_t =  Graph.Topology(graph_t)
 # plot geometry
 data_gt = Plotly.DataByTopology(topology_graph_t)
 figure_gt = Plotly.FigureByData(data_gt)
-#Plotly.Show(figure_gt, renderer="offline")                                                                  # visualization
 
 # Case 10 - Connect
 print("Case 10")
@@ -415,10 +416,13 @@ assert isinstance (graphTo2, topologic.Cluster)
 # Case 37 - Tree
 print("Case 37")
 # test 1
-graphTr1 = Graph.Tree(graph_ve1)                               # without optional inputs
+c = Cell.Prism()
+g_temp = Graph.ByTopology(c, toExteriorTopologies=True)
+v_temp = Graph.Vertices(g_temp)[0]
+graphTr1 = Graph.Tree(g_temp)                               # without optional inputs
 assert isinstance(graphTr1, topologic.Graph), "Graph.Tree. Should be topologic.Graph"
 # test 2
-graphTr2 = Graph.Tree(graph_ve2, v6, 0.0001)                   # with optional inputs
+graphTr2 = Graph.Tree(g_temp, v_temp, 0.0001)                   # with optional inputs
 assert isinstance(graphTr1, topologic.Graph), "Graph.Tree. Should be topologic.Graph"
 
 # Case 38 - VertexDegree
@@ -450,16 +454,15 @@ Bound2 = Topology.Rotate(Bound2, origin=Topology.Centroid(Bound2), x=0, y=0, z=1
 f = Face.ByWires(Bound1, [Bound2])
 va = Topology.Vertices(Bound1)
 graphVG1 = Graph.VisibilityGraph(f, viewpointsA=va, viewpointsB=[])
-Topology.Show(graphVG1, renderer="offline")
 assert isinstance(graphVG1, topologic.Graph), "Graph.VisibilityGraph. Should be topologic.Graph"
 
-# case 40 - NavigationGraph
-print("Case 40")
+# case 41 - NavigationGraph
+print("Case 41")
 Bound1 = Wire.Rectangle(v0, 50, 50)
 Bound2 = Wire.Rectangle(v0, 25, 25)
 Bound2 = Topology.Rotate(Bound2, origin=Topology.Centroid(Bound2), x=0, y=0, z=1, degree=45)
 f = Face.ByWires(Bound1, [Bound2])
 va = Topology.Vertices(Bound1)
-graphNG1 = Graph.NavigationGraph(f, viewpointsA=va, viewpointsB=[], tolerance=0.001)
-Topology.Show(graphNG1, renderer="offline")
+graphNG1 = Graph.NavigationGraph(f, viewpointsA=va, viewpointsB=va, tolerance=0.001, progressBar=False)
 assert isinstance(graphVG1, topologic.Graph), "Graph.NavigationGraph. Should be topologic.Graph"
+print("End")

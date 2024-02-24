@@ -32,6 +32,20 @@ except:
         print("CellComplex - numpy library installed correctly.")
     except:
         raise Exception("CellComplex - Error: Could not import numpy.")
+try:
+    from scipy.spatial import Delaunay
+    from scipy.spatial import Voronoi
+except:
+    print("CellComplex - Install required scipy library.")
+    try:
+        os.system("pip install scipy")
+    except:
+        os.system("pip install scipy --user")
+    try:
+        from scipy.spatial import Delaunay
+        from scipy.spatial import Voronoi
+    except:
+        raise Exception("CellComplex - Error: Could not import scipy.")
 
 class CellComplex(Topology):
     @staticmethod
@@ -558,6 +572,67 @@ class CellComplex(Topology):
         return d
     
     @staticmethod
+    def Delaunay(vertices: list=None, tolerance: float = 0.0001) -> topologic.CellComplex:
+        """
+        Triangulates the input vertices based on the Delaunay method. See https://en.wikipedia.org/wiki/Delaunay_triangulation.
+
+        Parameters
+        ----------
+        vertices: list , optional 
+            The input list of vertices to use for voronoi partitioning. If set to None, the algorithm uses the vertices of the input cell parameter.
+            if both are set to none, a unit cube centered around the origin is used.
+        tolerance : float , optional
+            the desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        topologic.CellComplex
+            The created voronoi cellComplex.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from scipy.spatial import Delaunay as SCIDelaunay
+        import numpy as np
+
+        if not isinstance(vertices, list):
+            cell = Cell.Prism()
+            vertices = Topology.Vertices(cell)
+        
+        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        if len(vertices) < 3:
+            print("CellComplex/Delaunay - Error: The input vertices parameter does not contain enough valid vertices. Returning None.")
+            return None
+        # Get the vertices of the input cell
+        points = np.array([Vertex.Coordinates(v) for v in vertices])
+        # Compute Delaunay triangulation
+        triangulation = SCIDelaunay(points, furthest_site=False)
+
+        faces = []
+        for simplex in triangulation.simplices:
+            tetrahedron_vertices = points[simplex]
+            verts = [Vertex.ByCoordinates(list(coord)) for coord in tetrahedron_vertices]
+            tri1 = [verts[0], verts[1], verts[2], verts[0]]
+            tri2 = [verts[0], verts[2], verts[3], verts[0]]
+            tri3 = [verts[0], verts[1], verts[3], verts[0]]
+            tri4 = [verts[1], verts[2], verts[3], verts[1]]
+            f1 = Face.ByVertices(tri1)
+            f2 = Face.ByVertices(tri2)
+            f3 = Face.ByVertices(tri3)
+            f4 = Face.ByVertices(tri4)
+            faces.append(f1)
+            faces.append(f2)
+            faces.append(f3)
+            faces.append(f4)
+        cc = Topology.RemoveCoplanarFaces(CellComplex.ByFaces(faces, tolerance=tolerance))
+        faces = [Topology.RemoveCollinearEdges(f) for f in Topology.Faces(cc)]
+        cc = CellComplex.ByFaces(faces)
+        return cc
+    
+    @staticmethod
     def Edges(cellComplex: topologic.CellComplex) -> list:
         """
         Returns the edges of the input cellComplex.
@@ -969,24 +1044,25 @@ class CellComplex(Topology):
         return round(volume, mantissa)
     
     @staticmethod
-    def Voronoi(vertices: list, cell: topologic.Cell = None, tolerance: float = 0.0001):
+    def Voronoi(vertices: list = None, cell: topologic.Cell = None, tolerance: float = 0.0001):
         """
         Partitions the input cell based on the Voronoi method. See https://en.wikipedia.org/wiki/Voronoi_diagram.
 
         Parameters
         ----------
-        vertices: list
-            The input list of vertices to use for voronoi partitioning.
+        vertices: list , optional 
+            The input list of vertices to use for voronoi partitioning. If set to None, the algorithm uses the vertices of the input cell parameter.
+            if both are set to none, a unit cube centered around the origin is used.
         cell : topologic.Cell , optional
-            The input cell. If set to None, an axes-aligned bounding cell is created from the list of vertices. The default is None.
+            The input bounding cell. If set to None, an axes-aligned bounding cell is created from the list of vertices. The default is None.
         tolerance : float , optional
             the desired tolerance. The default is 0.0001.
         
 
         Returns
         -------
-        float
-            The volume of the input cellComplex.
+        topologic.CellComplex
+            The created voronoi cellComplex.
 
         """
         from topologicpy.Vertex import Vertex
@@ -1012,22 +1088,40 @@ class CellComplex(Topology):
                     f = Face.ByVertices(temp_list)
                     if isinstance(f, topologic.Face):
                         faces.append(f)
+            if len(faces) < 1:
+                return None
             return Cluster.ByTopologies(faces)
         
-
         if cell == None:
-            cell = Topology.BoundingBox(Cluster.ByTopologies(vertices))
-        if not isinstance(cell, topologic.Cell):
-            print("CellComplex.Voronoi - Error: The input cell parameter is not a valid cell. Returning None.")
-            return None
-        vertices = [v for v in vertices if Cell.IsInternal(cell, v)]
+            if not isinstance(vertices, list):
+                cell = Cell.Prism(uSides=2, vSides=2, wSides=2)
+                vertices = Topology.Vertices(cell)
+                vertices.append(Vertex.Origin())
+            else:
+                vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+                if len(vertices) < 1:
+                    print("CellComplex.Voronoi - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+                    return None
+                cell = Topology.BoundingBox(Cluster.ByTopologies(vertices))
+        if not isinstance(vertices, list):
+            if not isinstance(cell, topologic.Cell):
+                cell = Cell.Prism()
+                vertices = Topology.Vertices(cell)
+            else:
+                vertices = Topology.Vertices(cell)
+        else:
+            vertices += Topology.Vertices(cell)
+        vertices = [v for v in vertices if (Cell.IsInternal(cell, v) or not Vertex.Index(v, Topology.Vertices(cell)) == None)]
         if len(vertices) < 1:
-            print("CellComplex.Voronoi - Error: The input vertices paramter does not contain any vertices that are inside the input cell parameter. Returning None.")
+            print("CellComplex.Voronoi - Error: The input vertices parame ter does not contain any vertices that are inside the input cell parameter. Returning None.")
             return None
-        cell_vertices = Topology.Vertices(cell)
-        all_vertices = cell_vertices + vertices
-        voronoi_points = np.array([Vertex.Coordinates(v) for v in all_vertices])
+        #cell_vertices = Topology.Vertices(cell)
+        #all_vertices = cell_vertices + vertices
+        voronoi_points = np.array([Vertex.Coordinates(v) for v in vertices])
         cluster = fracture_with_voronoi(voronoi_points)
+        if cluster == None:
+            print("CellComplex.Voronoi - Error: the operation failed. Returning None.")
+            return None
         cellComplex = Topology.Slice(cell, cluster)
         if not isinstance(cellComplex, topologic.CellComplex):
             print("CellComplex.Voronoi - Error: the operation failed. Returning None.")

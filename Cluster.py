@@ -79,13 +79,13 @@ class Cluster(Topology):
         from topologicpy.Vertex import Vertex
         import math
         if xRange == None and yRange == None:
-            print("Wire.ByFormula - Error: Both ranges cannot be None at the same time. Returning None.")
+            print("Cluster.ByFormula - Error: Both ranges cannot be None at the same time. Returning None.")
             return None
         if xString.islower():
-            print("Wire.ByFormula - Error: the input xString cannot lowercase. Please consider using uppercase (e.g. X). Returning None.")
+            print("Cluster.ByFormula - Error: the input xString cannot lowercase. Please consider using uppercase (e.g. X). Returning None.")
             return None
         if yString == 'y':
-            print("Wire.ByFormula - Error: the input yString cannot be lowercase. Please consider using uppercase (e.g. Y). Returning None.")
+            print("Cluster.ByFormula - Error: the input yString cannot be lowercase. Please consider using uppercase (e.g. Y). Returning None.")
             return None
         
         x_values = []
@@ -153,13 +153,13 @@ class Cluster(Topology):
         from topologicpy.Helper import Helper
         #assert isinstance(topologies, list), "Cluster.ByTopologies - Error: Input is not a list"
         if len(args) == 0:
-            print("1. Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+            print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
             return None
         if len(args) == 1:
             topologies = args[0]
             if isinstance(topologies, list):
                 if len(topologies) == 0:
-                    print("2. Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+                    print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
                     return None
                 else:
                     topologyList = [x for x in topologies if isinstance(x, topologic.Topology)]

@@ -70,6 +70,45 @@ class Vector(list):
         return round(math.degrees(np.arctan2(sinang, cosang)), mantissa)
     
     @staticmethod
+    def Average(vectors: list):
+        """
+        Returns the average vector of the input vectors.
+
+        Parameters
+        ----------
+        vectors : list
+            The input list of vectors.
+        
+        Returns
+        -------
+        list
+            The average vector of the input list of vectors.
+        """
+        if not isinstance(vectors, list):
+            print("Vector.Average - Error: The input vectors parameter is not a valid list. Returning None.")
+            return None
+        vectors = [vec for vec in vectors if isinstance(vec, list)]
+        if len(vectors) < 1:
+            print("Vector.Average - Error: The input vectors parameter does not contain any valid vectors. Returning None.")
+            return None
+        
+        dimensions = len(vectors[0])
+        num_vectors = len(vectors)
+        
+        # Initialize a list to store the sum of each dimension
+        sum_dimensions = [0] * dimensions
+        
+        # Calculate the sum of each dimension across all vectors
+        for vector in vectors:
+            for i in range(dimensions):
+                sum_dimensions[i] += vector[i]
+        
+        # Calculate the average for each dimension
+        average_dimensions = [sum_dim / num_vectors for sum_dim in sum_dimensions]
+    
+        return average_dimensions
+    
+    @staticmethod
     def AzimuthAltitude(vector, mantissa: int = 6):
         """
         Returns a dictionary of azimuth and altitude angles in degrees for the input vector. North is assumed to be the positive Y axis [0,1,0]. Up is assumed to be the positive Z axis [0,0,1].
@@ -530,6 +569,42 @@ class Vector(list):
             The vector representing the *southwest* direction.
         """
         return [-1,-1,0]
+    
+    @staticmethod
+    def Sum(vectors: list):
+        """
+        Returns the sum vector of the input vectors.
+
+        Parameters
+        ----------
+        vectors : list
+            The input list of vectors.
+        
+        Returns
+        -------
+        list
+            The sum vector of the input list of vectors.
+        """
+        if not isinstance(vectors, list):
+            print("Vector.Average - Error: The input vectors parameter is not a valid list. Returning None.")
+            return None
+        vectors = [vec for vec in vectors if isinstance(vec, list)]
+        if len(vectors) < 1:
+            print("Vector.Average - Error: The input vectors parameter does not contain any valid vectors. Returning None.")
+            return None
+        
+        dimensions = len(vectors[0])
+        num_vectors = len(vectors)
+        
+        # Initialize a list to store the sum of each dimension
+        sum_dimensions = [0] * dimensions
+        
+        # Calculate the sum of each dimension across all vectors
+        for vector in vectors:
+            for i in range(dimensions):
+                sum_dimensions[i] += vector[i]
+    
+        return sum_dimensions
     
     @staticmethod
     def Up():
