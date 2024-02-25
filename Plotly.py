@@ -447,7 +447,7 @@ class Plotly:
                        faceMinGroup=None, faceMaxGroup=None, 
                        showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
                        faceLegendGroup=3, 
-                       intensityKey=None, colorScale="Viridis", mantissa=6, tolerance=0.0001):
+                       intensityKey=None, intensities=[], colorScale="Viridis", mantissa=6, tolerance=0.0001):
         """
         Creates plotly face, edge, and vertex data.
 
@@ -476,7 +476,7 @@ class Plotly:
             The list of vertex groups against which to index the color of the vertex. The default is [].
         vertexMinGroup : int or float , optional
             For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.
-        edgeMaxGroup : int or float , optional
+        vertexMaxGroup : int or float , optional
             For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.
         showVertexLegend : bool, optional
             If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. The default is False.
@@ -550,6 +550,8 @@ class Plotly:
             The number of the face legend group to which the faces of this topology belong. The default is 3.
         intensityKey: str, optional
             If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
+        intensities : list , optional
+            The list of intensities against which to index the intensity of the vertex. The default is [].
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         mantissa : int , optional
@@ -568,6 +570,9 @@ class Plotly:
         from topologicpy.Color import Color
         from time import time
         
+        def closest_index(input_value, values):
+            return min(range(len(values)), key=lambda i: abs(values[i] - input_value))
+
         def vertexData(vertices, dictionaries=[], color="black", size=1.1, labelKey=None, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Vertices", legendGroup=1, legendRank=1, showLegend=True, colorScale="Viridis"):
             x = []
             y = []
@@ -815,6 +820,8 @@ class Plotly:
                     color = color,
                     facecolor = groupList,
                     colorscale = colorScale,
+                    cmin = 0,
+                    cmax = 1,
                     intensity = intensities,
                     opacity = opacity,
                     hoverinfo = 'text',
@@ -832,38 +839,37 @@ class Plotly:
         from time import time
         if not isinstance(topology, topologic.Topology):
             return None
-        
-        intensities = []
+    
+    
+        intensityList = []
         data = []
         
-        if showVertices:
-            if topology.Type() == topologic.Vertex.Type():
-                tp_vertices = [topology]
-            else:
-                tp_vertices = Topology.Vertices(topology)
-            if not (tp_vertices == None or tp_vertices == []):
-                vertices = []
-                v_dictionaries = []
-                intensities = []
-                for i, tp_v in enumerate(tp_vertices):
-                    vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
-                    d = Topology.Dictionary(tp_v)
-                    if intensityKey:
-                        if d:
-                            v = Dictionary.ValueAtKey(d, key=intensityKey)
-                            if not v == None:
-                                intensities.append(v)
-                            else:
-                                intensities.append(0)
-                        else:
-                            intensities.append(0)
-                    else:
-                        intensities = None            
-                    if vertexLabelKey or vertexGroupKey:
-                        v_dictionaries.append(d)
-                data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
+        if topology.Type() == topologic.Vertex.Type():
+            tp_vertices = [topology]
         else:
-            intensities = None
+            tp_vertices = Topology.Vertices(topology)
+        if not (tp_vertices == None or tp_vertices == []):
+            vertices = []
+            v_dictionaries = []
+            intensityList = []
+            for i, tp_v in enumerate(tp_vertices):
+                vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
+                d = Topology.Dictionary(tp_v)
+                if intensityKey:
+                    if d:
+                        v = Dictionary.ValueAtKey(d, key=intensityKey)
+                        if not v == None:
+                            intensityList.append(closest_index(v, intensities)/float(len(intensities)))
+                        else:
+                            intensityList.append(0)
+                    else:
+                        intensityList.append(0)
+                else:
+                    intensityList = None            
+                if vertexLabelKey or vertexGroupKey:
+                    v_dictionaries.append(d)
+                if showVertices:
+                    data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
             
         if showEdges and topology.Type() > topologic.Vertex.Type():
             if topology.Type() == topologic.Edge.Type():
@@ -922,7 +928,7 @@ class Plotly:
                     geo = Topology.Geometry(f_cluster, mantissa=mantissa)
                     vertices = geo['vertices']
                     faces = geo['faces']
-                    data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensities, colorScale=colorScale))
+                    data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensityList, colorScale=colorScale))
         return data
 
     @staticmethod

@@ -5471,6 +5471,7 @@ class Topology():
              showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
              faceLegendGroup=3, 
              intensityKey=None,
+             intensities=[],
              
              width=950, height=500,
              xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)',
@@ -5617,6 +5618,8 @@ class Topology():
             The desired renderer. See Plotly.Renderers(). The default is "notebook".
         intensityKey : str , optional
             If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
+        intensities : list , optional
+            The list of intensities against which to index the intensity of the vertex. The default is [].
         showScale : bool , optional
             If set to True, the colorbar is shown. The default is False.
         cbValues : list , optional
@@ -5685,7 +5688,7 @@ class Topology():
                        faceMinGroup=faceMinGroup, faceMaxGroup=faceMaxGroup, 
                        showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel, faceLegendRank=faceLegendRank,
                        faceLegendGroup=faceLegendGroup, 
-                       intensityKey=intensityKey, colorScale=colorScale, mantissa=mantissa, tolerance=tolerance)
+                       intensityKey=intensityKey, intensities=intensities, colorScale=colorScale, mantissa=mantissa, tolerance=tolerance)
         figure = Plotly.FigureByData(data=data, width=width, height=height,
                                      xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,
                                      backgroundColor=backgroundColor,
