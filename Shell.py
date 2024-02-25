@@ -751,7 +751,7 @@ class Shell(Topology):
     
     @staticmethod
     def HyperbolicParaboloidRectangularDomain(origin: topologic.Vertex = None, llVertex: topologic.Vertex = None, lrVertex: topologic.Vertex =None, ulVertex: topologic.Vertex =None, urVertex: topologic.Vertex = None,
-                                              uSides: int = 10, vSides: int = 10, direction: list = [0,0,1], placement: str = "bottom", tolerance: float = 0.0001) -> topologic.Shell:
+                                              uSides: int = 10, vSides: int = 10, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a hyperbolic paraboloid with a rectangular domain.
 
@@ -816,7 +816,6 @@ class Shell(Topology):
         returnTopology = Shell.ByFaces(faces, tolerance=tolerance)
         if not returnTopology:
             returnTopology = None
-        zeroOrigin = returnTopology.CenterOfMass()
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -838,30 +837,15 @@ class Shell(Topology):
             xOffset = -(minX + (maxX - minX)*0.5)
             yOffset = -(minY + (maxY - minY)*0.5)
             zOffset = -(minZ + (maxZ - minZ)*0.5)
-        x1 = 0
-        y1 = 0
-        z1 = 0
-        x2 = 0 + direction[0]
-        y2 = 0 + direction[1]
-        z2 = 0 + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        returnTopology = Topology.Rotate(returnTopology, zeroOrigin, 0, 1, 0, theta)
-        returnTopology = Topology.Rotate(returnTopology, zeroOrigin, 0, 0, 1, phi)
-        returnTopology = Topology.Translate(returnTopology, zeroOrigin.X()+xOffset, zeroOrigin.Y()+yOffset, zeroOrigin.Z()+zOffset)
+        returnTopology = Topology.Translate(returnTopology, xOffset, yOffset, zOffset)
+        returnTopology = Topology.Place(returnTopology, originA=Vertex.Origin(), originB=origin)
+        returnTopology = Topology.Orient(returnTopology, origin=origin, dirA=[0,0,1], dirB=direction)
         return returnTopology
     
     @staticmethod
     def HyperbolicParaboloidCircularDomain(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 36, rings: int = 10,
-                                           A: float = 1.0, B: float = -1.0, direction: list = [0,0,1],
-                                           placement: str = "bottom", tolerance: float = 0.0001) -> topologic.Shell:
+                                           A: float = 2.0, B: float = -2.0, direction: list = [0,0,1],
+                                           placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a hyperbolic paraboloid with a circular domain. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
@@ -876,9 +860,9 @@ class Shell(Topology):
         rings : int , optional
             The desired number of concentric rings of the hyperbolic parabolid. The default is 10.
         A : float , optional
-            The *A* constant in the equation z = A*x^2^ + B*y^2^. The default is 1.0.
+            The *A* constant in the equation z = A*x^2^ + B*y^2^. The default is 2.0.
         B : float , optional
-            The *B* constant in the equation z = A*x^2^ + B*y^2^. The default is -1.0.
+            The *B* constant in the equation z = A*x^2^ + B*y^2^. The default is -2.0.
         direction : list , optional
             The  vector representing the up direction of the hyperbolic paraboloid. The default is [0,0,1.
         placement : str , optional
@@ -998,7 +982,6 @@ class Shell(Topology):
         maxY = max(yList)
         minZ = min(zList)
         maxZ = max(zList)
-        zeroOrigin = returnTopology.CenterOfMass()
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -1014,25 +997,9 @@ class Shell(Topology):
             xOffset = -(minX + (maxX - minX)*0.5)
             yOffset = -(minY + (maxY - minY)*0.5)
             zOffset = -(minZ + (maxZ - minZ)*0.5)
-        x1 = 0
-        y1 = 0
-        z1 = 0
-        x2 = 0 + direction[0]
-        y2 = 0 + direction[1]
-        z2 = 0 + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        zeroOrigin = topologic.Vertex.ByCoordinates(0,0,0)
-        returnTopology = Topology.Rotate(returnTopology, zeroOrigin, 0, 1, 0, theta)
-        returnTopology = Topology.Rotate(returnTopology, zeroOrigin, 0, 0, 1, phi)
-        returnTopology = Topology.Translate(returnTopology, origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset)
+        returnTopology = Topology.Translate(returnTopology, xOffset, yOffset, zOffset)
+        returnTopology = Topology.Place(returnTopology, originA=Vertex.Origin(), originB=origin)
+        returnTopology = Topology.Orient(returnTopology, origin=origin, dirA=[0,0,1], dirB=direction)
         return returnTopology
     
     @staticmethod
@@ -1205,24 +1172,9 @@ class Shell(Topology):
         shell = Shell.ByFaces(faces, tolerance=tolerance)
         if not shell:
             return None
-        x1 = 0
-        y1 = 0
-        z1 = 0
-        x2 = 0 + direction[0]
-        y2 = 0 + direction[1]
-        z2 = 0 + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < tolerance:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        shell = Topology.Rotate(shell, origin, 0, 1, 0, theta)
-        shell = Topology.Rotate(shell, origin, 0, 0, 1, phi)
-        shell = Topology.Translate(shell, origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset)
+        shell = Topology.Translate(shell, xOffset, yOffset, zOffset)
+        shell = Topology.Place(shell, originA=Vertex.Origin(), originB=origin)
+        shell = Topology.Orient(shell, origin=origin, dirA=[0,0,1], dirB=direction)
         return shell
 
 
@@ -1326,23 +1278,8 @@ class Shell(Topology):
                 f = Face.ByWire(w, tolerance=tolerance)
                 faces.append(f)
         shell = Shell.ByFaces(faces, tolerance=tolerance)
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + direction[0]
-        y2 = origin.Y() + direction[1]
-        z2 = origin.Z() + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        shell = Topology.Rotate(shell, origin, 0, 1, 0, theta)
-        shell = Topology.Rotate(shell, origin, 0, 0, 1, phi)
+        shell = Topology.Place(shell, originA=Vertex.Origin(), originB=origin)
+        shell = Topology.Orient(shell, origin=origin, dirA=[0,0,1], dirB=direction)
         return shell
 
     @staticmethod
