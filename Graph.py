@@ -4316,6 +4316,79 @@ class Graph:
         return graph.GetGUID()
 
     @staticmethod
+    def IncomingEdges(graph: topologic.Graph, vertex: topologic.Vertex, tolerance: float=0.0001) -> list:
+        """
+        Returns the incoming edges connected to a vertex. An edge is considered incoming if its end vertex is
+        coincident with the input vertex.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of incoming edges
+
+        """
+        from topologicpy.Edge import Edge
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.IncomingEdges - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            print("Graph.IncomingEdges - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        
+        edges = Graph.Edges(graph, [vertex])
+        incoming_edges = []
+        for edge in edges:
+            ev = Edge.EndVertex(edge)
+            if Vertex.Distance(vertex, ev) < tolerance:
+                incoming_edges.append(edge)
+        return incoming_edges
+    
+    @staticmethod
+    def IncomingVertices(graph: topologic.Graph, vertex: topologic.Vertex, tolerance: float=0.0001) -> list:
+        """
+        Returns the incoming vertices connected to a vertex. A vertex is considered incoming if it is an adjacent vertex to the input vertex
+        and the the edge connecting it to the input vertex is an incoming edge.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of incoming vertices
+
+        """
+        from topologicpy.Edge import Edge
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.IncomingVertices - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            print("Graph.IncomingVertices - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        
+        incoming_edges = Graph.IncomingEdges(graph, vertex, tolerance=tolerance)
+        incoming_vertices = []
+        for edge in incoming_edges:
+            sv = Edge.StartVertex(edge)
+            incoming_vertices.append(Graph.NearestVertex(graph, sv))
+        return incoming_vertices
+    
+    @staticmethod
     def IsBipartite(graph, tolerance=0.0001):
         """
         Returns True if the input graph is bipartite. Returns False otherwise. See https://en.wikipedia.org/wiki/Bipartite_graph.
@@ -5142,7 +5215,134 @@ class Graph:
             print("Graph.Order - Error: The input graph is not a valid graph. Returning None.")
             return None
         return len(Graph.Vertices(graph))
+    
+    @staticmethod
+    def OutgoingEdges(graph: topologic.Graph, vertex: topologic.Vertex, tolerance: float=0.0001) -> list:
+        """
+        Returns the outgoing edges connected to a vertex. An edge is considered outgoing if its start vertex is
+        coincident with the input vertex.
 
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of outgoing edges
+
+        """
+        from topologicpy.Edge import Edge
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.IncomingEdges - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            print("Graph.IncomingEdges - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        
+        edges = Graph.Edges(graph, [vertex])
+        outgoing_edges = []
+        for edge in edges:
+            sv = Edge.StartVertex(edge)
+            if Vertex.Distance(vertex, sv) < tolerance:
+                outgoing_edges.append(edge)
+        return outgoing_edges
+    
+    @staticmethod
+    def OutgoingVertices(graph: topologic.Graph, vertex: topologic.Vertex, tolerance: float=0.0001) -> list:
+        """
+        Returns the list of outgoing vertices connected to a vertex. A vertex is considered outgoing if it is an adjacent vertex to the input vertex
+        and the the edge connecting it to the input vertex is an outgoing edge.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertex : topologic.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of incoming vertices
+
+        """
+        from topologicpy.Edge import Edge
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.OutgoingVertices - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertex, topologic.Vertex):
+            print("Graph.OutgoingVertices - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        
+        outgoing_edges = Graph.OutgoingEdges(graph, vertex, tolerance=tolerance)
+        outgoing_vertices = []
+        for edge in outgoing_edges:
+            ev = Edge.EndVertex(edge)
+            outgoing_vertices.append(Graph.NearestVertex(graph, ev))
+        return outgoing_vertices
+    
+    @staticmethod
+    def PageRank(graph, alpha=0.85, maxIterations=100, normalize=True, mantissa=6, tolerance=0.0001):
+        """
+        Calculates PageRank scores for nodes in a directed graph. see https://en.wikipedia.org/wiki/PageRank.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        alpha : float , optional
+            The damping (dampening) factor. The default is 0.85. See https://en.wikipedia.org/wiki/PageRank.
+        maxIterations : int , optional
+            The maximum number of iterations to calculate the page rank. The default is 100.
+        normalize : bool , optional
+            If set to True, the results will be normalized from 0 to 1. Otherwise, they won't be. The default is True.
+        mantissa : int , optional
+            The desired length of the mantissa.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of page ranks for the vertices in the graph.
+        """
+        from topologicpy.Helper import Helper
+
+        vertices = Graph.Vertices(graph)
+        num_vertices = len(vertices)
+        if num_vertices < 1:
+            print("Graph.PageRank - Error: The input graph parameter has no vertices. Returning None")
+            return None
+        initial_score = 1.0 / num_vertices
+        scores = [initial_score for vertex in vertices]
+        for _ in range(maxIterations):
+            new_scores = [0 for vertex in vertices]
+            for i, vertex in enumerate(vertices):
+                incoming_score = 0
+                for incoming_vertex in Graph.IncomingVertices(graph, vertex):
+                    if len(Graph.IncomingVertices(graph, incoming_vertex)) > 0:
+                        incoming_score += scores[Vertex.Index(incoming_vertex, vertices)] / len(Graph.IncomingVertices(graph, incoming_vertex))
+                new_scores[i] = alpha * incoming_score + (1 - alpha) / num_vertices
+
+            # Check for convergence
+            if all(abs(new_scores[i] - scores[i]) < tolerance for i in range(len(vertices))):
+                break
+
+            scores = new_scores
+        if normalize == True:
+            scores = Helper.Normalize(scores, mantissa=mantissa)
+        else:
+            scores = [round(x, mantissa) for x in scores]
+        return scores
+    
     @staticmethod
     def Path(graph, vertexA, vertexB):
         """
@@ -5835,7 +6035,7 @@ class Graph:
         return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'])
     
     @staticmethod
-    def VertexDegree(graph, vertex):
+    def VertexDegree(graph : topologic.Graph, vertex: topologic.Vertex, edgeKey: str=None, tolerance: float=0.0001):
         """
         Returns the degree of the input vertex. See https://en.wikipedia.org/wiki/Degree_(graph_theory).
 
@@ -5843,8 +6043,13 @@ class Graph:
         ----------
         graph : topologic.Graph
             The input graph.
-        vertices : topologic.Vertex
+        vertex : topologic.Vertex
             The input vertex.
+        edgeKey : str , optional
+            If specified, the value in the connected edges' dictionary specified by the edgeKey string will be aggregated to calculate
+            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -5852,13 +6057,28 @@ class Graph:
             The degree of the input vertex.
 
         """
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import numbers
+
         if not isinstance(graph, topologic.Graph):
             print("Graph.VertexDegree - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(vertex, topologic.Vertex):
             print("Graph.VertexDegree - Error: The input vertex is not a valid vertex. Returning None.")
             return None
-        return graph.VertexDegree(vertex)
+        if not isinstance(edgeKey, str):
+            edgeKey = ""
+        edges = Graph.Edges(graph, [vertex], tolerance=tolerance)
+        degree = 0
+        for edge in edges:
+            d = Topology.Dictionary(edge)
+            value = Dictionary.ValueAtKey(d, edgeKey)
+            if isinstance(value, numbers.Number):
+                degree += value
+            else:
+                degree += 1
+        return degree
     
     @staticmethod
     def Vertices(graph):
