@@ -4316,7 +4316,7 @@ class Graph:
         return graph.GetGUID()
 
     @staticmethod
-    def IncomingEdges(graph: topologic.Graph, vertex: topologic.Vertex, tolerance: float=0.0001) -> list:
+    def IncomingEdges(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool=False, tolerance: float=0.0001) -> list:
         """
         Returns the incoming edges connected to a vertex. An edge is considered incoming if its end vertex is
         coincident with the input vertex.
@@ -4327,6 +4327,8 @@ class Graph:
             The input graph.
         vertex : topologic.Vertex
             The input vertex.
+        directed : bool , optional
+            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -4345,6 +4347,8 @@ class Graph:
             return None
         
         edges = Graph.Edges(graph, [vertex])
+        if directed == False:
+            return edges
         incoming_edges = []
         for edge in edges:
             ev = Edge.EndVertex(edge)
@@ -4353,7 +4357,7 @@ class Graph:
         return incoming_edges
     
     @staticmethod
-    def IncomingVertices(graph: topologic.Graph, vertex: topologic.Vertex, tolerance: float=0.0001) -> list:
+    def IncomingVertices(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool=False, tolerance: float=0.0001) -> list:
         """
         Returns the incoming vertices connected to a vertex. A vertex is considered incoming if it is an adjacent vertex to the input vertex
         and the the edge connecting it to the input vertex is an incoming edge.
@@ -4364,6 +4368,8 @@ class Graph:
             The input graph.
         vertex : topologic.Vertex
             The input vertex.
+        directed : bool , optional
+            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -4381,7 +4387,9 @@ class Graph:
             print("Graph.IncomingVertices - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         
-        incoming_edges = Graph.IncomingEdges(graph, vertex, tolerance=tolerance)
+        if directed == False:
+            return Graph.AdjacentVertices(graph, vertex)
+        incoming_edges = Graph.IncomingEdges(graph, vertex, directed=directed, tolerance=tolerance)
         incoming_vertices = []
         for edge in incoming_edges:
             sv = Edge.StartVertex(edge)
@@ -5217,7 +5225,7 @@ class Graph:
         return len(Graph.Vertices(graph))
     
     @staticmethod
-    def OutgoingEdges(graph: topologic.Graph, vertex: topologic.Vertex, tolerance: float=0.0001) -> list:
+    def OutgoingEdges(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool=False, tolerance: float=0.0001) -> list:
         """
         Returns the outgoing edges connected to a vertex. An edge is considered outgoing if its start vertex is
         coincident with the input vertex.
@@ -5228,6 +5236,8 @@ class Graph:
             The input graph.
         vertex : topologic.Vertex
             The input vertex.
+        directed : bool , optional
+            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -5246,6 +5256,8 @@ class Graph:
             return None
         
         edges = Graph.Edges(graph, [vertex])
+        if directed == False:
+            return edges
         outgoing_edges = []
         for edge in edges:
             sv = Edge.StartVertex(edge)
@@ -5254,7 +5266,7 @@ class Graph:
         return outgoing_edges
     
     @staticmethod
-    def OutgoingVertices(graph: topologic.Graph, vertex: topologic.Vertex, tolerance: float=0.0001) -> list:
+    def OutgoingVertices(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool=False, tolerance: float=0.0001) -> list:
         """
         Returns the list of outgoing vertices connected to a vertex. A vertex is considered outgoing if it is an adjacent vertex to the input vertex
         and the the edge connecting it to the input vertex is an outgoing edge.
@@ -5265,6 +5277,8 @@ class Graph:
             The input graph.
         vertex : topologic.Vertex
             The input vertex.
+        directed : bool , optional
+            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -5282,7 +5296,9 @@ class Graph:
             print("Graph.OutgoingVertices - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         
-        outgoing_edges = Graph.OutgoingEdges(graph, vertex, tolerance=tolerance)
+        if directed == False:
+            return Graph.AdjacentVertices(graph, vertex)
+        outgoing_edges = Graph.OutgoingEdges(graph, vertex, directed=directed, tolerance=tolerance)
         outgoing_vertices = []
         for edge in outgoing_edges:
             ev = Edge.EndVertex(edge)
@@ -5290,7 +5306,7 @@ class Graph:
         return outgoing_vertices
     
     @staticmethod
-    def PageRank(graph, alpha=0.85, maxIterations=100, normalize=True, mantissa=6, tolerance=0.0001):
+    def PageRank(graph, alpha=0.85, maxIterations=100, normalize=True, directed=False, mantissa=6, tolerance=0.0001):
         """
         Calculates PageRank scores for nodes in a directed graph. see https://en.wikipedia.org/wiki/PageRank.
 
@@ -5304,6 +5320,8 @@ class Graph:
             The maximum number of iterations to calculate the page rank. The default is 100.
         normalize : bool , optional
             If set to True, the results will be normalized from 0 to 1. Otherwise, they won't be. The default is True.
+        directed : bool , optional
+            If set to True, the graph is considered as a directed graph. Otherwise, it will be considered as an undirected graph. The default is False.
         mantissa : int , optional
             The desired length of the mantissa.
         tolerance : float , optional
@@ -5327,9 +5345,9 @@ class Graph:
             new_scores = [0 for vertex in vertices]
             for i, vertex in enumerate(vertices):
                 incoming_score = 0
-                for incoming_vertex in Graph.IncomingVertices(graph, vertex):
-                    if len(Graph.IncomingVertices(graph, incoming_vertex)) > 0:
-                        incoming_score += scores[Vertex.Index(incoming_vertex, vertices)] / len(Graph.IncomingVertices(graph, incoming_vertex))
+                for incoming_vertex in Graph.IncomingVertices(graph, vertex, directed=directed):
+                    if len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed)) > 0:
+                        incoming_score += scores[Vertex.Index(incoming_vertex, vertices)] / len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed))
                 new_scores[i] = alpha * incoming_score + (1 - alpha) / num_vertices
 
             # Check for convergence
