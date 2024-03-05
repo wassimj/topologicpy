@@ -3644,7 +3644,6 @@ class Graph:
         import os
         import math
         import random
-        import os
         from os.path import exists
         
         
@@ -3900,7 +3899,7 @@ class Graph:
                     defaultVertexColor="black", defaultVertexSize=3,
                     vertexLabelKey=None, vertexColorKey=None, vertexSizeKey=None, 
                     defaultEdgeColor="black", defaultEdgeWeight=1, defaultEdgeType="undirected",
-                    edgeLabelKey=None, edgeColorKey=None, edgeWeightKey=None):
+                    edgeLabelKey=None, edgeColorKey=None, edgeWeightKey=None, overwrite=False):
         """
         Exports the input graph to a Graph Exchange XML (GEXF) file format. See https://gexf.net/
 
@@ -3944,6 +3943,8 @@ class Graph:
         edgeWeightKey : str , optional
             If specified, the edge dictionary is searched for this key to determine the edge weight. If not specified
             the edge weight is set to the value defined by defaultEdgeWeight parameter. The default is None.
+        overwrite : bool , optional
+            If set to True, any existing file is overwritten. Otherwise, it is not. The default is False.
 
         Returns
         -------
@@ -3958,6 +3959,8 @@ class Graph:
         from topologicpy.Color import Color
         import numbers
         from datetime import datetime
+        import os
+        from os.path import exists
         
         def create_gexf_file(nodes, edges, default_edge_type, node_attributes, edge_attributes, path):
 
@@ -4040,6 +4043,20 @@ class Graph:
                 return 'integer'
             else:
                 return 'string'
+        
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.ExportToGEXF - Error: the input graph parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(path, str):
+            print("Graph.ExportToGEXF - Error: the input path parameter is not a valid string. Returning None.")
+            return None
+        # Make sure the file extension is .brep
+        ext = path[len(path)-5:len(path)]
+        if ext.lower() != ".gexf":
+            path = path+".gexf"
+        if not overwrite and exists(path):
+            print("Graph.ExportToGEXF - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
         
         g_vertices = Graph.Vertices(graph)
         g_edges = Graph.Edges(graph)
@@ -4174,9 +4191,9 @@ class Graph:
             dict_weight = None
             if not isinstance(defaultEdgeWeight, numbers.Real):
                 defaultEdgeWeight = 1
+            edge_weight = defaultEdgeWeight
             if isinstance(edgeWeightKey, str):
                 dict_weight = Dictionary.ValueAtKey(d, edgeWeightKey)
-            
             if not dict_weight == None:
                 if isinstance(dict_weight, numbers.Real):
                     edge_weight = dict_weight
