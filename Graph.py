@@ -3895,12 +3895,62 @@ class Graph:
         yaml_file.close()
         return True
     
+    @staticmethod
     def ExportToGEXF(graph, path, graphWidth=20, graphLength=20, graphHeight=20,
                     defaultVertexColor="black", defaultVertexSize=3,
-                    defaultEdgeColor="black", defaultEdgeWeight=1,
                     vertexLabelKey=None, vertexColorKey=None, vertexSizeKey=None, 
+                    defaultEdgeColor="black", defaultEdgeWeight=1, defaultEdgeType="undirected",
                     edgeLabelKey=None, edgeColorKey=None, edgeWeightKey=None):
+        """
+        Exports the input graph to a Graph Exchange XML (GEXF) file format. See https://gexf.net/
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph
+        path : str
+            The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
+        graphWidth : float or int , optional
+            The desired graph width. The default is 20.
+        graphLength : float or int , optional
+            The desired graph length. The default is 20.
+        graphHeight : float or int , optional
+            The desired graph height. The default is 20.
+        defaultVertexColor : str , optional
+            The desired default vertex color. The default is "black".
+        defaultVertexSize : float or int , optional
+            The desired default vertex size. The default is 3.
+        defaultEdgeColor : str , optional
+            The desired default edge color. The default is "black".
+        defaultEdgeWeight : float or int , optional
+            The desired default edge weight. The edge weight determines the width of the displayed edge. The default is 3.
+        defaultEdgeType : str , optional
+            The desired default edge type. This can be one of "directed" or "undirected". The default is "undirected".
+        vertexLabelKey : str , optional
+            If specified, the vertex dictionary is searched for this key to determine the vertex label. If not specified
+            the vertex label being is set to "Node X" where is X is a unique number. The default is None.
+        vertexColorKey : str , optional
+            If specified, the vertex dictionary is searched for this key to determine the vertex color. If not specified
+            the vertex color is set to the value defined by defaultVertexColor parameter. The default is None.
+        vertexSizeKey : str , optional
+            If specified, the vertex dictionary is searched for this key to determine the vertex size. If not specified
+            the vertex size is set to the value defined by defaultVertexSize parameter. The default is None.
+        edgeLabelKey : str , optional
+            If specified, the edge dictionary is searched for this key to determine the edge label. If not specified
+            the edge label being is set to "Edge X" where is X is a unique number. The default is None.
+        edgeColorKey : str , optional
+            If specified, the edge dictionary is searched for this key to determine the edge color. If not specified
+            the edge color is set to the value defined by defaultEdgeColor parameter. The default is None.
+        edgeWeightKey : str , optional
+            If specified, the edge dictionary is searched for this key to determine the edge weight. If not specified
+            the edge weight is set to the value defined by defaultEdgeWeight parameter. The default is None.
+
+        Returns
+        -------
+        bool
+            True if the graph has been successfully exported. False otherwise.
         
+        """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
@@ -3909,11 +3959,17 @@ class Graph:
         import numbers
         from datetime import datetime
         
-        def create_gexf_file(nodes, edges, node_attributes, edge_attributes, path):
+        def create_gexf_file(nodes, edges, default_edge_type, node_attributes, edge_attributes, path):
 
             with open(path, 'w') as file:
                 # Write the GEXF header
                 formatted_date = datetime.now().strftime("%Y-%m-%d")
+                if not isinstance(default_edge_type, str):
+                    default_edge_type = "undirected"
+                if default_edge_type.lower() == "directed":
+                    defaultedge_type = "directed"
+                else:
+                    default_edge_type = "undirected"
                 file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
                 file.write('<gexf version="1.3" xmlns="http://www.gephi.org/gexf" xmlns:viz="http://www.gephi.org/gexf/viz">\n')
                 file.write(f'<meta lastmodifieddate="{formatted_date}">\n')
@@ -3921,7 +3977,7 @@ class Graph:
                 file.write('<title>"Topologic Graph"</title>\n')
                 file.write('<description>"This is a Topologic Graph"</description>\n')
                 file.write('</meta>\n')
-                file.write('<graph type="dynamic" defaultedgetype="undirected">\n')
+                file.write(f'<graph type="static" defaultedgetype="{defaultEdgeType}">\n')
 
                 # Write attribute definitions
                 file.write('<attributes class="node" mode="static">\n')
@@ -4145,15 +4201,8 @@ class Graph:
             edge_dict['label'] = edge_label
             edges[(str(svid), str(evid))] = edge_dict
 
-        create_gexf_file(nodes, edges, node_attributes, edge_attributes, path)
-
-
-
-
-
-
-
-
+        create_gexf_file(nodes, edges, defaultEdgeType, node_attributes, edge_attributes, path)
+        return True
 
     @staticmethod
     def Flatten(graph, layout="spring", k=0.8, seed=None, iterations=50, rootVertex=None, tolerance=0.0001):
