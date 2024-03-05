@@ -621,7 +621,7 @@ class Face(Topology):
             return returnList
 
     @staticmethod
-    def ByWires(externalBoundary: topologic.Wire, internalBoundaries: list = [], tolerance: float = 0.0001, silent: bool = True) -> topologic.Face:
+    def ByWires(externalBoundary: topologic.Wire, internalBoundaries: list = [], tolerance: float = 0.0001, silent: bool = False) -> topologic.Face:
         """
         Creates a face from the input external boundary (closed wire) and the input list of internal boundaries (closed wires).
 
@@ -634,7 +634,7 @@ class Face(Topology):
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, error messages are printed. Otherwise, they are not. The default is True.
+            If set to False, error messages are printed. Otherwise, they are not. The default is False.
 
         Returns
         -------
@@ -643,11 +643,11 @@ class Face(Topology):
 
         """
         if not isinstance(externalBoundary, topologic.Wire):
-            if silent:
+            if not silent:
                 print("Face.ByWires - Error: The input externalBoundary parameter is not a valid topologic wire. Returning None.")
             return None
         if not Wire.IsClosed(externalBoundary):
-            if silent:
+            if not silent:
                 print("Face.ByWires - Error: The input externalBoundary parameter is not a closed topologic wire. Returning None.")
             return None
         ibList = [x for x in internalBoundaries if isinstance(x, topologic.Wire) and Wire.IsClosed(x)]
@@ -655,14 +655,14 @@ class Face(Topology):
         try:
             face = topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList, tolerance)
         except:
-            if silent:
+            if not silent:
                 print("Face.ByWires - Error: The operation failed. Returning None.")
             face = None
         return face
 
 
     @staticmethod
-    def ByWiresCluster(externalBoundary: topologic.Wire, internalBoundariesCluster: topologic.Cluster = None, tolerance: float = 0.0001, silent: bool = True) -> topologic.Face:
+    def ByWiresCluster(externalBoundary: topologic.Wire, internalBoundariesCluster: topologic.Cluster = None, tolerance: float = 0.0001, silent: bool = False) -> topologic.Face:
         """
         Creates a face from the input external boundary (closed wire) and the input cluster of internal boundaries (closed wires).
 
@@ -675,7 +675,7 @@ class Face(Topology):
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, error messages are printed. Otherwise, they are not. The default is True.
+            If set to False, error messages are printed. Otherwise, they are not. The default is False.
         
         Returns
         -------
@@ -686,17 +686,17 @@ class Face(Topology):
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         if not isinstance(externalBoundary, topologic.Wire):
-            if silent:
+            if not silent:
                 print("Face.ByWiresCluster - Error: The input externalBoundary parameter is not a valid topologic wire. Returning None.")
             return None
         if not Wire.IsClosed(externalBoundary):
-            if silent:
+            if not silent:
                 print("Face.ByWiresCluster - Error: The input externalBoundary parameter is not a closed topologic wire. Returning None.")
             return None
         if not internalBoundariesCluster:
             internalBoundaries = []
         elif not isinstance(internalBoundariesCluster, topologic.Cluster):
-            if silent:
+            if not silent:
                 print("Face.ByWiresCluster - Error: The input internalBoundariesCluster parameter is not a valid topologic cluster. Returning None.")
             return None
         else:

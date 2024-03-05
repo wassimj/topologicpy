@@ -1025,7 +1025,7 @@ class Cluster(Topology):
         for aComplex in complexes:
             aComplex = list(aComplex)
             if len(aComplex) > 1:
-                cc = CellComplex.ByCells(aComplex, silent=False)
+                cc = CellComplex.ByCells(aComplex, silent=True)
                 if isinstance(cc, topologic.CellComplex):
                     cellComplexes.append(cc)
             elif len(aComplex) == 1:
