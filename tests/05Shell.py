@@ -52,10 +52,10 @@ assert isinstance(shell_fc, topologic.Shell), "Shell.ByFacesCluster. Should be t
 # Case 3 - ByWires
 print("Case 3")
 # test 1
-shell_w = Shell.ByWires(w_list)                                     # without optional inputs
+shell_w = Shell.ByWires(w_list, silent=True)                                     # without optional inputs
 assert isinstance(shell_w, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
 # test 2
-shell_w = Shell.ByWires(w_list, triangulate=True, tolerance=0.001)  # with optional inputs
+shell_w = Shell.ByWires(w_list, triangulate=True, tolerance=0.001, silent=True)  # with optional inputs
 assert isinstance(shell_w, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
 # test 3
 #print(" Test 3")
@@ -68,10 +68,10 @@ assert isinstance(shell_w, topologic.Shell), "Shell.ByFaces. Should be topologic
 # Case 4 - ByWiresCluster
 print("Case 4")
 # test 1
-shell_wc = Shell.ByWiresCluster(w_cluster)               # without optional inputs
+shell_wc = Shell.ByWiresCluster(w_cluster, silent=True)               # without optional inputs
 assert isinstance(shell_wc, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
 # test 2
-shell_wc = Shell.ByWiresCluster(w_cluster, triangulate=True, tolerance=0.001)   # with optional inputs
+shell_wc = Shell.ByWiresCluster(w_cluster, triangulate=True, tolerance=0.001, silent=True)   # with optional inputs
 assert isinstance(shell_wc, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
 # test 3
 #print(" Test 3")

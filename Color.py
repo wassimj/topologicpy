@@ -19,7 +19,77 @@ import math
 
 class Color:
     @staticmethod
-    def ByValueInRange(value: float = 0.5, minValue: float = 0.0, maxValue: float = 1.0, alpha: float = 1.0, useAlpha: bool = False, colorScale="viridis"):
+    def ByCSSNamedColor(color, alpha: float = None):
+        """
+        Creates a Color from a CSS named color string. See https://developer.mozilla.org/en-US/docs/Web/CSS/named-color
+
+        Parameters
+        ----------
+        color : str
+            A CSS named color.
+        alpha : float , optional
+            THe desired alpha (transparency value). The default is None which means no alpha value will be included in the returned list.
+
+        Returns
+        -------
+        list
+            The color expressed as an [r,g,b] or an [r,g,b,a] list.
+        """
+        import webcolors
+        if not alpha == None:
+            if not 0.0 <= alpha <= 1.0:
+                print("Color.ByCSSNamedColor - Error: alpha is not within the valid range of 0 to 1. Returning None.")
+                return None
+        try:
+            # Get RGB values from the named CSS color
+            rgbList = list(webcolors.name_to_rgb(color))
+            if not alpha == None:
+                rgbList.append(alpha)
+            return rgbList
+
+        except ValueError:
+            print(f"Color.ByCSSNamedColor - Error: '{color}' is not a valid named CSS color. Returning None.")
+            return None
+    
+    @staticmethod
+    def ByHEX(hex: str, alpha: float = None):
+        """
+        Converts a hexadecimal color string to RGB color values.
+
+        Parameters
+        ----------
+        hex : str
+            A hexadecimal color string in the format '#RRGGBB'.
+        alpha : float , optional
+            The transparency value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. The default is None
+            which means no transparency value will be included in the returned color.
+        Returns
+        -------
+        list
+            The color expressed as an [r,g,b] or an [r,g,b,a] list.
+
+        """
+        if not isinstance(hex, str):
+            print("Color.HEXtoRGB - Error: The input hex parameter is not a valid string. Returning None.")
+            return None
+        if not alpha == None:
+            if not 0.0 <= alpha <= 1.0:
+                print("Color.ByHEX - Error: alpha is not within the valid range of 0 to 1. Returning None.")
+                return None
+        hex = hex.lstrip('#')
+        if len(hex) != 6:
+            print("Color.HEXtoRGB - Error: Invalid hexadecimal color format. It should be a 6-digit hex value. Returning None.")
+            return None
+        r = int(hex[0:2], 16)
+        g = int(hex[2:4], 16)
+        b = int(hex[4:6], 16)
+        rgbList = [r,g,b]
+        if not alpha == None:
+            rgbList.append(alpha)
+        return rgbList
+
+    @staticmethod
+    def ByValueInRange(value: float = 0.5, minValue: float = 0.0, maxValue: float = 1.0, alpha: float = None, colorScale="viridis"):
         """
         Returns the r, g, b, (and optionally) a list of numbers representing the red, green, blue and alpha color elements.
         
@@ -44,7 +114,10 @@ class Color:
             The color expressed as an [r,g,b] or an [r,g,b,a] list.
 
         """
-        
+        if not alpha == None:
+            if not 0.0 <= alpha <= 1.0:
+                print("Color.ByValueInRange - Error: alpha is not within the valid range of 0 to 1. Returning None.")
+                return None
         # Code based on: https://stackoverflow.com/questions/62710057/access-color-from-plotly-color-scale
 
         def hex_to_rgb(value):
@@ -169,37 +242,96 @@ class Color:
             rgbList = get_color_default(val)
         else:
             rgbList = get_color(colorScale, val)
-        if useAlpha:
+        if not alpha == None:
             rgbList.append(alpha)
         return rgbList
     
     @staticmethod
-    def HEXToRGB(hex):
+    def CSSNamedColor(color):
         """
-        Converts a hexadecimal color string to RGB color values.
+        Returns the CSS Named color that most closely matches the input color. The input color is assumed to be
+        in the format [r,g,b]. See https://developer.mozilla.org/en-US/docs/Web/CSS/named-color
 
         Parameters
         ----------
-        hex : str
-            A hexadecimal color string in the format '#RRGGBB'.
+        color : list
+            The input color. This is assumed to be in the format [r,g,b]
+        
+        Returns
+        -------
+        str
+            The CSS named color that most closely matches the input color.
+        """
+
+        import webcolors
+        import numbers
+
+        if not isinstance(color, list):
+            print("Color.CSSNamedColor - Error: The input color parameter is not a valid list. Returning None.")
+            return None
+        color = [int(x) for x in color if isinstance(x, numbers.Real)]
+        if len(color) < 3:
+            print("Color.CSSNamedColor - Error: The input color parameter does not contain valid r,g,b values. Returning None.")
+            return None
+        color = color[0:3]
+        for x in color:
+            if not (0 <= x <= 255):
+                print("Color.CSSNamedColor - Error: The input color parameter does not contain valid r,g,b values. Returning None.")
+                return None
+
+        def est_color(requested_color):
+            min_colors = {}
+            for key, name in webcolors.CSS3_HEX_TO_NAMES.items():
+                r_c, g_c, b_c = webcolors.hex_to_rgb(key)
+                rd = (r_c - requested_color[0]) ** 2
+                gd = (g_c - requested_color[1]) ** 2
+                bd = (b_c - requested_color[2]) ** 2
+                min_colors[(rd + gd + bd)] = name
+            return min_colors[min(min_colors.keys())]
+
+        try:
+            closest_color_name = webcolors.rgb_to_name(color)
+        except ValueError:
+            closest_color_name = est_color(color)
+        return closest_color_name
+
+    @staticmethod
+    def CSSNamedColors():
+        """
+        Returns a list of all CSS named colors. See https://developer.mozilla.org/en-US/docs/Web/CSS/named-color
+
+        Parameters
+        ----------
 
         Returns
         -------
-        tuple
-            A tuple containing three integers representing the RGB values.
+        list
+            The list of all CSS named colors.
 
         """
-        if not isinstance(hex, str):
-            print("Color.HEXtoRGB - Error: The input hex parameter is not a valid string. Returning None.")
-            return None
-        hex = hex.lstrip('#')
-        if len(hex) != 6:
-            print("Color.HEXtoRGB - Error: Invalid hexadecimal color format. It should be a 6-digit hex value. Returning None.")
-            return None
-        r = int(hex[0:2], 16)
-        g = int(hex[2:4], 16)
-        b = int(hex[4:6], 16)
-        return [r, g, b]
+        # List of CSS named colors
+        css_named_colors = [
+            "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond",
+            "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue",
+            "cornsilk", "crimson", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey",
+            "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon",
+            "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink",
+            "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia",
+            "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "green", "greenyellow", "grey", "honeydew", "hotpink",
+            "indianred", "indigo", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue",
+            "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink",
+            "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue",
+            "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue",
+            "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise",
+            "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace",
+            "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise",
+            "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple",
+            "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna",
+            "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan",
+            "teal", "thistle", "tomato", "turquoise", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen"
+        ]
+
+        return css_named_colors
 
     @staticmethod
     def PlotlyColor(color, alpha=1.0, useAlpha=False):
@@ -257,3 +389,5 @@ class Color:
         r, g, b = rgb
         hex_value = "#{:02x}{:02x}{:02x}".format(r, g, b)
         return hex_value.upper()
+    
+    

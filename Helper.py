@@ -35,13 +35,73 @@ except:
 
 class Helper:
     @staticmethod
+    def ClosestMatch(item, listA):
+        """
+        Returns the index of the closest match in the input list to the input item.
+        This works for lists made out of numeric or string values.
+
+        Parameters
+        ----------
+        item : int, float, or str
+            The input item.
+        listA : list
+            The input list.
+
+        Returns
+        -------
+        int
+            The index of the best match in listA for the input item.
+
+        """
+        import numbers
+        import random
+        import string
+        def levenshtein_distance(s1, s2):
+            if len(s1) < len(s2):
+                return levenshtein_distance(s2, s1)
+
+            if len(s2) == 0:
+                return len(s1)
+
+            previous_row = range(len(s2) + 1)
+            for i, c1 in enumerate(s1):
+                current_row = [i + 1]
+                for j, c2 in enumerate(s2):
+                    insertions = previous_row[j + 1] + 1
+                    deletions = current_row[j] + 1
+                    substitutions = previous_row[j] + (c1 != c2)
+                    current_row.append(min(insertions, deletions, substitutions))
+                previous_row = current_row
+
+            return previous_row[-1]
+       
+        def generate_unlikely_string(length=16):
+            characters = string.ascii_letters + string.digits + string.punctuation
+            return ''.join(random.choice(characters) for _ in range(length))
+
+        if not listA:
+            print("Helper.ClosestMatch - Error: THe input listA parameter is not a valid list. Returning None.")
+            return None  # Handle empty list case
+
+        if isinstance(item, str):
+            listA = [generate_unlikely_string(length=32) if not isinstance(x, str) else x for x in listA]
+            # For string inputs, find the closest match using Levenshtein distance
+            closest_index = min(range(len(listA)), key=lambda i: levenshtein_distance(item, listA[i]))
+        else:
+            listA = [float('-inf') if not isinstance(x, numbers.Real) else x for x in listA]
+            # For numeric or boolean inputs, find the closest match based on absolute difference
+            closest_index = min(range(len(listA)), key=lambda i: abs(listA[i] - item))
+
+        return closest_index
+
+    @staticmethod
     def Flatten(listA):
         """
         Flattens the input nested list.
 
         Parameters
         ----------
-        l : list
+        listA : list
             The input nested list.
 
         Returns

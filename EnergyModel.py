@@ -1011,13 +1011,13 @@ class EnergyModel:
             for i in range(len(surfaceVertices)-1):
                 sv = topologic.Vertex.ByCoordinates(surfaceVertices[i].x(), surfaceVertices[i].y(), surfaceVertices[i].z())
                 ev = topologic.Vertex.ByCoordinates(surfaceVertices[i+1].x(), surfaceVertices[i+1].y(), surfaceVertices[i+1].z())
-                edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance, verbose=False)
+                edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance, silent=False)
                 if not edge:
                     continue
                 surfaceEdges.append(edge)
             sv = topologic.Vertex.ByCoordinates(surfaceVertices[len(surfaceVertices)-1].x(), surfaceVertices[len(surfaceVertices)-1].y(), surfaceVertices[len(surfaceVertices)-1].z())
             ev = topologic.Vertex.ByCoordinates(surfaceVertices[0].x(), surfaceVertices[0].y(), surfaceVertices[0].z())
-            edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance, verbose=False)
+            edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance, silent=False)
             surfaceEdges.append(edge)
             surfaceWire = Wire.ByEdges(surfaceEdges, tolerance=tolerance)
             internalBoundaries = []

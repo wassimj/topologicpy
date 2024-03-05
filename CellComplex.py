@@ -91,7 +91,7 @@ class CellComplex(Topology):
                                  direction=direction, placement=placement, tolerance=tolerance)
     
     @staticmethod
-    def ByCells(cells: list, tolerance: float = 0.0001, verbose: bool = True) -> topologic.CellComplex:
+    def ByCells(cells: list, tolerance: float = 0.0001, silent: bool = False) -> topologic.CellComplex:
         """
         Creates a cellcomplex by merging the input cells.
 
@@ -112,42 +112,41 @@ class CellComplex(Topology):
         from topologicpy.Topology import Topology
 
         if not isinstance(cells, list):
-            if verbose:
+            if not silent:
                 print("CellComplex.ByCells - Error: The input cells parameter is not a valid list. Returning None.")
             return None
         cells = [x for x in cells if isinstance(x, topologic.Cell)]
         if len(cells) < 1:
-            if verbose:
+            if not silent:
                 print("CellComplex.ByCells - Error: The input cells parameter does not contain any valid cells. Returning None.")
             return None
-        elif len(cells) == 1:
-            if verbose:
-                print("CellComplex.ByCells - Warning: The input cells parameter contains only one valid cells. Returning object of type topologic.Cell instead of topologic.CellComplex.")
-            return cells[0]
         cellComplex = None
-        try:
-            cellComplex = topologic.CellComplex.ByCells(cells)
-        except:
-            topA = cells[0]
-            topB = Cluster.ByTopologies(cells[1:])
-            cellComplex = Topology.Merge(topA, topB, tranDict=False, tolerance=tolerance)
+        if len(cells) == 1:
+            return topologic.CellComplex.ByCells(cells)
+        else:
+            try:
+                cellComplex = topologic.CellComplex.ByCells(cells)
+            except:
+                topA = cells[0]
+                topB = Cluster.ByTopologies(cells[1:])
+                cellComplex = Topology.Merge(topA, topB, tranDict=False, tolerance=tolerance)
         
         if not isinstance(cellComplex, topologic.CellComplex):
-            if verbose:
+            if not silent:
                 print("CellComplex.ByCells - Warning: Could not create a CellComplex. Returning object of type topologic.Cluster instead of topologic.CellComplex.")
             return Cluster.ByTopologies(cells)
         else:
             temp_cells = CellComplex.Cells(cellComplex)
             if not isinstance(temp_cells, list):
-                if verbose:
+                if not silent:
                     print("CellComplex.ByCells - Error: The resulting object does not contain any cells. Returning None.")
                 return None
             elif len(temp_cells) < 1:
-                if verbose:
+                if silent:
                     print("CellComplex.ByCells - Error: Could not create a CellComplex. Returning None.")
                 return None
             elif len(temp_cells) == 1:
-                if verbose:
+                if not silent:
                     print("CellComplex.ByCells - Warning: Resulting object contains only one cell. Returning object of type topologic.Cell instead of topologic.CellComplex.")
                 return(temp_cells[0])
         return cellComplex
@@ -327,10 +326,10 @@ class CellComplex(Topology):
                 e3 = None
                 e4 = None
                 try:
-                    e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance, verbose=False)
+                    e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance, silent=True)
                 except:
                     try:
-                        e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance, verbose=False)
+                        e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance, silent=True)
                         f = Face.ByExternalBoundary(Wire.ByEdges([e1, e2, e4], tolerance=tolerance))
                         if triangulate == True:
                             if len(Topology.Vertices(face)) > 3:
@@ -343,10 +342,10 @@ class CellComplex(Topology):
                     except:
                         pass
                 try:
-                    e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance, verbose=False)
+                    e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance, silent=True)
                 except:
                     try:
-                        e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance, verbose=False)
+                        e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance, silent=True)
                         f = Face.ByWire(Wire.ByEdges([e1, e2, e3], tolerance=tolerance), tolerance=tolerance)
                         if triangulate == True:
                             if len(Topology.Vertices(face)) > 3:
@@ -360,7 +359,7 @@ class CellComplex(Topology):
                         pass
                 if e3 and e4:
                     if triangulate == True:
-                        e5 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex(), tolerance=tolerance, verbose=False)
+                        e5 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex(), tolerance=tolerance, silent=True)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
                         faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
                     else:

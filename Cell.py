@@ -316,8 +316,8 @@ class Cell(Topology):
         _ = bottomFace.Edges(None, bottomEdges)
         for bottomEdge in bottomEdges:
             topEdge = Topology.Translate(bottomEdge, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
-            sideEdge1 = Edge.ByVertices([bottomEdge.StartVertex(), topEdge.StartVertex()], tolerance=tolerance, verbose=False)
-            sideEdge2 = Edge.ByVertices([bottomEdge.EndVertex(), topEdge.EndVertex()], tolerance=tolerance, verbose=False)
+            sideEdge1 = Edge.ByVertices([bottomEdge.StartVertex(), topEdge.StartVertex()], tolerance=tolerance, silent=False)
+            sideEdge2 = Edge.ByVertices([bottomEdge.EndVertex(), topEdge.EndVertex()], tolerance=tolerance, silent=False)
             cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]), tolerance=tolerance)
             cellFaces.append(Face.ByWire(cellWire, tolerance=tolerance))
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
@@ -371,8 +371,8 @@ class Cell(Topology):
         bottomEdges = Wire.Edges(bottomWire)
         for bottomEdge in bottomEdges:
             topEdge = Topology.Translate(bottomEdge, direction[0]*thickness, direction[1]*thickness, direction[2]*thickness)
-            sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)], tolerance=tolerance, verbose=False)
-            sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)], tolerance=tolerance, verbose=False)
+            sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)], tolerance=tolerance, silent=False)
+            sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)], tolerance=tolerance, silent=False)
             cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]), tolerance=tolerance)
             cellFace = Face.ByWire(cellWire, tolerance=tolerance)
             cellFaces.append(cellFace)
@@ -469,23 +469,23 @@ class Cell(Topology):
                     e3 = None
                     e4 = None
                     try:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, verbose=False)
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=False)
                     except:
                         try:
-                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
+                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=False)
                             faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4], tolerance=tolerance), tolerance=tolerance))
                         except:
                             pass
                     try:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=False)
                     except:
                         try:
-                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, verbose=False)
+                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=False)
                             faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3], tolerance=tolerance), tolerance=tolerance))
                         except:
                             pass
                     if e3 and e4:
-                        e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
+                        e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()], tolerance=tolerance, silent=False)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
                         faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
             else:
@@ -495,17 +495,17 @@ class Cell(Topology):
                     e3 = None
                     e4 = None
                     try:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, verbose=False)
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=False)
                     except:
                         try:
-                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
+                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=False)
                         except:
                             pass
                     try:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, verbose=False)
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=False)
                     except:
                         try:
-                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, verbose=False)
+                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=False)
                         except:
                             pass
                     if e3 and e4:

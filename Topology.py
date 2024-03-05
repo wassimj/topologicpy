@@ -5799,7 +5799,7 @@ class Topology():
             returnTopology = Wire.ByVertices(topologies, False)
         elif topology.Type() == topologic.Edge.Type():
             try:
-                returnTopology = Shell.ByWires(topologies,triangulate=triangulate, tolerance=tolerance)
+                returnTopology = Shell.ByWires(topologies,triangulate=triangulate, tolerance=tolerance, silent=True)
             except:
                 try:
                     returnTopology = Cluster.ByTopologies(topologies)
@@ -5821,16 +5821,16 @@ class Topology():
                             pass
                     except:
                         try:
-                            returnTopology = Shell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
+                            returnTopology = Shell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance, silent=True)
                         except:
                             try:
                                 returnTopology = Cluster.ByTopologies(topologies)
                             except:
                                 returnTopology = None
             else:
-                Shell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
+                Shell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance, silent=True)
                 try:
-                    returnTopology = Shell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
+                    returnTopology = Shell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance, silent=True)
                 except:
                     try:
                         returnTopology = Cluster.ByTopologies(topologies)
@@ -5844,7 +5844,7 @@ class Topology():
                 returnTopology = CellComplex.ByWires(external_wires, tolerance)
             except:
                 try:
-                    returnTopology = Shell.ByWires(external_wires, triangulate=triangulate, tolerance=tolerance)
+                    returnTopology = Shell.ByWires(external_wires, triangulate=triangulate, tolerance=tolerance, silent=True)
                 except:
                     try:
                         returnTopology = Cluster.ByTopologies(topologies)

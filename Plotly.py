@@ -902,7 +902,7 @@ class Plotly:
                         #ibList = Face.InternalBoundaries(f)
                         #ibList = [Wire.RemoveCollinearEdges(ib) for ib in ibList]
                         #ibList = [ib for ib in ibList if not ib == None]
-                        #new_f = Face.ByWires(eb, ibList, verbose=False)
+                        #new_f = Face.ByWires(eb, ibList, silent=False)
                         #if isinstance(new_f, topologic.Face):
                             #if faceLabelKey or faceGroupKey:
                                 #d = Topology.Dictionary(tp_faces[i])

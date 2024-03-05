@@ -3895,6 +3895,266 @@ class Graph:
         yaml_file.close()
         return True
     
+    def ExportToGEXF(graph, path, graphWidth=20, graphLength=20, graphHeight=20,
+                    defaultVertexColor="black", defaultVertexSize=3,
+                    defaultEdgeColor="black", defaultEdgeWeight=1,
+                    vertexLabelKey=None, vertexColorKey=None, vertexSizeKey=None, 
+                    edgeLabelKey=None, edgeColorKey=None, edgeWeightKey=None):
+        
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+        import numbers
+        from datetime import datetime
+        
+        def create_gexf_file(nodes, edges, node_attributes, edge_attributes, path):
+
+            with open(path, 'w') as file:
+                # Write the GEXF header
+                formatted_date = datetime.now().strftime("%Y-%m-%d")
+                file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+                file.write('<gexf version="1.3" xmlns="http://www.gephi.org/gexf" xmlns:viz="http://www.gephi.org/gexf/viz">\n')
+                file.write(f'<meta lastmodifieddate="{formatted_date}">\n')
+                file.write('<creator>Topologic GEXF Generator</creator>\n')
+                file.write('<title>"Topologic Graph"</title>\n')
+                file.write('<description>"This is a Topologic Graph"</description>\n')
+                file.write('</meta>\n')
+                file.write('<graph type="dynamic" defaultedgetype="undirected">\n')
+
+                # Write attribute definitions
+                file.write('<attributes class="node" mode="static">\n')
+                for attr_name, attr_type in node_attributes.items():
+                    file.write(f'<attribute id="{attr_name}" title="{attr_name}" type="{attr_type}"/>\n')
+                file.write('</attributes>\n')
+                # Write attribute definitions
+                file.write('<attributes class="edge" mode="static">\n')
+                for attr_name, attr_type in edge_attributes.items():
+                    file.write(f'<attribute id="{attr_name}" title="{attr_name}" type="{attr_type}"/>\n')
+                file.write('</attributes>\n')
+
+                # Write nodes with attributes
+                file.write('<nodes>\n')
+                for node_id, node_attrs in nodes.items():
+                    file.write(f'<node id="{node_id}" label="{node_attrs["label"]}">\n')
+                    if "r" in node_attrs and "g" in node_attrs and "b" in node_attrs:
+                        r = node_attrs['r']
+                        g = node_attrs['g']
+                        b = node_attrs['b']
+                        file.write(f'<viz:color r="{r}" g="{g}" b="{b}"/>\n')
+                    if "size" in node_attrs:
+                        file.write(f'<viz:size value="{node_attrs["size"]}"/>\n')
+                    if "x" in node_attrs and "y" in node_attrs and "z" in node_attrs:
+                        file.write(f'<viz:position x="{node_attrs["x"]}" y="{node_attrs["y"]}" z="{node_attrs["z"]}"/>\n')
+                    file.write('<attvalues>\n')
+                    keys = node_attrs.keys()
+                    for key in keys:
+                        file.write(f'<attvalue id="{key}" value="{node_attrs[key]}"/>\n')
+                    file.write('</attvalues>\n')
+                    file.write('</node>\n')
+                file.write('</nodes>\n')
+
+                # Write edges with attributes
+                file.write('<edges>\n')
+                for edge_id, edge_attrs in edges.items():
+                    source, target = edge_id
+                    file.write(f'<edge id="{edge_id}" source="{source}" target="{target}" label="{edge_attrs["label"]}">\n')
+                    if "color" in edge_attrs:
+                        r,g,b = Color.ByCSSNamedColor(edge_attrs["color"])
+                        file.write(f'<viz:color r="{r}" g="{g}" b="{b}"/>\n')
+                    file.write('<attvalues>\n')
+                    keys = edge_attrs.keys()
+                    for key in keys:
+                        file.write(f'<attvalue id="{key}" value="{edge_attrs[key]}"/>\n')
+                    file.write('</attvalues>\n')
+                    file.write('</edge>\n')
+                file.write('</edges>\n')
+
+                # Write the GEXF footer
+                file.write('</graph>\n')
+                file.write('</gexf>\n')
+
+        def valueType(value):
+            if isinstance(value, str):
+                return 'string'
+            elif isinstance(value, float):
+                return 'double'
+            elif isinstance(value, int):
+                return 'integer'
+            else:
+                return 'string'
+        
+        g_vertices = Graph.Vertices(graph)
+        g_edges = Graph.Edges(graph)
+        
+        node_attributes = {'id': 'integer',
+                        'label': 'string',
+                        'x': 'double',
+                        'y': 'double',
+                        'z': 'double',
+                        'r': 'integer',
+                        'g': 'integer',
+                        'b': 'integer',
+                        'color': 'string',
+                        'size': 'double'}
+        nodes = {}
+        # Resize the graph
+        xList = [Vertex.X(v) for v in g_vertices]
+        yList = [Vertex.Y(v) for v in g_vertices]
+        zList = [Vertex.Z(v) for v in g_vertices]
+        xMin = min(xList)
+        xMax = max(xList)
+        yMin = min(yList)
+        yMax = max(yList)
+        zMin = min(zList)
+        zMax = max(zList)
+        width = max(abs(xMax - xMin), 0.01)
+        length = max(abs(yMax - yMin), 0.01)
+        height = max(abs(zMax - zMin), 0.01)
+        x_sf = graphWidth/width
+        y_sf = graphLength/length
+        z_sf = graphHeight/height
+        x_avg = sum(xList)/float(len(xList))
+        y_avg = sum(yList)/float(len(yList))
+        z_avg = sum(zList)/float(len(zList))
+        
+        for i, v in enumerate(g_vertices):
+            node_dict = {}
+            d = Topology.Dictionary(v)
+            keys = Dictionary.Keys(d)
+            values = Dictionary.Values(d)
+            x = (Vertex.X(v) - x_avg)*x_sf + x_avg
+            y = (Vertex.Y(v) - y_avg)*y_sf + y_avg
+            z = (Vertex.Z(v) - z_avg)*z_sf + z_avg
+            node_dict['x'] = x
+            node_dict['y'] = y
+            node_dict['z'] = z
+            node_dict['id'] = i
+            for m, key in enumerate(keys):
+                if key == "id":
+                    key = "TOPOLOGIC_ID"
+                if not key in node_attributes.keys():
+                    node_attributes[key] = valueType(values[m])
+                node_dict[key] = values[m]
+            dict_color = None
+            if not defaultVertexColor in Color.CSSNamedColors():
+                defaultVertexColor = "black"
+            vertex_color = defaultVertexColor
+            if isinstance(vertexColorKey, str):
+                dict_color = Dictionary.ValueAtKey(d, vertexColorKey)
+            if not dict_color == None:
+                vertex_color = dict_color
+            if not vertex_color in Color.CSSNamedColors():
+                vertex_color = defaultVertexColor
+            node_dict['color'] = vertex_color
+            r,g,b = Color.ByCSSNamedColor(vertex_color)
+            node_dict['r'] = r
+            node_dict['g'] = g
+            node_dict['b'] = b
+        
+            dict_size = None
+            if isinstance(vertexSizeKey, str):
+                dict_size = Dictionary.ValueAtKey(d, vertexSizeKey)
+            
+            vertex_size = defaultVertexSize
+            if not dict_size == None:
+                if isinstance(dict_size, numbers.Real):
+                    vertex_size = dict_size
+            if not isinstance(vertex_size, numbers.Real):
+                vertex_size = defaultVertexSize
+            
+            node_dict['size'] = vertex_size
+
+            vertex_label = "Node "+str(i)
+            if isinstance(vertexLabelKey, str):
+                vertex_label = Dictionary.ValueAtKey(d, vertexLabelKey)
+            if not isinstance(vertex_label, str):
+                vertex_label = "Node "+str(i)
+            node_dict['label'] = vertex_label
+
+            nodes[i] = node_dict
+            
+        edge_attributes = {'id': 'integer',
+                        'label': 'string',
+                        'source': 'integer',
+                        'target': 'integer',
+                        'r': 'integer',
+                        'g': 'integer',
+                        'b': 'integer',
+                        'color': 'string',
+                        'weight': 'double'}
+        edges = {}
+        for i, edge in enumerate(g_edges):
+            edge_dict = {}
+            d = Topology.Dictionary(edge)
+            keys = Dictionary.Keys(d)
+            values = Dictionary.Values(d)
+            edge_dict['id'] = i
+            for m, key in enumerate(keys):
+                if key == "id":
+                    key = "TOPOLOGIC_ID"
+                if not key in edge_attributes.keys():
+                    edge_attributes[key] = valueType(values[m])
+                edge_dict[key] = values[m]
+                
+            dict_color = None
+            if not defaultEdgeColor in Color.CSSNamedColors():
+                defaultEdgeColor = "black"
+            edge_color = defaultEdgeColor
+            if isinstance(edgeColorKey, str):
+                dict_color = Dictionary.ValueAtKey(d, edgeColorKey)
+            if not dict_color == None:
+                edge_color = dict_color
+            if not vertex_color in Color.CSSNamedColors():
+                edge_color = defaultVertexColor
+            edge_dict['color'] = edge_color
+            
+            r,g,b = Color.ByCSSNamedColor(edge_color)
+            edge_dict['r'] = r
+            edge_dict['g'] = g
+            edge_dict['b'] = b
+        
+            dict_weight = None
+            if not isinstance(defaultEdgeWeight, numbers.Real):
+                defaultEdgeWeight = 1
+            if isinstance(edgeWeightKey, str):
+                dict_weight = Dictionary.ValueAtKey(d, edgeWeightKey)
+            
+            if not dict_weight == None:
+                if isinstance(dict_weight, numbers.Real):
+                    edge_weight = dict_weight
+            if not isinstance(edge_weight, numbers.Real):
+                edge_weight = defaultEdgeWeight
+            
+            edge_dict['weight'] = edge_weight
+
+            
+            sv = g_vertices[Vertex.Index(Edge.StartVertex(edge), g_vertices)]
+            ev = g_vertices[Vertex.Index(Edge.EndVertex(edge), g_vertices)]
+            svid = Vertex.Index(sv, g_vertices)
+            edge_dict['source'] = svid
+            evid = Vertex.Index(ev, g_vertices)
+            edge_dict['target'] = evid
+            
+            edge_label = "Edge "+str(svid)+"-"+str(evid)
+            if isinstance(edgeLabelKey, str):
+                edge_label = Dictionary.ValueAtKey(d, edgeLabelKey)
+            if not isinstance(edge_label, str):
+                edge_label = "Edge "+str(svid)+"-"+str(evid)
+            edge_dict['label'] = edge_label
+            edges[(str(svid), str(evid))] = edge_dict
+
+        create_gexf_file(nodes, edges, node_attributes, edge_attributes, path)
+
+
+
+
+
+
+
+
+
     @staticmethod
     def Flatten(graph, layout="spring", k=0.8, seed=None, iterations=50, rootVertex=None, tolerance=0.0001):
         """
@@ -5710,10 +5970,10 @@ class Graph:
             gsv = Graph.NearestVertex(graph, vertexA)
             gev = Graph.NearestVertex(graph, vertexB)
             shortest_path = graph.ShortestPath(gsv, gev, vertexKey, edgeKey)
+            if isinstance(shortest_path, topologic.Edge):
+                    shortest_path = Wire.ByEdges([shortest_path])
             sv = Topology.Vertices(shortest_path)[0]
             if Vertex.Distance(sv, gev) < tolerance: # Path is reversed. Correct it.
-                if isinstance(shortest_path, topologic.Edge):
-                    shortest_path = Edge.Reverse(shortest_path)
                 if isinstance(shortest_path, topologic.Wire):
                     shortest_path = Wire.Reverse(shortest_path)
             return shortest_path

@@ -271,10 +271,15 @@ class Wire(Topology):
         if not isinstance(edges, list):
             return None
         edgeList = [x for x in edges if isinstance(x, topologic.Edge)]
-        if len(edgeList) < 1:
+        if len(edgeList) == 0:
+            print("Wire.ByEdges - Error: The input edges list does not contain any valid edges. Returning None.")
             return None
-        wire = Topology.SelfMerge(Cluster.ByTopologies(edgeList), tolerance=tolerance)
-        if wire.Type() != 4:
+        if len(edgeList) == 1:
+            wire = topologic.Wire.ByEdges(edgeList)
+        else:
+            wire = Topology.SelfMerge(Cluster.ByTopologies(edgeList), tolerance=tolerance)
+        if not isinstance(wire, topologic.Wire):
+            print("Wire.ByEdges - Error: The operation failed. Returning None.")
             wire = None
         return wire
 
@@ -413,11 +418,11 @@ class Wire(Topology):
                 dupVertices.append(vertices[0])
                 dupVertices.append(vertices[0])
             else:
-                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, verbose=False)
+                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=True)
                 normal = Edge.Normal(e1)
                 normal = [normal[0]*finalOffset*10, normal[1]*finalOffset*10, normal[2]*finalOffset*10]
                 tempV = Vertex.ByCoordinates(vertices[0].X()+normal[0], vertices[0].Y()+normal[1], vertices[0].Z()+normal[2])
-                tempEdge2 = Edge.ByVertices([vertices[0], tempV], tolerance=tolerance, verbose=False)
+                tempEdge2 = Edge.ByVertices([vertices[0], tempV], tolerance=tolerance, silent=True)
                 intV = Edge.Intersect2D(tempEdge1,tempEdge2)
                 newVertices.append(intV)
                 dupVertices.append(vertices[0])
@@ -437,11 +442,11 @@ class Wire(Topology):
                 dupVertices.append(vertices[i+1])
                 dupVertices.append(vertices[i+1])
             else:
-                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, verbose=False)
+                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=True)
                 normal = Edge.Normal(e1)
                 normal = [normal[0]*finalOffset*10, normal[1]*finalOffset*10, normal[2]*finalOffset*10]
                 tempV = Vertex.ByCoordinates(vertices[i+1].X()+normal[0], vertices[i+1].Y()+normal[1], vertices[i+1].Z()+normal[2])
-                tempEdge2 = Edge.ByVertices([vertices[i+1], tempV], tolerance=tolerance, verbose=False)
+                tempEdge2 = Edge.ByVertices([vertices[i+1], tempV], tolerance=tolerance, silent=True)
                 intV = Edge.Intersect2D(tempEdge1,tempEdge2)
                 newVertices.append(intV)
                 dupVertices.append(vertices[i+1])
@@ -550,13 +555,13 @@ class Wire(Topology):
         for i in range(len(vertexList)-1):
             v1 = vertexList[i]
             v2 = vertexList[i+1]
-            e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance, verbose=False)
+            e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance, silent=True)
             if isinstance(e, topologic.Edge):
                 edges.append(e)
         if close:
             v1 = vertexList[-1]
             v2 = vertexList[0]
-            e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance, verbose=False)
+            e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance, silent=True)
             if isinstance(e, topologic.Edge):
                 edges.append(e)
         if len(edges) < 1:
@@ -1001,9 +1006,9 @@ class Wire(Topology):
             for j in range(len(c)-1):
                 v1 = c[j]
                 v2 = c[j+1]
-                e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance, verbose=False)
+                e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance, silent=True)
                 resultEdges.append(e)
-            e = Edge.ByStartVertexEndVertex(c[len(c)-1], c[0], tolerance=tolerance, verbose=False)
+            e = Edge.ByStartVertexEndVertex(c[len(c)-1], c[0], tolerance=tolerance, silent=True)
             resultEdges.append(e)
             resultWire = Wire.ByEdges(resultEdges, tolerance=tolerance)
             resultWires.append(resultWire)
@@ -1705,17 +1710,17 @@ class Wire(Topology):
                 scaleFactor = maxDistance/d
                 newV = Topology.Scale(aVertex, viewPoint, scaleFactor, scaleFactor, scaleFactor)
                 try:
-                    ray = Edge.ByStartVertexEndVertex(viewPoint, newV, tolerance=tolerance, verbose=False)
+                    ray = Edge.ByStartVertexEndVertex(viewPoint, newV, tolerance=tolerance, silent=True)
                     topologyC = ray.Intersect(wire, False)
                     vertices = []
                     _ = topologyC.Vertices(None, vertices)
                     if topologyC:
                         try:
-                            rays.append(Edge.ByStartVertexEndVertex(viewPoint, vertices[0], tolerance=tolerance, verbose=False))
+                            rays.append(Edge.ByStartVertexEndVertex(viewPoint, vertices[0], tolerance=tolerance, silent=True))
                         except:
                             pass
                     try:
-                        rays.append(Edge.ByStartVertexEndVertex(viewPoint, aVertex, tolerance=tolerance, verbose=False))
+                        rays.append(Edge.ByStartVertexEndVertex(viewPoint, aVertex, tolerance=tolerance, silent=True))
                     except:
                         pass
                 except:
@@ -2202,7 +2207,7 @@ class Wire(Topology):
                 else:
                     final_wire = Wire.ByVertices(wire_verts, close=False)
             elif len(wire_verts) == 2:
-                final_wire = Edge.ByStartVertexEndVertex(wire_verts[0], wire_verts[1], tolerance=tolerance, verbose=False)
+                final_wire = Edge.ByStartVertexEndVertex(wire_verts[0], wire_verts[1], tolerance=tolerance, silent=True)
             return final_wire
         
         new_wire = cleanup(wire, tolerance=tolerance)
@@ -2328,7 +2333,7 @@ class Wire(Topology):
                     sink_vertex = Vertex.ByCoordinates(sink.x, sink.y, z)
                     if (source.x, source.y) == (sink.x, sink.y):
                         continue
-                    e = Edge.ByStartVertexEndVertex(source_vertex, sink_vertex, tolerance=tolerance, verbose=False)
+                    e = Edge.ByStartVertexEndVertex(source_vertex, sink_vertex, tolerance=tolerance, silent=True)
                     if e not in edges and e != None:
                         edges.append(e)
             return edges

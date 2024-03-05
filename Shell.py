@@ -280,7 +280,8 @@ class Shell(Topology):
         if not isinstance(faces, list):
             return None
         faceList = [x for x in faces if isinstance(x, topologic.Face)]
-        if len(faceList) < 1:
+        if len(faceList) == 0:
+            print("Shell.ByFaces - Error: The input faces list does not contain any valid faces. Returning None.")
             return None
         shell = topologic.Shell.ByFaces(faceList, tolerance)
         if not isinstance(shell, topologic.Shell):
@@ -318,7 +319,7 @@ class Shell(Topology):
         return Shell.ByFaces(faces, tolerance=tolerance)
 
     @staticmethod
-    def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001) -> topologic.Shell:
+    def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False) -> topologic.Shell:
         """
         Creates a shell by lofting through the input wires
         Parameters
@@ -329,6 +330,9 @@ class Shell(Topology):
             If set to True, the faces will be triangulated. The default is True.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
+        
         Returns
         -------
         topologic.Shell
@@ -365,17 +369,17 @@ class Shell(Topology):
                     e3 = None
                     e4 = None
                     try:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance)
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=silent)
                     except:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance)
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=silent)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4], tolerance=tolerance), tolerance=tolerance))
                     try:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance)
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=silent)
                     except:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance)
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=silent)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3],tolerance=tolerance), tolerance=tolerance))
                     if e3 and e4:
-                        e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()], tolerance=tolerance)
+                        e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()], tolerance=tolerance, silent=silent)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
                         faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
             else:
@@ -385,17 +389,17 @@ class Shell(Topology):
                     e3 = None
                     e4 = None
                     try:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance)
+                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=silent)
                     except:
                         try:
-                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance)
+                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=silent)
                         except:
                             pass
                     try:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance)
+                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=silent)
                     except:
                         try:
-                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance)
+                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=silent)
                         except:
                             pass
                     if e3 and e4:
@@ -410,7 +414,7 @@ class Shell(Topology):
         return Shell.ByFaces(faces, tolerance=tolerance)
 
     @staticmethod
-    def ByWiresCluster(cluster: topologic.Cluster, triangulate: bool = True, tolerance: float = 0.0001) -> topologic.Shell:
+    def ByWiresCluster(cluster: topologic.Cluster, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False) -> topologic.Shell:
         """
         Creates a shell by lofting through the input cluster of wires
 
@@ -422,6 +426,8 @@ class Shell(Topology):
             If set to True, the faces will be triangulated. The default is True.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
 
         Returns
         -------
@@ -435,7 +441,7 @@ class Shell(Topology):
         if not isinstance(cluster, topologic.Cluster):
             return None
         wires = Cluster.Wires(cluster)
-        return Shell.ByWires(wires, triangulate=triangulate, tolerance=tolerance)
+        return Shell.ByWires(wires, triangulate=triangulate, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 32, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
