@@ -4105,10 +4105,14 @@ class Graph:
             node_dict['z'] = z
             node_dict['id'] = i
             for m, key in enumerate(keys):
+                if key == "psets": #We cannot handle IFC psets at this point.
+                    continue
                 if key == "id":
                     key = "TOPOLOGIC_ID"
                 if not key in node_attributes.keys():
                     node_attributes[key] = valueType(values[m])
+                if isinstance(values[m], str):
+                    values[m] = values[m].replace('&','_and_')
                 node_dict[key] = values[m]
             dict_color = None
             if not defaultVertexColor in Color.CSSNamedColors():

@@ -1733,9 +1733,9 @@ class DGL:
             print("DGL.ConfusionMatrix - ERROR: The two input lists do not have the same length. Returning None")
             return None
         if normalize:
-            cm = numpy.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true"))
+            cm = np.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true"))
         else:
-            cm = numpy.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted))
+            cm = np.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted))
         return cm
     
     @staticmethod
