@@ -4112,7 +4112,11 @@ class Graph:
                 if not key in node_attributes.keys():
                     node_attributes[key] = valueType(values[m])
                 if isinstance(values[m], str):
-                    values[m] = values[m].replace('&','_and_')
+                    values[m] = values[m].replace('&','&amp;')
+                    values[m] = values[m].replace('<','&lt;')
+                    values[m] = values[m].replace('>','&gt;')
+                    values[m] = values[m].replace('"','&quot;')
+                    values[m] = values[m].replace('\'','&apos;')
                 node_dict[key] = values[m]
             dict_color = None
             if not defaultVertexColor in Color.CSSNamedColors():
@@ -4148,6 +4152,12 @@ class Graph:
                 vertex_label = Dictionary.ValueAtKey(d, vertexLabelKey)
             if not isinstance(vertex_label, str):
                 vertex_label = "Node "+str(i)
+            if isinstance(vertex_label, str):
+                vertex_label = vertex_label.replace('&','&amp;')
+                vertex_label = vertex_label.replace('<','&lt;')
+                vertex_label = vertex_label.replace('>','&gt;')
+                vertex_label = vertex_label.replace('"','&quot;')
+                vertex_label = vertex_label.replace('\'','&apos;')
             node_dict['label'] = vertex_label
 
             nodes[i] = node_dict
