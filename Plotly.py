@@ -571,7 +571,7 @@ class Plotly:
         from time import time
         
         def closest_index(input_value, values):
-            return min(range(len(values)), key=lambda i: abs(values[i] - input_value))
+            return int(min(range(len(values)), key=lambda i: abs(values[i] - input_value)))
 
         def vertexData(vertices, dictionaries=[], color="black", size=1.1, labelKey=None, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Vertices", legendGroup=1, legendRank=1, showLegend=True, colorScale="Viridis"):
             x = []
@@ -848,6 +848,21 @@ class Plotly:
             tp_vertices = [topology]
         else:
             tp_vertices = Topology.Vertices(topology)
+        if isinstance(intensities, list):
+            if len(intensities) == 0:
+                intensities = None
+        if intensities == None and (not intensityKey == None):
+            intensities = []
+            for i, tp_v in enumerate(tp_vertices):
+                d = Topology.Dictionary(tp_v)
+                if d:
+                    v = Dictionary.ValueAtKey(d, key=intensityKey)
+                    if not v == None:
+                        intensities.append(v)
+                    else:
+                        intensities.append(0)
+                else:
+                    intensities.append(0)
         if not (tp_vertices == None or tp_vertices == []):
             vertices = []
             v_dictionaries = []
@@ -856,16 +871,24 @@ class Plotly:
                 vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
                 d = Topology.Dictionary(tp_v)
                 if intensityKey:
+                    min_i = min(intensities)
+                    max_i = max(intensities)
                     if d:
                         v = Dictionary.ValueAtKey(d, key=intensityKey)
                         if not v == None:
-                            intensityList.append(closest_index(v, intensities)/float(len(intensities)))
+                            ci = closest_index(v, intensities)
+                            value = intensities[ci]
+                            if (max_i - min_i) == 0:
+                                value = 0
+                            else:
+                                value = (value - min_i)/(max_i - min_i)
+                            intensityList.append(value)
                         else:
                             intensityList.append(0)
                     else:
                         intensityList.append(0)
                 else:
-                    intensityList = None            
+                    intensityList = intensities            
                 if vertexLabelKey or vertexGroupKey:
                     v_dictionaries.append(d)
                 if showVertices:
@@ -928,7 +951,7 @@ class Plotly:
                     geo = Topology.Geometry(f_cluster, mantissa=mantissa)
                     vertices = geo['vertices']
                     faces = geo['faces']
-                    data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensityList, colorScale=colorScale))
+                    data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensities, colorScale=colorScale))
         return data
 
     @staticmethod

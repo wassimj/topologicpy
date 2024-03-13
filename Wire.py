@@ -281,6 +281,8 @@ class Wire(Topology):
         if not isinstance(wire, topologic.Wire):
             print("Wire.ByEdges - Error: The operation failed. Returning None.")
             wire = None
+        if Wire.IsManifold(wire):
+            wire = Wire.OrientEdges(wire, Wire.StartVertex(wire), tolerance=tolerance)
         return wire
 
     @staticmethod
@@ -567,7 +569,10 @@ class Wire(Topology):
         if len(edges) < 1:
             print("Wire.ByVertices - Error: The number of edges is less than 1. Returning None.")
             return None
-        wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
+        elif len(edges) == 1:
+            wire = topologic.Wire.ByEdges(edges)
+        else:
+            wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
         return wire
 
     @staticmethod
@@ -1954,6 +1959,65 @@ class Wire(Topology):
         return Wire.ByVertices(vertices)
     
     @staticmethod
+    def OrientEdges(wire, vertexA, tolerance=0.0001):
+        """
+        Returns a correctly oriented head-to-tail version of the input wire. The input wire must be manifold.
+
+        Parameters
+        ----------
+        wire : topologic.Wire
+            The input wire.
+        vertexA : topologic.Vertex
+            The desired start vertex of the wire.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Wire
+            The oriented wire.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+
+        if not isinstance(wire, topologic.Wire):
+            print("Wire.OrientEdges - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+        if not isinstance(vertexA, topologic.Vertex):
+            print("Wire.OrientEdges - Error: The input vertexA parameter is not a valid vertex. Returning None.")
+            return None
+        if not Wire.IsManifold(wire):
+            print("Wire.OrientEdges - Error: The input wire parameter is not a manifold wire. Returning None.")
+            return None
+        oriented_edges = []
+        remaining_edges = Topology.Edges(wire)
+
+        current_vertex = vertexA
+        while remaining_edges:
+            next_edge = None
+            for edge in remaining_edges:
+                if Vertex.Distance(Edge.StartVertex(edge), current_vertex) < tolerance:
+                    next_edge = edge
+                    break
+                elif Vertex.Distance(Edge.EndVertex(edge), current_vertex) < tolerance:
+                    next_edge = Edge.Reverse(edge)
+                    break
+
+            if next_edge:
+                oriented_edges.append(next_edge)
+                remaining_edges.remove(next_edge)
+                current_vertex = Edge.EndVertex(next_edge)
+            else:
+                # Unable to find a next edge connected to the current vertex
+                break
+        vertices = [Edge.StartVertex(oriented_edges[0])]
+        for i, edge in enumerate(oriented_edges):
+            vertices.append(Edge.EndVertex(edge))
+            
+        return Wire.ByVertices(vertices, close=Wire.IsClosed(wire))
+
+    @staticmethod
     def Planarize(wire: topologic.Wire, origin: topologic.Vertex = None, mantissa: int = 6, tolerance: float = 0.0001) -> topologic.Wire:
         """
         Returns a planarized version of the input wire.
@@ -2741,10 +2805,9 @@ class Wire(Topology):
         if not Wire.IsManifold(wire):
             print("Wire.StartEndVertices - Error: The input wire parameter is non-manifold. Returning None.")
             return None
+        vertices = Topology.Vertices(wire)
         if Wire.IsClosed(wire):
-            print("Wire.StartEndVertices - Error: The input wire parameter is closed. Returning None.")
-            return None
-        vertices = Wire.Vertices(wire)
+            return [vertices[0], vertices[0]] # If the wire is closed, the start and end vertices are the same vertex
         endPoints = [v for v in vertices if (Vertex.Degree(v, wire) == 1)]
         if len(endPoints) < 2:
             print("Wire.StartEndVertices - Error: Could not find the end vertices if the input wire parameter. Returning None.")

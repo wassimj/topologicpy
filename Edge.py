@@ -1047,6 +1047,8 @@ class Edge(Topology):
             The created vertex.
 
         """
+        from topologicpy.Topology import Topology
+
         if not isinstance(edge, topologic.Edge):
             print("Edge.VertexByParameter - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
@@ -1056,11 +1058,15 @@ class Edge(Topology):
         elif u == 1:
             vertex = edge.EndVertex()
         else:
-            try:
-                vertex = topologic.EdgeUtility.PointAtParameter(edge, u)
-            except:
-                print("Edge.VertexByParameter - Error: Could not create a vertex at the input parameter. Returning None.")
-                vertex = None
+            dir = Edge.Direction(edge)
+            edge_length = Edge.Length(edge)
+            dist = edge_length*u
+            vertex = Topology.TranslateByDirectionDistance(Edge.StartVertex(edge), direction=dir, distance=dist)
+            #try:
+                #vertex = topologic.EdgeUtility.PointAtParameter(edge, u)
+            #except:
+                #print("Edge.VertexByParameter - Error: Could not create a vertex at the input parameter. Returning None.")
+                #vertex = None
         return vertex
 
     @staticmethod

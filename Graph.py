@@ -5046,12 +5046,14 @@ class Graph:
         for edge in Topology.Edges(temp_path):
             new_edges.append(g_edges[Edge.Index(edge, g_edges)])
         longest_path = Topology.SelfMerge(Cluster.ByTopologies(new_edges), tolerance=tolerance)
+
         sv = Topology.Vertices(longest_path)[0]
         if Vertex.Distance(sv, vertexB) < tolerance: # Wire is reversed. Re-reverse it
             if isinstance(longest_path, topologic.Edges):
                 longest_path = Edge.Reverse(longest_path)
             if isinstance(longest_path, topologic.Wire):
                 longest_path = Wire.Reverse(longest_path)
+                longest_path = Wire.OrientEdges(longest_path, Wire.StartVertex(longest_path), tolerance=tolerance)
         if not costKey == None:
             lengths.sort()
             d = Dictionary.ByKeysValues([costKey], [cost])
@@ -5702,7 +5704,7 @@ class Graph:
         return scores
     
     @staticmethod
-    def Path(graph, vertexA, vertexB):
+    def Path(graph, vertexA, vertexB, tolerance=0.0001):
         """
         Returns a path (wire) in the input graph that connects the input vertices.
 
@@ -5714,6 +5716,8 @@ class Graph:
             The first input vertex.
         vertexB : topologic.Vertex
             The second input vertex.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -5721,6 +5725,8 @@ class Graph:
             The path (wire) in the input graph that connects the input vertices.
 
         """
+        from topologicpy.Wire import Wire
+
         if not isinstance(graph, topologic.Graph):
             print("Graph.Path - Error: The input graph is not a valid graph. Returning None.")
             return None
@@ -5730,7 +5736,11 @@ class Graph:
         if not isinstance(vertexB, topologic.Vertex):
             print("Graph.Path - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
-        return graph.Path(vertexA, vertexB)
+        path = graph.Path(vertexA, vertexB)
+        if isinstance(path, topologic.Wire):
+            path = Wire.OrientEdges(path, Wire.StartVertex(path), tolerance=tolerance)
+        return path
+
     
     @staticmethod
     def PyvisGraph(graph, path, overwrite=True, height=900, backgroundColor="white", fontColor="black", notebook=False,
@@ -6056,6 +6066,7 @@ class Graph:
             if Vertex.Distance(sv, gev) < tolerance: # Path is reversed. Correct it.
                 if isinstance(shortest_path, topologic.Wire):
                     shortest_path = Wire.Reverse(shortest_path)
+            shortest_path = Wire.OrientEdges(shortest_path, Wire.StartVertex(shortest_path), tolerance=tolerance)
             return shortest_path
         except:
             return None
