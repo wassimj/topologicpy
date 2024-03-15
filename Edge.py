@@ -187,7 +187,7 @@ class Edge(Topology):
 
         """
         from topologicpy.Topology import Topology
-        n = Edge.Normal2D(edge)
+        n = Edge.Normal(edge)
         n = Vector.Normalize(n)
         n = Vector.Multiply(n, offset, tolerance)
         edge = Topology.Translate(edge, n[0], n[1], n[2])
@@ -725,9 +725,9 @@ class Edge(Topology):
             return None
     
     @staticmethod
-    def Normal2D(edge: topologic.Edge) -> list:
+    def Normal(edge: topologic.Edge, degree: float=0.0):
         """
-        Returns the normal (perpendicular) vector to the input edge. This method is intended for edges that are in the XY plane. Z is assumed to be zero and ignored.
+        Returns the normal (perpendicular) vector to the input edge.
 
         Parameters
         ----------
@@ -740,22 +740,88 @@ class Edge(Topology):
             The normal (perpendicular ) vector to the input edge.
 
         """
-        
-        from topologicpy.Vector import Vector
         if not isinstance(edge, topologic.Edge):
-            print("Edge.Normal2D - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            print("Edge.Normal - Error: The input edge parameter is not a valid edge. Returning None.")
             return None
-        sv = Edge.StartVertex(edge)
-        ev = Edge.EndVertex(edge)
-        x1 = Vertex.X(sv)
-        y1 = Vertex.Y(sv)
+        normal_edge = Edge.NormalAsEdge(edge, length=1.0, u=0.5, degree=degree)
+        return Edge.Direction(normal_edge)
 
-        x2 = Vertex.X(ev)
-        y2 = Vertex.Y(ev)
+    @staticmethod
+    def NormalAsEdge(edge: topologic.Edge, length: float=1.0, u: float=0.5, degree: float=0.0):
+        """
+        Returns the normal (perpendicular) vector to the input edge as an edge.
 
-        dx = x2 - x1
-        dy = y2 - y1
-        return Vector.Normalize([-dy, dx, 0])
+        Parameters
+        ----------
+        edge : topologic.Edge
+            The input edge.
+        length : float , optional
+            The desired length of the normal edge. The default is 1.0.
+        u : float , optional
+            The desired u parameter placement of the normal edge. A value of 0.0 places the normal edge
+            at the start vertex of the input edge, a value of 0.5 places the normal edge
+            at the midpoint of the input edge, and a value of 1.0 places the normal edge
+            at the end vertex of the input edge. The default is 0.5
+        degree : float , optional
+            The desired rotational offset in degrees for the normal edge. This rotates the normal edge
+            by the degree value around the axis defined by the input edge. The default is 0.0.
+
+        Returns
+        -------
+        topologic.Edge
+            The normal (perpendicular ) vector to the input edge as an edge.
+
+        """
+        import numpy as np
+        from numpy.linalg import norm
+        import topologic
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        def calculate_normal(start_vertex, end_vertex):
+            start_vertex = [float(x) for x in start_vertex]
+            end_vertex = [float(x) for x in end_vertex]
+            # Calculate the direction vector of the line segment
+            direction_vector = np.array(end_vertex) - np.array(start_vertex)
+
+            # Calculate the normal vector by swapping components and negating one of them
+            normal_vector = np.array([-direction_vector[1], direction_vector[0], 0])
+
+            # Normalize the normal vector
+            normal_vector /= norm(normal_vector)
+
+            return normal_vector
+
+
+        def calculate_normal_line(start_vertex, end_vertex):
+            # Calculate the normal vector of the line
+            normal_vector = calculate_normal(start_vertex, end_vertex)
+
+            # Calculate the new end vertex for the normal line to have a length of 1
+            normal_end_vertex = np.array(start_vertex) + normal_vector
+
+            # Return the start and end vertices of the normal line
+            return start_vertex, list(normal_end_vertex)
+
+        if not isinstance(edge, topologic.Edge):
+            print("Edge.NormalAsEdge - Error: The input edge parameter is not a valid edge. Returning None.")
+            return None
+        if length <= 0.0:
+            print("Edge.NormalAsEdge - Error: The input length parameter is not a positive number greater than zero. Returning None.")
+            return None
+        edge_direction = Edge.Direction(edge)
+        x, y, z = edge_direction
+        start_vertex = Vertex.Coordinates(Edge.StartVertex(edge))
+        end_vertex = Vertex.Coordinates(Edge.EndVertex(edge))
+        normal_line_start, normal_line_end = calculate_normal_line(start_vertex, end_vertex)
+        sv = Vertex.ByCoordinates(normal_line_start)
+        ev = Vertex.ByCoordinates(list(normal_line_end))
+        normal_edge = Edge.ByVertices([sv, ev])
+        normal_edge = Edge.SetLength(normal_edge, length, bothSides=False)
+        normal_edge = Topology.Rotate(normal_edge, Edge.StartVertex(normal_edge), x=x, y=y, z=z, degree=degree)
+        dist = Edge.Length(edge)*u
+        normal_edge = Topology.TranslateByDirectionDistance(normal_edge, edge_direction, dist)
+        return normal_edge
 
     @staticmethod
     def Normalize(edge: topologic.Edge, useEndVertex: bool = False, tolerance: float = 0.0001) -> topologic.Edge:

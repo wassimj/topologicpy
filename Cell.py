@@ -104,7 +104,7 @@ class Cell(Topology):
                           direction=direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
-    def ByFaces(faces: list, planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
+    def ByFaces(faces: list, planarize: bool = False, tolerance: float = 0.0001, silent=False) -> topologic.Cell:
         """
         Creates a cell from the input list of faces.
 
@@ -129,12 +129,14 @@ class Cell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         if not isinstance(faces, list):
-            print("Cell.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
-            return None
+            if not silent:
+                print("Cell.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
+                return None
         faceList = [x for x in faces if isinstance(x, topologic.Face)]
         if len(faceList) < 1:
-            print("Cell.ByFaces - Error: The input faces parameter does not contain valid faces. Returning None.")
-            return None
+            if not silent:
+                print("Cell.ByFaces - Error: The input faces parameter does not contain valid faces. Returning None.")
+                return None
         # Try the default method
         cell = topologic.Cell.ByFaces(faceList, tolerance)
         if isinstance(cell, topologic.Cell):
@@ -184,15 +186,17 @@ class Cell(Topology):
                     finalFinalFaces.append(f1)
             cell = topologic.Cell.ByFaces(finalFinalFaces, tolerance)
             if cell == None:
-                print("1. Cell.ByFaces - Error: The operation failed. Returning None.")
-                return None
+                if not silent:
+                    print("Cell.ByFaces - Error: The operation failed. Returning None.")
+                    return None
             else:
                 return cell
         else:
             cell = topologic.Cell.ByFaces(faces, tolerance)
             if cell == None:
-                print("2. Cell.ByFaces - Error: The operation failed. Returning None.")
-                return None
+                if not silent:
+                    print("Cell.ByFaces - Error: The operation failed. Returning None.")
+                    return None
             else:
                 return cell
     @staticmethod
@@ -379,7 +383,7 @@ class Cell(Topology):
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
     
     @staticmethod
-    def ByWires(wires: list, close: bool = False, triangulate: bool = True, planarize: bool = False, mantissa: int = 6, tolerance: float = 0.0001) -> topologic.Cell:
+    def ByWires(wires: list, close: bool = False, triangulate: bool = True, planarize: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent=False) -> topologic.Cell:
         """
         Creates a cell by lofting through the input list of wires.
 
@@ -435,12 +439,14 @@ class Cell(Topology):
             return f
 
         if not isinstance(wires, list):
-            print("Cell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
-            return None
+            if not silent:
+                print("Cell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
+                return None
         wires = [w for w in wires if isinstance(w, topologic.Wire)]
         if len(wires) < 2:
-            print("Cell.ByWires - Error: The input wires parameter contains less than two valid topologic wires. Returning None.")
-            return None
+            if not silent:
+                print("Cell.ByWires - Error: The input wires parameter contains less than two valid topologic wires. Returning None.")
+                return None
         faces = [Face.ByWire(wires[0], tolerance=tolerance), Face.ByWire(wires[-1], tolerance=tolerance)]
         if close == True:
             faces.append(Face.ByWire(wires[0], tolerance=tolerance))
@@ -460,8 +466,9 @@ class Cell(Topology):
             w2_edges = []
             _ = wire2.Edges(None, w2_edges)
             if len(w1_edges) != len(w2_edges):
-                print("Cell.ByWires - Error: The input wires parameter contains wires with different number of edges. Returning None.")
-                return None
+                if not silent:
+                    print("Cell.ByWires - Error: The input wires parameter contains wires with different number of edges. Returning None.")
+                    return None
             if triangulate == True:
                 for j in range (len(w1_edges)):
                     e1 = w1_edges[j]
@@ -517,7 +524,7 @@ class Cell(Topology):
                             faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2], tolerance=tolerance), tolerance=tolerance))
                     elif e4:
                             faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2], tolerance=tolerance), tolerance=tolerance))
-        cell = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
+        cell = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance, silent=silent)
         if not cell:
             shell = Shell.ByFaces(faces, tolerance=tolerance)
             if isinstance(shell, topologic.Shell):
@@ -561,6 +568,69 @@ class Cell(Topology):
         wires = []
         _ = cluster.Wires(None, wires)
         return Cell.ByWires(wires, close=close, triangulate=triangulate, planarize=planarize, tolerance=tolerance)
+
+    @staticmethod
+    def Capsule(origin: topologic.Vertex = None, radius: float = 0.25, height: float = 1, uSides: int = 16, vSidesEnds:int = 8, vSidesMiddle: int = 1, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+        """
+        Creates a capsule shape. A capsule is a cylinder with hemispherical ends.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The location of the origin of the cylinder. The default is None which results in the cylinder being placed at (0,0,0).
+        radius : float , optional
+            The radius of the capsule. The default is 0.25.
+        height : float , optional
+            The height of the capsule. The default is 1.
+        uSides : int , optional
+            The number of circle segments of the capsule. The default is 16.
+        vSidesEnds : int , optional
+            The number of vertical segments of the end hemispheres. The default is 8.
+        vSidesMiddle : int , optional
+            The number of vertical segments of the middle cylinder. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the capsule. The default is [0,0,1].
+        placement : str , optional
+            The description of the placement of the origin of the capsule. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Cell
+            The created cell.
+
+            """
+        from topologicpy.Topology import Topology
+        from topologicpy.Cell import Cell
+        from topologicpy.Vertex import Vertex
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            print("Cell.Capsule - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        cyl_height = height - radius*2
+        if cyl_height <= 0:
+            capsule = Cell.Sphere(origin=origin, radius=radius, uSides= uSides, vSides=vSidesEnds*2)
+        else:
+            cyl = Cell.Cylinder(origin=origin,
+                                radius=radius,
+                                height=cyl_height,
+                                uSides=uSides, vSides=vSidesMiddle, direction=[0,0,1], placement="center", tolerance=tolerance)
+            o1 = Vertex.ByCoordinates(0,0,cyl_height*0.5)
+            o2 = Vertex.ByCoordinates(0,0,-cyl_height*0.5)
+            s1 = Cell.Sphere(origin=o1, radius=radius, uSides=uSides, vSides=vSidesEnds*2, tolerance=tolerance)
+            s2 = Cell.Sphere(origin=o2, radius=radius, uSides=uSides, vSides=vSidesEnds*2, tolerance=tolerance)
+            capsule = Topology.Union(cyl, s1, tolerance=tolerance)
+            capsule = Topology.Union(capsule, s2, tolerance=tolerance)
+        if placement == "bottom":
+            capsule = Topology.Translate(capsule, 0, 0, height/2)
+        if placement == "lowerleft":
+            capsule = Topology.Translate(capsule, 0, 0, height/2)
+            capsule = Topology.Translate(capsule, radius, radius)
+        capsule = Topology.Place(capsule, originA=Vertex.Origin(), originB=origin)
+        capsule = Topology.Orient(capsule, origin=origin, dirA=[0,0,1], dirB=direction)
+        return capsule
 
     @staticmethod
     def Compactness(cell: topologic.Cell, reference = "sphere", mantissa: int = 6) -> float:
@@ -684,13 +754,13 @@ class Cell(Topology):
         for i in range(uSides):
             angle = math.radians(360/uSides)*i
             if baseRadius > 0:
-                baseX = math.sin(angle)*baseRadius + origin.X() + xOffset
-                baseY = math.cos(angle)*baseRadius + origin.Y() + yOffset
+                baseX = math.cos(angle)*baseRadius + origin.X() + xOffset
+                baseY = math.sin(angle)*baseRadius + origin.Y() + yOffset
                 baseZ = origin.Z() + zOffset
                 baseV.append(Vertex.ByCoordinates(baseX,baseY,baseZ))
             if topRadius > 0:
-                topX = math.sin(angle)*topRadius + origin.X() + xOffset
-                topY = math.cos(angle)*topRadius + origin.Y() + yOffset
+                topX = math.cos(angle)*topRadius + origin.X() + xOffset
+                topY = math.sin(angle)*topRadius + origin.Y() + yOffset
                 topV.append(Vertex.ByCoordinates(topX,topY,topZ))
         if baseRadius > 0:
             baseWire = Wire.ByVertices(baseV)
@@ -814,7 +884,7 @@ class Cell(Topology):
         
         baseWire = Wire.Circle(origin=circle_origin, radius=radius, sides=uSides, fromAngle=0, toAngle=360, close=True, direction=[0,0,1], placement="center", tolerance=tolerance)
         baseFace = Face.ByWire(baseWire, tolerance=tolerance)
-        cylinder = Cell.ByThickenedFace(face=baseFace, thickness=height, bothSides=False, reverse=False,
+        cylinder = Cell.ByThickenedFace(face=baseFace, thickness=height, bothSides=False, reverse=True,
                             tolerance=tolerance)
         if vSides > 1:
             cutting_planes = []
@@ -1903,7 +1973,8 @@ class Cell(Topology):
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Sphere - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
-        c = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=vSides, fromAngle=90, toAngle=270, close=False, direction=[0, 1, 0], placement="center")
+        c = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=vSides, fromAngle=-90, toAngle=90, close=False, direction=[0, 0, 1], placement="center")
+        c = Topology.Rotate(c, origin=Vertex.Origin(), x=1, y=0, z=0, degree=90)
         sphere = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0,0,1], degree=360, sides=uSides, tolerance=tolerance)
         if sphere.Type() == topologic.CellComplex.Type():
             sphere = sphere.ExternalBoundary()

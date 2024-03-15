@@ -30,11 +30,11 @@ class Wire(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
+            The location of the origin of the arc. The default is None which results in the arc being placed at (0,0,0).
         length : float , optional
-            The length of the base chord of the arch. The default is 1.
+            The length of the base chord of the arc. The default is 1.
         height : float , optional
-            The perpendicular distance from the chord to the cricumference of the circle. The default is 0.5.
+            The perpendicular distance from the chord to the cricumference of the arc. The default is 0.5.
         sides : int , optional
             The number of sides of the circle. The default is 16.
         close : bool , optional
@@ -42,7 +42,7 @@ class Wire(Topology):
         direction : list , optional
             The vector representing the up direction of the arc. The default is [0,0,1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright".
+            The description of the placement of the origin of the arc. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright".
             It is case insensitive. If "center", the origin will be placed at the mnid-point of the arc.The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -50,7 +50,7 @@ class Wire(Topology):
         Returns
         -------
         topologic.Wire
-            The created circle.
+            The created arc .
 
         """
 
@@ -483,7 +483,7 @@ class Wire(Topology):
                             e1 = Edge.Reverse(e1, tolerance=tolerance)
                             bisector = Edge.ByVertices([vertices[i], newVertices[i]], tolerance=tolerance)
                             nv = Edge.VertexByDistance(bisector, distance=finalMiterThreshold, origin=Edge.StartVertex(bisector), tolerance=0.0001)
-                            vec = Edge.Normal2D(bisector)
+                            vec = Edge.Normal(bisector)
                             nv2 = Topology.Translate(nv, vec[0], vec[1], 0)
                             nv3 = Topology.Translate(nv, -vec[0], -vec[1], 0)
                             miterEdge = Edge.ByVertices([nv2,nv3], tolerance=tolerance)
@@ -660,8 +660,8 @@ class Wire(Topology):
         sides = int(math.floor(sides))
         for i in range(sides+1):
             angle = fromAngle + math.radians(angleRange/sides)*i
-            x = math.sin(angle)*radius + origin.X()
-            y = math.cos(angle)*radius + origin.Y()
+            x = math.cos(angle)*radius + origin.X()
+            y = math.sin(angle)*radius + origin.Y()
             z = origin.Z()
             xList.append(x)
             yList.append(y)

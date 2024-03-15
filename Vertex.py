@@ -651,7 +651,7 @@ class Vertex(Topology):
     @staticmethod
     def Fuse(vertices: list, mantissa: int = 6, tolerance: float = 0.0001):
         """
-        Fuses vertices within the list of input vertices if the distance between them is less than the input tolerance.
+        Returns a list of vertices where vertices within a specified tolerance distance are fused while retaining duplicates, ensuring that vertices with nearly identical coordinates are replaced by a single shared coordinate.
 
         Parameters
         ----------
@@ -661,7 +661,48 @@ class Vertex(Topology):
             The desired length of the mantissa for retrieving vertex coordinates. The default is 6.
         tolerance : float , optional
             The desired tolerance for computing if vertices need to be fused. Any vertices that are closer to each other than this tolerance will be fused. The default is 0.0001.
+
+         Returns
+        -------
+        list
+            The list of fused vertices. This list contains the same number of vertices and in the same order as the input list of vertices. However, the coordinates
+            of these vertices have now been modified so that they are exactly the same with other vertices that are within the tolerance distance.
         """
+
+        import numpy as np
+
+        def fuse_vertices(vertices, tolerance):
+            fused_vertices = []
+            merged_indices = {}
+
+            for idx, vertex in enumerate(vertices):
+                if idx in merged_indices:
+                    fused_vertices.append(fused_vertices[merged_indices[idx]])
+                    continue
+
+                merged_indices[idx] = len(fused_vertices)
+                fused_vertex = vertex
+                for i in range(idx + 1, len(vertices)):
+                    if i in merged_indices:
+                        continue
+
+                    other_vertex = vertices[i]
+                    distance = np.linalg.norm(np.array(vertex) - np.array(other_vertex))
+                    if distance < tolerance:
+                        # Choose the coordinate with the least amount of decimal points
+                        if count_decimal_points(other_vertex) < count_decimal_points(fused_vertex):
+                            fused_vertex = other_vertex
+
+                        merged_indices[i] = len(fused_vertices)
+
+                fused_vertices.append(fused_vertex)
+
+            return fused_vertices
+
+        def count_decimal_points(vertex):
+            # Count the number of decimal points in the coordinates
+            return max(len(str(coord).split('.')[1]) for coord in vertex)
+
 
         if not isinstance(vertices, list):
             print("Vertex.Fuse - Error: The input vertices parameter is not a valid list. Returning None.")
@@ -671,29 +712,11 @@ class Vertex(Topology):
             print("Vertex.Fuse - Error: The input vertices parameter does not contain any valid topologic vertices. Returning None.")
             return None
         
-        # Convert the list of topologic vertices to coordinate lists for efficient operations
-        points = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices]
-        
-        # Convert the list of points to a NumPy array for efficient operations
-        points = np.array(points)
-        
-        # Round the points to the specified tolerance
-        rounded_points = np.round(points / tolerance) * tolerance
-        
-        # Use a set to store unique rounded points
-        unique_rounded_points = set()
-        
-        # Create a list of unique points by iterating over the rounded points
-        unique_points = []
-        for point in rounded_points:
-            point_tuple = tuple(point)
-            if point_tuple not in unique_rounded_points:
-                unique_rounded_points.add(point_tuple)
-                unique_points.append(point)
+        vertices = [(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)) for v in vertices]
+        fused_vertices = fuse_vertices(vertices, tolerance)
+        return_vertices = [Vertex.ByCoordinates(list(coord)) for coord in fused_vertices]
+        return return_vertices
 
-        unique_vertices = [Vertex.ByCoordinates(list(coords)) for coords in unique_points]
-        return unique_vertices
-    
     @staticmethod
     def Index(vertex: topologic.Vertex, vertices: list, strict: bool = False, tolerance: float = 0.0001) -> int:
         """

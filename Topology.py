@@ -5746,7 +5746,7 @@ class Topology():
     
     @staticmethod
     def Spin(topology, origin=None, triangulate=True, direction=[0,0,1], degree=360, sides=16,
-                     tolerance=0.0001):
+                     tolerance=0.0001, silent=False):
         """
         Spins the input topology around an axis to create a new topology.See https://en.wikipedia.org/wiki/Solid_of_revolution.
 
@@ -5783,11 +5783,13 @@ class Topology():
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
         if not isinstance(topology, topologic.Topology):
-            print("Topology.Spin - Error: the input topology parameter is not a valid topology. Returning None.")
-            return None
+            if not silent:
+                print("Topology.Spin - Error: the input topology parameter is not a valid topology. Returning None.")
+                return None
         if not isinstance(origin, topologic.Vertex):
-            print("Topology.Spin - Error: the input origin parameter is not a valid vertex. Returning None.")
-            return None
+            if not silent:
+                print("Topology.Spin - Error: the input origin parameter is not a valid vertex. Returning None.")
+                return None
         topologies = []
         unit_degree = degree / float(sides)
         for i in range(sides+1):
@@ -5807,9 +5809,9 @@ class Topology():
                     returnTopology = None
         elif topology.Type() == topologic.Wire.Type():
             if topology.IsClosed():
-                returnTopology = Cell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
+                #returnTopology = Cell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance, silent=True)
                 try:
-                    returnTopology = Cell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance)
+                    returnTopology = Cell.ByWires(topologies, triangulate=triangulate, tolerance=tolerance, silent=True)
                     returnTopology = Cell.ExternalBoundary(returnTopology)
                     returnTopology = Cell.ByShell(returnTopology)
                 except:
