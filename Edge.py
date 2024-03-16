@@ -85,6 +85,8 @@ class Edge(Topology):
             The created bisecting edge.
 
         """
+        from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
         if not isinstance(edgeA, topologic.Edge):
@@ -100,6 +102,14 @@ class Edge(Topology):
             print("Edge.Bisect - Error: The input edgeB parameter is shorter than the input tolerance parameter. Returning None.")
             return None
         
+        wire = Topology.SelfMerge(Cluster.ByTopologies([edgeA, edgeB]))
+        if not isinstance(wire, topologic.Wire):
+            print("Edge.Bisect - Error: The input edgeA and edgeB parameters do not share a vertex and thus cannot be bisected. Returning None.")
+            return None
+        edges = Topology.Edges(wire)
+        edgeA = edges[0]
+        edgeB = edges[1]
+
         v1 = Edge.VertexByDistance(edgeA, -1, edgeA.EndVertex(), tolerance=0.0001)
         newEdgeA = Edge.ByVertices([v1, edgeA.EndVertex()], tolerance=tolerance, silent=True)
         v1 = Edge.VertexByDistance(edgeB, 1, edgeB.StartVertex(), tolerance=0.0001)

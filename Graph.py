@@ -5321,7 +5321,7 @@ class Graph:
         return mst
 
     @staticmethod
-    def NavigationGraph(face, viewpointsA=None, viewpointsB=None, tolerance=0.0001, progressBar=True):
+    def NavigationGraph(face, sources=None, destinations=None, tolerance=0.0001, progressBar=True):
         """
         Creates a 2D navigation graph.
 
@@ -5329,10 +5329,10 @@ class Graph:
         ----------
         face : topologic.Face
             The input boundary. View edges will be clipped to this face. The holes in the face are used as the obstacles
-        viewpointsA : list
-            The first input list of viewpoints (vertices). Visibility edges will connect these veritces to viewpointsB.
-        viewpointsB : list
-            The input list of viewpoints (vertices). Visibility edges will connect these vertices to viewpointsA.
+        sources : list
+            The first input list of sources (vertices). Navigation edges will connect these veritces to destinations.
+        destinations : list
+            The input list of destinations (vertices). Navigation edges will connect these vertices to sources.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         tqdm : bool , optional
@@ -5341,7 +5341,7 @@ class Graph:
         Returns
         -------
         topologic.Graph
-            The visibility graph.
+            The navigation graph.
 
         """
         from topologicpy.Vertex import Vertex
@@ -5351,29 +5351,31 @@ class Graph:
         from topologicpy.Graph import Graph
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        import topologic
+        from tqdm.auto import tqdm
 
         if not isinstance(face, topologic.Face):
-            print("Graph.VisibilityGraph - Error: The input face parameter is not a valid face. Returning None")
+            print("Graph.NavigationGraph - Error: The input face parameter is not a valid face. Returning None")
             return None
-        if viewpointsA == None:
-            viewpointsA = Topology.Vertices(face)
-        if viewpointsB == None:
-            viewpointsB = Topology.Vertices(face)
-        
-        if not isinstance(viewpointsA, list):
-            print("Graph.VisibilityGraph - Error: The input viewpointsA parameter is not a valid list. Returning None")
+        if sources == None:
+            sources = Topology.Vertices(face)
+        if destinations == None:
+            destinations = Topology.Vertices(face)
+
+        if not isinstance(sources, list):
+            print("Graph.NavigationGraph - Error: The input sources parameter is not a valid list. Returning None")
             return None
-        if not isinstance(viewpointsB, list):
-            print("Graph.VisibilityGraph - Error: The input viewpointsB parameter is not a valid list. Returning None")
+        if not isinstance(destinations, list):
+            print("Graph.NavigationGraph - Error: The input destinations parameter is not a valid list. Returning None")
             return None
-        viewpointsA = [v for v in viewpointsA if isinstance(v, topologic.Vertex)]
-        if len(viewpointsA) < 1:
-            print("Graph.VisibilityGraph - Error: The input viewpointsA parameter does not contain any vertices. Returning None")
+        sources = [v for v in sources if isinstance(v, topologic.Vertex)]
+        if len(sources) < 1:
+            print("Graph.NavigationGraph - Error: The input sources parameter does not contain any vertices. Returning None")
             return None
-        viewpointsB = [v for v in viewpointsB if isinstance(v, topologic.Vertex)]
-        #if len(viewpointsB) < 1: #Nothing to navigate to, so return a graph made of viewpointsA
-            #return Graph.ByVerticesEdges(viewpointsA, [])
-        
+        destinations = [v for v in destinations if isinstance(v, topologic.Vertex)]
+        #if len(destinations) < 1: #Nothing to navigate to, so return a graph made of sources
+            #return Graph.ByVerticesEdges(sources, [])
+
         # Add obstuse angles of external boundary to viewpoints
         e_boundary = Face.ExternalBoundary(face)
         if isinstance(e_boundary, topologic.Wire):
@@ -5381,59 +5383,42 @@ class Graph:
             interior_angles = Wire.InteriorAngles(e_boundary)
             for i, ang in enumerate(interior_angles):
                 if ang > 180:
-                    viewpointsA.append(vertices[i])
-                    viewpointsB.append(vertices[i])
+                    sources.append(vertices[i])
+                    destinations.append(vertices[i])
         i_boundaries = Face.InternalBoundaries(face)
-        obstacles = []
         for i_boundary in i_boundaries:
             if isinstance(i_boundary, topologic.Wire):
-                obstacles.append(Face.ByWire(i_boundary))
                 vertices = Topology.Vertices(i_boundary)
                 interior_angles = Wire.InteriorAngles(i_boundary)
                 for i, ang in enumerate(interior_angles):
                     if ang < 180:
-                        viewpointsA.append(vertices[i])
-                        viewpointsB.append(vertices[i])
-        if len(obstacles) > 0:
-            obstacle_cluster = Cluster.ByTopologies(obstacles)
-        else:
-            obstacle_cluster = None
+                        sources.append(vertices[i])
+                        destinations.append(vertices[i])
         used = []
-        for i in range(len(viewpointsA)):
+        for i in range(max(len(sources), len(destinations))):
             temp_row = []
-            for j in range(len(viewpointsB)):
+            for j in  range(max(len(sources), len(destinations))):
                 temp_row.append(0)
             used.append(temp_row)
 
         final_edges = []
         if progressBar:
-            the_range = tqdm(range(len(viewpointsA)))
+            the_range = tqdm(range(len(sources)))
         else:
-            the_range = range(len(viewpointsA))
+            the_range = range(len(sources))
         for i in the_range:
-            va = viewpointsA[i]
-            index_b = Vertex.Index(va, viewpointsB)
-            for j in range(len(viewpointsB)):
-                vb = viewpointsB[j]
-                index_a = Vertex.Index(vb, viewpointsA)
-                if used[i][j] == 1 or used[j][i] == 1:
+            source = sources[i]
+            index_b = Vertex.Index(source, destinations)
+            for j in range(len(destinations)):
+                destination = destinations[j]
+                index_a = Vertex.Index(destination, sources)
+                if used[i][j] == 1 or used[j][i]:
                     continue
-                if Vertex.Distance(va, vb) > tolerance:
-                    edge = Edge.ByVertices([va,vb])
-                    if not obstacle_cluster == None:
-                        result = Topology.Difference(edge, obstacle_cluster)
-                    else:
-                        result = edge
-                    if not result == None:
-                        result2 = Topology.Difference(result, face)
-                        if isinstance(result2, topologic.Edge) or isinstance(result2, topologic.Cluster):
-                            result = result2
-                    if isinstance(result, topologic.Edge):
-                        if abs(Edge.Length(result) - Edge.Length(edge)) < tolerance:
-                            sv = Edge.StartVertex(result)
-                            ev = Edge.EndVertex(result)
-                            if (not Vertex.Index(sv, viewpointsA+viewpointsB) == None) and (not Vertex.Index(ev, viewpointsA+viewpointsB) == None):
-                                final_edges.append(result)
+                if Vertex.Distance(source, destination) > tolerance:
+                    edge = Edge.ByVertices([source,destination])
+                    e = Topology.Boolean(edge, face, operation="intersect")
+                    if isinstance(e, topologic.Edge):
+                        final_edges.append(edge)
                 used[i][j] = 1
                 if not index_a == None and not index_b == None:
                     used[j][i] = 1
@@ -5445,7 +5430,6 @@ class Graph:
             g = Graph.ByVerticesEdges(final_vertices, final_edges)
             return g
         return None
-
 
     @staticmethod
     def NearestVertex(graph, vertex):
