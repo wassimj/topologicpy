@@ -840,59 +840,66 @@ class Plotly:
         if not isinstance(topology, topologic.Topology):
             return None
     
-    
         intensityList = []
+        alt_intensities = []
         data = []
+        v_list = []
         
         if topology.Type() == topologic.Vertex.Type():
             tp_vertices = [topology]
         else:
             tp_vertices = Topology.Vertices(topology)
+        
         if isinstance(intensities, list):
             if len(intensities) == 0:
                 intensities = None
-        if intensities == None and (not intensityKey == None):
-            intensities = []
-            for i, tp_v in enumerate(tp_vertices):
-                d = Topology.Dictionary(tp_v)
-                if d:
-                    v = Dictionary.ValueAtKey(d, key=intensityKey)
-                    if not v == None:
-                        intensities.append(v)
-                    else:
-                        intensities.append(0)
-                else:
-                    intensities.append(0)
+    
         if not (tp_vertices == None or tp_vertices == []):
             vertices = []
             v_dictionaries = []
             intensityList = []
-            for i, tp_v in enumerate(tp_vertices):
-                vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
-                d = Topology.Dictionary(tp_v)
-                if intensityKey:
-                    min_i = min(intensities)
-                    max_i = max(intensities)
+            
+            if intensityKey:
+                for i, tp_v in enumerate(tp_vertices):
+                    vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
+                    d = Topology.Dictionary(tp_v)
                     if d:
                         v = Dictionary.ValueAtKey(d, key=intensityKey)
                         if not v == None:
-                            ci = closest_index(v, intensities)
-                            value = intensities[ci]
-                            if (max_i - min_i) == 0:
-                                value = 0
-                            else:
-                                value = (value - min_i)/(max_i - min_i)
-                            intensityList.append(value)
+                            alt_intensities.append(v)
+                            v_list.append(v)
                         else:
-                            intensityList.append(0)
+                            alt_intensities.append(0)
+                            v_list.append(0)
                     else:
-                        intensityList.append(0)
-                else:
-                    intensityList = intensities            
-                if vertexLabelKey or vertexGroupKey:
-                    v_dictionaries.append(d)
-                if showVertices:
-                    data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
+                        alt_intensities.append(0)
+                        v_list.append(0)
+                alt_intensities = list(set(alt_intensities))
+                alt_intensities.sort()
+                if isinstance(intensities, list):
+                    if len(intensities) > 0:
+                        alt_intensities = intensities
+                min_i = min(alt_intensities)
+                max_i = max(alt_intensities)
+                for i, tp_v in enumerate(tp_vertices):
+                    v = v_list[i]      
+                    ci = closest_index(v_list[i], alt_intensities)
+                    value = intensities[ci]
+                    if (max_i - min_i) == 0:
+                        value = 0
+                    else:
+                        value = (value - min_i)/(max_i - min_i)
+                    intensityList.append(value)
+            if all(x == 0 for x in intensityList):
+                intensityList = None
+            if showVertices:
+                if len(vertices) == 0:
+                    for i, tp_v in enumerate(tp_vertices):
+                        if vertexLabelKey or vertexGroupKey:
+                            d = Topology.Dictionary(tp_v)
+                            v_dictionaries.append(d)
+                        vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
+                data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
             
         if showEdges and topology.Type() > topologic.Vertex.Type():
             if topology.Type() == topologic.Edge.Type():
