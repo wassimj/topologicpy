@@ -146,7 +146,7 @@ class Shell(Topology):
                 iv = Topology.InternalVertex(w1, tolerance=tolerance)
                 flag = False
                 for w2 in faces:
-                    if Face.IsInternal(w2, iv):
+                    if Vertex.IsInternal(iv, w2):
                         flag = True
                         break;
                 if flag == False:
@@ -285,7 +285,7 @@ class Shell(Topology):
             return None
         shell = topologic.Shell.ByFaces(faceList, tolerance)
         if not isinstance(shell, topologic.Shell):
-            shell = Topology.SelfMerge(shell)
+            shell = Topology.SelfMerge(shell, tolerance=tolerance)
             if isinstance(shell, topologic.Shell):
                 return shell
             else:
@@ -520,29 +520,17 @@ class Shell(Topology):
             flatFace = Topology.Flatten(face, origin=origin, direction=normal)
             faceVertices = Face.Vertices(face)
             vertices += faceVertices
-            # Retrieve the needed transformations
-            dictionary = Topology.Dictionary(flatFace)
-            xTran = Dictionary.ValueAtKey(dictionary,"x")
-            yTran = Dictionary.ValueAtKey(dictionary,"y")
-            zTran = Dictionary.ValueAtKey(dictionary,"z")
-            phi = Dictionary.ValueAtKey(dictionary,"phi")
-            theta = Dictionary.ValueAtKey(dictionary,"theta")
 
             # Create a cluster of the input vertices
             verticesCluster = Cluster.ByTopologies(vertices)
 
             # Flatten the cluster using the same transformations
-            verticesCluster = Topology.Translate(verticesCluster, -xTran, -yTran, -zTran)
-            verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=0, z=1, degree=-phi)
-            verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=1, z=0, degree=-theta)
+            verticesCluster = Topology.Flatten(verticesCluster, origin=origin, direction=normal)
 
             vertices = Cluster.Vertices(verticesCluster)
-        tempFlatVertices = []
         points = []
         for v in vertices:
-            tempFlatVertices.append(Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), 0))
             points.append([Vertex.X(v), Vertex.Y(v)])
-        #flatVertices = tempFlatVertices
         delaunay = SCIDelaunay(points)
         simplices = delaunay.simplices
 
@@ -569,9 +557,7 @@ class Shell(Topology):
                 ibList = [Face.ByWire(w) for w in wires]
                 cluster = Cluster.ByTopologies(ibList)
                 shell = Topology.Difference(shell, cluster)
-            shell = Topology.Rotate(shell, origin=world_origin, x=0, y=1, z=0, degree=theta)
-            shell = Topology.Rotate(shell, origin=world_origin, x=0, y=0, z=1, degree=phi)
-            shell = Topology.Translate(shell, xTran, yTran, zTran)
+            shell = Topology.Unflatten(shell, origin=origin, direction=normal)
         return shell
 
     @staticmethod
@@ -653,47 +639,6 @@ class Shell(Topology):
         return faces
     
     @staticmethod
-    def IsInside(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
-        """
-        DEPRECATED METHOD. DO NOT USE. INSTEAD USE Shell.IsInternal.
-        """
-        print("Shell.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Cell.IsInternal.")
-        return Shell.IsInternal(shell=shell, vertex=vertex, tolerance=tolerance)
-    
-    @staticmethod
-        
-    def IsInternal(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
-        """
-        Returns True if the input vertex is an internal vertex of the input shell. Returns False otherwise. Intenral is defined as being inside one of the shell's faces.
-
-        Parameters
-        ----------
-        shell : topologic.Shell
-            The input shell.
-        vertex : topologic.Vertex
-            The input vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            Returns True if the input vertex is inside the input shell. Returns False otherwise.
-
-        """
-
-        from topologicpy.Face import Face
-        if not isinstance(shell, topologic.Shell):
-            return None
-        if not isinstance(vertex, topologic.Vertex):
-            return None
-        faces = Shell.Faces(shell)
-        for f in faces:
-            if Face.IsInternal(face=f, vertex=vertex, tolerance=tolerance):
-                return True
-        return False
-    
-    @staticmethod
     def IsOnBoundary(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input vertex is on the boundary of the input shell. Returns False otherwise. On the boundary is defined as being on the boundary of one of the shell's external or internal boundaries
@@ -728,32 +673,6 @@ class Shell(Topology):
             if Wire.IsInternal(wire=ib, vertex=vertex, tolerance=tolerance):
                 return True
         return False
-    
-    @staticmethod
-    def IsOutside(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
-        """
-        Returns True if the input vertex is outside the input shell. Returns False otherwise. Outside is defined as being outside all of the shell's faces
-
-        Parameters
-        ----------
-        shell : topologic.Shell
-            The input shell.
-        vertex : topologic.Vertex
-            The input vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            Returns True if the input vertex is inside the input shell. Returns False otherwise.
-
-        """
-        if not isinstance(shell, topologic.Shell):
-            return None
-        if not isinstance(vertex, topologic.Vertex):
-            return None
-        return not Shell.IsInternal(shell=shell, vertex=vertex, tolerance=tolerance)
     
     @staticmethod
     def HyperbolicParaboloidRectangularDomain(origin: topologic.Vertex = None, llVertex: topologic.Vertex = None, lrVertex: topologic.Vertex =None, ulVertex: topologic.Vertex =None, urVertex: topologic.Vertex = None,
@@ -1372,13 +1291,13 @@ class Shell(Topology):
         origin = Topology.Centroid(face)
         normal = Face.Normal(face)
         flat_face = Topology.Flatten(face, origin=origin, direction=normal)
-        d = Topology.Dictionary(flat_face)
         roof = Wire.Roof(flat_face, degree=degree, tolerance=tolerance)
         if not roof:
             return None
         shell = Shell.Skeleton(flat_face, tolerance=tolerance)
+        print(shell)
         faces = Shell.Faces(shell)
-        
+        Topology.Show(shell)
         if not faces:
             return None
         triangles = []
@@ -1423,14 +1342,7 @@ class Shell(Topology):
             shell = Topology.RemoveCoplanarFaces(shell, epsilon=epsilon, tolerance=tolerance)
         except:
             pass
-        xTran = Dictionary.ValueAtKey(d,"x")
-        yTran = Dictionary.ValueAtKey(d,"y")
-        zTran = Dictionary.ValueAtKey(d,"z")
-        phi = Dictionary.ValueAtKey(d,"phi")
-        theta = Dictionary.ValueAtKey(d,"theta")
-        shell = Topology.Rotate(shell, origin=Vertex.Origin(), x=0, y=1, z=0, degree=theta)
-        shell = Topology.Rotate(shell, origin=Vertex.Origin(), x=0, y=0, z=1, degree=phi)
-        shell = Topology.Translate(shell, xTran, yTran, zTran)
+        #shell = Topology.Unflatten(shell, origin=origin, direction=normal)
         return shell
     
     @staticmethod
@@ -1689,7 +1601,7 @@ class Shell(Topology):
             faces = Topology.Faces(result)
             final_faces = []
             for face in faces:
-                if not Face.IsInternal(face, v, tolerance=0.01):
+                if not Vertex.IsInternal(v, face, tolerance=0.01):
                     final_faces.append(face)
             final_result = Shell.ByFaces(final_faces, tolerance=tolerance)
         return final_result
@@ -1759,26 +1671,25 @@ class Shell(Topology):
         origin = Topology.Centroid(face)
         normal = Face.Normal(face)
         flatFace = Topology.Flatten(face, origin=origin, direction=normal)
-        # Retrieve the needed transformations
-        dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"x")
-        yTran = Dictionary.ValueAtKey(dictionary,"y")
-        zTran = Dictionary.ValueAtKey(dictionary,"z")
-        phi = Dictionary.ValueAtKey(dictionary,"phi")
-        theta = Dictionary.ValueAtKey(dictionary,"theta")
-
-        # Create a Vertex at the world's origin (0,0,0)
-        world_origin = Vertex.ByCoordinates(0,0,0)
+        eb = Face.ExternalBoundary(flatFace)
+        ibList = Face.InternalBoundaries(flatFace)
+        temp_verts = Topology.Vertices(eb)
+        new_verts = [Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), 0) for v in temp_verts]
+        eb = Wire.ByVertices(new_verts, close=True)
+        new_ibList = []
+        for ib in ibList:
+            temp_verts = Topology.Vertices(ib)
+            new_verts = [Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), 0) for v in temp_verts]
+            new_ibList.append(Wire.ByVertices(new_verts, close=True))
+        flatFace = Face.ByWires(eb, new_ibList)
 
         # Create a cluster of the input vertices
         verticesCluster = Cluster.ByTopologies(vertices)
 
         # Flatten the cluster using the same transformations
-        verticesCluster = Topology.Translate(verticesCluster, -xTran, -yTran, -zTran)
-        verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=0, z=1, degree=-phi)
-        verticesCluster = Topology.Rotate(verticesCluster, origin=world_origin, x=0, y=1, z=0, degree=-theta)
-
-        flatVertices = Cluster.Vertices(verticesCluster)
+        verticesCluster = Topology.Flatten(verticesCluster, origin=origin, direction=normal)
+        flatVertices = Topology.Vertices(verticesCluster)
+        flatVertices = [Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), 0) for v in flatVertices]
         points = []
         for flatVertex in flatVertices:
             points.append([flatVertex.X(), flatVertex.Y()])
@@ -1814,14 +1725,20 @@ class Shell(Topology):
             if len(region) > 1 and not -1 in region:
                 for v in region:
                     tempWire.append(Vertex.ByCoordinates(voronoiVertices[v].X(), voronoiVertices[v].Y(),0))
+                temp_verts = []
+                for v in tempWire:
+                    if len(temp_verts) == 0:
+                        temp_verts.append(v)
+                    elif Vertex.Index(v, temp_verts) == None:
+                        temp_verts.append(v)
+                tempWire = temp_verts
+                temp_w = Wire.ByVertices(tempWire, close=True)
                 faces.append(Face.ByWire(Wire.ByVertices(tempWire, close=True), tolerance=tolerance))
         shell = Shell.ByFaces(faces, tolerance=tolerance)
         edges = Shell.Edges(shell)
         edgesCluster = Cluster.ByTopologies(edges)
-        shell = Topology.Boolean(flatFace,edgesCluster, operation="slice", tolerance=tolerance)
-        shell = Topology.Rotate(shell, origin=world_origin, x=0, y=1, z=0, degree=theta)
-        shell = Topology.Rotate(shell, origin=world_origin, x=0, y=0, z=1, degree=phi)
-        shell = Topology.Translate(shell, xTran, yTran, zTran)
+        shell = Topology.Slice(flatFace,edgesCluster, tolerance=tolerance)
+        shell = Topology.Unflatten(shell, origin=origin, direction=normal)
         return shell
 
     @staticmethod

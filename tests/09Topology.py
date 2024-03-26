@@ -458,20 +458,8 @@ cell_cy = Cell.Cylinder()
 topology_iv = Topology.InternalVertex(cell_cy)
 assert isinstance(topology_iv, topologic.Vertex), "Topology.InternalVertex. Should be topologic.Vertex"
 
-# Case 35 - IsInside
+# Case 35 - IsPlanar
 print("Case 35")
-# test 1
-topology_c = Topology.Centroid(cell_cy)
-topology_ii = Topology.IsInternal(cell_cy,topology_c)    # without optional inputs
-assert isinstance(topology_ii, bool), "Topology.IsInternal. Should be bool"
-assert topology_ii == True, "Topology.IsInternal. Should be True"
-# test 2
-topology_ii_2 = Topology.IsInternal(cell_cy,v01,0.001)
-assert isinstance(topology_ii_2, bool), "Topology.IsInternal. Should be bool"
-assert topology_ii_2 == False, "Topology.IsInternal. Should be False"
-
-# Case 36 - IsPlanar
-print("Case 36")
 # test 1
 cluster_pts = Cluster.ByTopologies([v00,v01,v02,v03])   # all points in xy plane
 topology_ip = Topology.IsPlanar(cluster_pts)        # without optional inputs
@@ -483,8 +471,8 @@ topology_ip2 = Topology.IsPlanar(cluster_pts2,0.01)   # with optional inputs
 assert isinstance(topology_ip2, bool), "Topology.IsPlanar. Should be bool"
 assert topology_ip2 == False, "Topology.IsPlanar. Should be False"
 
-# Case 37 - IsSame
-print("Case 37")
+# Case 36 - IsSame
+print("Case 36")
 # test 1
 topology_is = Topology.IsSame(e00,v00)    # vertice and edge
 assert isinstance(topology_is, bool), "Topology.IsSame. Should be bool"
@@ -494,15 +482,15 @@ topology_is2 = Topology.IsSame(v00,v00)    # vertice and vertice
 assert isinstance(topology_is2, bool), "Topology.IsSame. Should be bool"
 assert topology_is2 == True, "Topology.IsSame. Should be True"
 
-# Case 38 - MergeAll
-print("Case 38")
+# Case 37 - MergeAll
+print("Case 37")
 # test 1
 list_ve = [v00,v01,e00,e01]
 """AttributeError: 'NoneType' object has no attribute 'Union'"""
 topology_ma = Topology.MergeAll(list_ve) #wrong
 
-# Case 39 - OCCTShape
-print("Case 39")
+# Case 38 - OCCTShape
+print("Case 38")
 # test 1
 topology_os = Topology.OCCTShape(cell_cy)
 assert isinstance(topology_os, topologic.TopoDS_Shape), "Topology.OCCTShape. Should be topologic.TopoDS_Shape"
@@ -510,8 +498,8 @@ assert isinstance(topology_os, topologic.TopoDS_Shape), "Topology.OCCTShape. Sho
 topology_os2 = Topology.OCCTShape(e02)
 assert isinstance(topology_os2, topologic.TopoDS_Shape), "Topology.OCCTShape. Should be topologic.TopoDS_Shape"
 
-# Case 40 - Orient
-print("Case 40")
+# Case 39 - Orient
+print("Case 39")
 # test 1
 cell_cy = Cell.Cylinder()
 topology_o = Topology.Orient(cell_cy, origin=None, dirA=[0, 0, 1], dirB=[0, 1, 0], tolerance=0.001)
@@ -524,8 +512,8 @@ data_cell_cy2 = Plotly.DataByTopology(topology_o)
 figure_cell_cy2 = Plotly.FigureByData(data_cell_cy2)
 #Plotly.Show(figure_cell_cy2)                        # oriented geometry
 
-# Case 41 - Place
-print("Case 41")
+# Case 40 - Place
+print("Case 40")
 # test 1
 topology_pl = Topology.Place(cell_cy,v00,v02)
 topology_pl_ctr = Topology.Centroid(topology_pl)            # get the centroid
@@ -533,8 +521,8 @@ vd = Vertex.Distance(topology_pl_ctr,v02)                    # measure distance 
 assert isinstance(topology_pl, topologic.Topology), "Topology.Place. Should be topologic.Topology"
 assert vd == 0.0, "Vertex.Distance. Should be 0.0"   
 
-# Case 42 - InternalVertex
-print("Case 42")
+# Case 41 - InternalVertex
+print("Case 41")
 # test 1
 topology_iv = Topology.InternalVertex(cell_cy, 0.01)
 assert isinstance(topology_iv, topologic.Vertex), "Topology.InternalVertex. Should be topologic.Vertex"
@@ -545,8 +533,8 @@ data_cluster_bs = Plotly.DataByTopology(cluster_bs)
 figure_cluster_bs = Plotly.FigureByData(data_cluster_bs)
 #Plotly.Show(figure_cluster_bs)                        # to check the returned vertex is inside the Cell.Cylinder
 
-# Case 43 - RemoveCollinearEdges
-print("Case 43")
+# Case 42 - RemoveCollinearEdges
+print("Case 42")
 # test 1
 e4 = Edge.ByStartVertexEndVertex(v00,v01)
 e5 = Edge.ByStartVertexEndVertex(v01,v05)
@@ -557,8 +545,8 @@ data_top_rce = Plotly.DataByTopology(topology_rce)
 figure_top_rce = Plotly.FigureByData(data_top_rce)
 #Plotly.Show(figure_top_rce) 
 
-# Case 44 - RemoveContent
-print("Case 44")
+# Case 43 - RemoveContent
+print("Case 43")
 # test 1
 topology_rc = Topology.RemoveContent(cell_cy, [e00,e01])
 assert isinstance(topology_rc, topologic.Topology), "Topology.RemoveContent. Should be topologic.Topology"
@@ -567,8 +555,8 @@ data_topology_rc = Plotly.DataByTopology(topology_rc)
 figure_topology_rc = Plotly.FigureByData(data_topology_rc)  
 #Plotly.Show(figure_topology_rc)                         # original geometry
 
-# Case 45 - RemoveCoplanarFaces
-print("Case 45")
+# Case 44 - RemoveCoplanarFaces
+print("Case 44")
 # test 1
 shell_r = Shell.Rectangle(uSides=3, vSides=3)
 shell_faces = Shell.Faces(shell_r)
@@ -584,8 +572,8 @@ assert len(cell_f) == 70, "Cell.Faces. List length should be 70"
 assert isinstance(topology_rcf, topologic.Topology), "Topology.RemoveCoplanarFaces. Should be topologic.Topology"
 assert len(cell_f2) == 6, "Topology.RemoveCoplanarFaces. List length should be 6"
 
-# Case 46 - Rotate
-print("Case 46")
+# Case 45 - Rotate
+print("Case 45")
 # test 1
 topology_rot = Topology.Rotate(cell_cy, x = 1, y = 0, z = 1, degree = 45)
 assert isinstance(topology_rot, topologic.Topology), "Topology.Rotate. Should be topologic.Topology"
@@ -594,8 +582,8 @@ assert isinstance(topology_rot, topologic.Topology), "Topology.Rotate. Should be
 #figure_topology_rot = Plotly.FigureByData(data_topology_rot) 
 #Plotly.Show(figure_topology_rot)                         # rotated geometry
 
-# Case 47 - Scale
-print("Case 47")
+# Case 46 - Scale
+print("Case 46")
 # test 1
 topology_scale = Topology.Scale(cell_cy)                                      # without optional inputs
 assert isinstance(topology_scale, topologic.Topology), "Topology.Scale. Should be topologic.Topology"
@@ -610,23 +598,23 @@ assert isinstance(topology_scale02, topologic.Topology), "Topology.Scale. Should
 #figure_topology_scale02 = Plotly.FigureByData(data_topology_scale02)             # scaled geometry
 #Plotly.Show(figure_topology_scale02)                                           # scaled geometry
 
-# Case 48 - SelectSubTopology
-print("Case 48")
+# Case 47 - SelectSubTopology
+print("Case 47")
 # test 1
 """NameError: name 'topologyType' is not defined. Did you mean: 'subTopologyType'"""
 topology_sst = Topology.SelectSubTopology(cluster_bs, selector = v00, subTopologyType = "vertex")
 assert isinstance(topology_sst, topologic.Vertex), "Topology.SelectSubTopology. Should be topologic.Vertex"
 
-# Case 49 - SelfMerge
-print("Case 49")
+# Case 48 - SelfMerge
+print("Case 48")
 # test 1
 clus_edges = Cluster.ByTopologies([e4,e5])
 topology_sm = Topology.SelfMerge(clus_edges)
 assert isinstance(topology_sm, topologic.Topology), "Topology.SelfMerge. Should be topologic.Topology"
 assert isinstance(topology_sm, topologic.Wire), "Topology.SelfMerge. Should be topologic.Wire"
 
-# Case 50 - SetDictionary
-print("Case 50")
+# Case 49 - SetDictionary
+print("Case 49")
 # test 1
 k = ["a","b","c"]
 val = [1,2,3]
@@ -635,8 +623,8 @@ topology_sd = Topology.SetDictionary(cell_cy,top_dict)
 assert isinstance(topology_sd, topologic.Topology), "Topology.SetDictionary. Should be topologic.Topology"
 #print(topology_sd)
 
-# Case 51 - SharedTopologies
-print("Case 51")
+# Case 50 - SharedTopologies
+print("Case 50")
 # test 1
 """Returns Empty Dictionary"""
 topology_st1 = Topology.SharedTopologies(e00, e01)
@@ -656,8 +644,8 @@ figure_cc = Plotly.FigureByData(data_cc)
 #Plotly.Show(figure_cc)                         # visualization
 #print(topology_st) #empty
 
-# Case 52 - SortBySelectors
-print("Case 52")
+# Case 51 - SortBySelectors
+print("Case 51")
 # test 1
 cell_cy5 = Cell.Cylinder()
 v_cy6 = Vertex.ByCoordinates(0,1,0)
@@ -666,8 +654,8 @@ topology_sbs = Topology.SortBySelectors([cell_cy5,cell_cy6], [v_cy6,v00], exclus
 assert isinstance(topology_sbs, dict), "Topology.SortBySelectors. Should be dictionary"
 #print(topology_sbs)                              # check the sorted and unsorted list
 
-# Case 53 - Spin
-print("Case 53")
+# Case 52 - Spin
+print("Case 52")
 """Takes really long time to run"""
 # test 1
 topology_spin = Topology.Spin(cell_cy, origin=v00, triangulate=False,
@@ -678,8 +666,8 @@ assert isinstance(topology_spin, topologic.Topology), "Topology.Spin. Should be 
 #figure_top_spin = Plotly.FigureByData(data_top_spin) 
 #Plotly.Show(figure_top_spin, renderer="browser")                         # visualization
 
-# Case 54 - BREPString
-print("Case 54")
+# Case 53 - BREPString
+print("Case 53")
 # test 1
 topology_str = Topology.BREPString(cell_cy)
 topology_str2 = Topology.BREPString(cell_cy3)
@@ -688,15 +676,15 @@ assert isinstance(topology_str2, str), "Topology.BREPString. Should be string"
 #print(topology_str)
 #print(topology_str2)
 
-# Case 55 - SubTopologies
-print("Case 55")
+# Case 54 - SubTopologies
+print("Case 54")
 # test 1
 topology_sub = Topology.SubTopologies(cell_cy, subTopologyType='edge')
 assert isinstance(topology_sub, list), "Topology.SubTopologies. Should be list"
 assert len(topology_sub) == 48, "Topology.SubTopologies. List length should be 12"
 
-# Case 56 - SuperTopologies
-print("Case 56")
+# Case 55 - SuperTopologies
+print("Case 55")
 # test 1
 v_cell = Cell.Vertices(cell_cy3)
 topology_sup = Topology.SuperTopologies(v_cell[1], cell_cy3, "face")
@@ -704,8 +692,8 @@ topology_sup = Topology.SuperTopologies(v_cell[1], cell_cy3, "face")
 #Topology.Show(cell_cy3, renderer="browser")
 assert len(topology_sup) == 3, "Topology.SuperTopologies. List length should be 3"
 
-# Case 57 - SymmetricDifference
-print("Case 57")
+# Case 56 - SymmetricDifference
+print("Case 56")
 # test 1
 cell_cy4 = Cell.Cylinder(origin = Vertex.ByCoordinates(0,0.125,0),radius = 0.25)
 topology_sym = Topology.SymmetricDifference(cell_cy, cell_cy4, tranDict = False)
@@ -715,8 +703,8 @@ data_top_sym = Plotly.DataByTopology(topology_sym)
 figure_top_sym = Plotly.FigureByData(data_top_sym)
 #Plotly.Show(figure_top_sym)                               # visualization
 
-# Case 58 - TransferDictionaries
-#print("Case 58")
+# Case 57 - TransferDictionaries
+print("Case 57 - Skipped")
 # test 1
 #list_cy = [cell_cy,cell_cy3]
 #list_vs = [v00,v01]
@@ -724,14 +712,14 @@ figure_top_sym = Plotly.FigureByData(data_top_sym)
 #assert isinstance(topology_td, dict), "Topology.TransferDictionaries. Should be Dictionary"
 
 # Case 59 - TransferDictionariesBySelectors
-#print("Case 59")
+print("Case 58 - Skipped")
 # test 1
 #cluster_c = Cluster.ByTopologies([cell_cy,cell_cy])
 #topology_tdbs = Topology.TransferDictionariesBySelectors(cluster_c, selectors = [v00,v01], tranVertices = False,
                                                         #tranEdges = False, tranFaces = False, tranCells = False, tolerance = 0.001 )
 
-# Case 60 -  Transform
-print("Case 60")
+# Case 59 -  Transform
+print("Case 59")
 # test 1
 mat_rot = Matrix.ByRotation(rx=0, ry=45, rz=0, order='xyz')     # Create rotation matrix
 topology_transform = Topology.Transform(cell_cy3, mat_rot)
@@ -741,8 +729,8 @@ data_top_transform = Plotly.DataByTopology(topology_transform)
 figure_top_transform = Plotly.FigureByData(data_top_transform)
 #Plotly.Show(figure_top_transform)                               # visualization
 
-# Case 61 -  Translate
-print("Case 61")
+# Case 60 -  Translate
+print("Case 60")
 # test 1
 topology_trans = Topology.Translate(cell_cy3, x=0, y=0, z=1)
 center_tcy = Topology.Centroid(topology_trans)
@@ -750,8 +738,8 @@ z_tcy = Vertex.Z(center_tcy)                          # Get the z value of the t
 assert isinstance(topology_trans, topologic.Topology), "Topology.Translate. Should be topologic.Topology"
 assert z_tcy == 1.0, "Vertex.Z. should be 1.0"
 
-# Case 62 -  Triangulate
-print("Case 62")
+# Case 61 -  Triangulate
+print("Case 61")
 # test 1
 topology_tr = Topology.Triangulate(cell_cy, tolerance = 0.001)
 assert isinstance(topology_tr, topologic.Topology), "Topology.Triangulate. Should be topologic.Topology"
@@ -760,8 +748,8 @@ data_top_tr = Plotly.DataByTopology(topology_tr)
 figure_top_tr = Plotly.FigureByData(data_top_tr) 
 #Plotly.Show(figure_top_tr)                         # visualization
 
-# Case 63 -  Type
-print("Case 63")
+# Case 62 -  Type
+print("Case 62")
 # test 1
 topology_type = Topology.Type(cell_cy)
 assert isinstance(topology_type, int), "Topology.TypeID. Should be integer"
@@ -771,8 +759,8 @@ topology_type02 = Topology.Type(v00)
 assert isinstance(topology_type02, int), "Topology.TypeID. Should be integer"
 assert topology_type02 == 1, "Topology.SubTopologies. Should be 1"
 
-# Case 64 -  TypeAsString
-print("Case 64")
+# Case 63 -  TypeAsString
+print("Case 63")
 # test 1
 topology_tas = Topology.TypeAsString(cell_cy)
 assert isinstance(topology_tas, str), "Topology.TypeAsString. Should be string"
@@ -782,8 +770,8 @@ topology_tas2 = Topology.TypeAsString(v00)
 assert isinstance(topology_tas2, str), "Topology.TypeAsString. Should be string"
 assert topology_tas2 == "Vertex", "Topology.TypeAsString. Should be Vertex"
 
-# Case 65 -  TypeID
-print("Case 65")
+# Case 64 -  TypeID
+print("Case 64")
 # test 1
 topology_id = Topology.TypeID("vertex")
 assert isinstance(topology_id, int), "Topology.TypeID. Should be integer"

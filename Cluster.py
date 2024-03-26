@@ -135,7 +135,7 @@ class Cluster(Topology):
         return Cluster.ByTopologies(vertices)
     
     @staticmethod
-    def ByTopologies(*args) -> topologic.Cluster:
+    def ByTopologies(*args, transferDictionaries: bool = False) -> topologic.Cluster:
         """
         Creates a topologic Cluster from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.
 
@@ -143,6 +143,8 @@ class Cluster(Topology):
         ----------
         topologies : list
             The list of topologies.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. The default is False.
 
         Returns
         -------
@@ -150,8 +152,10 @@ class Cluster(Topology):
             The created topologic Cluster.
 
         """
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
-        #assert isinstance(topologies, list), "Cluster.ByTopologies - Error: Input is not a list"
+
         if len(args) == 0:
             print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
             return None
@@ -175,7 +179,18 @@ class Cluster(Topology):
         if len(topologyList) == 0:
             print("Cluster.ByTopologies - Error: The input parameters do not contain any valid topologies. Returning None.")
             return None
-        return topologic.Cluster.ByTopologies(topologyList, False)
+        cluster = topologic.Cluster.ByTopologies(topologyList, False)
+        dictionaries = []
+        for t in topologyList:
+            d = Topology.Dictionary(t)
+            keys = Dictionary.Keys(d)
+            if isinstance(keys, list):
+                if len(keys) > 0:
+                    dictionaries.append(d)
+        if len(dictionaries) > 0:
+            d = Dictionary.ByMergedDictionaries(dictionaries)
+            cluster = Topology.SetDictionary(cluster, d)
+        return cluster
 
     @staticmethod
     def CellComplexes(cluster: topologic.Cluster) -> list:
@@ -739,6 +754,34 @@ class Cluster(Topology):
         if result == None:
             return [] #Make sure you return an empty list instead of None
         return result
+    
+    @staticmethod
+    def FreeTopologies(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
+        """
+        Returns the free topologies of the input cluster that are not part of a higher topology.
+
+        Parameters
+        ----------
+        cluster : topologic.Cluster
+            The input cluster.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of free topologies.
+
+        """
+        topologies = Cluster.FreeVertices(cluster, tolerance=tolerance)
+        topologies += Cluster.FreeEdges(cluster, tolerance=tolerance)
+        topologies += Cluster.FreeWires(cluster, tolerance=tolerance)
+        topologies += Cluster.FreeFaces(cluster, tolerance=tolerance)
+        topologies += Cluster.FreeShells(cluster, tolerance=tolerance)
+        topologies += Cluster.FreeCells(cluster, tolerance=tolerance)
+        topologies += Cluster.CellComplexes(cluster)
+
+        return topologies
     
     @staticmethod
     def HighestType(cluster: topologic.Cluster) -> int:

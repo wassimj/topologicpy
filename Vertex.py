@@ -78,7 +78,7 @@ class Vertex(Topology):
             return None
         if len(vertexList) < 3:
             return True # Any two vertices can form a line!
-        cluster = Topology.SelfMerge(Cluster.ByTopologies(vertexList))
+        cluster = Topology.SelfMerge(Cluster.ByTopologies(vertexList), tolerance=tolerance)
         vertexList = Topology.Vertices(cluster)
         slices = []
         for i in range(2,len(vertexList)):
@@ -537,7 +537,7 @@ class Vertex(Topology):
         
         def distance_to_face(vertex, face, includeCentroid):
             v_proj = Vertex.Project(vertex, face, mantissa=mantissa)
-            if not Face.IsInternal(face, v_proj):
+            if not Vertex.IsInternal(v_proj, face):
                 vertices = Topology.Vertices(topology)
                 distances = [distance_to_vertex(vertex, v) for v in vertices]
                 edges = Topology.Edges(topology)
@@ -867,15 +867,70 @@ class Vertex(Topology):
         return vertex
 
     @staticmethod
-    def IsInside(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001) -> bool:
+    def IsCoincident(vertexA: topologic.Vertex, vertexB: topologic.Vertex, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
-        DEPRECATED. DO NOT USE. INSTEAD USE Vertex.IsInternal.
+        Returns True if the input vertexA is coincident with the input vertexB. Returns False otherwise.
+
+        Parameters
+        ----------
+        vertexA : topologic.Vertex
+            The first input vertex.
+        vertexB : topologic.Vertex
+            The second input vertex.
+        tolerance : float , optional
+            The tolerance for computing if the input vertexA is coincident with the input vertexB. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the input vertexA is coincident with the input vertexB. False otherwise.
+
         """
-        print("Vertex.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Vertex.IsInternal.")
-        return Vertex.IsInternal(vertex=vertex, topology=topology, tolerance=tolerance)
+        if not isinstance(vertexA, topologic.Vertex):
+            if not silent:
+                print("Vertex.IsCoincident - Error: The input vertexA parameter is not a valid vertex. Returning None.")
+            return None
+        if not isinstance(vertexB, topologic.Vertex):
+            if not silent:
+                print("Vertex.IsICoincident - Error: The input vertexB parameter is not a valid vertex. Returning None.")
+            return None
+        return Vertex.IsInternal(vertexA, vertexB, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def IsInternal(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001) -> bool:
+    def IsExternal(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
+        """
+        Returns True if the input vertex is external to the input topology. Returns False otherwise.
+
+        Parameters
+        ----------
+        vertex : topologic.Vertex
+            The input vertex.
+        topology : topologic.Topology
+            The input topology.
+        tolerance : float , optional
+            The tolerance for computing if the input vertex is external to the input topology. The default is 0.0001.
+        silent : bool , optional
+            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
+
+        Returns
+        -------
+        bool
+            True if the input vertex is external to the input topology. False otherwise.
+
+        """
+
+        if not isinstance(vertex, topologic.Vertex):
+            if not silent:
+                print("Vertex.IsExternal - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        if not isinstance(topology, topologic.Topology):
+            if not silent:
+                print("Vertex.IsExternal - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        return not (Vertex.IsPeripheral(vertex, topology, tolerance=tolerance, silent=silent) or Vertex.IsInternal(vertex, topology, tolerance=tolerance, silent=silent))
+    
+    @staticmethod
+    def IsInternal(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
         Returns True if the input vertex is inside the input topology. Returns False otherwise.
 
@@ -886,14 +941,17 @@ class Vertex(Topology):
         topology : topologic.Topology
             The input topology.
         tolerance : float , optional
-            The tolerance for computing if the input vertex is enclosed in a cell. The default is 0.0001.
+            The tolerance for computing if the input vertex is internal to the input topology. The default is 0.0001.
+        silent : bool , optional
+            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
 
         Returns
         -------
         bool
-            True if the input vertex is inside the input topology. False otherwise.
+            True if the input vertex is internal to the input topology. False otherwise.
 
         """
+        from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
@@ -901,8 +959,12 @@ class Vertex(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         if not isinstance(vertex, topologic.Vertex):
+            if not silent:
+                print("Vertex.IsInternal - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         if not isinstance(topology, topologic.Topology):
+            if not silent:
+                print("Vertex.IsInternal - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
 
         if isinstance(topology, topologic.Vertex):
@@ -914,39 +976,163 @@ class Vertex(Topology):
                 parameter = 400 #aribtrary large number greater than 1
             return 0 <= parameter <= 1
         elif isinstance(topology, topologic.Wire):
+            vertices = [v for v in Topology.Vertices(topology) if Vertex.Degree(v, topology) > 1]
             edges = Wire.Edges(topology)
-            for edge in edges:
-                if Vertex.IsInternal(vertex, edge, tolerance):
+            sub_list = vertices + edges
+            for sub in sub_list:
+                if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
                     return True
             return False
         elif isinstance(topology, topologic.Face):
-            return Face.IsInternal(topology, vertex, tolerance)
+            # Test the distance first
+            if Vertex.PerpendicularDistance(vertex, topology) > tolerance:
+                return False
+            if Vertex.IsPeripheral(vertex, topology):
+                return False
+            normal = Face.Normal(topology)
+            proj_v = Vertex.Project(vertex, topology)
+            v1 = Topology.TranslateByDirectionDistance(proj_v, normal, 1)
+            v2 = Topology.TranslateByDirectionDistance(proj_v, normal, -1)
+            edge = Edge.ByVertices(v1, v2)
+            intersect = edge.Intersect(topology)
+            if intersect == None:
+                return False
+            return True
         elif isinstance(topology, topologic.Shell):
-            faces = Shell.Faces(topology)
-            for face in faces:
-                if Vertex.IsInternal(vertex, face, tolerance):
-                    return True
-            return False
+            if Vertex.IsPeripheral(vertex, topology, tolerance=tolerance, silent=silent):
+                return False
+            else:
+                edges = Topology.Edges(topology)
+                for edge in edges:
+                    if Vertex.IsInternal(vertex, edge, tolerance=tolerance, silent=silent):
+                        return True
+                faces = Topology.Faces(topology)
+                for face in faces:
+                    if Vertex.IsInternal(vertex, face, tolerance=tolerance, silent=silent):
+                        return True
+                return False
         elif isinstance(topology, topologic.Cell):
             return topologic.CellUtility.Contains(topology, vertex, tolerance) == 0
         elif isinstance(topology, topologic.CellComplex):
-            cells = CellComplex.Cells(topology)
-            faces = CellComplex.Faces(topology)
-            edges = CellComplex.Edges(topology)
-            vertices = CellComplex.Vertices(topology)
-            subtopologies = cells + faces + edges + vertices
-            for subtopology in subtopologies:
-                if Vertex.IsInternal(vertex, subtopology, tolerance):
+            ext_boundary = CellComplex.ExternalBoundary(topology)
+            return Vertex.IsInternal(vertex, ext_boundary, tolerance=tolerance, silent=silent)
+        elif isinstance(topology, topologic.Cluster):
+            sub_list = Cluster.FreeTopologies(topology)
+            for sub in sub_list:
+                if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
+                    return True
+            return False
+        return False
+    
+    
+    @staticmethod
+    def IsPeripheral(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
+        """
+        Returns True if the input vertex is peripheral to the input topology. Returns False otherwise.
+        A vertex is said to be peripheral to the input topology if:
+            01. Vertex: If it is internal to it (i.e. coincident with it).
+            02. Edge: If it is internal to its start or end vertices.
+            03. Manifold open wire: If it is internal to its start or end vertices.
+            04. Manifold closed wire: If it is internal to any of its vertices.
+            05. Non-manifold wire: If it is internal to any of its vertices that has a vertex degree of 1.
+            06. Face: If it is internal to any of its edges or vertices.
+            07. Shell: If it is internal to external boundary
+            08. Cell: If it is internal to any of its faces, edges, or vertices.
+            09. CellComplex: If it is peripheral to its external boundary.
+            10. Cluster: If it is peripheral to any of its free topologies. (See Cluster.FreeTopologies)
+
+        Parameters
+        ----------
+        vertex : topologic.Vertex
+            The input vertex.
+        topology : topologic.Topology
+            The input topology.
+        tolerance : float , optional
+            The tolerance for computing if the input vertex is peripheral to the input topology. The default is 0.0001.
+        silent : bool , optional
+            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
+
+        Returns
+        -------
+        bool
+            True if the input vertex is peripheral to the input topology. False otherwise.
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        
+        if not isinstance(vertex, topologic.Vertex):
+            if not silent:
+                print("Vertex.IsPeripheral - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        if not isinstance(topology, topologic.Topology):
+            if not silent:
+                print("Vertex.IsPeripheral - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+
+        if isinstance(topology, topologic.Vertex):
+            return Vertex.IsInternal(vertex, topology, tolerance=tolerance, silent=silent)
+        elif isinstance(topology, topologic.Edge):
+            sv = Edge.StartVertex(topology)
+            ev = Edge.EndVertex(topology)
+            f1 = Vertex.IsInternal(vertex, sv, tolerance=tolerance, silent=silent)
+            f2 = Vertex.IsInternal(vertex, ev, tolerance=tolerance, silent=silent)
+            return f1 or f2
+        elif isinstance(topology, topologic.Wire):
+            if Wire.IsManifold(topology):
+                if not Wire.IsClosed(topology):
+                    sv = Wire.StartVertex(topology)
+                    ev = Wire.EndVertex(topology)
+                    f1 = Vertex.IsInternal(vertex, sv, tolerance=tolerance, silent=silent)
+                    f2 = Vertex.IsInternal(vertex, ev, tolerance=tolerance, silent=silent)
+                    return f1 or f2
+                else:
+                    sub_list = [v for v in Topology.Vertices(topology)]
+                    for sub in sub_list:
+                        if Vertex.IsPeripheral(vertex, sub, tolerance=tolerance, silent=silent):
+                            return True
+                    return False
+            else:
+                sub_list = [v for v in Topology.Vertices(topology) if Vertex.Degree(v, topology) == 1]
+                for sub in sub_list:
+                    if Vertex.IsPeripheral(vertex, sub, tolerance=tolerance, silent=silent):
+                        return True
+                return False
+        elif isinstance(topology, topologic.Face):
+            sub_list = Topology.Vertices(topology) + Topology.Edges(topology)
+            for sub in sub_list:
+                if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
+                    return True
+            return False
+        elif isinstance(topology, topologic.Shell):
+            ext_boundary = Shell.ExternalBoundary(topology)
+            sub_list = Topology.Vertices(ext_boundary) + Topology.Edges(ext_boundary)
+            for sub in sub_list:
+                if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
+                    return True
+            return False
+        elif isinstance(topology, topologic.Cell):
+            sub_list = Topology.Vertices(topology) + Topology.Edges(topology) + Topology.Faces(topology)
+            for sub in sub_list:
+                if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
+                    return True
+            return False
+        elif isinstance(topology, topologic.CellComplex):
+            ext_boundary = CellComplex.ExternalBoundary(topology)
+            sub_list = Topology.Vertices(ext_boundary) + Topology.Edges(ext_boundary) + Topology.Faces(ext_boundary)
+            for sub in sub_list:
+                if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
                     return True
             return False
         elif isinstance(topology, topologic.Cluster):
-            cells = Cluster.Cells(topology)
-            faces = Cluster.Faces(topology)
-            edges = Cluster.Edges(topology)
-            vertices = Cluster.Vertices(topology)
-            subtopologies = cells + faces + edges + vertices
-            for subtopology in subtopologies:
-                if Vertex.IsInternal(vertex, subtopology, tolerance):
+            sub_list = Cluster.FreeTopologies(topology)
+            for sub in sub_list:
+                if Vertex.IsPeripheral(vertex, sub, tolerance=tolerance, silent=silent):
                     return True
             return False
         return False

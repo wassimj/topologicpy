@@ -815,8 +815,8 @@ class CellComplex(Topology):
             octahedron = Topology.Translate(octahedron, 0, 0, radius)
         elif placement == "lowerleft":
             octahedron = Topology.Translate(octahedron, radius, radius, radius)
+        octahedron = Topology.Orient(octahedron, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
         octahedron = Topology.Place(octahedron, originA=Vertex.Origin(), originB=origin)
-        octahedron = Topology.Orient(octahedron, origin=origin, dirA=[0,0,1], dirB=direction)
         return octahedron
     
     @staticmethod
@@ -896,7 +896,7 @@ class CellComplex(Topology):
             for i in range(uSides-1):
                 uFaces.append(Topology.Translate(uFace, uOffset*(i+1),0,0))
             vOrigin = Vertex.ByCoordinates(Vertex.X(centroid), minY, Vertex.Z(centroid))
-            vFace = Face.Rectangle(origin=vOrigin, width=(maxZ-minZ)*1.1, length=(maxX-minX)*1.1, direction=[0,1,0])
+            vFace = Face.Rectangle(origin=vOrigin, width=(maxX-minX)*1.1, length=(maxZ-minZ)*1.1, direction=[0,1,0])
             vFaces = []
             vOffset = (maxY-minY)/vSides
             for i in range(vSides-1):
@@ -913,23 +913,7 @@ class CellComplex(Topology):
         c = Cell.Prism(origin=origin, width=width, length=length, height=height, uSides=1, vSides=1, wSides=1, placement=placement, tolerance=tolerance)
         prism = slice(c, uSides=uSides, vSides=vSides, wSides=wSides)
         if prism:
-            x1 = origin.X()
-            y1 = origin.Y()
-            z1 = origin.Z()
-            x2 = origin.X() + direction[0]
-            y2 = origin.Y() + direction[1]
-            z2 = origin.Z() + direction[2]
-            dx = x2 - x1
-            dy = y2 - y1
-            dz = z2 - z1    
-            dist = math.sqrt(dx**2 + dy**2 + dz**2)
-            phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-            if dist < 0.0001:
-                theta = 0
-            else:
-                theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-            prism = Topology.Rotate(prism, origin, 0, 1, 0, theta)
-            prism = Topology.Rotate(prism, origin, 0, 0, 1, phi)
+            prism = Topology.Orient(prism, origin=origin, dirA=[0,0,1], dirB=direction)
             return prism
         else:
             print("CellComplex.Prism - Error: Could not create a prism. Returning None.")
@@ -1110,7 +1094,7 @@ class CellComplex(Topology):
                 vertices = Topology.Vertices(cell)
         else:
             vertices += Topology.Vertices(cell)
-        vertices = [v for v in vertices if (Cell.IsInternal(cell, v) or not Vertex.Index(v, Topology.Vertices(cell)) == None)]
+        vertices = [v for v in vertices if (Vertex.IsInternal(v, cell) or not Vertex.Index(v, Topology.Vertices(cell)) == None)]
         if len(vertices) < 1:
             print("CellComplex.Voronoi - Error: The input vertices parame ter does not contain any vertices that are inside the input cell parameter. Returning None.")
             return None

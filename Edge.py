@@ -85,9 +85,12 @@ class Edge(Topology):
             The created bisecting edge.
 
         """
+        import numpy as np
+
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        from topologicpy.Vector import Vector
 
         if not isinstance(edgeA, topologic.Edge):
             print("Edge.Bisect - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
@@ -102,7 +105,7 @@ class Edge(Topology):
             print("Edge.Bisect - Error: The input edgeB parameter is shorter than the input tolerance parameter. Returning None.")
             return None
         
-        wire = Topology.SelfMerge(Cluster.ByTopologies([edgeA, edgeB]))
+        wire = Topology.SelfMerge(Cluster.ByTopologies([edgeA, edgeB]), tolerance=tolerance)
         if not isinstance(wire, topologic.Wire):
             print("Edge.Bisect - Error: The input edgeA and edgeB parameters do not share a vertex and thus cannot be bisected. Returning None.")
             return None
@@ -110,25 +113,14 @@ class Edge(Topology):
         edgeA = edges[0]
         edgeB = edges[1]
 
-        v1 = Edge.VertexByDistance(edgeA, -1, edgeA.EndVertex(), tolerance=0.0001)
-        newEdgeA = Edge.ByVertices([v1, edgeA.EndVertex()], tolerance=tolerance, silent=True)
-        v1 = Edge.VertexByDistance(edgeB, 1, edgeB.StartVertex(), tolerance=0.0001)
-        newEdgeB = Edge.ByVertices([edgeB.StartVertex(), v1], tolerance=tolerance, silent=True)
-        newEdgeB = Topology.Place(newEdgeB, newEdgeB.StartVertex(), newEdgeA.StartVertex())
-        bisectingEdge = Edge.ByVertices([newEdgeA.EndVertex(), newEdgeB.EndVertex()], tolerance=tolerance, silent=True)
-        bEdgeLength = Edge.Length(bisectingEdge)
-        bisectingEdge = Topology.Scale(bisectingEdge, bisectingEdge.StartVertex(), 1/bEdgeLength, 1/bEdgeLength, 1/bEdgeLength)
-        if length != 1.0 and length > tolerance:
-            bisectingEdge = Topology.Scale(bisectingEdge, bisectingEdge.StartVertex(), length, length, length)
-        newLocation = edgeA.EndVertex()
-        if placement == 2:
-            oldLocation = bisectingEdge.EndVertex()
-        elif placement == 1:
-            oldLocation = bisectingEdge.StartVertex()
-        else:
-            oldLocation = bisectingEdge.Centroid()
-        bisectingEdge = Topology.Place(bisectingEdge, oldLocation, newLocation)
-        return bisectingEdge
+        sv = Wire.Vertices(wire)[1]
+
+        dirA = Edge.Direction(edgeA)
+        dirB = Edge.Direction(edgeB)
+        bisecting_vector = Vector.Bisect(dirA, dirB)
+        ev = Topology.TranslateByDirectionDistance(sv, bisecting_vector, length)
+        bisecting_edge = Edge.ByVertices([sv, ev])
+        return bisecting_edge
 
     @staticmethod
     def ByFaceNormal(face: topologic.Face, origin: topologic.Vertex = None, length: float = 1.0, tolerance: float = 0.0001) -> topologic.Edge:
@@ -253,7 +245,7 @@ class Edge(Topology):
         return edge
     
     @staticmethod
-    def ByVertices(vertices: list, tolerance: float = 0.0001, silent: bool = False) -> topologic.Edge:
+    def ByVertices(*args, tolerance: float = 0.0001, silent: bool = False) -> topologic.Edge:
         """
         Creates a straight edge that connects the input list of vertices.
 
@@ -272,11 +264,32 @@ class Edge(Topology):
             The created edge.
 
         """
-        if not isinstance(vertices, list):
-            if not silent:
-                print("Edge.ByVertices - Error: The input vertices parameter is not a valid list. Returning None.")
+
+        from topologicpy.Helper import Helper
+
+        if len(args) == 0:
+            print("Edge.ByVertices - Error: The input vertices parameter is an empty list. Returning None.")
             return None
-        vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        if len(args) == 1:
+            vertices = args[0]
+            if isinstance(vertices, list):
+                if len(vertices) == 0:
+                    if not silent:
+                        print("Edge.ByVertices - Error: The input vertices parameter is an empty list. Returning None.")
+                    return None
+                else:
+                    vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
+                    if len(vertexList) == 0:
+                        if not silent:
+                            print("Edge.ByVertices - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+                        return None
+            else:
+                if not silent:
+                    print("Edge.ByVertices - Warning: The input vertices parameter contains only one vertex. Returning None.")
+                return None
+        else:
+            vertexList = Helper.Flatten(list(args))
+            vertexList = [x for x in vertexList if isinstance(x, topologic.Vertex)]
         if len(vertexList) < 2:
             if not silent:
                 print("Edge.ByVertices - Error: The input vertices parameter has less than two vertices. Returning None.")

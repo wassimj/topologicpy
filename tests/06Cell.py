@@ -17,7 +17,7 @@ from topologicpy.Topology import Topology
 from topologicpy.Plotly import Plotly
 
 print("Start")
-print("29 Cases")
+print("28 Cases")
 # Object for test case
 v0 = Vertex.ByCoordinates(0, 0, 0)          # create vertex
 v1 = Vertex.ByCoordinates(0, 10, 0)         # create vertex
@@ -258,16 +258,7 @@ assert isinstance(iv_cell, topologic.Vertex), "Cell.Hyperboloid. topologic.Verte
 iv_cell1 = Cell.InternalVertex(cell_c, tolerance=0.001)                                   # with optional inputs
 assert isinstance(iv_cell1, topologic.Vertex), "Cell.Hyperboloid. topologic.Vertex"
 
-# Case 20 - IsInternal
-print("Case 20")
-# test 1
-b_inside = Cell.IsInternal(cell_c, v2)                        # without optional inputs
-assert isinstance(b_inside, bool), "Cell.IsInternal. boolean"
-# test 2
-b_inside1 = Cell.IsInternal(cell_cy, v2, tolerance=0.001)     # with optional inputs
-assert isinstance(b_inside1, bool), "Cell.IsInternal. boolean"
-
-# Case 21 - Pipe
+# Case 20 - Pipe
 print("Case 21")
 # test 1
 pipe_cell_dict = Cell.Pipe(e0)                                           # without optional inputs
@@ -282,7 +273,7 @@ assert isinstance(pipe_cell_dict, dict), "Cell.Pipe. dict"
 pipe_cell = pipe_cell_dict['pipe']
 assert isinstance(pipe_cell, topologic.Cell), "Cell.Pipe. Should be a Cell"
 
-# Case 22 - Sets
+# Case 21 - Sets
 print("Case 22")
 # test 1
 cell_cy2 = Cell.Cylinder()
@@ -301,7 +292,7 @@ list_sup = [cell_cy2,cell_cy3]
 cell_sets = Cell.Sets(list_sub,list_sup)
 assert isinstance(cell_sets, list), "Cell.Shells. list"
 
-# Case 23 - Shells
+# Case 22 - Shells
 print("Case 23")
 # test 1
 shell_cell = Cell.Shells(cell_cy)
@@ -312,7 +303,7 @@ shell_cell1 = Cell.Shells(cell_hp)
 assert len(shell_cell) == 1, "Cell.Shells. List length should be 1"
 assert isinstance(shell_cell1, list), "Cell.Shells. list"
 
-# Case 24 - Sphere
+# Case 23 - Sphere
 print("Case 24")
 # test 1
 cell_sphere = Cell.Sphere()                                                                       # with optional inputs
@@ -322,7 +313,7 @@ cell_sphere = Cell.Sphere(origin=v3, radius=3, uSides=32, vSides=16,
                             direction = [0,0,1], placement='bottom', tolerance=0.001)             # with optional inputs
 assert isinstance(cell_sphere, topologic.Cell), "Cell.Sphere. topologic.Cell"                                                                 # visualization
 
-# Case 25 - SurfaceArea
+# Case 24 - SurfaceArea
 print("Case 25")
 # test 1
 sa_cell = Cell.SurfaceArea(cell_f)                  # without optional inputs
@@ -332,7 +323,7 @@ assert sa_cell == 600.0, "Cell.SurfaceArea. Should be 600.0"
 sa_cell = Cell.SurfaceArea(cell_f, mantissa=3)      # with optional inputs
 assert isinstance(sa_cell, float), "Cell.SurfaceArea. float"
 
-# Case 26 - Torus
+# Case 25 - Torus
 print("Case 26")
 # test 1
 """TypeError: 'NoneType' object is not iterable"""
@@ -348,7 +339,7 @@ assert isinstance(cell_torus, topologic.Cell), "Cell.Torus. topologic.Cell"
 #figure_cell_torus = Plotly.FigureByData(data_cell_torus)
 #Plotly.Show(figure_cell_torus)                                                               # visualization
 
-# Case 27 - Vertices
+# Case 26 - Vertices
 print("Case 27")
 # test 1
 v_cell = Cell.Vertices(cell_hp)
@@ -359,14 +350,14 @@ v_cell = Cell.Vertices(cell_f)
 assert len(v_cell) == 8, "Cell.Vertices. List length should be 8"
 assert isinstance(v_cell, list), "Cell.Vertices. list"
 
-# Case 28 - Volume
+# Case 27 - Volume
 print("Case 29")
 # test 1
 vol_cell = Cell.Volume(cell_f, mantissa=3)
 assert isinstance(vol_cell, float), "Cell.Volume. float"
 assert vol_cell == 1000.0, "Cell.Volume. Should be 1000.0"
 
-# Case 29 - Wires
+# Case 28 - Wires
 print("Case 29")
 # test 1
 w_cell = Cell.Wires(cell_c)

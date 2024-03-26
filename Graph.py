@@ -2303,7 +2303,7 @@ class Graph:
             return [vertices, edges]
 
         def processFace(item):
-            from topologic.Face import Face
+            from topologicpy.Face import Face
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBRep, tolerance = item
             graph = None
             vertices = []
@@ -3003,27 +3003,91 @@ class Graph:
         return topologic.Graph.ByVerticesEdges(vertices, edges)
     
     @staticmethod
-    def Color(graph, vertices=None, key="color", delta=1, tolerance=0.0001):
+    def ChromaticNumber(graph: topologic.Graph, maxColors: int = 3, silent: bool = False):
         """
-        Colors the input vertices within the input graph. The saved value is an integer rather than an actual color. See Color.ByValueInRange to convert to an actual color. Any vertices that have been pre-colored will not be affected. See https://en.wikipedia.org/wiki/Graph_coloring.
+        Returns the chromatic number of the input graph. See https://en.wikipedia.org/wiki/Graph_coloring.
 
         Parameters
         ----------
         graph : topologic.Graph
             The input graph.
-        vertices : list , optional
-            The input list of graph vertices. If no vertices are specified, all vertices in the input graph are colored. The default is None.
-        key : str , optional
-            The dictionary key to use to save the color information.
-        delta : int , optional
-            The desired minimum delta value between the assigned colors.
+        maxColors : int , optional
+            The desired maximum number of colors to test against. The default is 3.
+        silent : bool , optional
+            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
+        
+        Returns
+        -------
+        int
+            The chromatic number of the input graph.
+
+        """
+        # This is based on code from https://www.geeksforgeeks.org/graph-coloring-applications/
+        
+        def is_safe(graph, v, color, c):
+            for i in range(len(graph)):
+                if graph[v][i] == 1 and color[i] == c:
+                    return False
+            return True
+
+        def graph_coloring(graph, m, color, v):
+            V = len(graph)
+            if v == V:
+                return True
+
+            for c in range(1, m + 1):
+                if is_safe(graph, v, color, c):
+                    color[v] = c
+                    if graph_coloring(graph, m, color, v + 1):
+                        return True
+                    color[v] = 0
+
+            return False
+
+        def chromatic_number(graph):
+            V = len(graph)
+            color = [0] * V
+            m = 1
+
+            while True:
+                if graph_coloring(graph, m, color, 0):
+                    return m
+                m += 1
+        
+        if not isinstance(graph, topologic.Graph):
+            if not silent:
+                print("Graph.ChromaticNumber - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        if maxColors < 1:
+            if not silent:
+                print("Graph.ChromaticNumber - Error: The input maxColors parameter is not a valid positive number. Returning None.")
+            return None
+        adj_matrix = Graph.AdjacencyMatrix(graph)
+        return chromatic_number(adj_matrix)
+
+    @staticmethod
+    def Color(graph, oldKey: str = "color", newKey: str = "color", maxColors: int = None, tolerance: float = 0.0001):
+        """
+        Colors the input vertices within the input graph. The saved value is an integer rather than an actual color. See Color.ByValueInRange to convert to an actual color.
+        Any vertices that have been pre-colored will not be affected. See https://en.wikipedia.org/wiki/Graph_coloring.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        oldKey : str , optional
+            The existing dictionary key to use to read any pre-existing color information. The default is "color".
+        newKey : str , optional
+            The new dictionary key to use to write out new color information. The default is "color".
+        maxColors : int , optional
+            The desired maximum number of colors to use. If set to None, the chromatic number of the graph is used. The default is None.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        list
-            The colored list of vertices.
+        topologic.Graph
+            The input graph, but with its vertices colored.
 
         """
         from topologicpy.Vertex import Vertex
@@ -3032,75 +3096,69 @@ class Graph:
         from topologicpy.Topology import Topology
         import math
 
-        delta = max(abs(delta), 1) # Ensure that delta is never less than 1
+        def is_safe(v, graph, colors, c):
+            # Check if the color 'c' is safe for the vertex 'v'
+            for i in range(len(graph)):
+                if graph[v][i] and c == colors[i]:
+                    return False
+            return True
 
-        def satisfiesCondition(i, used_colors, delta):
-            if delta == 1:
-                return i not in used_colors
-            else:
-                for j in used_colors:
-                    if abs(j-i) < delta:
-                        return False
+        def graph_coloring_util(graph, m, colors, v):
+            # Base case: If all vertices are assigned a color, return true
+            if v == len(graph):
                 return True
-        def color_graph(graph, vertices, key, delta):
-            # Create a dictionary to store the colors of each vertex
-            colors = {}                
-            # Iterate over each vertex in the graph
-            for j, vertex in enumerate(vertices):
-                d = Topology.Dictionary(vertex)
-                color_value = Dictionary.ValueAtKey(d, key)
-                if color_value != None:
-                    colors[j] = color_value
-                # Initialize an empty set of used colors
-                used_colors = set()
 
-                # Iterate over each neighbor of the vertex
-                for neighbor in Graph.AdjacentVertices(graph, vertex):
-                    # If the neighbor has already been colored, add its color to the used colors set
-                    index = Vertex.Index(neighbor, vertices)
-                    if index in colors:
-                        used_colors.add(colors[index])
+            # Try different colors for the current vertex 'v'
+            for c in range(1, m + 1):
+                # Check if assignment of color 'c' to 'v' is fine
+                if is_safe(v, graph, colors, c):
+                    colors[v] = c
 
-                if color_value == None:
-                    # Choose the smallest unused color for the vertex
-                    for i in range(0,int(math.ceil(len(vertices)*int(math.ceil(delta)))), int(math.ceil(delta))):
-                        #if i not in used_colors:
-                        if satisfiesCondition(i, used_colors, int(math.ceil(delta))):
-                            v_d = Topology.Dictionary(vertex)
-                            if not v_d == None:
-                                keys = Dictionary.Keys(v_d)
-                                values = Dictionary.Values(v_d)
-                            else:
-                                keys = []
-                                values = []
-                            if len(keys) > 0:
-                                keys.append(key)
-                                values.append(i)
-                            else:
-                                keys = [key]
-                                values = [i]
-                            d = Dictionary.ByKeysValues(keys, values)
-                            vertex = Topology.SetDictionary(vertex, d)
-                            colors[j] = i
-                            break
+                    # Recur to assign colors to the rest of the vertices
+                    if graph_coloring_util(graph, m, colors, v + 1):
+                        return True
 
-            return colors
+                    # If assigning color 'c' doesn't lead to a solution, remove it
+                    colors[v] = 0
+
+            # If no color can be assigned to this vertex, return false
+            return False
+
+        def graph_coloring(graph, m, colors):
+
+            # Call graph_coloring_util() for vertex 0
+            if not graph_coloring_util(graph, m, colors, 0):
+                return None
+            return [x-1 for x in colors]
 
         if not isinstance(graph, topologic.Graph):
             print("Graph.Color - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if vertices == None:
-            vertices = Graph.Vertices(graph)
-        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
-        if len(vertices) == 0:
-            print("Graph.Color - Error: The input list of vertices does not contain any valid vertices. Returning None.")
-            return None
-        graph_vertices = [Graph.NearestVertex(graph,v) for v in vertices]
-        degrees = [Graph.VertexDegree(graph, v) for v in graph_vertices]
-        graph_vertices = Helper.Sort(graph_vertices, degrees)
-        graph_vertices.reverse()
-        _ = color_graph(graph, graph_vertices, key, delta)
-        return graph_vertices
+        
+        vertices = Graph.Vertices(graph)
+        adj_mat = Graph.AdjacencyMatrix(graph)
+        # Isolate vertices that have pre-existing colors as they shouldn't affect graph coloring.
+        for i, v in enumerate(vertices):
+            d = Topology.Dictionary(v)
+            c = Dictionary.ValueAtKey(d, oldKey)
+            if not c == None:
+                adj_mat[i] = [0] * len(vertices)
+                for j in range(len(adj_mat)):
+                    row = adj_mat[j]
+                    row[i] = 0
+        temp_graph = Graph.ByAdjacencyMatrix(adj_mat)
+        # If the maximum number of colors are not provided, compute it using the graph's chromatic number.
+        if maxColors == None:
+            maxColors = Graph.ChromaticNumber(temp_graph)
+        print("MaxColors:", maxColors)
+        colors = [0] * len(vertices)
+        colors = graph_coloring(adj_mat, maxColors, colors)
+        print("Colors:", colors)
+        for i, v in enumerate(vertices):
+                d = Topology.Dictionary(v)
+                d = Dictionary.SetValueAtKey(d, newKey, colors[i])
+                v = Topology.SetDictionary(v,d)
+        return graph
 
     @staticmethod
     def ClosenessCentrality(graph, vertices=None, tolerance = 0.0001):

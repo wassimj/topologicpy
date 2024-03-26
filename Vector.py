@@ -148,6 +148,48 @@ class Vector(list):
             return {"azimuth":azimuth, "altitude":altitude}
     
     @staticmethod
+    def Bisect(vectorA, vectorB):
+        """
+        Compute the bisecting vector of two input vectors.
+        
+        Parameters
+        ----------
+        vectorA : list
+            The first input vector.
+        vectorB : list
+            The second input vector.
+            
+        Returns
+        -------
+        dict
+            The bisecting vector.
+        
+        """
+        import numpy as np
+
+
+        # Ensure vectors are numpy arrays
+        vector1 = np.array(vectorA)
+        vector2 = np.array(vectorB)
+        
+        # Normalize input vectors
+        vector1_norm = vector1 / np.linalg.norm(vector1)
+        vector2_norm = vector2 / np.linalg.norm(vector2)
+        
+        # Check if the angle between vectors is either 0 or 180 degrees
+        dot_product = np.dot(vector1_norm, vector2_norm)
+        if np.isclose(dot_product, 1.0) or np.isclose(dot_product, -1.0):
+            print("Vector.Bisect - Warning: The two vectors are collinear and thus the bisecting vector is not well-defined.")
+            # Angle is either 0 or 180 degrees, return any perpendicular vector
+            bisecting_vector = np.array([vector1[1] - vector1[2], vector1[2] - vector1[0], vector1[0] - vector1[1]])
+            bisecting_vector /= np.linalg.norm(bisecting_vector)
+        else:
+            # Compute bisecting vector
+            bisecting_vector = (vector1_norm + vector2_norm) / np.linalg.norm(vector1_norm + vector2_norm)
+    
+        return bisecting_vector
+    
+    @staticmethod
     def ByAzimuthAltitude(azimuth, altitude, north=0, reverse=False, tolerance=0.0001):
         """
         Returns the vector specified by the input azimuth and altitude angles.
@@ -375,27 +417,153 @@ class Vector(list):
         return [1,0,0]
     
     @staticmethod
-    def IsCollinear(vectorA, vectorB, angTolerance=0.1):
+    def IsAntiParallel(vectorA, vectorB):
         """
-        Returns True if the input vectors are collinear. Returns False otherwise.
-
+        Returns True if the input vectors are anti-parallel. Returns False otherwise.
+        
         Parameters
         ----------
         vectorA : list
             The first input vector.
         vectorB : list
             The second input vector.
-        angTolerance : float, optional
-            The desired angular tolerance. The default is 0.1
-
+            
         Returns
         -------
         bool
-            Returns True if the input vectors are collinear. Returns False otherwise.
+            True if the input vectors are anti-parallel. False otherwise.
+        
         """
+        import numpy as np
 
-        return Vector.Angle(vectorA, vectorB) < angTolerance
 
+        # Ensure vectors are numpy arrays
+        vector1 = np.array(vectorA)
+        vector2 = np.array(vectorB)
+        
+        # Normalize input vectors
+        vector1_norm = vector1 / np.linalg.norm(vector1)
+        vector2_norm = vector2 / np.linalg.norm(vector2)
+        
+        # Check if the angle between vectors is either 0 or 180 degrees
+        dot_product = np.dot(vector1_norm, vector2_norm)
+        if np.isclose(dot_product, -1.0):
+            return True
+        else:
+            # Compute bisecting vector
+            return False
+    
+    @staticmethod
+    def IsParallel(vectorA, vectorB):
+        """
+        Returns True if the input vectors are parallel. Returns False otherwise.
+        
+        Parameters
+        ----------
+        vectorA : list
+            The first input vector.
+        vectorB : list
+            The second input vector.
+            
+        Returns
+        -------
+        bool
+            True if the input vectors are parallel. False otherwise.
+        
+        """
+        import numpy as np
+
+
+        # Ensure vectors are numpy arrays
+        vector1 = np.array(vectorA)
+        vector2 = np.array(vectorB)
+        
+        # Normalize input vectors
+        vector1_norm = vector1 / np.linalg.norm(vector1)
+        vector2_norm = vector2 / np.linalg.norm(vector2)
+        
+        # Check if the angle between vectors is either 0 or 180 degrees
+        dot_product = np.dot(vector1_norm, vector2_norm)
+        if np.isclose(dot_product, 1.0):
+            return True
+        else:
+            # Compute bisecting vector
+            return False
+    
+    @staticmethod
+    def IsCollinear(vectorA, vectorB):
+        """
+        Returns True if the input vectors are collinear (parallel or anti-parallel). Returns False otherwise.
+        
+        Parameters
+        ----------
+        vectorA : list
+            The first input vector.
+        vectorB : list
+            The second input vector.
+            
+        Returns
+        -------
+        bool
+            True if the input vectors are collinear (parallel or anti-parallel). False otherwise.
+        
+        """
+        import numpy as np
+
+
+        # Ensure vectors are numpy arrays
+        vector1 = np.array(vectorA)
+        vector2 = np.array(vectorB)
+        
+        # Normalize input vectors
+        vector1_norm = vector1 / np.linalg.norm(vector1)
+        vector2_norm = vector2 / np.linalg.norm(vector2)
+        
+        # Check if the angle between vectors is either 0 or 180 degrees
+        dot_product = np.dot(vector1_norm, vector2_norm)
+        if np.isclose(dot_product, 1.0) or np.isclose(dot_product, -1.0):
+            return True
+        else:
+            # Compute bisecting vector
+            return False
+    
+    @staticmethod
+    def IsParallel(vectorA, vectorB):
+        """
+        Returns True if the input vectors are parallel. Returns False otherwise.
+        
+        Parameters
+        ----------
+        vectorA : list
+            The first input vector.
+        vectorB : list
+            The second input vector.
+            
+        Returns
+        -------
+        bool
+            True if the input vectors are parallel. False otherwise.
+        
+        """
+        import numpy as np
+
+
+        # Ensure vectors are numpy arrays
+        vector1 = np.array(vectorA)
+        vector2 = np.array(vectorB)
+        
+        # Normalize input vectors
+        vector1_norm = vector1 / np.linalg.norm(vector1)
+        vector2_norm = vector2 / np.linalg.norm(vector2)
+        
+        # Check if the angle between vectors is either 0 or 180 degrees
+        dot_product = np.dot(vector1_norm, vector2_norm)
+        if np.isclose(dot_product, 1.0):
+            return True
+        else:
+            # Compute bisecting vector
+            return False
+    
     @staticmethod
     def Magnitude(vector, mantissa: int = 6):
         """
@@ -605,6 +773,75 @@ class Vector(list):
                 sum_dimensions[i] += vector[i]
     
         return sum_dimensions
+    
+    @staticmethod
+    def TransformationMatrix(vectorA, vectorB):
+        """
+        Returns the transformation matrix needed to align vectorA with vectorB.
+
+        Parameters
+        ----------
+        vectorA : list
+            The input vector to be transformed.
+        vectorB : list
+            The desired vector with which to align vectorA.
+        
+        Returns
+        -------
+        list
+            Transformation matrix that follows the Blender software convention (nested list)
+        """
+        import numpy as np
+        from topologicpy.Matrix import Matrix
+
+        import numpy as np
+
+        def transformation_matrix(vec1, vec2, translation_vector=None):
+            """
+            Compute a 4x4 transformation matrix that aligns vec1 to vec2.
+            
+            :param vec1: A 3D "source" vector
+            :param vec2: A 3D "destination" vector
+            :param translation_vector: Optional translation vector (default is None)
+            :return: The 4x4 transformation matrix
+            """
+            vec1 = vec1 / np.linalg.norm(vec1)
+            vec2 = vec2 / np.linalg.norm(vec2)
+            dot_product = np.dot(vec1, vec2)
+            
+            if np.isclose(dot_product, 1.0):
+                # Vectors are parallel; return the identity matrix
+                return np.eye(4)
+            elif np.isclose(dot_product, -1.0):
+                # Vectors are antiparallel; reflect one of the vectors about the origin
+                reflection_matrix = np.eye(4)
+                reflection_matrix[2, 2] = -1
+                return reflection_matrix
+            
+            cross_product = np.cross(vec1, vec2)
+            
+            skew_symmetric_matrix = np.array([[0, -cross_product[2], cross_product[1], 0],
+                                            [cross_product[2], 0, -cross_product[0], 0],
+                                            [-cross_product[1], cross_product[0], 0, 0],
+                                            [0, 0, 0, 1]])
+            
+            rotation_matrix = np.eye(4) + skew_symmetric_matrix + \
+                            np.dot(skew_symmetric_matrix, skew_symmetric_matrix) * \
+                            (1 / (1 + dot_product))
+            
+            if translation_vector is not None:
+                translation_matrix = np.eye(4)
+                translation_matrix[:3, 3] = translation_vector
+                transformation_matrix = np.dot(translation_matrix, rotation_matrix)
+            else:
+                transformation_matrix = rotation_matrix
+            
+            return transformation_matrix
+
+
+        tran_mat = transformation_matrix(vectorA, vectorB)
+        
+        return [list(tran_mat[0]), list(tran_mat[1]), list(tran_mat[2]), list(tran_mat[3])]
     
     @staticmethod
     def Up():

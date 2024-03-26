@@ -427,19 +427,13 @@ class Face(Topology):
         planar_shell = Shell.Planarize(shell)
         normal = Face.Normal(Topology.Faces(planar_shell)[0])
         planar_shell = Topology.Flatten(planar_shell, origin=origin, direction=normal)
-        d = Topology.Dictionary(planar_shell)
-        phi = Dictionary.ValueAtKey(d, 'phi')
-        theta = Dictionary.ValueAtKey(d, 'theta')
-        x_tran = Dictionary.ValueAtKey(d, 'x')
-        y_tran = Dictionary.ValueAtKey(d, 'y')
-        z_tran = Dictionary.ValueAtKey(d, 'z')
         vertices = Shell.Vertices(planar_shell)
         new_vertices = []
         for v in vertices:
             x, y, z = Vertex.Coordinates(v)
             new_v = Vertex.ByCoordinates(x,y,0)
             new_vertices.append(new_v)
-        planar_shell = Topology.SelfMerge(Topology.ReplaceVertices(planar_shell, verticesA=vertices, verticesB=new_vertices))
+        planar_shell = Topology.SelfMerge(Topology.ReplaceVertices(planar_shell, verticesA=vertices, verticesB=new_vertices), tolerance=tolerance)
         ext_boundary = Shell.ExternalBoundary(planar_shell, tolerance=tolerance)
         ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
         if not isinstance(ext_boundary, topologic.Topology):
@@ -452,9 +446,7 @@ class Face(Topology):
             ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
             try:
                 face = Face.ByWire(ext_boundary)
-                face = Topology.Rotate(face, world_origin, 0, 1, 0, theta)
-                face = Topology.Rotate(face, world_origin, 0, 0, 1, phi)
-                face = Topology.Translate(face, x_tran, y_tran, z_tran)
+                face = Topology.Unflatten(face, origin=origin, direction=normal)
                 return face
             except:
                 print("Face.ByShell - Error: The operation failed. Returning None.")
@@ -485,9 +477,7 @@ class Face(Topology):
             ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
             face = Face.ByWires(ext_wire, int_wires)
            
-            face = Topology.Rotate(face, world_origin, 0, 1, 0, theta)
-            face = Topology.Rotate(face, world_origin, 0, 0, 1, phi)
-            face = Topology.Translate(face, x_tran, y_tran, z_tran)
+            face = Topology.Unflatten(face, origin=origin, direction=normal)
             return face
         else:
             return None
@@ -553,6 +543,8 @@ class Face(Topology):
         ----------
         wire : topologic.Wire
             The input wire.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -584,7 +576,7 @@ class Face(Topology):
             return None
         
         edges = Wire.Edges(wire)
-        wire = Topology.SelfMerge(Cluster.ByTopologies(edges))
+        wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
         vertices = Wire.Vertices(wire)
         fList = []
         if isinstance(wire, topologic.Wire):
@@ -750,23 +742,8 @@ class Face(Topology):
             arrow = Topology.Translate(arrow, -radius, radius, 0)
         elif placement.lower() == "upperright":
             arrow = Topology.Translate(arrow, -radius, -radius, 0)
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + direction[0]
-        y2 = origin.Y() + direction[1]
-        z2 = origin.Z() + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        arrow = Topology.Rotate(arrow, origin, 0, 1, 0, theta)
-        arrow = Topology.Rotate(arrow, origin, 0, 0, 1, phi)
+        arrow = Topology.Place(arrow, originA=Vertex.Origin(), originB=origin)
+        arrow = Topology.Orient(arrow, orign=origin, direction=direction)
         return arrow
 
     @staticmethod
@@ -1025,129 +1002,6 @@ class Face(Topology):
         if dot < tolerance:
             return False
         return True
-    
-    @staticmethod
-    def Flatten(face: topologic.Face, originA: topologic.Vertex = None,
-                originB: topologic.Vertex = None, direction: list = None, tolerance: float = 0.0001) -> topologic.Face:
-        """
-        Flattens the input face such that its center of mass is located at the origin and its normal is pointed in the positive Z axis.
-
-        Parameters
-        ----------
-        face : topologic.Face
-            The input face.
-        originA : topologic.Vertex , optional
-            The old location to use as the origin of the movement. If set to None, the center of mass of the input topology is used. The default is None.
-        originB : topologic.Vertex , optional
-            The new location at which to place the topology. If set to None, the world origin (0,0,0) is used. The default is None.
-        direction : list , optional
-            The direction, expressed as a list of [X,Y,Z] that signifies the direction of the face. If set to None, the normal at *u* 0.5 and *v* 0.5 is considered the direction of the face. The deafult is None.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-        Returns
-        -------
-        topologic.Face
-            The flattened face.
-
-        """
-
-        from topologicpy.Vertex import Vertex
-
-        def leftMost(vertices, tolerance = 0.0001):
-            xCoords = []
-            for v in vertices:
-                xCoords.append(Vertex.Coordinates(vertices[0])[0])
-            minX = min(xCoords)
-            lmVertices = []
-            for v in vertices:
-                if abs(Vertex.Coordinates(vertices[0])[0] - minX) <= tolerance:
-                    lmVertices.append(v)
-            return lmVertices
-        
-        def bottomMost(vertices, tolerance = 0.0001):
-            yCoords = []
-            for v in vertices:
-                yCoords.append(Vertex.Coordinates(vertices[0])[1])
-            minY = min(yCoords)
-            bmVertices = []
-            for v in vertices:
-                if abs(Vertex.Coordinates(vertices[0])[1] - minY) <= tolerance:
-                    bmVertices.append(v)
-            return bmVertices
-
-        def vIndex(v, vList, tolerance):
-            for i in range(len(vList)):
-                if Vertex.Distance(v, vList[i]) < tolerance:
-                    return i+1
-            return None
-        
-        #  rotate cycle path such that it begins with the smallest node
-        def rotate_to_smallest(path):
-            n = path.index(min(path))
-            return path[n:]+path[:n]
-        
-        #  rotate vertices list so that it begins with the input vertex
-        def rotate_vertices(vertices, vertex):
-            n = vertices.index(vertex)
-            return vertices[n:]+vertices[:n]
-        
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        if not isinstance(face, topologic.Face):
-            return None
-        if not isinstance(originA, topologic.Vertex):
-            originA = Topology.CenterOfMass(face)
-        if not isinstance(originB, topologic.Vertex):
-            originB = Vertex.ByCoordinates(0,0,0)
-        cm = originA
-        world_origin = originB
-        if not direction or len(direction) < 3:
-            direction = Face.NormalAtParameters(face, 0.5, 0.5)
-        x1 = Vertex.X(cm)
-        y1 = Vertex.Y(cm)
-        z1 = Vertex.Z(cm)
-        x2 = Vertex.X(cm) + direction[0]
-        y2 = Vertex.Y(cm) + direction[1]
-        z2 = Vertex.Z(cm) + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        flatFace = Topology.Translate(face, -cm.X(), -cm.Y(), -cm.Z())
-        flatFace = Topology.Rotate(flatFace, world_origin, 0, 0, 1, -phi)
-        flatFace = Topology.Rotate(flatFace, world_origin, 0, 1, 0, -theta)
-        # Ensure flatness. Force Z to be zero
-        flatExternalBoundary = Face.ExternalBoundary(flatFace)
-        flatFaceVertices = Topology.SubTopologies(flatExternalBoundary, subTopologyType="vertex")
-    
-        tempVertices = []
-        for ffv in flatFaceVertices:
-            tempVertices.append(Vertex.ByCoordinates(ffv.X(), ffv.Y(), 0))
-        
-        temp_v = bottomMost(leftMost(tempVertices))[0]
-        tempVertices = rotate_vertices(tempVertices, temp_v)
-        flatExternalBoundary = Wire.ByVertices(tempVertices)
-
-        internalBoundaries = Face.InternalBoundaries(flatFace)
-        flatInternalBoundaries = []
-        for internalBoundary in internalBoundaries:
-            ibVertices = Wire.Vertices(internalBoundary)
-            tempVertices = []
-            for ibVertex in ibVertices:
-                tempVertices.append(Vertex.ByCoordinates(ibVertex.X(), ibVertex.Y(), 0))
-            temp_v = bottomMost(leftMost(tempVertices))[0]
-            tempVertices = rotate_vertices(tempVertices, temp_v)
-            flatInternalBoundaries.append(Wire.ByVertices(tempVertices))
-        flatFace = Face.ByWires(flatExternalBoundary, flatInternalBoundaries, tolerance=tolerance)
-        dictionary = Dictionary.ByKeysValues(["x", "y", "z", "phi", "theta"], [cm.X(), cm.Y(), cm.Z(), phi, theta])
-        flatFace = Topology.SetDictionary(flatFace, dictionary)
-        return flatFace
 
     @staticmethod
     def Harmonize(face: topologic.Face, tolerance: float = 0.0001) -> topologic.Face:
@@ -1179,13 +1033,6 @@ class Face(Topology):
         origin = Topology.Centroid(face)
         flatFace = Topology.Flatten(face, origin=origin, direction=normal)
         world_origin = Vertex.Origin()
-        # Retrieve the needed transformations
-        dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"x")
-        yTran = Dictionary.ValueAtKey(dictionary,"y")
-        zTran = Dictionary.ValueAtKey(dictionary,"z")
-        phi = Dictionary.ValueAtKey(dictionary,"phi")
-        theta = Dictionary.ValueAtKey(dictionary,"theta")
         vertices = Wire.Vertices(Face.ExternalBoundary(flatFace))
         harmonizedEB = Wire.ByVertices(vertices)
         internalBoundaries = Face.InternalBoundaries(flatFace)
@@ -1194,9 +1041,7 @@ class Face(Topology):
             ibVertices = Wire.Vertices(ib)
             harmonizedIB.append(Wire.ByVertices(ibVertices))
         harmonizedFace = Face.ByWires(harmonizedEB, harmonizedIB, tolerance=tolerance)
-        harmonizedFace = Topology.Rotate(harmonizedFace, origin=world_origin, x=0, y=1, z=0, degree=theta)
-        harmonizedFace = Topology.Rotate(harmonizedFace, origin=world_origin, x=0, y=0, z=1, degree=phi)
-        harmonizedFace = Topology.Translate(harmonizedFace, xTran, yTran, zTran)
+        harmonizedFace = Topology.Unflatten(harmonizedFace, origin=origin, direction=normal)
         return harmonizedFace
 
     @staticmethod
@@ -1279,17 +1124,18 @@ class Face(Topology):
             The created vertex.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         if not isinstance(face, topologic.Face):
             return None
         v = Topology.Centroid(face)
-        if Face.IsInternal(face, v):
+        if Vertex.IsInternal(v, face, tolerance=tolerance):
             return v
         l = [0.4,0.6,0.3,0.7,0.2,0.8,0.1,0.9]
         for u in l:
             for v in l:
                 v = Face.VertexByParameters(face, u, v)
-                if Face.IsInternal(face, v):
+                if Vertex.IsInternal(v, face, tolerance=tolerance):
                     return v
         v = topologic.FaceUtility.InternalVertex(face, tolerance)
         return v
@@ -1360,59 +1206,7 @@ class Face(Topology):
             return None
         dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
         dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
-        return Vector.IsCollinear(dirA, dirB, tolerance)
-    
-    @staticmethod
-    def IsInside(face: topologic.Face, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
-        """
-        DEPRECATED METHOD. DO NOT USE. INSTEAD USE Face.IsInternal.
-        """
-        print("Face.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Face.IsInternal.")
-        return Face.IsInternal(face=face, vertex=vertex, tolerance=tolerance)
-    
-    @staticmethod
-    def IsInternal(face: topologic.Face, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
-        """
-        Returns True if the input vertex is an internal vertex of the input face. Returns False otherwise.
-
-        Parameters
-        ----------
-        face : topologic.Face
-            The input face.
-        vertex : topologic.Vertex
-            The input vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            True if the input vertex is inside the input face. False otherwise.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Cell import Cell
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        
-        if not isinstance(face, topologic.Face):
-            print("Face.IsInternal - Error: The input face parameter is not a valid topologic face. Returning None.")
-            return None
-        if not isinstance(vertex, topologic.Vertex):
-            print("Face.IsInternal - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
-            return None
-        # Test the distance first
-        if Vertex.PerpendicularDistance(vertex, face) > tolerance:
-            return False
-        status = False
-        try:
-            status = topologic.FaceUtility.IsInside(face, vertex, tolerance)
-        except:
-            print("Face.IsInternal - Warning: Could not determine if vertex is inside face. Returning False.")
-            clus = Cluster.ByTopologies([vertex, face])
-            status = False
-        return status
+        return Vector.IsCollinear(dirA, dirB)
     
     @staticmethod
     def MedialAxis(face: topologic.Face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
@@ -1465,13 +1259,6 @@ class Face(Topology):
         origin = Topology.Centroid(face)
         normal = Face.Normal(face)
         flatFace = Topology.Flatten(face, origin=origin, direction=normal)
-        # Retrieve the needed transformations
-        dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"x")
-        yTran = Dictionary.ValueAtKey(dictionary,"y")
-        zTran = Dictionary.ValueAtKey(dictionary,"z")
-        phi = Dictionary.ValueAtKey(dictionary,"phi")
-        theta = Dictionary.ValueAtKey(dictionary,"theta")
 
         # Create a Vertex at the world's origin (0,0,0)
         world_origin = Vertex.Origin()
@@ -1493,8 +1280,6 @@ class Face(Topology):
             ev = Edge.EndVertex(e)
             svTouchesEdge = touchesEdge(sv, faceEdges, tolerance=tolerance)
             evTouchesEdge = touchesEdge(ev, faceEdges, tolerance=tolerance)
-            #connectsToCorners = (Vertex.Index(sv, faceVertices) != None) or (Vertex.Index(ev, faceVertices) != None)
-            #if Face.IsInternal(flatFace, sv, tolerance=tolerance) and Face.IsInternal(flatFace, ev, tolerance=tolerance):
             if not svTouchesEdge and not evTouchesEdge:
                 medialAxisEdges.append(e)
 
@@ -1529,9 +1314,7 @@ class Face(Topology):
         medialAxis = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges), tolerance=tolerance)
         if isinstance(medialAxis, topologic.Wire) and angTolerance > 0:
             medialAxis = Topology.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance)
-        medialAxis = Topology.Rotate(medialAxis, origin=world_origin, x=0, y=1, z=0, degree=theta)
-        medialAxis = Topology.Rotate(medialAxis, origin=world_origin, x=0, y=0, z=1, degree=phi)
-        medialAxis = Topology.Translate(medialAxis, xTran, yTran, zTran)
+        medialAxis = Topology.Unflatten(medialAxis, origin=origin,direction=normal)
         return medialAxis
 
     @staticmethod
@@ -1683,7 +1466,7 @@ class Face(Topology):
     
     @staticmethod
     def Planarize(face: topologic.Face, origin: topologic.Vertex = None,
-                  direction: list = None, tolerance: float = 0.0001) -> topologic.Face:
+                  tolerance: float = 0.0001) -> topologic.Face:
         """
         Planarizes the input face such that its center of mass is located at the input origin and its normal is pointed in the input direction.
 
@@ -1692,9 +1475,7 @@ class Face(Topology):
         face : topologic.Face
             The input face.
         origin : topologic.Vertex , optional
-            The old location to use as the origin of the movement. If set to None, the center of mass of the input face is used. The default is None.
-        direction : list , optional
-            The direction, expressed as a list of [X,Y,Z] that signifies the direction of the face. If set to None, the normal at *u* 0.5 and *v* 0.5 is considered the direction of the face. The deafult is None.
+            The desired vertex to use as the origin of the plane to project the face unto. If set to None, the centroidof the input face is used. The default is None.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -1705,32 +1486,21 @@ class Face(Topology):
 
         """
 
-        from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
 
         if not isinstance(face, topologic.Face):
             return None
         if not isinstance(origin, topologic.Vertex):
             origin = Topology.Centroid(face)
-        if not isinstance(direction, list):
-            normal = Face.Normal(face)
-        flatFace = Topology.Flatten(face, origin=origin, direction=normal)
-
-        world_origin = Vertex.ByCoordinates(0,0,0)
-        # Retrieve the needed transformations
-        dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"x")
-        yTran = Dictionary.ValueAtKey(dictionary,"y")
-        zTran = Dictionary.ValueAtKey(dictionary,"z")
-        phi = Dictionary.ValueAtKey(dictionary,"phi")
-        theta = Dictionary.ValueAtKey(dictionary,"theta")
-
-        planarizedFace = Topology.Rotate(flatFace, origin=world_origin, x=0, y=1, z=0, degree=theta)
-        planarizedFace = Topology.Rotate(planarizedFace, origin=world_origin, x=0, y=0, z=1, degree=phi)
-        planarizedFace = Topology.Translate(planarizedFace, xTran, yTran, zTran)
-        return planarizedFace
+        eb = Face.ExternalBoundary(face)
+        plan_eb = Wire.Planarize(eb, origin=origin)
+        ib_list = Face.InternalBoundaries(face)
+        plan_ib_list = []
+        for ib in ib_list:
+            plan_ib_list.append(Wire.Planarize(ib, origin=origin))
+        plan_face = Face.ByWires(plan_eb, plan_ib_list)
+        return plan_face
 
     @staticmethod
     def Project(faceA: topologic.Face, faceB: topologic.Face, direction : list = None,
@@ -2014,16 +1784,9 @@ class Face(Topology):
         vertices = Topology.Vertices(face)
         if len(vertices) == 3: # Already a triangle
             return [face]
-        flatFace = Face.Flatten(face)
-
-        world_origin = Vertex.ByCoordinates(0,0,0)
-        # Retrieve the needed transformations
-        dictionary = Topology.Dictionary(flatFace)
-        xTran = Dictionary.ValueAtKey(dictionary,"x")
-        yTran = Dictionary.ValueAtKey(dictionary,"y")
-        zTran = Dictionary.ValueAtKey(dictionary,"z")
-        phi = Dictionary.ValueAtKey(dictionary,"phi")
-        theta = Dictionary.ValueAtKey(dictionary,"theta")
+        origin = Topology.Centroid(face)
+        normal = Face.Normal(face)
+        flatFace = Topology.Flatten(face, origin=origin, direction=normal)
     
         shell_faces = []
         for i in range(0,5,1):
@@ -2037,9 +1800,7 @@ class Face(Topology):
             return []
         finalFaces = []
         for f in shell_faces:
-            f = Topology.Rotate(f, origin=world_origin, x=0, y=1, z=0, degree=theta)
-            f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
-            f = Topology.Translate(f, xTran, yTran, zTran)
+            f = Topology.Unflatten(f, origin=origin, direction=normal)
             if Face.Angle(face, f) > 90:
                 wire = Face.ExternalBoundary(f)
                 wire = Wire.Invert(wire)
@@ -2077,21 +1838,6 @@ class Face(Topology):
         if reverse:
             trimmed_face = face.Difference(trimmed_face)
         return trimmed_face
-    
-    @staticmethod
-    def UnFlatten(face: topologic.Face, dictionary: topologic.Dictionary):
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        theta = Dictionary.ValueAtKey(dictionary, "theta")
-        phi = Dictionary.ValueAtKey(dictionary, "phi")
-        xTran = Dictionary.ValueAtKey(dictionary, "xTran")
-        yTran = Dictionary.ValueAtKey(dictionary, "yTran")
-        zTran = Dictionary.ValueAtKey(dictionary, "zTran")
-        newFace = Topology.Rotate(face, origin=Vertex.Origin(), x=0, y=1, z=0, degree=theta)
-        newFace = Topology.Rotate(newFace, origin=Vertex.Origin(), x=0, y=0, z=1, degree=phi)
-        newFace = Topology.Translate(newFace, xTran, yTran, zTran)
-        return newFace
     
     @staticmethod
     def VertexByParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5) -> topologic.Vertex:

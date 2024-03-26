@@ -116,6 +116,8 @@ class Cell(Topology):
             If set to True, the input faces are planarized before building the cell. Otherwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
 
         Returns
         -------
@@ -126,8 +128,8 @@ class Cell(Topology):
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+
         if not isinstance(faces, list):
             if not silent:
                 print("Cell.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
@@ -175,7 +177,7 @@ class Cell(Topology):
                 centroid = Topology.Centroid(f)
                 n = Face.Normal(f)
                 v = Topology.Translate(centroid, n[0]*0.01,n[1]*0.01,n[2]*0.01)
-                if not Cell.IsInternal(cell, v):
+                if not Vertex.IsInternal(v, cell):
                     finalFaces.append(f)
             finalFinalFaces = []
             for f in finalFaces:
@@ -240,7 +242,7 @@ class Cell(Topology):
             sum_normal = Vector.Sum(normals)
             new_v = Topology.TranslateByDirectionDistance(v, direction=sum_normal, distance=Vector.Magnitude(sum_normal))
             new_vertices.append(new_v)
-        new_cell = Topology.SelfMerge(Topology.ReplaceVertices(cell, Topology.Vertices(cell), new_vertices))
+        new_cell = Topology.SelfMerge(Topology.ReplaceVertices(cell, Topology.Vertices(cell), new_vertices), tolerance=tolerance)
         return new_cell
     
     @staticmethod
@@ -399,6 +401,8 @@ class Cell(Topology):
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
 
         Raises
         ------
@@ -411,32 +415,11 @@ class Cell(Topology):
             The created cell.
 
         """
-        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-
-        def cleanup(f):
-            origin = Topology.Centroid(f)
-            normal = Face.Normal(f)
-            flatFace = Topology.Flatten(f, origin=origin, direction=normal)
-            world_origin = Vertex.ByCoordinates(0,0,0)
-            # Retrieve the needed transformations
-            dictionary = Topology.Dictionary(flatFace)
-            xTran = Dictionary.ValueAtKey(dictionary,"x")
-            yTran = Dictionary.ValueAtKey(dictionary,"y")
-            zTran = Dictionary.ValueAtKey(dictionary,"z")
-            phi = Dictionary.ValueAtKey(dictionary,"phi")
-            theta = Dictionary.ValueAtKey(dictionary,"theta")
-
-            f = Topology.Rotate(f, origin=world_origin, x=0, y=1, z=0, degree=theta)
-            f = Topology.Rotate(f, origin=world_origin, x=0, y=0, z=1, degree=phi)
-            f = Topology.Translate(f, xTran, yTran, zTran)
-            return f
 
         if not isinstance(wires, list):
             if not silent:
@@ -611,9 +594,9 @@ class Cell(Topology):
             return None
         cyl_height = height - radius*2
         if cyl_height <= 0:
-            capsule = Cell.Sphere(origin=origin, radius=radius, uSides= uSides, vSides=vSidesEnds*2)
+            capsule = Cell.Sphere(origin=Vertex.Origin(), radius=radius, uSides= uSides, vSides=vSidesEnds*2)
         else:
-            cyl = Cell.Cylinder(origin=origin,
+            cyl = Cell.Cylinder(origin=Vertex.Origin(),
                                 radius=radius,
                                 height=cyl_height,
                                 uSides=uSides, vSides=vSidesMiddle, direction=[0,0,1], placement="center", tolerance=tolerance)
@@ -628,8 +611,9 @@ class Cell(Topology):
         if placement == "lowerleft":
             capsule = Topology.Translate(capsule, 0, 0, height/2)
             capsule = Topology.Translate(capsule, radius, radius)
+        
+        capsule = Topology.Orient(capsule, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
         capsule = Topology.Place(capsule, originA=Vertex.Origin(), originB=origin)
-        capsule = Topology.Orient(capsule, origin=origin, dirA=[0,0,1], dirB=direction)
         return capsule
 
     @staticmethod
@@ -1075,8 +1059,9 @@ class Cell(Topology):
             dodecahedron = Topology.Translate(dodecahedron, 0, 0, radius)
         elif placement == "lowerleft":
             dodecahedron = Topology.Translate(dodecahedron, radius, radius, radius)
+        
+        dodecahedron = Topology.Orient(dodecahedron, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction, tolerance=tolerance)
         dodecahedron = Topology.Place(dodecahedron, originA=Vertex.Origin(), originB=origin)
-        dodecahedron = Topology.Orient(dodecahedron, origin=origin, dirA=[0,0,1], dirB=direction, tolerance=tolerance)
         return dodecahedron
 
     @staticmethod
@@ -1152,8 +1137,8 @@ class Cell(Topology):
         return faces
 
     @staticmethod
-    def Hyperboloid(origin: topologic.Cell = None, baseRadius: float = 0.5, topRadius: float = 0.5, height: float = 1, sides: int = 16, direction: list = [0,0,1],
-                        twist: float = 360, placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Hyperboloid(origin: topologic.Cell = None, baseRadius: float = 0.5, topRadius: float = 0.5, height: float = 1, sides: int = 24, direction: list = [0,0,1],
+                        twist: float = 60, placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a hyperboloid.
 
@@ -1168,11 +1153,11 @@ class Cell(Topology):
         height : float , optional
             The height of the cone. The default is 1.
         sides : int , optional
-            The number of sides of the cone. The default is 16.
+            The number of sides of the cone. The default is 24.
         direction : list , optional
             The vector representing the up direction of the hyperboloid. The default is [0,0,1].
         twist : float , optional
-            The angle to twist the base cylinder. The default is 360.
+            The angle to twist the base cylinder. The default is 60.
         placement : str , optional
             The description of the placement of the origin of the hyperboloid. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1218,6 +1203,7 @@ class Cell(Topology):
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Hyperboloid - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
+        w_origin = Vertex.Origin()
         baseV = []
         topV = []
         xOffset = 0
@@ -1228,41 +1214,27 @@ class Cell(Topology):
         elif placement.lower() == "lowerleft":
             xOffset = max(baseRadius, topRadius)
             yOffset = max(baseRadius, topRadius)
-        baseZ = origin.Z() + zOffset
-        topZ = origin.Z() + zOffset + height
+        baseZ = w_origin.Z() + zOffset
+        topZ = w_origin.Z() + zOffset + height
         for i in range(sides):
             angle = math.radians(360/sides)*i
             if baseRadius > 0:
-                baseX = math.sin(angle+math.radians(twist))*baseRadius + origin.X() + xOffset
-                baseY = math.cos(angle+math.radians(twist))*baseRadius + origin.Y() + yOffset
-                baseZ = origin.Z() + zOffset
+                baseX = math.sin(angle+math.radians(twist))*baseRadius + w_origin.X() + xOffset
+                baseY = math.cos(angle+math.radians(twist))*baseRadius + w_origin.Y() + yOffset
+                baseZ = w_origin.Z() + zOffset
                 baseV.append(Vertex.ByCoordinates(baseX,baseY,baseZ))
             if topRadius > 0:
-                topX = math.sin(angle-math.radians(twist))*topRadius + origin.X() + xOffset
-                topY = math.cos(angle-math.radians(twist))*topRadius + origin.Y() + yOffset
+                topX = math.sin(angle-math.radians(twist))*topRadius + w_origin.X() + xOffset
+                topY = math.cos(angle-math.radians(twist))*topRadius + w_origin.Y() + yOffset
                 topV.append(Vertex.ByCoordinates(topX,topY,topZ))
 
         hyperboloid = createHyperboloid(baseV, topV, tolerance)
         if hyperboloid == None:
             print("Cell.Hyperboloid - Error: Could not create a hyperboloid. Returning None.")
             return None
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + direction[0]
-        y2 = origin.Y() + direction[1]
-        z2 = origin.Z() + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        hyperboloid = Topology.Rotate(hyperboloid, origin, 0, 1, 0, theta)
-        hyperboloid = Topology.Rotate(hyperboloid, origin, 0, 0, 1, phi)
+        
+        hyperboloid = Topology.Orient(hyperboloid, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction, tolerance=tolerance)
+        hyperboloid = Topology.Place(hyperboloid, originA=Vertex.Origin(), originB=origin)
         return hyperboloid
     
     @staticmethod
@@ -1345,8 +1317,9 @@ class Cell(Topology):
             icosahedron = Topology.Translate(icosahedron, 0, 0, radius)
         elif placement == "lowerleft":
             icosahedron = Topology.Translate(icosahedron, radius, radius, radius)
+        
+        icosahedron = Topology.Orient(icosahedron, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction, tolerance=tolerance)
         icosahedron = Topology.Place(icosahedron, originA=Vertex.Origin(), originB=origin)
-        icosahedron = Topology.Orient(icosahedron, origin=origin, dirA=[0,0,1], dirB=direction, tolerance=tolerance)
         return icosahedron
 
 
@@ -1399,46 +1372,6 @@ class Cell(Topology):
             return None
     
     @staticmethod
-    def IsInside(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
-        """
-        DEPRECATED METHOD. DO NOT USE. INSTEAD USE Cell.IsInternal.
-        """
-        print("Cell.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Cell.IsInternal.")
-        return Cell.IsInternal(cell=cell, vertex=vertex, tolerance=tolerance)
-    
-    @staticmethod
-    def IsInternal(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
-        """
-        Returns True if the input vertex is an internal vertex of the input cell. Returns False otherwise.
-
-        Parameters
-        ----------
-        cell : topologic.Cell
-            The input cell.
-        vertex : topologic.Vertex
-            The input vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            Returns True if the input vertex is inside the input cell. Returns False otherwise.
-
-        """
-        if not isinstance(cell, topologic.Cell):
-            print("Cell.IsInternal - Error: The input cell parameter is not a valid topologic cell. Returning None.")
-            return None
-        if not isinstance(vertex, topologic.Vertex):
-            print("Cell.IsInternal - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
-            return None
-        try:
-            return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 0)
-        except:
-            print("Cell.IsInternal - Error: Could not determine if the input vertex is inside the input cell. Returning None.")
-            return None
-    
-    @staticmethod
     def IsOnBoundary(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input vertex is on the boundary of the input cell. Returns False otherwise.
@@ -1469,39 +1402,6 @@ class Cell(Topology):
             return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 1)
         except:
             print("Cell.IsOnBoundary - Error: Could not determine if the input vertex is on the boundary of the input cell. Returning None.")
-            return None
- 
-    @staticmethod
-    def IsOutside(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
-        """
-        Returns True if the input vertex is outisde the input cell. Returns False otherwise.
-
-        Parameters
-        ----------
-        cell : topologic.Cell
-            The input cell.
-        vertex : topologic.Vertex
-            The input vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            Returns True if the input vertex is inside the input cell. Returns False otherwise.
-
-        """
-
-        if not isinstance(cell, topologic.Cell):
-            print("Cell.IsOutside - Error: The input cell parameter is not a valid topologic cell. Returning None.")
-            return None
-        if not isinstance(vertex, topologic.Vertex):
-            print("Cell.IsOutside - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
-            return None
-        try:
-            return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 2)
-        except:
-            print("Cell.IsOutside - Error: Could not determine if the input vertex is outside the input cell. Returning None.")
             return None
     
     @staticmethod
@@ -1563,8 +1463,8 @@ class Cell(Topology):
             octahedron = Topology.Translate(octahedron, 0, 0, radius)
         elif placement == "lowerleft":
             octahedron = Topology.Translate(octahedron, radius, radius, radius)
+        octahedron = Topology.Orient(octahedron, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
         octahedron = Topology.Place(octahedron, originA=Vertex.Origin(), originB=origin)
-        octahedron = Topology.Orient(octahedron, origin=origin, dirA=[0,0,1], dirB=direction)
         return octahedron
     
     @staticmethod
@@ -1873,6 +1773,8 @@ class Cell(Topology):
             The classified list of input cells based on their encolsure within the input list of super cells.
 
         """
+
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
         if not isinstance(cells, list):
@@ -1907,7 +1809,7 @@ class Cell(Topology):
             if unused[i]:
                 iv = Topology.InternalVertex(cells[i], tolerance=tolerance)
                 for j in range(len(superCells)):
-                    if (Cell.IsInternal(superCells[j], iv, tolerance)):
+                    if (Vertex.IsInternal(iv, superCells[j], tolerance)):
                         sets[j].append(cells[i])
                         unused[i] = False
         return sets
@@ -1984,8 +1886,8 @@ class Cell(Topology):
             sphere = Topology.Translate(sphere, 0, 0, radius)
         elif placement.lower() == "lowerleft":
             sphere = Topology.Translate(sphere, radius, radius, radius)
+        sphere = Topology.Orient(sphere, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
         sphere = Topology.Place(sphere, originA=Vertex.Origin(), originB=origin)
-        sphere = Topology.Orient(sphere, origin=origin, dirA=[0,0,1], dirB=direction)
         return sphere
     
     @staticmethod
@@ -2117,8 +2019,8 @@ class Cell(Topology):
         elif placement.lower() == "lowerleft":
             torus = Topology.Translate(torus, majorRadius, majorRadius, minorRadius)
 
+        torus = Topology.Orient(torus, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
         torus = Topology.Place(torus, originA=Vertex.Origin(), originB=origin)
-        torus = Topology.Orient(torus, origin=origin, dirA=[0,0,1], dirB=direction)
         return torus
     
     @staticmethod

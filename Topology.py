@@ -129,6 +129,7 @@ class WorkerProcess(Process):
         self.tolerance = tolerance
 
     def run(self):
+        from topologicpy.Vertex import Vertex
         for sink_item in self.sinks:
             sink = Topology.ByBREPString(sink_item.sink_str)
             sinkKeys = []
@@ -138,9 +139,9 @@ class WorkerProcess(Process):
                 source = Topology.ByBREPString(source_str)
                 flag = False
                 if isinstance(source, topologic.Vertex):
-                    flag = Topology.IsInternal(sink, source, self.tolerance)
+                    flag = Vertex.IsInternal(source, sink, self.tolerance)
                 else:
-                    flag = Topology.IsInternal(source, iv, self.tolerance)
+                    flag = Vertex.IsInternal(iv, source, self.tolerance)
                 if flag:
                     d = Dictionary.ByPythonDictionary(self.so_dicts[j])
                     if d == None:
@@ -883,7 +884,267 @@ class Topology():
         See Topology.Boolean().
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="intersect", tranDict=tranDict, tolerance=tolerance)
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Cluster import Cluster
+        # Sort the two topologies by their type from lower to higher so comparison can be eased.
+        if Topology.Type(topologyB) < Topology.Type(topologyA):
+            temp = topologyA
+            topologyA = topologyB
+            topologyB = temp
+        # Vertex:
+        if isinstance(topologyA, topologic.Vertex):
+            # Vertex:
+            if isinstance(topologyB, topologic.Vertex):
+                if Vertex.Distance(topologyA, topologyB) < tolerance:
+                    return topologyA
+                else:
+                    return None
+            # Edge/Wire/Face/Shell/Cell/CellComplex:
+            elif Topology.Type(topologyB) < 256:
+                if Vertex.IsInternal(topologyA, topologyB):
+                    return topologyA
+                else:
+                    return None
+            # Cluster:
+            elif isinstance(topologyB, topologic.Cluster):
+                free_topologies = Cluster.FreeTopologies(topologyB)
+                for f_t in free_topologies:
+                    if not Topology.Intersect(topologyA, f_t) == None:
+                        return topologyA
+                return None
+        # Edge:
+        elif isinstance(topologyA, topologic.Edge):
+            if isinstance(topologyB, topologic.Shell):
+                vertices = Topology.Vertices(topologyB)
+                edges = Topology.Edges(topologyB)
+                faces = Topology.Faces(topologyB)
+                intersections = [topologyA.Intersect(x) for x in vertices]
+                intersections += [topologyA.Intersect(x) for x in edges]
+                intersections += [topologyA.Intersect(x) for x in faces]
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            elif isinstance(topologyB, topologic.CellComplex):
+                vertices = Topology.Vertices(topologyB)
+                edges = Topology.Edges(topologyB)
+                faces = Topology.Faces(topologyB)
+                cells = Topology.Cells(topologyB)
+                intersections = [topologyA.Intersect(x) for x in vertices]
+                intersections += [topologyA.Intersect(x) for x in edges]
+                intersections += [topologyA.Intersect(x) for x in faces]
+                intersections += [topologyA.Intersect(x) for x in cells]
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            elif isinstance(topologyB, topologic.Cluster):
+                free_topologies = Cluster.FreeTopologies(topologyB)
+                intersections = []
+                for f_t in free_topologies:
+                    intersections.append(Topology.Intersect(topologyA, f_t))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            else:
+                return topologyA.Intersect(topologyB)
+        # Wire:
+        elif isinstance(topologyA, topologic.Wire):
+            if isinstance(topologyB, topologic.Face):
+                edges = Topology.Edges(topologyA)
+                intersections = []
+                for edge in edges:
+                    intersections.append(Topology.Intersect(edge, topologyB))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            elif isinstance(topologyB, topologic.Wire):
+                edges_a = Topology.Edges(topologyA)
+                intersections = []
+                for edge_a in edges_a:
+                    vertices = Topology.Vertices(topologyB)
+                    edges = Topology.Edges(topologyB)
+                    intersections += [edge_a.Intersect(x) for x in vertices]
+                    intersections += [edge_a.Intersect(x) for x in edges]
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            elif isinstance(topologyB, topologic.Shell):
+                edges_a = Topology.Edges(topologyA)
+                intersections = []
+                for edge_a in edges_a:
+                    vertices = Topology.Vertices(topologyB)
+                    edges = Topology.Edges(topologyB)
+                    faces = Topology.Faces(topologyB)
+                    intersections += [edge_a.Intersect(x) for x in vertices]
+                    intersections += [edge_a.Intersect(x) for x in edges]
+                    intersections += [edge_a.Intersect(x) for x in faces]
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            elif isinstance(topologyB, topologic.Cell):
+                edges = Topology.Edges(topologyA)
+                intersections = []
+                for edge in edges:
+                    intersections.append(Topology.Intersect(edge, topologyB))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            elif isinstance(topologyB, topologic.CellComplex):
+                edges = Topology.Edges(topologyA)
+                intersections = []
+                for edge in edges:
+                    intersections.append(Topology.Intersect(edge, topologyB))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            elif isinstance(topologyB, topologic.Cluster):
+                free_topologies = Cluster.FreeTopologies(topologyB)
+                intersections = []
+                for f_t in free_topologies:
+                    intersections.append(Topology.Intersect(topologyA, f_t))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+        # Face:
+        elif isinstance(topologyA, topologic.Face):
+            if isinstance(topologyB, topologic.Face):
+                return Topology.SelfMerge(topologyA.Intersect(topologyB), tolerance=tolerance)
+            elif isinstance(topologyB, topologic.Shell):
+                intersections = []
+                faces = Topology.Faces(topologyB)
+                for face in faces:
+                    inter = Topology.Intersect(topologyA, face)
+                    if isinstance(inter, topologic.Cluster):
+                        inter = Topology.SelfMerge(inter, tolerance=tolerance)
+                    intersections.append(inter)
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            elif isinstance(topologyB, topologic.Cell):
+                diff1 = Topology.Difference(topologyA, topologyB)
+                if diff1 == None:
+                    return topologyA
+                else:
+                    return Topology.Difference(topologyA,diff1)
+            elif isinstance(topologyB, topologic.CellComplex):
+                cells = Topology.Cells(topologyB)
+                intersections = []
+                for cell in cells:
+                    intersections.append(Topology.Intersect(topologyA, cell))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            elif isinstance(topologyB, topologic.Cluster):
+                free_topologies = Cluster.FreeTopologies(topologyB)
+                intersections = []
+                for f_t in free_topologies:
+                    intersections.append(Topology.Intersect(topologyA, f_t))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            else:
+                return Topology.SelfMerge(topologyA.Intersect(topologyB), tolerance=tolerance)
+        # Shell:
+        elif isinstance(topologyA, topologic.Shell):
+            if isinstance(topologyB, topologic.Shell) or isinstance(topologyB, topologic.Cell) or isinstance(topologyB, topologic.CellComplex):
+                intersections = []
+                faces = Topology.Faces(topologyA)
+                for face in faces:
+                    inter = Topology.Intersect(face, topologyB)
+                    if isinstance(inter, topologic.Cluster):
+                        inter = Topology.SelfMerge(inter, tolerance=tolerance)
+                    intersections.append(inter)
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+            elif isinstance(topologyB, topologic.Cluster):
+                free_topologies = Cluster.FreeTopologies(topologyB)
+                intersections = []
+                for f_t in free_topologies:
+                    intersections.append(Topology.Intersect(topologyA, f_t))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+        # Cell:
+        elif isinstance(topologyA, topologic.Cell):
+            if isinstance(topologyB, topologic.Cell) or isinstance(topologyB, topologic.CellComplex):
+                vertices = Topology.Vertices(topologyA)
+                edges = Topology.Edges(topologyA)
+                faces = Topology.Faces(topologyA)
+                subs = vertices + edges + faces
+                diff1 = Topology.Difference(topologyA,topologyB)
+                diff2 = Topology.Difference(topologyA, diff1)
+                intersections = []
+                if not diff2 == None:
+                    intersections.append(diff2)
+                for i, sub in enumerate(subs):
+                    inter = Topology.Intersect(sub, topologyB)
+                    if isinstance(inter, topologic.Cluster):
+                        inter = Topology.SelfMerge(inter, tolerance=tolerance)
+                    intersections.append(inter)
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance), tolerance=tolerance) # Hack to return proper topology type
+            elif isinstance(topologyB, topologic.Cluster):
+                free_topologies = Cluster.FreeTopologies(topologyB)
+                intersections = []
+                for f_t in free_topologies:
+                    intersections.append(Topology.Intersect(topologyA, f_t))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+        # CellComplex:
+        elif isinstance(topologyA, topologic.CellComplex):
+            if isinstance(topologyB, topologic.CellComplex):
+                intersections = []
+                cells_a = Topology.Cells(topologyA)
+                cells_b = Topology.Cells(topologyB)
+                for cell_a in cells_a:
+                    for cell_b in cells_b:
+                        intersections.append(Topology.Intersect(cell_a, cell_b))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance), tolerance=tolerance) # Hack to return proper topology type
+            elif isinstance(topologyB, topologic.Cluster):
+                free_topologies = Cluster.FreeTopologies(topologyB)
+                intersections = []
+                for f_t in free_topologies:
+                    intersections.append(Topology.Intersect(topologyA, f_t))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+        # Cluster:
+        elif isinstance(topologyA, topologic.Cluster):
+            if isinstance(topologyB, topologic.Cluster):
+                free_topologies_a = Cluster.FreeTopologies(topologyA)
+                free_topologies_b = Cluster.FreeTopologies(topologyB)
+                intersections = []
+                for f_t_a in free_topologies_a:
+                    for f_t_b in free_topologies_b:
+                        intersections.append(Topology.Intersect(f_t_a, f_t_b))
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+                return Topology.SelfMerge(Cluster.ByTopologies(intersections), tolerance=tolerance)
+        else:
+            return topologyA.Intersect(topologyB)
     
     @staticmethod
     def SymmetricDifference(topologyA, topologyB, tranDict=False, tolerance=0.0001):
@@ -996,8 +1257,9 @@ class Topology():
                 topologyC = topologyA.Union(topologyB, False)
             elif operation.lower() == "difference":
                 topologyC = topologyA.Difference(topologyB, False)
-            elif operation.lower() == "intersect":
-                topologyC = topologyA.Intersect(topologyB, False)
+            elif operation.lower() == "intersect": #Intersect in Topologic (Core) is faulty. This is a workaround.
+                #topologyC = topologyA.Intersect(topologyB, False)
+                topologyC = Topology.Intersect(topologyA, topologyB)
             elif operation.lower() == "symdif":
                 topologyC = topologyA.XOR(topologyB, False)
             elif operation.lower() == "merge":
@@ -3834,9 +4096,10 @@ class Topology():
                 otherTopologies.append(aTopology)
         return {"filtered": filteredTopologies, "other": otherTopologies}
 
+    @staticmethod
     def Flatten(topology, origin=None, direction=[0,0,1]):
         """
-        Flattens the input topology such that the input origin is located at the world origin and the input topology is rotated such that the input vector is pointed in the positive Z axis.
+        Flattens the input topology such that the input origin is located at the world origin and the input topology is rotated such that the input vector is pointed in the Up direction (see Vector.Up()).
 
         Parameters
         ----------
@@ -3854,34 +4117,17 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Vector import Vector
 
         if not isinstance(topology, topologic.Topology):
             print("Topology.Flatten - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        world_origin = Vertex.Origin()
         if origin == None:
             origin = Topology.Centroid(topology)
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + direction[0]
-        y2 = origin.Y() + direction[1]
-        z2 = origin.Z() + direction[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        flat_topology = Topology.Translate(topology, -origin.X(), -origin.Y(), -origin.Z())
-        flat_topology = Topology.Rotate(flat_topology, world_origin, 0, 0, 1, -phi)
-        flat_topology = Topology.Rotate(flat_topology, world_origin, 0, 1, 0, -theta)
-        d = Dictionary.ByKeysValues(['phi', 'theta', 'x', 'y', 'z'], [phi, theta, origin.X(), origin.Y(), origin.Z()])
-        flat_topology = Topology.SetDictionary(flat_topology, d)
+        up = Vector.Up()
+        flat_topology = Topology.Translate(topology, -Vertex.X(origin), -Vertex.Y(origin), -Vertex.Z(origin))
+        tran_mat = Vector.TransformationMatrix(direction, up)
+        flat_topology = Topology.Transform(flat_topology, tran_mat)
         return flat_topology
     
     @staticmethod
@@ -4089,106 +4335,6 @@ class Topology():
         else:
             vst = Topology.Centroid(topology)
         return vst
-
-    @staticmethod
-    def IsInside(topology, vertex, tolerance=0.0001):
-        """
-        DEPRECATED METHOD. DO NOT USE. INSTEAD USE Topology.IsInternal.
-        """
-        print("Topology.IsInside - Warning: Deprecated method. This method will be removed in the future. Instead, use Topology.IsInternal.")
-        return Topology.IsInternal(topology=topology, vertex=vertex, tolerance=tolerance)
-    
-    @staticmethod
-    def IsInternal(topology, vertex, tolerance=0.0001):
-        """
-        Returns True if the input vertex is an internal vertex of the input topology. Returns False otherwise.
-
-        Parameters
-        ----------
-        topology : topologic.Topology
-            The input topology.
-        vertex : topologic.Vertex
-            The input Vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            True if the input vertex is inside the input topology. False otherwise.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
-        from topologicpy.Face import Face
-        from topologicpy.Cell import Cell
-        from topologicpy.Shell import Shell
-        from topologicpy.CellComplex import CellComplex
-        from topologicpy.Cluster import Cluster
-        
-        if not isinstance(topology, topologic.Topology):
-            print("Topology.IsInternal - Error: the input topology parameter is not a valid topology. Returning None.")
-            return None
-        if not isinstance(vertex, topologic.Vertex):
-            print("Topology.IsInternal - Error: the input vertex parameter is not a valid vertex. Returning None.")
-            return None
-        is_internal = False
-        if topology.Type() == topologic.Vertex.Type():
-            try:
-                is_internal = (Vertex.Distance(vertex, topology) <= tolerance)
-            except:
-                is_internal = False
-            return is_internal
-        elif topology.Type() == topologic.Edge.Type():
-            u = Edge.ParameterAtVertex(topology, vertex)
-            d = Vertex.Distance(vertex, topology)
-            if not u == None:
-                is_internal = (0 <= u <= 1) and (d <= tolerance)              
-            else:
-                is_internal = False
-            return is_internal
-        elif topology.Type() == topologic.Wire.Type():
-            edges = Wire.Edges(topology)
-            for edge in edges:
-                is_internal = (Vertex.Distance(vertex, edge) <= tolerance)
-                if is_internal:
-                    return is_internal
-        elif topology.Type() == topologic.Face.Type():
-            return Face.IsInternal(topology, vertex, tolerance)
-        elif topology.Type() == topologic.Shell.Type():
-            faces = Shell.Faces(topology)
-            for face in faces:
-                is_internal = Face.IsInternal(face, vertex, tolerance)
-                if is_internal:
-                    return is_internal
-        elif topology.Type() == topologic.Cell.Type():
-            return Cell.IsInternal(topology, vertex, tolerance)
-        elif topology.Type() == topologic.CellComplex.Type():
-            cells = CellComplex.Cells(topology)
-            for cell in cells:
-                is_internal = Cell.IsInternal(cell, vertex, tolerance)
-                if is_internal:
-                    return is_internal
-        elif topology.Type() == topologic.Cluster.Type():
-            cells = Cluster.Cells(topology)
-            faces = Cluster.Faces(topology)
-            edges = Cluster.Edges(topology)
-            vertices = Cluster.Vertices(topology)
-            subTopologies = []
-            if isinstance(cells, list):
-                subTopologies += cells
-            if isinstance(faces, list):
-                subTopologies += faces
-            if isinstance(edges, list):
-                subTopologies += edges
-            if isinstance(vertices, list):
-                subTopologies += vertices
-            for subTopology in subTopologies:
-                is_internal = Topology.IsInternal(subTopology, vertex, tolerance)
-                if is_internal:
-                    return is_internal
-        return False
 
     @staticmethod
     def IsPlanar(topology, tolerance=0.0001):
@@ -4482,33 +4628,17 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Vector import Vector
         if not isinstance(topology, topologic.Topology):
             print("Topology.Orient - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if not isinstance(origin, topologic.Vertex):
             origin = Topology.Centroid(topology)
-        topology = Topology.Flatten(topology, origin=origin, direction=dirA)
-        x1 = origin.X()
-        y1 = origin.Y()
-        z1 = origin.Z()
-        x2 = origin.X() + dirB[0]
-        y2 = origin.Y() + dirB[1]
-        z2 = origin.Z() + dirB[2]
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1    
-        dist = math.sqrt(dx**2 + dy**2 + dz**2)
-        world_origin = Vertex.ByCoordinates(0,0,0)
-
-        phi = math.degrees(math.atan2(dy, dx)) # Rotation around Y-Axis
-        if dist < 0.0001:
-            theta = 0
-        else:
-            theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        returnTopology = Topology.Rotate(topology, world_origin, 0, 1, 0, theta)
-        returnTopology = Topology.Rotate(returnTopology, world_origin, 0, 0, 1, phi)
-        returnTopology = Topology.Place(returnTopology, world_origin, origin)
-        return returnTopology
+        return_topology = Topology.Place(topology, originA=origin, originB=Vertex.Origin())
+        tran_mat = Vector.TransformationMatrix(dirA, dirB)
+        return_topology = Topology.Transform(return_topology, tran_mat)
+        return_topology = Topology.Place(return_topology, originA=Vertex.Origin(), originB=origin)
+        return return_topology
 
     @staticmethod
     def Place(topology, originA=None, originB=None):
@@ -4604,7 +4734,7 @@ class Topology():
             faces = Topology.Faces(topology)
             for face in faces:
                 topologies.append(Face.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance))
-            return_topology = Topology.SelfMerge(Cluster.ByTopologies(topologies))
+            return_topology = Topology.SelfMerge(Cluster.ByTopologies(topologies), tolerance=tolerance)
         return return_topology
 
     @staticmethod
@@ -4699,7 +4829,7 @@ class Topology():
         face_clusters = cluster_faces_on_planes(faces, epsilon=epsilon)
         final_faces = []
         for face_cluster in face_clusters:
-            t = Topology.SelfMerge(Cluster.ByTopologies(face_cluster))
+            t = Topology.SelfMerge(Cluster.ByTopologies(face_cluster), tolerance=tolerance)
             if isinstance(t, topologic.Face):
                 #final_faces.append(Face.RemoveCollinearEdges(t))
                 final_faces.append(t)
@@ -4864,9 +4994,9 @@ class Topology():
             The input topology with the identified faces removed.
 
         """
-
+        from topologic.Vertex import Vertex
         from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
+
         if not isinstance(topology, topologic.Topology):
             return None
         selectors = [v for v in selectors if isinstance(v, topologic.Vertex)]
@@ -4877,7 +5007,7 @@ class Topology():
         for t_f in t_faces:
             remove = False
             for i, v in enumerate(selectors):
-                if Face.IsInternal(face=t_f, vertex=v, tolerance=tolerance):
+                if Vertex.IsInternal(v, t_f, tolerance=tolerance):
                     remove = True
                     selectors = selectors[:i]+ selectors[i:]
                     break
@@ -5178,7 +5308,7 @@ class Topology():
 
     
     @staticmethod
-    def SelfMerge(topology, tolerance=0.0001):
+    def SelfMerge(topology, transferDictionaries: bool = False, tolerance: float = 0.0001):
         """
         Self merges the input topology to return the most logical topology type given the input data.
 
@@ -5968,6 +6098,40 @@ class Topology():
         return return_topology
     
     @staticmethod
+    def Unflatten(topology, origin=None, direction=[0,0,1]):
+        """
+        Unflattens the input topology such that the world origin is translated to the input origin and the input topology is rotated such that the Up direction (see Vector.Up()) is aligned with the input vector.
+
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        origin : topologic.Vertex , optional
+            The input origin. If set to None, The object's centroid will be used to translate the world origin. The default is None.
+        vector : list , optional
+            The input direction vector. The input topology will be rotated such that this vector is pointed in the positive Z axis.
+
+        Returns
+        -------
+        topologic.Topology
+            The flattened topology.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Vector import Vector
+
+        if not isinstance(topology, topologic.Topology):
+            print("Topology.Unflatten - Error: the input topology parameter is not a valid topology. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        up = Vector.Up()
+        tran_mat = Vector.TransformationMatrix(up, direction)
+        unflat_topology = Topology.Transform(topology, tran_mat)
+        unflat_topology = Topology.Translate(unflat_topology, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+        return unflat_topology
+    
+    @staticmethod
     def Vertices(topology):
         """
         Returns the vertices of the input topology.
@@ -6554,7 +6718,7 @@ class Topology():
                 return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
         
         if return_topology == None:
-            return_topology = Topology.SelfMerge(Cluster.ByTopologies(faceTriangles))
+            return_topology = Topology.SelfMerge(Cluster.ByTopologies(faceTriangles), tolerance=tolerance)
             if transferDictionaries == True:
                 return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
         
