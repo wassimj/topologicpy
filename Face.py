@@ -535,7 +535,7 @@ class Face(Topology):
         return Face.ByVertices(vertices)
 
     @staticmethod
-    def ByWire(wire: topologic.Wire, tolerance: float = 0.0001) -> topologic.Face:
+    def ByWire(wire: topologic.Wire, tolerance: float = 0.0001, silent=False) -> topologic.Face:
         """
         Creates a face from the input closed wire.
 
@@ -545,6 +545,8 @@ class Face(Topology):
             The input wire.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
 
         Returns
         -------
@@ -569,21 +571,24 @@ class Face(Topology):
             else:
                 return []
         if not isinstance(wire, topologic.Wire):
-            print("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            if not silent:
+                print("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
         if not Wire.IsClosed(wire):
-            print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
+            if not silent:
+                print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
             return None
         
         edges = Wire.Edges(wire)
         wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
-        vertices = Wire.Vertices(wire)
+        vertices = Topology.Vertices(wire)
         fList = []
         if isinstance(wire, topologic.Wire):
             try:
                 fList = topologic.Face.ByExternalBoundary(wire)
             except:
-                print("Face.ByWire - Warning: Could not create face by external boundary. Trying other methods.")
+                if not silent:
+                    print("Face.ByWire - Warning: Could not create face by external boundary. Trying other methods.")
                 if len(vertices) > 3:
                     fList = triangulateWire(wire)
                 else:
@@ -605,11 +610,14 @@ class Face(Topology):
             else:
                 returnList.append(f)
         if len(returnList) == 0:
-            print("Face.ByWire - Error: Could not build a face from the input wire parameter. Returning None.")
+            if not silent:
+                print("Face.ByWire - Error: Could not build a face from the input wire parameter. Returning None.")
             return None
         elif len(returnList) == 1:
             return returnList[0]
         else:
+            if not silent:
+                print("Face.ByWire - Warning: Could not build a single face from the input wire parameter. Returning a list of faces.")
             return returnList
 
     @staticmethod

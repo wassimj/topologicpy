@@ -493,7 +493,7 @@ class Wire(Topology):
                                 miterEdge = Edge.SetLength(miterEdge, abs(offset)*10)
                                 msv = Edge.Intersect2D(miterEdge, e1)
                                 mev = Edge.Intersect2D(miterEdge, e2)
-                                if (Topology.IsInternal(e1, msv,tolerance=0.01) and (Topology.IsInternal(e2, mev, tolerance=0.01))):
+                                if (Vertex.IsInternal(msv, e1,tolerance=0.01) and (Vertex.IsInternal(mev, e2, tolerance=0.01))):
                                     miterEdge = Edge.ByVertices([msv, mev], tolerance=tolerance)
                                     if miterEdge:
                                         cleanMiterEdges.append(miterEdge)
@@ -2855,7 +2855,7 @@ class Wire(Topology):
         if not isinstance(origin, topologic.Vertex):
             print("Wire.VertexDistance - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
-        if not Topology.IsInternal(wire, vertex, tolerance=tolerance):
+        if not Vertex.IsInternal(vertex, wire, tolerance=tolerance):
             print("Wire.VertexDistance: The input vertex parameter is not internal to the input wire parameter. Returning None.")
             return None
         
@@ -2864,7 +2864,7 @@ class Wire(Topology):
             found = False
             # Iterate over the edges of the wire
             for edge in Wire.Edges(wire):
-                if Topology.IsInternal(edge, v, tolerance=tolerance):
+                if Vertex.IsInternal(v, edge, tolerance=tolerance):
                     total_distance += Vertex.Distance(Edge.StartVertex(edge), v)
                     found = True
                     break

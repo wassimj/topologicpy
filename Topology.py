@@ -1085,8 +1085,14 @@ class Topology():
                 edges = Topology.Edges(topologyA)
                 faces = Topology.Faces(topologyA)
                 subs = vertices + edges + faces
-                diff1 = Topology.Difference(topologyA,topologyB)
-                diff2 = Topology.Difference(topologyA, diff1)
+                if isinstance(topologyB, topologic.Topology):
+                    diff1 = Topology.Difference(topologyA,topologyB)
+                else:
+                    diff1 = topologyA
+                if isinstance(diff1, topologic.Topology):
+                    diff2 = Topology.Difference(topologyA, diff1)
+                else:
+                    diff2 = topologyA
                 intersections = []
                 if not diff2 == None:
                     intersections.append(diff2)
@@ -1241,6 +1247,9 @@ class Topology():
             return None
         if not isinstance(topologyB, topologic.Topology):
             print("Topology.Boolean - Error: the input topologyB parameter is not a valid topology. Returning None.")
+            print("TopologyA:", topologyA)
+            print("TopologyB:", topologyB)
+            Topology.Show(topologyA, renderer="offline")
             return None
         if not isinstance(operation, str):
             print("Topology.Boolean - Error: the input operation parameter is not a valid string. Returning None.")
@@ -1665,8 +1674,11 @@ class Topology():
                 if len(faceEdges) > 2:
                     faceWire = Wire.ByEdges(faceEdges, tolerance=tolerance)
                     try:
-                        topFace = Face.ByWire(faceWire, tolerance=tolerance)
-                        topFaces.append(topFace)
+                        topFace = Face.ByWire(faceWire, tolerance=tolerance, silent=True)
+                        if isinstance(topFace, topologic.Face):
+                            topFaces.append(topFace)
+                        elif isinstance(topFace, list):
+                            topFaces += topFace
                     except:
                         pass
             if len(topFaces) > 0:
@@ -2489,7 +2501,7 @@ class Topology():
             topology = Topology.ByGeometry(vertices = vertices, faces = faces, outputMode="default", tolerance=tolerance)
             if transposeAxes == True:
                 topology = Topology.Rotate(topology, Vertex.Origin(), 1,0,0,90)
-            return topology
+            return Topology.SelfMerge(topology)
         print("Topology.ByOBJString - Error: Could not find vertices or faces. Returning None.")
         return None
 
@@ -3952,6 +3964,7 @@ class Topology():
         lines = []
         version = Helper.Version()
         lines.append("# topologicpy "+version)
+        topology = Topology.Triangulate(topology, tolerance=tolerance)
         d = Topology.Geometry(topology, mantissa=mantissa)
         vertices = d['vertices']
         faces = d['faces']
@@ -5851,6 +5864,8 @@ class Topology():
             A dictionary containing the list of sorted and unsorted topologies. The keys are "sorted" and "unsorted".
 
         """
+
+        from topologicpy.Vertex import Vertex
         usedTopologies = []
         sortedTopologies = []
         unsortedTopologies = []
@@ -5861,7 +5876,7 @@ class Topology():
             found = False
             for j in range(len(topologies)):
                 if usedTopologies[j] == 0:
-                    if Topology.IsInternal(topologies[j], selectors[i], tolerance):
+                    if Vertex.IsInternal( selectors[i], topologies[j], tolerance):
                         sortedTopologies.append(topologies[j])
                         if exclusive == True:
                             usedTopologies[j] = 1

@@ -359,7 +359,11 @@ class Graph:
             new_vertices.append(nv)
         new_edge = Edge.ByVertices([new_vertices[0], new_vertices[1]], tolerance=tolerance)
         if transferEdgeDictionaries == True:
-            _ = Topology.SetDictionary(new_edge, Topology.Dictionary(edge))
+            d = Topology.Dictionary(edge)
+            keys = Dictionary.Keys(d)
+            if isinstance(keys, list):
+                if len(keys) > 0:
+                    _ = Topology.SetDictionary(new_edge, d)
         graph_edges.append(new_edge)
         new_graph = Graph.ByVerticesEdges(graph_vertices, graph_edges)
         return new_graph
@@ -3159,7 +3163,108 @@ class Graph:
                 d = Dictionary.SetValueAtKey(d, newKey, colors[i])
                 v = Topology.SetDictionary(v,d)
         return graph
+    
+    @staticmethod
+    def ContractEdge(graph, edge, vertex=None, tolerance=0.0001):
+        """
+        Contracts the input edge in the input graph into a single vertex. Please note that the dictionary of the edge is transferred to the
+        vertex that replaces it. See https://en.wikipedia.org/wiki/Edge_contraction
 
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        edge : topologic.Edge
+            The input graph edge that needs to be contracted.
+        vertex : topollogic.Vertex , optional
+            The vertex to replace the contracted edge. If set to None, the centroid of the edge is chosen. The default is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Graph
+            The input graph, but with input edge contracted into a single vertex.
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        def OppositeVertex(edge, vertex, tolerance=0.0001):
+            sv = Edge.StartVertex(edge)
+            ev = Edge.EndVertex(edge)
+            d1 = Vertex.Distance(vertex, sv)
+            d2 = Vertex.Distance(vertex, ev)
+            if d1 < d2:
+                return [ev,1]
+            return [sv,0]
+        if not isinstance(graph, topologic.Graph):
+            print("Graph.ContractEdge - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(edge, topologic.Edge):
+            print("Graph.ContractEdge - Error: The input edge parameter is not a valid edge. Returning None.")
+            return None
+        if vertex == None:
+            vertex = Topology.Centroid(edge)
+        sv = Edge.StartVertex(edge)
+        ev = Edge.EndVertex(edge)
+        vd = Topology.Dictionary(vertex)
+        sd = Topology.Dictionary(sv)
+        dictionaries = []
+        keys = Dictionary.Keys(vd)
+        if isinstance(keys, list):
+            if len(keys) > 0:
+                dictionaries.append(vd)
+        keys = Dictionary.Keys(sd)
+        if isinstance(keys, list):
+            if len(keys) > 0:
+                dictionaries.append(sd)
+        ed = Topology.Dictionary(ev)
+        keys = Dictionary.Keys(ed)
+        if isinstance(keys, list):
+            if len(keys) > 0:
+                dictionaries.append(ed)
+        if len(dictionaries) == 1:
+            vertex = Topology.SetDictionary(vertex, dictionaries[0])
+        elif len(dictionaries) > 1:
+            cd = Dictionary.ByMergedDictionaries(dictionaries)
+            vertex = Topology.SetDictionary(vertex, cd)
+        graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance)
+        graph = Graph.AddVertex(graph, vertex, tolerance=tolerance)
+        adj_edges_sv = Graph.Edges(graph, [sv])
+        adj_edges_ev = Graph.Edges(graph, [ev])
+        new_edges = []
+        for adj_edge_sv in adj_edges_sv:
+            ov, flag = OppositeVertex(adj_edge_sv, sv)
+            if flag == 0:
+                new_edge = Edge.ByVertices([ov, vertex])
+            else:
+                new_edge = Edge.ByVertices([vertex, ov])
+            d = Topology.Dictionary(adj_edge_sv)
+            keys = Dictionary.Keys(d)
+            if isinstance(keys, list):
+                if len(keys) > 0:
+                    new_edge = Topology.SetDictionary(new_edge, d)
+            new_edges.append(new_edge)
+        for adj_edge_ev in adj_edges_ev:
+            ov, flag = OppositeVertex(adj_edge_ev, ev)
+            if flag == 0:
+                new_edge = Edge.ByVertices([ov, vertex])
+            else:
+                new_edge = Edge.ByVertices([vertex, ov])
+            d = Topology.Dictionary(adj_edge_ev)
+            keys = Dictionary.Keys(d)
+            if isinstance(keys, list):
+                if len(keys) > 0:
+                    new_edge = Topology.SetDictionary(new_edge, d)
+            new_edges.append(new_edge)
+        for new_edge in new_edges:
+            graph = Graph.AddEdge(graph, new_edge, transferVertexDictionaries=True, transferEdgeDictionaries=True, tolerance=tolerance)
+        graph = Graph.RemoveVertex(graph,sv, tolerance=tolerance)
+        graph = Graph.RemoveVertex(graph,ev, tolerance=tolerance)
+        return graph
+    
     @staticmethod
     def ClosenessCentrality(graph, vertices=None, tolerance = 0.0001):
         """

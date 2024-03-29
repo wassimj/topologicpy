@@ -449,7 +449,10 @@ class Edge(Topology):
             The extended edge.
 
         """
+
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+
         if not isinstance(edgeA, topologic.Edge):
             print("Edge.ExtendToEdge2D - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
             return None
@@ -459,7 +462,7 @@ class Edge(Topology):
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
         intVertex = Edge.Intersect2D(edgeA, edgeB)
-        if intVertex and not (Topology.IsInternal(edgeA, intVertex)):
+        if intVertex and not (Vertex.IsInternal(intVertex, edgeA)):
             e1 = Edge.ByVertices([sva, intVertex], tolerance=tolerance, silent=True)
             e2 = Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=True)
             l1 = Edge.Length(e1)
@@ -1071,7 +1074,7 @@ class Edge(Topology):
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
         intVertex = Edge.Intersect2D(edgeA, edgeB)
-        if intVertex and (Topology.IsInternal(edgeA, intVertex)):
+        if intVertex and (Vertex.IsInternal(intVertex, edgeA)):
             if reverse:
                 return Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=True)
             else:

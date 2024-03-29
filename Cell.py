@@ -161,9 +161,11 @@ class Cell(Topology):
                     face_vertices.append(all_vertices[index])
             new_w = Wire.ByVertices(face_vertices)
             if isinstance(new_w, topologic.Wire):
-                new_f = Face.ByWire(new_w)
+                new_f = Face.ByWire(new_w, silent=True)
                 if isinstance(new_f, topologic.Face):
                     new_faces.append(new_f)
+                elif isinstance(new_f, list):
+                    new_faces += new_f
         faceList = new_faces
         planarizedList = []
         enlargedList = []
@@ -183,9 +185,11 @@ class Cell(Topology):
             for f in finalFaces:
                 vertices = Face.Vertices(f)
                 w = Wire.Cycles(Face.ExternalBoundary(f), maxVertices=len(vertices))[0]
-                f1 = Face.ByWire(w, tolerance=tolerance)
+                f1 = Face.ByWire(w, tolerance=tolerance, silent=True)
                 if isinstance(f1, topologic.Face):
                     finalFinalFaces.append(f1)
+                elif isinstance(f1, list):
+                    finalFinalFaces += f1
             cell = topologic.Cell.ByFaces(finalFinalFaces, tolerance)
             if cell == None:
                 if not silent:
