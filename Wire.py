@@ -2906,6 +2906,21 @@ class Wire(Topology):
 
         """
         from topologicpy.Vertex import Vertex
+        def compute_u(u):
+            def count_decimal_places(number):
+                try:
+                    # Convert the number to a string to analyze decimal places
+                    num_str = str(number)
+                    # Split the number into integer and decimal parts
+                    integer_part, decimal_part = num_str.split('.')
+                    # Return the length of the decimal part
+                    return len(decimal_part)
+                except ValueError:
+                    # If there's no decimal part, return 0
+                    return 0
+            dp = count_decimal_places(u)
+            u = -(int(u) - u)
+            return round(u,dp)
 
         if not isinstance(wire, topologic.Wire):
             print("Wire.VertexByDistance - Error: The input wire parameter is not a valid topologic wire. Returning None.")
@@ -2918,9 +2933,9 @@ class Wire(Topology):
             return Wire.StartVertex(wire)
         if abs(distance - wire_length) < tolerance:
             return Wire.EndVertex(wire)
-        if abs(distance) > wire_length:
-            print("Wire.VertexByDistance - Error: The input distance parameter is larger than the wire's length. Returning None.")
-            return None
+        # if abs(distance) > wire_length:
+        #     print("Wire.VertexByDistance - Error: The input distance parameter is larger than the wire's length. Returning None.")
+        #     return None
         if not Wire.IsManifold(wire):
             print("Wire.VertexAtParameter - Error: The input wire parameter is non-manifold. Returning None.")
             return None
@@ -2929,17 +2944,18 @@ class Wire(Topology):
         if not isinstance(origin, topologic.Vertex):
             print("Wire.VertexByDistance - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
-        if not Wire.IsInternal(wire, origin, tolerance=tolerance):
+        if not Vertex.IsInternal(origin, wire, tolerance=tolerance):
             print("Wire.VertexByDistance - Error: The input origin parameter is not internal to the input wire parameter. Returning None.")
             return None
-        if distance < 0:
-            if Wire.VertexDistance(wire, Wire.StartVertex(wire), origin) < abs(distance):
-                print("Wire.VertexByDistance - Error: The resulting vertex would fall outside the wire. Returning None.")
-                return None
-        else:
-            if Wire.VertexDistance(wire, Wire.EndVertex(wire), origin) < distance:
-                print("Wire.VertexByDistance - Error: The resulting vertex would fall outside the wire. Returning None.")
-                return None
+        # if distance < 0:
+        #     if Wire.VertexDistance(wire, Wire.StartVertex(wire), origin) < abs(distance):
+        #         print("Wire.VertexByDistance - Error: The resulting vertex would fall outside the wire. Returning None.")
+        #         return None
+        # else:
+        #     if Wire.VertexDistance(wire, Wire.EndVertex(wire), origin) < distance:
+        #         print("Wire.VertexDistance:", Wire.VertexDistance(wire, Wire.EndVertex(wire), origin))
+        #         print("Wire.VertexByDistance - Error: The resulting vertex would fall outside the wire. Returning None.")
+        #         return None
         
         if Vertex.Distance(Wire.StartVertex(wire), origin) < tolerance:
             u = distance/wire_length
@@ -2948,7 +2964,8 @@ class Wire(Topology):
         else:
             d = Wire.VertexDistance(wire, origin) + distance
             u = d/wire_length
-        return Wire.VertexByParameter(wire, u=u)
+
+        return Wire.VertexByParameter(wire, u=compute_u(u))
     
     @staticmethod
     def VertexByParameter(wire: topologic.Wire, u: float = 0) -> topologic.Vertex:

@@ -914,7 +914,15 @@ class Topology():
                 return None
         # Edge:
         elif isinstance(topologyA, topologic.Edge):
-            if isinstance(topologyB, topologic.Shell):
+            if isinstance(topologyB, topologic.Wire):
+                vertices = Topology.Vertices(topologyB)
+                edges = Topology.Edges(topologyB)
+                intersections = [topologyA.Intersect(x) for x in vertices]
+                intersections += [topologyA.Intersect(x) for x in edges]
+                intersections = [x for x in intersections if not x == None]
+                if len(intersections) == 0:
+                    return None
+            elif isinstance(topologyB, topologic.Shell):
                 vertices = Topology.Vertices(topologyB)
                 edges = Topology.Edges(topologyB)
                 faces = Topology.Faces(topologyB)

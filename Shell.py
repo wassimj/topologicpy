@@ -659,18 +659,18 @@ class Shell(Topology):
 
         """
 
-        from topologicpy.Wire import Wire
+        from topologicpy.Vertex import Vertex
 
         if not isinstance(shell, topologic.Shell):
             return None
         if not isinstance(vertex, topologic.Vertex):
             return None
         boundary = Shell.ExternalBoundary(shell, tolerance=tolerance)
-        if Wire.IsInternal(wire=boundary, vertex=vertex, tolerance=tolerance):
+        if Vertex.IsInternal(vertex, boundary, tolerance=tolerance):
             return True
         internal_boundaries = Shell.InternalBoundaries(shell, tolerance=tolerance)
         for ib in internal_boundaries:
-            if Wire.IsInternal(wire=ib, vertex=vertex, tolerance=tolerance):
+            if Vertex.IsInternal(vertex, ib, tolerance=tolerance):
                 return True
         return False
     
