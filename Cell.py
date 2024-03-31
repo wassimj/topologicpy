@@ -1092,6 +1092,90 @@ class Cell(Topology):
         return edges
 
     @staticmethod
+    def Egg(origin: topologic.Vertex = None, height: float = 1.0, uSides: int = 16, vSides: int = 8, direction: list = [0,0,1],
+                   placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+        """
+        Creates a sphere.
+
+        Parameters
+        ----------
+        origin : topologic.Vertex , optional
+            The origin location of the sphere. The default is None which results in the sphere being placed at (0,0,0).
+        radius : float , optional
+            The radius of the sphere. The default is 0.5.
+        uSides : int , optional
+            The number of sides along the longitude of the sphere. The default is 16.
+        vSides : int , optional
+            The number of sides along the latitude of the sphere. The default is 8.
+        direction : list , optional
+            The vector representing the up direction of the sphere. The default is [0,0,1].
+        placement : str , optional
+            The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic.Cell
+            The created sphere.
+
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not origin:
+            origin = Vertex.ByCoordinates(0,0,0)
+        if not isinstance(origin, topologic.Vertex):
+            print("Cell.Sphere - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        
+        coords = [[0.0, 0.0, -0.5],
+                 [0.074748, 0.0, -0.494015],
+                 [0.140819, 0.0, -0.473222],
+                 [0.204118, 0.0, -0.438358],
+                 [0.259512, 0.0, -0.391913],
+                 [0.304837, 0.0, -0.335519],
+                 [0.338649, 0.0, -0.271416],
+                 [0.361307, 0.0, -0.202039],
+                 [0.375678, 0.0, -0.129109],
+                 [0.381294, 0.0, -0.053696],
+                 [0.377694, 0.0, 0.019874],
+                 [0.365135, 0.0, 0.091978],
+                 [0.341482, 0.0, 0.173973],
+                 [0.300154, 0.0, 0.276001],
+                 [0.252928, 0.0, 0.355989],
+                 [0.206605, 0.0, 0.405813],
+                 [0.157529, 0.0, 0.442299],
+                 [0.10604, 0.0, 0.472092],
+                 [0.05547, 0.0, 0.491784],
+                 [0.0, 0.0, 0.5]]
+        verts = [Vertex.ByCoordinates(coord) for coord in coords]
+        c = Wire.ByVertices(verts, close=False)
+        new_verts = []
+        for i in range(vSides+1):
+            new_verts.append(Wire.VertexByParameter(c, i/vSides))
+        c = Wire.ByVertices(new_verts, close=False)
+        egg = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0,0,1], degree=360, sides=uSides, tolerance=tolerance)
+        if egg.Type() == topologic.CellComplex.Type():
+            egg = egg.ExternalBoundary()
+        if egg.Type() == topologic.Shell.Type():
+            egg = topologic.Cell.ByShell(egg)
+        egg = Topology.Scale(egg, origin=Vertex.Origin(), x=height, y=height, z=height)
+        if placement.lower() == "bottom":
+            egg = Topology.Translate(egg, 0, 0, height/2)
+        elif placement.lower() == "lowerleft":
+            bb = Cell.BoundingBox(egg)
+            d = Topology.Dictionary(bb)
+            width = Dictionary.ValueAtKey(d, 'width')
+            length = Dictionary.ValueAtKey(d, 'length')
+            egg = Topology.Translate(egg, width*0.5, length*0.5, height*0.5)
+        egg = Topology.Orient(egg, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
+        egg = Topology.Place(egg, originA=Vertex.Origin(), originB=origin)
+        return egg
+    
+    @staticmethod
     def ExternalBoundary(cell: topologic.Cell) -> topologic.Shell:
         """
         Returns the external boundary of the input cell.

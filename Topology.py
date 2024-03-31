@@ -5192,6 +5192,7 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
 
         def rotate_vertex_3d(vertex, axis, angle_degrees, origin):
             vertex = np.array(vertex)  # Vertex to be rotated
@@ -5214,7 +5215,7 @@ class Topology():
             translated_vertex = vertex - origin
             rotated_vertex = np.dot(rotation_matrix, translated_vertex) + origin
             
-            rotated_vertex = [v for v in rotated_vertex]
+            rotated_vertex = [v for v in rotated_vertex] 
             return rotated_vertex
 
         if not isinstance(topology, topologic.Topology):
