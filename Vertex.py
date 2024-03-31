@@ -698,10 +698,16 @@ class Vertex(Topology):
                 fused_vertices.append(fused_vertex)
 
             return fused_vertices
-
         def count_decimal_points(vertex):
             # Count the number of decimal points in the coordinates
-            return max(len(str(coord).split('.')[1]) for coord in vertex)
+            decimals_list = []
+            for coord in vertex:
+                coord_str = str(coord)
+                if '.' in coord_str:
+                    decimals_list.append(len(coord_str.split('.')[1]))
+                elif 'e' in coord_str:
+                    decimals_list.append(int(coord_str.split('e')[1].replace('-','')))
+            return max(decimals_list)
 
 
         if not isinstance(vertices, list):

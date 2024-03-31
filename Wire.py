@@ -2933,9 +2933,6 @@ class Wire(Topology):
             return Wire.StartVertex(wire)
         if abs(distance - wire_length) < tolerance:
             return Wire.EndVertex(wire)
-        # if abs(distance) > wire_length:
-        #     print("Wire.VertexByDistance - Error: The input distance parameter is larger than the wire's length. Returning None.")
-        #     return None
         if not Wire.IsManifold(wire):
             print("Wire.VertexAtParameter - Error: The input wire parameter is non-manifold. Returning None.")
             return None
@@ -2947,16 +2944,6 @@ class Wire(Topology):
         if not Vertex.IsInternal(origin, wire, tolerance=tolerance):
             print("Wire.VertexByDistance - Error: The input origin parameter is not internal to the input wire parameter. Returning None.")
             return None
-        # if distance < 0:
-        #     if Wire.VertexDistance(wire, Wire.StartVertex(wire), origin) < abs(distance):
-        #         print("Wire.VertexByDistance - Error: The resulting vertex would fall outside the wire. Returning None.")
-        #         return None
-        # else:
-        #     if Wire.VertexDistance(wire, Wire.EndVertex(wire), origin) < distance:
-        #         print("Wire.VertexDistance:", Wire.VertexDistance(wire, Wire.EndVertex(wire), origin))
-        #         print("Wire.VertexByDistance - Error: The resulting vertex would fall outside the wire. Returning None.")
-        #         return None
-        
         if Vertex.Distance(Wire.StartVertex(wire), origin) < tolerance:
             u = distance/wire_length
         elif Vertex.Distance(Wire.EndVertex(wire), origin) < tolerance:

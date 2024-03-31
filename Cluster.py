@@ -188,8 +188,11 @@ class Cluster(Topology):
                 if len(keys) > 0:
                     dictionaries.append(d)
         if len(dictionaries) > 0:
-            d = Dictionary.ByMergedDictionaries(dictionaries)
-            cluster = Topology.SetDictionary(cluster, d)
+            if len(dictionaries) > 1:
+                d = Dictionary.ByMergedDictionaries(dictionaries)
+            else:
+                d = dictionaries[0]
+                cluster = Topology.SetDictionary(cluster, d)
         return cluster
 
     @staticmethod

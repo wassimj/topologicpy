@@ -3607,7 +3607,6 @@ class Topology():
             return_topology = Cell.ByFaces(faces, tolerance=tolerance)
             if return_topology == None:
                 return_topology = CellComplex.ByFaces(faces, tolerance=tolerance)
-                #print("Return Topology:", return_topology)
                 if return_topology == None:
                     print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
                     return topology
@@ -4397,7 +4396,6 @@ class Topology():
             return [a,b,c,d]
 
         if not isinstance(topology, topologic.Topology):
-            print("Topology.IsPlanar", topology)
             print("Topology.IsPlanar - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         vertices = Topology.Vertices(topology)
@@ -5146,7 +5144,7 @@ class Topology():
 
         """
         if not len(verticesA) == len(verticesB):
-            print("Error - Topology.ReplaceVertices: VerticesA and VerticesB must be the same length")
+            print("Topology.ReplaceVertices - Error: The input parameters verticesA and verticesB must be the same length")
             return None
         from topologicpy.Vertex import Vertex
         geom = Topology.Geometry(topology, mantissa=mantissa)
@@ -5221,7 +5219,6 @@ class Topology():
 
         if not isinstance(topology, topologic.Topology):
             print("Topology.Rotate - Error: The input topology parameter is not a valid topologic topology. Returning None.")
-            print("The topology is", topology)
             return None
         if not origin:
             origin = Vertex.ByCoordinates(0,0,0)
@@ -6476,7 +6473,6 @@ class Topology():
         for i, sink in enumerate(sink_items):
             mapItem = sinkMap[sink.ID]
             newDict = Dictionary.ByKeysValues(mapItem.sinkKeys, mapItem.sinkValues)
-            # print("newDict", Dictionary.Keys(newDict), Dictionary.Values(newDict))
             _ = sinks[i].SetDictionary(newDict)
         return {"sources": sources, "sinks": sinks}
 

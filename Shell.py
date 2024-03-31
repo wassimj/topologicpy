@@ -1295,7 +1295,6 @@ class Shell(Topology):
         if not roof:
             return None
         shell = Shell.Skeleton(flat_face, tolerance=tolerance)
-        print(shell)
         faces = Shell.Faces(shell)
         Topology.Show(shell)
         if not faces:

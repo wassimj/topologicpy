@@ -675,7 +675,7 @@ class Graph:
         import  random
 
         if not isinstance(adjacencyMatrix, list):
-            print("Graph.BYAdjacencyMatrix - Error: The input adjacencyMatrix parameter is not a valid list. Returning None.")
+            print("Graph.ByAdjacencyMatrix - Error: The input adjacencyMatrix parameter is not a valid list. Returning None.")
             return None
         # Add vertices with random coordinates
         vertices = []
@@ -692,7 +692,7 @@ class Graph:
 
         # Create the graph using vertices and edges
         if len(vertices) == 0:
-            print("Graph.BYAdjacencyMatrix - Error: The graph does not contain any vertices. Returning None.")
+            print("Graph.ByAdjacencyMatrix - Error: The graph does not contain any vertices. Returning None.")
             return None
         
         return Graph.ByVerticesEdges(vertices, edges)
@@ -960,13 +960,9 @@ class Graph:
         graphs = []
         for i, vertices, in enumerate(vertices_ds):
             edges = edges_ds[i]
-            print("2. Length of Vertices:", len(vertices))
-            print("2. Length of Edges:", len(edges))
             g = Graph.ByVerticesEdges(vertices, edges)
             temp_v = Graph.Vertices(g)
             temp_e = Graph.Edges(g)
-            print("3. Length of Vertices:", len(temp_v))
-            print("3. Length of Edges:", len(temp_e))
             if isinstance(g, topologic.Graph):
                 if len(graphFeaturesKeys) == 0:
                     values = [graph_ids[i], graph_labels[i], graph_features[i]]
@@ -3154,10 +3150,8 @@ class Graph:
         # If the maximum number of colors are not provided, compute it using the graph's chromatic number.
         if maxColors == None:
             maxColors = Graph.ChromaticNumber(temp_graph)
-        print("MaxColors:", maxColors)
         colors = [0] * len(vertices)
         colors = graph_coloring(adj_mat, maxColors, colors)
-        print("Colors:", colors)
         for i, v in enumerate(vertices):
                 d = Topology.Dictionary(v)
                 d = Dictionary.SetValueAtKey(d, newKey, colors[i])
@@ -3314,7 +3308,7 @@ class Graph:
                 else:
                     returnList.append((n-1)/top_dist)
         except:
-            print("Could not use tqdm")
+            print("Graph.ClosenessCentrality - Warning: Could not use tqdm.")
             for va in vertices:
                 top_dist = 0
                 for vb in graphVertices:
@@ -3889,7 +3883,6 @@ class Graph:
             if not nodeMaskKey == None:
                 if not nd == None:
                     keys = Dictionary.Keys(nd)
-                    print("keys", keys)
                 else:
                     keys = []
                     flag = True
@@ -4791,8 +4784,6 @@ class Graph:
                     
 
             # Calculate the global clustering coefficient
-            print("Total Triangles:", total_triangles )
-            print("Total Possible Triangles:", total_possible_triangles )
             global_clustering_coeff = 3.0 * total_triangles / total_possible_triangles if total_possible_triangles > 0 else 0.0
 
             return global_clustering_coeff
