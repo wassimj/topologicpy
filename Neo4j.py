@@ -17,6 +17,7 @@
 import time
 import random
 import os
+import warnings
 
 try:
     import py2neo
@@ -33,7 +34,7 @@ except:
         from py2neo import NodeMatcher,RelationshipMatcher
         from py2neo.data import spatial as sp
     except:
-        raise Exception("Neo4j - Error: Could not import py2neo")
+        warnings.warn("Neo4j - Error: Could not import py2neo")
 
 class Neo4j:
 

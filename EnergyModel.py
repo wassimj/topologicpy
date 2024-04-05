@@ -21,6 +21,7 @@ from collections import OrderedDict
 import os
 from os.path import exists
 from datetime import datetime
+import warnings
 
 try:
     from tqdm.auto import tqdm
@@ -34,7 +35,7 @@ except:
         from tqdm.auto import tqdm
         print("EnergyModel - tqdm library installed correctly.")
     except:
-        raise Exception("EnergyModel - Error: Could not import tqdm.")
+        warnings.warn("EnergyModel - Error: Could not import tqdm.")
 
 try:
     import openstudio
@@ -50,7 +51,7 @@ except:
         openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
         print("EnergyModel - openstudio library installed correctly.")
     except:
-        raise Exception("EnergyModel - Error: Could not import openstudio.")
+        warnings.warn("EnergyModel - Error: Could not import openstudio.")
 
 class EnergyModel:
     '''

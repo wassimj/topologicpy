@@ -18,6 +18,7 @@ import topologic
 from topologicpy.Topology import Topology
 import math
 import os
+import warnings
 
 try:
     from tqdm.auto import tqdm
@@ -31,7 +32,7 @@ except:
         from tqdm.auto import tqdm
         print("Shell - tqdm library installed correctly.")
     except:
-        raise Exception("Shell - Error: Could not import tqdm.")
+        warnings.warn("Shell - Error: Could not import tqdm.")
 
 try:
     from scipy.spatial import Delaunay
@@ -46,7 +47,7 @@ except:
         from scipy.spatial import Delaunay
         from scipy.spatial import Voronoi
     except:
-        raise Exception("Shell - Error: Could not import scipy.")
+        warnings.warn("Shell - Error: Could not import scipy.")
 
 class Shell(Topology):
     @staticmethod

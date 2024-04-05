@@ -22,6 +22,7 @@ from topologicpy.Vertex import Vertex
 import random
 import time
 import os
+import warnings
 
 try:
     import numpy as np
@@ -35,7 +36,7 @@ except:
         import numpy as np
         print("Graph - numpy library installed correctly.")
     except:
-        raise Exception("Graph - Error: Could not import numpy.")
+        warnings.warn("Graph - Error: Could not import numpy.")
 
 try:
     import pandas as pd
@@ -49,7 +50,7 @@ except:
         import pandas as pd
         print("Graph - pandas library installed correctly.")
     except:
-        raise Exception("Graph - Error: Could not import pandas.")
+        warnings.warn("Graph - Error: Could not import pandas.")
 
 try:
     from tqdm.auto import tqdm
@@ -63,7 +64,7 @@ except:
         from tqdm.auto import tqdm
         print("Graph - tqdm library installed correctly.")
     except:
-        raise Exception("Graph - Error: Could not import tqdm.")
+        warnings.warn("Graph - Error: Could not import tqdm.")
 
 try:
     from pyvis.network import Network
@@ -77,7 +78,7 @@ except:
         from pyvis.network import Network
         print("Graph - pyvis library installed correctly.")
     except:
-        raise Exception("Graph - Error: Could not import pyvis")
+        rwarnings.warn("Graph - Error: Could not import pyvis")
 
 try:
     import networkx as nx
@@ -91,7 +92,7 @@ except:
         import networkx as nx
         print("Graph - networkx library installed correctly.")
     except:
-        raise Exception("Graph - Error: Could not import networkx.")
+        warnings.warn("Graph - Error: Could not import networkx.")
 
 class _Tree:
     def __init__(self, node="", *children):

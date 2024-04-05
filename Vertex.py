@@ -20,6 +20,7 @@ from topologicpy.Face import Face
 from topologicpy.Topology import Topology
 import collections
 import os
+import warnings
 
 try:
     import numpy as np
@@ -33,7 +34,7 @@ except:
         import numpy as np
         print("Vertex - numpy library installed successfully.")
     except:
-        raise Exception("Vertex - Error: Could not import numpy.")
+        warnings.warn("Vertex - Error: Could not import numpy.")
 
 class Vertex(Topology):
     @staticmethod

@@ -17,6 +17,7 @@
 from topologicpy.Topology import Topology
 import topologic
 import os
+import warnings
 
 try:
     import numpy as np
@@ -30,7 +31,7 @@ except:
         import numpy as np
         print("Cluster - numpy library installed correctly.")
     except:
-        raise Exception("Cluster - Error: Could not import numpy.")
+        warnings.warn("Cluster - Error: Could not import numpy.")
 
 try:
     from scipy.spatial.distance import pdist, squareform
@@ -44,7 +45,7 @@ except:
         from scipy.spatial.distance import pdist, squareform
         print("Cluster - scipy library installed correctly.")
     except:
-        raise Exception("Cluster - Error: Could not import scipy.")
+        warnings.warn("Cluster - Error: Could not import scipy.")
 
 class Cluster(Topology):
     @staticmethod

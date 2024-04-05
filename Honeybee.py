@@ -15,6 +15,7 @@
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
 import os
+import warnings
 
 try:
     import honeybee.facetype
@@ -39,7 +40,7 @@ except:
         from honeybee.aperture import Aperture as HBAperture
         from honeybee.door import Door as HBDoor
     except:
-        raise Exception("Honeybee - ERROR: Could not import honeybee")
+        warnings.warn("Honeybee - ERROR: Could not import honeybee")
 
 try:
     import honeybee_energy.lib.constructionsets as constr_set_lib
@@ -64,7 +65,7 @@ except:
         from honeybee_energy.load.setpoint import Setpoint
         from honeybee_energy.load.hotwater import  ServiceHotWater
     except:
-        raise Exception("Honeybee - Error: Could not import honeybee-energy")
+        warnings.warn("Honeybee - Error: Could not import honeybee-energy")
 
 try:
     from honeybee_radiance.sensorgrid import SensorGrid
@@ -77,7 +78,7 @@ except:
     try:
         from honeybee_radiance.sensorgrid import SensorGrid
     except:
-        raise Exception("Honeybee - Error: Could not import honeybee-radiance")
+        warnings.warn("Honeybee - Error: Could not import honeybee-radiance")
 
 try:
     from ladybug.dt import Time
@@ -90,7 +91,7 @@ except:
     try:
         from ladybug.dt import Time
     except:
-        raise Exception("Honeybee - Error: Could not import ladybug")
+        warnings.warn("Honeybee - Error: Could not import ladybug")
 
 try:
     from ladybug_geometry.geometry3d.face import Face3D
@@ -105,7 +106,7 @@ except:
         from ladybug_geometry.geometry3d.face import Face3D
         from ladybug_geometry.geometry3d.pointvector import Point3D, Vector3D
     except:
-        raise Exception("Honeybee - Error: Could not import ladybug-geometry")
+        warnings.warn("Honeybee - Error: Could not import ladybug-geometry")
 
 import json
 import topologic

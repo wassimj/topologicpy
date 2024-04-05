@@ -18,6 +18,7 @@ import topologic
 import math
 import os
 from topologicpy.Topology import Topology
+import warnings
 
 try:
     import numpy as np
@@ -31,7 +32,7 @@ except:
         import numpy as np
         print("CellComplex - numpy library installed correctly.")
     except:
-        raise Exception("CellComplex - Error: Could not import numpy.")
+        warnings.warn("CellComplex - Error: Could not import numpy.")
 try:
     from scipy.spatial import Delaunay
     from scipy.spatial import Voronoi
@@ -45,7 +46,7 @@ except:
         from scipy.spatial import Delaunay
         from scipy.spatial import Voronoi
     except:
-        raise Exception("CellComplex - Error: Could not import scipy.")
+        warnings.warn("CellComplex - Error: Could not import scipy.")
 
 class CellComplex(Topology):
     @staticmethod

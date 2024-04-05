@@ -16,6 +16,7 @@
 
 import topologicpy
 import os
+import warnings
 
 try:
     import numpy as np
@@ -31,7 +32,7 @@ except:
         import numpy.linalg as la
         print("Helper - numpy library installed correctly.")
     except:
-        raise Exception("Helper - Error: Could not import numpy.")
+        warnings.warn("Helper - Error: Could not import numpy.")
 
 class Helper:
     @staticmethod

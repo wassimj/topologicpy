@@ -16,6 +16,7 @@
 
 import math
 import os
+import warnings
 
 try:
     import numpy as np
@@ -33,7 +34,7 @@ except:
         from numpy import pi, arctan2, rad2deg
         print("Vector - numpy library installed successfully.")
     except:
-        raise Exception("Vector - Error: Could not import numpy.")
+        warnings.warn("Vector - Error: Could not import numpy.")
 
 class Vector(list):
     @staticmethod

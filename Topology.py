@@ -17,7 +17,7 @@
 import topologic
 from topologicpy.Aperture import Aperture
 from topologicpy.Dictionary import Dictionary
-
+import warnings
 import uuid
 import json
 import os
@@ -42,7 +42,7 @@ except:
         from numpy.linalg import norm
         print("Topology - numpy library installed successfully.")
     except:
-        raise Exception("Topology - Error: Could not import numpy.")
+        warnings.warn("Topology - Error: Could not import numpy.")
 
 try:
     import ifcopenshell
@@ -58,7 +58,7 @@ except:
         import ifcopenshell.geom
         print("Topology - ifcopenshell library installed successfully.")
     except:
-        raise Exception("Topology - Error: Could not import ifcopenshell.")
+        warnings.warn("Topology - Error: Could not import ifcopenshell.")
 
 try:
     from scipy.spatial import ConvexHull
@@ -72,7 +72,7 @@ except:
         from scipy.spatial import ConvexHull
         print("Topology - scipy library installed successfully.")
     except:
-        raise Exception ("Topology - Error: Could not import scipy.")
+        warnings.warn("Topology - Error: Could not import scipy.")
 
 QueueItem = namedtuple('QueueItem', ['ID', 'sinkKeys', 'sinkValues'])
 SinkItem = namedtuple('SinkItem', ['ID', 'sink_str'])
@@ -278,8 +278,8 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
-        conntents : list
-            The input list of contents.
+        conntents : list or topologic.Topology
+            The input list of contents (of type topologic.Topology). A single topology is also accepted as input.
         subTopologyType : string , optional
             The subtopology type to which to add the contents. This can be "cellcomplex", "cell", "shell", "face", "wire", "edge", or "vertex". It is case insensitive. If set to None, the contents will be added to the input topology. The default is None.
         tolerance : float , optional
@@ -296,6 +296,8 @@ class Topology():
             return None
         if not contents:
             return topology
+        if not isinstance(contents, list):
+            contents = [contents]
         if not isinstance(contents, list):
             print("Topology.AddContent - Error: the input contents parameter is not a list. Returning None.")
             return None
@@ -5455,6 +5457,56 @@ class Topology():
         return topology
     
     @staticmethod
+    def SetSnapshot(topology, snapshot=None, timestamp=None, key="timestamp", silent=False):
+        from datetime import datetime
+        def is_valid_timestamp(timestamp):
+            if isinstance(timestamp, datetime):
+                return True
+            elif isinstance(timestamp, str):
+                try:
+                    # Split the timestamp string into date and time parts
+                    date_part, time_part = timestamp.split(' ')
+                    # Parse the date part
+                    date_obj = datetime.strptime(date_part, '%Y-%m-%d')
+                    # Split the time part into hours, minutes, and seconds
+                    hours, minutes, seconds = map(float, time_part.split(':'))
+                    # Check if seconds are within valid range
+                    if seconds < 0 or seconds >= 60:
+                        return False
+                    # Create a datetime object with the parsed date and time parts
+                    datetime_obj = datetime(date_obj.year, date_obj.month, date_obj.day, int(hours), int(minutes), int(seconds))
+                    return True
+                except ValueError:
+                    return False
+            else:
+                return False
+
+        if not isinstance(topology, topologic.Topology):
+            if not silent:
+                print("Topology.SetSnapshot - Error: The input topology parameter is not a valid topology. Returning None.")
+                return None
+        if not isinstance(snapshot, topologic.Topology):
+            snapshot = Topology.Copy(topology)
+            d = Topology.Dictionary(topology)
+            snapshot = Topology.SetDictionary(snapshot, d)
+        if not isinstance(snapshot, topologic.Topology):
+            if not silent:
+                print("Topology.SetSnapshot - Error: The input snapshot parameter is not a valid topology. Returning None.")
+                return None
+        if timestamp == None:
+            timestamp = datetime.now()
+        if not is_valid_timestamp(timestamp):
+            if not silent:
+                print("Topology.SetSnapshot - Error: The input timestamp parameter is not a valid timestamp. Returning None.")
+                return None
+        
+        d = Topology.Dictionary(snapshot)
+        d = Dictionary.SetValueAtKey(d, key, str(timestamp))
+        snapshot = Topology.SetDictionary(snapshot, d)
+        topology = Topology.AddContent(topology, snapshot)
+        return topology
+    
+    @staticmethod
     def SharedTopologies(topologyA, topologyB):
         """
         Returns the shared topologies between the two input topologies
@@ -5895,6 +5947,57 @@ class Topology():
                 unsortedTopologies.append(topologies[i])
         return {"sorted":sortedTopologies, "unsorted":unsortedTopologies}
     
+    @staticmethod
+    def Snapshots(topology, key="timestamp", start=None, end=None, silent=False):
+        from datetime import datetime
+        def is_valid_timestamp(timestamp):
+            if isinstance(timestamp, datetime):
+                return True
+            elif isinstance(timestamp, str):
+                try:
+                    # Split the timestamp string into date and time parts
+                    date_part, time_part = timestamp.split(' ')
+                    # Parse the date part
+                    date_obj = datetime.strptime(date_part, '%Y-%m-%d')
+                    # Split the time part into hours, minutes, and seconds
+                    hours, minutes, seconds = map(float, time_part.split(':'))
+                    # Check if seconds are within valid range
+                    if seconds < 0 or seconds >= 60:
+                        return False
+                    # Create a datetime object with the parsed date and time parts
+                    return datetime(date_obj.year, date_obj.month, date_obj.day, int(hours), int(minutes), int(seconds))
+                except ValueError:
+                    return False
+            else:
+                return False
+        
+        if not isinstance(topology, topologic.Topology):
+            if not silent:
+                print("Topology.Snapshots - Error: The input topology parameter is not a valid topology. Returning None.")
+                return None
+        if start == None:
+            start = datetime.datetime(year=1900, month=1, day=1) # Set the start date to a date in the distant past
+        if end == None:
+            end = datetime.now() # Set the end date to the present.
+        if not is_valid_timestamp(start):
+            if not silent:
+                print("Topology.Snapshots - Error: The input start parameter is not a valid timestamp. Returning None.")
+                return None
+        if not is_valid_timestamp(end):
+            if not silent:
+                print("Topology.Snapshots - Error: The input end parameter is not a valid timestamp. Returning None.")
+                return None
+        contents = Topology.Contents(topology)    
+        snapshots = []
+        for content in contents:
+            d = Topology.Dictionary(content)
+            timestamp = Dictionary.ValueAtKey(d, key)
+            timestamp = is_valid_timestamp(timestamp)
+            if not timestamp == False:
+                if start <= timestamp <= end:
+                    snapshots.append(content)
+        return snapshots
+
     @staticmethod
     def Spin(topology, origin=None, triangulate=True, direction=[0,0,1], degree=360, sides=16,
                      tolerance=0.0001, silent=False):

@@ -20,6 +20,7 @@ import heapq
 from itertools import *
 from collections import namedtuple
 import os
+import warnings
 
 try:
 	from euclid3 import *
@@ -32,7 +33,7 @@ except:
 	try:
 		from euclid3 import *
 	except:
-		raise Exception("Polyskel - ERROR: Could not import euclid3.")
+		warnings.warn("Polyskel - ERROR: Could not import euclid3.")
 
 log = logging.getLogger("__name__")
 

@@ -19,6 +19,7 @@ from topologicpy.Wire import Wire
 from topologicpy.Topology import Topology
 import math
 import os
+import warnings
 
 try:
     import numpy as np
@@ -32,7 +33,7 @@ except:
         import numpy as np
         print("Cell - numpy library installed correctly.")
     except:
-        raise Exception("Cell - Error: Could not import numpy.")
+        warnings.warn("Cell - Error: Could not import numpy.")
     
 class Cell(Topology):
     @staticmethod
@@ -1045,13 +1046,16 @@ class Cell(Topology):
             pentagons.append(Topology.Rotate(pen, origin=o, x=e_dir[0], y=e_dir[1], z=e_dir[2], degree=116.565))
 
         cluster = Cluster.ByTopologies(pentagons)
-        vertices = Topology.Vertices(cluster)
+        
+        cluster2 = Topology.Rotate(cluster, origin=Vertex.Origin(), x=1,y=0,z=0,degree=180)
+        cluster2 = Topology.Rotate(cluster2, origin=Vertex.Origin(), x=0,y=0,z=1,degree=36)
+        vertices = Topology.Vertices(cluster2)
         zList = [Vertex.Z(v) for v in vertices]
         zList = list(set(zList))
         zList.sort()
-        zOffset = zList[1]+zList[2]
-        cluster2 = Topology.Rotate(cluster, origin=Vertex.Origin(), x=1,y=0,z=0,degree=180)
-        cluster2 = Topology.Translate(cluster2, 0, 0, zOffset)
+        zoffset1 = zList[-1] - zList[0]
+        zoffset2 = zList[1] - zList[0]
+        cluster2 = Topology.Translate(cluster2, 0, 0, -zoffset1-zoffset2)
         pentagons += Topology.Faces(cluster2)
         dodecahedron = Cell.ByFaces(pentagons, tolerance=tolerance)
         centroid = Topology.Centroid(dodecahedron)

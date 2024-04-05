@@ -20,6 +20,7 @@ from topologicpy.Wire import Wire
 from topologicpy.Topology import Topology
 import math
 import os
+import warnings
 
 try:
     import numpy as np
@@ -33,7 +34,7 @@ except:
         import numpy as np
         print("Face - numpy library installed correctly.")
     except:
-        raise Exception("Face - Error: Could not import numpy.")
+        warnings.warn("Face - Error: Could not import numpy.")
 
 class Face(Topology):
     @staticmethod

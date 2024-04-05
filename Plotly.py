@@ -20,6 +20,7 @@ import topologic
 from topologicpy.Wire import Wire
 from topologicpy.Face import Face
 import os
+import warnings
 
 try:
     import numpy as np
@@ -32,7 +33,7 @@ except:
     try:
         import numpy as np
     except:
-        raise Exception("Plotly - Error: Could not import numpy.")
+        warnings.warn("Plotly - Error: Could not import numpy.")
 
 try:
     import pandas as pd
@@ -45,7 +46,7 @@ except:
     try:
         import pandas as pd
     except:
-        raise Exception("Plotly - Error: Could not import pandas.")
+        warnings.warn("Plotly - Error: Could not import pandas.")
 
 try:
     import plotly
@@ -62,7 +63,7 @@ except:
         import plotly.graph_objects as go
         import plotly.offline as ofl
     except:
-        raise Exception("Plotly - Error: Could not import plotly.")
+        warnings.warn("Plotly - Error: Could not import plotly.")
 
 class Plotly:
     @staticmethod
