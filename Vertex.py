@@ -1477,31 +1477,35 @@ class Vertex(Topology):
         """
         from topologicpy.Face import Face
         
-        def project_point_onto_plane(point, plane_coeffs):
+        def project_point_onto_plane(point, plane_coeffs, direction_vector):
             """
-            Project a point onto a plane defined by its equation coefficients (a, b, c, d).
-            
-            Args:
-                point: A tuple or list containing the coordinates of the point (x, y, z).
-                plane_coeffs: A tuple or list containing the plane equation coefficients (a, b, c, d).
-            
+            Project a 3D point onto a plane defined by its coefficients and using a direction vector.
+
+            Parameters:
+                point (tuple or list): The 3D point coordinates (x, y, z).
+                plane_coeffs (tuple or list): The coefficients of the plane equation (a, b, c, d).
+                direction_vector (tuple or list): The direction vector (vx, vy, vz).
+
             Returns:
-                projected_point: A tuple containing the coordinates of the projected point (x_proj, y_proj, z_proj).
+                tuple: The projected point coordinates (x_proj, y_proj, z_proj).
             """
+            # Unpack point coordinates
             x, y, z = point
+
+            # Unpack plane coefficients
             a, b, c, d = plane_coeffs
-            
+
+            # Unpack direction vector
+            vx, vy, vz = direction_vector
+
             # Calculate the distance from the point to the plane
-            if (a**2 + b**2 + c**2) == 0:
-                distance = 0
-            else:
-                distance = (a * x + b * y + c * z + d) / (a**2 + b**2 + c**2)
-            
-            # Calculate the coordinates of the projected point
-            x_proj = round(x - distance * a, mantissa)
-            y_proj = round(y - distance * b, mantissa)
-            z_proj = round(z - distance * c, mantissa)
-            
+            distance = (a * x + b * y + c * z + d) / (a * vx + b * vy + c * vz)
+
+            # Calculate the projected point coordinates
+            x_proj = x - distance * vx
+            y_proj = y - distance * vy
+            z_proj = z - distance * vz
+
             return [x_proj, y_proj, z_proj]
 
         if not isinstance(vertex, topologic.Vertex):
@@ -1509,7 +1513,7 @@ class Vertex(Topology):
         if not isinstance(face, topologic.Face):
             return None
         eq = Face.PlaneEquation(face, mantissa= mantissa)
-        pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]])
+        pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]], direction)
         return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 
     @staticmethod
