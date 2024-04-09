@@ -232,7 +232,42 @@ class Helper:
                 merged_list.append(listA[i])
 
         return merged_list
+    
+    @staticmethod
+    def MakeUnique(listA):
+        """
+        Forces the strings in the input list to be unique if they have duplicates.
 
+        Parameters
+        ----------
+        listA : list
+            The input list of strings.
+
+        Returns
+        -------
+        list
+            The input list, but with each item ensured to be unique if they have duplicates.
+
+        """
+        # Create a dictionary to store counts of each string
+        counts = {}
+        # Create a list to store modified strings
+        unique_strings = []
+        
+        for string in listA:
+            # If the string already exists in the counts dictionary
+            if string in counts:
+                # Increment the count
+                counts[string] += 1
+                # Append the modified string with underscore and count
+                unique_strings.append(f"{string}_{counts[string]}")
+            else:
+                # If it's the first occurrence of the string, add it to the counts dictionary
+                counts[string] = 0
+                unique_strings.append(string)
+        
+        return unique_strings
+    
     @staticmethod
     def Normalize(listA, mantissa: int = 6):
         """

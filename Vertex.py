@@ -1513,6 +1513,8 @@ class Vertex(Topology):
         if not isinstance(face, topologic.Face):
             return None
         eq = Face.PlaneEquation(face, mantissa= mantissa)
+        if direction == None:
+            direction = Face.Normal(face)
         pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]], direction)
         return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 

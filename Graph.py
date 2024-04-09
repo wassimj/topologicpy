@@ -1604,8 +1604,8 @@ class Graph:
                                     keys = (Dictionary.Keys(mDict) or [])+["relationship"]
                                     values = (Dictionary.Values(mDict) or [])+["Direct"]
                                 else:
-                                    keys = []
-                                    values = []
+                                    keys = ["relationship"]
+                                    values = ["Direct"]
                                 mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
                                     e.SetDictionary(mDict)
@@ -2041,6 +2041,13 @@ class Graph:
                                     v2 = topFaces[j].CenterOfMass()
                                 e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                 mDict = mergeDictionaries(sharedt)
+                                if not mDict == None:
+                                    keys = (Dictionary.Keys(mDict) or [])+["relationship"]
+                                    values = (Dictionary.Values(mDict) or [])+["Direct"]
+                                else:
+                                    keys = ["relationship"]
+                                    values = ["Direct"]
+                                mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
                                     e.SetDictionary(mDict)
                                 edges.append(e)
@@ -2472,6 +2479,13 @@ class Graph:
                                     v2 = topEdges[j].CenterOfMass()
                                 e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                 mDict = mergeDictionaries(sharedt)
+                                if not mDict == None:
+                                    keys = (Dictionary.Keys(mDict) or [])+["relationship"]
+                                    values = (Dictionary.Values(mDict) or [])+["Direct"]
+                                else:
+                                    keys = ["relationship"]
+                                    values = ["Direct"]
+                                mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
                                     e.SetDictionary(mDict)
                                 edges.append(e)
@@ -4393,6 +4407,66 @@ class Graph:
         return True
 
     @staticmethod
+    def ExportToJSON(graph, path, vertexLabelKey="", edgeLabelKey="", indent=4, sortKeys=False, mantissa=6, overwrite=False):
+        """
+        Exports the input graph to a JSON file.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        path : str
+            The path to the JSON file.
+        vertexLabelKey : str , optional
+            If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
+            Note: If vertex labels are not unique, they will be forced to be unique.
+        edgeLabelKey : str , optional
+            If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
+            Note: If edge labels are not unique, they will be forced to be unique.
+        indent : int , optional
+            The desired amount of indent spaces to use. The default is 4.
+        sortKeys : bool , optional
+            If set to True, the keys will be sorted. Otherwise, they won't be. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+
+        Returns
+        -------
+        bool
+            The status of exporting the JSON file. If True, the operation was successful. Otherwise, it was unsuccesful.
+
+        """
+        import json
+        from os.path import exists
+        # Make sure the file extension is .json
+        ext = path[len(path)-5:len(path)]
+        if ext.lower() != ".json":
+            path = path+".json"
+        if not overwrite and exists(path):
+            print("Graph.ExportToJSON - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
+        f = None
+        try:
+            if overwrite == True:
+                f = open(path, "w")
+            else:
+                f = open(path, "x") # Try to create a new File
+        except:
+            raise Exception("Graph.ExportToJSON - Error: Could not create a new file at the following location: "+path)
+        if (f):
+            jsondata = Graph.JSONData(graph, vertexLabelKey=vertexLabelKey, edgeLabelKey=edgeLabelKey, mantissa=mantissa)
+            if jsondata != None:
+                json.dump(jsondata, f, indent=indent, sort_keys=sortKeys)
+                f.close()
+                return True
+            else:
+                f.close()
+                return False
+        return False
+    
+    @staticmethod
     def Flatten(graph, layout="spring", k=0.8, seed=None, iterations=50, rootVertex=None, tolerance=0.0001):
         """
         Flattens the input graph.
@@ -5035,6 +5109,122 @@ class Graph:
         vertices = []
         _ = graph.IsolatedVertices(vertices)
         return vertices
+    
+    @staticmethod
+    def JSONData(graph, vertexLabelKey="", edgeLabelKey="", mantissa=6):
+        """
+        Converts the input graph into JSON data.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertexLabelKey : str , optional
+            If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
+            Note: If vertex labels are not unique, they will be forced to be unique.
+        edgeLabelKey : str , optional
+            If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
+            Note: If edge labels are not unique, they will be forced to be unique.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+
+        Returns
+        -------
+        dict
+            The JSON data
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+
+        vertices = Graph.Vertices(graph)
+        j_data = {}
+        j_data['nodes'] = {}
+        j_data['edges'] = {}
+        n = len(str(len(vertices)))
+        v_labels = []
+        v_dicts = []
+        for i, v in enumerate(vertices):
+            d = Topology.Dictionary(v)
+            d = Dictionary.SetValueAtKey(d, "x", Vertex.X(v, mantissa=mantissa))
+            d = Dictionary.SetValueAtKey(d, "y", Vertex.Y(v, mantissa=mantissa))
+            d = Dictionary.SetValueAtKey(d, "z", Vertex.Z(v, mantissa=mantissa))
+            v_dict = Dictionary.PythonDictionary(d)
+            v_label = Dictionary.ValueAtKey(d, vertexLabelKey)
+            if isinstance(v_label, str):
+                v_label = Dictionary.ValueAtKey(d, vertexLabelKey)
+            else:
+                v_label = "Vertex_"+str(i).zfill(n)
+            v_labels.append(v_label)
+            v_dicts.append(v_dict)
+        v_labels = Helper.MakeUnique(v_labels)
+        for i, v_label in enumerate(v_labels):
+            j_data['nodes'][v_label] = v_dicts[i]
+
+        edges = Graph.Edges(graph)
+        n = len(str(len(edges)))    
+        e_labels = []
+        e_dicts = []
+        for i, e in enumerate(edges):
+            sv = Edge.StartVertex(e)
+            ev = Edge.EndVertex(e)
+            svi = Vertex.Index(sv, vertices)
+            evi = Vertex.Index(ev, vertices)
+            sv_label = v_labels[svi]
+            ev_label = v_labels[evi]
+            d = Topology.Dictionary(e)
+            
+            d = Dictionary.SetValueAtKey(d, "source", sv_label)
+            d = Dictionary.SetValueAtKey(d, "target", ev_label)
+            e_dict = Dictionary.PythonDictionary(d)
+            e_label = Dictionary.ValueAtKey(d, edgeLabelKey)
+            if isinstance(e_label, str):
+                e_label = Dictionary.ValueAtKey(d, edgeLabelKey)
+            else:
+                e_label = "Edge_"+str(i).zfill(n)
+            e_labels.append(e_label)
+            e_dicts.append(e_dict)
+        e_labels = Helper.MakeUnique(e_labels)
+        for i, e_label in enumerate(e_labels):
+            j_data['edges'][e_label] = e_dicts[i]
+
+        return j_data
+    
+    @staticmethod
+    def JSONString(graph, vertexLabelKey="", edgeLabelKey="", indent=4, sortKeys=False, mantissa=6):
+        """
+        Converts the input graph into JSON data.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        vertexLabelKey : str , optional
+            If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
+            Note: If vertex labels are not unique, they will be forced to be unique.
+        edgeLabelKey : str , optional
+            If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
+            Note: If edge labels are not unique, they will be forced to be unique.
+        indent : int , optional
+            The desired amount of indent spaces to use. The default is 4.
+        sortKeys : bool , optional
+            If set to True, the keys will be sorted. Otherwise, they won't be. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+
+        Returns
+        -------
+        str
+            The JSON str
+
+        """
+        import json
+        json_data = Graph.JSONData(graph, vertexLabelKey=vertexLabelKey, edgeLabelKey=edgeLabelKey, mantissa=mantissa)
+        json_string = json.dumps(json_data, indent=indent, sort_keys=sortKeys)
+        return json_string
     
     @staticmethod
     def LocalClusteringCoefficient(graph, vertices=None, mantissa=6):

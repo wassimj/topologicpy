@@ -1391,7 +1391,7 @@ class Face(Topology):
         return returnResult
     
     @staticmethod
-    def NormalEdge(face: topologic.Face, length: float = 1.0) -> topologic.Edge:
+    def NormalEdge(face: topologic.Face, length: float = 1.0, tolerance: float = 0.0001, silent: bool = False) -> topologic.Edge:
         """
         Returns the normal vector to the input face as an edge with the desired input length. A normal vector of a face is a vector perpendicular to it.
 
@@ -1401,6 +1401,8 @@ class Face(Topology):
             The input face.
         length : float , optional
             The desired length of the normal edge. The default is 1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -1408,7 +1410,21 @@ class Face(Topology):
             The created normal edge to the input face. This is computed at the approximate center of the face.
 
         """
-        return Face.NormalEdgeAtParameters(face, u=0.5, v=0.5, length=length)
+        from topologicpy.Edge import Edge
+
+        if not isinstance(face, topologic.Face):
+            if not silent:
+                print("Face.NormalEdge - Error: The input face parameter is not a valid face. Retuning None.")
+            return None
+        if length < tolerance:
+            if not silent:
+                print("Face.NormalEdge - Error: The input length parameter is less than the input tolerance. Retuning None.")
+            return None
+        iv = Face.InternalVertex(face)
+        u, v = Face.VertexParameters(face, iv)
+        vec = Face.NormalAtParameters(face, u=u, v=v)
+        ev = Topology.TranslateByDirectionDistance(iv, vec, length)
+        return Edge.ByVertices([iv, ev], tolerance=tolerance, silent=silent)
 
     @staticmethod
     def NormalEdgeAtParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5, length: float = 1.0, tolerance: float = 0.0001) -> topologic.Edge:
