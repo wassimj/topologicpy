@@ -1765,18 +1765,19 @@ class Graph:
                                     edges.append(tempe)
                     if viaSharedApertures:
                         for sharedAperture in sharedApertures:
+                            sharedAp = sharedAperture.Topology()
                             if useInternalVertex == True:
-                                vst = Topology.InternalVertex(sharedAperture.Topology(), tolerance)
+                                vst = Topology.InternalVertex(sharedAp, tolerance)
                             else:
-                                vst = sharedAperture.Topology().CenterOfMass()
-                            d1 = sharedAperture.Topology().GetDictionary()
+                                vst = sharedAp.CenterOfMass()
+                            d1 = sharedAp.GetDictionary()
+                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             if storeBRep:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAperture), Topology.Type(sharedAperture), Topology.TypeAsString(sharedAperture)])
                                 d3 = mergeDictionaries2([d1, d2])
                                 _ = vst.SetDictionary(d3)
                             else:
                                 _ = vst.SetDictionary(d1)
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Apertures"])
@@ -2608,11 +2609,12 @@ class Graph:
                                     edges.append(tempe)
                     if viaSharedApertures:
                         for sharedAperture in sharedApertures:
+                            sharedTop = sharedAperture.Topology()
                             if useInternalVertex == True:
-                                vst = Topology.InternalVertex(sharedAperture.Topology(), tolerance)
+                                vst = Topology.InternalVertex(sharedTop, tolerance)
                             else:
-                                vst = sharedAperture.Topology().CenterOfMass()
-                            d1 = sharedAperture.Topology().GetDictionary()
+                                vst = sharedTop.CenterOfMass()
+                            d1 = sharedTop.GetDictionary()
                             vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             if storeBRep:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(Aperture.Topology(sharedAperture)), Topology.Type(Aperture.Topology(sharedAperture)), Topology.TypeAsString(Aperture.Topology(sharedAperture))])
@@ -2684,7 +2686,6 @@ class Graph:
                                 vst = content.CenterOfMass()
                             vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             d1 = content.GetDictionary()
-                            vst = topologic.Vertex.ByCoordinates(vst.X(), vst.Y(), vst.Z())
                             if storeBRep:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2928,6 +2929,7 @@ class Graph:
         if not isinstance(topology, topologic.Topology):
             print("Graph.ByTopology - Error: The input topology is not a valid topology. Returning None.")
             return None
+        topology = Topology.Copy(topology)
         graph = None
         item = [topology, None, None, None, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, None, useInternalVertex, storeBRep, tolerance]
         vertices = []
