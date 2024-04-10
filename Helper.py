@@ -304,6 +304,40 @@ class Helper:
         return normalized_list
 
     @staticmethod
+    def Position(item, listA):
+        """
+        Returns the position of the item in the list or the position it would have been inserts.
+        item is assumed to be numeric. listA is assumed to contain only numeric values and sorted from lowest to highest value.
+
+        Parameters
+        ----------
+        item : int or float
+            The input number to be positioned.
+        listA : list
+            The input sorted list.
+
+        Returns
+        -------
+        int
+            The position of the item within the list.
+
+        """
+        left = 0
+        right = len(listA) - 1
+
+        while left <= right:
+            mid = (left + right) // 2
+            if listA[mid] == item:
+                return mid
+            elif listA[mid] < item:
+                left = mid + 1
+            else:
+                right = mid - 1
+
+        # If the target is not found, return the position where it would be inserted
+        return left
+    
+    @staticmethod
     def Repeat(listA):
         """
         Repeats the input nested list so that each sublist has the same number of members. To fill extra members, the last item in the shorter lists are repeated and appended.
