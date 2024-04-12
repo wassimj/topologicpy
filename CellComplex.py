@@ -443,20 +443,21 @@ class CellComplex(Topology):
         -------
         dictionary
             A dictionary with the following keys and values:
-            1. "externalVerticalFaces": list of external vertical faces
-            2. "internalVerticalFaces": list of internal vertical faces
-            3. "topHorizontalFaces": list of top horizontal faces
-            4. "bottomHorizontalFaces": list of bottom horizontal faces
-            5. "internalHorizontalFaces": list of internal horizontal faces
-            6. "externalInclinedFaces": list of external inclined faces
-            7. "internalInclinedFaces": list of internal inclined faces
-            8. "externalVerticalApertures": list of external vertical apertures
-            9. "internalVerticalApertures": list of internal vertical apertures
-            10. "topHorizontalApertures": list of top horizontal apertures
-            11. "bottomHorizontalApertures": list of bottom horizontal apertures
-            12. "internalHorizontalApertures": list of internal horizontal apertures
-            13. "externalInclinedApertures": list of external inclined apertures
-            14. "internalInclinedApertures": list of internal inclined apertures
+            1. "cells": list of cells
+            2. "externalVerticalFaces": list of external vertical faces
+            3. "internalVerticalFaces": list of internal vertical faces
+            4. "topHorizontalFaces": list of top horizontal faces
+            5. "bottomHorizontalFaces": list of bottom horizontal faces
+            6. "internalHorizontalFaces": list of internal horizontal faces
+            7. "externalInclinedFaces": list of external inclined faces
+            8. "internalInclinedFaces": list of internal inclined faces
+            9. "externalVerticalApertures": list of external vertical apertures
+            10. "internalVerticalApertures": list of internal vertical apertures
+            11. "topHorizontalApertures": list of top horizontal apertures
+            12. "bottomHorizontalApertures": list of bottom horizontal apertures
+            13. "internalHorizontalApertures": list of internal horizontal apertures
+            14. "externalInclinedApertures": list of external inclined apertures
+            15. "internalInclinedApertures": list of internal inclined apertures
 
         """
         from topologicpy.Face import Face
@@ -553,7 +554,9 @@ class CellComplex(Topology):
                     internalInclinedFaces.append(aFace)
                     internalInclinedApertures += getApertures(aFace)
         
+        cells = Topology.Cells(cellComplex)
         d = {
+            "cells" : cells
             "externalVerticalFaces" : externalVerticalFaces,
             "internalVerticalFaces" : internalVerticalFaces,
             "topHorizontalFaces" : topHorizontalFaces,
