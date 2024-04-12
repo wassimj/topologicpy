@@ -5146,7 +5146,7 @@ class Graph:
         j_data = {}
         j_data['nodes'] = {}
         j_data['edges'] = {}
-        n = len(str(len(vertices)))
+        n = max(len(str(len(vertices))),4)
         v_labels = []
         v_dicts = []
         for i, v in enumerate(vertices):
@@ -6348,7 +6348,7 @@ class Graph:
     @staticmethod
     def ShortestPath(graph, vertexA, vertexB, vertexKey="", edgeKey="Length", tolerance=0.0001):
         """
-        Returns the shortest path that connects the input vertices.
+        Returns the shortest path that connects the input vertices. The shortest path will take into consideration both the vertexKey and the edgeKey if both are specified and will minimize the total "cost" of the path. Otherwise, it will take into consideration only whatever key is specified.
 
         Parameters
         ----------
