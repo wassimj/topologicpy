@@ -556,7 +556,7 @@ class CellComplex(Topology):
         
         cells = Topology.Cells(cellComplex)
         d = {
-            "cells" : cells
+            "cells" : cells,
             "externalVerticalFaces" : externalVerticalFaces,
             "internalVerticalFaces" : internalVerticalFaces,
             "topHorizontalFaces" : topHorizontalFaces,
