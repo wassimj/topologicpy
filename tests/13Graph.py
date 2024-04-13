@@ -463,6 +463,6 @@ Bound2 = Wire.Rectangle(v0, 25, 25)
 Bound2 = Topology.Rotate(Bound2, origin=Topology.Centroid(Bound2), axis=[0, 0, 1], angle=45)
 f = Face.ByWires(Bound1, [Bound2])
 va = Topology.Vertices(Bound1)
-graphNG1 = Graph.NavigationGraph(f, viewpointsA=va, viewpointsB=va, tolerance=0.001, progressBar=False)
+graphNG1 = Graph.NavigationGraph(f, sources=va, destinations=va, tolerance=0.001, progressBar=False)
 assert isinstance(graphVG1, topologic.Graph), "Graph.NavigationGraph. Should be topologic.Graph"
 print("End")

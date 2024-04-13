@@ -1536,7 +1536,7 @@ class Cell(Topology):
         
         vb1 = Vertex.ByCoordinates(-0.5, 0, 0)
         vb2 = Vertex.ByCoordinates(0, -0.5, 0)
-        vb3 = Vertex.ByCoordinates(0.5, 0 0)
+        vb3 = Vertex.ByCoordinates(0.5, 0, 0)
         vb4 = Vertex.ByCoordinates(0, 0.5, 0)
         top = Vertex.ByCoordinates(0, 0, 0.5)
         bottom = Vertex.ByCoordinates(0, 0, -0.5)

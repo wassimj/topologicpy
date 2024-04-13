@@ -17,7 +17,7 @@ from topologicpy.Topology import Topology
 from topologicpy.Plotly import Plotly
 
 print("Start")
-print("28 Cases")
+print("29 Cases")
 # Object for test case
 v0 = Vertex.ByCoordinates(0, 0, 0)          # create vertex
 v1 = Vertex.ByCoordinates(0, 10, 0)         # create vertex

@@ -97,7 +97,7 @@ cCC2 = Cluster.CellComplexes(ccB2)
 assert isinstance(cCC2, list), "Cluster.CellComplexes. Should be list"
 
 # Case 3 - Cells
-print("Case 3")
+#print("Case 3")
 # test 1
 
 cCell1 = Cluster.ByTopologies([cyl1, cyl2, cyl3])                #cell cluster
@@ -110,7 +110,7 @@ cC2 = Cluster.Cells(cCell2)
 assert isinstance(cC2, list), "Cluster.CellComplexes. Should be list"
 
 # Case 4 - Edges
-print("Case 4")
+#print("Case 4")
 # test 1
 
 cE1 = Cluster.Edges(cT1)
