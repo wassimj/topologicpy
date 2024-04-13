@@ -1044,7 +1044,7 @@ class Topology():
                 if diff1 == None:
                     return topologyA
                 else:
-                    return Topology.Difference(topologyA,diff1)
+                    return Topology.Difference(topologyA, diff1)
             elif isinstance(topologyB, topologic.CellComplex):
                 cells = Topology.Cells(topologyB)
                 intersections = []
@@ -1373,7 +1373,7 @@ class Topology():
     @staticmethod
     def BoundingBox(topology, optimize=0, axes="xyz", tolerance=0.0001):
         """
-        Returns a cell representing a bounding box of the input topology. The returned cell contains a dictionary with keys "xrot", "yrot", and "zrot" that represents rotations around the X,Y, and Z axes. If applied in the order of Z,Y,Z, the resulting box will become axis-aligned.
+        Returns a cell representing a bounding box of the input topology. The returned cell contains a dictionary with keys "xrot", "yrot", and "zrot" that represents rotations around the X, Y, and Z axes. If applied in the order of Z, Y, X, the resulting box will become axis-aligned.
 
         Parameters
         ----------
@@ -1451,7 +1451,7 @@ class Topology():
         if optimize > 0:
             factor = (round(((11 - optimize)/30 + 0.57), 2))
             flag = False
-            for n in range(10,0,-1):
+            for n in range(10, 0, -1):
                 if flag:
                     break
                 if x_flag:
@@ -1487,9 +1487,9 @@ class Topology():
                         for z in range(za,zb,zc):
                             if flag:
                                 break
-                            t = Topology.Rotate(topology, origin=origin, x=0,y=0,z=1, degree=z)
-                            t = Topology.Rotate(t, origin=origin, x=0,y=1,z=0, degree=y)
-                            t = Topology.Rotate(t, origin=origin, x=1,y=0,z=0, degree=x)
+                            t = Topology.Rotate(topology, origin=origin, axis=[0, 0, 1], angle=z)
+                            t = Topology.Rotate(t, origin=origin, axis=[0, 1, 0], angle=y)
+                            t = Topology.Rotate(t, origin=origin, axis=[1, 0, 0], angle=x)
                             minX, minY, minZ, maxX, maxY, maxZ = bb(t)
                             w = abs(maxX - minX)
                             l = abs(maxY - minY)
@@ -1525,9 +1525,9 @@ class Topology():
             box = baseFace
         else:
             box = Cell.ByThickenedFace(baseFace, planarize=False, thickness=abs(maxZ-minZ), bothSides=False)
-        box = Topology.Rotate(box, origin=origin, x=1,y=0,z=0, degree=-best_x)
-        box = Topology.Rotate(box, origin=origin, x=0,y=1,z=0, degree=-best_y)
-        box = Topology.Rotate(box, origin=origin, x=0,y=0,z=1, degree=-best_z)
+        box = Topology.Rotate(box, origin=origin, axis=[1, 0, 0], angle=-best_x)
+        box = Topology.Rotate(box, origin=origin, axis=[0, 1, 0], angle=-best_y)
+        box = Topology.Rotate(box, origin=origin, axis=[0, 0, 1], angle=-best_z)
         dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot", "minx", "miny", "minz", "maxx", "maxy", "maxz", "width", "length", "height"], [best_x, best_y, best_z, minX, minY, minZ, maxX, maxY, maxZ, (maxX-minX), (maxY-minY), (maxZ-minZ)])
         box = Topology.SetDictionary(box, dictionary)
         return box
@@ -1564,7 +1564,7 @@ class Topology():
         return st
     
     @staticmethod
-    def ByGeometry(vertices=[], edges=[], faces=[], color=[1.0,1.0,1.0,1.0], id=None, name=None, lengthUnit="METERS", outputMode="default", tolerance=0.0001):
+    def ByGeometry(vertices=[], edges=[], faces=[], color=[1.0, 1.0, 1.0, 1.0], id=None, name=None, lengthUnit="METERS", outputMode="default", tolerance=0.0001):
         """
         Create a topology by the input lists of vertices, edges, and faces.
 
@@ -1717,7 +1717,7 @@ class Topology():
                         color = list(color[0])
                 values.append(color)
             else:
-                values.append([1.0,1.0,1.0,1.0])
+                values.append([1.0, 1.0, 1.0, 1.0])
             if id:
                 values.append(id)
             else:
@@ -1834,7 +1834,7 @@ class Topology():
                             keys = []
                             values = []
                             keys.append("TOPOLOGIC_color")
-                            values.append([1.0,1.0,1.0,1.0])
+                            values.append([1.0, 1.0, 1.0, 1.0])
                             keys.append("TOPOLOGIC_id")
                             values.append(str(uuid.uuid4()))
                             keys.append("TOPOLOGIC_name")
@@ -2062,7 +2062,7 @@ class Topology():
         def buildVertex(json_item):
             x, y, z = json_item['coordinates']
             d = json_item['dictionary']
-            v = Vertex.ByCoordinates(x,y,z)
+            v = Vertex.ByCoordinates(x, y, z)
             if v == None:
                 print("Topology.ByJSONString - Error: Could not build a vertex. Returning None.")
                 return None
@@ -2510,7 +2510,7 @@ class Topology():
         if vertices or faces:
             topology = Topology.ByGeometry(vertices = vertices, faces = faces, outputMode="default", tolerance=tolerance)
             if transposeAxes == True:
-                topology = Topology.Rotate(topology, Vertex.Origin(), 1,0,0,90)
+                topology = Topology.Rotate(topology, origin=Vertex.Origin(), axis=[1, 0, 0], angle=90)
             return Topology.SelfMerge(topology)
         print("Topology.ByOBJString - Error: Could not find vertices or faces. Returning None.")
         return None
@@ -2916,7 +2916,7 @@ class Topology():
             for i in range(len(matrix)):
                 for j in range(len(matrix)):
                     if collinear(samples[i], samples[j], tol):
-                        matrix[i,j] = 1
+                        matrix[i, j] = 1
             return matrix
 
         def determineRow(matrix):
@@ -2959,8 +2959,8 @@ class Topology():
 
         def deleteChosenRowsAndCols(matrix, indexes):
             for i in indexes:
-                matrix[i,:] = 0
-                matrix[:,i] = 0
+                matrix[i, :] = 0
+                matrix[:, i] = 0
             return matrix
         if not isinstance(topology, topologic.Topology):
             print("Topology.ClusterFaces - Error: the input topology parameter is not a valid topology. Returning None.")
@@ -4119,7 +4119,7 @@ class Topology():
         return {"filtered": filteredTopologies, "other": otherTopologies}
 
     @staticmethod
-    def Flatten(topology, origin=None, direction=[0,0,1]):
+    def Flatten(topology, origin=None, direction=[0, 0, 1]):
         """
         Flattens the input topology such that the input origin is located at the world origin and the input topology is rotated such that the input vector is pointed in the Up direction (see Vector.Up()).
 
@@ -4192,7 +4192,7 @@ class Topology():
 
         def triangulateFace(face):
             faceTriangles = []
-            for i in range(0,5,1):
+            for i in range(0, 5, 1):
                 try:
                     _ = topologic.FaceUtility.Triangulate(face, float(i)*0.1, faceTriangles)
                     return faceTriangles
@@ -4395,7 +4395,7 @@ class Topology():
             b = a2 * c1 - a1 * c2 
             c = a1 * b2 - b1 * a2 
             d = (- a * v1.X() - b * v1.Y() - c * v1.Z())
-            return [a,b,c,d]
+            return [a, b, c, d]
 
         if not isinstance(topology, topologic.Topology):
             print("Topology.IsPlanar - Error: the input topology parameter is not a valid topology. Returning None.")
@@ -4625,7 +4625,7 @@ class Topology():
         return [v for v in Topology.SubTopologies(topology, subTopologyType="vertex") if Topology.Degree(v, hostTopology=topology) < 2]
     
     @staticmethod
-    def Orient(topology, origin=None, dirA=[0,0,1], dirB=[0,0,1], tolerance=0.0001):
+    def Orient(topology, origin=None, dirA=[0, 0, 1], dirB=[0, 0, 1], tolerance=0.0001):
         """
         Orients the input topology such that the input such that the input dirA vector is parallel to the input dirB vector.
 
@@ -4636,9 +4636,9 @@ class Topology():
         origin : topologic.Vertex , optional
             The input origin. If set to None, The object's centroid will be used to locate the input topology. The default is None.
         dirA : list , optional
-            The first input direction vector. The input topology will be rotated such that this vector is parallel to the input dirB vector. The default is [0,0,1].
+            The first input direction vector. The input topology will be rotated such that this vector is parallel to the input dirB vector. The default is [0, 0, 1].
         dirB : list , optional
-            The target direction vector. The input topology will be rotated such that the input dirA vector is parallel to this vector. The default is [0,0,1].
+            The target direction vector. The input topology will be rotated such that the input dirA vector is parallel to this vector. The default is [0, 0, 1].
         tolerance : float , optional
             The desired tolerance. The default is 0.0001
 
@@ -4673,7 +4673,7 @@ class Topology():
         originA : topologic.Vertex , optional
             The old location to use as the origin of the movement. If set to None, the centroid of the input topology is used. The default is None.
         originB : topologic.Vertex , optional
-            The new location at which to place the topology. If set to None, the world origin (0,0,0) is used. The default is None.
+            The new location at which to place the topology. If set to None, the world origin (0, 0, 0) is used. The default is None.
 
         Returns
         -------
@@ -4687,7 +4687,7 @@ class Topology():
         if not isinstance(originA, topologic.Vertex):
             originA = Topology.Centroid(topology)
         if not isinstance(originA, topologic.Vertex):
-            originA = Vertex.ByCoordinates(0,0,0)
+            originA = Vertex.ByCoordinates(0, 0, 0)
 
         x = originB.X() - originA.X()
         y = originB.Y() - originA.Y()
@@ -5164,7 +5164,7 @@ class Topology():
         return new_topology
 
     @staticmethod
-    def Rotate(topology, origin=None, x=0, y=0, z=1, degree=0, angTolerance=0.001, tolerance=0.0001):
+    def Rotate(topology, origin=None, axis: list = [0, 0, 1], angle: float = 0, angTolerance: float =0.001, tolerance: float =0.0001):
         """
         Rotates the input topology
 
@@ -5173,14 +5173,10 @@ class Topology():
         topology : topologic.Topology
             The input topology.
         origin : topologic.Vertex , optional
-            The origin (center) of the rotation. If set to None, the world origin (0,0,0) is used. The default is None.
-        x : float , optional
-            The 'x' component of the rotation axis. The default is 0.
-        y : float , optional
-            The 'y' component of the rotation axis. The default is 0.
-        z : float , optional
-            The 'z' component of the rotation axis. The default is 0.
-        degree : float , optional
+            The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. The default is None.
+        axis : list , optional
+            The vector representing the axis of rotation. The default is [0, 0, 1] which equates to the Z axis.
+        angle : float , optional
             The angle of rotation in degrees. The default is 0.
         angTolerance : float , optional
             The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
@@ -5224,22 +5220,22 @@ class Topology():
             print("Topology.Rotate - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Topology.Rotate - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         returnTopology = topology
-        if abs(degree) >= angTolerance:
+        if abs(angle) >= angTolerance:
             try:
-                returnTopology = topologic.TopologyUtility.Rotate(topology, origin, x, y, z, degree)
+                x, y, z = axis
+                returnTopology = topologic.TopologyUtility.Rotate(topology, origin, x, y, z, angle)
             except:
                 print("Topology.Rotate - Warning: (topologic.TopologyUtility.Rotate) operation failed. Trying a workaround.")
                 vertices = [Vertex.Coordinates(v) for v in Topology.Vertices(topology)]
-                axis = [x,y,z]
                 origin = Vertex.Coordinates(origin)
                 rot_vertices = []
                 for v in vertices:
-                    rot_vertices.append(rotate_vertex_3d(v, axis, degree, origin))
+                    rot_vertices.append(rotate_vertex_3d(v, axis, angle, origin))
                 rot_vertices = [Vertex.ByCoordinates(rot_v) for rot_v in rot_vertices]
                 new_topology = Topology.ReplaceVertices(topology, verticesA=Topology.Vertices(topology), verticesB=rot_vertices)
                 new_topology = Topology.SelfMerge(new_topology, tolerance=tolerance)
@@ -5256,7 +5252,7 @@ class Topology():
         topology : topologic.Topology
             The input topology.
         origin : topologic.Vertex , optional
-            The origin (center) of the scaling. If set to None, the world origin (0,0,0) is used. The default is None.
+            The origin (center) of the scaling. If set to None, the world origin (0, 0, 0) is used. The default is None.
         x : float , optional
             The 'x' component of the scaling factor. The default is 1.
         y : float , optional
@@ -5274,7 +5270,7 @@ class Topology():
         if not isinstance(topology, topologic.Topology):
             return None
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             return None
         newTopology = None
@@ -5808,11 +5804,11 @@ class Topology():
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera). The default is [-1.25,-1.25,1.25].
+            The desired location of the camera). The default is [-1.25, -1.25, 1.25].
         center : list , optional
-            The desired center (camera target). The default is [0,0,0].
+            The desired center (camera target). The default is [0, 0, 0].
         up : list , optional
-            The desired up vector. The default is [0,0,1].
+            The desired up vector. The default is [0, 0, 1].
         projection : str , optional
             The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
         renderer : str , optional
@@ -5999,8 +5995,8 @@ class Topology():
         return snapshots
 
     @staticmethod
-    def Spin(topology, origin=None, triangulate=True, direction=[0,0,1], degree=360, sides=16,
-                     tolerance=0.0001, silent=False):
+    def Spin(topology, origin=None, triangulate: bool = True, direction: list = [0, 0, 1], angle: float = 360, sides: int = 16,
+                     tolerance: float = 0.0001, silent: bool = False):
         """
         Spins the input topology around an axis to create a new topology.See https://en.wikipedia.org/wiki/Solid_of_revolution.
 
@@ -6013,8 +6009,8 @@ class Topology():
         triangulate : bool , optional
             If set to True, the result will be triangulated. The default is True.
         direction : list , optional
-            The vector representing the direction of the spin axis. The default is [0,0,1].
-        degree : float , optional
+            The vector representing the direction of the spin axis. The default is [0, 0, 1].
+        angle : float , optional
             The angle in degrees for the spin. The default is 360.
         sides : int , optional
             The desired number of sides. The default is 16.
@@ -6035,7 +6031,7 @@ class Topology():
         from topologicpy.Cluster import Cluster
 
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(topology, topologic.Topology):
             if not silent:
                 print("Topology.Spin - Error: the input topology parameter is not a valid topology. Returning None.")
@@ -6045,9 +6041,9 @@ class Topology():
                 print("Topology.Spin - Error: the input origin parameter is not a valid vertex. Returning None.")
                 return None
         topologies = []
-        unit_degree = degree / float(sides)
+        unit_degree = angle / float(sides)
         for i in range(sides+1):
-            tempTopology = Topology.Rotate(topology, origin, direction[0], direction[1], direction[2], unit_degree*i)
+            tempTopology = Topology.Rotate(topology, origin=origin, axis=direction, angle=unit_degree*i)
             if tempTopology:
                 topologies.append(tempTopology)
         returnTopology = None
@@ -6120,7 +6116,7 @@ class Topology():
         return returnTopology
     
     @staticmethod
-    def Taper(topology, origin=None, ratioRange=[0,1], triangulate=False, tolerance=0.0001):
+    def Taper(topology, origin=None, ratioRange=[0, 1], triangulate=False, tolerance=0.0001):
         """
         Tapers the input topology. This method tapers the input geometry along its Z-axis based on the ratio range input.
 
@@ -6145,9 +6141,9 @@ class Topology():
         """
         from topologicpy.Vertex import Vertex
         ratioRange = [min(1,ratioRange[0]), min(1,ratioRange[1])]
-        if ratioRange == [0,0]:
+        if ratioRange == [0, 0]:
             return topology
-        if ratioRange == [1,1]:
+        if ratioRange == [1, 1]:
             print("Topology.Taper - Error: Degenerate result. Returning original topology.")
             return topology
         if triangulate == True:
@@ -6176,7 +6172,7 @@ class Topology():
         return return_topology
     
     @staticmethod
-    def Twist(topology, origin=None, degreeRange=[45,90], triangulate=False):
+    def Twist(topology, origin=None, angleRange=[45, 90], triangulate=False):
         """
         Twists the input topology. This method twists the input geometry along its Z-axis based on the degree range input.
 
@@ -6186,7 +6182,7 @@ class Topology():
             The input topology.
         origin : topologic.Vertex , optional
             The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. The default is None.
-        degreeRange : list , optional
+        angleRange : list , optional
             The desired angle range in degrees. This will specify a linear range from bottom to top for twisting the vertices. positive numbers mean a clockwise rotation.
         triangulate : bool , optional
             If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. The default is False.
@@ -6199,7 +6195,7 @@ class Topology():
         """
         from topologicpy.Vertex import Vertex
 
-        if degreeRange == [0,0]:
+        if angleRange == [0, 0]:
             return topology
         if triangulate == True:
             topology = Topology.Triangulate(topology)
@@ -6214,15 +6210,15 @@ class Topology():
         new_vertices = []
         for v in vertices:
             ht = (Vertex.Z(v)-minZ)/(maxZ - minZ)
-            new_rot = degreeRange[0] + ht*(degreeRange[1] - degreeRange[0])
+            new_rot = angleRange[0] + ht*(angleRange[1] - angleRange[0])
             orig = Vertex.ByCoordinates(Vertex.X(origin), Vertex.Y(origin), Vertex.Z(v))
-            new_vertices.append(Topology.Rotate(v, origin=orig, degree=new_rot))
+            new_vertices.append(Topology.Rotate(v, origin=orig, axis=[0, 0, 1], angle=new_rot))
         return_topology = Topology.ReplaceVertices(topology, vertices, new_vertices)
         return_topology = Topology.Fix(return_topology, topologyType=Topology.TypeAsString(topology))
         return return_topology
     
     @staticmethod
-    def Unflatten(topology, origin=None, direction=[0,0,1]):
+    def Unflatten(topology, origin=None, direction=[0, 0, 1]):
         """
         Unflattens the input topology such that the world origin is translated to the input origin and the input topology is rotated such that the Up direction (see Vector.Up()) is aligned with the input vector.
 
@@ -6738,7 +6734,7 @@ class Topology():
             return topology
     
     @staticmethod
-    def TranslateByDirectionDistance(topology, direction=[0,0,0], distance=0):
+    def TranslateByDirectionDistance(topology, direction: list = [0, 0, 0], distance: float = 0):
         """
         Translates (moves) the input topology along the input direction by the specified distance.
 
@@ -6747,7 +6743,7 @@ class Topology():
         topology : topologic.topology
             The input topology.
         direction : list , optional
-            The direction vector in which the topology should be moved. The default is [0,0,0]
+            The direction vector in which the topology should be moved. The default is [0, 0, 0]
         distance : float , optional
             The distance by which the toplogy should be moved. The default is 0.
 

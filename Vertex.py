@@ -380,10 +380,10 @@ class Vertex(Topology):
         x = round(vertex.X(), mantissa)
         y = round(vertex.Y(), mantissa)
         z = round(vertex.Z(), mantissa)
-        matrix = [[1,0,0,x],
-                [0,1,0,y],
-                [0,0,1,z],
-                [0,0,0,1]]
+        matrix = [[1, 0, 0, x],
+                [0, 1, 0, y],
+                [0, 0, 1, z],
+                [0, 0, 0, 1]]
         output = []
         outputType = outputType.lower()
         if outputType == "matrix":
@@ -526,7 +526,7 @@ class Vertex(Topology):
         def distance_to_vertex(vertexA, vertexB):
             a = (Vertex.X(vertexA), Vertex.Y(vertexA), Vertex.Z(vertexA))
             b = (Vertex.X(vertexB), Vertex.Y(vertexB), Vertex.Z(vertexB))
-            return distance_point_to_point(a,b)
+            return distance_point_to_point(a, b)
         
         def distance_to_edge(vertex, edge):
             a = (Vertex.X(vertex), Vertex.Y(vertex), Vertex.Z(vertex))
@@ -1290,7 +1290,7 @@ class Vertex(Topology):
     @staticmethod
     def Origin() -> topologic.Vertex:
         """
-        Returns a vertex with coordinates (0,0,0)
+        Returns a vertex with coordinates (0, 0, 0)
 
         Parameters
         -----------
@@ -1299,10 +1299,10 @@ class Vertex(Topology):
         -----------
         topologic.Vertex
         """
-        return Vertex.ByCoordinates(0,0,0)
+        return Vertex.ByCoordinates(0, 0, 0)
     
     @staticmethod
-    def PerpendicularDistance(vertex: topologic.Vertex, face: topologic.Face, mantissa: int=4):
+    def PerpendicularDistance(vertex: topologic.Vertex, face: topologic.Face, mantissa: int = 6):
         """
         Returns the perpendicular distance between the input vertex and the input face. The face is considered to be infinite.
 
@@ -1394,7 +1394,7 @@ class Vertex(Topology):
         Return
         -----------
         dict
-            The dictionary containing the values of a,b,c,d for the plane equation in the form of ax+by+cz+d=0.
+            The dictionary containing the values of a, b, c, d for the plane equation in the form of ax+by+cz+d=0.
             The keys in the dictionary are ["a", "b", "c". "d"]
         """
 
@@ -1449,7 +1449,7 @@ class Vertex(Topology):
         topologic.Vertex
         """
         
-        return Vertex.ByCoordinates(x,y,z)
+        return Vertex.ByCoordinates(x, y, z)
 
     @staticmethod
     def Project(vertex: topologic.Vertex, face: topologic.Face, direction: bool = None, mantissa: int = 6) -> topologic.Vertex:
@@ -1465,7 +1465,7 @@ class Vertex(Topology):
         direction : vector, optional
             The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. The default is None.
         mantissa : int , optional
-            The length of the desired mantissa. The default is 4.
+            The length of the desired mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 

@@ -56,12 +56,12 @@ class Grid(topologic.Cluster):
             return None
         if not uOrigin:
             if not isinstance(face, topologic.Face):
-                uOrigin = Vertex.ByCoordinates(0,0,0)
+                uOrigin = Vertex.ByCoordinates(0, 0, 0)
             else:
                 uOrigin = Face.VertexByParameters(face, 0, 0)
         if not vOrigin:
             if not isinstance(face, topologic.Face):
-                vOrigin = Vertex.ByCoordinates(0,0,0)
+                vOrigin = Vertex.ByCoordinates(0, 0, 0)
             else:
                 vOrigin = Face.VertexByParameters(face, 0, 0)
         
@@ -71,9 +71,9 @@ class Grid(topologic.Cluster):
             v3 = Face.VertexByParameters(face, 0, 0)
             v4 = Face.VertexByParameters(face, 0, 1)
         else:
-            v1 = Vertex.ByCoordinates(0,0,0)
+            v1 = Vertex.ByCoordinates(0, 0, 0)
             v2 = Vertex.ByCoordinates(max(uRange),0,0)
-            v3 = Vertex.ByCoordinates(0,0,0)
+            v3 = Vertex.ByCoordinates(0, 0, 0)
             v4 = Vertex.ByCoordinates(0,max(vRange),0)
 
         uVector = [v2.X()-v1.X(), v2.Y()-v1.Y(),v2.Z()-v1.Z()]
@@ -224,7 +224,7 @@ class Grid(topologic.Cluster):
         face : topologic.Face , optional
             The input face. If set to None, the grid will be created on the XY plane. The default is None.
         origin : topologic.Vertex , optional
-            The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the origin will be set to (0,0,0). The default is None.
+            The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the origin will be set to (0, 0, 0). The default is None.
         uRange : list , optional
             A list of distances for the *u* grid lines from the uOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
         vRange : list , optional
@@ -251,7 +251,7 @@ class Grid(topologic.Cluster):
             return None
         if not origin:
             if not isinstance(face, topologic.Face):
-                origin = Vertex.ByCoordinates(0,0,0)
+                origin = Vertex.ByCoordinates(0, 0, 0)
             else:
                 origin = Face.VertexByParameters(face, 0, 0)
         
@@ -261,9 +261,9 @@ class Grid(topologic.Cluster):
             v3 = Face.VertexByParameters(face, 0, 0)
             v4 = Face.VertexByParameters(face, 0, 1)
         else:
-            v1 = Vertex.ByCoordinates(0,0,0)
+            v1 = Vertex.ByCoordinates(0, 0, 0)
             v2 = Vertex.ByCoordinates(max(uRange),0,0)
-            v3 = Vertex.ByCoordinates(0,0,0)
+            v3 = Vertex.ByCoordinates(0, 0, 0)
             v4 = Vertex.ByCoordinates(0,max(vRange),0)
 
         uVector = [v2.X()-v1.X(), v2.Y()-v1.Y(),v2.Z()-v1.Z()]
@@ -300,7 +300,7 @@ class Grid(topologic.Cluster):
         face : topologic.Face , optional
             The input face. If set to None, the grid will be created on the XY plane. The default is None.
         origin : topologic.Vertex , optional
-            The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the origin will be set to (0,0,0). The default is None.
+            The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the origin will be set to (0, 0, 0). The default is None.
         uRange : list , optional
             A list of *u* parameters for the *u* grid lines from the uOrigin. The default is [0.0,0.25,0.5,0.75,1.0].
         vRange : list , optional

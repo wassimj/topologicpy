@@ -25,18 +25,18 @@ v4 = Vertex.ByCoordinates(0, 0, 10)         # create vertex
 v5 = Vertex.ByCoordinates(0, 10, 10)        # create vertex
 v6 = Vertex.ByCoordinates(10, 10, 10)       # create vertex
 v7 = Vertex.ByCoordinates(10, 0, 10)        # create vertex
-list_v = [v0,v1,v2,v3,v4,v5,v6,v7]
-e0 = Edge.ByStartVertexEndVertex(v0,v1)
-wire0 = Wire.ByVertices([v0,v1,v2])         # create wire
-wire1 = Wire.ByVertices([v4,v5,v6])         # create wire
+list_v = [v0, v1, v2, v3, v4, v5, v6, v7]
+e0 = Edge.ByStartVertexEndVertex(v0, v1)
+wire0 = Wire.ByVertices([v0, v1, v2])         # create wire
+wire1 = Wire.ByVertices([v4, v5, v6])         # create wire
 w_list = [wire0,wire1]                      # create list
-face0 = Face.ByVertices([v0,v1,v2,v3,v0])     # create face
-face1 = Face.ByVertices([v4,v5,v6,v7,v4])     # create face
-face2 = Face.ByVertices([v0,v4,v7,v3,v0])     # create face
-face3 = Face.ByVertices([v3,v7,v6,v2,v3])     # create face
-face4 = Face.ByVertices([v2,v6,v5,v1,v2])     # create face
-face5 = Face.ByVertices([v1,v5,v4,v0,v1])     # create face
-f_list = [face0,face1,face2,face3,face4,face5]  # create list
+face0 = Face.ByVertices([v0, v1, v2, v3, v0])     # create face
+face1 = Face.ByVertices([v4, v5, v6, v7, v4])     # create face
+face2 = Face.ByVertices([v0, v4, v7, v3, v0])     # create face
+face3 = Face.ByVertices([v3, v7, v6, v2, v3])     # create face
+face4 = Face.ByVertices([v2, v6, v5, v1, v2])     # create face
+face5 = Face.ByVertices([v1, v5, v4, v0, v1])     # create face
+f_list = [face0, face1, face2, face3, face4, face5]  # create list
 
 # Case 1 - EdgesByDistances
 print("Case 1")

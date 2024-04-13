@@ -31,9 +31,9 @@ v11 = Vertex.ByCoordinates(9.3, 9.4, 4.6)                        # create vertex
 v12 = Vertex.ByCoordinates(9.3, -5.3, 4.6)                      # create vertex
 v13 = Vertex.ByCoordinates(23.4, 14.3, 0)                      # create vertex
 # creating edges
-e1 = Edge.ByVertices([v1,v2])                                        # create edge
-e2 = Edge.ByVertices([v2,v3])                                        # create edge
-e3 = Edge.ByVertices([v3,v4])                                        # create edge
+e1 = Edge.ByVertices([v1, v2])                                        # create edge
+e2 = Edge.ByVertices([v2, v3])                                        # create edge
+e3 = Edge.ByVertices([v3, v4])                                        # create edge
 e4 = Edge.ByVertices([v4, v1])                                       # create edge
 # creating Wire
 w1 = Wire.ByEdges([e1, e2, e3, e4])                               # create wire

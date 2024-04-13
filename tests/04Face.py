@@ -77,7 +77,6 @@ assert isinstance(intB_C1, topologic.Face), "Face.AddInternalBoundariesCluster. 
 # test 2
 intB_C2 = Face.AddInternalBoundariesCluster(c1, clu2)
 assert isinstance(intB_C2, topologic.Face), "Face.AddInternalBoundariesCluster. Should be topologic.Face"
-# Topology.ExportToBRep(intB_C2,r"E:\UK_Work\Topologic_Work\Export\intB_C2.brep",True)
 
 # Case 3 - Angle
 print("Case 3")
@@ -142,8 +141,6 @@ assert isinstance(fcE1, topologic.Face), "Face.ByEdgesCluster. Should be topolog
 # test 2
 fcE2 = Face.ByEdgesCluster(Clu4)
 assert isinstance(fcE2, topologic.Face), "Face.ByEdgesCluster. Should be topologic.Fac"
-# Topology.ExportToBRep(fcE1,r"E:\UK_Work\Topologic_Work\Export\fcE1.brep",True)
-# Topology.ExportToBRep(fcE2,r"E:\UK_Work\Topologic_Work\Export\fcE2.brep",True)
  
 # Case 9 - ByOffset
 print("Case 9")

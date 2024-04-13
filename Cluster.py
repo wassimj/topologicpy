@@ -1081,7 +1081,7 @@ class Cluster(Topology):
         return Cluster.ByTopologies(cellComplexes+cells)
     
     @staticmethod
-    def MysticRose(wire: topologic.Wire = None, origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, perimeter: bool = True, direction: list = [0,0,1], placement:str = "center", tolerance: float = 0.0001) -> topologic.Cluster:
+    def MysticRose(wire: topologic.Wire = None, origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, perimeter: bool = True, direction: list = [0, 0, 1], placement:str = "center", tolerance: float = 0.0001) -> topologic.Cluster:
         """
         Creates a mystic rose.
 
@@ -1090,7 +1090,7 @@ class Cluster(Topology):
         wire : topologic.Wire , optional
             The input Wire. if set to None, a circle with the input parameters is created. Otherwise, the input parameters are ignored.
         origin : topologic.Vertex , optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
+            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
             The radius of the mystic rose. The default is 1.
         sides : int , optional
@@ -1098,7 +1098,7 @@ class Cluster(Topology):
         perimeter : bool , optional
             If True, the perimeter edges are included in the output. The default is True.
         direction : list , optional
-            The vector representing the up direction of the mystic rose. The default is [0,0,1].
+            The vector representing the up direction of the mystic rose. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the mystic rose. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional

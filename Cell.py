@@ -66,15 +66,15 @@ class Cell(Topology):
     @staticmethod
     def Box(origin: topologic.Vertex = None,
             width: float = 1, length: float = 1, height: float = 1,
-            uSides: int = 1, vSides:int = 1, wSides:int = 1,
-            direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+            uSides: int = 1, vSides: int = 1, wSides: int = 1,
+            direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a box.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the box. The default is None which results in the box being placed at (0,0,0).
+            The origin location of the box. The default is None which results in the box being placed at (0, 0, 0).
         width : float , optional
             The width of the box. The default is 1.
         length : float , optional
@@ -88,7 +88,7 @@ class Cell(Topology):
         wSides : int , optional
             The number of sides along the height. The default is 1.
         direction : list , optional
-            The vector representing the up direction of the box. The default is [0,0,1].
+            The vector representing the up direction of the box. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -179,7 +179,7 @@ class Cell(Topology):
             for f in faceList:
                 centroid = Topology.Centroid(f)
                 n = Face.Normal(f)
-                v = Topology.Translate(centroid, n[0]*0.01,n[1]*0.01,n[2]*0.01)
+                v = Topology.Translate(centroid, n[0]*0.01, n[1]*0.01, n[2]*0.01)
                 if not Vertex.IsInternal(v, cell):
                     finalFaces.append(f)
             finalFinalFaces = []
@@ -334,7 +334,7 @@ class Cell(Topology):
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
-    def ByThickenedShell(shell: topologic.Shell, direction: list = [0,0,1], thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
+    def ByThickenedShell(shell: topologic.Shell, direction: list = [0, 0, 1], thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
                             planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a cell by thickening the input shell. The shell must be open.
@@ -558,14 +558,14 @@ class Cell(Topology):
         return Cell.ByWires(wires, close=close, triangulate=triangulate, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
-    def Capsule(origin: topologic.Vertex = None, radius: float = 0.25, height: float = 1, uSides: int = 16, vSidesEnds:int = 8, vSidesMiddle: int = 1, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Capsule(origin: topologic.Vertex = None, radius: float = 0.25, height: float = 1, uSides: int = 16, vSidesEnds:int = 8, vSidesMiddle: int = 1, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a capsule shape. A capsule is a cylinder with hemispherical ends.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the cylinder. The default is None which results in the cylinder being placed at (0,0,0).
+            The location of the origin of the cylinder. The default is None which results in the cylinder being placed at (0, 0, 0).
         radius : float , optional
             The radius of the capsule. The default is 0.25.
         height : float , optional
@@ -577,7 +577,7 @@ class Cell(Topology):
         vSidesMiddle : int , optional
             The number of vertical segments of the middle cylinder. The default is 1.
         direction : list , optional
-            The vector representing the up direction of the capsule. The default is [0,0,1].
+            The vector representing the up direction of the capsule. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the capsule. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
         tolerance : float , optional
@@ -593,7 +593,7 @@ class Cell(Topology):
         from topologicpy.Cell import Cell
         from topologicpy.Vertex import Vertex
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Capsule - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
@@ -604,9 +604,9 @@ class Cell(Topology):
             cyl = Cell.Cylinder(origin=Vertex.Origin(),
                                 radius=radius,
                                 height=cyl_height,
-                                uSides=uSides, vSides=vSidesMiddle, direction=[0,0,1], placement="center", tolerance=tolerance)
-            o1 = Vertex.ByCoordinates(0,0,cyl_height*0.5)
-            o2 = Vertex.ByCoordinates(0,0,-cyl_height*0.5)
+                                uSides=uSides, vSides=vSidesMiddle, direction=[0, 0, 1], placement="center", tolerance=tolerance)
+            o1 = Vertex.ByCoordinates(0, 0, cyl_height*0.5)
+            o2 = Vertex.ByCoordinates(0, 0, -cyl_height*0.5)
             s1 = Cell.Sphere(origin=o1, radius=radius, uSides=uSides, vSides=vSidesEnds*2, tolerance=tolerance)
             s2 = Cell.Sphere(origin=o2, radius=radius, uSides=uSides, vSides=vSidesEnds*2, tolerance=tolerance)
             capsule = Topology.Union(cyl, s1, tolerance=tolerance)
@@ -617,7 +617,7 @@ class Cell(Topology):
             capsule = Topology.Translate(capsule, 0, 0, height/2)
             capsule = Topology.Translate(capsule, radius, radius)
         
-        capsule = Topology.Orient(capsule, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
+        capsule = Topology.Orient(capsule, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
         capsule = Topology.Place(capsule, originA=Vertex.Origin(), originB=origin)
         return capsule
 
@@ -661,7 +661,7 @@ class Cell(Topology):
         return round(compactness, mantissa)
     
     @staticmethod
-    def Cone(origin: topologic.Vertex = None, baseRadius: float = 0.5, topRadius: float = 0, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0,0,1],
+    def Cone(origin: topologic.Vertex = None, baseRadius: float = 0.5, topRadius: float = 0, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
                  dirZ: float = 1, placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a cone.
@@ -669,7 +669,7 @@ class Cell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the cone. The default is None which results in the cone being placed at (0,0,0).
+            The location of the origin of the cone. The default is None which results in the cone being placed at (0, 0, 0).
         baseRadius : float , optional
             The radius of the base circle of the cone. The default is 0.5.
         topRadius : float , optional
@@ -679,7 +679,7 @@ class Cell(Topology):
         sides : int , optional
             The number of sides of the cone. The default is 16.
         direction : list , optional
-            The vector representing the up direction of the cone. The default is [0,0,1].
+            The vector representing the up direction of the cone. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the cone. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -720,7 +720,7 @@ class Cell(Topology):
             faces.append(f)
             return Cell.ByFaces(faces, tolerance=tolerance)
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Cone - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
@@ -779,7 +779,7 @@ class Cell(Topology):
             shell = Cell.Shells(cone)[0]
             shell = shell.Slice(cutting_planes_cluster)
             cone = Cell.ByShell(shell)
-        cone = Topology.Orient(cone, origin=origin, dirA=[0,0,1], dirB=direction)
+        cone = Topology.Orient(cone, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return cone
   
     @staticmethod
@@ -821,7 +821,7 @@ class Cell(Topology):
             return None
  
     @staticmethod
-    def Cylinder(origin: topologic.Vertex = None, radius: float = 0.5, height: float = 1, uSides: int = 16, vSides:int = 1, direction: list = [0,0,1],
+    def Cylinder(origin: topologic.Vertex = None, radius: float = 0.5, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
                      placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a cylinder.
@@ -829,7 +829,7 @@ class Cell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the cylinder. The default is None which results in the cylinder being placed at (0,0,0).
+            The location of the origin of the cylinder. The default is None which results in the cylinder being placed at (0, 0, 0).
         radius : float , optional
             The radius of the cylinder. The default is 0.5.
         height : float , optional
@@ -839,7 +839,7 @@ class Cell(Topology):
         vSides : int , optional
             The number of vertical segments of the cylinder. The default is 1.
         direction : list , optional
-            The vector representing the up direction of the cylinder. The default is [0,0,1].
+            The vector representing the up direction of the cylinder. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the cylinder. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
         tolerance : float , optional
@@ -857,7 +857,7 @@ class Cell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Cylinder - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
@@ -871,7 +871,7 @@ class Cell(Topology):
             yOffset = radius
         circle_origin = Vertex.ByCoordinates(origin.X() + xOffset, origin.Y() + yOffset, origin.Z() + zOffset)
         
-        baseWire = Wire.Circle(origin=circle_origin, radius=radius, sides=uSides, fromAngle=0, toAngle=360, close=True, direction=[0,0,1], placement="center", tolerance=tolerance)
+        baseWire = Wire.Circle(origin=circle_origin, radius=radius, sides=uSides, fromAngle=0, toAngle=360, close=True, direction=[0, 0, 1], placement="center", tolerance=tolerance)
         baseFace = Face.ByWire(baseWire, tolerance=tolerance)
         cylinder = Cell.ByThickenedFace(face=baseFace, thickness=height, bothSides=False, reverse=True,
                             tolerance=tolerance)
@@ -887,7 +887,7 @@ class Cell(Topology):
             cutting_planes_cluster = Cluster.ByTopologies(cutting_planes)
             cylinder = CellComplex.ExternalBoundary(cylinder.Slice(cutting_planes_cluster))
 
-        cylinder = Topology.Orient(cylinder, origin=origin, dirA=[0,0,1], dirB=direction)
+        cylinder = Topology.Orient(cylinder, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return cylinder
     
     @staticmethod
@@ -963,7 +963,7 @@ class Cell(Topology):
             zList.append(f.Centroid().Z())
         zMin = min(zList)
         zMax = max(zList)
-        up = [0,0,1]
+        up = [0, 0, 1]
         for aFace in faces:
             aCode = angleCode(aFace, up, tiltAngle)
 
@@ -1001,7 +1001,7 @@ class Cell(Topology):
 
     @staticmethod
     def Dodecahedron(origin: topologic.Vertex = None, radius: float = 0.5,
-                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Description
         ----------
@@ -1010,11 +1010,11 @@ class Cell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the dodecahedron. The default is None which results in the dodecahedron being placed at (0,0,0).
+            The origin location of the dodecahedron. The default is None which results in the dodecahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the dodecahedron's circumscribed sphere. The default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the dodecahedron. The default is [0,0,1].
+            The vector representing the up direction of the dodecahedron. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the dodecahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1033,7 +1033,7 @@ class Cell(Topology):
         from topologicpy.Topology import Topology
 
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Dodecahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
@@ -1043,12 +1043,12 @@ class Cell(Topology):
         for edge in edges:
             o = Topology.Centroid(edge)
             e_dir = Edge.Direction(edge)
-            pentagons.append(Topology.Rotate(pen, origin=o, x=e_dir[0], y=e_dir[1], z=e_dir[2], degree=116.565))
+            pentagons.append(Topology.Rotate(pen, origin=o, axis=e_dir, angle=116.565))
 
         cluster = Cluster.ByTopologies(pentagons)
         
-        cluster2 = Topology.Rotate(cluster, origin=Vertex.Origin(), x=1,y=0,z=0,degree=180)
-        cluster2 = Topology.Rotate(cluster2, origin=Vertex.Origin(), x=0,y=0,z=1,degree=36)
+        cluster2 = Topology.Rotate(cluster, origin=Vertex.Origin(), axis=[1, 0, 0], angle=180)
+        cluster2 = Topology.Rotate(cluster2, origin=Vertex.Origin(), axis=[0, 0, 1], angle=36)
         vertices = Topology.Vertices(cluster2)
         zList = [Vertex.Z(v) for v in vertices]
         zList = list(set(zList))
@@ -1068,7 +1068,7 @@ class Cell(Topology):
         elif placement == "lowerleft":
             dodecahedron = Topology.Translate(dodecahedron, radius, radius, radius)
         
-        dodecahedron = Topology.Orient(dodecahedron, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction, tolerance=tolerance)
+        dodecahedron = Topology.Orient(dodecahedron, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
         dodecahedron = Topology.Place(dodecahedron, originA=Vertex.Origin(), originB=origin)
         return dodecahedron
 
@@ -1096,7 +1096,7 @@ class Cell(Topology):
         return edges
 
     @staticmethod
-    def Egg(origin: topologic.Vertex = None, height: float = 1.0, uSides: int = 16, vSides: int = 8, direction: list = [0,0,1],
+    def Egg(origin: topologic.Vertex = None, height: float = 1.0, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
                    placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a sphere.
@@ -1104,7 +1104,7 @@ class Cell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the sphere. The default is None which results in the sphere being placed at (0,0,0).
+            The origin location of the sphere. The default is None which results in the sphere being placed at (0, 0, 0).
         radius : float , optional
             The radius of the sphere. The default is 0.5.
         uSides : int , optional
@@ -1112,7 +1112,7 @@ class Cell(Topology):
         vSides : int , optional
             The number of sides along the latitude of the sphere. The default is 8.
         direction : list , optional
-            The vector representing the up direction of the sphere. The default is [0,0,1].
+            The vector representing the up direction of the sphere. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1130,7 +1130,7 @@ class Cell(Topology):
         from topologicpy.Dictionary import Dictionary
 
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Sphere - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
@@ -1161,7 +1161,7 @@ class Cell(Topology):
         for i in range(vSides+1):
             new_verts.append(Wire.VertexByParameter(c, i/vSides))
         c = Wire.ByVertices(new_verts, close=False)
-        egg = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0,0,1], degree=360, sides=uSides, tolerance=tolerance)
+        egg = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
         if egg.Type() == topologic.CellComplex.Type():
             egg = egg.ExternalBoundary()
         if egg.Type() == topologic.Shell.Type():
@@ -1175,7 +1175,7 @@ class Cell(Topology):
             width = Dictionary.ValueAtKey(d, 'width')
             length = Dictionary.ValueAtKey(d, 'length')
             egg = Topology.Translate(egg, width*0.5, length*0.5, height*0.5)
-        egg = Topology.Orient(egg, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
+        egg = Topology.Orient(egg, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
         egg = Topology.Place(egg, originA=Vertex.Origin(), originB=origin)
         return egg
     
@@ -1229,7 +1229,7 @@ class Cell(Topology):
         return faces
 
     @staticmethod
-    def Hyperboloid(origin: topologic.Cell = None, baseRadius: float = 0.5, topRadius: float = 0.5, height: float = 1, sides: int = 24, direction: list = [0,0,1],
+    def Hyperboloid(origin: topologic.Cell = None, baseRadius: float = 0.5, topRadius: float = 0.5, height: float = 1, sides: int = 24, direction: list = [0, 0, 1],
                         twist: float = 60, placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a hyperboloid.
@@ -1237,7 +1237,7 @@ class Cell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the hyperboloid. The default is None which results in the hyperboloid being placed at (0,0,0).
+            The location of the origin of the hyperboloid. The default is None which results in the hyperboloid being placed at (0, 0, 0).
         baseRadius : float , optional
             The radius of the base circle of the hyperboloid. The default is 0.5.
         topRadius : float , optional
@@ -1247,7 +1247,7 @@ class Cell(Topology):
         sides : int , optional
             The number of sides of the cone. The default is 24.
         direction : list , optional
-            The vector representing the up direction of the hyperboloid. The default is [0,0,1].
+            The vector representing the up direction of the hyperboloid. The default is [0, 0, 1].
         twist : float , optional
             The angle to twist the base cylinder. The default is 60.
         placement : str , optional
@@ -1291,7 +1291,7 @@ class Cell(Topology):
             return returnTopology
         
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Hyperboloid - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
@@ -1325,13 +1325,13 @@ class Cell(Topology):
             print("Cell.Hyperboloid - Error: Could not create a hyperboloid. Returning None.")
             return None
         
-        hyperboloid = Topology.Orient(hyperboloid, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction, tolerance=tolerance)
+        hyperboloid = Topology.Orient(hyperboloid, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
         hyperboloid = Topology.Place(hyperboloid, originA=Vertex.Origin(), originB=origin)
         return hyperboloid
     
     @staticmethod
     def Icosahedron(origin: topologic.Vertex = None, radius: float = 0.5,
-                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Description
         ----------
@@ -1340,11 +1340,11 @@ class Cell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the icosahedron. The default is None which results in the icosahedron being placed at (0,0,0).
+            The origin location of the icosahedron. The default is None which results in the icosahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the icosahedron's circumscribed sphere. The default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the icosahedron. The default is [0,0,1].
+            The vector representing the up direction of the icosahedron. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the icosahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1363,15 +1363,15 @@ class Cell(Topology):
         import math
 
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Dodecahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         rect1 = Wire.Rectangle(width=(1+math.sqrt(5))/2, length=1)
         rect2 = Wire.Rectangle(width=1, length=(1+math.sqrt(5))/2)
-        rect2 = Topology.Rotate(rect2, x=1,y=0,z=0, degree=90)
+        rect2 = Topology.Rotate(rect2, origin=Vertex.Origin(), axis=[1, 0, 0], angle=90)
         rect3 = Wire.Rectangle(width=1, length=(1+math.sqrt(5))/2)
-        rect3 = Topology.Rotate(rect3, x=0,y=1,z=0, degree=90)
+        rect3 = Topology.Rotate(rect3, origin=Vertex.Origin(), axis=[0, 1, 0], angle=90)
         vertices = Topology.Vertices(rect1)
         v1, v2, v3, v4 = vertices
         vertices = Topology.Vertices(rect2)
@@ -1410,7 +1410,7 @@ class Cell(Topology):
         elif placement == "lowerleft":
             icosahedron = Topology.Translate(icosahedron, radius, radius, radius)
         
-        icosahedron = Topology.Orient(icosahedron, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction, tolerance=tolerance)
+        icosahedron = Topology.Orient(icosahedron, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
         icosahedron = Topology.Place(icosahedron, originA=Vertex.Origin(), originB=origin)
         return icosahedron
 
@@ -1498,7 +1498,7 @@ class Cell(Topology):
     
     @staticmethod
     def Octahedron(origin: topologic.Vertex = None, radius: float = 0.5,
-                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Description
         ----------
@@ -1507,11 +1507,11 @@ class Cell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the octahedron. The default is None which results in the octahedron being placed at (0,0,0).
+            The origin location of the octahedron. The default is None which results in the octahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the octahedron's circumscribed sphere. The default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the octahedron. The default is [0,0,1].
+            The vector representing the up direction of the octahedron. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the octahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1529,33 +1529,33 @@ class Cell(Topology):
         from topologicpy.Topology import Topology
 
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Octahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         
-        vb1 = Vertex.ByCoordinates(-0.5,0,0)
-        vb2 = Vertex.ByCoordinates(0,-0.5,0)
-        vb3 = Vertex.ByCoordinates(0.5,0,0)
-        vb4 = Vertex.ByCoordinates(0,0.5,0)
+        vb1 = Vertex.ByCoordinates(-0.5, 0, 0)
+        vb2 = Vertex.ByCoordinates(0, -0.5, 0)
+        vb3 = Vertex.ByCoordinates(0.5, 0 0)
+        vb4 = Vertex.ByCoordinates(0, 0.5, 0)
         top = Vertex.ByCoordinates(0, 0, 0.5)
         bottom = Vertex.ByCoordinates(0, 0, -0.5)
-        f1 = Face.ByVertices([top,vb1,vb2])
-        f2 = Face.ByVertices([top,vb2,vb3])
-        f3 = Face.ByVertices([top,vb3,vb4])
-        f4 = Face.ByVertices([top,vb4,vb1])
-        f5 = Face.ByVertices([bottom,vb1,vb2])
-        f6 = Face.ByVertices([bottom,vb2,vb3])
-        f7 = Face.ByVertices([bottom,vb3,vb4])
-        f8 = Face.ByVertices([bottom,vb4,vb1])
+        f1 = Face.ByVertices([top, vb1, vb2])
+        f2 = Face.ByVertices([top, vb2, vb3])
+        f3 = Face.ByVertices([top, vb3, vb4])
+        f4 = Face.ByVertices([top, vb4, vb1])
+        f5 = Face.ByVertices([bottom, vb1, vb2])
+        f6 = Face.ByVertices([bottom, vb2, vb3])
+        f7 = Face.ByVertices([bottom, vb3, vb4])
+        f8 = Face.ByVertices([bottom, vb4, vb1])
 
-        octahedron = Cell.ByFaces([f1,f2,f3,f4,f5,f6,f7,f8], tolerance=tolerance)
+        octahedron = Cell.ByFaces([f1, f2, f3, f4, f5, f6, f7, f8], tolerance=tolerance)
         octahedron = Topology.Scale(octahedron, origin=Vertex.Origin(), x=radius/0.5, y=radius/0.5, z=radius/0.5)
         if placement == "bottom":
             octahedron = Topology.Translate(octahedron, 0, 0, radius)
         elif placement == "lowerleft":
             octahedron = Topology.Translate(octahedron, radius, radius, radius)
-        octahedron = Topology.Orient(octahedron, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
+        octahedron = Topology.Orient(octahedron, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
         octahedron = Topology.Place(octahedron, originA=Vertex.Origin(), originB=origin)
         return octahedron
     
@@ -1630,8 +1630,8 @@ class Cell(Topology):
                 x = math.sin(angle)*radius + sv.X()
                 y = math.cos(angle)*radius + sv.Y()
                 z = sv.Z()
-                baseV.append(Vertex.ByCoordinates(x,y,z))
-                topV.append(Vertex.ByCoordinates(x,y,z+dist))
+                baseV.append(Vertex.ByCoordinates(x, y, z))
+                topV.append(Vertex.ByCoordinates(x, y, z+dist))
 
             baseWire = Wire.ByVertices(baseV)
             topWire = Wire.ByVertices(topV)
@@ -1642,9 +1642,9 @@ class Cell(Topology):
             theta = 0
         else:
             theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
-        pipe = Topology.Rotate(pipe, sv, 0, 1, 0, theta)
-        pipe = Topology.Rotate(pipe, sv, 0, 0, 1, phi)
-        zzz = Vertex.ByCoordinates(0,0,0)
+        pipe = Topology.Rotate(pipe, origin=sv, axis=[0, 1, 0], angle=theta)
+        pipe = Topology.Rotate(pipe, origin=sv, axis=[0, 0, 1], angle=phi)
+        zzz = Vertex.ByCoordinates(0, 0, 0)
         if endcapA:
             origin = edge.StartVertex()
             x1 = origin.X()
@@ -1663,8 +1663,8 @@ class Cell(Topology):
             else:
                 theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
             endcapA = Topology.Copy(endcapA)
-            endcapA = Topology.Rotate(endcapA, zzz, 0, 1, 0, theta)
-            endcapA = Topology.Rotate(endcapA, zzz, 0, 0, 1, phi + 180)
+            endcapA = Topology.Rotate(endcapA, origin=zzz, axis=[0, 1, 0], angle=theta)
+            endcapA = Topology.Rotate(endcapA, origin=zzz, axis=[0, 0, 1], angle=phi+180)
             endcapA = Topology.Translate(endcapA, origin.X(), origin.Y(), origin.Z())
         if endcapB:
             origin = edge.EndVertex()
@@ -1684,14 +1684,14 @@ class Cell(Topology):
             else:
                 theta = math.degrees(math.acos(dz/dist)) # Rotation around Z-Axis
             endcapB = Topology.Copy(endcapB)
-            endcapB = Topology.Rotate(endcapB, zzz, 0, 1, 0, theta)
-            endcapB = Topology.Rotate(endcapB, zzz, 0, 0, 1, phi + 180)
+            endcapB = Topology.Rotate(endcapB, origin=zzz, axis=[0, 1, 0], angle=theta)
+            endcapB = Topology.Rotate(endcapB, origin=zzz, axis=[0, 0, 1], angle=phi+180)
             endcapB = Topology.Translate(endcapB, origin.X(), origin.Y(), origin.Z())
         return {'pipe': pipe, 'endcapA': endcapA, 'endcapB': endcapB}
     
     @staticmethod
     def Prism(origin: topologic.Vertex = None, width: float = 1, length: float = 1, height: float = 1, uSides: int = 1, vSides: int = 1, wSides: int = 1,
-                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Description
         ----------
@@ -1700,7 +1700,7 @@ class Cell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the prism. The default is None which results in the prism being placed at (0,0,0).
+            The origin location of the prism. The default is None which results in the prism being placed at (0, 0, 0).
         width : float , optional
             The width of the prism. The default is 1.
         length : float , optional
@@ -1714,7 +1714,7 @@ class Cell(Topology):
         wSides : int , optional
             The number of sides along the height. The default is 1.
         direction : list , optional
-            The vector representing the up direction of the prism. The default is [0,0,1].
+            The vector representing the up direction of the prism. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1752,7 +1752,7 @@ class Cell(Topology):
         from topologicpy.Topology import Topology
 
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Prism - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
@@ -1776,7 +1776,7 @@ class Cell(Topology):
 
         if uSides > 1 or vSides > 1 or wSides > 1:
             prism = sliceCell(prism, width, length, height, uSides, vSides, wSides)
-        prism = Topology.Orient(prism, origin=origin, dirA=[0,0,1], dirB=direction, tolerance=tolerance)
+        prism = Topology.Orient(prism, origin=origin, dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
         return prism
 
     @staticmethod
@@ -1811,7 +1811,7 @@ class Cell(Topology):
         return Cell.ByFaces(clean_faces, tolerance=tolerance)
     
     @staticmethod
-    def Roof(face, degree: float = 45, epsilon: float = 0.01 , tolerance: float = 0.001):
+    def Roof(face, angle: float = 45, epsilon: float = 0.01 , tolerance: float = 0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
             This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
@@ -1820,7 +1820,7 @@ class Cell(Topology):
         ----------
         face : topologic.Face
             The input face.
-        degree : float , optioal
+        angle : float , optioal
             The desired angle in degrees of the roof. The default is 45.
         epsilon : float , optional
             The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)
@@ -1837,7 +1837,7 @@ class Cell(Topology):
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
         
-        shell = Shell.Roof(face=face, degree=degree, epsilon=epsilon, tolerance=tolerance)
+        shell = Shell.Roof(face=face, angle=angle, epsilon=epsilon, tolerance=tolerance)
         faces = Topology.Faces(shell) + [face]
         cell = Cell.ByFaces(faces, tolerance=tolerance)
         if not cell:
@@ -1930,7 +1930,7 @@ class Cell(Topology):
         return shells
 
     @staticmethod
-    def Sphere(origin: topologic.Vertex = None, radius: float = 0.5, uSides: int = 16, vSides: int = 8, direction: list = [0,0,1],
+    def Sphere(origin: topologic.Vertex = None, radius: float = 0.5, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
                    placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a sphere.
@@ -1938,7 +1938,7 @@ class Cell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the sphere. The default is None which results in the sphere being placed at (0,0,0).
+            The origin location of the sphere. The default is None which results in the sphere being placed at (0, 0, 0).
         radius : float , optional
             The radius of the sphere. The default is 0.5.
         uSides : int , optional
@@ -1946,7 +1946,7 @@ class Cell(Topology):
         vSides : int , optional
             The number of sides along the latitude of the sphere. The default is 8.
         direction : list , optional
-            The vector representing the up direction of the sphere. The default is [0,0,1].
+            The vector representing the up direction of the sphere. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1963,13 +1963,13 @@ class Cell(Topology):
         from topologicpy.Topology import Topology
 
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Sphere - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         c = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=vSides, fromAngle=-90, toAngle=90, close=False, direction=[0, 0, 1], placement="center")
-        c = Topology.Rotate(c, origin=Vertex.Origin(), x=1, y=0, z=0, degree=90)
-        sphere = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0,0,1], degree=360, sides=uSides, tolerance=tolerance)
+        c = Topology.Rotate(c, origin=Vertex.Origin(), axis=[1, 0, 0], angle=90)
+        sphere = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
         if sphere.Type() == topologic.CellComplex.Type():
             sphere = sphere.ExternalBoundary()
         if sphere.Type() == topologic.Shell.Type():
@@ -1978,7 +1978,7 @@ class Cell(Topology):
             sphere = Topology.Translate(sphere, 0, 0, radius)
         elif placement.lower() == "lowerleft":
             sphere = Topology.Translate(sphere, radius, radius, radius)
-        sphere = Topology.Orient(sphere, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
+        sphere = Topology.Orient(sphere, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
         sphere = Topology.Place(sphere, originA=Vertex.Origin(), originB=origin)
         return sphere
     
@@ -2004,7 +2004,7 @@ class Cell(Topology):
     
     @staticmethod
     def Tetrahedron(origin: topologic.Vertex = None, radius: float = 0.5,
-                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Description
         ----------
@@ -2013,11 +2013,11 @@ class Cell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the tetrahedron. The default is None which results in the tetrahedron being placed at (0,0,0).
+            The origin location of the tetrahedron. The default is None which results in the tetrahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the tetrahedron's circumscribed sphere. The default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the tetrahedron. The default is [0,0,1].
+            The vector representing the up direction of the tetrahedron. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the tetrahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -2037,7 +2037,7 @@ class Cell(Topology):
         import math
 
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Tetrahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
@@ -2045,12 +2045,12 @@ class Cell(Topology):
         vb1 = Vertex.ByCoordinates(math.sqrt(8/9), 0, -1/3)
         vb2 = Vertex.ByCoordinates(-math.sqrt(2/9), math.sqrt(2/3), -1/3)
         vb3 = Vertex.ByCoordinates(-math.sqrt(2/9), -math.sqrt(2/3), -1/3)
-        vb4 = Vertex.ByCoordinates(0,0,1)
-        f1 = Face.ByVertices([vb1,vb2,vb3])
-        f2 = Face.ByVertices([vb4,vb1,vb2])
-        f3 = Face.ByVertices([vb4,vb2,vb3])
-        f4 = Face.ByVertices([vb4,vb3,vb1])
-        tetrahedron = Cell.ByFaces([f1,f2,f3,f4])
+        vb4 = Vertex.ByCoordinates(0, 0, 1)
+        f1 = Face.ByVertices([vb1, vb2, vb3])
+        f2 = Face.ByVertices([vb4, vb1, vb2])
+        f3 = Face.ByVertices([vb4, vb2, vb3])
+        f4 = Face.ByVertices([vb4, vb3, vb1])
+        tetrahedron = Cell.ByFaces([f1, f2, f3, f4])
         tetrahedron = Topology.Scale(tetrahedron, origin=Vertex.Origin(), x=0.5, y=0.5, z=0.5)
         tetrahedron = Topology.Scale(tetrahedron, origin=Vertex.Origin(), x=radius/0.5, y=radius/0.5, z=radius/0.5)
 
@@ -2059,18 +2059,18 @@ class Cell(Topology):
         elif placement.lower() == "bottom":
             tetrahedron = Topology.Translate(tetrahedron, 0, 0, radius)
         tetrahedron = Topology.Place(tetrahedron, originA=Vertex.Origin(), originB=origin)
-        tetrahedron = Topology.Orient(tetrahedron, origin=origin, dirA=[0,0,1], dirB=direction, tolerance=tolerance)
+        tetrahedron = Topology.Orient(tetrahedron, origin=origin, dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
         return tetrahedron
     
     @staticmethod
-    def Torus(origin: topologic.Vertex = None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Torus(origin: topologic.Vertex = None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
         """
         Creates a torus.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the torus. The default is None which results in the torus being placed at (0,0,0).
+            The origin location of the torus. The default is None which results in the torus being placed at (0, 0, 0).
         majorRadius : float , optional
             The major radius of the torus. The default is 0.5.
         minorRadius : float , optional
@@ -2080,7 +2080,7 @@ class Cell(Topology):
         vSides : int , optional
             The number of sides along the latitude of the torus. The default is 8.
         direction : list , optional
-            The vector representing the up direction of the torus. The default is [0,0,1].
+            The vector representing the up direction of the torus. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the torus. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -2097,13 +2097,13 @@ class Cell(Topology):
         from topologicpy.Topology import Topology
         
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Cell.Torus - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         c = Wire.Circle(origin=Vertex.Origin(), radius=minorRadius, sides=vSides, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
         c = Topology.Translate(c, abs(majorRadius-minorRadius), 0, 0)
-        torus = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0,0,1], degree=360, sides=uSides, tolerance=tolerance)
+        torus = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
         if torus.Type() == topologic.Shell.Type():
             torus = topologic.Cell.ByShell(torus)
         if placement.lower() == "bottom":
@@ -2111,7 +2111,7 @@ class Cell(Topology):
         elif placement.lower() == "lowerleft":
             torus = Topology.Translate(torus, majorRadius, majorRadius, minorRadius)
 
-        torus = Topology.Orient(torus, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
+        torus = Topology.Orient(torus, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
         torus = Topology.Place(torus, originA=Vertex.Origin(), originB=origin)
         return torus
     

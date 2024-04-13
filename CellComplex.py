@@ -53,14 +53,14 @@ class CellComplex(Topology):
     def Box(origin: topologic.Vertex = None,
             width: float = 1.0, length: float = 1.0, height: float = 1.0,
             uSides: int = 2, vSides: int = 2, wSides: int = 2,
-            direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.CellComplex:
+            direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Creates a box with internal cells.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the box. The default is None which results in the box being placed at (0,0,0).
+            The origin location of the box. The default is None which results in the box being placed at (0, 0, 0).
         width : float , optional
             The width of the box. The default is 1.
         length : float , optional
@@ -74,7 +74,7 @@ class CellComplex(Topology):
         wSides : int , optional
             The number of sides along the height. The default is 1.
         direction : list , optional
-            The vector representing the up direction of the box. The default is [0,0,1].
+            The vector representing the up direction of the box. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -511,7 +511,7 @@ class CellComplex(Topology):
             zList.append(f.Centroid().Z())
         zMin = min(zList)
         zMax = max(zList)
-        up = [0,0,1]
+        up = [0, 0, 1]
         for aFace in faces:
             aCode = angleCode(aFace, up, tiltAngle)
             cells = []
@@ -575,7 +575,7 @@ class CellComplex(Topology):
         return d
     
     @staticmethod
-    def Delaunay(vertices: list=None, tolerance: float = 0.0001) -> topologic.CellComplex:
+    def Delaunay(vertices: list = None, tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Triangulates the input vertices based on the Delaunay method. See https://en.wikipedia.org/wiki/Delaunay_triangulation.
 
@@ -761,7 +761,7 @@ class CellComplex(Topology):
     
     @staticmethod
     def Octahedron(origin: topologic.Vertex = None, radius: float = 0.5,
-                  direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.CellComplex:
+                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Description
         ----------
@@ -770,11 +770,11 @@ class CellComplex(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the octahedron. The default is None which results in the octahedron being placed at (0,0,0).
+            The origin location of the octahedron. The default is None which results in the octahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the octahedron's circumscribed sphere. The default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the octahedron. The default is [0,0,1].
+            The vector representing the up direction of the octahedron. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the octahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -792,7 +792,7 @@ class CellComplex(Topology):
         from topologicpy.Topology import Topology
 
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("CellComplex.Octahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
@@ -819,7 +819,7 @@ class CellComplex(Topology):
             octahedron = Topology.Translate(octahedron, 0, 0, radius)
         elif placement == "lowerleft":
             octahedron = Topology.Translate(octahedron, radius, radius, radius)
-        octahedron = Topology.Orient(octahedron, origin=Vertex.Origin(), dirA=[0,0,1], dirB=direction)
+        octahedron = Topology.Orient(octahedron, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
         octahedron = Topology.Place(octahedron, originA=Vertex.Origin(), originB=origin)
         return octahedron
     
@@ -827,14 +827,14 @@ class CellComplex(Topology):
     def Prism(origin: topologic.Vertex = None,
               width: float = 1.0, length: float = 1.0, height: float = 1.0,
               uSides: int = 2, vSides: int = 2, wSides: int = 2,
-              direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.CellComplex:
+              direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.CellComplex:
         """
         Creates a prismatic cellComplex with internal cells.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the prism. The default is None which results in the prism being placed at (0,0,0).
+            The origin location of the prism. The default is None which results in the prism being placed at (0, 0, 0).
         width : float , optional
             The width of the prism. The default is 1.
         length : float , optional
@@ -848,7 +848,7 @@ class CellComplex(Topology):
         wSides : int , optional
             The number of sides along the height. The default is 1.
         direction : list , optional
-            The vector representing the up direction of the prism. The default is [0,0,1].
+            The vector representing the up direction of the prism. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -912,12 +912,12 @@ class CellComplex(Topology):
             else:
                 return topologic.CellComplex.ByCells([topology])
         if not isinstance(origin, topologic.Vertex):
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
 
         c = Cell.Prism(origin=origin, width=width, length=length, height=height, uSides=1, vSides=1, wSides=1, placement=placement, tolerance=tolerance)
         prism = slice(c, uSides=uSides, vSides=vSides, wSides=wSides)
         if prism:
-            prism = Topology.Orient(prism, origin=origin, dirA=[0,0,1], dirB=direction)
+            prism = Topology.Orient(prism, origin=origin, dirA=[0, 0, 1], dirB=direction)
             return prism
         else:
             print("CellComplex.Prism - Error: Could not create a prism. Returning None.")

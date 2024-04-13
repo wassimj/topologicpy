@@ -275,10 +275,10 @@ print("Case 10")
 print("Case 14")
 # test 1
 g1 = Topology.ByBREPString(Topology.BREPString(box1))
-assert isinstance(g1,topologic.Topology), "Topology.ByBREPString. Should be topologic.Topology"
+assert isinstance(g1, topologic.Topology), "Topology.ByBREPString. Should be topologic.Topology"
 # test 2
 g2 = Topology.ByBREPString(Topology.BREPString(box2))
-assert isinstance(g1,topologic.Topology), "Topology.ByBREPString. Should be topologic.Topology"
+assert isinstance(g1, topologic.Topology), "Topology.ByBREPString. Should be topologic.Topology"
 
 # case 15 - CenterOfMass
 print("Case 15")
@@ -602,7 +602,7 @@ assert len(cell_f2) == 6, "Topology.RemoveCoplanarFaces. List length should be 6
 # Case 45 - Rotate
 print("Case 45")
 # test 1
-topology_rot = Topology.Rotate(cell_cy, x = 1, y = 0, z = 1, degree = 45)
+topology_rot = Topology.Rotate(cell_cy, axis=[1,0,1], angle=45)
 assert isinstance(topology_rot, topologic.Topology), "Topology.Rotate. Should be topologic.Topology"
 # plot geometry
 #data_topology_rot = Plotly.DataByTopology(topology_rot)
@@ -686,7 +686,7 @@ print("Case 52")
 """Takes really long time to run"""
 # test 1
 topology_spin = Topology.Spin(cell_cy, origin=v00, triangulate=False,
-                                direction = [0,1,0], degree=90, sides=2, tolerance=0.001)
+                                direction = [0,1,0], angle=90, sides=2, tolerance=0.001)
 assert isinstance(topology_spin, topologic.Topology), "Topology.Spin. Should be topologic.Topology"
 # plot geometry
 #data_top_spin = Plotly.DataByTopology(topology_spin)

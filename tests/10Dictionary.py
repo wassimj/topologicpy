@@ -25,39 +25,39 @@ v4 = Vertex.ByCoordinates(0, 0, 10)         # create vertex
 v5 = Vertex.ByCoordinates(0, 10, 10)        # create vertex
 v6 = Vertex.ByCoordinates(10, 10, 10)       # create vertex
 v7 = Vertex.ByCoordinates(10, 0, 10)        # create vertex
-e0 = Edge.ByStartVertexEndVertex(v0,v1)
-wire0 = Wire.ByVertices([v0,v1,v2])         # create wire
-wire1 = Wire.ByVertices([v4,v5,v6])         # create wire
+e0 = Edge.ByStartVertexEndVertex(v0, v1)
+wire0 = Wire.ByVertices([v0, v1, v2])         # create wire
+wire1 = Wire.ByVertices([v4, v5, v6])         # create wire
 w_list = [wire0,wire1]                      # create list
 w_cluster = Cluster.ByTopologies(w_list)    # create cluster
-face0 = Face.ByVertices([v0,v1,v2,v3,v0])     # create face
-face1 = Face.ByVertices([v4,v5,v6,v7,v4])     # create face
-face2 = Face.ByVertices([v0,v4,v7,v3,v0])     # create face
-face3 = Face.ByVertices([v3,v7,v6,v2,v3])     # create face
-face4 = Face.ByVertices([v2,v6,v5,v1,v2])     # create face
-face5 = Face.ByVertices([v1,v5,v4,v0,v1])     # create face
-f_list = [face0,face1,face2,face3,face4,face5]  # create list
+face0 = Face.ByVertices([v0, v1, v2, v3, v0])     # create face
+face1 = Face.ByVertices([v4, v5, v6, v7, v4])     # create face
+face2 = Face.ByVertices([v0, v4, v7, v3, v0])     # create face
+face3 = Face.ByVertices([v3, v7, v6, v2, v3])     # create face
+face4 = Face.ByVertices([v2, v6, v5, v1, v2])     # create face
+face5 = Face.ByVertices([v1, v5, v4, v0, v1])     # create face
+f_list = [face0, face1, face2, face3, face4, face5]  # create list
 c_faces = Cluster.ByTopologies(f_list)          # create cluster
 shell_f = Shell.ByFaces(f_list)                 # create shell
-shell_open = Shell.ByFaces([face0,face2])       # create shell
+shell_open = Shell.ByFaces([face0, face2])       # create shell
 
 # Case 1 - ByKeysValues
 print("Case 1")
 # test 1
 k = ["a", "b", "c"]
 val = [1,2,3]
-dict_kv = Dictionary.ByKeysValues(k,val)
+dict_kv = Dictionary.ByKeysValues(k, val)
 assert isinstance(dict_kv, topologic.Dictionary), "Dictionary.ByKeysValues. Should be topologic.Dictionary"
 assert len(dict_kv.Keys()) == 3, "Dictionary.ByKeysValues. List length should be 3"
 # test 2
-dict_kv2 = Dictionary.ByKeysValues(["d","e","f"],[4,5,6])
+dict_kv2 = Dictionary.ByKeysValues(["d", "e", "f"],[4, 5, 6])
 assert isinstance(dict_kv2, topologic.Dictionary), "Dictionary.ByKeysValues. Should be topologic.Dictionary"
 assert len(dict_kv2.Keys()) == 3, "Dictionary.ByKeysValues. List length should be 3"
 
 # Case 2 - ByMergedDictionaries
 print("Case 2")
 # test 1
-dict_bmd = Dictionary.ByMergedDictionaries([dict_kv,dict_kv2])
+dict_bmd = Dictionary.ByMergedDictionaries([dict_kv, dict_kv2])
 assert isinstance(dict_bmd, topologic.Dictionary), "Dictionary.ByKeysValues. Should be topologic.Dictionary"
 assert len(dict_bmd.Keys()) == 6, "Dictionary.ByMergedDictionaries. List length should be 6"
 assert len(dict_bmd.Values()) == 6, "Dictionary.ByMergedDictionaries. List length should be 6"

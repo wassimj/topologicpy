@@ -696,7 +696,7 @@ class Edge(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the box. The default is None which results in the edge being placed at (0,0,0).
+            The origin location of the box. The default is None which results in the edge being placed at (0, 0, 0).
         length : float , optional
             The desired length of the edge. The default is 1.0.
         direction : list , optional
@@ -751,7 +751,7 @@ class Edge(Topology):
             return None
     
     @staticmethod
-    def Normal(edge: topologic.Edge, degree: float=0.0):
+    def Normal(edge: topologic.Edge, angle: float = 0.0):
         """
         Returns the normal (perpendicular) vector to the input edge.
 
@@ -759,6 +759,9 @@ class Edge(Topology):
         ----------
         edge : topologic.Edge
             The input edge.
+        angle : float , optional
+            The desired rotational offset angle in degrees for the normal edge. This rotates the normal edge
+            by the angle value around the axis defined by the input edge. The default is 0.0.
 
         Returns
         -------
@@ -769,11 +772,11 @@ class Edge(Topology):
         if not isinstance(edge, topologic.Edge):
             print("Edge.Normal - Error: The input edge parameter is not a valid edge. Returning None.")
             return None
-        normal_edge = Edge.NormalAsEdge(edge, length=1.0, u=0.5, degree=degree)
+        normal_edge = Edge.NormalAsEdge(edge, length=1.0, u=0.5, angle=angle)
         return Edge.Direction(normal_edge)
 
     @staticmethod
-    def NormalAsEdge(edge: topologic.Edge, length: float=1.0, u: float=0.5, degree: float=0.0):
+    def NormalAsEdge(edge: topologic.Edge, length: float = 1.0, u: float = 0.5, angle: float = 0.0):
         """
         Returns the normal (perpendicular) vector to the input edge as an edge.
 
@@ -788,14 +791,14 @@ class Edge(Topology):
             at the start vertex of the input edge, a value of 0.5 places the normal edge
             at the midpoint of the input edge, and a value of 1.0 places the normal edge
             at the end vertex of the input edge. The default is 0.5
-        degree : float , optional
-            The desired rotational offset in degrees for the normal edge. This rotates the normal edge
-            by the degree value around the axis defined by the input edge. The default is 0.0.
+        angle : float , optional
+            The desired rotational offset angle in degrees for the normal edge. This rotates the normal edge
+            by the angle value around the axis defined by the input edge. The default is 0.0.
 
         Returns
         -------
         topologic.Edge
-            The normal (perpendicular ) vector to the input edge as an edge.
+            The normal (perpendicular) vector to the input edge as an edge.
 
         """
         import numpy as np
@@ -844,7 +847,7 @@ class Edge(Topology):
         ev = Vertex.ByCoordinates(list(normal_line_end))
         normal_edge = Edge.ByVertices([sv, ev])
         normal_edge = Edge.SetLength(normal_edge, length, bothSides=False)
-        normal_edge = Topology.Rotate(normal_edge, Edge.StartVertex(normal_edge), x=x, y=y, z=z, degree=degree)
+        normal_edge = Topology.Rotate(normal_edge, origin=Edge.StartVertex(normal_edge), axis=[x,y,z], angle=angle)
         dist = Edge.Length(edge)*u
         normal_edge = Topology.TranslateByDirectionDistance(normal_edge, edge_direction, dist)
         return normal_edge

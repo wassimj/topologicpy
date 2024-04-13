@@ -177,8 +177,8 @@ class Shell(Topology):
                 used = []
                 for v in vertices:
                     for w in vertices:
-                        if not Topology.IsSame(v,w) and not w in used:
-                            if Vertex.Distance(v,w) < threshold:
+                        if not Topology.IsSame(v, w) and not w in used:
+                            if Vertex.Distance(v, w) < threshold:
                                 centers.append(v)
                                 used.append(w)
                 edges = Shell.Edges(shell)
@@ -445,14 +445,14 @@ class Shell(Topology):
         return Shell.ByWires(wires, triangulate=triangulate, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 32, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
+    def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 32, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a circle.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
+            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
             The  radius of the circle. The default is 0.5.
         sides : int , optional
@@ -462,7 +462,7 @@ class Shell(Topology):
         toAngle : float , optional
             The angle in degrees at which to end creating the arc of the circle. The default is 360.
         direction : list , optional
-            The vector representing the up direction of the circle. The default is [0,0,1].
+            The vector representing the up direction of the circle. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -511,7 +511,7 @@ class Shell(Topology):
         if len(vertices) < 3:
             return None
 
-        # Create a Vertex at the world's origin (0,0,0)
+        # Create a Vertex at the world's origin (0, 0, 0)
         world_origin = Vertex.Origin()
 
         if isinstance(face, topologic.Face):
@@ -677,28 +677,28 @@ class Shell(Topology):
     
     @staticmethod
     def HyperbolicParaboloidRectangularDomain(origin: topologic.Vertex = None, llVertex: topologic.Vertex = None, lrVertex: topologic.Vertex =None, ulVertex: topologic.Vertex =None, urVertex: topologic.Vertex = None,
-                                              uSides: int = 10, vSides: int = 10, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
+                                              uSides: int = 10, vSides: int = 10, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a hyperbolic paraboloid with a rectangular domain.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0,0,0) origin. The default is None.
+            The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.
         llVertex : topologic.Vertex , optional
-            The lower left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5,-0.5,-0.5).
+            The lower left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5, -0.5, -0.5).
         lrVertex : topologic.Vertex , optional
-            The lower right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5,-0.5,0.5).
+            The lower right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5, -0.5, 0.5).
         ulVertex : topologic.Vertex , optional
-            The upper left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5,0.5,0.5).
+            The upper left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5, 0.5, 0.5).
         urVertex : topologic.Vertex , optional
-            The upper right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5,0.5,-0.5).
+            The upper right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5, 0.5, -0.5).
         uSides : int , optional
             The number of segments along the X axis. The default is 10.
         vSides : int , optional
             The number of segments along the Y axis. The default is 10.
         direction : list , optional
-            The vector representing the up direction of the hyperbolic parabolid. The default is [0,0,1].
+            The vector representing the up direction of the hyperbolic parabolid. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the hyperbolic parabolid. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -714,15 +714,15 @@ class Shell(Topology):
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         if not isinstance(origin, topologic.Vertex):
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(llVertex, topologic.Vertex):
-            llVertex = Vertex.ByCoordinates(-0.5,-0.5,-0.5)
+            llVertex = Vertex.ByCoordinates(-0.5, -0.5, -0.5)
         if not isinstance(lrVertex, topologic.Vertex):
-            lrVertex = Vertex.ByCoordinates(0.5,-0.5,0.5)
+            lrVertex = Vertex.ByCoordinates(0.5, -0.5, 0.5)
         if not isinstance(ulVertex, topologic.Vertex):
-            ulVertex = Vertex.ByCoordinates(-0.5,0.5,0.5)
+            ulVertex = Vertex.ByCoordinates(-0.5, 0.5, 0.5)
         if not isinstance(urVertex, topologic.Vertex):
-            urVertex = Vertex.ByCoordinates(0.5,0.5,-0.5)
+            urVertex = Vertex.ByCoordinates(0.5, 0.5, -0.5)
         e1 = Edge.ByVertices([llVertex, lrVertex], tolerance=tolerance)
         e3 = Edge.ByVertices([urVertex, ulVertex], tolerance=tolerance)
         edges = []
@@ -765,12 +765,12 @@ class Shell(Topology):
             zOffset = -(minZ + (maxZ - minZ)*0.5)
         returnTopology = Topology.Translate(returnTopology, xOffset, yOffset, zOffset)
         returnTopology = Topology.Place(returnTopology, originA=Vertex.Origin(), originB=origin)
-        returnTopology = Topology.Orient(returnTopology, origin=origin, dirA=[0,0,1], dirB=direction)
+        returnTopology = Topology.Orient(returnTopology, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return returnTopology
     
     @staticmethod
     def HyperbolicParaboloidCircularDomain(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 36, rings: int = 10,
-                                           A: float = 2.0, B: float = -2.0, direction: list = [0,0,1],
+                                           A: float = 2.0, B: float = -2.0, direction: list = [0, 0, 1],
                                            placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a hyperbolic paraboloid with a circular domain. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
@@ -778,7 +778,7 @@ class Shell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0,0,0) origin. The default is None.
+            The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.
         radius : float , optional
             The desired radius of the hyperbolic paraboloid. The default is 0.5.
         sides : int , optional
@@ -790,7 +790,7 @@ class Shell(Topology):
         B : float , optional
             The *B* constant in the equation z = A*x^2^ + B*y^2^. The default is -2.0.
         direction : list , optional
-            The  vector representing the up direction of the hyperbolic paraboloid. The default is [0,0,1.
+            The  vector representing the up direction of the hyperbolic paraboloid. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the circle. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -805,7 +805,7 @@ class Shell(Topology):
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         if not isinstance(origin, topologic.Vertex):
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         uOffset = float(360)/float(sides)
         vOffset = float(radius)/float(rings)
         faces = []
@@ -925,7 +925,7 @@ class Shell(Topology):
             zOffset = -(minZ + (maxZ - minZ)*0.5)
         returnTopology = Topology.Translate(returnTopology, xOffset, yOffset, zOffset)
         returnTopology = Topology.Place(returnTopology, originA=Vertex.Origin(), originB=origin)
-        returnTopology = Topology.Orient(returnTopology, origin=origin, dirA=[0,0,1], dirB=direction)
+        returnTopology = Topology.Orient(returnTopology, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return returnTopology
     
     @staticmethod
@@ -980,14 +980,14 @@ class Shell(Topology):
         return shell.IsClosed()
 
     @staticmethod
-    def Pie(origin: topologic.Vertex = None, radiusA: float = 0.5, radiusB: float = 0.0, sides: int = 32, rings: int = 1, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
+    def Pie(origin: topologic.Vertex = None, radiusA: float = 0.5, radiusB: float = 0.0, sides: int = 32, rings: int = 1, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a pie shape.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the pie. The default is None which results in the pie being placed at (0,0,0).
+            The location of the origin of the pie. The default is None which results in the pie being placed at (0, 0, 0).
         radiusA : float , optional
             The outer radius of the pie. The default is 0.5.
         radiusB : float , optional
@@ -1001,7 +1001,7 @@ class Shell(Topology):
         toAngle : float , optional
             The angle in degrees at which to end creating the arc of the pie. The default is 360.
         direction : list , optional
-            The vector representing the up direction of the pie. The default is [0,0,1].
+            The vector representing the up direction of the pie. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1017,7 +1017,7 @@ class Shell(Topology):
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             return None
         if toAngle < fromAngle:
@@ -1100,7 +1100,7 @@ class Shell(Topology):
             return None
         shell = Topology.Translate(shell, xOffset, yOffset, zOffset)
         shell = Topology.Place(shell, originA=Vertex.Origin(), originB=origin)
-        shell = Topology.Orient(shell, origin=origin, dirA=[0,0,1], dirB=direction)
+        shell = Topology.Orient(shell, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return shell
 
 
@@ -1151,7 +1151,7 @@ class Shell(Topology):
     
     @staticmethod
     def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0,
-                  uSides: int = 2, vSides: int = 2, direction: list = [0,0,1],
+                  uSides: int = 2, vSides: int = 2, direction: list = [0, 0, 1],
                   placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
         """
         Creates a rectangle.
@@ -1159,7 +1159,7 @@ class Shell(Topology):
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0,0,0).
+            The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0, 0, 0).
         width : float , optional
             The width of the rectangle. The default is 1.0.
         length : float , optional
@@ -1169,7 +1169,7 @@ class Shell(Topology):
         vSides : int , optional
             The number of sides along the length. The default is 2.
         direction : list , optional
-            The vector representing the up direction of the rectangle. The default is [0,0,1].
+            The vector representing the up direction of the rectangle. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1185,7 +1185,7 @@ class Shell(Topology):
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             return None
         uOffset = float(width)/float(uSides)
@@ -1200,12 +1200,12 @@ class Shell(Topology):
         for i in range(uSides):
             for j in range(vSides):
                 rOrigin = Vertex.ByCoordinates(i*uOffset - wOffset, j*vOffset - lOffset, 0)
-                w = Wire.Rectangle(origin=rOrigin, width=uOffset, length=vOffset, direction=[0,0,1], placement="lowerleft", tolerance=tolerance)
+                w = Wire.Rectangle(origin=rOrigin, width=uOffset, length=vOffset, direction=[0, 0, 1], placement="lowerleft", tolerance=tolerance)
                 f = Face.ByWire(w, tolerance=tolerance)
                 faces.append(f)
         shell = Shell.ByFaces(faces, tolerance=tolerance)
         shell = Topology.Place(shell, originA=Vertex.Origin(), originB=origin)
-        shell = Topology.Orient(shell, origin=origin, dirA=[0,0,1], dirB=direction)
+        shell = Topology.Orient(shell, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return shell
 
     @staticmethod
@@ -1240,7 +1240,7 @@ class Shell(Topology):
         return Shell.ByFaces(clean_faces, tolerance=tolerance)
     
     @staticmethod
-    def Roof(face, degree: float = 45, epsilon: float = 0.01, tolerance: float = 0.001):
+    def Roof(face, angle: float = 45, epsilon: float = 0.01, tolerance: float = 0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
             This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
@@ -1249,7 +1249,7 @@ class Shell(Topology):
         ----------
         face : topologic.Face
             The input face.
-        degree : float , optioal
+        angle : float , optioal
             The desired angle in degrees of the roof. The default is 45.
         epsilon : float , optional
             The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)
@@ -1284,15 +1284,15 @@ class Shell(Topology):
         
         if not isinstance(face, topologic.Face):
             return None
-        degree = abs(degree)
-        if degree >= 90-tolerance:
+        angle = abs(angle)
+        if angle >= 90-tolerance:
             return None
-        if degree < tolerance:
+        if angle < tolerance:
             return None
         origin = Topology.Centroid(face)
         normal = Face.Normal(face)
         flat_face = Topology.Flatten(face, origin=origin, direction=normal)
-        roof = Wire.Roof(flat_face, degree=degree, tolerance=tolerance)
+        roof = Wire.Roof(flat_face, angle=angle, tolerance=tolerance)
         if not roof:
             return None
         shell = Shell.Skeleton(flat_face, tolerance=tolerance)
@@ -1342,7 +1342,6 @@ class Shell(Topology):
             shell = Topology.RemoveCoplanarFaces(shell, epsilon=epsilon, tolerance=tolerance)
         except:
             pass
-        #shell = Topology.Unflatten(shell, origin=origin, direction=normal)
         return shell
     
     @staticmethod
@@ -1724,7 +1723,7 @@ class Shell(Topology):
             tempWire = []
             if len(region) > 1 and not -1 in region:
                 for v in region:
-                    tempWire.append(Vertex.ByCoordinates(voronoiVertices[v].X(), voronoiVertices[v].Y(),0))
+                    tempWire.append(Vertex.ByCoordinates(voronoiVertices[v].X(), voronoiVertices[v].Y(), 0))
                 temp_verts = []
                 for v in tempWire:
                     if len(temp_verts) == 0:

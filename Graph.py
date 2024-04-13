@@ -337,7 +337,7 @@ class Graph:
                         elif (len(gk) < 1) and (len(vk) > 0):
                             d = vd
                         if d:
-                            _ = Topology.SetDictionary(gv,d)
+                            _ = Topology.SetDictionary(gv, d)
                     unique = False
                     returnVertex = gv
                     break
@@ -858,7 +858,7 @@ class Graph:
         # Iterate through the grouped nodes DataFrames
         for graph_id, group_node_df in grouped_nodes:
             vertices = []
-            verts = [] #This is a list of x,y,z tuples to make sure the vertices have unique locations.
+            verts = [] #This is a list of x, y, z tuples to make sure the vertices have unique locations.
             n_verts = 0
             for index, row in group_node_df.iterrows():
                 n_verts += 1
@@ -886,12 +886,12 @@ class Graph:
                     y = random.randrange(0,1000)
                 if not isinstance(z, numbers.Number):
                     z = random.randrange(0,1000)
-                while [x,y,z] in verts:
+                while [x, y, z] in verts:
                     x = x + random.randrange(10000,30000,1000)
                     y = y + random.randrange(4000,6000, 100)
                     z = z + random.randrange(70000,90000, 1000)
-                verts.append([x,y,z])
-                v = Vertex.ByCoordinates(x,y,z)
+                verts.append([x, y, z])
+                v = Vertex.ByCoordinates(x, y, z)
                 if isinstance(v, topologic.Vertex):
                     if len(nodeFeaturesKeys) == 0:
                         values = [node_id, label, mask, features]
@@ -1247,7 +1247,7 @@ class Graph:
                     x = random.uniform(xMin,xMax)
                     y = random.uniform(yMin,yMax)
                     z = random.uniform(zMin,zMax)
-                    centroid = Vertex.ByCoordinates(x,y,z)
+                    centroid = Vertex.ByCoordinates(x, y, z)
                 d = Dictionary.ByKeysValues(["id","psets", "type", "type_id", "name", "label"], [obj_id, psets, obj_type, obj_type_id, name, label])
                 centroid = Topology.SetDictionary(centroid, d)
                 return centroid
@@ -1375,9 +1375,9 @@ class Graph:
         Parameters
         ----------
         vertices : list
-            The list of [x,y,z] coordinates of the vertices/
+            The list of [x, y, z] coordinates of the vertices/
         edges : list
-            the list of [i,j] indices into the vertices list to signify and edge that connects vertices[i] to vertices[j].
+            the list of [i, j] indices into the vertices list to signify and edge that connects vertices[i] to vertices[j].
         vertexDictionaries : list , optional
             The python dictionaries of the vertices (in the same order as the list of vertices).
         edgeDictionaries : list , optional
@@ -3172,7 +3172,7 @@ class Graph:
         for i, v in enumerate(vertices):
                 d = Topology.Dictionary(v)
                 d = Dictionary.SetValueAtKey(d, newKey, colors[i])
-                v = Topology.SetDictionary(v,d)
+                v = Topology.SetDictionary(v, d)
         return graph
     
     @staticmethod
@@ -3208,8 +3208,8 @@ class Graph:
             d1 = Vertex.Distance(vertex, sv)
             d2 = Vertex.Distance(vertex, ev)
             if d1 < d2:
-                return [ev,1]
-            return [sv,0]
+                return [ev, 1]
+            return [sv, 0]
         if not isinstance(graph, topologic.Graph):
             print("Graph.ContractEdge - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
@@ -3905,7 +3905,7 @@ class Graph:
                     flag = True
                 if nodeMaskKey in keys:
                     value = Dictionary.ValueAtKey(nd, nodeMaskKey)
-                    if not value in [0,1,2]:
+                    if not value in [0, 1, 2]:
                         flag = True
                     elif value == 0:
                         train_mask = True
@@ -3992,7 +3992,7 @@ class Graph:
                     flag = True
                 if edgeMaskKey in keys:
                     value = Dictionary.ValueAtKey(ed, edgeMaskKey)
-                    if not value in [0,1,2]:
+                    if not value in [0, 1, 2]:
                         flag = True
                     elif value == 0:
                         train_mask = True
@@ -4193,7 +4193,7 @@ class Graph:
                     source, target = edge_id
                     file.write(f'<edge id="{edge_id}" source="{source}" target="{target}" label="{edge_attrs["label"]}">\n')
                     if "color" in edge_attrs:
-                        r,g,b = Color.ByCSSNamedColor(edge_attrs["color"])
+                        r, g, b = Color.ByCSSNamedColor(edge_attrs["color"])
                         file.write(f'<viz:color r="{r}" g="{g}" b="{b}"/>\n')
                     file.write('<attvalues>\n')
                     keys = edge_attrs.keys()
@@ -4302,7 +4302,7 @@ class Graph:
             if not vertex_color in Color.CSSNamedColors():
                 vertex_color = defaultVertexColor
             node_dict['color'] = vertex_color
-            r,g,b = Color.ByCSSNamedColor(vertex_color)
+            r, g, b = Color.ByCSSNamedColor(vertex_color)
             node_dict['r'] = r
             node_dict['g'] = g
             node_dict['b'] = b
@@ -4370,7 +4370,7 @@ class Graph:
                 edge_color = defaultVertexColor
             edge_dict['color'] = edge_color
             
-            r,g,b = Color.ByCSSNamedColor(edge_color)
+            r, g, b = Color.ByCSSNamedColor(edge_color)
             edge_dict['r'] = r
             edge_dict['g'] = g
             edge_dict['b'] = b
@@ -4887,7 +4887,7 @@ class Graph:
         return graph.GetGUID()
 
     @staticmethod
-    def IncomingEdges(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool=False, tolerance: float=0.0001) -> list:
+    def IncomingEdges(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
         """
         Returns the incoming edges connected to a vertex. An edge is considered incoming if its end vertex is
         coincident with the input vertex.
@@ -4928,7 +4928,7 @@ class Graph:
         return incoming_edges
     
     @staticmethod
-    def IncomingVertices(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool=False, tolerance: float=0.0001) -> list:
+    def IncomingVertices(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
         """
         Returns the incoming vertices connected to a vertex. A vertex is considered incoming if it is an adjacent vertex to the input vertex
         and the the edge connecting it to the input vertex is an incoming edge.
@@ -5146,7 +5146,7 @@ class Graph:
         j_data = {}
         j_data['nodes'] = {}
         j_data['edges'] = {}
-        n = max(len(str(len(vertices))),4)
+        n = max(len(str(len(vertices))), 4)
         v_labels = []
         v_dicts = []
         for i, v in enumerate(vertices):
@@ -5534,7 +5534,7 @@ class Graph:
                 keys.append(residualKey)
                 values.append(residual)
                 d = Dictionary.ByKeysValues(keys, values)
-                edge = Topology.SetDictionary(edge,d)
+                edge = Topology.SetDictionary(edge, d)
         return max_flow
 
     @staticmethod
@@ -5551,8 +5551,8 @@ class Graph:
         -------
         dict
             The python dictionary of the mesh data of the input graph. The keys in the dictionary are:
-            'vertices' : The list of [x,y,z] coordinates of the vertices.
-            'edges' : the list of [i,j] indices into the vertices list to signify and edge that connects vertices[i] to vertices[j].
+            'vertices' : The list of [x, y, z] coordinates of the vertices.
+            'edges' : the list of [i, j] indices into the vertices list to signify and edge that connects vertices[i] to vertices[j].
             'vertexDictionaries' : The python dictionaries of the vertices (in the same order as the list of vertices).
             'edgeDictionaries' : The python dictionaries of the edges (in the same order as the list of edges).
 
@@ -5898,7 +5898,7 @@ class Graph:
         return len(Graph.Vertices(graph))
     
     @staticmethod
-    def OutgoingEdges(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool=False, tolerance: float=0.0001) -> list:
+    def OutgoingEdges(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
         """
         Returns the outgoing edges connected to a vertex. An edge is considered outgoing if its start vertex is
         coincident with the input vertex.
@@ -5939,7 +5939,7 @@ class Graph:
         return outgoing_edges
     
     @staticmethod
-    def OutgoingVertices(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool=False, tolerance: float=0.0001) -> list:
+    def OutgoingVertices(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
         """
         Returns the list of outgoing vertices connected to a vertex. A vertex is considered outgoing if it is an adjacent vertex to the input vertex
         and the the edge connecting it to the input vertex is an outgoing edge.
@@ -6537,7 +6537,7 @@ class Graph:
         zAxis : bool , optional
             If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
         axisSize : float , optional
-            The size of the X,Y,Z, axes. The default is 1.
+            The size of the X, Y, Z, axes. The default is 1.
         backgroundColor : str , optional
             The desired color of the background. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -6555,11 +6555,11 @@ class Graph:
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera). The default is [-1.25,-1.25,1.25].
+            The desired location of the camera). The default is [-1.25, -1.25, 1.25].
         center : list , optional
-            The desired center (camera target). The default is [0,0,0].
+            The desired center (camera target). The default is [0, 0, 0].
         up : list , optional
-            The desired up vector. The default is [0,0,1].
+            The desired up vector. The default is [0, 0, 1].
         projection : str , optional
             The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
 
@@ -6735,7 +6735,7 @@ class Graph:
         return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'])
     
     @staticmethod
-    def VertexDegree(graph : topologic.Graph, vertex: topologic.Vertex, edgeKey: str=None, tolerance: float=0.0001):
+    def VertexDegree(graph : topologic.Graph, vertex: topologic.Vertex, edgeKey: str = None, tolerance: float = 0.0001):
         """
         Returns the degree of the input vertex. See https://en.wikipedia.org/wiki/Degree_(graph_theory).
 

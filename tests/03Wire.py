@@ -52,7 +52,7 @@ assert isinstance(bCir1, topologic.Wire), "Wire.BoundingRectangle. Should be top
 # Case 2 - ByEdges
 print("Case 2")
 # test 1
-w1 = Wire.ByEdges([e1,e2])                   
+w1 = Wire.ByEdges([e1, e2])                   
 assert isinstance(w1, topologic.Wire), "Wire.ByEdges. Should be topologic.Wire"
 # test 2
 w2 = Wire.ByEdges([e1, e2, e3])            

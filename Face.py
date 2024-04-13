@@ -230,7 +230,7 @@ class Face(Topology):
                 for z in range(za,zb,zc):
                     if flag:
                         break
-                    t = Topology.Rotate(topology, origin=origin, x=0,y=0,z=1, degree=z)
+                    t = Topology.Rotate(topology, origin=origin, axis=[0, 0, 1], angle=z)
                     minX, minY, maxX, maxY = bb(t)
                     w = abs(maxX - minX)
                     l = abs(maxY - minY)
@@ -257,7 +257,7 @@ class Face(Topology):
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
         baseFace = Face.ByWire(baseWire, tolerance=tolerance)
-        baseFace = Topology.Rotate(baseFace, origin=origin, x=0,y=0,z=1, degree=-best_z)
+        baseFace = Topology.Rotate(baseFace, origin=origin, axis=[0, 0, 1], angle=-best_z)
         dictionary = Dictionary.ByKeysValues(["zrot"], [best_z])
         baseFace = Topology.SetDictionary(baseFace, dictionary)
         return baseFace
@@ -705,7 +705,7 @@ class Face(Topology):
         return Face.ByWires(externalBoundary, internalBoundaries, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def NorthArrow(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, direction: list = [0,0,1], northAngle: float = 0.0,
+    def NorthArrow(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, direction: list = [0, 0, 1], northAngle: float = 0.0,
                    placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a north arrow.
@@ -713,13 +713,13 @@ class Face(Topology):
         Parameters
         ----------
         origin : topologic.Vertex, optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
+            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
             The radius of the circle. The default is 1.
         sides : int , optional
             The number of sides of the circle. The default is 16.
         direction : list , optional
-            The vector representing the up direction of the circle. The default is [0,0,1].
+            The vector representing the up direction of the circle. The default is [0, 0, 1].
         northAngle : float , optional
             The angular offset in degrees from the positive Y axis direction. The angle is measured in a counter-clockwise fashion where 0 is positive Y, 90 is negative X, 180 is negative Y, and 270 is positive X.
         placement : str , optional
@@ -738,11 +738,11 @@ class Face(Topology):
         if not origin:
             origin = Vertex.Origin()
         
-        c = Face.Circle(origin=origin, radius=radius, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
+        c = Face.Circle(origin=origin, radius=radius, sides=sides, direction=[0, 0, 1], placement="center", tolerance=tolerance)
         r = Face.Rectangle(origin=origin, width=radius*0.01,length=radius*1.2, placement="lowerleft")
         r = Topology.Translate(r, -0.005*radius,0,0)
         arrow = Topology.Difference(c, r, tolerance=tolerance)
-        arrow = Topology.Rotate(arrow, Vertex.Origin(), 0,0,1,northAngle)
+        arrow = Topology.Rotate(arrow, origin=Vertex.Origin(), axis=[0, 0, 1], angle=northAngle)
         if placement.lower() == "lowerleft":
             arrow = Topology.Translate(arrow, radius, radius, 0)
         elif placement.lower() == "upperleft":
@@ -756,7 +756,7 @@ class Face(Topology):
         return arrow
 
     @staticmethod
-    def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0,0,1],
+    def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1],
                    placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a circle.
@@ -764,7 +764,7 @@ class Face(Topology):
         Parameters
         ----------
         origin : topologic.Vertex, optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
+            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
             The radius of the circle. The default is 1.
         sides : int , optional
@@ -774,7 +774,7 @@ class Face(Topology):
         toAngle : float , optional
             The angle in degrees at which to end creating the arc of the circle. The default is 360.
         direction : list , optional
-            The vector representing the up direction of the circle. The default is [0,0,1].
+            The vector representing the up direction of the circle. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -880,19 +880,19 @@ class Face(Topology):
         return edges
 
     @staticmethod
-    def Einstein(origin: topologic.Vertex = None, radius: float = 0.5, direction: list = [0,0,1],
-                 placement: str = "center", tolerance: float=0.0001) -> topologic.Face:
+    def Einstein(origin: topologic.Vertex = None, radius: float = 0.5, direction: list = [0, 0, 1],
+                 placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physist). See https://arxiv.org/abs/2303.10798
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the tile. The default is None which results in the tiles first vertex being placed at (0,0,0).
+            The location of the origin of the tile. The default is None which results in the tiles first vertex being placed at (0, 0, 0).
         radius : float , optional
             The radius of the hexagon determining the size of the tile. The default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the ellipse. The default is [0,0,1].
+            The vector representing the up direction of the ellipse. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the hexagon determining the location of the tile. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -927,7 +927,8 @@ class Face(Topology):
             internal boundaries (holes). For example: [[270,270,270,270], [[270,270,270,270],[300,300,300]]]. If not, the returned list will be
             a simple list of interior angles of the external boundary. For example: [270,270,270,270]. Please note that that the interior angles of the
             internal boundaries are considered to be those interior to the original face. Thus, they are exterior to the internal boundary.
-        
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         Returns
         -------
         list
@@ -1054,7 +1055,7 @@ class Face(Topology):
         return harmonizedFace
 
     @staticmethod
-    def InteriorAngles(face: topologic.Face, includeInternalBoundaries=False, mantissa: int = 6) -> list:
+    def InteriorAngles(face: topologic.Face, includeInternalBoundaries: bool = False, mantissa: int = 6) -> list:
         """
         Returns the interior angles of the input face in degrees. The face must be planar.
         
@@ -1068,7 +1069,8 @@ class Face(Topology):
             internal boundaries (holes). For example: [[90,90,90,90], [[90,90,90,90],[60,60,60]]]. If not, the returned list will be
             a simple list of interior angles of the external boundary. For example: [90,90,90,90]. Please note that that the interior angles of the
             internal boundaries are considered to be those interior to the original face. Thus, they are exterior to the internal boundary.
-        
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         Returns
         -------
         list
@@ -1269,7 +1271,7 @@ class Face(Topology):
         normal = Face.Normal(face)
         flatFace = Topology.Flatten(face, origin=origin, direction=normal)
 
-        # Create a Vertex at the world's origin (0,0,0)
+        # Create a Vertex at the world's origin (0, 0, 0)
         world_origin = Vertex.Origin()
 
         faceEdges = Face.Edges(flatFace)
@@ -1592,20 +1594,20 @@ class Face(Topology):
         return Face.Rectangle(origin=origin, width=width, length=length, direction = direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
-    def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+    def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a rectangle.
 
         Parameters
         ----------
         origin : topologic.Vertex, optional
-            The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0,0,0).
+            The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0, 0, 0).
         width : float , optional
             The width of the rectangle. The default is 1.0.
         length : float , optional
             The length of the rectangle. The default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the rectangle. The default is [0,0,1].
+            The vector representing the up direction of the rectangle. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1680,18 +1682,18 @@ class Face(Topology):
         return Wire.Skeleton(face, tolerance=tolerance)
     
     @staticmethod
-    def Square(origin: topologic.Vertex = None, size: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+    def Square(origin: topologic.Vertex = None, size: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a square.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the square. The default is None which results in the square being placed at (0,0,0).
+            The location of the origin of the square. The default is None which results in the square being placed at (0, 0, 0).
         size : float , optional
             The size of the square. The default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the square. The default is [0,0,1].
+            The vector representing the up direction of the square. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the square. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1706,14 +1708,14 @@ class Face(Topology):
         return Face.Rectangle(origin=origin, width=size, length=size, direction=direction, placement=placement, tolerance=tolerance)
     
     @staticmethod
-    def Star(origin: topologic.Vertex = None, radiusA: float = 1.0, radiusB: float = 0.4, rays: int = 5, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+    def Star(origin: topologic.Vertex = None, radiusA: float = 1.0, radiusB: float = 0.4, rays: int = 5, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a star.
 
         Parameters
         ----------
         origin : topologic.Vertex, optional
-            The location of the origin of the star. The default is None which results in the star being placed at (0,0,0).
+            The location of the origin of the star. The default is None which results in the star being placed at (0, 0, 0).
         radiusA : float , optional
             The outer radius of the star. The default is 1.0.
         radiusB : float , optional
@@ -1721,7 +1723,7 @@ class Face(Topology):
         rays : int , optional
             The number of star rays. The default is 5.
         direction : list , optional
-            The vector representing the up direction of the star. The default is [0,0,1].
+            The vector representing the up direction of the star. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the star. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1741,14 +1743,14 @@ class Face(Topology):
         return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
-    def Trapezoid(origin: topologic.Vertex = None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+    def Trapezoid(origin: topologic.Vertex = None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
         """
         Creates a trapezoid.
 
         Parameters
         ----------
         origin : topologic.Vertex, optional
-            The location of the origin of the trapezoid. The default is None which results in the trapezoid being placed at (0,0,0).
+            The location of the origin of the trapezoid. The default is None which results in the trapezoid being placed at (0, 0, 0).
         widthA : float , optional
             The width of the bottom edge of the trapezoid. The default is 1.0.
         widthB : float , optional
@@ -1760,7 +1762,7 @@ class Face(Topology):
         length : float , optional
             The length of the trapezoid. The default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the trapezoid. The default is [0,0,1].
+            The vector representing the up direction of the trapezoid. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional

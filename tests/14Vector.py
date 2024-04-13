@@ -52,10 +52,10 @@ print("Case 5")
 v1 = Vertex.ByCoordinates(10,0,0)
 v2 = Vertex.ByCoordinates(20,0,0)
 # test 1
-vector = Vector.ByVertices([v1,v2], normalize=True)
+vector = Vector.ByVertices([v1, v2], normalize=True)
 assert vector == [1,0,0], "Vector.ByAzimuthAltitude. Should be [1,0,0]"
 # test 2
-vector = Vector.ByVertices([v1,v2], normalize=False)
+vector = Vector.ByVertices([v1, v2], normalize=False)
 assert vector == [10,0,0], "Vector.ByAzimuthAltitude. Should be [10,0,0]"
 
 # Case 6 - CompassAngle
@@ -110,12 +110,12 @@ print("Case 8")
 vectorA = [1,0,0]
 vectorB = [0,1,0]
 cross = Vector.Cross(vectorA, vectorB)
-assert cross == [0,0,1], "Vector.Cross. Should be [0,0,1]"
+assert cross == [0, 0, 1], "Vector.Cross. Should be [0, 0, 1]"
 
 # Case 9 - Up
 print("Case 9")
 vector = Vector.Up()
-assert vector == [0,0,1], "Vector.Up. Should be [0,0,1]"
+assert vector == [0, 0, 1], "Vector.Up. Should be [0, 0, 1]"
 
 # Case 10 - Down
 print("Case 10")

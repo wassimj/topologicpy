@@ -53,7 +53,7 @@ cV = Vertex.ByCoordinates(0,0,4)                             # create vertex
 ConeS1 = Face.ByVertices([v1, cV, v2])                     # create face
 ConeS2 = Face.ByVertices([v2, cV, vr1])                   # create face
 ConeS3 = Face.ByVertices([vr1, cV, vr2])                  # create face
-ConeS4 = Face.ByVertices([vr2,cV, v1])                    # create face
+ConeS4 = Face.ByVertices([vr2, cV, v1])                    # create face
 # box by wire
 boxW1 = Wire.ByVertices([v1, v2, v3, v4])                # create wire
 boxW2 = Wire.ByVertices([vr1, vr2, vr3, vr4])           # create wire

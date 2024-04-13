@@ -16,8 +16,8 @@ v0 = Vertex.ByCoordinates(0, 0, 0)          # create vertex
 v1 = Vertex.ByCoordinates(0, 10, 0)         # create vertex
 v3 = Vertex.ByCoordinates(0, -10, 0)        # create vertex
 v4 = Vertex.ByCoordinates(5, 0, 0)          # create vertex
-list_v = [v0,v1]                            # create list of vertices
-list_v1 = [v1,v3]                           # create list of vertices
+list_v = [v0, v1]                            # create list of vertices
+list_v1 = [v1, v3]                           # create list of vertices
 cluster_1 = Cluster.ByTopologies(list_v)    # create cluster of vertices
 cluster_2 = Cluster.ByTopologies(list_v1)   # create cluster of vertices    
 eB = Edge.ByStartVertexEndVertex(v0,v3)     # create edge
@@ -262,7 +262,7 @@ assert Edge.Length(edge) == 3, "Edge.ByFaceNormal. Length should be 3"
 print("Case 12")
 # test 1
 from topologicpy.Topology import Topology
-v1 = Vertex.ByCoordinates(0,0,0)
+v1 = Vertex.ByCoordinates(0, 0, 0)
 v2 = Vertex.ByCoordinates(10,0,0)
 edge = Edge.ByVertices([v1, v2])
 edge2 = Edge.ByOffset2D(edge, offset=1)
@@ -274,7 +274,7 @@ assert Vertex.Y(centroid) == 1, "Edge.ByOffset2D. Y Should be 1"
 #Case 23 - ExtendToEdge2D
 print("Case 23")
 # test 1
-v1 = Vertex.ByCoordinates(0,0,0)
+v1 = Vertex.ByCoordinates(0, 0, 0)
 v2 = Vertex.ByCoordinates(10,0,0)
 edge = Edge.ByVertices([v1, v2])
 v1 = Vertex.ByCoordinates(20,-10,0)
@@ -290,7 +290,7 @@ assert Vertex.Y(centroid) == 0, "Edge.ExtendToEdge2D. Y Should be 1"
 #Case 24 - Intersect2D
 print("Case 24")
 # test 1
-v1 = Vertex.ByCoordinates(0,0,0)
+v1 = Vertex.ByCoordinates(0, 0, 0)
 v2 = Vertex.ByCoordinates(10,0,0)
 edge = Edge.ByVertices([v1, v2])
 v1 = Vertex.ByCoordinates(5,-10,0)

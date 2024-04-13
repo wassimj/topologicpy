@@ -125,9 +125,9 @@ class Wire(Topology):
             print("Wire.Arc - Error: The endVertex parameter is not a valid vertex. Returning None.")
             return None
         if Vertex.AreCollinear([startVertex, middleVertex, endVertex], tolerance = tolerance):
-            return Wire.ByVertices([startVertex,middleVertex,endVertex], close=False)
+            return Wire.ByVertices([startVertex, middleVertex, endVertex], close=False)
         
-        w = Wire.ByVertices([startVertex,middleVertex,endVertex], close=False)
+        w = Wire.ByVertices([startVertex, middleVertex, endVertex], close=False)
         f = Face.ByWire(w, tolerance=tolerance)
         normal = Face.Normal(f)
         flat_w = Topology.Flatten(w, origin=startVertex, direction=normal)
@@ -224,7 +224,7 @@ class Wire(Topology):
         if optimize > 0:
             factor = (round(((11 - optimize)/30 + 0.57), 2))
             flag = False
-            for n in range(10,0,-1):
+            for n in range(10, 0, -1):
                 if flag:
                     break
                 za = n
@@ -233,7 +233,7 @@ class Wire(Topology):
                 for z in range(za,zb,zc):
                     if flag:
                         break
-                    t = Topology.Rotate(topology, origin=origin, x=0,y=0,z=1, degree=z)
+                    t = Topology.Rotate(topology, origin=origin, axis=[0, 0, 1], angle=z)
                     minX, minY, maxX, maxY = br(t)
                     w = abs(maxX - minX)
                     l = abs(maxY - minY)
@@ -259,7 +259,7 @@ class Wire(Topology):
         vb4 = topologic.Vertex.ByCoordinates(minX, maxY, 0)
 
         boundingRectangle = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
-        boundingRectangle = Topology.Rotate(boundingRectangle, origin=origin, x=0,y=0,z=1, degree=-best_z)
+        boundingRectangle = Topology.Rotate(boundingRectangle, origin=origin, axis=[0, 0, 1], angle=-best_z)
         boundingRectangle = Topology.Unflatten(boundingRectangle, origin=f_origin, direction=normal)
         dictionary = Dictionary.ByKeysValues(["zrot"], [best_z])
         boundingRectangle = Topology.SetDictionary(boundingRectangle, dictionary)
@@ -600,14 +600,14 @@ class Wire(Topology):
         return Wire.ByVertices(vertices, close)
 
     @staticmethod
-    def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
+    def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
         """
         Creates a circle.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0,0,0).
+            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
             The radius of the circle. The default is 0.5.
         sides : int , optional
@@ -619,7 +619,7 @@ class Wire(Topology):
         close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
         direction : list , optional
-            The vector representing the up direction of the circle. The default is [0,0,1].
+            The vector representing the up direction of the circle. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -635,7 +635,7 @@ class Wire(Topology):
         from topologicpy.Topology import Topology
 
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,0)
+            origin = topologic.Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             return None
         if not placement.lower() in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
@@ -665,7 +665,7 @@ class Wire(Topology):
             z = origin.Z()
             xList.append(x)
             yList.append(y)
-            baseV.append(Vertex.ByCoordinates(x,y,z))
+            baseV.append(Vertex.ByCoordinates(x, y, z))
 
         if angleRange == 360:
             baseWire = Wire.ByVertices(baseV[::-1], close=False) #reversing the list so that the normal points up in Blender
@@ -680,8 +680,8 @@ class Wire(Topology):
             baseWire = Topology.Translate(baseWire, -radius, radius, 0)
         elif placement.lower() == "upperright":
             baseWire = Topology.Translate(baseWire, -radius, -radius, 0)
-        if direction != [0,0,1]:
-            baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0,0,1], dirB=direction)
+        if direction != [0, 0, 1]:
+            baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
     
     @staticmethod
@@ -1025,18 +1025,18 @@ class Wire(Topology):
         return edges
 
     @staticmethod
-    def Einstein(origin: topologic.Vertex = None, radius: float = 0.5, direction: list = [0,0,1], placement: str = "center") -> topologic.Wire:
+    def Einstein(origin: topologic.Vertex = None, radius: float = 0.5, direction: list = [0, 0, 1], placement: str = "center") -> topologic.Wire:
         """
         Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physist). See https://arxiv.org/abs/2303.10798
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the tile. The default is None which results in the tiles first vertex being placed at (0,0,0).
+            The location of the origin of the tile. The default is None which results in the tiles first vertex being placed at (0, 0, 0).
         radius : float , optional
             The radius of the hexagon determining the size of the tile. The default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the ellipse. The default is [0,0,1].
+            The vector representing the up direction of the ellipse. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the hexagon determining the location of the tile. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         
@@ -1049,9 +1049,9 @@ class Wire(Topology):
         def sin(angle):
             return math.sin(math.radians(angle))
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         d = cos(30)*radius
-        v1 = Vertex.ByCoordinates(0,0,0)
+        v1 = Vertex.ByCoordinates(0, 0, 0)
         v2 = Vertex.ByCoordinates(cos(30)*d, sin(30)*d, 0)
         v3 = Vertex.ByCoordinates(radius, 0)
         v4 = Vertex.ByCoordinates(2*radius, 0)
@@ -1072,19 +1072,19 @@ class Wire(Topology):
         dy = Vertex.Y(origin)
         dz = Vertex.Z(origin)
         einstein = Topology.Translate(einstein, dx, dy, dz)
-        if direction != [0,0,1]:
-            einstein = Topology.Orient(einstein, origin=origin, dirA=[0,0,1], dirB=direction)
+        if direction != [0, 0, 1]:
+            einstein = Topology.Orient(einstein, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return einstein
     
     @staticmethod
-    def Ellipse(origin: topologic.Vertex = None, inputMode: int = 1, width: float = 2.0, length: float = 1.0, focalLength: float = 0.866025, eccentricity: float = 0.866025, majorAxisLength: float = 1.0, minorAxisLength: float = 0.5, sides: float = 32, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
+    def Ellipse(origin: topologic.Vertex = None, inputMode: int = 1, width: float = 2.0, length: float = 1.0, focalLength: float = 0.866025, eccentricity: float = 0.866025, majorAxisLength: float = 1.0, minorAxisLength: float = 0.5, sides: float = 32, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
         """
         Creates an ellipse and returns all its geometry and parameters.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0,0,0).
+            The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0, 0, 0).
         inputMode : int , optional
             The method by wich the ellipse is defined. The default is 1.
             Based on the inputMode value, only the following inputs will be considered. The options are:
@@ -1113,7 +1113,7 @@ class Wire(Topology):
         close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
         direction : list , optional
-            The vector representing the up direction of the ellipse. The default is [0,0,1].
+            The vector representing the up direction of the ellipse. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1129,14 +1129,14 @@ class Wire(Topology):
         return ellipseAll["ellipse"]
 
     @staticmethod
-    def EllipseAll(origin: topologic.Vertex = None, inputMode: int = 1, width: float = 2.0, length: float = 1.0, focalLength: float = 0.866025, eccentricity: float = 0.866025, majorAxisLength: float = 1.0, minorAxisLength: float = 0.5, sides: int = 32, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0,0,1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Wire:
+    def EllipseAll(origin: topologic.Vertex = None, inputMode: int = 1, width: float = 2.0, length: float = 1.0, focalLength: float = 0.866025, eccentricity: float = 0.866025, majorAxisLength: float = 1.0, minorAxisLength: float = 0.5, sides: int = 32, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Wire:
         """
         Creates an ellipse and returns all its geometry and parameters.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0,0,0).
+            The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0, 0, 0).
         inputMode : int , optional
             The method by wich the ellipse is defined. The default is 1.
             Based on the inputMode value, only the following inputs will be considered. The options are:
@@ -1165,7 +1165,7 @@ class Wire(Topology):
         close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
         direction : list , optional
-            The vector representing the up direction of the ellipse. The default is [0,0,1].
+            The vector representing the up direction of the ellipse. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -1188,10 +1188,10 @@ class Wire(Topology):
         from topologicpy.Topology import Topology
 
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,0)
+            origin = topologic.Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             return None
-        if inputMode not in [1,2,3,4]:
+        if inputMode not in [1, 2, 3, 4]:
             return None
         if placement.lower() not in ["center", "lowerleft"]:
             return None
@@ -1256,7 +1256,7 @@ class Wire(Topology):
             z = origin.Z()
             xList.append(x)
             yList.append(y)
-            baseV.append(topologic.Vertex.ByCoordinates(x,y,z))
+            baseV.append(topologic.Vertex.ByCoordinates(x, y, z))
 
         if angleRange == 360:
             baseWire = Wire.ByVertices(baseV[::-1], close=False) #reversing the list so that the normal points up in Blender
@@ -1265,14 +1265,14 @@ class Wire(Topology):
 
         if placement.lower() == "lowerleft":
             baseWire = Topology.Translate(baseWire, a, b, 0)
-        baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0,0,1], dirB=direction)
+        baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         # Create a Cluster of the two foci
-        v1 = topologic.Vertex.ByCoordinates(c+origin.X(), 0+origin.Y(),0)
-        v2 = topologic.Vertex.ByCoordinates(-c+origin.X(), 0+origin.Y(),0)
+        v1 = topologic.Vertex.ByCoordinates(c+origin.X(), 0+origin.Y(), 0)
+        v2 = topologic.Vertex.ByCoordinates(-c+origin.X(), 0+origin.Y(), 0)
         foci = topologic.Cluster.ByTopologies([v1, v2])
         if placement.lower() == "lowerleft":
             foci = Topology.Translate(foci, a, b, 0)
-        foci = Topology.Orient(foci, origin=origin, dirA=[0,0,1], dirB=direction)
+        foci = Topology.Orient(foci, origin=origin, dirA=[0, 0, 1], dirB=direction)
         d = {}
         d['ellipse'] = baseWire
         d['foci'] = foci
@@ -1294,7 +1294,7 @@ class Wire(Topology):
         return ev
     
     @staticmethod
-    def ExteriorAngles(wire: topologic.Wire, mantissa: int = 6) -> list:
+    def ExteriorAngles(wire: topologic.Wire, tolerance: float = 0.0001, mantissa: int = 6) -> list:
         """
         Returns the exterior angles of the input wire in degrees. The wire must be planar, manifold, and closed.
         
@@ -1302,11 +1302,15 @@ class Wire(Topology):
         ----------
         wire : topologic.Wire
             The input wire.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        mantissa : int , optional
+            The length of the desired mantissa. The default is 6.
         
         Returns
         -------
         list
-            The list of interior angles.
+            The list of exterior angles.
         """        
 
         if not isinstance(wire, topologic.Wire):
@@ -1319,7 +1323,7 @@ class Wire(Topology):
             print("Wire.InteriorAngles - Error: The input wire parameter is not closed. Returning None")
             return None
         
-        interior_angles = Wire.InteriorAngles(wire)
+        interior_angles = Wire.InteriorAngles(wire, mantissa=mantissa)
         exterior_angles = [round(360-a, mantissa) for a in interior_angles]
         return exterior_angles
     
@@ -1816,18 +1820,18 @@ class Wire(Topology):
         return totalLength
 
     @staticmethod
-    def Line(origin: topologic.Vertex = None, length: float = 1, direction: list = [1,0,0], sides: int = 2, placement: str ="center") -> topologic.Wire:
+    def Line(origin: topologic.Vertex = None, length: float = 1, direction: list = [1, 0, 0], sides: int = 2, placement: str ="center") -> topologic.Wire:
         """
         Creates a straight line wire using the input parameters.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the box. The default is None which results in the edge being placed at (0,0,0).
+            The origin location of the box. The default is None which results in the edge being placed at (0, 0, 0).
         length : float , optional
             The desired length of the edge. The default is 1.0.
         direction : list , optional
-            The desired direction (vector) of the edge. The default is [1,0,0] (along the X-axis).
+            The desired direction (vector) of the edge. The default is [1, 0, 0] (along the X-axis).
         sides : int , optional
             The desired number of sides/segments. The minimum number of sides is 2. The default is 2.
         placement : str , optional
@@ -2052,20 +2056,20 @@ class Wire(Topology):
         return w
 
     @staticmethod
-    def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, direction: list = [0,0,1], placement: str = "center", angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
+    def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
         """
         Creates a rectangle.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0,0,0).
+            The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0, 0, 0).
         width : float , optional
             The width of the rectangle. The default is 1.0.
         length : float , optional
             The length of the rectangle. The default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the rectangle. The default is [0,0,1].
+            The vector representing the up direction of the rectangle. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
         angTolerance : float , optional
@@ -2082,7 +2086,7 @@ class Wire(Topology):
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         if not origin:
-            origin = Vertex.ByCoordinates(0,0,0)
+            origin = Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Wire.Rectangle - Error: specified origin is not a topologic vertex. Retruning None.")
             return None
@@ -2118,8 +2122,8 @@ class Wire(Topology):
         vb4 = Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], True)
-        if direction != [0,0,1]:
-            baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0,0,1], dirB=direction)
+        if direction != [0, 0, 1]:
+            baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
     
     @staticmethod
@@ -2250,7 +2254,7 @@ class Wire(Topology):
         new_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
         return new_wire
 
-    def Roof(face, degree=45, tolerance=0.001):
+    def Roof(face, angle: float = 45, tolerance: float = 0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
             This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
@@ -2259,7 +2263,7 @@ class Wire(Topology):
         ----------
         face : topologic.Face
             The input face.
-        degree : float , optioal
+        angle : float , optioal
             The desired angle in degrees of the roof. The default is 45.
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
@@ -2317,7 +2321,7 @@ class Wire(Topology):
                         edges.append(e)
             return edges
         
-        def face_to_skeleton(face, degree=0):
+        def face_to_skeleton(face, angle=0):
             normal = Face.Normal(face)
             eb_wire = Face.ExternalBoundary(face)
             ib_wires = Face.InternalBoundaries(face)
@@ -2338,7 +2342,7 @@ class Wire(Topology):
                 ib_polygonsxy.append(ib_polygonxy)
                 zero_coordinates += ib_polygon_coordinates
             skeleton = Polyskel.skeletonize(eb_polygonxy, ib_polygonsxy)
-            slope = math.tan(math.radians(degree))
+            slope = math.tan(math.radians(angle))
             roofEdges = subtrees_to_edges(skeleton, zero_coordinates, slope)
             roofEdges = Helper.Flatten(roofEdges)+Topology.Edges(face)
             roofTopology = Topology.SelfMerge(Cluster.ByTopologies(roofEdges), tolerance=tolerance)
@@ -2346,14 +2350,14 @@ class Wire(Topology):
         
         if not isinstance(face, topologic.Face):
             return None
-        degree = abs(degree)
-        if degree >= 90-tolerance:
+        angle = abs(angle)
+        if angle >= 90-tolerance:
             return None
         origin = Topology.Centroid(face)
         normal = Face.Normal(face)
         flat_face = Topology.Flatten(face, origin=origin, direction=normal)
         d = Topology.Dictionary(flat_face)
-        roof = face_to_skeleton(flat_face, degree)
+        roof = face_to_skeleton(flat_face, angle)
         if not roof:
             return None
         roof = Topology.Unflatten(roof, origin=origin, direction=normal)
@@ -2381,17 +2385,17 @@ class Wire(Topology):
         """
         if not isinstance(face, topologic.Face):
             return None
-        return Wire.Roof(face, degree=0, tolerance=tolerance)
+        return Wire.Roof(face, angle=0, tolerance=tolerance)
     
     @staticmethod
-    def Spiral(origin : topologic.Vertex = None, radiusA : float = 0.05, radiusB : float = 0.5, height : float = 1, turns : int = 10, sides : int = 36, clockwise : bool = False, reverse : bool = False, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
+    def Spiral(origin : topologic.Vertex = None, radiusA : float = 0.05, radiusB : float = 0.5, height : float = 1, turns : int = 10, sides : int = 36, clockwise : bool = False, reverse : bool = False, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
         """
         Creates a spiral.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the spiral. The default is None which results in the spiral being placed at (0,0,0).
+            The location of the origin of the spiral. The default is None which results in the spiral being placed at (0, 0, 0).
         radiusA : float , optional
             The initial radius of the spiral. The default is 0.05.
         radiusB : float , optional
@@ -2407,7 +2411,7 @@ class Wire(Topology):
         reverse : bool , optional
             If set to True, the spiral will increase in height from the center to the circumference. Otherwise, it will increase in height from the conference to the center. The default is False.
         direction : list , optional
-            The vector representing the up direction of the spiral. The default is [0,0,1].
+            The vector representing the up direction of the spiral. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the spiral. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
 
@@ -2422,7 +2426,7 @@ class Wire(Topology):
         import math
 
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,0)
+            origin = topologic.Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             print("Wire.Spiral - Error: the input origin is not a valid topologic Vertex. Returning None.")
             return None
@@ -2480,7 +2484,7 @@ class Wire(Topology):
                 z = z - zOffset
             else:
                 z = z + zOffset
-            vertices.append(Vertex.ByCoordinates(x,y,z))
+            vertices.append(Vertex.ByCoordinates(x, y, z))
             ang = ang + angOffset
         
         minX = min(xList)
@@ -2499,8 +2503,8 @@ class Wire(Topology):
             baseWire = Topology.Translate(baseWire, -maxX, -minY, 0)
         elif placement.lower() == "upperright":
             baseWire = Topology.Translate(baseWire, -maxX, -maxY, 0)
-        if direction != [0,0,1]:
-            baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0,0,1], dirB=direction)
+        if direction != [0, 0, 1]:
+            baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
 
     @staticmethod
@@ -2582,18 +2586,18 @@ class Wire(Topology):
         return wires
     
     @staticmethod
-    def Square(origin: topologic.Vertex = None, size: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
+    def Square(origin: topologic.Vertex = None, size: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
         """
         Creates a square.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the square. The default is None which results in the square being placed at (0,0,0).
+            The location of the origin of the square. The default is None which results in the square being placed at (0, 0, 0).
         size : float , optional
             The size of the square. The default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the square. The default is [0,0,1].
+            The vector representing the up direction of the square. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the square. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -2608,14 +2612,14 @@ class Wire(Topology):
         return Wire.Rectangle(origin=origin, width=size, length=size, direction=direction, placement=placement, tolerance=tolerance)
     
     @staticmethod
-    def Star(origin: topologic.Wire = None, radiusA: float = 0.5, radiusB: float = 0.2, rays: int = 8, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
+    def Star(origin: topologic.Wire = None, radiusA: float = 0.5, radiusB: float = 0.2, rays: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
         """
         Creates a star.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the star. The default is None which results in the star being placed at (0,0,0).
+            The location of the origin of the star. The default is None which results in the star being placed at (0, 0, 0).
         radiusA : float , optional
             The outer radius of the star. The default is 1.0.
         radiusB : float , optional
@@ -2623,7 +2627,7 @@ class Wire(Topology):
         rays : int , optional
             The number of star rays. The default is 8.
         direction : list , optional
-            The vector representing the up direction of the star. The default is [0,0,1].
+            The vector representing the up direction of the star. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the star. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -2638,7 +2642,7 @@ class Wire(Topology):
         from topologicpy.Topology import Topology
 
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,0)
+            origin = topologic.Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             return None
         radiusA = abs(radiusA)
@@ -2666,7 +2670,7 @@ class Wire(Topology):
             z = origin.Z()
             xList.append(x)
             yList.append(y)
-            baseV.append([x,y])
+            baseV.append([x, y])
 
         if placement.lower() == "lowerleft":
             xmin = min(xList)
@@ -2696,8 +2700,8 @@ class Wire(Topology):
             tranBase.append(topologic.Vertex.ByCoordinates(coord[0]+xOffset, coord[1]+yOffset, origin.Z()))
         
         baseWire = Wire.ByVertices(tranBase[::-1], True) #reversing the list so that the normal points up in Blender
-        if direction != [0,0,1]:
-            baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0,0,1], dirB=direction)
+        if direction != [0, 0, 1]:
+            baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
 
     @staticmethod
@@ -2740,14 +2744,14 @@ class Wire(Topology):
         return sv
     
     @staticmethod
-    def Trapezoid(origin: topologic.Vertex = None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0,0,1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
+    def Trapezoid(origin: topologic.Vertex = None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Wire:
         """
         Creates a trapezoid.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The location of the origin of the trapezoid. The default is None which results in the trapezoid being placed at (0,0,0).
+            The location of the origin of the trapezoid. The default is None which results in the trapezoid being placed at (0, 0, 0).
         widthA : float , optional
             The width of the bottom edge of the trapezoid. The default is 1.0.
         widthB : float , optional
@@ -2759,7 +2763,7 @@ class Wire(Topology):
         length : float , optional
             The length of the trapezoid. The default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the trapezoid. The default is [0,0,1].
+            The vector representing the up direction of the trapezoid. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
@@ -2774,7 +2778,7 @@ class Wire(Topology):
         from topologicpy.Topology import Topology
 
         if not origin:
-            origin = topologic.Vertex.ByCoordinates(0,0,0)
+            origin = topologic.Vertex.ByCoordinates(0, 0, 0)
         if not isinstance(origin, topologic.Vertex):
             return None
         widthA = abs(widthA)
@@ -2808,8 +2812,8 @@ class Wire(Topology):
         vb4 = topologic.Vertex.ByCoordinates(origin.X()-widthB*0.5++offsetB+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], True)
-        if direction != [0,0,1]:
-            baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0,0,1], dirB=direction)
+        if direction != [0, 0, 1]:
+            baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
 
     @staticmethod
@@ -2978,7 +2982,7 @@ class Wire(Topology):
             print("Wire.VertexAtParameter - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
         if u < 0 or u > 1:
-            print("Wire.VertexAtParameter - Error: The input u parameter is not within the valid range of [0,1]. Returning None.")
+            print("Wire.VertexAtParameter - Error: The input u parameter is not within the valid range of [0, 1]. Returning None.")
             return None
         if not Wire.IsManifold(wire):
             print("Wire.VertexAtParameter - Error: The input wire parameter is non-manifold. Returning None.")

@@ -33,7 +33,7 @@ class Color:
         Returns
         -------
         list
-            The color expressed as an [r,g,b] or an [r,g,b,a] list.
+            The color expressed as an [r, g, b] or an [r, g, b, a] list.
         """
         import webcolors
         if not alpha == None:
@@ -66,7 +66,7 @@ class Color:
         Returns
         -------
         list
-            The color expressed as an [r,g,b] or an [r,g,b,a] list.
+            The color expressed as an [r, g, b] or an [r, g, b, a] list.
 
         """
         if not isinstance(hex, str):
@@ -83,7 +83,7 @@ class Color:
         r = int(hex[0:2], 16)
         g = int(hex[2:4], 16)
         b = int(hex[4:6], 16)
-        rgbList = [r,g,b]
+        rgbList = [r, g, b]
         if not alpha == None:
             rgbList.append(alpha)
         return rgbList
@@ -111,7 +111,7 @@ class Color:
         Returns
         -------
         list
-            The color expressed as an [r,g,b] or an [r,g,b,a] list.
+            The color expressed as an [r, g, b] or an [r, g, b, a] list.
 
         """
         if not alpha == None:
@@ -250,12 +250,12 @@ class Color:
     def CSSNamedColor(color):
         """
         Returns the CSS Named color that most closely matches the input color. The input color is assumed to be
-        in the format [r,g,b]. See https://developer.mozilla.org/en-US/docs/Web/CSS/named-color
+        in the format [r, g, b]. See https://developer.mozilla.org/en-US/docs/Web/CSS/named-color
 
         Parameters
         ----------
         color : list
-            The input color. This is assumed to be in the format [r,g,b]
+            The input color. This is assumed to be in the format [r, g, b]
         
         Returns
         -------
@@ -271,12 +271,12 @@ class Color:
             return None
         color = [int(x) for x in color if isinstance(x, numbers.Real)]
         if len(color) < 3:
-            print("Color.CSSNamedColor - Error: The input color parameter does not contain valid r,g,b values. Returning None.")
+            print("Color.CSSNamedColor - Error: The input color parameter does not contain valid r, g, b values. Returning None.")
             return None
         color = color[0:3]
         for x in color:
             if not (0 <= x <= 255):
-                print("Color.CSSNamedColor - Error: The input color parameter does not contain valid r,g,b values. Returning None.")
+                print("Color.CSSNamedColor - Error: The input color parameter does not contain valid r, g, b values. Returning None.")
                 return None
 
         def est_color(requested_color):
@@ -336,12 +336,12 @@ class Color:
     @staticmethod
     def PlotlyColor(color, alpha=1.0, useAlpha=False):
         """
-        Returns a plotly color string based on the input list of [r,g,b] or [r,g,b,a]. If your list is [r,g,b], you can optionally specify an alpha value
+        Returns a plotly color string based on the input list of [r, g, b] or [r, g, b, a]. If your list is [r, g, b], you can optionally specify an alpha value
 
         Parameters
         ----------
         color : list
-            The input color list. This is assumed to be in the format [r,g,b] or [r,g,b,a]
+            The input color list. This is assumed to be in the format [r, g, b] or [r, g, b, a]
         alpha : float , optional
             The transparency value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. The default is 1.0.
         useAlpha : bool , optional

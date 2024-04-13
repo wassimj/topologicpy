@@ -223,7 +223,7 @@ class Plotly:
         """
 
         if isinstance(data[labels[0]][0], int):
-            xAxis_list = list(range(1,data[labels[0]][0]+1))
+            xAxis_list = list(range(1, data[labels[0]][0]+1))
         else:
             xAxis_list = data[labels[0]][0]
         plot_data = [xAxis_list]
@@ -307,9 +307,9 @@ class Plotly:
             vertices = Graph.Vertices(graph)
             if vertexLabelKey or vertexGroupKey:
                 for v in vertices:
-                    Xn=[round(Vertex.X(v),4) for v in vertices] # x-coordinates of nodes
-                    Yn=[round(Vertex.Y(v),4) for v in vertices] # y-coordinates of nodes
-                    Zn=[round(Vertex.Z(v),4) for v in vertices] # x-coordinates of nodes
+                    Xn=[round(Vertex.X(v), 4) for v in vertices] # x-coordinates of nodes
+                    Yn=[round(Vertex.Y(v), 4) for v in vertices] # y-coordinates of nodes
+                    Zn=[round(Vertex.Z(v), 4) for v in vertices] # x-coordinates of nodes
                     v_label = ""
                     v_group = ""
                     d = Topology.Dictionary(v)
@@ -334,9 +334,9 @@ class Plotly:
                     v_labels.append(v_label)
             else:
                 for v in vertices:
-                    Xn=[round(Vertex.X(v),4) for v in vertices] # x-coordinates of nodes
-                    Yn=[round(Vertex.Y(v),4) for v in vertices] # y-coordinates of nodes
-                    Zn=[round(Vertex.Z(v),4) for v in vertices] # x-coordinates of nodes
+                    Xn=[round(Vertex.X(v), 4) for v in vertices] # x-coordinates of nodes
+                    Yn=[round(Vertex.Y(v), 4) for v in vertices] # y-coordinates of nodes
+                    Zn=[round(Vertex.Z(v), 4) for v in vertices] # x-coordinates of nodes
             if len(list(set(v_groupList))) < 2:
                 v_groupList = vertexColor
             if len(v_labels) < 1:
@@ -372,9 +372,9 @@ class Plotly:
                 for e in edges:
                     sv = Edge.StartVertex(e)
                     ev = Edge.EndVertex(e)
-                    Xe+=[round(Vertex.X(sv),4), round(Vertex.X(ev),4), None] # x-coordinates of edge ends
-                    Ye+=[round(Vertex.Y(sv),4), round(Vertex.Y(ev),4), None] # y-coordinates of edge ends
-                    Ze+=[round(Vertex.Z(sv),4), round(Vertex.Z(ev),4), None] # z-coordinates of edge ends
+                    Xe+=[round(Vertex.X(sv), 4), round(Vertex.X(ev), 4), None] # x-coordinates of edge ends
+                    Ye+=[round(Vertex.Y(sv), 4), round(Vertex.Y(ev), 4), None] # y-coordinates of edge ends
+                    Ze+=[round(Vertex.Z(sv), 4), round(Vertex.Z(ev), 4), None] # z-coordinates of edge ends
                     e_label = ""
                     e_group = ""
                     d = Topology.Dictionary(e)
@@ -398,9 +398,9 @@ class Plotly:
                 for e in edges:
                     sv = Edge.StartVertex(e)
                     ev = Edge.EndVertex(e)
-                    Xe+=[round(Vertex.X(sv),4), round(Vertex.X(ev),4), None] # x-coordinates of edge ends
-                    Ye+=[round(Vertex.Y(sv),4), round(Vertex.Y(ev),4), None] # y-coordinates of edge ends
-                    Ze+=[round(Vertex.Z(sv),4), round(Vertex.Z(ev),4), None] # z-coordinates of edge ends
+                    Xe+=[round(Vertex.X(sv), 4), round(Vertex.X(ev), 4), None] # x-coordinates of edge ends
+                    Ye+=[round(Vertex.Y(sv), 4), round(Vertex.Y(ev), 4), None] # y-coordinates of edge ends
+                    Ze+=[round(Vertex.Z(sv), 4), round(Vertex.Z(ev), 4), None] # z-coordinates of edge ends
 
             if len(list(set(e_groupList))) < 2:
                 e_groupList = edgeColor
@@ -677,9 +677,9 @@ class Plotly:
                 for m, e in enumerate(edges):
                     sv = vertices[e[0]]
                     ev = vertices[e[1]]
-                    x+=[round(sv[0],5),round(ev[0],mantissa), None] # x-coordinates of edge ends
-                    y+=[round(sv[1],5),round(ev[1],mantissa), None] # y-coordinates of edge ends
-                    z+=[round(sv[2],5),round(ev[2],mantissa), None] # z-coordinates of edge ends
+                    x+=[round(sv[0], mantissa),round(ev[0], mantissa), None] # x-coordinates of edge ends
+                    y+=[round(sv[1], mantissa),round(ev[1], mantissa), None] # y-coordinates of edge ends
+                    z+=[round(sv[2], mantissa),round(ev[2], mantissa), None] # z-coordinates of edge ends
                     label = ""
                     group = ""
                     if len(dictionaries) > 0:
@@ -1338,7 +1338,7 @@ class Plotly:
         zAxis : bool , optional
             If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
         axisSize : float , optional
-            The size of the X,Y,Z, axes. The default is 1.
+            The size of the X, Y, Z, axes. The default is 1.
         backgroundColor : str , optional
             The desired color of the background. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -1370,7 +1370,7 @@ class Plotly:
         if not isinstance(data, list):
             return None
 
-        v0 = Vertex.ByCoordinates(0,0,0)
+        v0 = Vertex.ByCoordinates(0, 0, 0)
         v1 = Vertex.ByCoordinates(axisSize,0,0)
         v2 = Vertex.ByCoordinates(0,axisSize,0)
         v3 = Vertex.ByCoordinates(0,0,axisSize)
@@ -1630,11 +1630,11 @@ class Plotly:
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera). The default is [-1.25,-1.25,1.25].
+            The desired location of the camera). The default is [-1.25, -1.25, 1.25].
         center : list , optional
-            The desired center (camera target). The default is [0,0,0].
+            The desired center (camera target). The default is [0, 0, 0].
         up : list , optional
-            The desired up vector. The default is [0,0,1].
+            The desired up vector. The default is [0, 0, 1].
         renderer : str , optional
             The desired renderer. See Plotly.Renderers(). The default is "notebook".
         intensityKey : str , optional
@@ -1888,11 +1888,11 @@ class Plotly:
         figure : plotly.graph_objs._figure.Figure
             The input plotly figure.
         camera : list , optional
-            The desired location of the camera. The default is [-1.25,-1.25,1.25].
+            The desired location of the camera. The default is [-1.25, -1.25, 1.25].
         center : list , optional
-            The desired center (camera target). The default is [0,0,0].
+            The desired center (camera target). The default is [0, 0, 0].
         up : list , optional
-            The desired up vector. The default is [0,0,1].
+            The desired up vector. The default is [0, 0, 1].
         projection : str , optional
             The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
         
@@ -1905,9 +1905,9 @@ class Plotly:
         if not isinstance(camera, list):
             camera = [-1.25, -1.25, 1.25]
         if not isinstance(center, list):
-            center = [0,0,0]
+            center = [0, 0, 0]
         if not isinstance(up, list):
-            up = [0,0,1]
+            up = [0, 0, 1]
         projection = projection.lower()
         if projection in "orthographic":
             projection = "orthographic"
@@ -1932,11 +1932,11 @@ class Plotly:
         figure : plotly.graph_objs._figure.Figure
             The input plotly figure.
         camera : list , optional
-            The desired location of the camera. The default is [0,0,0].
+            The desired location of the camera. The default is [0, 0, 0].
         center : list , optional
-            The desired center (camera target). The default is [0,0,0].
+            The desired center (camera target). The default is [0, 0, 0].
         up : list , optional
-            The desired up vector. The default is [0,0,1].
+            The desired up vector. The default is [0, 0, 1].
         renderer : str , optional
             The desired rendered. See Plotly.Renderers(). The default is "notebook".
         projection : str, optional

@@ -27,18 +27,18 @@ v4 = Vertex.ByCoordinates(0, 0, 10)         # create vertex
 v5 = Vertex.ByCoordinates(0, 10, 10)        # create vertex
 v6 = Vertex.ByCoordinates(10, 10, 10)       # create vertex
 v7 = Vertex.ByCoordinates(10, 0, 10)        # create vertex
-e0 = Edge.ByStartVertexEndVertex(v0,v1)
-wire0 = Wire.ByVertices([v0,v1,v2])         # create wire
-wire1 = Wire.ByVertices([v4,v5,v6])         # create wire
-w_list = [wire0,wire1]                      # create list
+e0 = Edge.ByStartVertexEndVertex(v0, v1)
+wire0 = Wire.ByVertices([v0, v1, v2])         # create wire
+wire1 = Wire.ByVertices([v4, v5, v6])         # create wire
+w_list = [wire0, wire1]                      # create list
 w_cluster = Cluster.ByTopologies(w_list)    # create cluster
-face0 = Face.ByVertices([v0,v1,v2,v3,v0])     # create face
-face1 = Face.ByVertices([v4,v5,v6,v7,v4])     # create face
-face2 = Face.ByVertices([v0,v4,v7,v3,v0])     # create face
-face3 = Face.ByVertices([v3,v7,v6,v2,v3])     # create face
-face4 = Face.ByVertices([v2,v6,v5,v1,v2])     # create face
-face5 = Face.ByVertices([v1,v5,v4,v0,v1])     # create face
-f_list = [face0,face1,face2,face3,face4,face5]  # create list
+face0 = Face.ByVertices([v0, v1, v2, v3, v0])     # create face
+face1 = Face.ByVertices([v4, v5, v6, v7, v4])     # create face
+face2 = Face.ByVertices([v0, v4, v7, v3, v0])     # create face
+face3 = Face.ByVertices([v3, v7, v6, v2, v3])     # create face
+face4 = Face.ByVertices([v2, v6, v5, v1, v2])     # create face
+face5 = Face.ByVertices([v1, v5, v4, v0, v1])     # create face
+f_list = [face0, face1, face2, face3, face4, face5]  # create list
 c_faces = Cluster.ByTopologies(f_list)          # create cluster
 shell_f = Shell.ByFaces(f_list)                 # create shell
 shell_open = Shell.ByFaces([face0])             # create shell
@@ -46,7 +46,7 @@ shell_open = Shell.ByFaces([face0])             # create shell
 # Case 1 - Box
 print("Case 1")
 # test 1
-list_dir = [0,0,1]
+list_dir = [0, 0, 1]
 cell_b0 = Cell.Box(origin = v0, width = 0.75, length = 0.75, height = 10, uSides = 1, vSides = 1,
                    wSides = 1, direction = list_dir, placement = "center")       # with optional inputs
 assert isinstance(cell_b0, topologic.Cell), "Cell.Box. Should be topologic.Cell"
@@ -65,7 +65,7 @@ cell_prism = Cell.Prism()                                                       
 assert isinstance(cell_prism, topologic.Cell), "Cell.Prism. topologic.Cell"
 # test 2
 cell_prism = Cell.Prism(origin=v2, width=3, length=3, height=5, uSides=3, vSides=2,
-                        wSides=2, direction = [0,0,1], placement='bottom')                   # with optional inputs
+                        wSides=2, direction = [0, 0, 1], placement='bottom')                   # with optional inputs
 assert isinstance(cell_prism, topologic.Cell), "Cell.Prism. topologic.Cell"
 # plot geometry
 data_cell_prism = Plotly.DataByTopology(cell_prism)
@@ -171,7 +171,7 @@ cell_c = Cell.Cone()                                                            
 assert isinstance(cell_c, topologic.Cell), "Cell.Cone. topologic.Cell"
 # test 2
 cell_c = Cell.Cone(origin=v2, baseRadius=3, topRadius=0, height=6, uSides=32, vSides=1,
-                    direction = [0,0,1], placement='center', tolerance=0.001)            # with optional inputs
+                    direction = [0, 0, 1], placement='center', tolerance=0.001)            # with optional inputs
 assert isinstance(cell_c, topologic.Cell), "Cell.Cone. topologic.Cell"
 # plot geometry
 data_cell_c = Plotly.DataByTopology(cell_c)
@@ -185,7 +185,7 @@ cell_cy = Cell.Cylinder()                                                       
 assert isinstance(cell_cy, topologic.Cell), "Cell.Cylinder. topologic.Cell"
 # test 2
 cell_cy = Cell.Cylinder(origin=v3, radius=3, height=6, uSides=32, vSides=1,
-                        direction = [0,0,1], placement='bottom', tolerance=0.001)                # with optional inputs
+                        direction = [0, 0, 1], placement='bottom', tolerance=0.001)                # with optional inputs
 assert isinstance(cell_cy, topologic.Cell), "Cell.Cylinder. topologic.Cell"
 # plot geometry
 data_cell_cy = Plotly.DataByTopology(cell_cy)
@@ -233,7 +233,7 @@ cell_hp = Cell.Hyperboloid()                                                    
 assert isinstance(cell_hp, topologic.Cell), "Cell.Hyperboloid. topologic.Cell"
 # test 2
 cell_hp = Cell.Hyperboloid(origin=v3, baseRadius=6, topRadius=2, height=4,sides=32,
-                            direction = [0,0,1], twist=360, placement='bottom', tolerance=0.001)     # with optional inputs
+                            direction = [0, 0, 1], twist=360, placement='bottom', tolerance=0.001)     # with optional inputs
 assert isinstance(cell_hp, topologic.Cell), "Cell.Hyperboloid. topologic.Cell"
 # plot geometry
 data_cell_hp = Plotly.DataByTopology(cell_hp)
@@ -310,7 +310,7 @@ cell_sphere = Cell.Sphere()                                                     
 assert isinstance(cell_sphere, topologic.Cell), "Cell.Sphere. topologic.Cell"
 # test 2
 cell_sphere = Cell.Sphere(origin=v3, radius=3, uSides=32, vSides=16,
-                            direction = [0,0,1], placement='bottom', tolerance=0.001)             # with optional inputs
+                            direction = [0, 0, 1], placement='bottom', tolerance=0.001)             # with optional inputs
 assert isinstance(cell_sphere, topologic.Cell), "Cell.Sphere. topologic.Cell"                                                                 # visualization
 
 # Case 24 - SurfaceArea
@@ -332,7 +332,7 @@ assert isinstance(cell_torus, topologic.Cell), "Cell.Torus. topologic.Cell"
 # test 2
 """TypeError: 'NoneType' object is not iterable"""
 #cell_torus = Cell.Torus(origin=v2, majorRadius=2, minorRadius=0.5, uSides=32, vSides=16,
-#                        direction = [0,0,1], placement='bottom', tolerance=0.001)            # with optional inputs
+#                        direction = [0, 0, 1], placement='bottom', tolerance=0.001)            # with optional inputs
 #assert isinstance(cell_torus, topologic.Cell), "Cell.Torus. topologic.Cell"
 # plot geometry
 #data_cell_torus = Plotly.DataByTopology(cell_torus)

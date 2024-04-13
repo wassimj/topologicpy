@@ -22,8 +22,8 @@ v2 = Vertex.ByCoordinates(10, 10, 0)        # create vertex
 v3 = Vertex.ByCoordinates(10, 0, 0)         # create vertex
 v5 = Vertex.ByCoordinates(-10, 10, 0)       # create vertex
 v6 = Vertex.ByCoordinates(-10, 0, 0)        # create vertex
-v_list0 = [v0,v1,v2,v3]                     # create list
-v_list1 = [v0,v1,v5,v6]                     # create list
+v_list0 = [v0, v1, v2, v3]                     # create list
+v_list1 = [v0, v1, v5, v6]                     # create list
 wire0 = Wire.ByVertices(v_list0)            # create wire
 wire1 = Wire.ByVertices(v_list1)            # create wire
 w_list = [wire0,wire1]                      # create list
@@ -85,7 +85,7 @@ shell_c = Shell.Circle()                                                        
 assert isinstance(shell_c, topologic.Shell), "Shell.Circle. Should be topologic.Shell"
 # test 2
 shell_c = Shell.Circle(v1, radius=2, sides=64, fromAngle=90, toAngle=180,
-                        direction = [0,0,1], placement='lowerleft', tolerance=0.001)  # with optional inputs
+                        direction = [0, 0, 1], placement='lowerleft', tolerance=0.001)  # with optional inputs
 assert isinstance(shell_c, topologic.Shell), "Shell.Circle. Should be topologic.Shell"
 
 # Case 6 - Edges
@@ -123,7 +123,7 @@ assert isinstance(shell_hpcd, topologic.Shell), "Shell.HyperbolicParaboloidCircu
 # test 2
 
 shell_hpcd = Shell.HyperbolicParaboloidCircularDomain(v2, radius=3.7, sides=64, rings=21, A=3, B=-3,
-                                                        direction = [0,0,1], placement='lowerleft')  # with optional inputs
+                                                        direction = [0, 0, 1], placement='lowerleft')  # with optional inputs
 assert isinstance(shell_hpcd, topologic.Shell), "Shell.HyperbolicParaboloidCircularDomain. Should be topologic.Shell"
 
 # Case 10 - HyperbolicParaboloidRectangularDomain
@@ -133,7 +133,7 @@ shell_hprd = Shell.HyperbolicParaboloidRectangularDomain()                      
 assert isinstance(shell_hprd, topologic.Shell), "Shell.HyperbolicParaboloidRectangularDomain. Should be topologic.Shell"
 # test 2
 shell_hprd = Shell.HyperbolicParaboloidRectangularDomain(v3, llVertex=None, lrVertex=None, ulVertex=None, urVertex=None, uSides=20,
-                                                        vSides=20, direction = [0,0,1], placement='lowerleft')    # with optional inputs
+                                                        vSides=20, direction = [0, 0, 1], placement='lowerleft')    # with optional inputs
 assert isinstance(shell_hprd, topologic.Shell), "Shell.HyperbolicParaboloidRectangularDomain. Should be topologic.Shell"
 
 # Case 11 - InternalBoundaries
@@ -166,7 +166,7 @@ assert isinstance(shell_p, topologic.Shell), "Shell.Pie. Should be topologic.She
 # test 2
 
 shell_p = Shell.Pie(v1, radiusA=10, radiusB=5, sides=64, rings=2, fromAngle=0, toAngle=90,
-                    direction = [0,0,1], placement='lowerleft', tolerance=0.001)             # with optional inputs
+                    direction = [0, 0, 1], placement='lowerleft', tolerance=0.001)             # with optional inputs
 assert isinstance(shell_p, topologic.Shell), "Shell.Pie. Should be topologic.Shell"
 
 # Case 14 - Rectangle
@@ -177,7 +177,7 @@ shell_r = Shell.Rectangle()                                             # withou
 assert isinstance(shell_r, topologic.Shell), "Shell.Rectangle. Should be topologic.Shell"
 # test 2
 
-shell_r = Shell.Rectangle(v2, width=2, length=4, uSides=3, vSides=3, direction = [0,0,1],
+shell_r = Shell.Rectangle(v2, width=2, length=4, uSides=3, vSides=3, direction = [0, 0, 1],
                         placement='lowerleft', tolerance=0.001)         # with optional inputs
 assert isinstance(shell_r, topologic.Shell), "Shell.Rectangle. Should be topologic.Shell"
 

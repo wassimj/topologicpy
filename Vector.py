@@ -112,7 +112,7 @@ class Vector(list):
     @staticmethod
     def AzimuthAltitude(vector, mantissa: int = 6):
         """
-        Returns a dictionary of azimuth and altitude angles in degrees for the input vector. North is assumed to be the positive Y axis [0,1,0]. Up is assumed to be the positive Z axis [0,0,1].
+        Returns a dictionary of azimuth and altitude angles in degrees for the input vector. North is assumed to be the positive Y axis [0, 1, 0]. Up is assumed to be the positive Z axis [0, 0, 1].
         Azimuth is calculated in a counter-clockwise fashion from North where 0 is North, 90 is East, 180 is South, and 270 is West. Altitude is calculated in a counter-clockwise fashing where -90 is straight down (negative Z axis), 0 is in the XY plane, and 90 is straight up (positive Z axis).
         If the altitude is -90 or 90, the azimuth is assumed to be 0.
 
@@ -218,9 +218,9 @@ class Vector(list):
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
-        e = Edge.ByVertices([Vertex.Origin(), Vertex.ByCoordinates(0,1,0)], tolerance=tolerance)
-        e = Topology.Rotate(e, Vertex.Origin(), 1, 0, 0, altitude)
-        e = Topology.Rotate(e, Vertex.Origin(), 0, 0, 1, -azimuth-north)
+        e = Edge.ByVertices([Vertex.Origin(), Vertex.ByCoordinates(0, 1, 0)], tolerance=tolerance)
+        e = Topology.Rotate(e, origin=Vertex.Origin(), axis=[1, 0, 0], angle=altitude)
+        e = Topology.Rotate(e, origin=Vertex.Origin(), axis=[0, 0, 1], angle=-azimuth-north)
         if reverse:
             return Vector.Reverse(Edge.Direction(e))
         return Edge.Direction(e)
@@ -245,7 +245,7 @@ class Vector(list):
             The created vector.
 
         """
-        return [x,y,z]
+        return [x, y, z]
     
     @staticmethod
     def ByVertices(vertices, normalize=True):
@@ -341,10 +341,10 @@ class Vector(list):
         x = round(vector[0], mantissa)
         y = round(vector[1], mantissa)
         z = round(vector[2], mantissa)
-        matrix = [[1,0,0,x],
-                [0,1,0,y],
-                [0,0,1,z],
-                [0,0,0,1]]
+        matrix = [[1, 0, 0, x],
+                [0, 1, 0, y],
+                [0, 0, 1, z],
+                [0, 0, 0, 1]]
         output = []
         outputType = outputType.lower()
         if outputType == "matrix":
@@ -390,32 +390,32 @@ class Vector(list):
         vecB = np.array(vectorB)
         vecC = list(np.cross(vecA, vecB))
         if Vector.Magnitude(vecC) < tolerance:
-            return [0,0,0]
+            return [0, 0, 0]
         return [round(vecC[0], mantissa), round(vecC[1], mantissa), round(vecC[2], mantissa)]
 
     @staticmethod
     def Down():
         """
-        Returns the vector representing the *down* direction. In Topologic, the negative ZAxis direction is considered *down* ([0,0,-1]).
+        Returns the vector representing the *down* direction. In Topologic, the negative ZAxis direction is considered *down* ([0, 0, -1]).
 
         Returns
         -------
         list
             The vector representing the *down* direction.
         """
-        return [0,0,-1]
+        return [0, 0, -1]
     
     @staticmethod
     def East():
         """
-        Returns the vector representing the *east* direction. In Topologic, the positive XAxis direction is considered *east* ([1,0,0]).
+        Returns the vector representing the *east* direction. In Topologic, the positive XAxis direction is considered *east* ([1, 0, 0]).
 
         Returns
         -------
         list
             The vector representing the *east* direction.
         """
-        return [1,0,0]
+        return [1, 0, 0]
     
     @staticmethod
     def IsAntiParallel(vectorA, vectorB):
@@ -632,38 +632,38 @@ class Vector(list):
     @staticmethod
     def North():
         """
-        Returns the vector representing the *north* direction. In Topologic, the positive YAxis direction is considered *north* ([0,1,0]).
+        Returns the vector representing the *north* direction. In Topologic, the positive YAxis direction is considered *north* ([0, 1, 0]).
 
         Returns
         -------
         list
             The vector representing the *north* direction.
         """
-        return [0,1,0]
+        return [0, 1, 0]
     
     @staticmethod
     def NorthEast():
         """
-        Returns the vector representing the *northeast* direction. In Topologic, the positive YAxis direction is considered *north* and the positive XAxis direction is considered *east*. Therefore *northeast* is ([1,1,0]).
+        Returns the vector representing the *northeast* direction. In Topologic, the positive YAxis direction is considered *north* and the positive XAxis direction is considered *east*. Therefore *northeast* is ([1, 1, 0]).
 
         Returns
         -------
         list
             The vector representing the *northeast* direction.
         """
-        return [1,1,0]
+        return [1, 1, 0]
     
     @staticmethod
     def NorthWest():
         """
-        Returns the vector representing the *northwest* direction. In Topologic, the positive YAxis direction is considered *north* and the negative XAxis direction is considered *west*. Therefore *northwest* is ([-1,1,0]).
+        Returns the vector representing the *northwest* direction. In Topologic, the positive YAxis direction is considered *north* and the negative XAxis direction is considered *west*. Therefore *northwest* is ([-1, 1, 0]).
 
         Returns
         -------
         list
             The vector representing the *northwest* direction.
         """
-        return [-1,1,0]
+        return [-1, 1, 0]
     
     @staticmethod
     def Reverse(vector):
@@ -706,38 +706,38 @@ class Vector(list):
     @staticmethod
     def South():
         """
-        Returns the vector representing the *south* direction. In Topologic, the negative YAxis direction is considered *south* ([0,-1,0]).
+        Returns the vector representing the *south* direction. In Topologic, the negative YAxis direction is considered *south* ([0, -1, 0]).
 
         Returns
         -------
         list
             The vector representing the *south* direction.
         """
-        return [0,-1,0]
+        return [0, -1, 0]
     
     @staticmethod
     def SouthEast():
         """
-        Returns the vector representing the *southeast* direction. In Topologic, the negative YAxis direction is considered *south* and the positive XAxis direction is considered *east*. Therefore *southeast* is ([1,-1,0]).
+        Returns the vector representing the *southeast* direction. In Topologic, the negative YAxis direction is considered *south* and the positive XAxis direction is considered *east*. Therefore *southeast* is ([1, -1, 0]).
 
         Returns
         -------
         list
             The vector representing the *southeast* direction.
         """
-        return [1,-1,0]
+        return [1, -1, 0]
     
     @staticmethod
     def SouthWest():
         """
-        Returns the vector representing the *southwest* direction. In Topologic, the negative YAxis direction is considered *south* and the negative XAxis direction is considered *west*. Therefore *southwest* is ([-1,-1,0]).
+        Returns the vector representing the *southwest* direction. In Topologic, the negative YAxis direction is considered *south* and the negative XAxis direction is considered *west*. Therefore *southwest* is ([-1, -1, 0]).
 
         Returns
         -------
         list
             The vector representing the *southwest* direction.
         """
-        return [-1,-1,0]
+        return [-1, -1, 0]
     
     @staticmethod
     def Sum(vectors: list):
@@ -847,59 +847,59 @@ class Vector(list):
     @staticmethod
     def Up():
         """
-        Returns the vector representing the up direction. In Topologic, the positive ZAxis direction is considered "up" ([0,0,1]).
+        Returns the vector representing the up direction. In Topologic, the positive ZAxis direction is considered "up" ([0, 0, 1]).
 
         Returns
         -------
         list
             The vector representing the "up" direction.
         """
-        return [0,0,1]
+        return [0, 0, 1]
     
     @staticmethod
     def West():
         """
-        Returns the vector representing the *west* direction. In Topologic, the negative XAxis direction is considered *west* ([-1,0,0]).
+        Returns the vector representing the *west* direction. In Topologic, the negative XAxis direction is considered *west* ([-1, 0, 0]).
 
         Returns
         -------
         list
             The vector representing the *west* direction.
         """
-        return [-1,0,0]
+        return [-1, 0, 0]
     
     @staticmethod
     def XAxis():
         """
-        Returns the vector representing the XAxis ([1,0,0])
+        Returns the vector representing the XAxis ([1, 0, 0])
 
         Returns
         -------
         list
             The vector representing the XAxis.
         """
-        return [1,0,0]
+        return [1, 0, 0]
 
     @staticmethod
     def YAxis():
         """
-        Returns the vector representing the YAxis ([0,1,0])
+        Returns the vector representing the YAxis ([0, 1, 0])
 
         Returns
         -------
         list
             The vector representing the YAxis.
         """
-        return [0,1,0]
+        return [0, 1, 0]
     
     @staticmethod
     def ZAxis():
         """
-        Returns the vector representing the ZAxis ([0,0,1])
+        Returns the vector representing the ZAxis ([0, 0, 1])
 
         Returns
         -------
         list
             The vector representing the ZAxis.
         """
-        return [0,0,1]
+        return [0, 0, 1]
