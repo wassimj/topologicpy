@@ -527,6 +527,370 @@ class Graph:
         lcc = Graph.LocalClusteringCoefficient(graph, vertices)
         acc = round(sum(lcc)/float(len(lcc)), mantissa)
         return acc
+    
+    @staticmethod
+    def BOTGraph(graph,
+                bidirectional=False,
+                includeAttributes=False,
+                includeLabel=False,
+                siteLabel = "Site_0001",
+                siteDictionary = None,
+                buildingLabel = "Building_0001",
+                buildingDictionary = None , 
+                storeyPrefix = "Storey",
+                floorLevels =[],
+                labelKey="label",
+                typeKey="type",
+                sourceKey="source",
+                targetKey="target",
+                xKey = "x",
+                yKey = "y",
+                zKey = "z",
+                spaceType = "space",
+                wallType = "wall",
+                slabType = "slab",
+                doorType = "door",
+                windowType = "window",
+                contentType = "content"
+                ):
+        """
+        Creates an RDF graph according to the BOT ontology. See https://w3c-lbd-cg.github.io/bot/.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        bidirectional : bool , optional
+            If set to True, reverse relationships are created wherever possible. Otherwise, they are not. The default is False.
+        includeAttributes : bool , optional
+            If set to True, the attributes associated with vertices in the graph are written out. Otherwise, they are not. The default is False.
+        includeLabel : bool , optional
+            If set to True, a label is attached to each node. Otherwise, it is not. The default is False.
+        siteLabel : str , optional
+            The desired site label. The default is "Site_0001".
+        siteDictionary : dict , optional
+            The dictionary of site attributes to include in the output. The default is None.
+        buildingLabel : str , optional
+            The desired building label. The default is "Building_0001".
+        buildingDictionary : dict , optional
+            The dictionary of building attributes to include in the output. The default is None.
+        storeyPrefix : str , optional
+            The desired prefixed to use for each building storey. The default is "Storey".
+        floorLevels : list , optional
+            The list of floor levels. This should be a numeric list, sorted from lowest to highest.
+            If not provided, floorLevels will be computed automatically based on the nodes' 'z' attribute.
+        typeKey : str , optional
+            The dictionary key to use to look up the type of the node. The default is "type".
+        labelKey : str , optional
+            The dictionary key to use to look up the label of the node. The default is "label".
+        sourceKey : str , optional
+            The desired dictionary key to use to store the source vertex. The default is "source".
+        targetKey : str , optional
+            The desired dictionary key to use to store the target vertex. The default is "target".
+        xKey : str , optional
+            The dictionary key to use to look up the x-coordinate of the node. The default is "x".
+        yKey : str , optional
+            The dictionary key to use to look up the y-coordinate of the node. The default is "y".
+        zKey : str , optional
+            The dictionary key to use to look up the z-coordinate of the node. The default is "z".
+        spaceType : str , optional
+            The dictionary string value to use to look up nodes of type "space". The default is "space".
+        wallType : str , optional
+            The dictionary string value to use to look up nodes of type "wall". The default is "wall".
+        slabType : str , optional
+            The dictionary string value to use to look up nodes of type "slab". The default is "slab".
+        doorType : str , optional
+            The dictionary string value to use to look up nodes of type "door". The default is "door".
+        windowType : str , optional
+            The dictionary string value to use to look up nodes of type "window". The default is "window".
+        contentType : str , optional
+            The dictionary string value to use to look up nodes of type "content". The default is "contents".
+
+        Returns
+        -------
+        rdflib.graph.Graph
+            The rdf graph using the BOT ontology.
+        """
+
+        from topologicpy.Helper import Helper
+        import os
+        import warnings
+        
+        try:
+            from rdflib import Graph as RDFGraph
+            from rdflib import URIRef, Literal, Namespace
+            from rdflib.namespace import RDF, RDFS
+        except:
+            print("Graph.BOTGraph - Installing required rdflib library.")
+            try:
+                os.system("pip install rdflib")
+            except:
+                os.system("pip install rdflib --user")
+            try:
+                from rdflib import Graph as RDFGraph
+                from rdflib import URIRef, Literal, Namespace
+                from rdflib.namespace import RDF, RDFS
+                print("Graph.BOTGraph - rdflib library installed correctly.")
+            except:
+                warnings.warn("Graph.BOTGraph - Error: Could not import rdflib. Please try to install rdflib manually. Returning None.")
+                return None
+        
+        if floorLevels == None:
+            floorLevels = []
+        json_data = Graph.JSONData(graph, vertexLabelKey=labelKey)
+        # Create an empty RDF graph
+        rdf_graph = RDFGraph()
+        
+        # Define namespaces
+        rdf = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+        rdfs = Namespace("http://www.w3.org/2000/01/rdf-schema#")
+        bot = Namespace("https://w3id.org/bot#")
+        
+        # Define a custom prefix mapping
+        rdf_graph.namespace_manager.bind("bot", bot)
+        
+        # Add site
+        site_uri = URIRef(siteLabel)
+        rdf_graph.add((site_uri, rdf.type, bot.Site))
+        if includeLabel:
+            rdf_graph.add((site_uri, RDFS.label, Literal("Site_0001")))
+        if isinstance(siteDictionary, topologic.Dictionary):
+            keys = Dictionary.Keys(siteDictionary)
+            for key in keys:
+                value = Dictionary.ValueAtKey(siteDictionary, key)
+                if key == labelKey:
+                    if includeLabel:
+                        rdf_graph.add((site_uri, RDFS.label, Literal(value)))
+                    elif key != typeKey:
+                        rdf_graph.add((site_uri, bot[key], Literal(value)))
+        # Add building
+        building_uri = URIRef(buildingLabel)
+        rdf_graph.add((building_uri, rdf.type, bot.Building))
+        if includeLabel:
+            rdf_graph.add((building_uri, RDFS.label, Literal(buildingLabel)))
+        if isinstance(buildingDictionary, topologic.Dictionary):
+            keys = Dictionary.Keys(buildingDictionary)
+            for key in keys:
+                value = Dictionary.ValueAtKey(buildingDictionary, key)
+                if key == labelKey:
+                    if includeLabel:
+                        rdf_graph.add((building_uri, RDFS.label, Literal(value)))
+                    elif key != typeKey:
+                        rdf_graph.add((building_uri, bot[key], Literal(value)))
+        # Add stories
+        # if floor levels are not given, then need to be computed
+        if len(floorLevels) == 0:
+            for node, attributes in json_data['nodes'].items():
+                if slabType.lower() in attributes[typeKey].lower():
+                    floorLevels.append(attributes[zKey])
+            floorLevels = list(set(floorLevels))
+            floorLevels.sort()
+        storey_uris = []
+        n = max(len(str(len(floorLevels))),4)
+        for i, floor_level in enumerate(floorLevels):
+            storey_uri = URIRef(storeyPrefix+"_"+str(i+1).zfill(n))
+            rdf_graph.add((storey_uri, rdf.type, bot.Storey))
+            if includeLabel:
+                rdf_graph.add((storey_uri, RDFS.label, Literal(storeyPrefix+"_"+str(i+1).zfill(n))))
+            storey_uris.append(storey_uri)
+
+        # Add triples to relate building to site and stories to building
+        rdf_graph.add((site_uri, bot.hasBuilding, building_uri))
+        if bidirectional:
+            rdf_graph.add((building_uri, bot.isPartOf, site_uri)) # might not be needed
+
+        for storey_uri in storey_uris:
+            rdf_graph.add((building_uri, bot.hasStorey, storey_uri))
+            if bidirectional:
+                rdf_graph.add((storey_uri, bot.isPartOf, building_uri)) # might not be needed
+        
+        # Add vertices as RDF resources
+        for node, attributes in json_data['nodes'].items():
+            node_uri = URIRef(node)
+            if spaceType.lower() in attributes[typeKey].lower():
+                rdf_graph.add((node_uri, rdf.type, bot.Space))
+                # Find the storey it is on
+                z = attributes[zKey]
+                level = Helper.Position(z, floorLevels)
+                if level > len(storey_uris):
+                    level = len(storey_uris)
+                storey_uri = storey_uris[level-1]
+                rdf_graph.add((storey_uri, bot.hasSpace, node_uri))
+                if bidirectional:
+                    rdf_graph.add((node_uri, bot.isPartOf, storey_uri)) # might not be needed
+            elif windowType.lower() in attributes[typeKey].lower():
+                rdf_graph.add((node_uri, rdf.type, bot.Window))
+            elif doorType.lower() in attributes[typeKey].lower():
+                rdf_graph.add((node_uri, rdf.type, bot.Door))
+            elif wallType.lower() in attributes[typeKey].lower():
+                rdf_graph.add((node_uri, rdf.type, bot.Wall))
+            elif slabType.lower() in attributes[typeKey].lower():
+                rdf_graph.add((node_uri, rdf.type, bot.Slab))
+            else:
+                rdf_graph.add((node_uri, rdf.type, bot.Element))
+            
+            if includeAttributes:
+                for key, value in attributes.items():
+                    if key == labelKey:
+                        if includeLabel:
+                            rdf_graph.add((node_uri, RDFS.label, Literal(value)))
+                    elif key != typeKey:
+                        rdf_graph.add((node_uri, bot[key], Literal(value)))
+            if includeLabel:
+                for key, value in attributes.items():
+                    if key == labelKey:
+                        rdf_graph.add((node_uri, RDFS.label, Literal(value)))
+        
+        # Add edges as RDF triples
+        for edge, attributes in json_data['edges'].items():
+            source = attributes[sourceKey]
+            target = attributes[targetKey]
+            source_uri = URIRef(source)
+            target_uri = URIRef(target)
+            if spaceType.lower() in json_data['nodes'][source][typeKey].lower() and spaceType.lower() in json_data['nodes'][target][typeKey].lower():
+                rdf_graph.add((source_uri, bot.adjacentTo, target_uri))
+                if bidirectional:
+                    rdf_graph.add((target_uri, bot.adjacentTo, source_uri))
+            elif spaceType.lower() in json_data['nodes'][source][typeKey].lower() and wallType.lower() in json_data['nodes'][target][typeKey].lower():
+                rdf_graph.add((target_uri, bot.interfaceOf, source_uri))
+            elif spaceType.lower() in json_data['nodes'][source][typeKey].lower() and slabType.lower() in json_data['nodes'][target][typeKey].lower():
+                rdf_graph.add((target_uri, bot.interfaceOf, source_uri))
+            elif spaceType.lower() in json_data['nodes'][source][typeKey].lower() and contentType.lower() in json_data['nodes'][target][typeKey].lower():
+                rdf_graph.add((source_uri, bot.containsElement, target_uri))
+                if bidirectional:
+                    rdf_graph.add((target_uri, bot.isPartOf, source_uri))
+            else:
+                rdf_graph.add((source_uri, bot.connectsTo, target_uri))
+                if bidirectional:
+                    rdf_graph.add((target_uri, bot.connectsTo, source_uri))
+            #for key, value in attributes.items():
+                #rdf_graph.add((source_uri, bot[key], Literal(value)))
+        # Return serialized  RDF graph
+        #rdf_serialized = rdf_graph.serialize(format=format)
+        return rdf_graph
+
+    @staticmethod
+    def BOTString(graph,
+                format="turtle",
+                bidirectional=False,
+                includeAttributes=False,
+                includeLabel=False,
+                siteLabel = "Site_0001",
+                siteDictionary = None,
+                buildingLabel = "Building_0001",
+                buildingDictionary = None , 
+                storeyPrefix = "Storey",
+                floorLevels =[],
+                labelKey="label",
+                typeKey="type",
+                sourceKey="source",
+                targetKey="target",
+                xKey = "x",
+                yKey = "y",
+                zKey = "z",
+                spaceType = "space",
+                wallType = "wall",
+                slabType = "slab",
+                doorType = "door",
+                windowType = "window",
+                contentType = "content",
+                ):
+        
+        """
+        Returns an RDF graph serialized string according to the BOT ontology. See https://w3c-lbd-cg.github.io/bot/.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        format : str , optional
+            The desired output format, the options are listed below. Thde default is "turtle".
+            turtle, ttl or turtle2 : Turtle, turtle2 is just turtle with more spacing & linebreaks
+            xml or pretty-xml : RDF/XML, Was the default format, rdflib < 6.0.0
+            json-ld : JSON-LD , There are further options for compact syntax and other JSON-LD variants
+            ntriples, nt or nt11 : N-Triples , nt11 is exactly like nt, only utf8 encoded
+            n3 : Notation-3 , N3 is a superset of Turtle that also caters for rules and a few other things
+            trig : Trig , Turtle-like format for RDF triples + context (RDF quads) and thus multiple graphs
+            trix : Trix , RDF/XML-like format for RDF quads
+            nquads : N-Quads , N-Triples-like format for RDF quads
+        bidirectional : bool , optional
+            If set to True, reverse relationships are created wherever possible. Otherwise, they are not. The default is False.
+        includeAttributes : bool , optional
+            If set to True, the attributes associated with vertices in the graph are written out. Otherwise, they are not. The default is False.
+        includeLabel : bool , optional
+            If set to True, a label is attached to each node. Otherwise, it is not. The default is False.
+        siteLabel : str , optional
+            The desired site label. The default is "Site_0001".
+        siteDictionary : dict , optional
+            The dictionary of site attributes to include in the output. The default is None.
+        buildingLabel : str , optional
+            The desired building label. The default is "Building_0001".
+        buildingDictionary : dict , optional
+            The dictionary of building attributes to include in the output. The default is None.
+        storeyPrefix : str , optional
+            The desired prefixed to use for each building storey. The default is "Storey".
+        floorLevels : list , optional
+            The list of floor levels. This should be a numeric list, sorted from lowest to highest.
+            If not provided, floorLevels will be computed automatically based on the nodes' 'z' attribute.
+        typeKey : str , optional
+            The dictionary key to use to look up the type of the node. The default is "type".
+        labelKey : str , optional
+            The dictionary key to use to look up the label of the node. The default is "label".
+        sourceKey : str , optional
+            The desired dictionary key to use to store the source vertex. The default is "source".
+        targetKey : str , optional
+            The desired dictionary key to use to store the target vertex. The default is "target".
+        xKey : str , optional
+            The dictionary key to use to look up the x-coordinate of the node. The default is "x".
+        yKey : str , optional
+            The dictionary key to use to look up the y-coordinate of the node. The default is "y".
+        zKey : str , optional
+            The dictionary key to use to look up the z-coordinate of the node. The default is "z".
+        spaceType : str , optional
+            The dictionary string value to use to look up nodes of type "space". The default is "space".
+        wallType : str , optional
+            The dictionary string value to use to look up nodes of type "wall". The default is "wall".
+        slabType : str , optional
+            The dictionary string value to use to look up nodes of type "slab". The default is "slab".
+        doorType : str , optional
+            The dictionary string value to use to look up nodes of type "door". The default is "door".
+        windowType : str , optional
+            The dictionary string value to use to look up nodes of type "window". The default is "window".
+        contentType : str , optional
+            The dictionary string value to use to look up nodes of type "content". The default is "contents".
+
+        
+        Returns
+        -------
+        str
+            The rdf graph serialized string using the BOT ontology.
+        """
+        
+        bot_graph = Graph.BOTGraph(graph,
+                            bidirectional=bidirectional,
+                            includeAttributes=includeAttributes,
+                            includeLabel=includeLabel,
+                            siteLabel=siteLabel,
+                            siteDictionary=siteDictionary,
+                            buildingLabel=buildingLabel,
+                            buildingDictionary=buildingDictionary, 
+                            storeyPrefix=storeyPrefix,
+                            floorLevels=floorLevels,
+                            labelKey=labelKey,
+                            typeKey=typeKey,
+                            sourceKey=sourceKey,
+                            targetKey=targetKey,
+                            xKey=xKey,
+                            yKey=yKey,
+                            zKey=zKey,
+                            spaceType = spaceType,
+                            wallType = wallType,
+                            slabType = slabType,
+                            doorType = doorType,
+                            windowType = windowType,
+                            contentType = contentType
+                            )
+        return bot_graph.serialize(format=format)
 
     @staticmethod
     def BetweenessCentrality(graph, vertices=None, sources=None, destinations=None, tolerance=0.001):
@@ -3731,6 +4095,177 @@ class Graph:
             return False
 
     @staticmethod
+    def ExportToBOT(graph,
+                    path,
+                    format="turtle",
+                    overwrite = False,
+                    bidirectional=False,
+                    includeAttributes=False,
+                    includeLabel=False,
+                    siteLabel = "Site_0001",
+                    siteDictionary = None,
+                    buildingLabel = "Building_0001",
+                    buildingDictionary = None , 
+                    storeyPrefix = "Storey",
+                    floorLevels =[],
+                    labelKey="label",
+                    typeKey="type",
+                    sourceKey="source",
+                    targetKey="target",
+                    xKey = "x",
+                    yKey = "y",
+                    zKey = "z",
+                    spaceType = "space",
+                    wallType = "wall",
+                    slabType = "slab",
+                    doorType = "door",
+                    windowType = "window",
+                    contentType = "content",
+                    ):
+        
+        """
+        Returns an RDF graph serialized string according to the BOT ontology. See https://w3c-lbd-cg.github.io/bot/.
+
+        Parameters
+        ----------
+        graph : topologic.Graph
+            The input graph.
+        format : str , optional
+            The desired output format, the options are listed below. Thde default is "turtle".
+            turtle, ttl or turtle2 : Turtle, turtle2 is just turtle with more spacing & linebreaks
+            xml or pretty-xml : RDF/XML, Was the default format, rdflib < 6.0.0
+            json-ld : JSON-LD , There are further options for compact syntax and other JSON-LD variants
+            ntriples, nt or nt11 : N-Triples , nt11 is exactly like nt, only utf8 encoded
+            n3 : Notation-3 , N3 is a superset of Turtle that also caters for rules and a few other things
+            trig : Trig , Turtle-like format for RDF triples + context (RDF quads) and thus multiple graphs
+            trix : Trix , RDF/XML-like format for RDF quads
+            nquads : N-Quads , N-Triples-like format for RDF quads
+        path : str
+            The desired path to where the RDF/BOT file will be saved.
+        overwrite : bool , optional
+            If set to True, any existing file is overwritten. Otherwise, it is not. The default is False.
+        bidirectional : bool , optional
+            If set to True, reverse relationships are created wherever possible. Otherwise, they are not. The default is False.
+        includeAttributes : bool , optional
+            If set to True, the attributes associated with vertices in the graph are written out. Otherwise, they are not. The default is False.
+        includeLabel : bool , optional
+            If set to True, a label is attached to each node. Otherwise, it is not. The default is False.
+        siteLabel : str , optional
+            The desired site label. The default is "Site_0001".
+        siteDictionary : dict , optional
+            The dictionary of site attributes to include in the output. The default is None.
+        buildingLabel : str , optional
+            The desired building label. The default is "Building_0001".
+        buildingDictionary : dict , optional
+            The dictionary of building attributes to include in the output. The default is None.
+        storeyPrefix : str , optional
+            The desired prefixed to use for each building storey. The default is "Storey".
+        floorLevels : list , optional
+            The list of floor levels. This should be a numeric list, sorted from lowest to highest.
+            If not provided, floorLevels will be computed automatically based on the nodes' 'z' attribute.
+        typeKey : str , optional
+            The dictionary key to use to look up the type of the node. The default is "type".
+        labelKey : str , optional
+            The dictionary key to use to look up the label of the node. The default is "label".
+        sourceKey : str , optional
+            The desired dictionary key to use to store the source vertex. The default is "source".
+        targetKey : str , optional
+            The desired dictionary key to use to store the target vertex. The default is "target".
+        xKey : str , optional
+            The dictionary key to use to look up the x-coordinate of the node. The default is "x".
+        yKey : str , optional
+            The dictionary key to use to look up the y-coordinate of the node. The default is "y".
+        zKey : str , optional
+            The dictionary key to use to look up the z-coordinate of the node. The default is "z".
+        spaceType : str , optional
+            The dictionary string value to use to look up nodes of type "space". The default is "space".
+        wallType : str , optional
+            The dictionary string value to use to look up nodes of type "wall". The default is "wall".
+        slabType : str , optional
+            The dictionary string value to use to look up nodes of type "slab". The default is "slab".
+        doorType : str , optional
+            The dictionary string value to use to look up nodes of type "door". The default is "door".
+        windowType : str , optional
+            The dictionary string value to use to look up nodes of type "window". The default is "window".
+        contentType : str , optional
+            The dictionary string value to use to look up nodes of type "content". The default is "contents".
+        format : str , optional
+            The desired output format, the options are listed below. Thde default is "turtle".
+            turtle, ttl or turtle2 : Turtle, turtle2 is just turtle with more spacing & linebreaks
+            xml or pretty-xml : RDF/XML, Was the default format, rdflib < 6.0.0
+            json-ld : JSON-LD , There are further options for compact syntax and other JSON-LD variants
+            ntriples, nt or nt11 : N-Triples , nt11 is exactly like nt, only utf8 encoded
+            n3 : Notation-3 , N3 is a superset of Turtle that also caters for rules and a few other things
+            trig : Trig , Turtle-like format for RDF triples + context (RDF quads) and thus multiple graphs
+            trix : Trix , RDF/XML-like format for RDF quads
+            nquads : N-Quads , N-Triples-like format for RDF quads
+        
+        Returns
+        -------
+        str
+            The rdf graph serialized string using the BOT ontology.
+        """
+        from os.path import exists
+        bot_graph = Graph.BOTGraph(graph,
+                            bidirectional=bidirectional,
+                            includeAttributes=includeAttributes,
+                            includeLabel=includeLabel,
+                            siteLabel=siteLabel,
+                            siteDictionary=siteDictionary,
+                            buildingLabel=buildingLabel,
+                            buildingDictionary=buildingDictionary, 
+                            storeyPrefix=storeyPrefix,
+                            floorLevels=floorLevels,
+                            labelKey=labelKey,
+                            typeKey=typeKey,
+                            sourceKey=sourceKey,
+                            targetKey=targetKey,
+                            xKey=xKey,
+                            yKey=yKey,
+                            zKey=zKey,
+                            spaceType = spaceType,
+                            wallType = wallType,
+                            slabType = slabType,
+                            doorType = doorType,
+                            windowType = windowType,
+                            contentType = contentType
+                            )
+        if "turtle" in format.lower() or "ttl" in format.lower() or "turtle2" in format.lower():
+            ext = ".ttl"
+        elif "xml" in format.lower() or "pretty=xml" in format.lower() or "rdf/xml" in format.lower():
+            ext = ".xml"
+        elif "json" in format.lower():
+            ext = ".json"
+        elif "ntriples" in format.lower() or "nt" in format.lower() or "nt11" in format.lower():
+            ext = ".nt"
+        elif "n3" in format.lower() or "notation" in format.lower():
+            ext = ".n3"
+        elif "trig" in format.lower():
+            ext = ".trig"
+        elif "trix" in format.lower():
+            ext = ".trix"
+        elif "nquads" in format.lower():
+            ext = ".nquads"
+        else:
+            format = "turtle"
+            ext = ".ttl"
+        n = len(ext)
+        # Make sure the file extension is .brep
+        ext = path[len(path)-n:len(path)]
+        if ext.lower() != ext:
+            path = path+ext
+        if not overwrite and exists(path):
+            print("Graph.ExportToBOT - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
+        status = False
+        try:
+            bot_graph.serialize(destination=path, format=format)
+            status = True
+        except:
+            status = False
+        return status
+    
+    @staticmethod
     def ExportToCSV(graph, path, graphLabel, graphFeatures="",  
                        graphIDHeader="graph_id", graphLabelHeader="label", graphFeaturesHeader="feat",
                        
@@ -5144,7 +5679,7 @@ class Graph:
         return vertices
     
     @staticmethod
-    def JSONData(graph, vertexLabelKey="", edgeLabelKey="", mantissa=6):
+    def JSONData(graph, vertexLabelKey="", edgeLabelKey="", sourceKey="source", targetKey="target", mantissa=6):
         """
         Converts the input graph into JSON data.
 
@@ -5158,6 +5693,10 @@ class Graph:
         edgeLabelKey : str , optional
             If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
             Note: If edge labels are not unique, they will be forced to be unique.
+        sourceKey : str , optional
+            The dictionary key used to store the source vertex. The default is "source".
+        targetKey : str , optional
+            The dictionary key used to store the target vertex. The default is "source".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
 
@@ -5210,8 +5749,8 @@ class Graph:
             ev_label = v_labels[evi]
             d = Topology.Dictionary(e)
             
-            d = Dictionary.SetValueAtKey(d, "source", sv_label)
-            d = Dictionary.SetValueAtKey(d, "target", ev_label)
+            d = Dictionary.SetValueAtKey(d, sourceKey, sv_label)
+            d = Dictionary.SetValueAtKey(d, targetKey, ev_label)
             e_dict = Dictionary.PythonDictionary(d)
             e_label = Dictionary.ValueAtKey(d, edgeLabelKey)
             if isinstance(e_label, str):

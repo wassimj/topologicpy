@@ -1841,30 +1841,30 @@ class Face(Topology):
             try:
                 import numpy as np
             except:
-                warnings.warn("Face.Triangulate - Warning: Installing required numpy library.")
+                print("Face.Triangulate - Warning: Installing required numpy library.")
                 try:
                     os.system("pip install numpy")
                 except:
                     os.system("pip install numpy --user")
                 try:
                     import numpy as np
-                    warnings.warn("Face.Triangulate - Warning: numpy library installed correctly.")
+                    print("Face.Triangulate - Warning: numpy library installed correctly.")
                 except:
-                    warnings.warn("Face.Triangulate - Error: Could not import numpy. Please try to pip install manually. Returning None")
+                    warnings.warn("Face.Triangulate - Error: Could not import numpy. Please try to install numpy manually. Returning None.")
                     return None
             try:
                 import gmsh
             except:
-                warnings.warn("Face.Triangulate - Warning: Installing required gmsh library.")
+                print("Face.Triangulate - Warning: Installing required gmsh library.")
                 try:
                     os.system("pip install gmsh")
                 except:
                     os.system("pip install gmsh --user")
                 try:
                     import gmsh
-                    warnings.warn("Face.Triangulate - Warning: gmsh library installed correctly.")
+                    print("Face.Triangulate - Warning: gmsh library installed correctly.")
                 except:
-                    warnings.warn("Face.Triangulate - Error: Could not import numpy. Please try to gmsh install manually. Returning None")
+                    warnings.warn("Face.Triangulate - Error: Could not import gmsh. Please try to install gmsh manually. Returning None.")
                     return None
 
             import topologic
