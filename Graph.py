@@ -1469,6 +1469,7 @@ class Graph:
         from topologicpy.Edge import Edge
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        from topologicpy.Aperture import Aperture
 
         def mergeDictionaries(sources):
             if isinstance(sources, list) == False:
@@ -1687,7 +1688,7 @@ class Graph:
 
             cells = []
             _ = topology.Cells(None, cells)
-            if (viaSharedTopologies == True) or (viaSharedApertures == True) or (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
+            if any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents]):
                 for aCell in cells:
                     if useInternalVertex == True:
                         vCell = Topology.InternalVertex(aCell, tolerance=tolerance)
@@ -1710,9 +1711,9 @@ class Graph:
                     contents = []
                     _ = aCell.Contents(contents)
                     for aFace in faces:
-                        cells = []
-                        _ = aFace.Cells(topology, cells)
-                        if len(cells) > 1:
+                        cells1 = []
+                        _ = aFace.Cells(topology, cells1)
+                        if len(cells1) > 1:
                             sharedTopologies.append(aFace)
                             apertures = []
                             _ = aFace.Apertures(apertures)
@@ -1724,6 +1725,7 @@ class Graph:
                             _ = aFace.Apertures(apertures)
                             for anAperture in apertures:
                                 exteriorApertures.append(anAperture)
+
                     if viaSharedTopologies:
                         for sharedTopology in sharedTopologies:
                             if useInternalVertex == True:
@@ -1746,6 +1748,8 @@ class Graph:
                                 contents = []
                                 _ = sharedTopology.Contents(contents)
                                 for content in contents:
+                                    if isinstance(content, topologic.Aperture):
+                                        content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
@@ -1767,38 +1771,38 @@ class Graph:
                         for sharedAperture in sharedApertures:
                             sharedAp = sharedAperture.Topology()
                             if useInternalVertex == True:
-                                vst = Topology.InternalVertex(sharedAp, tolerance)
+                                vsa = Topology.InternalVertex(sharedAp, tolerance)
                             else:
-                                vst = sharedAp.CenterOfMass()
+                                vsa = sharedAp.CenterOfMass()
                             d1 = sharedAp.GetDictionary()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vsa = topologic.Vertex.ByCoordinates(vsa.X()+(tolerance*100), vsa.Y()+(tolerance*100), vsa.Z()+(tolerance*100))
                             if storeBRep:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAperture), Topology.Type(sharedAperture), Topology.TypeAsString(sharedAperture)])
                                 d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
+                                _ = vsa.SetDictionary(d3)
                             else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
+                                _ = vsa.SetDictionary(d1)
+                            vertices.append(vsa)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vsa, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["Via Shared Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                     if toExteriorTopologies:
                         for exteriorTopology in exteriorTopologies:
                             if useInternalVertex == True:
-                                vst = Topology.InternalVertex(exteriorTopology, tolerance)
+                                vet = Topology.InternalVertex(exteriorTopology, tolerance)
                             else:
-                                vst = exteriorTopology.CenterOfMass()
-                            _ = vst.SetDictionary(exteriorTopology.GetDictionary())
+                                vet = exteriorTopology.CenterOfMass()
+                            _ = vet.SetDictionary(exteriorTopology.GetDictionary())
                             d1 = exteriorTopology.GetDictionary()
                             if storeBRep:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
                                 d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
+                                _ = vet.SetDictionary(d3)
                             else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
+                                _ = vet.SetDictionary(d1)
+                            vertices.append(vet)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vet, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Topologies"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1806,6 +1810,8 @@ class Graph:
                                 contents = []
                                 _ = exteriorTopology.Contents(contents)
                                 for content in contents:
+                                    if isinstance(content, topologic.Aperture):
+                                        content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
@@ -1819,7 +1825,7 @@ class Graph:
                                     else:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
-                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
+                                    tempe = Edge.ByStartVertexEndVertex(vet, vst2, tolerance=tolerance)
                                     tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
@@ -1827,19 +1833,19 @@ class Graph:
                         for exteriorAperture in exteriorApertures:
                             extTop = exteriorAperture.Topology()
                             if useInternalVertex == True:
-                                vst = Topology.InternalVertex(extTop, tolerance)
+                                vea = Topology.InternalVertex(extTop, tolerance)
                             else:
-                                vst = exteriorAperture.Topology().CenterOfMass()
+                                vea = exteriorAperture.Topology().CenterOfMass()
                             d1 = exteriorAperture.Topology().GetDictionary()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vea = topologic.Vertex.ByCoordinates(vea.X()+(tolerance*100), vea.Y()+(tolerance*100), vea.Z()+(tolerance*100))
                             if storeBRep:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorAperture), Topology.Type(exteriorAperture), Topology.TypeAsString(exteriorAperture)])
                                 d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
+                                _ = vea.SetDictionary(d3)
                             else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
+                                _ = vea.SetDictionary(d1)
+                            vertices.append(vea)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vea, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Exterior Apertures"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1847,20 +1853,22 @@ class Graph:
                         contents = []
                         _ = aCell.Contents(contents)
                         for content in contents:
+                            if isinstance(content, topologic.Aperture):
+                                content = Aperture.Topology(content)
                             if useInternalVertex == True:
-                                vst = Topology.InternalVertex(content, tolerance)
+                                vcn = Topology.InternalVertex(content, tolerance)
                             else:
-                                vst = content.CenterOfMass()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                                vcn = content.CenterOfMass()
+                            vcn = topologic.Vertex.ByCoordinates(vcn.X()+(tolerance*100), vcn.Y()+(tolerance*100), vcn.Z()+(tolerance*100))
                             d1 = content.GetDictionary()
                             if storeBRep:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                 d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
+                                _ = vcn.SetDictionary(d3)
                             else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
+                                _ = vcn.SetDictionary(d1)
+                            vertices.append(vcn)
+                            tempe = Edge.ByStartVertexEndVertex(vCell, vcn, tolerance=tolerance)
                             tempd = Dictionary.ByKeysValues(["relationship"],["To Contents"])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
@@ -1885,7 +1893,7 @@ class Graph:
             vertices = []
             edges = []
             if useInternalVertex == True:
-                vCell = Topology.InternalVertex(Topology.Copy(topology), tolerance=tolerance)
+                vCell = Topology.InternalVertex(topology, tolerance=tolerance)
             else:
                 vCell = topology.CenterOfMass()
             d1 = topology.GetDictionary()
@@ -1920,7 +1928,7 @@ class Graph:
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
-            if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
+            if any([toExteriorTopologies, toExteriorApertures, toContents]):
                 faces = Topology.Faces(topology)
                 exteriorTopologies = []
                 exteriorApertures = []
@@ -1951,6 +1959,8 @@ class Graph:
                                 contents = []
                                 _ = exteriorTopology.Contents(contents)
                                 for content in contents:
+                                    if isinstance(content, topologic.Aperture):
+                                        content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
@@ -1992,6 +2002,8 @@ class Graph:
                         contents = []
                         _ = topology.Contents(contents)
                         for content in contents:
+                            if isinstance(content, topologic.Aperture):
+                                content = Aperture.Topology(content)
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
@@ -2094,7 +2106,7 @@ class Graph:
 
             topFaces = []
             _ = topology.Faces(None, topFaces)
-            if (viaSharedTopologies == True) or (viaSharedApertures == True) or (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
+            if any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents == True]):
                 for aFace in topFaces:
                     if useInternalVertex == True:
                         vFace = Topology.InternalVertex(aFace, tolerance=tolerance)
@@ -2145,6 +2157,8 @@ class Graph:
                                 contents = []
                                 _ = sharedTopology.Contents(contents)
                                 for content in contents:
+                                    if isinstance(content, topologic.Aperture):
+                                        content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
@@ -2203,6 +2217,8 @@ class Graph:
                                 contents = []
                                 _ = exteriorTopology.Contents(contents)
                                 for content in contents:
+                                    if isinstance(content, topologic.Aperture):
+                                        content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
@@ -2244,6 +2260,8 @@ class Graph:
                         contents = []
                         _ = aFace.Contents(contents)
                         for content in contents:
+                            if isinstance(content, topologic.Aperture):
+                                content = Aperture.Topology(content)
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
@@ -2388,6 +2406,8 @@ class Graph:
                                 contents = []
                                 _ = exteriorTopology.Contents(contents)
                                 for content in contents:
+                                    if isinstance(content, topologic.Aperture):
+                                        content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
@@ -2429,6 +2449,8 @@ class Graph:
                         contents = []
                         _ = topology.Contents(contents)
                         for content in contents:
+                            if isinstance(content, topologic.Aperture):
+                                content = Aperture.Topology(content)
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
@@ -2590,6 +2612,8 @@ class Graph:
                                 contents = []
                                 _ = sharedTopology.Contents(contents)
                                 for content in contents:
+                                    if isinstance(content, topologic.Aperture):
+                                        content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
@@ -2639,6 +2663,8 @@ class Graph:
                                 contents = []
                                 _ = vst.Contents(contents)
                                 for content in contents:
+                                    if isinstance(content, topologic.Aperture):
+                                        content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
@@ -2680,6 +2706,8 @@ class Graph:
                         contents = []
                         _ = anEdge.Contents(contents)
                         for content in contents:
+                            if isinstance(content, topologic.Aperture):
+                                content = Aperture.Topology(content)
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
@@ -2830,6 +2858,8 @@ class Graph:
                                 contents = []
                                 _ = vst.Contents(contents)
                                 for content in contents:
+                                    if isinstance(content, topologic.Aperture):
+                                        content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
@@ -2880,6 +2910,8 @@ class Graph:
                 contents = []
                 _ = topology.Contents(contents)
                 for content in contents:
+                    if isinstance(content, topologic.Aperture):
+                        content = Aperture.Topology(content)
                     if useInternalVertex == True:
                         vst = Topology.InternalVertex(content, tolerance)
                     else:
@@ -2929,7 +2961,6 @@ class Graph:
         if not isinstance(topology, topologic.Topology):
             print("Graph.ByTopology - Error: The input topology is not a valid topology. Returning None.")
             return None
-        topology = Topology.Copy(topology)
         graph = None
         item = [topology, None, None, None, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, None, useInternalVertex, storeBRep, tolerance]
         vertices = []

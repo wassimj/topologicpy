@@ -464,7 +464,6 @@ class CellComplex(Topology):
         from topologicpy.Vector import Vector
         from topologicpy.Aperture import Aperture
         from topologicpy.Topology import Topology
-        from numpy import arctan, pi, signbit, arctan2, rad2deg
 
         def angleCode(f, up, tiltAngle):
             dirA = Face.NormalAtParameters(f)
@@ -1102,8 +1101,6 @@ class CellComplex(Topology):
         if len(vertices) < 1:
             print("CellComplex.Voronoi - Error: The input vertices parame ter does not contain any vertices that are inside the input cell parameter. Returning None.")
             return None
-        #cell_vertices = Topology.Vertices(cell)
-        #all_vertices = cell_vertices + vertices
         voronoi_points = np.array([Vertex.Coordinates(v) for v in vertices])
         cluster = fracture_with_voronoi(voronoi_points)
         if cluster == None:

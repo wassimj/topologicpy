@@ -3099,7 +3099,7 @@ class Topology():
         return returnObject
     
     @staticmethod
-    def Copy(topology):
+    def Copy(topology, deep=False):
         """
         Returns a copy of the input topology
 
@@ -3107,6 +3107,8 @@ class Topology():
         ----------
         topology : topologic.Topology
             The input topology.
+        deep : bool , optional
+            If set to True, a deep copy will be performed (this is slow). Othwerwise, it will not. The default is False
 
         Returns
         -------
@@ -3114,10 +3116,18 @@ class Topology():
             A copy of the input topology.
 
         """
+        from topologicpy.Dictionary import Dictionary
         if not isinstance(topology, topologic.Topology):
             print("Topology.Copy - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        return topologic.Topology.DeepCopy(topology)
+        if deep:
+            return Topology.ByJSONString(Topology.JSONString([topology]), progressBar=False)
+        d = Topology.Dictionary(topology)
+        return_topology = Topology.ByBREPString(Topology.BREPString(topology))
+        keys = Dictionary.Keys(d)
+        if len(keys) > 0:
+            return_topology = Topology.SetDictionary(return_topology, d)
+        return return_topology
     
     @staticmethod
     def Dictionary(topology):
@@ -4322,40 +4332,41 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Aperture import Aperture
+
         if not isinstance(topology, topologic.Topology):
             print("Topology.InternalVertex - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         vst = None
-        classType = topology.Type()
-        if isinstance(topology, topologic.CellComplex): #CellComplex
-            tempCell = Topology.Cells(topology)[0]
+        top = Topology.Copy(topology)
+        if isinstance(top, topologic.CellComplex): #CellComplex
+            tempCell = Topology.Cells(top)[0]
             vst = Cell.InternalVertex(tempCell, tolerance=tolerance)
-        elif isinstance(topology, topologic.Cell): #Cell
-            vst = Cell.InternalVertex(topology, tolerance=tolerance)
-        elif isinstance(topology, topologic.Shell): #Shell
-            tempFace = Topology.Faces(topology)[0]
+        elif isinstance(top, topologic.Cell): #Cell
+            vst = Cell.InternalVertex(top, tolerance=tolerance)
+        elif isinstance(top, topologic.Shell): #Shell
+            tempFace = Topology.Faces(top)[0]
             vst = Face.InternalVertex(tempFace, tolerance=tolerance)
-        elif isinstance(topology, topologic.Face): #Face
-            vst = Face.InternalVertex(topology, tolerance=tolerance)
-        elif isinstance(topology, topologic.Wire): #Wire
-            if topology.IsClosed():
+        elif isinstance(top, topologic.Face): #Face
+            vst = Face.InternalVertex(top, tolerance=tolerance)
+        elif isinstance(top, topologic.Wire): #Wire
+            if top.IsClosed():
                 internalBoundaries = []
                 try:
-                    tempFace = topologic.Face.ByExternalInternalBoundaries(topology, internalBoundaries)
+                    tempFace = topologic.Face.ByExternalInternalBoundaries(top, internalBoundaries)
                     vst = Face.InternalVertex(tempFace, tolerance=tolerance)
                 except:
-                    vst = Topology.Centroid(topology)
+                    vst = Topology.Centroid(top)
             else:
-                tempEdge = Topology.Edges(topology)[0]
+                tempEdge = Topology.Edges(top)[0]
                 vst = Edge.VertexByParameter(tempEdge, 0.5)
-        elif isinstance(topology, topologic.Edge): #Edge
-            vst = Edge.VertexByParameter(topology, 0.5)
-        elif isinstance(topology, topologic.Vertex): #Vertex
-            vst = topology
+        elif isinstance(top, topologic.Edge): #Edge
+            vst = Edge.VertexByParameter(top, 0.5)
+        elif isinstance(top, topologic.Vertex): #Vertex
+            vst = top
         elif isinstance(topology, topologic.Aperture): #Aperture
-            vst = Face.InternalVertex(Aperture.Topology(topology), tolerance)
+            vst = Face.InternalVertex(Aperture.Topology(top), tolerance)
         else:
-            vst = Topology.Centroid(topology)
+            vst = Topology.Centroid(top)
         return vst
 
     @staticmethod
@@ -5483,8 +5494,6 @@ class Topology():
                 return None
         if not isinstance(snapshot, topologic.Topology):
             snapshot = Topology.Copy(topology)
-            d = Topology.Dictionary(topology)
-            snapshot = Topology.SetDictionary(snapshot, d)
         if not isinstance(snapshot, topologic.Topology):
             if not silent:
                 print("Topology.SetSnapshot - Error: The input snapshot parameter is not a valid topology. Returning None.")
@@ -6762,7 +6771,7 @@ class Topology():
 
     
     @staticmethod
-    def Triangulate(topology, transferDictionaries = False, tolerance=0.0001):
+    def Triangulate(topology, transferDictionaries: bool = False, mode: str ="classic", meshSize: float = None, tolerance: float = 0.0001):
         """
         Triangulates the input topology.
 
@@ -6772,6 +6781,12 @@ class Topology():
             The input topologgy.
         transferDictionaries : bool , optional
             If set to True, the dictionaries of the faces in the input topology will be transferred to the created triangular faces. The default is False.
+        mode : str , optional
+            The desired mode of meshing. Two options are available: "classic" and "mesh". They are case insensitive.
+            The "mesh" option uses the gmsh library.
+        meshSize : float , optional
+            The desired size of the mesh when using the "mesh" option. If set to None, it will be
+            calculated automatically and set to 10% of the overall size of the face.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -6815,7 +6830,7 @@ class Topology():
         selectors = []
         for aFace in topologyFaces:
             if len(Topology.Vertices(aFace)) > 3:
-                triFaces = Face.Triangulate(aFace, tolerance=tolerance)
+                triFaces = Face.Triangulate(aFace, mode=mode, meshSize=meshSize, tolerance=tolerance)
             else:
                 triFaces = [aFace]
             for triFace in triFaces:

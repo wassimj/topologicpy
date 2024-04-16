@@ -18,22 +18,6 @@ import topologic
 from topologicpy.Wire import Wire
 from topologicpy.Topology import Topology
 import math
-import os
-import warnings
-
-try:
-    import numpy as np
-except:
-    print("Cell - Installing required numpy library.")
-    try:
-        os.system("pip install numpy")
-    except:
-        os.system("pip install numpy --user")
-    try:
-        import numpy as np
-        print("Cell - numpy library installed correctly.")
-    except:
-        warnings.warn("Cell - Error: Could not import numpy.")
     
 class Cell(Topology):
     @staticmethod
@@ -226,15 +210,9 @@ class Cell(Topology):
             The created offset topology. WARNING: This method may fail to create a cell if the offset creates self-intersecting faces. Always check the type being returned by this method.
 
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Helper import Helper
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
-        from operator import add
-        import numpy as np
 
         vertices = Topology.Vertices(cell)
         new_vertices = []
@@ -922,7 +900,6 @@ class Cell(Topology):
         from topologicpy.Vector import Vector
         from topologicpy.Aperture import Aperture
         from topologicpy.Topology import Topology
-        from numpy import arctan, pi, signbit, arctan2, rad2deg
 
         def angleCode(f, up, tiltAngle):
             dirA = Face.NormalAtParameters(f)
