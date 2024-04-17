@@ -541,11 +541,6 @@ class Graph:
                 floorLevels =[],
                 labelKey="label",
                 typeKey="type",
-                sourceKey="source",
-                targetKey="target",
-                xKey = "x",
-                yKey = "y",
-                zKey = "z",
                 spaceType = "space",
                 wallType = "wall",
                 slabType = "slab",
@@ -578,33 +573,23 @@ class Graph:
             The desired prefixed to use for each building storey. The default is "Storey".
         floorLevels : list , optional
             The list of floor levels. This should be a numeric list, sorted from lowest to highest.
-            If not provided, floorLevels will be computed automatically based on the nodes' 'z' attribute.
+            If not provided, floorLevels will be computed automatically based on the vertices' 'z' attribute.
         typeKey : str , optional
             The dictionary key to use to look up the type of the node. The default is "type".
         labelKey : str , optional
             The dictionary key to use to look up the label of the node. The default is "label".
-        sourceKey : str , optional
-            The desired dictionary key to use to store the source vertex. The default is "source".
-        targetKey : str , optional
-            The desired dictionary key to use to store the target vertex. The default is "target".
-        xKey : str , optional
-            The dictionary key to use to look up the x-coordinate of the node. The default is "x".
-        yKey : str , optional
-            The dictionary key to use to look up the y-coordinate of the node. The default is "y".
-        zKey : str , optional
-            The dictionary key to use to look up the z-coordinate of the node. The default is "z".
         spaceType : str , optional
-            The dictionary string value to use to look up nodes of type "space". The default is "space".
+            The dictionary string value to use to look up vertices of type "space". The default is "space".
         wallType : str , optional
-            The dictionary string value to use to look up nodes of type "wall". The default is "wall".
+            The dictionary string value to use to look up vertices of type "wall". The default is "wall".
         slabType : str , optional
-            The dictionary string value to use to look up nodes of type "slab". The default is "slab".
+            The dictionary string value to use to look up vertices of type "slab". The default is "slab".
         doorType : str , optional
-            The dictionary string value to use to look up nodes of type "door". The default is "door".
+            The dictionary string value to use to look up vertices of type "door". The default is "door".
         windowType : str , optional
-            The dictionary string value to use to look up nodes of type "window". The default is "window".
+            The dictionary string value to use to look up vertices of type "window". The default is "window".
         contentType : str , optional
-            The dictionary string value to use to look up nodes of type "content". The default is "contents".
+            The dictionary string value to use to look up vertices of type "content". The default is "contents".
 
         Returns
         -------
@@ -639,7 +624,7 @@ class Graph:
             floorLevels = []
         json_data = Graph.JSONData(graph, vertexLabelKey=labelKey)
         # Create an empty RDF graph
-        rdf_graph = RDFGraph()
+        bot_graph = RDFGraph()
         
         # Define namespaces
         rdf = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
@@ -647,127 +632,121 @@ class Graph:
         bot = Namespace("https://w3id.org/bot#")
         
         # Define a custom prefix mapping
-        rdf_graph.namespace_manager.bind("bot", bot)
+        bot_graph.namespace_manager.bind("bot", bot)
         
         # Add site
         site_uri = URIRef(siteLabel)
-        rdf_graph.add((site_uri, rdf.type, bot.Site))
+        bot_graph.add((site_uri, rdf.type, bot.Site))
         if includeLabel:
-            rdf_graph.add((site_uri, RDFS.label, Literal("Site_0001")))
+            bot_graph.add((site_uri, RDFS.label, Literal(siteLabel)))
         if isinstance(siteDictionary, topologic.Dictionary):
             keys = Dictionary.Keys(siteDictionary)
             for key in keys:
                 value = Dictionary.ValueAtKey(siteDictionary, key)
-                if key == labelKey:
-                    if includeLabel:
-                        rdf_graph.add((site_uri, RDFS.label, Literal(value)))
-                    elif key != typeKey:
-                        rdf_graph.add((site_uri, bot[key], Literal(value)))
+                if not (key == labelKey) and not (key == typeKey):
+                    bot_graph.add((site_uri, bot[key], Literal(value)))
         # Add building
         building_uri = URIRef(buildingLabel)
-        rdf_graph.add((building_uri, rdf.type, bot.Building))
+        bot_graph.add((building_uri, rdf.type, bot.Building))
         if includeLabel:
-            rdf_graph.add((building_uri, RDFS.label, Literal(buildingLabel)))
+            bot_graph.add((building_uri, RDFS.label, Literal(buildingLabel)))
         if isinstance(buildingDictionary, topologic.Dictionary):
             keys = Dictionary.Keys(buildingDictionary)
             for key in keys:
                 value = Dictionary.ValueAtKey(buildingDictionary, key)
                 if key == labelKey:
                     if includeLabel:
-                        rdf_graph.add((building_uri, RDFS.label, Literal(value)))
+                        bot_graph.add((building_uri, RDFS.label, Literal(value)))
                     elif key != typeKey:
-                        rdf_graph.add((building_uri, bot[key], Literal(value)))
+                        bot_graph.add((building_uri, bot[key], Literal(value)))
         # Add stories
         # if floor levels are not given, then need to be computed
         if len(floorLevels) == 0:
-            for node, attributes in json_data['nodes'].items():
+            for node, attributes in json_data['vertices'].items():
                 if slabType.lower() in attributes[typeKey].lower():
-                    floorLevels.append(attributes[zKey])
+                    floorLevels.append(attributes["z"])
             floorLevels = list(set(floorLevels))
             floorLevels.sort()
+            floorLevels = floorLevels[:-1]
         storey_uris = []
         n = max(len(str(len(floorLevels))),4)
         for i, floor_level in enumerate(floorLevels):
             storey_uri = URIRef(storeyPrefix+"_"+str(i+1).zfill(n))
-            rdf_graph.add((storey_uri, rdf.type, bot.Storey))
+            bot_graph.add((storey_uri, rdf.type, bot.Storey))
             if includeLabel:
-                rdf_graph.add((storey_uri, RDFS.label, Literal(storeyPrefix+"_"+str(i+1).zfill(n))))
+                bot_graph.add((storey_uri, RDFS.label, Literal(storeyPrefix+"_"+str(i+1).zfill(n))))
             storey_uris.append(storey_uri)
 
         # Add triples to relate building to site and stories to building
-        rdf_graph.add((site_uri, bot.hasBuilding, building_uri))
+        bot_graph.add((site_uri, bot.hasBuilding, building_uri))
         if bidirectional:
-            rdf_graph.add((building_uri, bot.isPartOf, site_uri)) # might not be needed
+            bot_graph.add((building_uri, bot.isPartOf, site_uri)) # might not be needed
 
         for storey_uri in storey_uris:
-            rdf_graph.add((building_uri, bot.hasStorey, storey_uri))
+            bot_graph.add((building_uri, bot.hasStorey, storey_uri))
             if bidirectional:
-                rdf_graph.add((storey_uri, bot.isPartOf, building_uri)) # might not be needed
+                bot_graph.add((storey_uri, bot.isPartOf, building_uri)) # might not be needed
         
         # Add vertices as RDF resources
-        for node, attributes in json_data['nodes'].items():
+        for node, attributes in json_data['vertices'].items():
             node_uri = URIRef(node)
             if spaceType.lower() in attributes[typeKey].lower():
-                rdf_graph.add((node_uri, rdf.type, bot.Space))
+                bot_graph.add((node_uri, rdf.type, bot.Space))
                 # Find the storey it is on
-                z = attributes[zKey]
+                z = attributes["z"]
                 level = Helper.Position(z, floorLevels)
                 if level > len(storey_uris):
                     level = len(storey_uris)
                 storey_uri = storey_uris[level-1]
-                rdf_graph.add((storey_uri, bot.hasSpace, node_uri))
+                bot_graph.add((storey_uri, bot.hasSpace, node_uri))
                 if bidirectional:
-                    rdf_graph.add((node_uri, bot.isPartOf, storey_uri)) # might not be needed
+                    bot_graph.add((node_uri, bot.isPartOf, storey_uri)) # might not be needed
             elif windowType.lower() in attributes[typeKey].lower():
-                rdf_graph.add((node_uri, rdf.type, bot.Window))
+                bot_graph.add((node_uri, rdf.type, bot.Window))
             elif doorType.lower() in attributes[typeKey].lower():
-                rdf_graph.add((node_uri, rdf.type, bot.Door))
+                bot_graph.add((node_uri, rdf.type, bot.Door))
             elif wallType.lower() in attributes[typeKey].lower():
-                rdf_graph.add((node_uri, rdf.type, bot.Wall))
+                bot_graph.add((node_uri, rdf.type, bot.Wall))
             elif slabType.lower() in attributes[typeKey].lower():
-                rdf_graph.add((node_uri, rdf.type, bot.Slab))
+                bot_graph.add((node_uri, rdf.type, bot.Slab))
             else:
-                rdf_graph.add((node_uri, rdf.type, bot.Element))
+                bot_graph.add((node_uri, rdf.type, bot.Element))
             
             if includeAttributes:
                 for key, value in attributes.items():
                     if key == labelKey:
                         if includeLabel:
-                            rdf_graph.add((node_uri, RDFS.label, Literal(value)))
+                            bot_graph.add((node_uri, RDFS.label, Literal(value)))
                     elif key != typeKey:
-                        rdf_graph.add((node_uri, bot[key], Literal(value)))
+                        bot_graph.add((node_uri, bot[key], Literal(value)))
             if includeLabel:
                 for key, value in attributes.items():
                     if key == labelKey:
-                        rdf_graph.add((node_uri, RDFS.label, Literal(value)))
+                        bot_graph.add((node_uri, RDFS.label, Literal(value)))
         
         # Add edges as RDF triples
         for edge, attributes in json_data['edges'].items():
-            source = attributes[sourceKey]
-            target = attributes[targetKey]
+            source = attributes["source"]
+            target = attributes["target"]
             source_uri = URIRef(source)
             target_uri = URIRef(target)
-            if spaceType.lower() in json_data['nodes'][source][typeKey].lower() and spaceType.lower() in json_data['nodes'][target][typeKey].lower():
-                rdf_graph.add((source_uri, bot.adjacentTo, target_uri))
+            if spaceType.lower() in json_data['vertices'][source][typeKey].lower() and spaceType.lower() in json_data['vertices'][target][typeKey].lower():
+                bot_graph.add((source_uri, bot.adjacentTo, target_uri))
                 if bidirectional:
-                    rdf_graph.add((target_uri, bot.adjacentTo, source_uri))
-            elif spaceType.lower() in json_data['nodes'][source][typeKey].lower() and wallType.lower() in json_data['nodes'][target][typeKey].lower():
-                rdf_graph.add((target_uri, bot.interfaceOf, source_uri))
-            elif spaceType.lower() in json_data['nodes'][source][typeKey].lower() and slabType.lower() in json_data['nodes'][target][typeKey].lower():
-                rdf_graph.add((target_uri, bot.interfaceOf, source_uri))
-            elif spaceType.lower() in json_data['nodes'][source][typeKey].lower() and contentType.lower() in json_data['nodes'][target][typeKey].lower():
-                rdf_graph.add((source_uri, bot.containsElement, target_uri))
+                    bot_graph.add((target_uri, bot.adjacentTo, source_uri))
+            elif spaceType.lower() in json_data['vertices'][source][typeKey].lower() and wallType.lower() in json_data['vertices'][target][typeKey].lower():
+                bot_graph.add((target_uri, bot.interfaceOf, source_uri))
+            elif spaceType.lower() in json_data['vertices'][source][typeKey].lower() and slabType.lower() in json_data['vertices'][target][typeKey].lower():
+                bot_graph.add((target_uri, bot.interfaceOf, source_uri))
+            elif spaceType.lower() in json_data['vertices'][source][typeKey].lower() and contentType.lower() in json_data['vertices'][target][typeKey].lower():
+                bot_graph.add((source_uri, bot.containsElement, target_uri))
                 if bidirectional:
-                    rdf_graph.add((target_uri, bot.isPartOf, source_uri))
+                    bot_graph.add((target_uri, bot.isPartOf, source_uri))
             else:
-                rdf_graph.add((source_uri, bot.connectsTo, target_uri))
+                bot_graph.add((source_uri, bot.connectsTo, target_uri))
                 if bidirectional:
-                    rdf_graph.add((target_uri, bot.connectsTo, source_uri))
-            #for key, value in attributes.items():
-                #rdf_graph.add((source_uri, bot[key], Literal(value)))
-        # Return serialized  RDF graph
-        #rdf_serialized = rdf_graph.serialize(format=format)
-        return rdf_graph
+                    bot_graph.add((target_uri, bot.connectsTo, source_uri))
+        return bot_graph
 
     @staticmethod
     def BOTString(graph,
@@ -783,11 +762,6 @@ class Graph:
                 floorLevels =[],
                 labelKey="label",
                 typeKey="type",
-                sourceKey="source",
-                targetKey="target",
-                xKey = "x",
-                yKey = "y",
-                zKey = "z",
                 spaceType = "space",
                 wallType = "wall",
                 slabType = "slab",
@@ -831,33 +805,23 @@ class Graph:
             The desired prefixed to use for each building storey. The default is "Storey".
         floorLevels : list , optional
             The list of floor levels. This should be a numeric list, sorted from lowest to highest.
-            If not provided, floorLevels will be computed automatically based on the nodes' 'z' attribute.
+            If not provided, floorLevels will be computed automatically based on the vertices' 'z' attribute.
         typeKey : str , optional
             The dictionary key to use to look up the type of the node. The default is "type".
         labelKey : str , optional
             The dictionary key to use to look up the label of the node. The default is "label".
-        sourceKey : str , optional
-            The desired dictionary key to use to store the source vertex. The default is "source".
-        targetKey : str , optional
-            The desired dictionary key to use to store the target vertex. The default is "target".
-        xKey : str , optional
-            The dictionary key to use to look up the x-coordinate of the node. The default is "x".
-        yKey : str , optional
-            The dictionary key to use to look up the y-coordinate of the node. The default is "y".
-        zKey : str , optional
-            The dictionary key to use to look up the z-coordinate of the node. The default is "z".
         spaceType : str , optional
-            The dictionary string value to use to look up nodes of type "space". The default is "space".
+            The dictionary string value to use to look up vertices of type "space". The default is "space".
         wallType : str , optional
-            The dictionary string value to use to look up nodes of type "wall". The default is "wall".
+            The dictionary string value to use to look up vertices of type "wall". The default is "wall".
         slabType : str , optional
-            The dictionary string value to use to look up nodes of type "slab". The default is "slab".
+            The dictionary string value to use to look up vertices of type "slab". The default is "slab".
         doorType : str , optional
-            The dictionary string value to use to look up nodes of type "door". The default is "door".
+            The dictionary string value to use to look up vertices of type "door". The default is "door".
         windowType : str , optional
-            The dictionary string value to use to look up nodes of type "window". The default is "window".
+            The dictionary string value to use to look up vertices of type "window". The default is "window".
         contentType : str , optional
-            The dictionary string value to use to look up nodes of type "content". The default is "contents".
+            The dictionary string value to use to look up vertices of type "content". The default is "contents".
 
         
         Returns
@@ -878,11 +842,6 @@ class Graph:
                             floorLevels=floorLevels,
                             labelKey=labelKey,
                             typeKey=typeKey,
-                            sourceKey=sourceKey,
-                            targetKey=targetKey,
-                            xKey=xKey,
-                            yKey=yKey,
-                            zKey=zKey,
                             spaceType = spaceType,
                             wallType = wallType,
                             slabType = slabType,
@@ -4112,9 +4071,6 @@ class Graph:
                     typeKey="type",
                     sourceKey="source",
                     targetKey="target",
-                    xKey = "x",
-                    yKey = "y",
-                    zKey = "z",
                     spaceType = "space",
                     wallType = "wall",
                     slabType = "slab",
@@ -4167,16 +4123,6 @@ class Graph:
             The dictionary key to use to look up the type of the node. The default is "type".
         labelKey : str , optional
             The dictionary key to use to look up the label of the node. The default is "label".
-        sourceKey : str , optional
-            The desired dictionary key to use to store the source vertex. The default is "source".
-        targetKey : str , optional
-            The desired dictionary key to use to store the target vertex. The default is "target".
-        xKey : str , optional
-            The dictionary key to use to look up the x-coordinate of the node. The default is "x".
-        yKey : str , optional
-            The dictionary key to use to look up the y-coordinate of the node. The default is "y".
-        zKey : str , optional
-            The dictionary key to use to look up the z-coordinate of the node. The default is "z".
         spaceType : str , optional
             The dictionary string value to use to look up nodes of type "space". The default is "space".
         wallType : str , optional
@@ -4218,11 +4164,6 @@ class Graph:
                             floorLevels=floorLevels,
                             labelKey=labelKey,
                             typeKey=typeKey,
-                            sourceKey=sourceKey,
-                            targetKey=targetKey,
-                            xKey=xKey,
-                            yKey=yKey,
-                            zKey=zKey,
                             spaceType = spaceType,
                             wallType = wallType,
                             slabType = slabType,
@@ -4975,7 +4916,7 @@ class Graph:
         return True
 
     @staticmethod
-    def ExportToJSON(graph, path, vertexLabelKey="", edgeLabelKey="", indent=4, sortKeys=False, mantissa=6, overwrite=False):
+    def ExportToJSON(graph, path, verticesKey="vertices", edgesKey="edges", vertexLabelKey="", edgeLabelKey="", xKey="x", yKey="y", zKey="z", indent=4, sortKeys=False, mantissa=6, overwrite=False):
         """
         Exports the input graph to a JSON file.
 
@@ -4985,12 +4926,22 @@ class Graph:
             The input graph.
         path : str
             The path to the JSON file.
+        verticesKey : str , optional
+            The desired key name to call vertices. The default is "vertices".
+        edgesKey : str , optional
+            The desired key name to call edges. The default is "edges".
         vertexLabelKey : str , optional
             If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
             Note: If vertex labels are not unique, they will be forced to be unique.
         edgeLabelKey : str , optional
             If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
             Note: If edge labels are not unique, they will be forced to be unique.
+        xKey : str , optional
+            The desired key name to use for x-coordinates. The default is "x".
+        yKey : str , optional
+            The desired key name to use for y-coordinates. The default is "y".
+        zKey : str , optional
+            The desired key name to use for z-coordinates. The default is "z".
         indent : int , optional
             The desired amount of indent spaces to use. The default is 4.
         sortKeys : bool , optional
@@ -5024,7 +4975,7 @@ class Graph:
         except:
             raise Exception("Graph.ExportToJSON - Error: Could not create a new file at the following location: "+path)
         if (f):
-            jsondata = Graph.JSONData(graph, vertexLabelKey=vertexLabelKey, edgeLabelKey=edgeLabelKey, mantissa=mantissa)
+            jsondata = Graph.JSONData(graph, verticesKey=verticesKey, edgesKey=edgesKey, vertexLabelKey=vertexLabelKey, edgeLabelKey=edgeLabelKey, xKey=xKey, yKey=yKey, zKey=zKey, mantissa=mantissa)
             if jsondata != None:
                 json.dump(jsondata, f, indent=indent, sort_keys=sortKeys)
                 f.close()
@@ -5679,7 +5630,17 @@ class Graph:
         return vertices
     
     @staticmethod
-    def JSONData(graph, vertexLabelKey="", edgeLabelKey="", sourceKey="source", targetKey="target", mantissa=6):
+    def JSONData(graph,
+                 verticesKey="vertices",
+                 edgesKey="edges",
+                 vertexLabelKey="",
+                 edgeLabelKey="",
+                 sourceKey="source",
+                 targetKey="target",
+                 xKey="x",
+                 yKey="y",
+                 zKey="z",
+                 mantissa=6):
         """
         Converts the input graph into JSON data.
 
@@ -5687,6 +5648,10 @@ class Graph:
         ----------
         graph : topologic.Graph
             The input graph.
+        verticesKey : str , optional
+            The desired key name to call vertices. The default is "vertices".
+        edgesKey : str , optional
+            The desired key name to call edges. The default is "edges".
         vertexLabelKey : str , optional
             If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
             Note: If vertex labels are not unique, they will be forced to be unique.
@@ -5697,6 +5662,12 @@ class Graph:
             The dictionary key used to store the source vertex. The default is "source".
         targetKey : str , optional
             The dictionary key used to store the target vertex. The default is "source".
+        xKey : str , optional
+            The desired key name to use for x-coordinates. The default is "x".
+        yKey : str , optional
+            The desired key name to use for y-coordinates. The default is "y".
+        zKey : str , optional
+            The desired key name to use for z-coordinates. The default is "z".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
 
@@ -5714,16 +5685,16 @@ class Graph:
 
         vertices = Graph.Vertices(graph)
         j_data = {}
-        j_data['nodes'] = {}
-        j_data['edges'] = {}
+        j_data[verticesKey] = {}
+        j_data[edgesKey] = {}
         n = max(len(str(len(vertices))), 4)
         v_labels = []
         v_dicts = []
         for i, v in enumerate(vertices):
             d = Topology.Dictionary(v)
-            d = Dictionary.SetValueAtKey(d, "x", Vertex.X(v, mantissa=mantissa))
-            d = Dictionary.SetValueAtKey(d, "y", Vertex.Y(v, mantissa=mantissa))
-            d = Dictionary.SetValueAtKey(d, "z", Vertex.Z(v, mantissa=mantissa))
+            d = Dictionary.SetValueAtKey(d, xKey, Vertex.X(v, mantissa=mantissa))
+            d = Dictionary.SetValueAtKey(d, yKey, Vertex.Y(v, mantissa=mantissa))
+            d = Dictionary.SetValueAtKey(d, zKey, Vertex.Z(v, mantissa=mantissa))
             v_dict = Dictionary.PythonDictionary(d)
             v_label = Dictionary.ValueAtKey(d, vertexLabelKey)
             if isinstance(v_label, str):
@@ -5734,7 +5705,7 @@ class Graph:
             v_dicts.append(v_dict)
         v_labels = Helper.MakeUnique(v_labels)
         for i, v_label in enumerate(v_labels):
-            j_data['nodes'][v_label] = v_dicts[i]
+            j_data[verticesKey][v_label] = v_dicts[i]
 
         edges = Graph.Edges(graph)
         n = len(str(len(edges)))    
@@ -5761,12 +5732,22 @@ class Graph:
             e_dicts.append(e_dict)
         e_labels = Helper.MakeUnique(e_labels)
         for i, e_label in enumerate(e_labels):
-            j_data['edges'][e_label] = e_dicts[i]
+            j_data[edgesKey][e_label] = e_dicts[i]
 
         return j_data
     
     @staticmethod
-    def JSONString(graph, vertexLabelKey="", edgeLabelKey="", indent=4, sortKeys=False, mantissa=6):
+    def JSONString(graph,
+                   verticesKey="vertices",
+                   edgesKey="edges",
+                   vertexLabelKey="",
+                   edgeLabelKey="",
+                   xKey = "x",
+                   yKey = "y",
+                   zKey = "z",
+                   indent=4,
+                   sortKeys=False,
+                   mantissa=6):
         """
         Converts the input graph into JSON data.
 
@@ -5774,12 +5755,22 @@ class Graph:
         ----------
         graph : topologic.Graph
             The input graph.
+        verticesKey : str , optional
+            The desired key name to call vertices. The default is "vertices".
+        edgesKey : str , optional
+            The desired key name to call edges. The default is "edges".
         vertexLabelKey : str , optional
             If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
             Note: If vertex labels are not unique, they will be forced to be unique.
         edgeLabelKey : str , optional
             If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
             Note: If edge labels are not unique, they will be forced to be unique.
+        xKey : str , optional
+            The desired key name to use for x-coordinates. The default is "x".
+        yKey : str , optional
+            The desired key name to use for y-coordinates. The default is "y".
+        zKey : str , optional
+            The desired key name to use for z-coordinates. The default is "z".
         indent : int , optional
             The desired amount of indent spaces to use. The default is 4.
         sortKeys : bool , optional
@@ -5794,7 +5785,7 @@ class Graph:
 
         """
         import json
-        json_data = Graph.JSONData(graph, vertexLabelKey=vertexLabelKey, edgeLabelKey=edgeLabelKey, mantissa=mantissa)
+        json_data = Graph.JSONData(graph, verticesKey=verticesKey, edgesKey=edgesKey, vertexLabelKey=vertexLabelKey, edgeLabelKey=edgeLabelKey, xKey=xKey, yKey=yKey, zKey=zKey, mantissa=mantissa)
         json_string = json.dumps(json_data, indent=indent, sort_keys=sortKeys)
         return json_string
     
