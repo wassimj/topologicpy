@@ -18,7 +18,7 @@ import sys
 import os, re
 from sys import platform
 
-__version__ = '0.5.7'
+__version__ = '0.5.8'
 __version_info__ = tuple([ int(num) for num in __version__.split('.')])
 
 if platform == 'win32':

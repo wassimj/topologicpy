@@ -1786,7 +1786,7 @@ class Face(Topology):
         return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
-    def Triangulate(face:topologic.Face, mode: str = "classic", meshSize: float = None, tolerance: float = 0.0001) -> list:
+    def Triangulate(face:topologic.Face, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001) -> list:
         """
         Triangulates the input face and returns a list of faces.
 
@@ -1796,10 +1796,18 @@ class Face(Topology):
             The input face.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
-        mode : str , optional
-            The desired mode of meshing. Two options are available: "classic" and "mesh". They are case insensitive.
-            The "mesh" option uses the gmsh library.
-            WARNING: The "mesh" option can be very time consuming and can create very heavy geometry.
+        mode : int , optional
+            The desired mode of meshing algorithm. Several options are available:
+            0: Classic
+            1: MeshAdapt
+            3: Initial Mesh Only
+            5: Delaunay
+            6: Frontal-Delaunay
+            7: BAMG
+            8: Fontal-Delaunay for Quads
+            9: Packing of Parallelograms
+            All options other than 0 (Classic) use the gmsh library. See https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options
+            WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
         meshSize : float , optional
             The desired size of the mesh when using the "mesh" option. If set to None, it will be
             calculated automatically and set to 10% of the overall size of the face.
@@ -1810,14 +1818,11 @@ class Face(Topology):
             The list of triangles of the input face.
 
         """
-        from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
-        from topologicpy.Shell import Shell
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
 
         # This function was contributed by Yidan Xue.
-        def generate_gmsh(face, meshSize = None, tolerance = 0.0001):
+        def generate_gmsh(face, mode="mesh", meshSize = None, tolerance = 0.0001):
             """
             Creates a gmsh of triangular meshes from the input face.
 
@@ -1921,7 +1926,9 @@ class Face(Topology):
 
             gmsh.model.geo.addPlaneSurface([i+1 for i in range(current_wire_number)])
             gmsh.model.geo.synchronize()
-            
+            if mode not in [1,3,5,6,7,8,9]:
+                mode = 6
+            gmsh.option.setNumber("Mesh.Algorithm", mode)
             gmsh.model.mesh.generate(2)         # For a 2D mesh
             nodeTags, nodeCoords, nodeParams = gmsh.model.mesh.getNodes(-1, -1)
             elemTypes, elemTags, elemNodeTags = gmsh.model.mesh.getElements(-1, -1)
@@ -1955,9 +1962,7 @@ class Face(Topology):
         normal = Face.Normal(face)
         flatFace = Topology.Flatten(face, origin=origin, direction=normal)
 
-        if "mesh" in mode.lower():
-            shell_faces = generate_gmsh(flatFace, meshSize = meshSize, tolerance = tolerance)
-        else:
+        if mode == 0:
             shell_faces = []
             for i in range(0,5,1):
                 try:
@@ -1965,7 +1970,9 @@ class Face(Topology):
                     break
                 except:
                     continue
-        
+        else:
+            shell_faces = generate_gmsh(flatFace, mode = mode, meshSize = meshSize, tolerance = tolerance)
+            
         if len(shell_faces) < 1:
             return []
         finalFaces = []

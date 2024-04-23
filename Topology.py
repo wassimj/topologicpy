@@ -3541,7 +3541,7 @@ class Topology():
         return False
 
     @staticmethod
-    def Fix(topology, topologyType: str ="CellComplex", tolerance: float = 0.0001):
+    def Fix(topology, topologyType: str = "CellComplex", tolerance: float = 0.0001):
         """
         Attempts to fix the input topology to matched the desired output type.
 
@@ -3951,7 +3951,7 @@ class Topology():
         return json_string
     
     @staticmethod
-    def OBJString(topology, transposeAxes=True, mantissa=6, tolerance=0.0001):
+    def OBJString(topology, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the Wavefront string of the input topology. This is very experimental and outputs a simple solid topology.
 
@@ -3961,6 +3961,21 @@ class Topology():
             The input topology.
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up"
+        mode : int , optional
+            The desired mode of meshing algorithm. Several options are available:
+            0: Classic
+            1: MeshAdapt
+            3: Initial Mesh Only
+            5: Delaunay
+            6: Frontal-Delaunay
+            7: BAMG
+            8: Fontal-Delaunay for Quads
+            9: Packing of Parallelograms
+            All options other than 0 (Classic) use the gmsh library. See https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options
+            WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
+        meshSize : float , optional
+            The desired size of the mesh when using the "mesh" option. If set to None, it will be
+            calculated automatically and set to 10% of the overall size of the face.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -3983,7 +3998,7 @@ class Topology():
         lines = []
         version = Helper.Version()
         lines.append("# topologicpy "+version)
-        topology = Topology.Triangulate(topology, tolerance=tolerance)
+        topology = Topology.Triangulate(topology, mode=mode, meshSize=meshSize, tolerance=tolerance)
         d = Topology.Geometry(topology, mantissa=mantissa)
         vertices = d['vertices']
         faces = d['faces']
@@ -4005,7 +4020,7 @@ class Topology():
         return finalLines
     
     @staticmethod
-    def ExportToOBJ(topology, path, transposeAxes=True, overwrite=False):
+    def ExportToOBJ(topology, path, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, overwrite: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Exports the input topology to a Wavefront OBJ file. This is very experimental and outputs a simple solid topology.
 
@@ -4016,7 +4031,26 @@ class Topology():
         path : str
             The input file path.
         transposeAxes : bool , optional
-            If set to True the Z and Y coordinates are transposed so that Y points "up" 
+            If set to True the Z and Y coordinates are transposed so that Y points "up"
+        mode : int , optional
+            The desired mode of meshing algorithm. Several options are available:
+            0: Classic
+            1: MeshAdapt
+            3: Initial Mesh Only
+            5: Delaunay
+            6: Frontal-Delaunay
+            7: BAMG
+            8: Fontal-Delaunay for Quads
+            9: Packing of Parallelograms
+            All options other than 0 (Classic) use the gmsh library. See https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options
+            WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
+        meshSize : float , optional
+            The desired size of the mesh when using the "mesh" option. If set to None, it will be
+            calculated automatically and set to 10% of the overall size of the face.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         overwrite : bool , optional
             If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
 
@@ -4040,7 +4074,7 @@ class Topology():
         if ext.lower() != ".obj":
             path = path+".obj"
         status = False
-        objString = Topology.OBJString(topology, transposeAxes=transposeAxes)
+        objString = Topology.OBJString(topology, transposeAxes=transposeAxes, mode=mode, meshSize=meshSize, mantissa=mantissa, tolerance=tolerance)
         with open(path, "w") as f:
             f.writelines(objString)
             f.close()
@@ -5175,7 +5209,7 @@ class Topology():
         return new_topology
 
     @staticmethod
-    def Rotate(topology, origin=None, axis: list = [0, 0, 1], angle: float = 0, angTolerance: float =0.001, tolerance: float =0.0001):
+    def Rotate(topology, origin=None, axis: list = [0, 0, 1], angle: float = 0, angTolerance: float = 0.001, tolerance: float = 0.0001):
         """
         Rotates the input topology
 
@@ -6771,7 +6805,7 @@ class Topology():
 
     
     @staticmethod
-    def Triangulate(topology, transferDictionaries: bool = False, mode: str ="classic", meshSize: float = None, tolerance: float = 0.0001):
+    def Triangulate(topology, transferDictionaries: bool = False, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001):
         """
         Triangulates the input topology.
 
@@ -6781,9 +6815,18 @@ class Topology():
             The input topologgy.
         transferDictionaries : bool , optional
             If set to True, the dictionaries of the faces in the input topology will be transferred to the created triangular faces. The default is False.
-        mode : str , optional
-            The desired mode of meshing. Two options are available: "classic" and "mesh". They are case insensitive.
-            The "mesh" option uses the gmsh library.
+        mode : int , optional
+            The desired mode of meshing algorithm. Several options are available:
+            0: Classic
+            1: MeshAdapt
+            3: Initial Mesh Only
+            5: Delaunay
+            6: Frontal-Delaunay
+            7: BAMG
+            8: Fontal-Delaunay for Quads
+            9: Packing of Parallelograms
+            All options other than 0 (Classic) use the gmsh library. See https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options
+            WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
         meshSize : float , optional
             The desired size of the mesh when using the "mesh" option. If set to None, it will be
             calculated automatically and set to 10% of the overall size of the face.
@@ -6801,7 +6844,6 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
-        from topologicpy.Dictionary import Dictionary
 
         if not isinstance(topology, topologic.Topology):
             print("Topology.Triangulate - Error: The input parameter is not a valid topology. Returning None.")
@@ -6813,13 +6855,16 @@ class Topology():
             temp_topologies = []
             cellComplexes = Topology.SubTopologies(topology, subTopologyType="cellcomplex") or []
             for cc in cellComplexes:
-                temp_topologies.append(Topology.Triangulate(cc, transferDictionaries=transferDictionaries, tolerance=tolerance))
+                temp_topologies.append(Topology.Triangulate(cc, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance))
             cells = Cluster.FreeCells(topology, tolerance=tolerance) or []
             for c in cells:
-                temp_topologies.append(Topology.Triangulate(c, transferDictionaries=transferDictionaries, tolerance=tolerance))
+                temp_topologies.append(Topology.Triangulate(c, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance))
             shells = Cluster.FreeShells(topology, tolerance=tolerance) or []
             for s in shells:
-                temp_topologies.append(Topology.Triangulate(s, transferDictionaries=transferDictionaries, tolerance=tolerance))
+                temp_topologies.append(Topology.Triangulate(s, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance))
+            faces = Cluster.FreeFaces(topology, tolerance=tolerance) or []
+            for f in faces:
+                temp_topologies.append(Topology.Triangulate(f, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance))
             if len(temp_topologies) > 0:
                 return Cluster.ByTopologies(temp_topologies)
             else:
@@ -6837,7 +6882,6 @@ class Topology():
                 if transferDictionaries:
                     selectors.append(Topology.SetDictionary(Face.Centroid(triFace), Topology.Dictionary(aFace)))
                 faceTriangles.append(triFace)
-        
         if t == 8 or t == 16: # Face or Shell
             return_topology = Shell.ByFaces(faceTriangles, tolerance=tolerance)
             if transferDictionaries and not return_topology == None:
