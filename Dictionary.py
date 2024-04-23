@@ -416,6 +416,57 @@ class Dictionary(topologic.Dictionary):
         return pythonDict
 
     @staticmethod
+    def RemoveKey(dictionary, key):
+        """
+        Removes the key (and its associated value) from the input dictionary.
+
+        Parameters
+        ----------
+        dictionary : topologic.Dictionary or dict
+            The input dictionary.
+        key : string
+            The input key.
+
+        Returns
+        -------
+        topologic.Dictionary or dict
+            The input dictionary with the key/value removed from it.
+
+        """
+        def processPythonDictionary (dictionary, key):
+            values = []
+            keys = dictionary.keys()
+            new_dict = {}
+            for k in keys:
+                if not key.lower() == k.lower():
+                    new_dict[key] = dictionary[key]
+            return new_dict
+
+        def processTopologicDictionary(dictionary, key):
+            keys = dictionary.Keys()
+            new_keys = []
+            new_values = []
+            for k in keys:
+                if not key.lower() == k.lower():
+                    new_keys.append(k)
+                    new_values.append(Dictionary.ValueAtKey(dictionary, k))
+            return Dictionary.ByKeysValues(new_keys, new_values)
+        
+        if not isinstance(dictionary, topologic.Dictionary) and not isinstance(dictionary, dict):
+            print("Dictionary.RemoveKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+            return None
+        if not isinstance(key, str):
+            print("Dictionary.RemoveKey - Error: The input key parameter is not a valid string. Returning None.")
+            return None
+
+        if isinstance(dictionary, dict):
+            return processPythonDictionary(dictionary, key)
+        elif isinstance(dictionary, topologic.Dictionary):
+            return processTopologicDictionary(dictionary, key)
+        else:
+            return None
+        
+    @staticmethod
     def SetValueAtKey(dictionary, key, value):
         """
         Creates a key/value pair in the input dictionary.
