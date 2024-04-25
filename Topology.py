@@ -45,22 +45,6 @@ except:
         warnings.warn("Topology - Error: Could not import numpy.")
 
 try:
-    import ifcopenshell
-    import ifcopenshell.geom
-except:
-    print("Topology - Installing required ifcopenshell library.")
-    try:
-        os.system("pip install ifcopenshell")
-    except:
-        os.system("pip install ifcopenshell --user")
-    try:
-        import ifcopenshell
-        import ifcopenshell.geom
-        print("Topology - ifcopenshell library installed successfully.")
-    except:
-        warnings.warn("Topology - Error: Could not import ifcopenshell.")
-
-try:
     from scipy.spatial import ConvexHull
 except:
     print("Topology - Installing required scipy library.")
@@ -73,6 +57,20 @@ except:
         print("Topology - scipy library installed successfully.")
     except:
         warnings.warn("Topology - Error: Could not import scipy.")
+
+try:
+    from tqdm.auto import tqdm
+except:
+    print("Topology - Installing required tqdm library.")
+    try:
+        os.system("pip install tqdm")
+    except:
+        os.system("pip install tqdm --user")
+    try:
+        from tqdm.auto import tqdm
+        print("Topology - tqdm library installed correctly.")
+    except:
+        warnings.warn("Topology - Error: Could not import tqdm.")
 
 QueueItem = namedtuple('QueueItem', ['ID', 'sinkKeys', 'sinkValues'])
 SinkItem = namedtuple('SinkItem', ['ID', 'sink_str'])
@@ -1810,6 +1808,22 @@ class Topology():
         from topologicpy.Dictionary import Dictionary
         import uuid
         
+        try:
+            import ifcopenshell
+            import ifcopenshell.geom
+        except:
+            print("Topology.ByIFCFile - Warning: Installing required ifcopenshell library.")
+            try:
+                os.system("pip install ifcopenshell")
+            except:
+                os.system("pip install ifcopenshell --user")
+            try:
+                import ifcopenshell
+                import ifcopenshell.geom
+                print("Topology.ByIFCFile - Warning: ifcopenshell library installed correctly.")
+            except:
+                warnings.warn("Topology.ByIFCFile - Error: Could not import ifcopenshell. Please try to install ifcopenshell manually. Returning None.")
+                return None
         if not file:
             print("Topology.ByIFCFile - Error: the input file parameter is not a valid file. Returning None.")
             return None

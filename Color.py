@@ -35,7 +35,23 @@ class Color:
         list
             The color expressed as an [r, g, b] or an [r, g, b, a] list.
         """
-        import webcolors
+        import warnings
+        import os
+        try:
+            import webcolors
+        except:
+            print("Color.ByCSSNamedColor - Information: Installing required webcolors library.")
+            try:
+                os.system("pip install webcolors")
+            except:
+                os.system("pip install webcolors --user")
+            try:
+                import webcolors
+                print("Color.ByCSSNamedColor - Information: webcolors library installed correctly.")
+            except:
+                warnings.warn("Color.ByCSSNamedColor - Error: Could not import webcolors library. Please manually install webcolors. Returning None.")
+                return None
+
         if not alpha == None:
             if not 0.0 <= alpha <= 1.0:
                 print("Color.ByCSSNamedColor - Error: alpha is not within the valid range of 0 to 1. Returning None.")
@@ -262,9 +278,23 @@ class Color:
         str
             The CSS named color that most closely matches the input color.
         """
-
-        import webcolors
         import numbers
+        import warnings
+        import os
+        try:
+            import webcolors
+        except:
+            print("Color.CSSNamedColor - Information: Installing required webcolors library.")
+            try:
+                os.system("pip install webcolors")
+            except:
+                os.system("pip install webcolors --user")
+            try:
+                import webcolors
+                print("Color.CSSNamedColor - Information: webcolors library installed correctly.")
+            except:
+                warnings.warn("Color.CSSNamedColor - Error: Could not import webcolors library. Please manually install webcolors. Returning None.")
+                return None
 
         if not isinstance(color, list):
             print("Color.CSSNamedColor - Error: The input color parameter is not a valid list. Returning None.")

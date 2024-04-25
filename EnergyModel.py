@@ -37,22 +37,6 @@ except:
     except:
         warnings.warn("EnergyModel - Error: Could not import tqdm.")
 
-try:
-    import openstudio
-    openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
-except:
-    print("EnergyModel - Installing required openstudio library.")
-    try:
-        os.system("pip install openstudio")
-    except:
-        os.system("pip install openstudio --user")
-    try:
-        import openstudio
-        openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
-        print("EnergyModel - openstudio library installed correctly.")
-    except:
-        warnings.warn("EnergyModel - Error: Could not import openstudio.")
-
 class EnergyModel:
     '''
     @staticmethod
@@ -99,8 +83,25 @@ class EnergyModel:
             The OSM model.
 
         """
+        try:
+            import openstudio
+            openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+        except:
+            print("EnergyModel.ByOSMPath - Information: Installing required openstudio library.")
+            try:
+                os.system("pip install openstudio")
+            except:
+                os.system("pip install openstudio --user")
+            try:
+                import openstudio
+                openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+                print("EnergyModel.ByOSMPath - Information: openstudio library installed correctly.")
+            except:
+                warnings.warn("EnergyModel - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
+                return None
+        
         if not path:
-            print("EnergyModel.ByImportedOSM - Error: The input path is not valid. Returning None.")
+            print("EnergyModel.ByOSMPath - Error: The input path is not valid. Returning None.")
             return None
         translator = openstudio.osversion.VersionTranslator()
         osmPath = openstudio.openstudioutilitiescore.toPath(path)
@@ -111,26 +112,6 @@ class EnergyModel:
         else:
             osModel = osModel.get()
         return osModel
-
-    @staticmethod
-    def ByImportedOSM(path: str):
-        """
-        DEPRECATED. DO NOT USE. Instead use Topology.ByOSMPath or Topology.ByOSMFile
-        Creates an EnergyModel from the input OSM file path.
-        
-        Parameters
-        ----------
-        path : string
-            The path to the input .OSM file.
-
-        Returns
-        -------
-        openstudio.openstudiomodelcore.Model
-            The OSM model.
-
-        """
-        print("Topology.ByImportedOSM - WARNING: This method is DEPRECATED. DO NOT USE. Instead use Topology.ByOSMPath")
-        return EnergyModel.ByOSMPath(path=path)
     
     @staticmethod
     def ByTopology(building : topologic.Topology,

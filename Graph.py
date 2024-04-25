@@ -66,33 +66,7 @@ except:
     except:
         warnings.warn("Graph - Error: Could not import tqdm.")
 
-try:
-    from pyvis.network import Network
-except:
-    print("Graph - Installing required pyvis library.")
-    try:
-        os.system("pip install pyvis")
-    except:
-        os.system("pip install pyvis --user")
-    try:
-        from pyvis.network import Network
-        print("Graph - pyvis library installed correctly.")
-    except:
-        rwarnings.warn("Graph - Error: Could not import pyvis")
 
-try:
-    import networkx as nx
-except:
-    print("Graph - Installing required networkx library.")
-    try:
-        os.system("pip install networkx")
-    except:
-        os.system("pip install networkx --user")
-    try:
-        import networkx as nx
-        print("Graph - networkx library installed correctly.")
-    except:
-        warnings.warn("Graph - Error: Could not import networkx.")
 
 class _Tree:
     def __init__(self, node="", *children):
@@ -643,7 +617,7 @@ class Graph:
             from rdflib import URIRef, Literal, Namespace
             from rdflib.namespace import RDF, RDFS
         except:
-            print("Graph.BOTGraph - Installing required rdflib library.")
+            print("Graph.BOTGraph - Information: Installing required rdflib library.")
             try:
                 os.system("pip install rdflib")
             except:
@@ -652,7 +626,7 @@ class Graph:
                 from rdflib import Graph as RDFGraph
                 from rdflib import URIRef, Literal, Namespace
                 from rdflib.namespace import RDF, RDFS
-                print("Graph.BOTGraph - rdflib library installed correctly.")
+                print("Graph.BOTGraph - Information: rdflib library installed correctly.")
             except:
                 warnings.warn("Graph.BOTGraph - Error: Could not import rdflib. Please try to install rdflib manually. Returning None.")
                 return None
@@ -1136,9 +1110,23 @@ class Graph:
         from topologicpy.Graph import Graph
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
-
-        import rdflib
         import random
+
+        try:
+            import rdflib
+        except:
+            print("Graph.BOTGraph - Information: Installing required rdflib library.")
+            try:
+                os.system("pip install rdflib")
+            except:
+                os.system("pip install rdflib --user")
+            try:
+                import rdflib
+                print("Graph.BOTGraph - Information: rdflib library installed correctly.")
+            except:
+                warnings.warn("Graph.BOTGraph - Error: Could not import rdflib. Please try to install rdflib manually. Returning None.")
+                return None
+        
         predicates = ['adjacentto', 'interfaceof', 'containselement', 'connectsto']
         bot_types = ['Space', 'Wall', 'Slab', 'Door', 'Window', 'Element']
 
@@ -1221,7 +1209,21 @@ class Graph:
                   tolerance = 0.0001
                   ):
         
-        from rdflib import Graph as RDFGraph
+        try:
+            from rdflib import Graph as RDFGraph
+        except:
+            print("Graph.ByBOTPath - Information: Installing required rdflib library.")
+            try:
+                os.system("pip install rdflib")
+            except:
+                os.system("pip install rdflib --user")
+            try:
+                from rdflib import Graph as RDFGraph
+                print("Graph.ByBOTPath - Information: rdflib library installed correctly.")
+            except:
+                warnings.warn("Graph.ByBOTPath - Error: Could not import rdflib. Please try to install rdflib manually. Returning None.")
+                return None
+        
         bot_graph = RDFGraph()
         bot_graph.parse(path)
         return Graph.ByBOTGraph(bot_graph,
@@ -1687,12 +1689,29 @@ class Graph:
         from topologicpy.Edge import Edge
         from topologicpy.Graph import Graph
         from topologicpy.Dictionary import Dictionary
-        import ifcopenshell
-        import ifcopenshell.util.placement
-        import ifcopenshell.util.element
-        import ifcopenshell.util.shape
-        import ifcopenshell.geom
-        import sys
+        try:
+            import ifcopenshell
+            import ifcopenshell.util.placement
+            import ifcopenshell.util.element
+            import ifcopenshell.util.shape
+            import ifcopenshell.geom
+        except:
+            print("Graph.ByIFCFile - Warning: Installing required ifcopenshell library.")
+            try:
+                os.system("pip install ifcopenshell")
+            except:
+                os.system("pip install ifcopenshell --user")
+            try:
+                import ifcopenshell
+                import ifcopenshell.util.placement
+                import ifcopenshell.util.element
+                import ifcopenshell.util.shape
+                import ifcopenshell.geom
+                print("Graph.ByIFCFile - Warning: ifcopenshell library installed correctly.")
+            except:
+                warnings.warn("Graph.ByIFCFile - Error: Could not import ifcopenshell. Please try to install ifcopenshell manually. Returning None.")
+                return None
+        
         import random
 
         def vertexAtKeyValue(vertices, key, value):
@@ -1892,7 +1911,28 @@ class Graph:
             The created graph.
         
         """
-        import ifcopenshell
+        try:
+            import ifcopenshell
+            import ifcopenshell.util.placement
+            import ifcopenshell.util.element
+            import ifcopenshell.util.shape
+            import ifcopenshell.geom
+        except:
+            print("Graph.ByIFCPath - Warning: Installing required ifcopenshell library.")
+            try:
+                os.system("pip install ifcopenshell")
+            except:
+                os.system("pip install ifcopenshell --user")
+            try:
+                import ifcopenshell
+                import ifcopenshell.util.placement
+                import ifcopenshell.util.element
+                import ifcopenshell.util.shape
+                import ifcopenshell.geom
+                print("Graph.ByIFCPath - Warning: ifcopenshell library installed correctly.")
+            except:
+                warnings.warn("Graph.ByIFCPath - Error: Could not import ifcopenshell. Please try to install ifcopenshell manually. Returning None.")
+                return None
         if not path:
             print("Graph.ByIFCPath - Error: the input path is not a valid path. Returning None.")
             return None
@@ -6620,12 +6660,24 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        import random
-        import sys
-        import subprocess
+
+        try:
+            import networkx as nx
+        except:
+            print("Graph.NetworkXGraph - Information: Installing required networkx library.")
+            try:
+                os.system("pip install networkx")
+            except:
+                os.system("pip install networkx --user")
+            try:
+                import networkx as nx
+                print("Graph.NetworkXGraph - Infromation: networkx library installed correctly.")
+            except:
+                warnings.warn("Graph - Error: Could not import networkx. Please try to install networkx manually. Returning None.")
+                return None
+        
         if not isinstance(graph, topologic.Graph):
             print("Graph.NetworkXGraph - Error: The input graph is not a valid graph. Returning None.")
             return None
@@ -6931,6 +6983,22 @@ class Graph:
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Color import Color
         from os.path import exists
+
+        try:
+            from pyvis.network import Network
+        except:
+            print("Graph.PyvisGraph - Information: Installing required pyvis library.")
+            try:
+                os.system("pip install pyvis")
+            except:
+                os.system("pip install pyvis --user")
+            try:
+                from pyvis.network import Network
+                print("Graph.PyvisGraph - Information: pyvis library installed correctly.")
+            except:
+                warnings.warn("Graph - Error: Could not import pyvis. Please try to install pyvis manually. Retruning None.")
+                return None
+        
         net = Network(height=str(height)+"px", width="100%", bgcolor=backgroundColor, font_color=fontColor, select_menu=selectMenu, filter_menu=filterMenu, cdn_resources="remote", notebook=notebook)
         if notebook == True:
             net.prep_notebook()

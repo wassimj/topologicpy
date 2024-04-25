@@ -95,24 +95,6 @@ except:
         warnings.warn("DGL - Error: Could not import dgl. The installation of the correct version of the dgl library is not trivial and is highly dependent on your hardward and software configuration. Please consult the dgl installation instructions.")
 
 try:
-    from sklearn import metrics
-    from sklearn.model_selection import KFold
-    from sklearn.metrics import accuracy_score
-except:
-    print("DGL - Installing required scikit-learn (sklearn) library.")
-    try:
-        os.system("pip install scikit-learn")
-    except:
-        os.system("pip install scikit-learn --user")
-    try:
-        from sklearn import metrics
-        from sklearn.model_selection import KFold
-        from sklearn.metrics import accuracy_score
-        print("DGL - scikit-learn (sklearn) library installed correctly.")
-    except:
-        raise Exception("DGL - Error: Could not import scikit-learn (sklearn).")
-
-try:
     from tqdm.auto import tqdm
 except:
     print("DGL - Installing required tqdm library.")
@@ -715,6 +697,20 @@ class _GraphRegressorKFold:
     
     
     def train(self):
+        try:
+            from sklearn.model_selection import KFold
+        except:
+            print("DGL - Installing required scikit-learn (sklearn) library.")
+            try:
+                os.system("pip install scikit-learn")
+            except:
+                os.system("pip install scikit-learn --user")
+            try:
+                from sklearn.model_selection import KFold
+                print("DGL - scikit-learn (sklearn) library installed correctly.")
+            except:
+                warnings.warn("DGL - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
+                return None
         device = torch.device("cpu")
 
         # The number of folds (This should come from the hparams)
@@ -904,6 +900,22 @@ class _GraphClassifierHoldout:
                                                     batch_size=hparams.batch_size,
                                                     drop_last=False)
     def train(self):
+
+        try:
+            from sklearn.metrics import accuracy_score
+        except:
+            print("DGL - Installing required scikit-learn (sklearn) library.")
+            try:
+                os.system("pip install scikit-learn")
+            except:
+                os.system("pip install scikit-learn --user")
+            try:
+                from sklearn.metrics import accuracy_score
+                print("DGL - scikit-learn (sklearn) library installed correctly.")
+            except:
+                warnings.warn("DGL - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
+                return None
+        
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
         # Init the loss and accuracy reporting lists
@@ -951,6 +963,20 @@ class _GraphClassifierHoldout:
             self.validation_loss_list.append(self.validation_loss)
         
     def validate(self):
+        try:
+            from sklearn.metrics import accuracy_score
+        except:
+            print("DGL - Installing required scikit-learn (sklearn) library.")
+            try:
+                os.system("pip install scikit-learn")
+            except:
+                os.system("pip install scikit-learn --user")
+            try:
+                from sklearn.metrics import accuracy_score
+                print("DGL - scikit-learn (sklearn) library installed correctly.")
+            except:
+                warnings.warn("DGL - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
+                return None
         #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         device = torch.device("cpu")
         temp_loss_list = []
@@ -969,6 +995,20 @@ class _GraphClassifierHoldout:
         self.validation_loss = np.mean(temp_loss_list).item()
     
     def test(self):
+        try:
+            from sklearn.metrics import accuracy_score
+        except:
+            print("DGL - Installing required scikit-learn (sklearn) library.")
+            try:
+                os.system("pip install scikit-learn")
+            except:
+                os.system("pip install scikit-learn --user")
+            try:
+                from sklearn.metrics import accuracy_score
+                print("DGL - scikit-learn (sklearn) library installed correctly.")
+            except:
+                warnings.warn("DGL - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
+                return None
         if self.test_dataloader:
             temp_loss_list = []
             temp_acc_list = []
@@ -1073,6 +1113,23 @@ class _GraphClassifierKFold:
                                             lr=self.hparams.lr, maximize=self.hparams.maximize, weight_decay=self.hparams.weight_decay)
 
     def train(self):
+
+        try:
+            from sklearn.model_selection import KFold
+            from sklearn.metrics import accuracy_score
+        except:
+            print("DGL - Installing required scikit-learn (sklearn) library.")
+            try:
+                os.system("pip install scikit-learn")
+            except:
+                os.system("pip install scikit-learn --user")
+            try:
+                from sklearn.model_selection import KFold
+                from sklearn.metrics import accuracy_score
+                print("DGL - scikit-learn (sklearn) library installed correctly.")
+            except:
+                warnings.warn("DGL - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
+                return None
         # The number of folds (This should come from the hparams)
         k_folds = self.hparams.k_folds
 
@@ -1176,6 +1233,20 @@ class _GraphClassifierKFold:
         self.validation_loss_list = self.validation_loss_list[ind]
         
     def validate(self):
+        try:
+            from sklearn.metrics import accuracy_score
+        except:
+            print("DGL - Installing required scikit-learn (sklearn) library.")
+            try:
+                os.system("pip install scikit-learn")
+            except:
+                os.system("pip install scikit-learn --user")
+            try:
+                from sklearn.metrics import accuracy_score
+                print("DGL - scikit-learn (sklearn) library installed correctly.")
+            except:
+                warnings.warn("DGL - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
+                return None
         temp_loss_list = []
         temp_acc_list = []
         self.model.eval()
@@ -1192,6 +1263,22 @@ class _GraphClassifierKFold:
         self.validation_loss = np.mean(temp_loss_list).item()
     
     def test(self):
+
+        try:
+            from sklearn.metrics import accuracy_score
+        except:
+            print("DGL - Installing required scikit-learn (sklearn) library.")
+            try:
+                os.system("pip install scikit-learn")
+            except:
+                os.system("pip install scikit-learn --user")
+            try:
+                from sklearn.metrics import accuracy_score
+                print("DGL - scikit-learn (sklearn) library installed correctly.")
+            except:
+                warnings.warn("DGL - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
+                return None
+        
         if self.testingDataset:
             self.test_dataloader = GraphDataLoader(self.testingDataset,
                                                     batch_size=len(self.testingDataset),
@@ -1724,6 +1811,23 @@ class DGL:
 
         """
 
+        try:
+            from sklearn import metrics
+            from sklearn.metrics import accuracy_score
+        except:
+            print("DGL - Installing required scikit-learn (sklearn) library.")
+            try:
+                os.system("pip install scikit-learn")
+            except:
+                os.system("pip install scikit-learn --user")
+            try:
+                from sklearn import metrics
+                from sklearn.metrics import accuracy_score
+                print("DGL - scikit-learn (sklearn) library installed correctly.")
+            except:
+                warnings.warn("DGL - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
+                return None
+            
         if not isinstance(actual, list):
             print("DGL.ConfusionMatrix - ERROR: The actual input is not a list. Returning None")
             return None
