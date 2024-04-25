@@ -153,7 +153,7 @@ cell_cy2 = Cell.Cylinder(vCy2)
 cc = CellComplex.ByCells([cell_cy,cell_cy2])
 graph_t = Graph.ByTopology(cc, direct=True, directApertures=False, viaSharedTopologies=True,
                             viaSharedApertures=False, toExteriorTopologies=True, toExteriorApertures=False,
-                            toContents=False, useInternalVertex=True, storeBRep=True, tolerance=0.0001)
+                            toContents=False, useInternalVertex=True, storeBREP=True, tolerance=0.0001)
 topology_graph_t =  Graph.Topology(graph_t)
 # plot geometry
 data_gt = Plotly.DataByTopology(topology_graph_t)

@@ -5819,7 +5819,7 @@ class Graph:
             print("Graph.IsBipartite - Error: The input graph is not a valid graph. Returning None.")
             return None
         order = Graph.Order(graph)
-        adjList = Graph.AdjacencyList(graph, tolerance)
+        adjList = Graph.AdjacencyList(graph, tolerance=tolerance)
         return isBipartite(order, adjList)
 
     @staticmethod

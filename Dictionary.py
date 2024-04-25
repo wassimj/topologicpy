@@ -622,6 +622,9 @@ class Dictionary(topologic.Dictionary):
         if not isinstance(dictionary, topologic.Dictionary) and not isinstance(dictionary, dict):
             print("Dictionary.ValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
             return None
+        if not isinstance(key, str):
+            print("Dictionary.ValueAtKey - Error: The input key parameter is not a valid str. Returning None.")
+            return None
         if isinstance(dictionary, dict):
             attr = dictionary[key]
         elif isinstance(dictionary, topologic.Dictionary):
