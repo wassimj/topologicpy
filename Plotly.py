@@ -1119,7 +1119,7 @@ class Plotly:
         marginBottom : int , optional
             The desired bottom margin in pixels. The default is 0.
         mantissa : int , optional
-            The desired number of digits of the mantissa. The default is 4.
+            The desired number of digits of the mantissa. The default is 6.
 
         """
         #import plotly.figure_factory as ff

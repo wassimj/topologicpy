@@ -2008,7 +2008,7 @@ class Wire(Topology):
         direction : list, optional
             The vector representing the direction of the projection. If None, the reverse vector of the receiving face normal will be used. The default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 4.
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 

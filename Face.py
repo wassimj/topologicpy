@@ -843,7 +843,7 @@ class Face(Topology):
         north : list , optional
             The second vector representing the north direction. The default is the positive YAxis ([0,1,0]).
         mantissa : int, optional
-            The length of the desired mantissa. The default is 4.
+            The length of the desired mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 

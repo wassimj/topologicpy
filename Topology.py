@@ -5895,7 +5895,7 @@ class Topology():
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         mantissa : int , optional
-            The desired length of the mantissa for the values listed on the colorbar. The default is 4.
+            The desired length of the mantissa for the values listed on the colorbar. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 

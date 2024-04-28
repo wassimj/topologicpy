@@ -49,7 +49,7 @@ class Vector(list):
         vectorB : list
             The second vector.
         mantissa : int, optional
-            The length of the desired mantissa. The default is 4.
+            The length of the desired mantissa. The default is 6.
 
         Returns
         -------
@@ -121,7 +121,7 @@ class Vector(list):
         vectorA : list
             The input vector.
         mantissa : int, optional
-            The length of the desired mantissa. The default is 4.
+            The length of the desired mantissa. The default is 6.
 
         Returns
         -------
@@ -296,7 +296,7 @@ class Vector(list):
         vectorB : list
             The second vector.
         mantissa : int, optional
-            The length of the desired mantissa. The default is 4.
+            The length of the desired mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -372,7 +372,7 @@ class Vector(list):
         vectorB : list
             The second vector.
         mantissa : int, optional
-            The length of the desired mantissa. The default is 4.
+            The length of the desired mantissa. The default is 6.
         tolerance : float, optional
             the desired tolerance. The default is 0.0001.
 
@@ -575,7 +575,7 @@ class Vector(list):
         vector : list
             The input vector.
         mantissa : int
-            The length of the desired mantissa. The default is 4.
+            The length of the desired mantissa. The default is 6.
 
         Returns
         -------

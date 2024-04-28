@@ -278,7 +278,7 @@ class Helper:
         listA : list
             The input nested list.
         mantissa : int , optional
-            The desired mantissa value. The default is 4.
+            The desired mantissa value. The default is 6.
 
         Returns
         -------
