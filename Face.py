@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
-import topologic
+import topologic_core as topologic
 from topologicpy.Vector import Vector
 from topologicpy.Wire import Wire
 from topologicpy.Topology import Topology
@@ -1872,7 +1872,7 @@ class Face(Topology):
                     warnings.warn("Face.Triangulate - Error: Could not import gmsh. Please try to install gmsh manually. Returning None.")
                     return None
 
-            import topologic
+            import topologic_core as topologic
             from topologicpy.Vertex import Vertex
             from topologicpy.Wire import Wire
             from topologicpy.Face import Face

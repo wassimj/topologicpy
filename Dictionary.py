@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
-import topologic
-from topologic import IntAttribute, DoubleAttribute, StringAttribute, ListAttribute
+import topologic_core as topologic
+from topologic_core import IntAttribute, DoubleAttribute, StringAttribute, ListAttribute
 
 class Dictionary(topologic.Dictionary):
     '''

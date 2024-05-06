@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
-import topologic
+import topologic_core as topologic
 from topologicpy.Aperture import Aperture
 from topologicpy.Dictionary import Dictionary
 import warnings
@@ -5074,7 +5074,7 @@ class Topology():
             The input topology with the identified faces removed.
 
         """
-        from topologic.Vertex import Vertex
+        from topologic_core.Vertex import Vertex
         from topologicpy.Face import Face
 
         if not isinstance(topology, topologic.Topology):

@@ -267,7 +267,7 @@ class Vector(list):
         """
 
         from topologicpy.Vertex import Vertex
-        import topologic
+        import topologic_core as topologic
         if not isinstance(vertices, list):
             return None
         if not isinstance(normalize, bool):

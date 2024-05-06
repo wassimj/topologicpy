@@ -15,7 +15,7 @@
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
 import topologicpy
-import topologic
+import topologic_core as topologic
 
 class Aperture(topologic.Aperture):
     @staticmethod

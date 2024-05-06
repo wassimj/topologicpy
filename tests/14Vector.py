@@ -6,7 +6,7 @@ sys.path.append("C:/Users/wassimj/Documents/GitHub")
 print("Start")
 print("20 Cases")
 import topologicpy
-import topologic
+import topologic_core as topologic
 from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
 from topologicpy.Cluster import Cluster
