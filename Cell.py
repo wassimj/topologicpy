@@ -1076,29 +1076,29 @@ class Cell(Topology):
     def Egg(origin: topologic.Vertex = None, height: float = 1.0, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
                    placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
         """
-        Creates a sphere.
+        Creates an egg-shaped cell.
 
         Parameters
         ----------
         origin : topologic.Vertex , optional
-            The origin location of the sphere. The default is None which results in the sphere being placed at (0, 0, 0).
-        radius : float , optional
-            The radius of the sphere. The default is 0.5.
+            The origin location of the sphere. The default is None which results in the egg-shaped cell being placed at (0, 0, 0).
+        height : float , optional
+            The desired height of of the egg-shaped cell. The default is 1.0.
         uSides : int , optional
-            The number of sides along the longitude of the sphere. The default is 16.
+            The desired number of sides along the longitude of the egg-shaped cell. The default is 16.
         vSides : int , optional
-            The number of sides along the latitude of the sphere. The default is 8.
+            The desired number of sides along the latitude of the egg-shaped cell. The default is 8.
         direction : list , optional
-            The vector representing the up direction of the sphere. The default is [0, 0, 1].
+            The vector representing the up direction of the egg-shaped cell. The default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the egg-shaped cell. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
         topologic.Cell
-            The created sphere.
+            The created egg-shaped cell.
 
         """
 

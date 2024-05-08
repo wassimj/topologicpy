@@ -51,27 +51,35 @@ class Cluster(Topology):
     @staticmethod
     def ByFormula(formula, xRange=None, yRange=None, xString="X", yString="Y"):
         """
-        Creates a cluster of vertices by vvaluating the input formula for a range of x and, optionally, a range of y values.
+        Creates a cluster of vertices by evaluating the input formula for a range of x values and, optionally, a range of y values.
 
         Parameters
         ----------
         formula : str
             A string representing the formula to be evaluated.
-            For 2D formulas, use 'X' for the independent variable. For 3D formulas, use 'X' and 'Y' for the independent variables.
+            For 2D formulas (i.e. Z = 0), use either 'X' (uppercase) or 'Y' (uppercase) for the independent variable.
+            For 3D formulas, use 'X' and 'Y' (uppercase) for the independent variables. The Z value will be evaluated.
+            For 3D formulas, both xRange and yRange MUST be specified.
             You can use standard math functions like 'sin', 'cos', 'tan', 'sqrt', etc.
             For example, 'X**2 + 2*X - sqrt(X)' or 'cos(abs(X)+abs(Y))'
-            xRange : tuple , optional
-                A tuple (start, end, step) representing the range of X values
-                for which the formula should be evaluated.
-                For example, to evaluate for X values from -5 to 5 with a step of 0.1: (-5, 5, 0.1)
-                If the xRange is set to None or not specified:
-                    The method assumes that the formula uses the yString (e.g. 'Y' as in 'Y**2 + 2*Y - sqrt(Y)')
-                    The method will attempt to use the YRange instead for the independent variable.
-            yRange : tuple , optional
-                A tuple (start, end, step) representing the range of Y values
-                for which the formula should be evaluated.
-                            For example, to evaluate for x values from -5 to 5 with a step of 0.1:
-                            (-5, 5, 0.1)
+        xRange : tuple , optional
+            A tuple (start, end, step) representing the range of X values for which the formula should be evaluated.
+            For example, to evaluate Y for X values from -5 to 5 with a step of 0.1, you should specify xRange=(-5, 5, 0.1).
+            If the xRange is set to None or not specified:
+                The method assumes that the formula uses the yString (e.g. 'Y' as in 'Y**2 + 2*Y - sqrt(Y)')
+                The method will attempt to evaluate X based on the specified yRange.
+                xRange and yRange CANNOT be None or unspecified at the same time. One or the other must be specified.
+        yRange : tuple , optional
+            A tuple (start, end, step) representing the range of Y values for which the formula should be evaluated.
+            For example, to evaluate X for Y values from -5 to 5 with a step of 0.1, you should specify yRange=(-5,5,0.1).
+            If the yRange is set to None or not specified:
+                The method assumes that the formula uses the xString (e.g. 'X' as in 'X**2 + 2*X - sqrt(X)')
+                The method will attempt to evaluate Y based on the specified xRange.
+                xRange and yRange CANNOT be None or unspecified at the same time. One or the other must be specified.
+        xString : str , optional
+            The string used to represent the X independent variable. The default is 'X' (uppercase).
+        yString : str , optional
+            The string used to represent the Y independent variable. The default is 'Y' (uppercase).
 
         Returns:
             topologic.Cluster
