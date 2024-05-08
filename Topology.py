@@ -4418,6 +4418,64 @@ class Topology():
         return vst
 
     @staticmethod
+    def IsInstance(topology, type: str):
+        """
+        Returns True if the input topology is an instance of the class specified by the input type string.
+        
+        Parameters
+        ----------
+        topology : topologic.Topology
+            The input topology.
+        type : string
+            The topology type. This can be one of:
+            "Vertex"
+            "Edge"
+            "Wire"
+            "Face"
+            "Shell"
+            "Cell"
+            "CellComplex"
+            "Cluster"
+            "Topology"
+            "Graph"
+            "Aperture"
+            "Dictionary"
+
+        Returns
+        -------
+        bool
+            True if the input topology is an instance of the class defined by the input type string. False otherwise.
+        """
+
+        if "vertex" in type.lower():
+            return isinstance(topology, topologic.Vertex)
+        elif "edge" in type.lower():
+            return isinstance(topology, topologic.Edge)
+        elif "wire" in type.lower():
+            return isinstance(topology, topologic.Wire)
+        elif "face" in type.lower():
+            return isinstance(topology, topologic.Face)
+        elif "shell" in type.lower():
+            return isinstance(topology, topologic.Shell)
+        elif "cellcomplex" in type.lower(): #Hack to test for cellcomplex before cell as they share the same prefix.
+            return isinstance(topology, topologic.CellComplex)
+        elif "cell" in type.lower():
+            return isinstance(topology, topologic.Cell)
+        elif "cluster" in type.lower():
+            return isinstance(topology, topologic.Cluster)
+        elif "topology" in type.lower():
+            return isinstance(topology, topologic.Topology)
+        elif "graph" in type.lower():
+            return isinstance(topology, topologic.Graph)
+        elif "aperture" in type.lower():
+            return isinstance(topology, topologic.Aperture)
+        elif "dictionary" in type.lower():
+            return isinstance(topology, topologic.Dictionary)
+        else:
+            print("Topology.IsInstance - Error: The type input string is not a known topology type. Returning None.")
+            return None
+
+    @staticmethod
     def IsPlanar(topology, tolerance=0.0001):
         """
         Returns True if all the vertices of the input topology are co-planar. Returns False otherwise.
