@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
-import topologic
+import topologic_core as topologic
 from topologicpy.Vertex import Vertex
 from topologicpy.Vector import Vector
 from topologicpy.Topology import Topology
@@ -803,7 +803,7 @@ class Edge(Topology):
         """
         import numpy as np
         from numpy.linalg import norm
-        import topologic
+        import topologic_core as topologic
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 

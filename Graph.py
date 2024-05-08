@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
-import topologic
+import topologic_core as topologic
 from topologicpy.Dictionary import Dictionary
 from topologicpy.Topology import Topology
 from topologicpy.Aperture import Aperture
@@ -518,7 +518,7 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
-        import topologic
+        import topologic_core as topologic
 
         if not isinstance(graph, topologic.Graph):
             print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is not a valid graph. Returning None.")
@@ -5613,7 +5613,7 @@ class Graph:
             The computed global clustering coefficient.
 
         """
-        import topologic
+        import topologic_core as topologic
 
         def global_clustering_coefficient(adjacency_matrix):
             total_triangles = 0
@@ -6078,7 +6078,7 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
-        import topologic
+        import topologic_core as topologic
 
         def local_clustering_coefficient(adjacency_matrix, node):
             """
@@ -6527,7 +6527,7 @@ class Graph:
         from topologicpy.Graph import Graph
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        import topologic
+        import topologic_core as topologic
         from tqdm.auto import tqdm
 
         if not isinstance(face, topologic.Face):

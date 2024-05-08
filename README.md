@@ -39,6 +39,7 @@ topologicpy depends on the following python libraries which will be installed au
 * [ipfshttpclient](https://pypi.org/project/ipfshttpclient/) >= 0.7.0
 * [web3](https://web3py.readthedocs.io/en/stable/) >=5.30.0
 * [openstudio](https://openstudio.net/) >= 3.4.0
+* [topologic_core](https://pypi.org/project/topologic_core/) >= 6.0.6
 * [lbt-ladybug](https://pypi.org/project/lbt-ladybug/) >= 0.25.161
 * [lbt-honeybee](https://pypi.org/project/lbt-honeybee/) >= 0.6.12
 * [honeybee-energy](https://pypi.org/project/honeybee-energy/) >= 1.91.49

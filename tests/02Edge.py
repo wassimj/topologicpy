@@ -5,7 +5,7 @@ sys.path.append("C:/Users/wassimj/Documents/GitHub")
 
 #Importing libraries
 import topologicpy
-import topologic
+import topologic_core as topologic
 from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
 from topologicpy.Cluster import Cluster

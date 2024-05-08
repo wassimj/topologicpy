@@ -16,7 +16,7 @@
 
 from binascii import a2b_base64
 from re import A
-import topologic
+import topologic_core as topologic
 from topologicpy.Topology import Topology
 import math
 import itertools
@@ -2282,7 +2282,7 @@ class Wire(Topology):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
-        import topologic
+        import topologic_core as topologic
         import math
 
         def subtrees_to_edges(subtrees, polygon, slope):

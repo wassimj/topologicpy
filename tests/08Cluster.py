@@ -5,7 +5,7 @@ import sys
 sys.path.append("C:/Users/wassimj/Documents/GitHub")
 
 import topologicpy
-import topologic
+import topologic_core as topologic
 from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
 from topologicpy.Wire import Wire

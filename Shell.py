@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
-import topologic
+import topologic_core as topologic
 from topologicpy.Topology import Topology
 import math
 import os
@@ -1270,7 +1270,7 @@ class Shell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        import topologic
+        import topologic_core as topologic
         import math
 
         def nearest_vertex_2d(v, vertices, tolerance=0.001):
@@ -1436,7 +1436,7 @@ class Shell(Topology):
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-        import topologic
+        import topologic_core as topologic
         import math
 
         if not isinstance(face, topologic.Face):

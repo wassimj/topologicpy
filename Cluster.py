@@ -15,7 +15,7 @@
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
 from topologicpy.Topology import Topology
-import topologic
+import topologic_core as topologic
 import os
 import warnings
 

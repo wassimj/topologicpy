@@ -109,7 +109,7 @@ except:
         warnings.warn("Honeybee - Error: Could not import ladybug-geometry")
 
 import json
-import topologic
+import topologic_core as topologic
 
 class Honeybee:
     @staticmethod
