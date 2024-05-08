@@ -1514,33 +1514,6 @@ class DGL:
         accuracy = round(float(correct) / float(len(predicted)), mantissa)
         return {"accuracy":accuracy, "correct":correct, "mask":mask, "size":size, "wrong":wrong}
     
-    @staticmethod
-    def RMSE(actual, predicted, mantissa: int = 6):
-        """
-        WARNING: This method is DEPRECATED. Please use DGL.Performance(actual, predicted, mantissa)
-        Computes the accuracy based on the mean squared error of the input predictions based on the input actual values. This is to be used only with regression not with classification.
-
-        Parameters
-        ----------
-        actual : list
-            The input list of actual values.
-        predicted : list
-            The input list of predicted values.
-        mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
-        
-        Returns
-        -------
-        float
-            The RMSE value.
-        """
-        print("DGL.RMSE - WARNING: This method is DEPRECTAED. Please use instead DGL.Performance(actual, predicted, mantissa)")
-        if len(predicted) < 1 or len(actual) < 1 or not len(predicted) == len(actual):
-            return None
-        size = len(predicted)
-        mse = F.mse_loss(torch.tensor(predicted), torch.tensor(actual))
-        return round(torch.sqrt(mse).item(), mantissa)
-    
     def Performance(actual, predicted, mantissa: int = 6):
         """
         Computes regression model performance measures. This is to be used only with regression not with classification.
