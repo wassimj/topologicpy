@@ -97,7 +97,7 @@ class EnergyModel:
                 openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
                 print("EnergyModel.ByOSMPath - Information: openstudio library installed correctly.")
             except:
-                warnings.warn("EnergyModel - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
+                warnings.warn("EnergyModel.ByOSMPath - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
                 return None
         
         if not path:
@@ -176,6 +176,22 @@ class EnergyModel:
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        try:
+            import openstudio
+            openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+        except:
+            print("EnergyModel.ByTopology - Information: Installing required openstudio library.")
+            try:
+                os.system("pip install openstudio")
+            except:
+                os.system("pip install openstudio --user")
+            try:
+                import openstudio
+                openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+                print("EnergyModel.ByTopology - Information: openstudio library installed correctly.")
+            except:
+                warnings.warn("EnergyModel.ByTopology - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
+                return None
 
         def getKeyName(d, keyName):
             keys = d.Keys()
@@ -531,6 +547,22 @@ class EnergyModel:
 
         """
         from os.path import exists
+        try:
+            import openstudio
+            openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+        except:
+            print("EnergyModel.ByOSMPath - Information: Installing required openstudio library.")
+            try:
+                os.system("pip install openstudio")
+            except:
+                os.system("pip install openstudio --user")
+            try:
+                import openstudio
+                openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+                print("EnergyModel.ExportToGbXML - Information: openstudio library installed correctly.")
+            except:
+                warnings.warn("EnergyModel.ExportToGbXML - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
+                return None
         
         print("EnergyModel.ExportToGbXML - Warning: This method is deprecated. Please do NOT use. Instead use EnergyModel.ExportToGBXML.")
         # Make sure the file extension is .xml
@@ -565,6 +597,22 @@ class EnergyModel:
 
         """
         from os.path import exists
+        try:
+            import openstudio
+            openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+        except:
+            print("EnergyModel.ExportToGBXML - Information: Installing required openstudio library.")
+            try:
+                os.system("pip install openstudio")
+            except:
+                os.system("pip install openstudio --user")
+            try:
+                import openstudio
+                openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+                print("EnergyModel.ExportToGBXML - Information: openstudio library installed correctly.")
+            except:
+                warnings.warn("EnergyModel.ExportToGBXML - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
+                return None
         
         # Make sure the file extension is .xml
         ext = path[len(path)-4:len(path)]
@@ -572,7 +620,7 @@ class EnergyModel:
             path = path+".xml"
         
         if not overwrite and exists(path):
-            print("EnergyModel.ExportToGbXML - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            print("EnergyModel.ExportToGBXML - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
             return None
 
         return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, openstudio.openstudioutilitiescore.toPath(path))
@@ -599,6 +647,22 @@ class EnergyModel:
 
         """
         from os.path import exists
+        try:
+            import openstudio
+            openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+        except:
+            print("EnergyModel.ExportToOSM - Information: Installing required openstudio library.")
+            try:
+                os.system("pip install openstudio")
+            except:
+                os.system("pip install openstudio --user")
+            try:
+                import openstudio
+                openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+                print("EnergyModel.ExportToOSM - Information: openstudio library installed correctly.")
+            except:
+                warnings.warn("EnergyModel.ExportToOSM - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
+                return None
         
         # Make sure the file extension is .osm
         ext = path[len(path)-4:len(path)]
@@ -629,6 +693,22 @@ class EnergyModel:
             The gbxml string.
 
         """
+        try:
+            import openstudio
+            openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+        except:
+            print("EnergyModel.GbXMLString - Information: Installing required openstudio library.")
+            try:
+                os.system("pip install openstudio")
+            except:
+                os.system("pip install openstudio --user")
+            try:
+                import openstudio
+                openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+                print("EnergyModel.GbXMLString - Information: openstudio library installed correctly.")
+            except:
+                warnings.warn("EnergyModel.GbXMLString - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
+                return None
         return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXMLString(model)
     
     @staticmethod
@@ -647,6 +727,22 @@ class EnergyModel:
             The gbxml string.
 
         """
+        try:
+            import openstudio
+            openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+        except:
+            print("EnergyModel.GBXMLString - Information: Installing required openstudio library.")
+            try:
+                os.system("pip install openstudio")
+            except:
+                os.system("pip install openstudio --user")
+            try:
+                import openstudio
+                openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+                print("EnergyModel.GBXMLString - Information: openstudio library installed correctly.")
+            except:
+                warnings.warn("EnergyModel.GBXMLString - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
+                return None
         return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXMLString(model)
     
     @staticmethod
@@ -771,6 +867,22 @@ class EnergyModel:
         """
         import os
         import time
+        try:
+            import openstudio
+            openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+        except:
+            print("EnergyModel.Run - Information: Installing required openstudio library.")
+            try:
+                os.system("pip install openstudio")
+            except:
+                os.system("pip install openstudio --user")
+            try:
+                import openstudio
+                openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+                print("EnergyModel.Run - Information: openstudio library installed correctly.")
+            except:
+                warnings.warn("EnergyModel.Run - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
+                return None
         def deleteOldFiles(path):
             onemonth = (time.time()) - 30 * 86400
             try:
