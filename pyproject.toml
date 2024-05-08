@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "topologicpy"
+dynamic = ["version"]
+authors = [
+  { name="Wassim Jabi", email="wassim.jabi@gmail.com" },
+]
+description = "An Advanced Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction."
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = '>=3.8, <3.13'
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy>=1.18.0",
+    "scipy>=1.4.1",
+    "pandas",
+    "tqdm",
+    "plotly",
+    "lark",
+    "topologic_core>=7.0.1",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest-xdist>=2.4.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/wassimj/TopologicPy"
+"Bug Tracker" = "https://github.com/wassimj/TopologicPy/issues"
+"Documentation" = "https://topologic.app/topologicpy_doc/"
+
+[tool.setuptools.dynamic]
+# https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html#dynamic-metadata
+# v61.0.0 offers:
+version = {attr = "topologicpy.__version__"}
+
+[tool.pytest.ini_options]
+minversion = "6.0.0"
+testpaths = ["tests"]
+python_files = "test*.py"
+addopts = "-nauto --strict-markers --strict-config -v"
+# always run in parallel (requires pytest-xdist to be installed)
+# and enable strict mode: require all markers
+# to be defined and raise on invalid config values
+# treat xpasses as test failures so they get converted to regular tests as soon as possible
+xfail_strict = true
