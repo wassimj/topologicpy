@@ -10,7 +10,7 @@ authors = [
 description = "An Advanced Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction."
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = '>=3.8, <3.13'
+requires-python = '>=3.8, <3.14'
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
