@@ -17,10 +17,6 @@
 import sys
 import os, re
 from sys import platform
+from .version import __version__
 
-__version__ = '0.6.0'
 __version_info__ = tuple([ int(num) for num in __version__.split('.')])
-
-
-import topologic_core as topologic
-

@@ -1,0 +1,171 @@
+name: build
+on:
+  pull_request:
+  push:
+    branches:
+      - '**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  prepare-build-info:
+    if: true
+    name: Prepare Build Information
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Obtain tag name (if set), version, and human readable name
+        id: got-tag
+        run: |
+            git tag --format='%(refname:strip=2)%09%(objectname:short)%09%(creatordate:short)%09%(authorname)%09%(subject)' --sort=-creatordate
+            echo "tagname=`git tag --points-at ${{ github.sha }} | head -n 1`" >> "$GITHUB_OUTPUT"
+            echo "anyname=`git describe --abbrev=0 --tags --always ${{ github.sha }} | head -n 1`" >> "$GITHUB_OUTPUT"
+            echo "anyversion=`git describe --abbrev=0 --tags --always ${{ github.sha }} | head -n 1 | sed 's/^v//'`" >> "$GITHUB_OUTPUT"
+      - name: Do not break process if obtained `anyversion` is valid
+        run: |
+          re='^([0-9]+\.)([0-9]+\.)([0-9]+)(-(dev|prod))?$'
+          if ! [[ "${{ steps.got-tag.outputs.anyversion }}" =~ $re ]] ; then
+            echo "Error: Incorrect version obtained from git tag; must be in the format of '#.#.#' (for git tag 'v#.#.#'): ${{ steps.got-tag.outputs.anyversion }}" >&2; exit 1
+          else
+            echo "Obtained version from git tag: ${{ steps.got-tag.outputs.anyversion }}"
+          fi
+    outputs:
+      tagname: ${{ steps.got-tag.outputs.tagname }}
+      anyname: ${{ steps.got-tag.outputs.anyname }}
+      anyversion: ${{ steps.got-tag.outputs.anyversion }}
+      branchname: ${{ github.head_ref || github.ref_name }}
+
+  build:
+    runs-on: ubuntu-latest
+    name: Build Universal Wheel
+    needs: [prepare-build-info]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: '**/pyproject.toml'
+      - name: Set project version from git tag/readable name
+        run: echo "__version__ = '${{ needs.prepare-build-info.outputs.anyversion }}'" > src/topologicpy/version.py
+      - name: Install dependencies
+        run: |
+          pip install setuptools wheel build
+      - name: Build distibutive
+        run: |
+          python -m build
+      - name: List files
+        run: |
+          ls -R dist/
+      - name: Upload artifact v3.12
+        uses: actions/upload-artifact@v4
+        with:
+          name: topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
+          path: dist/topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
+          if-no-files-found: error
+          retention-days: 60
+
+  test:
+    name: Test with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    runs-on: ${{ matrix.os }}
+    needs:
+      - prepare-build-info
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: '**/pyproject.toml'
+      - name: Ensure latest pip
+        run: python -m pip install --upgrade pip
+      - name: Set version from git tag/readable name (${{ needs.prepare-build-info.outputs.anyversion }})
+        run: echo "__version__ = '${{ needs.prepare-build-info.outputs.anyversion }}'" > src/topologicpy/version.py
+      - name: Install dependencies
+        run: |
+          pip install -e '.[test]'
+      - name: Run tests
+        run: pytest
+
+  publish-pypi-release:
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(needs.prepare-build-info.outputs.tagname, 'v') && github.event_name != 'pull_request' && (needs.prepare-build-info.outputs.branchname == 'prerelease' || needs.prepare-build-info.outputs.branchname == 'main') }}
+    needs:
+      - prepare-build-info
+      - build
+      - test
+    name: Consider & Publish PyPI Release
+    permissions:
+      id-token: write
+    environment:
+      name: release
+      url: https://pypi.org/p/topologicpy
+    steps:
+      - name: Download all artifact files (.whl)
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+      - name: Display new structure of downloaded files
+        # Skip '-linux_' builds if found, PyPI rejects them; use -manylinux*.
+        run: |
+          mkdir -p dist
+          find ./all-artifacts/ -type f -iname "*.whl" -exec mv {} ./dist/ \;
+          find ./dist/ -type f -iname "*-linux_*.whl" -exec rm {} \;
+          ls -R dist
+      - name: Publish package ${{ needs.prepare-build-info.outputs.tagname }} distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          print-hash: true
+
+  draft-github-release:
+    needs:
+      - prepare-build-info
+      - publish-pypi-release
+    if: ${{ startsWith(needs.prepare-build-info.outputs.tagname, 'v') && github.event_name != 'pull_request' && needs.prepare-build-info.outputs.branchname == 'main' }}
+    name: Consider & Draft GitHub Release Page
+    runs-on: ubuntu-latest
+    permissions:
+      # IMPORTANT: mandatory for GitHub Releases
+      contents: write
+    steps:
+      - name: Download all artifact files (.whl)
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+      - name: Display structure of downloaded files
+        run: ls -R all-artifacts
+      - name: Draft GitHub Release Page ${{ needs.prepare-build-info.outputs.tagname }}
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: true
+          prerelease: false
+          release_name: ${{ needs.prepare-build-info.outputs.tagname }}
+          tag_name: ${{ needs.prepare-build-info.outputs.tagname }}
+          body: Changes in this Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Release artifact topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: all-artifacts/topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-any.whl/topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
+          asset_name: topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
+          asset_content_type: application/zip
