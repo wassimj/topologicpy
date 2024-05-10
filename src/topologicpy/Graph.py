@@ -17,7 +17,6 @@
 import topologic_core as topologic
 from topologicpy.Dictionary import Dictionary
 from topologicpy.Topology import Topology
-from topologicpy.Aperture import Aperture
 from topologicpy.Vertex import Vertex
 import random
 import time

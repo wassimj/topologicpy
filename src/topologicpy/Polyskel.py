@@ -23,17 +23,17 @@ import os
 import warnings
 
 try:
-	from euclid3 import *
+	from euclid import *
 except:
-	print("Polyskel - Installing required euclid3 library.")
+	print("Polyskel - Installing required euclid library.")
 	try:
-		os.system("pip install euclid3")
+		os.system("pip install euclid")
 	except:
-		os.system("pip install euclid3 --user")
+		os.system("pip install euclid --user")
 	try:
-		from euclid3 import *
+		from euclid import *
 	except:
-		warnings.warn("Polyskel - ERROR: Could not import euclid3.")
+		warnings.warn("Polyskel - ERROR: Could not import euclid.")
 
 log = logging.getLogger("__name__")
 
@@ -129,6 +129,7 @@ class _LAVertex:
 		self.lav = None
 		self._valid = True  # TODO this might be handled better. Maybe membership in lav implies validity?
 
+		import operator
 		creator_vectors = (edge_left.v.normalized() * -1, edge_right.v.normalized())
 		if direction_vectors is None:
 			direction_vectors = creator_vectors

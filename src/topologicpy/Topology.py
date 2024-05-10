@@ -5132,8 +5132,7 @@ class Topology():
             The input topology with the identified faces removed.
 
         """
-        from topologic_core.Vertex import Vertex
-        from topologicpy.Face import Face
+        from topologicpy.Vertex import Vertex
 
         if not isinstance(topology, topologic.Topology):
             return None
