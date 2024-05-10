@@ -63,7 +63,7 @@ jobs:
       - name: List files
         run: |
           ls -R dist/
-      - name: Upload artifact v3.12
+      - name: Upload universal wheel artifact (py3, any platform)
         uses: actions/upload-artifact@v4
         with:
           name: topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
@@ -80,14 +80,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Add "3.13" when 'numpy' starts working with Python 3.13.
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
+        env:
+          # Reference: https://github.com/actions/setup-python/issues/862
+          # To solve: "A new release of pip is available: ... -> ..."
+          PIP_DISABLE_PIP_VERSION_CHECK: 1
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: true
           cache: pip
           cache-dependency-path: '**/pyproject.toml'
       - name: Ensure latest pip
@@ -166,6 +172,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: all-artifacts/topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-any.whl/topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
+          asset_path: all-artifacts/topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl/topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
           asset_name: topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
           asset_content_type: application/zip
