@@ -756,7 +756,7 @@ class Face(Topology):
         elif placement.lower() == "upperright":
             arrow = Topology.Translate(arrow, -radius, -radius, 0)
         arrow = Topology.Place(arrow, originA=Vertex.Origin(), originB=origin)
-        arrow = Topology.Orient(arrow, orign=origin, direction=direction)
+        arrow = Topology.Orient(arrow, origin=origin, direction=direction)
         return arrow
 
     @staticmethod
