@@ -4440,6 +4440,7 @@ class Topology():
             "Graph"
             "Aperture"
             "Dictionary"
+            "Context"
 
         Returns
         -------
@@ -4471,6 +4472,8 @@ class Topology():
             return isinstance(topology, topologic.Aperture)
         elif "dictionary" in type.lower():
             return isinstance(topology, topologic.Dictionary)
+        elif "context" in type.lower():
+            return isinstance(topology, topologic.Context)
         else:
             print("Topology.IsInstance - Error: The type input string is not a known topology type. Returning None.")
             return None

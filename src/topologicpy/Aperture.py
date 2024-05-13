@@ -34,7 +34,8 @@ class Aperture(topologic.Aperture):
             The topology of the input aperture.
 
         """
-        if not isinstance(aperture, topologic.Aperture):
+        from topologicpy.Topology import Topology
+        if not Topology.IsInstance(aperture, "aperture"):
             print("Aperture.Topology - Error: The input aperture parameter is not a valid topologic aperture. Returning None.")
             return None
         return topologic.Aperture.Topology(aperture)
@@ -57,7 +58,8 @@ class Aperture(topologic.Aperture):
             The created aperture.
 
         """
-        if not isinstance(topology, topologic.Topology):
+        from topologicpy.Topology import Topology
+        if not Topology.IsInstance(topology, "topology"):
             print("Aperture.ByTopologyContext - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
         if not isinstance(context, topologic.Context):

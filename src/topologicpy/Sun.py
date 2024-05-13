@@ -16,7 +16,7 @@
 
 import os
 import warnings
-
+import topologic_core as topologic
 try:
     import ephem
 except:
@@ -587,6 +587,13 @@ class Sun():
             The sun path represented as a wire.
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Dictionary import Dictionary
+        if origin == None:
+            origin = Vertex.Origin()
+        if startTime == None:
+            startTime = Sun.Sunrise(latitude=latitude, longitude=longitude, date=date)
+        if endTime == None:
+            endTime = Sun.Sunset(latitude=latitude, longitude=longitude, date=date)
         vertices = Sun.VerticesByDate(latitude=latitude, longitude=longitude, date=date,
                                       startTime=startTime, endTime=endTime, interval=interval,
                                       origin=origin, radius=radius, north=north)
@@ -600,6 +607,9 @@ class Sun():
                 v = Wire.VertexByParameter(wire, u)
                 vertices.append(v)
             wire = Wire.ByVertices(vertices, close=False)
+        d = Dictionary.ByKeysValues(["latitude", "longitude", "date", "startTime", "endTime", "interval", "type"],
+                                    [latitude, longitude, str(date), str(startTime), str(endTime), interval, "date"])
+        wire = Topology.SetDictionary(wire, d)
         return wire
 
     @staticmethod
@@ -667,9 +677,9 @@ class Sun():
         hour : datetime
             The input hour.
         startDay : integer , optional
-            The desired start day to compute the sun location. The default is 1.
+            The desired start day of the year to compute the sun location. The default is 1.
         endDay : integer , optional
-            The desired end day to compute the sun location. The default is 365.
+            The desired end day of the year to compute the sun location. The default is 365.
         interval : int , optional
             The interval in days to compute the sun location. The default is 5.
         origin : topologic.Vertex , optional
@@ -689,7 +699,8 @@ class Sun():
         """
 
         from topologicpy.Wire import Wire
-
+        from topologicpy.Dictionary import Dictionary
+        
         vertices = Sun.VerticesByHour(latitude=latitude, longitude=longitude, hour=hour,
                                       startDay=startDay, endDay=endDay, interval=interval,
                                       origin=origin, radius=radius, north=north)
@@ -703,10 +714,13 @@ class Sun():
                 v = Wire.VertexByParameter(wire, u)
                 vertices.append(v)
             wire = Wire.ByVertices(vertices, close=True)
+        d = Dictionary.ByKeysValues(["latitude", "longitude", "hour", "startDay", "endDay", "interval", "type"],
+                                    [latitude, longitude, hour, startDay, endDay, interval, "hour"])
+        wire = Topology.SetDictionary(wire, d)
         return wire
 
     @staticmethod
-    def Diagram(latitude, longitude, minuteInterval=10, dayInterval=5,
+    def Diagram(latitude, longitude, minuteInterval=30, dayInterval=15,
                 origin=None, radius=0.5, uSides=180, vSides=180, north=0,
                 compass = False, shell=False):
         """
@@ -718,12 +732,10 @@ class Sun():
             The input latitude. See https://en.wikipedia.org/wiki/Latitude.
         longitude : float
             The input longitude. See https://en.wikipedia.org/wiki/Longitude.
-        hour : datetime
-            The input hour.
         minuteInterval : int , optional
-            The interval in minutes to compute the sun location. The default is 10.
+            The interval in minutes to compute the sun location for the date path. The default is 30.
         dayInterval : int , optional
-            The interval in days to compute the sun location. The default is 5.
+            The interval in days for the hourly path to compute the sun location. The default is 15.
         origin : topologic.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
         radius : float , optional
@@ -735,98 +747,111 @@ class Sun():
         north : float, optional
             The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.
         compass : bool , optional
-            If set to True, a compass is included. Othwerwise, it is is not.
+            If set to True, a compass (shell) is included. Othwerwise, it is is not.
         shell : bool , optional
-            If set to True, a shell of the total surface of the sun paths is incldued. Otherwise, it is not.
+            If set to True, the total surface (shell) of the sun paths is incldued. Otherwise, it is not.
 
         Returns
         -------
-        topologic.Cluster
-            The sun diagram.
+        dict
+            A dictionary of the sun diagram shapes. The keys in this dictionary are:
+            - 'date_paths': These are the sun paths (wire) for the winter solstice, equinox, and summer solstice
+            - 'hourly_paths': These are the figure-8 (wire) for the sun location on the same hour on each selected day of the year.
+            - 'shell': This is the total surface (shell) of the sun paths. This is included only if the shell option is set to True.
+            - 'compass': This is the compass (shell) on the ground. It is made of 36 sides and 10 rings. This is included only
+               if the compass option is set to True.
+            - 'center' : This is a cross-shape (wire) at the center of the diagram. This is included only if the compass option is set to True.
+            - 'ground' : This is a circle (face) on the ground. It is made of 36 sides. This is included only if
+               the compass option is set to False.
         """
 
         from datetime import datetime
         from datetime import timedelta
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
 
+        if origin == None:
+            origin = Vertex.Origin()
+
+        cutter = Cell.Prism(origin=origin, width=radius*4, length=radius*4, height=radius*2)
+        cutter = Topology.Rotate(cutter, origin=origin, angle=-north)
+        cutter = Topology.Translate(cutter, 0,0,-radius)
         now = datetime.now()
         year = now.year
-        objects = []
-        monthly_paths = []
+        diagram = {}
         winter_solstice = Sun.WinterSolstice(latitude=latitude, year=year)
         summer_solstice = Sun.SummerSolstice(latitude=latitude, year=year)
-        equinox = Sun.SpringEquinox(latitude=latitude, year=year)
+        equinox = Sun.AutumnEquinox(latitude=latitude, year=year)
         dates = [winter_solstice, equinox, summer_solstice]
+        date_paths = []
         for date in dates:
-            startTime = Sun.Sunrise(latitude=latitude, longitude=longitude, date=date) - timedelta(hours=1)
-            endTime = Sun.Sunset(latitude=latitude, longitude=longitude, date=date) + timedelta(hours=1)
+            startTime = Sun.Sunrise(latitude=latitude, longitude=longitude, date=date) - timedelta(hours=2)
+            endTime = Sun.Sunset(latitude=latitude, longitude=longitude, date=date) + timedelta(hours=2)
             path = Sun.PathByDate(latitude=latitude, longitude=longitude, date=date,
                                   startTime=startTime, endTime=endTime, interval=minuteInterval,
                                  origin=origin, radius=radius, sides=uSides, north=north)
-            monthly_paths.append(path)
-        
-        
+            # Capture the path's dictionary to re-apply later
+            d = Topology.Dictionary(path)
+            # Clip the path to above ground level
+            path = Topology.Difference(path, cutter)
+            path = Topology.SetDictionary(path, d)
+            date_paths.append(path)
+        diagram['date_paths'] = date_paths
+        # Hourly paths
         hourly_paths = []
         for hour in range (0, 24, 1):
-            hourly_path = Sun.PathByHour(latitude, longitude, hour, startDay=1, endDay=365, interval=dayInterval,
+            hourly_path = Sun.PathByHour(latitude, longitude, hour, startDay=0, endDay=365, interval=dayInterval,
                                          origin=origin, radius=radius, sides=vSides*2, north=north)
-            hourly_paths.append(hourly_path)
-        cutter = Cell.Prism(origin=origin, width=radius*4, length=radius*4, height=radius*4)
-        cutter = Topology.Rotate(cutter, origin=origin, angle=-north)
-        cutter = Topology.Translate(cutter, 0,0,-radius*2)
+            d = Topology.Dictionary(hourly_path)
+            hourly_path = Topology.Difference(hourly_path, cutter)
+            if Topology.IsInstance(hourly_path, "topology"):
+                hourly_path = Topology.SetDictionary(hourly_path, d)
+                hourly_paths.append(hourly_path)
+        diagram['hourly_paths'] = hourly_paths
         if shell:
-            shell_paths = [monthly_paths[0]]
-            for j in range(2,5,1):
-                if j == 3:
-                    shell_paths.append(monthly_paths[1])
+            shell_paths = []
+            dates = [summer_solstice]
+            delta = (winter_solstice - summer_solstice)/12
+            for i in range(1,12):
+                a_date = summer_solstice + delta*i
+                if abs(a_date - equinox) < timedelta(hours=24*5):
+                    dates.append(equinox)
                 else:
-                    date = (datetime(datetime.now().year, j, 21))
-                    startTime = Sun.Sunrise(latitude=latitude, longitude=longitude, date=date) - timedelta(hours=1)
-                    endTime = Sun.Sunset(latitude=latitude, longitude=longitude, date=date) + timedelta(hours=1)
-                    shell_path = Sun.PathByDate(latitude=latitude, longitude=longitude, date=date,
+                    dates.append(a_date)
+            dates.append(winter_solstice)
+            for date in dates:
+                startTime = Sun.Sunrise(latitude=latitude, longitude=longitude, date=date) - timedelta(hours=2)
+                endTime = Sun.Sunset(latitude=latitude, longitude=longitude, date=date) + timedelta(hours=2)
+                shell_path = Sun.PathByDate(latitude=latitude, longitude=longitude, date=date,
                                       startTime=startTime, endTime=endTime, interval=minuteInterval,
-                                     origin=origin, radius=radius, sides=uSides, north=north)
-                    shell_paths.append(shell_path)
-            shell_paths.append(monthly_paths[-1])
-            print(len(shell_paths))
-            a_shell = Shell.ByWires(shell_paths, triangulate=True, silent=False)
-            a_shell = Topology.Difference(a_shell, cutter)
-            objects.append(a_shell)
-        if len(monthly_paths) > 1:
-            monthly_paths = Cluster.ByTopologies(monthly_paths)
+                                      origin=origin, radius=radius, sides=uSides, north=north)
+                # Clip the path to above ground level
+                shell_path = Topology.Difference(shell_path, cutter)
+                path_vertices = []
+                for i in range(uSides+1):
+                    u = float(i)/float(uSides)
+                    v = Wire.VertexByParameter(shell_path, u)
+                    path_vertices.append(v)
+                shell_path = Wire.ByVertices(path_vertices, close=False)
+                shell_paths.append(shell_path)
+            a_shell = Shell.ByWires(shell_paths, triangulate=True, silent=True)
+            d = Dictionary.ByKeysValues(["latitude", "longitude", "type"], [latitude, longitude, "shell"])
+            a_shell = Topology.SetDictionary(a_shell, d)
+            diagram['shell']= a_shell
         else:
-            monthly_paths = monthly_paths[0]
-        monthly_paths = Topology.Difference(monthly_paths, cutter)
-        if len(hourly_paths) > 1:
-            hourly_paths = Cluster.ByTopologies(hourly_paths)
-        else:
-            hourly_paths = hourly_paths[0]
-        hourly_paths = Topology.Difference(hourly_paths, cutter)
-        objects += [monthly_paths, hourly_paths]
-        circle = Wire.Circle(origin=origin, radius=radius, sides=36)
-        circle = Topology.Rotate(circle, origin=origin, angle=-north)
-        objects.append(circle)
+            diagram['shell'] = None
+
         if compass:
-            radius_unit = radius/(float(9))
-            for i in range(1,9):
-                circle = Wire.Circle(origin=origin, radius=radius_unit*i, sides=36)
-                circle = Topology.Rotate(circle, origin=origin, angle=-north)
-                objects.append(circle)
-            
-            edges = []
-            for i in range(0, 36, 1):
-                v1 = Topology.Translate(origin, 0, radius/float(9), 0)
-                v2 = Topology.Translate(origin, 0, radius, 0)
-                edge = Edge.ByVertices(v1, v2)
-                edge = Topology.Rotate(edge, origin=origin, angle=10*i)
-                edge = Topology.Rotate(edge, origin=origin, angle=-north)
-                edges.append(edge)
-            objects += edges
+            compass = Shell.Pie(origin=origin, radiusA=radius, radiusB=radius*0.1, sides=36, rings=10)
+            d = Dictionary.ByKeysValues(["latitude", "longitude", "type"], [latitude, longitude, "compass"])
+            compass = Topology.SetDictionary(compass, d)
+            diagram['compass'] = compass
             edges = []
             for i in range(0, 4, 1):
                 v2 = Topology.Translate(origin, 0, radius/float(9), 0)
@@ -834,6 +859,15 @@ class Sun():
                 edge = Topology.Rotate(edge, origin=origin, angle=90*i)
                 edge = Topology.Rotate(edge, origin=origin, angle=-north)
                 edges.append(edge)
-            objects += edges
-        diag = Cluster.ByTopologies(objects)
-        return diag
+            center = Topology.SelfMerge(Cluster.ByTopologies(edges))
+            d = Dictionary.ByKeysValues(["latitude", "longitude", "type"], [latitude, longitude, "center"])
+            center = Topology.SetDictionary(center, d)
+            diagram['center'] = center
+        else:
+            ground = Wire.Circle(origin=origin, radius=radius, sides=36)
+            d = Dictionary.ByKeysValues(["latitude", "longitude", "type"], [latitude, longitude, "ground"])
+            ground = Topology.SetDictionary(ground, d)
+            diagram['compass'] = None
+            diagram['center'] = None
+            diagram['ground']= ground
+        return diagram
