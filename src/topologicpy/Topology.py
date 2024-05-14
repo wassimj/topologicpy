@@ -5929,7 +5929,7 @@ class Topology():
         projection : str , optional
             The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
         renderer : str , optional
-            The desired renderer. See Plotly.Renderers(). The default is "notebook".
+            The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. The default is None.
         intensityKey : str , optional
             If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
         intensities : list , optional

@@ -1923,7 +1923,7 @@ class Plotly:
         return figure
 
     @staticmethod
-    def Show(figure, camera=[-1.25, -1.25, 1.25], center=[0, 0, 0], up=[0, 0, 1], renderer="notebook", projection="perspective"):
+    def Show(figure, camera=[-1.25, -1.25, 1.25], center=[0, 0, 0], up=[0, 0, 1], renderer=None, projection="perspective"):
         """
         Shows the input figure.
 
@@ -1938,7 +1938,7 @@ class Plotly:
         up : list , optional
             The desired up vector. The default is [0, 0, 1].
         renderer : str , optional
-            The desired rendered. See Plotly.Renderers(). The default is "notebook".
+            The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. The default is None.
         projection : str, optional
             The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
 
@@ -1954,6 +1954,8 @@ class Plotly:
         if not isinstance(figure, plotly.graph_objs._figure.Figure):
             print("Plotly.Show - Error: The input is not a figure. Returning None.")
             return None
+        if renderer == None:
+            renderer = Plotly.Renderer()
         if not renderer.lower() in Plotly.Renderers():
             print("Plotly.Show - Error: The input renderer is not in the approved list of renderers. Returning None.")
             return None
@@ -1964,6 +1966,36 @@ class Plotly:
         else:
             figure.show(renderer=renderer)
         return None
+
+    @staticmethod
+    def Renderer():
+        """
+        Return the renderer most suitable for the environment in which the script is running.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        str
+            The most suitable renderer type for the environment in which the script is running.
+            Currently, this is limited to:
+            - "vscode" if running in Visual Studio Code
+            - "colab" if running in Google Colab
+            - "iframe" if running in jupyter notebook or jupyterlab
+            - "browser" if running in anything else
+        """
+        import sys
+        import os
+        
+        if 'VSCODE_PID' in os.environ:
+            return 'vscode'
+        elif "google.colab" in sys.modules:
+            return "colab"
+        elif "ipykernel" in sys.modules:
+            return "iframe" #works for jupyter notebook and jupyterlab
+        else:
+            return "browser"
 
     @staticmethod
     def Renderers():
