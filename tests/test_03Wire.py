@@ -303,7 +303,7 @@ def test_main():
     assert Topology.IsInstance(c2, "Wire"), "Wire.Simplify. Should be a wire"
 
     # Case 24 - Squircle
-    print("Case 24
+    print("Case 24")
     c = Wire.Squircle()
     assert Topology.IsInstance(c, "Wire"), "Wire.Squircle. Should be a wire"
     print("End")

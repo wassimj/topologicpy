@@ -30,6 +30,7 @@ from topologicpy.Sun import Sun
 import math
 
 def test_main():
+    from topologicpy.Topology import Topology
     print("Start")
     print("24 Cases")
     # Object for test case

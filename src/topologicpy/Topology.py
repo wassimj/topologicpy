@@ -6733,9 +6733,9 @@ class Topology():
             The type of the input topology.
 
         """
-        if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.Type - Error: The input topology parameter is not a valid topology. Returning None.")
-            return None
+        #if not Topology.IsInstance(topology, "Topology"):
+            #print("Topology.Type - Error: The input topology parameter is not a valid topology. Returning None.")
+            #return None
         return topology.Type()
     
     @staticmethod
