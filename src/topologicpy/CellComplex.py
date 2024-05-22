@@ -175,7 +175,7 @@ class CellComplex():
         if not Topology.IsInstance(cluster, "Cluster"):
             print("CellComplex.ByCellsCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        cells = Topology.cells(cluster)
+        cells = Topology.Cells(cluster)
         return CellComplex.ByCells(cells, tolerance)
 
     @staticmethod
