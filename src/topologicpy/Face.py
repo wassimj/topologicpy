@@ -15,9 +15,6 @@
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
 import topologic_core as topologic
-from topologicpy.Vector import Vector
-from topologicpy.Wire import Wire
-from topologicpy.Topology import Topology
 import math
 import os
 import warnings
@@ -36,33 +33,34 @@ except:
     except:
         warnings.warn("Face - Error: Could not import numpy.")
 
-class Face(Topology):
+class Face():
     @staticmethod
-    def AddInternalBoundaries(face: topologic.Face, wires: list) -> topologic.Face:
+    def AddInternalBoundaries(face, wires: list):
         """
         Adds internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         wires : list
             The input list of internal boundaries (closed wires).
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created face with internal boundaries added to it.
 
         """
+        from topologicpy.Topology import Topology
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             print("Face.AddInternalBoundaries - Error: The input face parameter is not a valid topologic face. Returning None.")
             return None
         if not isinstance(wires, list):
             print("Face.AddInternalBoundaries - Warning: The input wires parameter is not a valid list. Returning the input face.")
             return face
-        wireList = [w for w in wires if isinstance(w, topologic.Wire)]
+        wireList = [w for w in wires if Topology.IsInstance(w, "Wire")]
         if len(wireList) < 1:
             print("Face.AddInternalBoundaries - Warning: The input wires parameter does not contain any valid wires. Returning the input face.")
             return face
@@ -71,47 +69,49 @@ class Face(Topology):
         _ = face.InternalBoundaries(faceibList)
         for wire in wires:
             faceibList.append(wire)
-        return topologic.Face.ByExternalInternalBoundaries(faceeb, faceibList)
+        return Face.ByWires(faceeb, faceibList)
 
     @staticmethod
-    def AddInternalBoundariesCluster(face: topologic.Face, cluster: topologic.Cluster) -> topologic.Face:
+    def AddInternalBoundariesCluster(face, cluster):
         """
         Adds the input cluster of internal boundaries (closed wires) to the input face. Internal boundaries are considered holes in the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster of internal boundaries (topologic wires).
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created face with internal boundaries added to it.
 
         """
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             print("Face.AddInternalBoundariesCluster - Warning: The input cluster parameter is not a valid cluster. Returning None.")
             return None
         if not cluster:
             return face
-        if not isinstance(cluster, topologic.Cluster):
+        if not Topology.IsInstance(cluster, "Cluster"):
             return face
         wires = []
         _ = cluster.Wires(None, wires)
         return Face.AddInternalBoundaries(face, wires)
     
     @staticmethod
-    def Angle(faceA: topologic.Face, faceB: topologic.Face, mantissa: int = 6) -> float:
+    def Angle(faceA, faceB, mantissa: int = 6) -> float:
         """
         Returns the angle in degrees between the two input faces.
 
         Parameters
         ----------
-        faceA : topologic.Face
+        faceA : topologic_core.Face
             The first input face.
-        faceB : topologic.Face
+        faceB : topologic_core.Face
             The second input face.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
@@ -123,10 +123,12 @@ class Face(Topology):
 
         """
         from topologicpy.Vector import Vector
-        if not isinstance(faceA, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(faceA, "Face"):
             print("Face.Angle - Warning: The input faceA parameter is not a valid topologic face. Returning None.")
             return None
-        if not isinstance(faceB, topologic.Face):
+        if not Topology.IsInstance(faceB, "Face"):
             print("Face.Angle - Warning: The input faceB parameter is not a valid topologic face. Returning None.")
             return None
         dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
@@ -134,13 +136,13 @@ class Face(Topology):
         return round((Vector.Angle(dirA, dirB)), mantissa)
 
     @staticmethod
-    def Area(face: topologic.Face, mantissa: int = 6) -> float:
+    def Area(face, mantissa: int = 6) -> float:
         """
         Returns the area of the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
@@ -151,24 +153,26 @@ class Face(Topology):
             The area of the input face.
 
         """
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             print("Face.Area - Warning: The input face parameter is not a valid topologic face. Returning None.")
             return None
         area = None
         try:
-            area = round(topologic.FaceUtility.Area(face), mantissa)
+            area = round(topologic.FaceUtility.Area(face), mantissa) # Hook to Core
         except:
             area = None
         return area
 
     @staticmethod
-    def BoundingRectangle(topology: topologic.Topology, optimize: int = 0, tolerance: float = 0.0001) -> topologic.Face:
+    def BoundingRectangle(topology, optimize: int = 0, tolerance: float = 0.0001):
         """
         Returns a face representing a bounding rectangle of the input topology. The returned face contains a dictionary with key "zrot" that represents rotations around the Z axis. If applied the resulting face will become axis-aligned.
 
         Parameters
         ----------
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology.
         optimize : int , optional
             If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding rectangle. The default is 0.
@@ -177,93 +181,20 @@ class Face(Topology):
         
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The bounding rectangle of the input topology.
 
         """
         from topologicpy.Wire import Wire
-        from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        def bb(topology):
-            vertices = []
-            _ = topology.Vertices(None, vertices)
-            x = []
-            y = []
-            for aVertex in vertices:
-                x.append(aVertex.X())
-                y.append(aVertex.Y())
-            minX = min(x)
-            minY = min(y)
-            maxX = max(x)
-            maxY = max(y)
-            return [minX, minY, maxX, maxY]
 
-        if not isinstance(topology, topologic.Topology):
-            print("Face.BoundingRectangle - Warning: The input topology parameter is not a valid topologic topology. Returning None.")
-            return None
-        vertices = Topology.SubTopologies(topology, subTopologyType="vertex")
-        topology = Cluster.ByTopologies(vertices)
-        boundingBox = bb(topology)
-        minX = boundingBox[0]
-        minY = boundingBox[1]
-        maxX = boundingBox[2]
-        maxY = boundingBox[3]
-        w = abs(maxX - minX)
-        l = abs(maxY - minY)
-        best_area = l*w
-        orig_area = best_area
-        best_z = 0
-        best_bb = boundingBox
-        origin = Topology.Centroid(topology)
-        optimize = min(max(optimize, 0), 10)
-        if optimize > 0:
-            factor = (round(((11 - optimize)/30 + 0.57), 2))
-            flag = False
-            for n in range(10,0,-1):
-                if flag:
-                    break
-                za = n
-                zb = 90+n
-                zc = n
-                for z in range(za,zb,zc):
-                    if flag:
-                        break
-                    t = Topology.Rotate(topology, origin=origin, axis=[0, 0, 1], angle=z)
-                    minX, minY, maxX, maxY = bb(t)
-                    w = abs(maxX - minX)
-                    l = abs(maxY - minY)
-                    area = l*w
-                    if area < orig_area*factor:
-                        best_area = area
-                        best_z = z
-                        best_bb = [minX, minY, maxX, maxY]
-                        flag = True
-                        break
-                    if area < best_area:
-                        best_area = area
-                        best_z = z
-                        best_bb = [minX, minY, maxX, maxY]
-                        
-        else:
-            best_bb = boundingBox
-
-        minX, minY, maxX, maxY = best_bb
-        vb1 = topologic.Vertex.ByCoordinates(minX, minY, 0)
-        vb2 = topologic.Vertex.ByCoordinates(maxX, minY, 0)
-        vb3 = topologic.Vertex.ByCoordinates(maxX, maxY, 0)
-        vb4 = topologic.Vertex.ByCoordinates(minX, maxY, 0)
-
-        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
-        baseFace = Face.ByWire(baseWire, tolerance=tolerance)
-        baseFace = Topology.Rotate(baseFace, origin=origin, axis=[0, 0, 1], angle=-best_z)
-        dictionary = Dictionary.ByKeysValues(["zrot"], [best_z])
-        baseFace = Topology.SetDictionary(baseFace, dictionary)
-        return baseFace
+        br_wire = Wire.BoundingRectangle(topology=topology, optimize=optimize, tolerance=tolerance)
+        br_face = Face.ByWire(br_wire)
+        br_face = Topology.SetDictionary(br_face, Topology.Dictionary(br_wire))
+        return br_face
     
     @staticmethod
-    def ByEdges(edges: list, tolerance : float = 0.0001) -> topologic.Face:
+    def ByEdges(edges: list, tolerance : float = 0.0001):
         """
         Creates a face from the input list of edges.
 
@@ -276,44 +207,48 @@ class Face(Topology):
 
         Returns
         -------
-        face : topologic.Face
+        face : topologic_core.Face
             The created face.
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
         if not isinstance(edges, list):
             print("Face.ByEdges - Error: The input edges parameter is not a valid list. Returning None.")
             return None
-        edges = [e for e in edges if isinstance(e, topologic.Edge)]
+        edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
         if len(edges) < 1:
             print("Face.ByEdges - Error: The input edges parameter does not contain any valid edges. Returning None.")
             return None
         wire = Wire.ByEdges(edges, tolerance=tolerance)
-        if not isinstance(wire, topologic.Wire):
+        if not Topology.IsInstance(wire, "Wire"):
             print("Face.ByEdges - Error: Could not create the required wire. Returning None.")
             return None
         return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
-    def ByEdgesCluster(cluster: topologic.Cluster, tolerance: float = 0.0001) -> topologic.Face:
+    def ByEdgesCluster(cluster, tolerance: float = 0.0001):
         """
         Creates a face from the input cluster of edges.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster of edges.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        face : topologic.Face
+        face : topologic_core.Face
             The created face.
 
         """
         from topologicpy.Cluster import Cluster
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Face.ByEdgesCluster - Warning: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         edges = Cluster.Edges(cluster)
@@ -323,15 +258,15 @@ class Face(Topology):
         return Face.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
-    def ByOffset(face: topologic.Face, offset: float = 1.0, miter: bool = False,
+    def ByOffset(face, offset: float = 1.0, miter: bool = False,
                  miterThreshold: float = None, offsetKey: str = None,
-                 miterThresholdKey: str = None, step: bool = True, tolerance: float = 0.0001) -> topologic.Face:
+                 miterThresholdKey: str = None, step: bool = True, tolerance: float = 0.0001):
         """
         Creates an offset face from the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         offset : float , optional
             The desired offset distance. The default is 1.0.
@@ -350,12 +285,14 @@ class Face(Topology):
         
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created face.
 
         """
         from topologicpy.Wire import Wire
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             print("Face.ByOffset - Warning: The input face parameter is not a valid toplogic face. Returning None.")
             return None
         eb = Face.Wire(face)
@@ -367,13 +304,13 @@ class Face(Topology):
         return Face.ByWires(offset_external_boundary, offset_internal_boundaries, tolerance=tolerance)
     
     @staticmethod
-    def ByShell(shell: topologic.Shell, origin: topologic.Vertex = None, angTolerance: float = 0.1, tolerance: float = 0.0001)-> topologic.Face:
+    def ByShell(shell, origin= None, angTolerance: float = 0.1, tolerance: float = 0.0001):
         """
         Creates a face by merging the faces of the input shell.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
         angTolerance : float , optional
             The desired angular tolerance. The default is 0.1.
@@ -382,7 +319,7 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created face.
 
         """
@@ -400,29 +337,29 @@ class Face(Topology):
                 returnList.append(Wire.Planarize(aWire))
             return returnList
         
-        if not isinstance(shell, topologic.Shell):
+        if not Topology.IsInstance(shell, "Shell"):
             print("Face.ByShell - Error: The input shell parameter is not a valid toplogic shell. Returning None.")
             return None
         
         if origin == None:
             origin = Topology.Centroid(shell)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Face.ByShell - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         
         # Try the simple method first
         face = None
         ext_boundary = Wire.RemoveCollinearEdges(Shell.ExternalBoundary(shell))
-        if isinstance(ext_boundary, topologic.Wire):
+        if Topology.IsInstance(ext_boundary, "Wire"):
             face = Face.ByWire(ext_boundary)
-        elif isinstance(ext_boundary, topologic.Cluster):
+        elif Topology.IsInstance(ext_boundary, "Cluster"):
             wires = Topology.Wires(ext_boundary)
             faces = [Face.ByWire(w) for w in wires]
             areas = [Face.Area(f) for f in faces]
             wires = Helper.Sort(wires, areas, reverseFlags=[True])
             face = Face.ByWires(wires[0], wires[1:])
 
-        if isinstance(face, topologic.Face):
+        if Topology.IsInstance(face, "Face"):
             return face
         world_origin = Vertex.Origin()
         planar_shell = Shell.Planarize(shell)
@@ -437,11 +374,11 @@ class Face(Topology):
         planar_shell = Topology.SelfMerge(Topology.ReplaceVertices(planar_shell, verticesA=vertices, verticesB=new_vertices), tolerance=tolerance)
         ext_boundary = Shell.ExternalBoundary(planar_shell, tolerance=tolerance)
         ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
-        if not isinstance(ext_boundary, topologic.Topology):
+        if not Topology.IsInstance(ext_boundary, "Topology"):
             print("Face.ByShell - Error: Could not derive the external boundary of the input shell parameter. Returning None.")
             return None
 
-        if isinstance(ext_boundary, topologic.Wire):
+        if Topology.IsInstance(ext_boundary, "Wire"):
             if not Topology.IsPlanar(ext_boundary, tolerance=tolerance):
                 ext_boundary = Wire.Planarize(ext_boundary, origin=origin, tolerance=tolerance)
             ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
@@ -452,14 +389,14 @@ class Face(Topology):
             except:
                 print("Face.ByShell - Error: The operation failed. Returning None.")
                 return None
-        elif isinstance(ext_boundary, topologic.Cluster): # The shell has holes.
+        elif Topology.IsInstance(ext_boundary, "Cluster"): # The shell has holes.
             wires = []
             _ = ext_boundary.Wires(None, wires)
             faces = []
             areas = []
             for wire in wires:
                 aFace = Face.ByWire(wire, tolerance=tolerance)
-                if not isinstance(aFace, topologic.Face):
+                if not Topology.IsInstance(aFace, "Face"):
                     print("Face.ByShell - Error: The operation failed. Returning None.")
                     return None
                 anArea = abs(Face.Area(aFace))
@@ -484,7 +421,7 @@ class Face(Topology):
             return None
     
     @staticmethod
-    def ByVertices(vertices: list, tolerance: float = 0.0001) -> topologic.Face:
+    def ByVertices(vertices: list, tolerance: float = 0.0001):
         
         """
         Creates a face from the input list of vertices.
@@ -498,7 +435,7 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created face.
 
         """
@@ -507,7 +444,7 @@ class Face(Topology):
 
         if not isinstance(vertices, list):
             return None
-        vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
         if len(vertexList) < 3:
             return None
         
@@ -516,37 +453,39 @@ class Face(Topology):
         return f
 
     @staticmethod
-    def ByVerticesCluster(cluster: topologic.Cluster, tolerance: float = 0.0001) -> topologic.Face:
+    def ByVerticesCluster(cluster, tolerance: float = 0.0001):
         """
         Creates a face from the input cluster of vertices.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster of vertices.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Face
-            The crearted face.
+        topologic_core.Face
+            The created face.
 
         """
         from topologicpy.Cluster import Cluster
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             return None
         vertices = Cluster.Vertices(cluster)
         return Face.ByVertices(vertices, tolerance=tolerance)
 
     @staticmethod
-    def ByWire(wire: topologic.Wire, tolerance: float = 0.0001, silent=False) -> topologic.Face:
+    def ByWire(wire, tolerance: float = 0.0001, silent=False):
         """
         Creates a face from the input closed wire.
 
         Parameters
         ----------
-        wire : topologic.Wire
+        wire : topologic_core.Wire
             The input wire.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -555,7 +494,7 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face or list
+        topologic_core.Face or list
             The created face. If the wire is non-planar, the method will attempt to triangulate the wire and return a list of faces.
 
         """
@@ -571,11 +510,11 @@ class Face(Topology):
             wire = Topology.RemoveCollinearEdges(wire)
             vertices = Topology.Vertices(wire)
             shell = Shell.Delaunay(vertices)
-            if isinstance(shell, topologic.Topology):
+            if Topology.IsInstance(shell, "Topology"):
                 return Topology.Faces(shell)
             else:
                 return []
-        if not isinstance(wire, topologic.Wire):
+        if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
@@ -588,9 +527,9 @@ class Face(Topology):
         wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
         vertices = Topology.Vertices(wire)
         fList = []
-        if isinstance(wire, topologic.Wire):
+        if Topology.IsInstance(wire, "Wire"):
             try:
-                fList = topologic.Face.ByExternalBoundary(wire)
+                fList = topologic.Face.ByExternalBoundary(wire) # Hook to Core
             except:
                 if not silent:
                     print("Face.ByWire - Warning: Could not create face by external boundary. Trying other methods.")
@@ -608,7 +547,7 @@ class Face(Topology):
                 wire = Face.ExternalBoundary(f)
                 wire = Wire.Invert(wire)
                 try:
-                    f = topologic.Face.ByExternalBoundary(wire)
+                    f = topologic.Face.ByExternalBoundary(wire)  # Hook to Core
                     returnList.append(f)
                 except:
                     pass
@@ -626,13 +565,13 @@ class Face(Topology):
             return returnList
 
     @staticmethod
-    def ByWires(externalBoundary: topologic.Wire, internalBoundaries: list = [], tolerance: float = 0.0001, silent: bool = False) -> topologic.Face:
+    def ByWires(externalBoundary, internalBoundaries: list = [], tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a face from the input external boundary (closed wire) and the input list of internal boundaries (closed wires).
 
         Parameters
         ----------
-        externalBoundary : topologic.Wire
+        externalBoundary : topologic_core.Wire
             The input external boundary.
         internalBoundaries : list , optional
             The input list of internal boundaries (closed wires). The default is an empty list.
@@ -643,11 +582,14 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created face.
 
         """
-        if not isinstance(externalBoundary, topologic.Wire):
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(externalBoundary, "Wire"):
             if not silent:
                 print("Face.ByWires - Error: The input externalBoundary parameter is not a valid topologic wire. Returning None.")
             return None
@@ -655,10 +597,10 @@ class Face(Topology):
             if not silent:
                 print("Face.ByWires - Error: The input externalBoundary parameter is not a closed topologic wire. Returning None.")
             return None
-        ibList = [x for x in internalBoundaries if isinstance(x, topologic.Wire) and Wire.IsClosed(x)]
+        ibList = [x for x in internalBoundaries if Topology.IsInstance(x, "Wire") and Wire.IsClosed(x)]
         face = None
         try:
-            face = topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList, tolerance)
+            face = topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList, tolerance) # Hook to Core
         except:
             if not silent:
                 print("Face.ByWires - Error: The operation failed. Returning None.")
@@ -667,15 +609,15 @@ class Face(Topology):
 
 
     @staticmethod
-    def ByWiresCluster(externalBoundary: topologic.Wire, internalBoundariesCluster: topologic.Cluster = None, tolerance: float = 0.0001, silent: bool = False) -> topologic.Face:
+    def ByWiresCluster(externalBoundary, internalBoundariesCluster = None, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a face from the input external boundary (closed wire) and the input cluster of internal boundaries (closed wires).
 
         Parameters
         ----------
-        externalBoundary : topologic.Wire
+        externalBoundary topologic_core.Wire
             The input external boundary (closed wire).
-        internalBoundariesCluster : topologic.Cluster
+        internalBoundariesCluster : topologic_core.Cluster
             The input cluster of internal boundaries (closed wires). The default is None.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -684,13 +626,15 @@ class Face(Topology):
         
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created face.
 
         """
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
-        if not isinstance(externalBoundary, topologic.Wire):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(externalBoundary, "Wire"):
             if not silent:
                 print("Face.ByWiresCluster - Error: The input externalBoundary parameter is not a valid topologic wire. Returning None.")
             return None
@@ -700,7 +644,7 @@ class Face(Topology):
             return None
         if not internalBoundariesCluster:
             internalBoundaries = []
-        elif not isinstance(internalBoundariesCluster, topologic.Cluster):
+        elif not Topology.IsInstance(internalBoundariesCluster, "Cluster"):
             if not silent:
                 print("Face.ByWiresCluster - Error: The input internalBoundariesCluster parameter is not a valid topologic cluster. Returning None.")
             return None
@@ -709,14 +653,14 @@ class Face(Topology):
         return Face.ByWires(externalBoundary, internalBoundaries, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def NorthArrow(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, direction: list = [0, 0, 1], northAngle: float = 0.0,
-                   placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+    def NorthArrow(origin= None, radius: float = 0.5, sides: int = 16, direction: list = [0, 0, 1], northAngle: float = 0.0,
+                   placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a north arrow.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic_core.Vertex, optional
             The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
             The radius of the circle. The default is 1.
@@ -733,7 +677,7 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created circle.
 
         """
@@ -760,14 +704,14 @@ class Face(Topology):
         return arrow
 
     @staticmethod
-    def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1],
-                   placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+    def Circle(origin= None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1],
+                   placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a circle.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic_core.Vertex, optional
             The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
             The radius of the circle. The default is 1.
@@ -786,24 +730,26 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created circle.
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
         wire = Wire.Circle(origin=origin, radius=radius, sides=sides, fromAngle=fromAngle, toAngle=toAngle, close=True, direction=direction, placement=placement, tolerance=tolerance)
-        if not isinstance(wire, topologic.Wire):
+        if not Topology.IsInstance(wire, "Wire"):
             return None
         return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
-    def Compactness(face: topologic.Face, mantissa: int = 6) -> float:
+    def Compactness(face, mantissa: int = 6) -> float:
         """
         Returns the compactness measure of the input face. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
@@ -814,12 +760,14 @@ class Face(Topology):
             The compactness measure of the input face.
 
         """
+        from topologicpy.Edge import Edge
+
         exb = face.ExternalBoundary()
         edges = []
         _ = exb.Edges(None, edges)
         perimeter = 0.0
         for anEdge in edges:
-            perimeter = perimeter + abs(topologic.EdgeUtility.Length(anEdge))
+            perimeter = perimeter + abs(Edge.Length(anEdge))
         area = abs(Face.Area(face))
         compactness  = 0
         #From https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
@@ -832,13 +780,13 @@ class Face(Topology):
         return round(compactness, mantissa)
 
     @staticmethod
-    def CompassAngle(face: topologic.Face, north: list = None, mantissa: int = 6) -> float:
+    def CompassAngle(face, north: list = None, mantissa: int = 6) -> float:
         """
         Returns the horizontal compass angle in degrees between the normal vector of the input face and the input vector. The angle is measured in counter-clockwise fashion. Only the first two elements of the vectors are considered.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         north : list , optional
             The second vector representing the north direction. The default is the positive YAxis ([0,1,0]).
@@ -854,7 +802,9 @@ class Face(Topology):
 
         """
         from topologicpy.Vector import Vector
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             return None
         if not north:
             north = Vector.North()
@@ -862,13 +812,13 @@ class Face(Topology):
         return Vector.CompassAngle(vectorA=dirA, vectorB=north, mantissa=mantissa)
 
     @staticmethod
-    def Edges(face: topologic.Face) -> list:
+    def Edges(face) -> list:
         """
         Returns the edges of the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
 
         Returns
@@ -877,21 +827,23 @@ class Face(Topology):
             The list of edges.
 
         """
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             return None
         edges = []
         _ = face.Edges(None, edges)
         return edges
 
     @staticmethod
-    def Einstein(origin: topologic.Vertex = None, radius: float = 0.5, direction: list = [0, 0, 1],
-                 placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+    def Einstein(origin= None, radius: float = 0.5, direction: list = [0, 0, 1],
+                 placement: str = "center", tolerance: float = 0.0001):
         """
         Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physist). See https://arxiv.org/abs/2303.10798
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The location of the origin of the tile. The default is None which results in the tiles first vertex being placed at (0, 0, 0).
         radius : float , optional
             The radius of the hexagon determining the size of the tile. The default is 0.5.
@@ -904,26 +856,27 @@ class Face(Topology):
         
         Returns
         --------
-            topologic.Face
+            topologic_core.Face
                 The created Einstein tile.
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
 
         wire = Wire.Einstein(origin=origin, radius=radius, direction=direction, placement=placement)
-        if not isinstance(wire, topologic.Wire):
+        if not Topology.IsInstance(wire, "Wire"):
             print("Face.Einstein - Error: Could not create base wire for the Einstein tile. Returning None.")
             return None
         return Face.ByWire(wire, tolerance=tolerance)
     
     @staticmethod
-    def ExteriorAngles(face: topologic.Face, includeInternalBoundaries=False, mantissa: int = 6) -> list:
+    def ExteriorAngles(face, includeInternalBoundaries=False, mantissa: int = 6) -> list:
         """
         Returns the exterior angles of the input face in degrees. The face must be planar.
         
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         includeInternalBoundaries : bool , optional
             If set to True and if the face has internal boundaries (holes), the returned list will be a nested list where the first list is the list
@@ -940,8 +893,9 @@ class Face(Topology):
         """
         
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             print("Face.ExteriorAngles - Error: The input face parameter is not a valid face. Returning None.")
             return None
         eb = Face.ExternalBoundary(face)
@@ -958,31 +912,31 @@ class Face(Topology):
         return return_list
 
     @staticmethod
-    def ExternalBoundary(face: topologic.Face) -> topologic.Wire:
+    def ExternalBoundary(face):
         """
         Returns the external boundary (closed wire) of the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
 
         Returns
         -------
-        topologic.Wire
+        topologic_core.Wire
             The external boundary of the input face.
 
         """
         return face.ExternalBoundary()
     
     @staticmethod
-    def FacingToward(face: topologic.Face, direction: list = [0,0,-1], asVertex: bool = False, tolerance: float = 0.0001) -> bool:
+    def FacingToward(face, direction: list = [0,0,-1], asVertex: bool = False, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input face is facing toward the input direction.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         direction : list , optional
             The input direction. The default is [0,0,-1].
@@ -997,8 +951,10 @@ class Face(Topology):
             True if the face is facing toward the direction. False otherwise.
 
         """
-        faceNormal = topologic.FaceUtility.NormalAtParameters(face,0.5, 0.5)
-        faceCenter = topologic.FaceUtility.VertexAtParameters(face,0.5,0.5)
+        from topologicpy.Vector import Vector
+
+        faceNormal = Face.Normal(face)
+        faceCenter = Face.VertexByParameters(face,0.5,0.5)
         cList = [faceCenter.X(), faceCenter.Y(), faceCenter.Z()]
         try:
             vList = [direction.X(), direction.Y(), direction.Z()]
@@ -1017,21 +973,80 @@ class Face(Topology):
             return False
         return True
 
+
     @staticmethod
-    def Harmonize(face: topologic.Face, tolerance: float = 0.0001) -> topologic.Face:
+    def Fillet(face, radius: float = 0, radiusKey: str = None, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Fillets (rounds) the interior and exterior corners of the input face given the input radius. See https://en.wikipedia.org/wiki/Fillet_(mechanics)
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        radius : float
+            The desired radius of the fillet.
+        radiusKey : str , optional
+            If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. The default is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The filleted face.
+
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.Fillet - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+        
+        eb = Topology.Copy(Face.ExternalBoundary(face))
+        ib_list = Face.InternalBoundaries(face)
+        ib_list = [Topology.Copy(ib) for ib in ib_list]
+        f_vertices = Face.Vertices(face)
+        if isinstance(radiusKey, str):
+            eb = Topology.TransferDictionariesBySelectors(eb, selectors=f_vertices, tranVertices=True)
+        eb = Wire.Fillet(eb, radius=radius, radiusKey=radiusKey, tolerance=tolerance)
+        if not Topology.IsInstance(eb, "Wire"):
+            if not silent:
+                print("Face.Fillet - Error: The operation failed. Returning None.")
+            return None
+        ib_wires = []
+        for ib in ib_list:
+            ib = Wire.ByVertices(Topology.Vertices(ib))
+            ib = Wire.Reverse(ib)
+            if isinstance(radiusKey, str):
+                ib = Topology.TransferDictionariesBySelectors(ib, selectors=f_vertices, tranVertices=True)
+            
+            ib_wire = Wire.Fillet(ib, radius=radius, radiusKey=radiusKey, tolerance=tolerance, silent=silent)
+            if Topology.IsInstance(ib, "Wire"):
+                ib_wires.append(ib_wire)
+            else:
+                if not silent:
+                    print("Face.Fillet - Error: The operation for one of the interior boundaries failed. Skipping.")
+        return Face.ByWires(eb, ib_wires)
+
+    @staticmethod
+    def Harmonize(face, tolerance: float = 0.0001):
         """
         Returns a harmonized version of the input face such that the *u* and *v* origins are always in the upperleft corner.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The harmonized face.
 
         """
@@ -1040,7 +1055,7 @@ class Face(Topology):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             print("Face.Harmonize - Error: The input face parameter is not a valid face. Returning None.")
             return None
         normal = Face.Normal(face)
@@ -1059,13 +1074,13 @@ class Face(Topology):
         return harmonizedFace
 
     @staticmethod
-    def InteriorAngles(face: topologic.Face, includeInternalBoundaries: bool = False, mantissa: int = 6) -> list:
+    def InteriorAngles(face, includeInternalBoundaries: bool = False, mantissa: int = 6) -> list:
         """
         Returns the interior angles of the input face in degrees. The face must be planar.
         
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         includeInternalBoundaries : bool , optional
             If set to True and if the face has internal boundaries (holes), the returned list will be a nested list where the first list is the list
@@ -1080,10 +1095,10 @@ class Face(Topology):
         list
             The list of interior angles.
         """
-        
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             print("Face.InteriorAngles - Error: The input face parameter is not a valid face. Returning None.")
             return None
         eb = Face.ExternalBoundary(face)
@@ -1100,13 +1115,13 @@ class Face(Topology):
         return return_list
     
     @staticmethod
-    def InternalBoundaries(face: topologic.Face) -> list:
+    def InternalBoundaries(face) -> list:
         """
         Returns the internal boundaries (closed wires) of the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
 
         Returns
@@ -1115,33 +1130,36 @@ class Face(Topology):
             The list of internal boundaries (closed wires).
 
         """
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             return None
         wires = []
         _ = face.InternalBoundaries(wires)
         return list(wires)
 
     @staticmethod
-    def InternalVertex(face: topologic.Face, tolerance: float = 0.0001) -> topologic.Vertex:
+    def InternalVertex(face, tolerance: float = 0.0001):
         """
         Creates a vertex guaranteed to be inside the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Vertex
+        topologic_core.Vertex
             The created vertex.
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
-        if not isinstance(face, topologic.Face):
+
+        if not Topology.IsInstance(face, "Face"):
             return None
         v = Topology.Centroid(face)
         if Vertex.IsInternal(v, face, tolerance=tolerance):
@@ -1152,30 +1170,31 @@ class Face(Topology):
                 v = Face.VertexByParameters(face, u, v)
                 if Vertex.IsInternal(v, face, tolerance=tolerance):
                     return v
-        v = topologic.FaceUtility.InternalVertex(face, tolerance)
+        v = topologic.FaceUtility.InternalVertex(face, tolerance) # Hook to Core
         return v
 
     @staticmethod
-    def Invert(face: topologic.Face, tolerance: float = 0.0001) -> topologic.Face:
+    def Invert(face, tolerance: float = 0.0001):
         """
         Creates a face that is an inverse (mirror) of the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The inverted face.
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             return None
         eb = Face.ExternalBoundary(face)
         vertices = Wire.Vertices(eb)
@@ -1189,15 +1208,15 @@ class Face(Topology):
         return inverted_face
 
     @staticmethod
-    def IsCoplanar(faceA: topologic.Face, faceB: topologic.Face, tolerance: float = 0.0001) -> bool:
+    def IsCoplanar(faceA, faceB, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the two input faces are coplanar. Returns False otherwise.
 
         Parameters
         ----------
-        faceA : topologic.Face
+        faceA : topologic_core.Face
             The first input face.
-        faceB : topologic.Face
+        faceB : topologic_core.Face
             The second input face
         tolerance : float , optional
             The desired tolerance. The deafault is 0.0001.
@@ -1213,24 +1232,112 @@ class Face(Topology):
             True if the two input faces are coplanar. False otherwise.
 
         """
-        if not isinstance(faceA, topologic.Face):
+        from topologicpy.Vector import Vector
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(faceA, "Face"):
             print("Face.IsInide - Error: The input faceA parameter is not a valid topologic face. Returning None.")
             return None
-        if not isinstance(faceB, topologic.Face):
+        if not Topology.IsInstance(faceB, "Face"):
             print("Face.IsInide - Error: The input faceB parameter is not a valid topologic face. Returning None.")
             return None
         dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
         dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
         return Vector.IsCollinear(dirA, dirB)
-    
+
     @staticmethod
-    def MedialAxis(face: topologic.Face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
+    def Isovist(face, vertex, obstacles = None, fromAngle=0, toAngle=360, tolerance: float = 0.0001):
+        """
+        Returns the face representing the isovist projection from the input viewpoint.
+        This method assumes all input is in 2D. Z coordinates are ignored.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The face representing the boundary of the isovist.
+        vertex : topologic_core.Vertex
+            The vertex representing the location of the viewpoint of the isovist.
+        obstacles : list , optional
+            A list of wires representing the obstacles within the face. All obstacles are assumed to be within the
+            boundary of the face.
+        fromAngle : float , optional
+            The angle in degrees from which to start creating the arc of the circle. The default is 0.
+            0 is considered to be in the positive X-axis direction. 90 is considered to be in the
+            positive Y-axis direction.
+        toAngle : float , optional
+            The angle in degrees at which to end creating the arc of the circle. The default is 360.
+            Angles are measured in an anti-clockwise fashion.
+        tolerance : float , optional:
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Face
+            The face representing the isovist projection from the input viewpoint.
+        
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        
+        def vertexPartofFace(vertex, face, tolerance):
+            vertices = []
+            _ = face.Vertices(None, vertices)
+            for v in vertices:
+                if Vertex.Distance(vertex, v) < tolerance:
+                    return True
+            return False
+        
+        if not Topology.IsInstance(face, "Face"):
+            print("Face.Isovist - Error: The input boundary parameter is not a valid Face. Returning None")
+            return None
+        if not Topology.IsInstance(vertex, "Vertex"):
+            print("Face.Isovist - Error: The input viewPoint parameter is not a valid Vertex. Returning None")
+            return None
+        if isinstance(obstacles, list):
+            obstacles = [obs for obs in obstacles if Topology.IsInstance(obs, "Wire")]
+        for obs in obstacles:
+            face = Topology.Difference(face, Face.ByWire(obs))
+        targets = Topology.Vertices(face)
+        distances = []
+        for target in targets:
+            distances.append(Vertex.Distance(vertex, target))
+        distances.sort()
+        max_d = distances[-1]*1.05
+        edges = []
+        for target in targets:
+            e = Edge.ByVertices(vertex, target)
+            e = Edge.SetLength(e, length=max_d, bothSides=False)
+            edges.append(e)
+        shell = Topology.Slice(face, Cluster.ByTopologies(edges))
+        faces = Topology.Faces(shell)
+        final_faces = []
+        for face in faces:
+            if vertexPartofFace(vertex, face, tolerance=0.001):
+                final_faces.append(face)
+        shell = Shell.ByFaces(final_faces)
+        return_face = Topology.RemoveCoplanarFaces(shell)
+        if abs(360 - toAngle - fromAngle) > tolerance:
+            c = Wire.Circle(origin= vertex, radius=max_d, sides=180, fromAngle=fromAngle, toAngle=toAngle, close = False)
+            e1 = Edge.ByVertices(Wire.StartVertex(c), vertex)
+            e2 = Edge.ByVertices(Wire.EndVertex(c), vertex)
+            edges = Topology.Edges(c) + [e1,e2]
+            pie = Face.ByWire(Topology.SelfMerge(Cluster.ByTopologies(edges)))
+            return_face = Topology.Intersect(pie, return_face)
+        return return_face
+
+    @staticmethod
+    def MedialAxis(face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001):
         """
         Returns a wire representing an approximation of the medial axis of the input topology. See https://en.wikipedia.org/wiki/Medial_axis.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         resolution : int , optional
             The desired resolution of the solution (range is 0: standard resolution to 10: high resolution). This determines the density of the sampling along each edge. The default is 0.
@@ -1247,7 +1354,7 @@ class Face(Topology):
         
         Returns
         -------
-        topologic.Wire
+        topologic_core.Wire
             The medial axis of the input face.
 
         """
@@ -1260,7 +1367,7 @@ class Face(Topology):
         from topologicpy.Dictionary import Dictionary
 
         def touchesEdge(vertex,edges, tolerance=0.0001):
-            if not isinstance(vertex, topologic.Vertex):
+            if not Topology.IsInstance(vertex, "Vertex"):
                 return False
             for edge in edges:
                 u = Edge.ParameterAtVertex(edge, vertex, mantissa=6)
@@ -1313,13 +1420,13 @@ class Face(Topology):
             theVertices = theVertices+extVertices
 
         tempWire = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges), tolerance=tolerance)
-        if isinstance(tempWire, topologic.Wire) and angTolerance > 0:
+        if Topology.IsInstance(tempWire, "Wire") and angTolerance > 0:
             tempWire = Wire.RemoveCollinearEdges(tempWire, angTolerance=angTolerance)
         medialAxisEdges = Wire.Edges(tempWire)
         for v in theVertices:
             nv = Vertex.NearestVertex(v, tempWire, useKDTree=False)
 
-            if isinstance(nv, topologic.Vertex):
+            if Topology.IsInstance(nv, "Vertex"):
                 if toLeavesOnly:
                     adjVertices = Topology.AdjacentTopologies(nv, tempWire)
                     if len(adjVertices) < 2:
@@ -1327,19 +1434,19 @@ class Face(Topology):
                 else:
                     medialAxisEdges.append(Edge.ByVertices([nv, v], tolerance=tolerance))
         medialAxis = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges), tolerance=tolerance)
-        if isinstance(medialAxis, topologic.Wire) and angTolerance > 0:
+        if Topology.IsInstance(medialAxis, "Wire") and angTolerance > 0:
             medialAxis = Topology.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance)
         medialAxis = Topology.Unflatten(medialAxis, origin=origin,direction=normal)
         return medialAxis
 
     @staticmethod
-    def Normal(face: topologic.Face, outputType: str = "xyz", mantissa: int = 6) -> list:
+    def Normal(face, outputType: str = "xyz", mantissa: int = 6) -> list:
         """
         Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         outputType : string , optional
             The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. The default is "xyz".
@@ -1355,13 +1462,13 @@ class Face(Topology):
         return Face.NormalAtParameters(face, u=0.5, v=0.5, outputType=outputType, mantissa=mantissa)
 
     @staticmethod
-    def NormalAtParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5, outputType: str = "xyz", mantissa: int = 6) -> list:
+    def NormalAtParameters(face, u: float = 0.5, v: float = 0.5, outputType: str = "xyz", mantissa: int = 6) -> list:
         """
         Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         u : float , optional
             The *u* parameter at which to compute the normal to the input face. The default is 0.5.
@@ -1380,7 +1487,7 @@ class Face(Topology):
         """
         returnResult = []
         try:
-            coords = topologic.FaceUtility.NormalAtParameters(face, u, v)
+            coords = topologic.FaceUtility.NormalAtParameters(face, u, v) # Hook to Core
             x = round(coords[0], mantissa)
             y = round(coords[1], mantissa)
             z = round(coords[2], mantissa)
@@ -1397,13 +1504,13 @@ class Face(Topology):
         return returnResult
     
     @staticmethod
-    def NormalEdge(face: topologic.Face, length: float = 1.0, tolerance: float = 0.0001, silent: bool = False) -> topologic.Edge:
+    def NormalEdge(face, length: float = 1.0, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the normal vector to the input face as an edge with the desired input length. A normal vector of a face is a vector perpendicular to it.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         length : float , optional
             The desired length of the normal edge. The default is 1.
@@ -1412,13 +1519,14 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Edge
+        topologic_core.Edge
             The created normal edge to the input face. This is computed at the approximate center of the face.
 
         """
         from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             if not silent:
                 print("Face.NormalEdge - Error: The input face parameter is not a valid face. Retuning None.")
             return None
@@ -1433,13 +1541,13 @@ class Face(Topology):
         return Edge.ByVertices([iv, ev], tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def NormalEdgeAtParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5, length: float = 1.0, tolerance: float = 0.0001) -> topologic.Edge:
+    def NormalEdgeAtParameters(face, u: float = 0.5, v: float = 0.5, length: float = 1.0, tolerance: float = 0.0001):
         """
         Returns the normal vector to the input face as an edge with the desired input length. A normal vector of a face is a vector perpendicular to it.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         u : float , optional
             The *u* parameter at which to compute the normal to the input face. The default is 0.5.
@@ -1452,13 +1560,13 @@ class Face(Topology):
         
         Returns
         -------
-        topologic.Edge
+        topologic_core.Edge
             The created normal edge to the input face. This is computed at the approximate center of the face.
 
         """
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             return None
         sv = Face.VertexByParameters(face=face, u=u, v=v)
         vec = Face.NormalAtParameters(face, u=u, v=v)
@@ -1466,13 +1574,13 @@ class Face(Topology):
         return Edge.ByVertices([sv, ev], tolerance=tolerance, silent=True)
 
     @staticmethod
-    def PlaneEquation(face: topologic.Face, mantissa: int = 6) -> dict:
+    def PlaneEquation(face, mantissa: int = 6) -> dict:
         """
         Returns the a, b, c, d coefficients of the plane equation of the input face. The input face is assumed to be planar.
         
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         
         Returns
@@ -1486,7 +1594,7 @@ class Face(Topology):
         import random
         import time
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             print("Face.PlaneEquation - Error: The input face is not a valid topologic face. Returning None.")
             return None
         vertices = Topology.Vertices(face)
@@ -1496,23 +1604,23 @@ class Face(Topology):
         return Vertex.PlaneEquation(vertices, mantissa=mantissa)
     
     @staticmethod
-    def Planarize(face: topologic.Face, origin: topologic.Vertex = None,
-                  tolerance: float = 0.0001) -> topologic.Face:
+    def Planarize(face, origin= None,
+                  tolerance: float = 0.0001):
         """
         Planarizes the input face such that its center of mass is located at the input origin and its normal is pointed in the input direction.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The desired vertex to use as the origin of the plane to project the face unto. If set to None, the centroidof the input face is used. The default is None.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The planarized face.
 
         """
@@ -1520,9 +1628,9 @@ class Face(Topology):
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             return None
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Topology.Centroid(face)
         eb = Face.ExternalBoundary(face)
         plan_eb = Wire.Planarize(eb, origin=origin)
@@ -1534,16 +1642,16 @@ class Face(Topology):
         return plan_face
 
     @staticmethod
-    def Project(faceA: topologic.Face, faceB: topologic.Face, direction : list = None,
-                mantissa: int = 6, tolerance: float = 0.0001) -> topologic.Face:
+    def Project(faceA, faceB, direction : list = None,
+                mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates a projection of the first input face unto the second input face.
 
         Parameters
         ----------
-        faceA : topologic.Face
+        faceA : topologic_core.Face
             The face to be projected.
-        faceB : topologic.Face
+        faceB : topologic_core.Face
             The face unto which the first input face will be projected.
         direction : list, optional
             The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. The default is None.
@@ -1554,20 +1662,20 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The projected Face.
 
         """
-
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
 
         if not faceA:
             return None
-        if not isinstance(faceA, topologic.Face):
+        if not Topology.IsInstance(faceA, "Face"):
             return None
         if not faceB:
             return None
-        if not isinstance(faceB, topologic.Face):
+        if not Topology.IsInstance(faceB, "Face"):
             return None
 
         eb = faceA.ExternalBoundary()
@@ -1582,7 +1690,7 @@ class Face(Topology):
         return Face.ByWires(p_eb, p_ib_list, tolerance=tolerance)
 
     @staticmethod
-    def RectangleByPlaneEquation(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, placement: str = "center", equation: dict = None, tolerance: float = 0.0001) -> topologic.Face:
+    def RectangleByPlaneEquation(origin= None, width: float = 1.0, length: float = 1.0, placement: str = "center", equation: dict = None, tolerance: float = 0.0001):
         from topologicpy.Vertex import Vertex
         # Extract coefficients of the plane equation
         a = equation['a']
@@ -1598,13 +1706,13 @@ class Face(Topology):
         return Face.Rectangle(origin=origin, width=width, length=length, direction = direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
-    def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+    def Rectangle(origin= None, width: float = 1.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a rectangle.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic_core.Vertex, optional
             The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0, 0, 0).
         width : float , optional
             The width of the rectangle. The default is 1.0.
@@ -1619,26 +1727,27 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created face.
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
         
         wire = Wire.Rectangle(origin=origin, width=width, length=length, direction=direction, placement=placement, tolerance=tolerance)
-        if not isinstance(wire, topologic.Wire):
+        if not Topology.IsInstance(wire, "Wire"):
             print("Face.Rectangle - Error: Could not create the base wire for the rectangle. Returning None.")
             return None
         return Face.ByWire(wire, tolerance=tolerance)
     
     @staticmethod
-    def RemoveCollinearEdges(face: topologic.Face, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
+    def RemoveCollinearEdges(face, angTolerance: float = 0.1, tolerance: float = 0.0001):
         """
         Removes any collinear edges in the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         angTolerance : float , optional
             The desired angular tolerance. The default is 0.1.
@@ -1647,18 +1756,50 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created face without any collinear edges.
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             print("Face.RemoveCollinearEdges - Error: The input face parameter is not a valid face. Returning None.")
             return None
         eb = Wire.RemoveCollinearEdges(Face.Wire(face), angTolerance=angTolerance, tolerance=tolerance)
         ib = [Wire.RemoveCollinearEdges(w, angTolerance=angTolerance, tolerance=tolerance) for w in Face.InternalBoundaries(face)]
         return Face.ByWires(eb, ib)
+    
+    @staticmethod
+    def Simplify(face, tolerance=0.0001):
+        """
+            Simplifies the input face edges based on the Douglas Peucker algorthim. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+            Part of this code was contributed by gaoxipeng. See https://github.com/wassimj/topologicpy/issues/35
+            
+            Parameters
+            ----------
+            face : topologic_core.Face
+                The input face.
+            tolerance : float , optional
+                The desired tolerance. The default is 0.0001. Edges shorter than this length will be removed.
+
+            Returns
+            -------
+            topologic_core.Face
+                The simplified face.
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
+            print("Face.Simplify - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+        
+        eb = Face.ExternalBoundary(face)
+        eb = Wire.Simplify(eb, tolerance=tolerance)
+        ibList = Face.InternalBoundaries(face)
+        ibList = [Wire.Simplify(ib) for ib in ibList]
+        return Face.ByWires(eb, ibList)
     
     @staticmethod
     def Skeleton(face, tolerance=0.001):
@@ -1668,31 +1809,33 @@ class Face(Topology):
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number than the usual 0.0001 as it was found to work better)
 
         Returns
         -------
-        topologic.Wire
+        topologic_core.Wire
             The created straight skeleton.
 
         """
         from topologicpy.Wire import Wire
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             print("Face.Skeleton - Error: The input face is not a valid topologic face. Retruning None.")
             return None
         return Wire.Skeleton(face, tolerance=tolerance)
     
     @staticmethod
-    def Square(origin: topologic.Vertex = None, size: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+    def Square(origin= None, size: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a square.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The location of the origin of the square. The default is None which results in the square being placed at (0, 0, 0).
         size : float , optional
             The size of the square. The default is 1.0.
@@ -1705,20 +1848,62 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created square.
 
         """
         return Face.Rectangle(origin=origin, width=size, length=size, direction=direction, placement=placement, tolerance=tolerance)
     
+
     @staticmethod
-    def Star(origin: topologic.Vertex = None, radiusA: float = 1.0, radiusB: float = 0.4, rays: int = 5, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+    def Squircle(origin = None, radius: float = 0.5, sides: int = 121, a: float = 2.0, b: float = 2.0, direction: list = [0, 0, 1], placement: str = "center", angTolerance: float = 0.1, tolerance: float = 0.0001):
+        """
+        Creates a Squircle which is a hybrid between a circle and a square. See https://en.wikipedia.org/wiki/Squircle
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the squircle. The default is None which results in the squircle being placed at (0, 0, 0).
+        radius : float , optional
+            The radius of the squircle. The default is 0.5.
+        sides : int , optional
+            The number of sides of the squircle. The default is 121.
+        a : float , optional
+            The "a" factor affects the x position of the points to interpolate between a circle and a square.
+            A value of 1 will create a circle. Higher values will create a more square-like shape. The default is 2.0.
+        b : float , optional
+            The "b" factor affects the y position of the points to interpolate between a circle and a square.
+            A value of 1 will create a circle. Higher values will create a more square-like shape. The default is 2.0.
+        radius : float , optional
+            The desired radius of the squircle. The default is 0.5.
+        sides : int , optional
+            The desired number of sides for the squircle. The default is 100.
+        direction : list , optional
+            The vector representing the up direction of the circle. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+        angTolerance : float , optional
+            The desired angular tolerance. The default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created squircle.
+        """
+        from topologicpy.Wire import Wire
+        wire = Wire.Squircle(origin = origin, radius= radius, sides = sides, a = a, b = b, direction = direction, placement = placement, angTolerance = angTolerance, tolerance = tolerance)
+        return Face.ByWire(wire)
+    
+    @staticmethod
+    def Star(origin= None, radiusA: float = 1.0, radiusB: float = 0.4, rays: int = 5, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a star.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic_core.Vertex, optional
             The location of the origin of the star. The default is None which results in the star being placed at (0, 0, 0).
         radiusA : float , optional
             The outer radius of the star. The default is 1.0.
@@ -1735,25 +1920,27 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created face.
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
         wire = Wire.Star(origin=origin, radiusA=radiusA, radiusB=radiusB, rays=rays, direction=direction, placement=placement, tolerance=tolerance)
-        if not isinstance(wire, topologic.Wire):
+        if not Topology.IsInstance(wire, "Wire"):
             print("Face.Rectangle - Error: Could not create the base wire for the star. Returning None.")
             return None
         return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
-    def Trapezoid(origin: topologic.Vertex = None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Face:
+    def Trapezoid(origin= None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a trapezoid.
 
         Parameters
         ----------
-        origin : topologic.Vertex, optional
+        origin : topologic_core.Vertex, optional
             The location of the origin of the trapezoid. The default is None which results in the trapezoid being placed at (0, 0, 0).
         widthA : float , optional
             The width of the bottom edge of the trapezoid. The default is 1.0.
@@ -1774,25 +1961,27 @@ class Face(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created trapezoid.
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
         wire = Wire.Trapezoid(origin=origin, widthA=widthA, widthB=widthB, offsetA=offsetA, offsetB=offsetB, length=length, direction=direction, placement=placement, tolerance=tolerance)
-        if not isinstance(wire, topologic.Wire):
+        if not Topology.IsInstance(wire, "Wire"):
             print("Face.Rectangle - Error: Could not create the base wire for the trapezoid. Returning None.")
             return None
         return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
-    def Triangulate(face:topologic.Face, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001) -> list:
+    def Triangulate(face, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001) -> list:
         """
         Triangulates the input face and returns a list of faces.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -1828,7 +2017,7 @@ class Face(Topology):
 
             Parameters
             ----------
-            face : topologic.Face
+            face : topologic_core.Face
                 The input face.
             meshSize : float , optional
                 The desired mesh size.
@@ -1837,7 +2026,7 @@ class Face(Topology):
             
             Returns
             ----------
-            topologic.Shell
+            topologic_core.Shell
                 The shell of triangular meshes.
 
             """
@@ -1877,7 +2066,7 @@ class Face(Topology):
             from topologicpy.Wire import Wire
             from topologicpy.Face import Face
 
-            if not isinstance(face, topologic.Face):
+            if not Topology.IsInstance(face, "Face"):
                 print("Shell.ByMeshFace - Error: The input face parameter is not a valid face. Returning None.")
                 return None
             if not meshSize:
@@ -1952,7 +2141,7 @@ class Face(Topology):
                         faces.append(Face.ByVertices(face_vertices))
             return faces
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             print("Face.Triangulate - Error: The input face parameter is not a valid face. Returning None.")
             return None
         vertices = Topology.Vertices(face)
@@ -1966,7 +2155,7 @@ class Face(Topology):
             shell_faces = []
             for i in range(0,5,1):
                 try:
-                    _ = topologic.FaceUtility.Triangulate(flatFace, float(i)*0.1, shell_faces)
+                    _ = topologic.FaceUtility.Triangulate(flatFace, float(i)*0.1, shell_faces) # Hook to Core
                     break
                 except:
                     continue
@@ -1981,49 +2170,51 @@ class Face(Topology):
             if Face.Angle(face, f) > 90:
                 wire = Face.ExternalBoundary(f)
                 wire = Wire.Invert(wire)
-                f = topologic.Face.ByExternalBoundary(wire)
+                f = Face.ByWire(wire)
                 finalFaces.append(f)
             else:
                 finalFaces.append(f)
         return finalFaces
 
     @staticmethod
-    def TrimByWire(face: topologic.Face, wire: topologic.Wire, reverse: bool = False) -> topologic.Face:
+    def TrimByWire(face, wire, reverse: bool = False):
         """
         Trims the input face by the input wire.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
-        wire : topologic.Wire
+        wire : topologic_core.Wire
             The input wire.
         reverse : bool , optional
             If set to True, the effect of the trim will be reversed. The default is False.
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The resulting trimmed face.
 
         """
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             return None
-        if not isinstance(wire, topologic.Wire):
+        if not Topology.IsInstance(wire, "Wire"):
             return face
-        trimmed_face = topologic.FaceUtility.TrimByWire(face, wire, False)
+        trimmed_face = topologic.FaceUtility.TrimByWire(face, wire, False) # Hook to Core
         if reverse:
             trimmed_face = face.Difference(trimmed_face)
         return trimmed_face
     
     @staticmethod
-    def VertexByParameters(face: topologic.Face, u: float = 0.5, v: float = 0.5) -> topologic.Vertex:
+    def VertexByParameters(face, u: float = 0.5, v: float = 0.5):
         """
         Creates a vertex at the *u* and *v* parameters of the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         u : float , optional
             The *u* parameter of the input face. The default is 0.5.
@@ -2036,20 +2227,22 @@ class Face(Topology):
             The created vertex.
 
         """
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             return None
-        return topologic.FaceUtility.VertexAtParameters(face, u, v)
+        return topologic.FaceUtility.VertexAtParameters(face, u, v) # Hook to Core
     
     @staticmethod
-    def VertexParameters(face: topologic.Face, vertex: topologic.Vertex, outputType: str = "uv", mantissa: int = 6) -> list:
+    def VertexParameters(face, vertex, outputType: str = "uv", mantissa: int = 6) -> list:
         """
         Returns the *u* and *v* parameters of the input face at the location of the input vertex.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         outputType : string , optional
             The string defining the desired output. This can be any subset or permutation of "uv". It is case insensitive. The default is "uv".
@@ -2062,11 +2255,13 @@ class Face(Topology):
             The list of *u* and/or *v* as specified by the outputType input.
 
         """
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             return None
-        params = topologic.FaceUtility.ParametersAtVertex(face, vertex)
+        params = topologic.FaceUtility.ParametersAtVertex(face, vertex) # Hook to Core
         u = round(params[0], mantissa)
         v = round(params[1], mantissa)
         outputType = list(outputType.lower())
@@ -2079,13 +2274,13 @@ class Face(Topology):
         return returnResult
 
     @staticmethod
-    def Vertices(face: topologic.Face) -> list:
+    def Vertices(face) -> list:
         """
         Returns the vertices of the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
 
         Returns
@@ -2094,38 +2289,40 @@ class Face(Topology):
             The list of vertices.
 
         """
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             return None
         vertices = []
         _ = face.Vertices(None, vertices)
         return vertices
     
     @staticmethod
-    def Wire(face: topologic.Face) -> topologic.Wire:
+    def Wire(face):
         """
         Returns the external boundary (closed wire) of the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
 
         Returns
         -------
-        topologic.Wire
+        topologic_core.Wire
             The external boundary of the input face.
 
         """
         return face.ExternalBoundary()
     
     @staticmethod
-    def Wires(face: topologic.Face) -> list:
+    def Wires(face) -> list:
         """
         Returns the wires of the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
 
         Returns
@@ -2134,7 +2331,9 @@ class Face(Topology):
             The list of wires.
 
         """
-        if not isinstance(face, topologic.Face):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
             return None
         wires = []
         _ = face.Wires(None, wires)

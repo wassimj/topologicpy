@@ -15,19 +15,16 @@
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
 import topologic_core as topologic
-from topologicpy.Wire import Wire
-from topologicpy.Topology import Topology
-import math
     
-class Cell(Topology):
+class Cell():
     @staticmethod
-    def Area(cell: topologic.Cell, mantissa: int = 6) -> float:
+    def Area(cell, mantissa: int = 6):
         """
         Returns the surface area of the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The cell.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
@@ -39,25 +36,25 @@ class Cell(Topology):
 
         """
         from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
 
-        faces = []
-        _ = cell.Faces(None, faces)
+        faces = Topology.Faces(cell)
         area = 0.0
         for aFace in faces:
             area = area + Face.Area(aFace)
         return round(area, mantissa)
 
     @staticmethod
-    def Box(origin: topologic.Vertex = None,
+    def Box(origin = None,
             width: float = 1, length: float = 1, height: float = 1,
             uSides: int = 1, vSides: int = 1, wSides: int = 1,
-            direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+            direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
         Creates a box.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin location of the box. The default is None which results in the box being placed at (0, 0, 0).
         width : float , optional
             The width of the box. The default is 1.
@@ -80,7 +77,7 @@ class Cell(Topology):
         
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created box.
 
         """
@@ -89,7 +86,7 @@ class Cell(Topology):
                           direction=direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
-    def ByFaces(faces: list, planarize: bool = False, tolerance: float = 0.0001, silent=False) -> topologic.Cell:
+    def ByFaces(faces: list, planarize: bool = False, tolerance: float = 0.0001, silent=False):
         """
         Creates a cell from the input list of faces.
 
@@ -106,7 +103,7 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created cell.
 
         """
@@ -119,14 +116,14 @@ class Cell(Topology):
             if not silent:
                 print("Cell.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
                 return None
-        faceList = [x for x in faces if isinstance(x, topologic.Face)]
+        faceList = [x for x in faces if Topology.IsInstance(x, "Face")]
         if len(faceList) < 1:
             if not silent:
                 print("Cell.ByFaces - Error: The input faces parameter does not contain valid faces. Returning None.")
                 return None
         # Try the default method
-        cell = topologic.Cell.ByFaces(faceList, tolerance)
-        if isinstance(cell, topologic.Cell):
+        cell = topologic.Cell.ByFaces(faceList, tolerance) # Hook to Core
+        if Topology.IsInstance(cell, "Cell"):
             return cell
         
         # Fuse all the vertices first and rebuild the faces
@@ -145,9 +142,9 @@ class Cell(Topology):
                 if not index == None:
                     face_vertices.append(all_vertices[index])
             new_w = Wire.ByVertices(face_vertices)
-            if isinstance(new_w, topologic.Wire):
+            if Topology.IsInstance(new_w, "Wire"):
                 new_f = Face.ByWire(new_w, silent=True)
-                if isinstance(new_f, topologic.Face):
+                if Topology.IsInstance(new_f, "Face"):
                     new_faces.append(new_f)
                 elif isinstance(new_f, list):
                     new_faces += new_f
@@ -157,7 +154,7 @@ class Cell(Topology):
         if planarize:
             planarizedList = [Face.Planarize(f, tolerance=tolerance) for f in faceList]
             enlargedList = [Face.ByOffset(f, offset=-tolerance*10) for f in planarizedList]
-            cell = topologic.Cell.ByFaces(enlargedList, tolerance)
+            cell = topologic.Cell.ByFaces(enlargedList, tolerance) # Hook to Core
             faceList = Topology.SubTopologies(cell, subTopologyType="face")
             finalFaces = []
             for f in faceList:
@@ -171,11 +168,11 @@ class Cell(Topology):
                 vertices = Face.Vertices(f)
                 w = Wire.Cycles(Face.ExternalBoundary(f), maxVertices=len(vertices))[0]
                 f1 = Face.ByWire(w, tolerance=tolerance, silent=True)
-                if isinstance(f1, topologic.Face):
+                if Topology.IsInstance(f1, "Face"):
                     finalFinalFaces.append(f1)
                 elif isinstance(f1, list):
                     finalFinalFaces += f1
-            cell = topologic.Cell.ByFaces(finalFinalFaces, tolerance)
+            cell = topologic.Cell.ByFaces(finalFinalFaces, tolerance) # Hook to Core
             if cell == None:
                 if not silent:
                     print("Cell.ByFaces - Error: The operation failed. Returning None.")
@@ -183,7 +180,7 @@ class Cell(Topology):
             else:
                 return cell
         else:
-            cell = topologic.Cell.ByFaces(faces, tolerance)
+            cell = topologic.Cell.ByFaces(faces, tolerance) # Hook to Core
             if cell == None:
                 if not silent:
                     print("Cell.ByFaces - Error: The operation failed. Returning None.")
@@ -191,13 +188,13 @@ class Cell(Topology):
             else:
                 return cell
     @staticmethod
-    def ByOffset(cell: topologic.Cell, offset: float = 1.0, tolerance: float = 0.0001) -> topologic.Face:
+    def ByOffset(cell, offset: float = 1.0, tolerance: float = 0.0001):
         """
         Creates an offset cell from the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
         offset : float , optional
             The desired offset distance. The default is 1.0.
@@ -206,7 +203,7 @@ class Cell(Topology):
         
         Returns
         -------
-        topologic.Topology
+        Topology
             The created offset topology. WARNING: This method may fail to create a cell if the offset creates self-intersecting faces. Always check the type being returned by this method.
 
         """
@@ -229,13 +226,13 @@ class Cell(Topology):
         return new_cell
     
     @staticmethod
-    def ByShell(shell: topologic.Shell, planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
+    def ByShell(shell, planarize: bool = False, tolerance: float = 0.0001):
         """
         Creates a cell from the input shell.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell. The shell must be closed for this method to succeed.
         planarize : bool, optional
             If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. The default is False.
@@ -244,26 +241,27 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created cell.
 
         """
         from topologicpy.Topology import Topology
-        if not isinstance(shell, topologic.Shell):
+
+        if not Topology.IsInstance(shell, "Shell"):
             print("Cell.ByShell - Error: The input shell parameter is not a valid topologic shell. Returning None.")
             return None
         faces = Topology.SubTopologies(shell, subTopologyType="face")
         return Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
     
     @staticmethod
-    def ByThickenedFace(face: topologic.Face, thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
-                            planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
+    def ByThickenedFace(face, thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
+                            planarize: bool = False, tolerance: float = 0.0001):
         """
         Creates a cell by thickening the input face.
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face to be thickened.
         thickness : float , optional
             The desired thickness. The default is 1.0.
@@ -278,7 +276,7 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created cell.
 
         """
@@ -287,7 +285,7 @@ class Cell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             print("Cell.ByThickenedFace - Error: The input face parameter is not a valid topologic face. Returning None.")
             return None
         if reverse == True and bothSides == False:
@@ -301,8 +299,7 @@ class Cell(Topology):
             topFace = Topology.Translate(face, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
 
         cellFaces = [bottomFace, topFace]
-        bottomEdges = []
-        _ = bottomFace.Edges(None, bottomEdges)
+        bottomEdges = Topology.Edges(bottomFace)
         for bottomEdge in bottomEdges:
             topEdge = Topology.Translate(bottomEdge, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
             sideEdge1 = Edge.ByVertices([bottomEdge.StartVertex(), topEdge.StartVertex()], tolerance=tolerance, silent=True)
@@ -312,14 +309,14 @@ class Cell(Topology):
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
-    def ByThickenedShell(shell: topologic.Shell, direction: list = [0, 0, 1], thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
-                            planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
+    def ByThickenedShell(shell, direction: list = [0, 0, 1], thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
+                            planarize: bool = False, tolerance: float = 0.0001):
         """
         Creates a cell by thickening the input shell. The shell must be open.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell to be thickened.
         thickness : float , optional
             The desired thickness. The default is 1.0.
@@ -334,7 +331,7 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created cell.
 
         """
@@ -344,7 +341,7 @@ class Cell(Topology):
         from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        if not isinstance(shell, topologic.Shell):
+        if not Topology.IsInstance(shell, "Shell"):
             print("Cell.ByThickenedShell - Error: The input shell parameter is not a valid topologic Shell. Returning None.")
             return None
         if reverse == True and bothSides == False:
@@ -368,13 +365,13 @@ class Cell(Topology):
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
     
     @staticmethod
-    def ByWires(wires: list, close: bool = False, triangulate: bool = True, planarize: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent=False) -> topologic.Cell:
+    def ByWires(wires: list, close: bool = False, triangulate: bool = True, planarize: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent=False):
         """
         Creates a cell by lofting through the input list of wires.
 
         Parameters
         ----------
-        wires : topologic.Wire
+        wires : list
             The input list of wires.
         close : bool , optional
             If set to True, the last wire in the list of input wires will be connected to the first wire in the list of input wires. The default is False.
@@ -394,7 +391,7 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created cell.
 
         """
@@ -408,7 +405,7 @@ class Cell(Topology):
             if not silent:
                 print("Cell.ByWires - Error: The input wires parameter is not a valid list. Returning None.")
                 return None
-        wires = [w for w in wires if isinstance(w, topologic.Wire)]
+        wires = [w for w in wires if Topology.IsInstance(w, "Wire")]
         if len(wires) < 2:
             if not silent:
                 print("Cell.ByWires - Error: The input wires parameter contains less than two valid topologic wires. Returning None.")
@@ -427,10 +424,8 @@ class Cell(Topology):
         for i in range(len(wires)-1):
             wire1 = wires[i]
             wire2 = wires[i+1]
-            w1_edges = []
-            _ = wire1.Edges(None, w1_edges)
-            w2_edges = []
-            _ = wire2.Edges(None, w2_edges)
+            w1_edges = Topology.Edges(wire1)
+            w2_edges = Topology.Edges(wire2)
             if len(w1_edges) != len(w2_edges):
                 if not silent:
                     print("Cell.ByWires - Error: The input wires parameter contains wires with different number of edges. Returning None.")
@@ -493,22 +488,22 @@ class Cell(Topology):
         cell = Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance, silent=silent)
         if not cell:
             shell = Shell.ByFaces(faces, tolerance=tolerance)
-            if isinstance(shell, topologic.Shell):
+            if Topology.IsInstance(shell, "Shell"):
                 geom = Topology.Geometry(shell, mantissa=mantissa)
                 cell = Topology.ByGeometry(geom['vertices'], geom['edges'], geom['faces'])
-            if not isinstance(cell, topologic.Cell):
+            if not Topology.IsInstance(cell, "Cell"):
                 print("Cell.ByWires - Error: Could not create a cell. Returning None.")
                 return None
         return cell
 
     @staticmethod
-    def ByWiresCluster(cluster: topologic.Cluster, close: bool = False, triangulate: bool = True, planarize: bool = False, tolerance: float = 0.0001) -> topologic.Cell:
+    def ByWiresCluster(cluster, close: bool = False, triangulate: bool = True, planarize: bool = False, tolerance: float = 0.0001):
         """
         Creates a cell by lofting through the input cluster of wires.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : Cluster
             The input Cluster of wires.
         close : bool , optional
             If set to True, the last wire in the cluster of input wires will be connected to the first wire in the cluster of input wires. The default is False.
@@ -524,25 +519,26 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created cell.
 
         """
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cell.ByWiresCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        wires = []
-        _ = cluster.Wires(None, wires)
+        wires = Topology.Wires(cluster)
         return Cell.ByWires(wires, close=close, triangulate=triangulate, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
-    def Capsule(origin: topologic.Vertex = None, radius: float = 0.25, height: float = 1, uSides: int = 16, vSidesEnds:int = 8, vSidesMiddle: int = 1, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Capsule(origin = None, radius: float = 0.25, height: float = 1, uSides: int = 16, vSidesEnds:int = 8, vSidesMiddle: int = 1, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a capsule shape. A capsule is a cylinder with hemispherical ends.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The location of the origin of the cylinder. The default is None which results in the cylinder being placed at (0, 0, 0).
         radius : float , optional
             The radius of the capsule. The default is 0.25.
@@ -563,7 +559,7 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created cell.
 
             """
@@ -572,7 +568,7 @@ class Cell(Topology):
         from topologicpy.Vertex import Vertex
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Capsule - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         cyl_height = height - radius*2
@@ -600,13 +596,13 @@ class Cell(Topology):
         return capsule
 
     @staticmethod
-    def Compactness(cell: topologic.Cell, reference = "sphere", mantissa: int = 6) -> float:
+    def Compactness(cell, reference = "sphere", mantissa: int = 6) -> float:
         """
         Returns the compactness measure of the input cell. If the reference is "sphere", this is also known as 'sphericity' (https://en.wikipedia.org/wiki/Sphericity).
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
         reference : str , optional
             The desired reference to which to compare this compactness. The options are "sphere" and "cube". It is case insensitive. The default is "sphere".
@@ -620,12 +616,14 @@ class Cell(Topology):
 
         """
         from topologicpy.Face import Face
-        faces = []
-        _ = cell.Faces(None, faces)
+        from topologicpy.Topology import Topology
+        import math
+
+        faces = Topology.Faces(cell)
         area = 0.0
         for aFace in faces:
             area = area + abs(Face.Area(aFace))
-        volume = abs(topologic.CellUtility.Volume(cell))
+        volume = abs(Cell.Volume(cell, mantissa=mantissa))
         compactness  = 0
         #From https://en.wikipedia.org/wiki/Sphericity
         if area > 0:
@@ -639,14 +637,14 @@ class Cell(Topology):
         return round(compactness, mantissa)
     
     @staticmethod
-    def Cone(origin: topologic.Vertex = None, baseRadius: float = 0.5, topRadius: float = 0, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
-                 dirZ: float = 1, placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Cone(origin = None, baseRadius: float = 0.5, topRadius: float = 0, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
+                 dirZ: float = 1, placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a cone.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The location of the origin of the cone. The default is None which results in the cone being placed at (0, 0, 0).
         baseRadius : float , optional
             The radius of the base circle of the cone. The default is 0.5.
@@ -665,16 +663,17 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created cone.
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        import math
+
         def createCone(baseWire, topWire, baseVertex, topVertex, tolerance):
             if baseWire == None and topWire == None:
                 raise Exception("Cell.Cone - Error: Both radii of the cone cannot be zero at the same time")
@@ -685,9 +684,8 @@ class Cell(Topology):
                 apex = topVertex
                 wire = baseWire
             else:
-                return topologic.CellUtility.ByLoft([baseWire, topWire])
-            vertices = []
-            _ = wire.Vertices(None,vertices)
+                return Cell.ByWires([baseWire, topWire])
+            vertices = Topology.Vertices(wire)
             faces = [Face.ByWire(wire, tolerance=tolerance)]
             for i in range(0, len(vertices)-1):
                 w = Wire.ByVertices([apex, vertices[i], vertices[i+1]])
@@ -699,7 +697,7 @@ class Cell(Topology):
             return Cell.ByFaces(faces, tolerance=tolerance)
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Cone - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         xOffset = 0
@@ -761,15 +759,15 @@ class Cell(Topology):
         return cone
   
     @staticmethod
-    def ContainmentStatus(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> int:
+    def ContainmentStatus(cell, vertex, tolerance: float = 0.0001) -> int:
         """
         Returns the containment status of the input vertex in relationship to the input cell
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -780,14 +778,16 @@ class Cell(Topology):
             Returns 0 if the vertex is inside, 1 if it is on the boundary of, and 2 if it is outside the input cell.
 
         """
-        if not isinstance(cell, topologic.Cell):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.ContainmentStatus - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Cell.ContainmentStatus - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         try:
-            status = topologic.CellUtility.Contains(cell, vertex, tolerance)
+            status = topologic.CellUtility.Contains(cell, vertex, tolerance) # Hook to Core
             if status == 0:
                 return 0
             elif status == 1:
@@ -799,14 +799,14 @@ class Cell(Topology):
             return None
  
     @staticmethod
-    def Cylinder(origin: topologic.Vertex = None, radius: float = 0.5, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
-                     placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Cylinder(origin = None, radius: float = 0.5, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
+                     placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a cylinder.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The location of the origin of the cylinder. The default is None which results in the cylinder being placed at (0, 0, 0).
         radius : float , optional
             The radius of the cylinder. The default is 0.5.
@@ -825,18 +825,19 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created cell.
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Cylinder - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         xOffset = 0
@@ -869,13 +870,13 @@ class Cell(Topology):
         return cylinder
     
     @staticmethod
-    def Decompose(cell: topologic.Cell, tiltAngle: float = 10, tolerance: float = 0.0001) -> dict:
+    def Decompose(cell, tiltAngle: float = 10, tolerance: float = 0.0001) -> dict:
         """
         Decomposes the input cell into its logical components. This method assumes that the positive Z direction is UP.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             the input cell.
         tiltAngle : float , optional
             The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. The default is 10.
@@ -922,7 +923,7 @@ class Cell(Topology):
                     apTopologies.append(Aperture.Topology(aperture))
             return apTopologies
 
-        if not isinstance(cell, topologic.Cell):
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.Decompose - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         verticalFaces = []
@@ -977,8 +978,8 @@ class Cell(Topology):
         return d
 
     @staticmethod
-    def Dodecahedron(origin: topologic.Vertex = None, radius: float = 0.5,
-                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Dodecahedron(origin= None, radius: float = 0.5,
+                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
         Description
         ----------
@@ -986,7 +987,7 @@ class Cell(Topology):
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin location of the dodecahedron. The default is None which results in the dodecahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the dodecahedron's circumscribed sphere. The default is 0.5.
@@ -999,7 +1000,7 @@ class Cell(Topology):
         
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created dodecahedron.
 
         """
@@ -1011,7 +1012,7 @@ class Cell(Topology):
 
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Dodecahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         pen = Face.Circle(sides=5, radius=0.5)
@@ -1050,13 +1051,13 @@ class Cell(Topology):
         return dodecahedron
 
     @staticmethod
-    def Edges(cell: topologic.Cell) -> list:
+    def Edges(cell) -> list:
         """
         Returns the edges of the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
 
         Returns
@@ -1064,23 +1065,24 @@ class Cell(Topology):
         list
             The list of edges.
 
-        """ 
-        if not isinstance(cell, topologic.Cell):
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.Edges - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
-        edges = []
-        _ = cell.Edges(None, edges)
+        edges = Topology.Edges(cell)
         return edges
 
     @staticmethod
-    def Egg(origin: topologic.Vertex = None, height: float = 1.0, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
-                   placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Egg(origin= None, height: float = 1.0, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
+                   placement: str = "center", tolerance: float = 0.0001):
         """
         Creates an egg-shaped cell.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin location of the sphere. The default is None which results in the egg-shaped cell being placed at (0, 0, 0).
         height : float , optional
             The desired height of of the egg-shaped cell. The default is 1.0.
@@ -1097,18 +1099,19 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created egg-shaped cell.
 
         """
 
         from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Sphere - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         
@@ -1139,10 +1142,10 @@ class Cell(Topology):
             new_verts.append(Wire.VertexByParameter(c, i/vSides))
         c = Wire.ByVertices(new_verts, close=False)
         egg = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
-        if egg.Type() == topologic.CellComplex.Type():
+        if Topology.IsInstance(egg, "CellComplex"):
             egg = egg.ExternalBoundary()
-        if egg.Type() == topologic.Shell.Type():
-            egg = topologic.Cell.ByShell(egg)
+        if Topology.IsInstance(egg, "Shell"):
+            egg = Cell.ByShell(egg)
         egg = Topology.Scale(egg, origin=Vertex.Origin(), x=height, y=height, z=height)
         if placement.lower() == "bottom":
             egg = Topology.Translate(egg, 0, 0, height/2)
@@ -1157,23 +1160,24 @@ class Cell(Topology):
         return egg
     
     @staticmethod
-    def ExternalBoundary(cell: topologic.Cell) -> topologic.Shell:
+    def ExternalBoundary(cell):
         """
         Returns the external boundary of the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The external boundary of the input cell.
 
         """
+        from topologicpy.Topology import Topology
 
-        if not isinstance(cell, topologic.Cell):
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.ExternalBoundary - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         try:
@@ -1183,13 +1187,13 @@ class Cell(Topology):
             return None
     
     @staticmethod
-    def Faces(cell: topologic.Cell) -> list:
+    def Faces(cell) -> list:
         """
         Returns the faces of the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
 
         Returns
@@ -1198,22 +1202,23 @@ class Cell(Topology):
             The list of faces.
 
         """
-        if not isinstance(cell, topologic.Cell):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.Faces - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
-        faces = []
-        _ = cell.Faces(None, faces)
+        faces = Topology.Faces(cell)
         return faces
 
     @staticmethod
-    def Hyperboloid(origin: topologic.Cell = None, baseRadius: float = 0.5, topRadius: float = 0.5, height: float = 1, sides: int = 24, direction: list = [0, 0, 1],
-                        twist: float = 60, placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Hyperboloid(origin = None, baseRadius: float = 0.5, topRadius: float = 0.5, height: float = 1, sides: int = 24, direction: list = [0, 0, 1],
+                        twist: float = 60, placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a hyperboloid.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The location of the origin of the hyperboloid. The default is None which results in the hyperboloid being placed at (0, 0, 0).
         baseRadius : float , optional
             The radius of the base circle of the hyperboloid. The default is 0.5.
@@ -1234,14 +1239,16 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created hyperboloid.
 
         """
         from topologicpy.Cluster import Cluster
         from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
+        import math
 
         def createHyperboloid(baseVertices, topVertices, tolerance):
             baseWire = Wire.ByVertices(baseVertices, close=True)
@@ -1269,7 +1276,7 @@ class Cell(Topology):
         
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Hyperboloid - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         w_origin = Vertex.Origin()
@@ -1307,8 +1314,8 @@ class Cell(Topology):
         return hyperboloid
     
     @staticmethod
-    def Icosahedron(origin: topologic.Vertex = None, radius: float = 0.5,
-                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Icosahedron(origin= None, radius: float = 0.5,
+                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
         Description
         ----------
@@ -1316,7 +1323,7 @@ class Cell(Topology):
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin location of the icosahedron. The default is None which results in the icosahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the icosahedron's circumscribed sphere. The default is 0.5.
@@ -1329,7 +1336,7 @@ class Cell(Topology):
         
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created icosahedron.
 
         """
@@ -1341,7 +1348,7 @@ class Cell(Topology):
 
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Dodecahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         rect1 = Wire.Rectangle(width=(1+math.sqrt(5))/2, length=1)
@@ -1393,63 +1400,64 @@ class Cell(Topology):
 
 
     @staticmethod
-    def InternalBoundaries(cell: topologic.Cell) -> list:
+    def InternalBoundaries(cell) -> list:
         """
         Returns the internal boundaries of the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
 
         Returns
         -------
         list
-            The list of internal boundaries ([topologic.Shell]).
+            The list of internal boundaries ([topologic_core.Shell]).
 
         """
         shells = []
-        _ = cell.InternalBoundaries(shells)
+        _ = cell.InternalBoundaries(shells) # Hook to Core
         return shells
     
     @staticmethod
-    def InternalVertex(cell: topologic.Cell, tolerance: float = 0.0001):
+    def InternalVertex(cell, tolerance: float = 0.0001):
         """
         Creates a vertex that is guaranteed to be inside the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Vertex
+        topologic_core.Vertex
             The internal vertex.
 
         """
+        from topologicpy.Topology import Topology
 
-        if not isinstance(cell, topologic.Cell):
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.InternalVertex - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         try:
-            return topologic.CellUtility.InternalVertex(cell, tolerance)
+            return topologic.CellUtility.InternalVertex(cell, tolerance) # Hook to Core
         except:
             print("Cell.InternalVertex - Error: Could not create an internal vertex. Returning None.")
             return None
     
     @staticmethod
-    def IsOnBoundary(cell: topologic.Cell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+    def IsOnBoundary(cell, vertex, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input vertex is on the boundary of the input cell. Returns False otherwise.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -1460,22 +1468,23 @@ class Cell(Topology):
             Returns True if the input vertex is inside the input cell. Returns False otherwise.
 
         """
+        from topologicpy.Topology import Topology
 
-        if not isinstance(cell, topologic.Cell):
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.IsOnBoundary - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Cell.IsOnBoundary - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         try:
-            return (topologic.CellUtility.Contains(cell, vertex, tolerance) == 1)
+            return (Cell.ContainmentStatus(cell, vertex, tolerance = tolerance) == 1)
         except:
             print("Cell.IsOnBoundary - Error: Could not determine if the input vertex is on the boundary of the input cell. Returning None.")
             return None
     
     @staticmethod
-    def Octahedron(origin: topologic.Vertex = None, radius: float = 0.5,
-                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Octahedron(origin= None, radius: float = 0.5,
+                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
         Description
         ----------
@@ -1483,7 +1492,7 @@ class Cell(Topology):
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin location of the octahedron. The default is None which results in the octahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the octahedron's circumscribed sphere. The default is 0.5.
@@ -1496,7 +1505,7 @@ class Cell(Topology):
         
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created octahedron.
 
         """
@@ -1507,7 +1516,7 @@ class Cell(Topology):
 
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Octahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         
@@ -1537,7 +1546,7 @@ class Cell(Topology):
         return octahedron
     
     @staticmethod
-    def Pipe(edge: topologic.Edge, profile: topologic.Wire = None, radius: float = 0.5, sides: int = 16, startOffset: float = 0, endOffset: float = 0, endcapA: topologic.Topology = None, endcapB: topologic.Topology = None) -> dict:
+    def Pipe(edge, profile = None, radius: float = 0.5, sides: int = 16, startOffset: float = 0, endOffset: float = 0, endcapA = None, endcapB = None) -> dict:
         """
         Description
         ----------
@@ -1545,9 +1554,9 @@ class Cell(Topology):
 
         Parameters
         ----------
-        edge : topologic.Edge
+        edge : topologic_core.Edge
             The centerline of the pipe.
-        profile : topologic.Wire , optional
+        profile : topologic_core.Wire , optional
             The profile of the pipe. It is assumed that the profile is in the XY plane. If set to None, a circle of radius 0.5 will be used. The default is None.
         radius : float , optional
             The radius of the pipe. The default is 0.5.
@@ -1557,9 +1566,9 @@ class Cell(Topology):
             The offset distance from the start vertex of the centerline edge. The default is 0.
         endOffset : float , optional
             The offset distance from the end vertex of the centerline edge. The default is 0.
-        endcapA : topologic.Topology, optional
+        endcapA, optional
             The topology to place at the start vertex of the centerline edge. The positive Z direction of the end cap will be oriented in the direction of the centerline edge.
-        endcapB : topologic.Topology, optional
+        endcapB, optional
             The topology to place at the end vertex of the centerline edge. The positive Z direction of the end cap will be oriented in the inverse direction of the centerline edge.
 
         Returns
@@ -1574,9 +1583,11 @@ class Cell(Topology):
 
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
+        import math
 
-        if not isinstance(edge, topologic.Edge):
+        if not Topology.IsInstance(edge, "Edge"):
             print("Cell.Pipe - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         length = Edge.Length(edge)
@@ -1598,7 +1609,7 @@ class Cell(Topology):
         baseV = []
         topV = []
 
-        if isinstance(profile, topologic.Wire):
+        if Topology.IsInstance(profile, "Wire"):
             baseWire = Topology.Translate(profile, 0 , 0, sv.Z())
             topWire = Topology.Translate(profile, 0 , 0, sv.Z()+dist)
         else:
@@ -1667,8 +1678,8 @@ class Cell(Topology):
         return {'pipe': pipe, 'endcapA': endcapA, 'endcapB': endcapB}
     
     @staticmethod
-    def Prism(origin: topologic.Vertex = None, width: float = 1, length: float = 1, height: float = 1, uSides: int = 1, vSides: int = 1, wSides: int = 1,
-                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Prism(origin= None, width: float = 1, length: float = 1, height: float = 1, uSides: int = 1, vSides: int = 1, wSides: int = 1,
+                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
         Description
         ----------
@@ -1676,7 +1687,7 @@ class Cell(Topology):
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin location of the prism. The default is None which results in the prism being placed at (0, 0, 0).
         width : float , optional
             The width of the prism. The default is 1.
@@ -1699,14 +1710,17 @@ class Cell(Topology):
         
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created prism.
 
         """
+        from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
         def sliceCell(cell, width, length, height, uSides, vSides, wSides):
-            origin = cell.Centroid()
-            shells = []
-            _ = cell.Shells(None, shells)
+            origin = Topology.Centroid(cell)
+            shells = Topology.Shells(cell)
             shell = shells[0]
             wRect = Wire.Rectangle(origin=origin, width=width*1.2, length=length*1.2, direction=[0, 0, 1], placement="center")
             sliceFaces = []
@@ -1719,7 +1733,7 @@ class Cell(Topology):
             for i in range(1, vSides):
                 sliceFaces.append(Topology.Translate(Face.ByWire(vRect, tolerance=tolerance), 0, length/vSides*i - length*0.5, 0))
             if len(sliceFaces) > 0:
-                sliceCluster = topologic.Cluster.ByTopologies(sliceFaces)
+                sliceCluster = Cluster.ByTopologies(sliceFaces)
                 shell = Topology.Slice(topologyA=shell, topologyB=sliceCluster, tranDict=False, tolerance=tolerance)
                 return Cell.ByShell(shell)
             return cell
@@ -1730,7 +1744,7 @@ class Cell(Topology):
 
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Prism - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         xOffset = 0
@@ -1757,13 +1771,13 @@ class Cell(Topology):
         return prism
 
     @staticmethod
-    def RemoveCollinearEdges(cell: topologic.Cell, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
+    def RemoveCollinearEdges(cell, angTolerance: float = 0.1, tolerance: float = 0.0001):
         """
         Removes any collinear edges in the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
         angTolerance : float , optional
             The desired angular tolerance. The default is 0.1.
@@ -1772,13 +1786,14 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created cell without any collinear edges.
 
         """
         from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
 
-        if not isinstance(cell, topologic.Cell):
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.RemoveCollinearEdges - Error: The input cell parameter is not a valid cell. Returning None.")
             return None
         faces = Cell.Faces(cell)
@@ -1795,7 +1810,7 @@ class Cell(Topology):
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         angle : float , optioal
             The desired angle in degrees of the roof. The default is 45.
@@ -1852,11 +1867,11 @@ class Cell(Topology):
         if not isinstance(superCells, list):
             print("Cell.Sets - Error: The input superCells parameter is not a valid list. Returning None.")
             return None
-        cells = [c for c in cells if isinstance(c, topologic.Cell)]
+        cells = [c for c in cells if Topology.IsInstance(c, "Cell")]
         if len(cells) < 1:
             print("Cell.Sets - Error: The input cells parameter does not contain any valid cells. Returning None.")
             return None
-        superCells = [c for c in superCells if isinstance(c, topologic.Cell)]
+        superCells = [c for c in superCells if Topology.IsInstance(c, "Cell")]
         if len(cells) < 1:
             print("Cell.Sets - Error: The input cells parameter does not contain any valid cells. Returning None.")
             return None
@@ -1866,8 +1881,7 @@ class Cell(Topology):
                 oldCluster = cluster
                 cluster = cluster.Union(cells[i])
                 del oldCluster
-            superCells = []
-            _ = cluster.Cells(None, superCells)
+            superCells = Topology.Cells(cluster)
         unused = []
         for i in range(len(cells)):
             unused.append(True)
@@ -1884,13 +1898,13 @@ class Cell(Topology):
         return sets
     
     @staticmethod
-    def Shells(cell: topologic.Cell) -> list:
+    def Shells(cell) -> list:
         """
         Returns the shells of the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
 
         Returns
@@ -1899,22 +1913,24 @@ class Cell(Topology):
             The list of shells.
 
         """
-        if not isinstance(cell, topologic.Cell):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.Shells - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         shells = []
-        _ = cell.Shells(None, shells)
+        _ = cell.Shells(None, shells) # Hook to Core
         return shells
 
     @staticmethod
-    def Sphere(origin: topologic.Vertex = None, radius: float = 0.5, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
-                   placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Sphere(origin= None, radius: float = 0.5, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
+                   placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a sphere.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin location of the sphere. The default is None which results in the sphere being placed at (0, 0, 0).
         radius : float , optional
             The radius of the sphere. The default is 0.5.
@@ -1931,26 +1947,27 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created sphere.
 
         """
 
         from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Sphere - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         c = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=vSides, fromAngle=-90, toAngle=90, close=False, direction=[0, 0, 1], placement="center")
         c = Topology.Rotate(c, origin=Vertex.Origin(), axis=[1, 0, 0], angle=90)
         sphere = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
-        if sphere.Type() == topologic.CellComplex.Type():
+        if Topology.Type(sphere) == Topology.TypeID("CellComplex"):
             sphere = sphere.ExternalBoundary()
-        if sphere.Type() == topologic.Shell.Type():
-            sphere = topologic.Cell.ByShell(sphere)
+        if Topology.Type(sphere) == Topology.TypeID("Shell"):
+            sphere = Cell.ByShell(sphere)
         if placement.lower() == "bottom":
             sphere = Topology.Translate(sphere, 0, 0, radius)
         elif placement.lower() == "lowerleft":
@@ -1960,13 +1977,13 @@ class Cell(Topology):
         return sphere
     
     @staticmethod
-    def SurfaceArea(cell: topologic.Cell, mantissa: int = 6) -> float:
+    def SurfaceArea(cell, mantissa: int = 6) -> float:
         """
         Returns the surface area of the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The cell.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
@@ -1980,8 +1997,8 @@ class Cell(Topology):
         return Cell.Area(cell=cell, mantissa=mantissa)
     
     @staticmethod
-    def Tetrahedron(origin: topologic.Vertex = None, radius: float = 0.5,
-                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Tetrahedron(origin= None, radius: float = 0.5,
+                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
         Description
         ----------
@@ -1989,7 +2006,7 @@ class Cell(Topology):
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin location of the tetrahedron. The default is None which results in the tetrahedron being placed at (0, 0, 0).
         radius : float , optional
             The radius of the tetrahedron's circumscribed sphere. The default is 0.5.
@@ -2002,7 +2019,7 @@ class Cell(Topology):
         
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created tetrahedron.
 
         """
@@ -2015,7 +2032,7 @@ class Cell(Topology):
 
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Tetrahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
 
@@ -2040,13 +2057,13 @@ class Cell(Topology):
         return tetrahedron
     
     @staticmethod
-    def Torus(origin: topologic.Vertex = None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Cell:
+    def Torus(origin= None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a torus.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin location of the torus. The default is None which results in the torus being placed at (0, 0, 0).
         majorRadius : float , optional
             The major radius of the torus. The default is 0.5.
@@ -2065,24 +2082,25 @@ class Cell(Topology):
 
         Returns
         -------
-        topologic.Cell
+        topologic_core.Cell
             The created torus.
 
         """
         
         from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
         
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Torus - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         c = Wire.Circle(origin=Vertex.Origin(), radius=minorRadius, sides=vSides, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
         c = Topology.Translate(c, abs(majorRadius-minorRadius), 0, 0)
         torus = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
-        if torus.Type() == topologic.Shell.Type():
-            torus = topologic.Cell.ByShell(torus)
+        if Topology.Type(torus) == Topology.TypeID("Shell"):
+            torus = Cell.ByShell(torus)
         if placement.lower() == "bottom":
             torus = Topology.Translate(torus, 0, 0, minorRadius)
         elif placement.lower() == "lowerleft":
@@ -2093,13 +2111,13 @@ class Cell(Topology):
         return torus
     
     @staticmethod
-    def Vertices(cell: topologic.Cell) -> list:
+    def Vertices(cell) -> list:
         """
         Returns the vertices of the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
 
         Returns
@@ -2108,21 +2126,23 @@ class Cell(Topology):
             The list of vertices.
 
         """
-        if not isinstance(cell, topologic.Cell):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.Vertices - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         vertices = []
-        _ = cell.Vertices(None, vertices)
+        _ = cell.Vertices(None, vertices) # Hook to Core
         return vertices
 
     @staticmethod
-    def Volume(cell: topologic.Cell, mantissa: int = 6) -> float:
+    def Volume(cell, mantissa: int = 6) -> float:
         """
         Returns the volume of the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
         manitssa: int , optional
             The desired length of the mantissa. The default is 6.
@@ -2133,25 +2153,27 @@ class Cell(Topology):
             The volume of the input cell.
 
         """
-        if not isinstance(cell, topologic.Cell):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.Volume - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         volume = None
         try:
-            volume = round(topologic.CellUtility.Volume(cell), mantissa)
+            volume = round(topologic.CellUtility.Volume(cell), mantissa) # Hook to Core
         except:
             print("Cell.Volume - Error: Could not compute the volume of the input cell. Returning None.")
             volume = None
         return volume
 
     @staticmethod
-    def Wires(cell: topologic.Cell) -> list:
+    def Wires(cell) -> list:
         """
         Returns the wires of the input cell.
 
         Parameters
         ----------
-        cell : topologic.Cell
+        cell : topologic_core.Cell
             The input cell.
 
         Returns
@@ -2160,10 +2182,12 @@ class Cell(Topology):
             The list of wires.
 
         """
-        if not isinstance(cell, topologic.Cell):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.Wires - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         wires = []
-        _ = cell.Wires(None, wires)
+        _ = cell.Wires(None, wires) # Hook to Core
         return wires
 

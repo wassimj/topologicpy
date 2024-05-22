@@ -21,7 +21,7 @@ from topologicpy.Plotly import  Plotly
 
 def test_main():
     print("Start")
-    print("65 Cases")
+    print("64 Cases (5 cases will be skipped)")
     # Object for test
     v0 = Vertex.ByCoordinates(0, 0, 0)                                                                   # create vertex
     v1 = Vertex.ByCoordinates(0, 10, 0)                                                                 # create vertex
@@ -59,26 +59,26 @@ def test_main():
         offF2.append(Topology.Scale(face2, Topology.Centroid(face2), x=.4, y=.4, z=.4))   # offset face
     # test 1
     addA1 = Topology.AddApertures(box5, offF1)                                                            # without optional inputs
-    assert isinstance(addA1, topologic.Topology), "Topology.AddApertures. Should be topology.Topology"
+    assert Topology.IsInstance(addA1, "Topology"), "Topology.AddApertures. Should be Topology"
     # test 2
     addA2 = Topology.AddApertures(prism1, offF2,  exclusive=False, tolerance=0.0001) # with optional inputs
-    assert isinstance(addA2, topologic.Topology), "Topology.AddApertures. Should be topology.Topology"
+    assert Topology.IsInstance(addA2, "Topology"), "Topology.AddApertures. Should be Topology"
     # test 2.1 - vertex
     addA2Ver = Topology.AddApertures(prism1, offF2,  exclusive=False,                          # with optional inputs
                                                                subTopologyType= 'vertex', tolerance=0.0001) 
-    assert isinstance(addA2Ver, topologic.Topology), "Topology.AddApertures. Should be topology.Topology"
+    assert Topology.IsInstance(addA2Ver, "Topology"), "Topology.AddApertures. Should be Topology"
     # test 2.2 - edge
     addA2Edg = Topology.AddApertures(prism1, offF2,  exclusive=False,                          # with optional inputs
                                                                 subTopologyType= 'edge', tolerance=0.0001)
-    assert isinstance(addA2Edg, topologic.Topology), "Topology.AddApertures. Should be topology.Topology"
+    assert Topology.IsInstance(addA2Edg, "Topology"), "Topology.AddApertures. Should be Topology"
     # test 2.3 - face
     addA2Face = Topology.AddApertures(prism1, offF2,  exclusive=False,                         # with optional inputs
                                                                  subTopologyType= 'face', tolerance=0.0001)
-    assert isinstance(addA2Face, topologic.Topology), "Topology.AddApertures. Should be topology.Topology"
+    assert Topology.IsInstance(addA2Face, "Topology"), "Topology.AddApertures. Should be Topology"
     # test 2.4 - cell
     addA2Cell = Topology.AddApertures(prism1, offF2,  exclusive=False,                         # with optional inputs
                                                                 subTopologyType= 'cell', tolerance=0.0001)
-    assert isinstance(addA2Cell, topologic.Topology), "Topology.AddApertures. Should be topology.Topology"
+    assert Topology.IsInstance(addA2Cell, "Topology"), "Topology.AddApertures. Should be Topology"
     #plot geometry
     # geo1 = Plotly.DataByTopology(addA2)                       # create plotly data
     # plotfig1 = Plotly.FigureByData(geo1)
@@ -90,10 +90,10 @@ def test_main():
     contents2 = [box1, box3]                                              # create content
     # test 1
     addC1 = Topology.AddContent(box1, contents1)
-    assert isinstance(addC1, topologic.Topology), "Topology.AddContent. Should be topologic.Topologic"
+    assert Topology.IsInstance(addC1, "Topology"), "Topology.AddContent. Should be topologic.Topologic"
     # test 2
     addC2 = Topology.AddContent(box2, contents2)
-    assert isinstance(addC2, topologic.Topology), "Topology.AddContent. Should be topologic.Topologic"
+    assert Topology.IsInstance(addC2, "Topology"), "Topology.AddContent. Should be topologic.Topologic"
     # plot geometry
     # geo1 = Plotly.DataByTopology(addC1)                       # create plotly data
     # plotfig1 = Plotly.FigureByData(geo1)
@@ -105,10 +105,10 @@ def test_main():
     Dict2 = Dictionary.ByKeysValues([1], ["prism1"])                                   # create dictionary
     # test 1
     AddD1 = Topology.AddDictionary(box1, Dict1)
-    assert isinstance(AddD1, topologic.Topology), "Topology.AddDictionary.  Should be topologic.Topology"
+    assert Topology.IsInstance(AddD1, "Topology"), "Topology.AddDictionary.  Should be topologic.Topology"
     # test 2
     AddD2 = Topology.AddDictionary(prism1, Dict2)
-    assert isinstance(AddD2, topologic.Topology), "Topology.AddDictionary.  Should be topologic.Topology"
+    assert Topology.IsInstance(AddD2, "Topology"), "Topology.AddDictionary.  Should be topologic.Topology"
 
     # case 4 - AdjacentTopologies
     print("Case 4")
@@ -159,109 +159,120 @@ def test_main():
     print("Case 8")
     # test 1 - Union
     union1 = Topology.Boolean(box1, box4)                                                      # without optional inputs                                         
-    assert isinstance(union1, topologic.Cell), "Topology.Union. Should be topologic.Cell"
+    assert Topology.IsInstance(union1, "Cell"), "Topology.Union. Should be topologic_core.Cell"
     # test 2 - Union
     union2 = Topology.Boolean(prism1, prism3, operation= 'union',                 # with optional inputs
                                                   tranDict=False, tolerance= 0.0005)
-    assert isinstance(union2, topologic.Cell), "Topology.Boolean. Should be topologic.Cell"
+    assert Topology.IsInstance(union2, "Cell"), "Topology.Boolean. Should be topologic_core.Cell"
     # test 3 - Difference
     diff1 = Topology.Boolean(box1, box4, operation= 'difference')
-    assert isinstance(diff1, topologic.CellComplex), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(diff1, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
     # test 4 -Difference
     diff2 = Topology.Boolean(prism1, prism3, operation= 'difference',                 # with optional inputs     
                                                   tranDict=False, tolerance= 0.0005)
-    assert isinstance(diff2, topologic.Cluster), "Topology.Boolean. Should be topologic.Cluster"
+    assert Topology.IsInstance(diff2, "Cluster"), "Topology.Boolean. Should be topologic.Cluster"
 
     # test 5 - Intersect
     intrsct1 = Topology.Boolean(box1, box4, operation= 'intersect')
-    assert isinstance(intrsct1, topologic.Cell), "Topology.Boolean. Should be topologic.Cell"
+    assert Topology.IsInstance(intrsct1, "Cell"), "Topology.Boolean. Should be topologic.Cell"
 
     # test 6 - Intersect
     intrsct2 = Topology.Boolean(box1, box4, operation= 'intersect',              # with optional inputs
                                                    tranDict=False, tolerance= 0.0001)   
-    assert isinstance(intrsct2, topologic.Cell), "Topology.Boolean. Should be topologic.Cell"
+    assert Topology.IsInstance(intrsct2, "Cell"), "Topology.Boolean. Should be topologic.Cell"
 
     # test 7 - Intersect
     intrsct3 = Topology.Boolean(box1, box4, operation= 'intersect',              # with optional inputs
                                                    tranDict=False, tolerance= 0.0001)   
-    assert isinstance(intrsct3, topologic.Cell), "Topology.Boolean. Should be topologic.Cell"
+    assert Topology.IsInstance(intrsct3, "Cell"), "Topology.Boolean. Should be topologic.Cell"
 
-    # test 8 - symdif
+    # test 8 - SymDif
     symdif1 = Topology.Boolean(box1, box4, operation= 'symdif')
-    assert isinstance(symdif1, topologic.Cluster), "Topology.Boolean. Should be topologic.Cluster"
+    assert Topology.IsInstance(symdif1, "Cluster"), "Topology.Boolean. Should be topologic.Cluster"
 
     # test 9 - symdif
     symdif2 = Topology.Boolean(box1, box4, operation= 'symdif',              # with optional inputs
                                                    tranDict=False, tolerance= 0.0001)
-    assert isinstance(symdif2, topologic.Cluster), "Topology.Boolean. Should be topologic.Cluster"
+    assert Topology.IsInstance(symdif2, "Cluster"), "Topology.Boolean. Should be topologic.Cluster"
 
-    # test 10 - symdif
+    # test 10 - SymDif
     symdif3 = Topology.Boolean(box1, box4, operation= 'symdif',              # with optional inputs
                                                    tranDict=False, tolerance= 0.0001)
-    assert isinstance(symdif3, topologic.Cluster), "Topology.Boolean. Should be topologic.Cluster"
+    assert Topology.IsInstance(symdif3, "Cluster"), "Topology.Boolean. Should be topologic.Cluster"
 
-    # test 11 - merge
+    # test 11 - Merge
     merge1 = Topology.Boolean(box1, box4,  operation= 'merge')
-    assert isinstance(merge1, topologic.CellComplex), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(merge1, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
 
-    # test 12 - merge
+    # test 12 - Merge
     merge2 = Topology.Boolean(prism1, prism3, operation= 'merge', 
                                                    tranDict=False, tolerance=0.0005)
-    assert isinstance(merge2, topologic.CellComplex), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(merge2, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
 
-    # test 13 - slice
+    # test 13 - Slice
     slice1 = Topology.Boolean(box2, box1, operation= 'slice')
-    assert isinstance(slice1, topologic.CellComplex), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(slice1, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
 
-    # test 14 - slice
+    # test 14 - Slice
     slice2 = Topology.Boolean(prism1, prism3, operation= 'slice',
                                                 tranDict=False, tolerance=0.0005)
-    assert isinstance(slice2, topologic.CellComplex), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(slice2, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
 
-    # test 15 - impose
+    # test 15 - Impose
     impo1 = Topology.Boolean(box2, box1, operation= 'impose')
-    assert isinstance(impo1, topologic.Cluster), "Topology.Boolean. Should be topologic.Cluster"
+    assert Topology.IsInstance(impo1, "Cluster"), "Topology.Boolean. Should be topologic.Cluster"
     # test 16 - impose
     impo2 = Topology.Boolean(prism1, prism3, operation= 'impose',
                                                 tranDict=False, tolerance=0.0005)
-    assert isinstance(impo2, topologic.CellComplex), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(impo2, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
 
-    # test 17 - imprint
+    # test 17 - Imprint
     impr1 = Topology.Boolean(box2, box1, operation= 'imprint')
-    assert isinstance(impr1, topologic.CellComplex), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(impr1, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
 
-    # test 18 - imprint
+    # test 18 - Imprint
     impr2 = Topology.Boolean(prism1, prism3, operation= 'imprint',
                                                 tranDict=False, tolerance=0.0005)
-    assert isinstance(impr2, topologic.CellComplex), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(impr2, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
 
     # case 9 - BoundingBox
     print("Case 9")
     # test 1
     bbox1 = Topology.BoundingBox(prism3)                                        # without optional inputs
-    assert isinstance(bbox1, topologic.Cell), "Topology.BoundingBox. Should be topology.Cell"
+    assert Topology.IsInstance(bbox1, "Cell"), "Topology.BoundingBox. Should be topology.Cell"
     # test 2.1
     bbox2x = Topology.BoundingBox(prism3, 10, "x")                          # with optional inputs           
-    assert isinstance(bbox2x, topologic.Cell), "Topology.BoundingBox. Should be topology.Cell"
+    assert Topology.IsInstance(bbox2x, "Cell"), "Topology.BoundingBox. Should be topology.Cell"
     # test 2.2
     bbox2y = Topology.BoundingBox(prism3, 10, "y")                          # with optional inputs  
-    assert isinstance(bbox2y, topologic.Cell), "Topology.BoundingBox. Should be topology.Cell"
+    assert Topology.IsInstance(bbox2y, "Cell"), "Topology.BoundingBox. Should be topology.Cell"
     # test 2.3
     bbox2z = Topology.BoundingBox(prism3, 10, "z")                          # with optional inputs  
-    assert isinstance(bbox2z, topologic.Cell), "Topology.BoundingBox. Should be topology.Cell"
+    assert Topology.IsInstance(bbox2z, "Cell"), "Topology.BoundingBox. Should be topology.Cell"
     #plot geometry
     # geo1 = Plotly.DataByTopology(bbox1)                       # create plotly data
     # plotfig1 = Plotly.FigureByData(geo1)
     # Plotly.Show(plotfig1, renderer= 'browser')
 
     # case 10 - ByImportedBRep
-    print("Case 10")
+    print("Case 10 - Skipped")
+    # case 11 - IsInstance
+    print("Case 11")
+    v = Vertex.Origin()
+    status = Topology.IsInstance(v, "Vertex")
+    assert status == True, "Topology.IsInstance. Should be True."
+    status = Topology.IsInstance(v, "Face")
+    assert status == False, "Topology.IsInstance. Should be False."
+
+
+    print("Case 12 - Skipped")
+    print("Case 13 - Skipped")
     # test 1
     #Brep1 = Topology.ByImportedBRep('../Export/bEB2.brep')
-    #assert isinstance(Brep1, topologic.Topology), "Topology.ByImportedBRep. Should be topologic.Topology"
+    #assert Topology.IsInstance(Brep1, "Topology"), "Topology.ByImportedBRep. Should be topologic.Topology"
     # test 2
     #Brep2 = Topology.ByImportedBRep('../Export/fcE2.brep')
-    #assert isinstance(Brep1, topologic.Topology), "Topology.ByImportedBRep. Should be topologic.Topology"
+    #assert Topology.IsInstance(Brep1, "Topology"), "Topology.ByImportedBRep. Should be topologic.Topology"
 
     # case 11 - ByImportedJSONMK1
     """ Not tested """
@@ -274,28 +285,28 @@ def test_main():
     print("Case 14")
     # test 1
     g1 = Topology.ByBREPString(Topology.BREPString(box1))
-    assert isinstance(g1, topologic.Topology), "Topology.ByBREPString. Should be topologic.Topology"
+    assert Topology.IsInstance(g1, "Topology"), "Topology.ByBREPString. Should be topologic.Topology"
     # test 2
     g2 = Topology.ByBREPString(Topology.BREPString(box2))
-    assert isinstance(g1, topologic.Topology), "Topology.ByBREPString. Should be topologic.Topology"
+    assert Topology.IsInstance(g1, "Topology"), "Topology.ByBREPString. Should be topologic.Topology"
 
     # case 15 - CenterOfMass
     print("Case 15")
     # test 1
     com1 = Topology.CenterOfMass(box1)
-    assert isinstance(com1, topologic.Vertex), "Topology.Centroid. Should be topologic.Vertex"
+    assert Topology.IsInstance(com1, "Vertex"), "Topology.Centroid. Should be topologic.Vertex"
     # test 2
     com2 = Topology.CenterOfMass(prism3)
-    assert isinstance(com2, topologic.Vertex), "Topology.Centroid. Should be topologic.Vertex"
+    assert Topology.IsInstance(com2, "Vertex"), "Topology.Centroid. Should be topologic.Vertex"
 
     # case 16 - Centroid
     print("Case 16")
     # test 1
     cent1 = Topology.Centroid(box1)
-    assert isinstance(cent1, topologic.Vertex), "Topology.Centroid. Should be topologic.Vertex"
+    assert Topology.IsInstance(cent1, "Vertex"), "Topology.Centroid. Should be topologic.Vertex"
     # test 2
     cent2 = Topology.Centroid(prism3)
-    assert isinstance(cent2, topologic.Vertex), "Topology.Centroid. Should be topologic.Vertex"
+    assert Topology.IsInstance(cent2, "Vertex"), "Topology.Centroid. Should be topologic.Vertex"
 
     # case 17 - ClusterFaces
     print("Case 17")
@@ -328,28 +339,28 @@ def test_main():
     print("Case 20")
     # test 1
     conV1 = Topology.ConvexHull(box1)
-    assert isinstance(conV1, topologic.Topology), "Topology.ConvexHull. Should be topologic.Topology"
+    assert Topology.IsInstance(conV1, "Topology"), "Topology.ConvexHull. Should be topologic.Topology"
     # test 2
     conV2 = Topology.ConvexHull(prism1)
-    assert isinstance(conV2, topologic.Topology), "Topology.ConvexHull. Should be topologic.Topology"
+    assert Topology.IsInstance(conV2, "Topology"), "Topology.ConvexHull. Should be topologic.Topology"
 
     # case 21 - Copy
     print("Case 21")
     # test 1
     copy1 = Topology.Copy(box1)
-    assert isinstance(copy1, topologic.Topology), "Topology.Copy. Should be topologic.Topology"
+    assert Topology.IsInstance(copy1, "Topology"), "Topology.Copy. Should be topologic.Topology"
     # test 2
     copy2 = Topology.Copy(prism3)
-    assert isinstance(copy2, topologic.Topology), "Topology.Copy. Should be topologic.Topology"
+    assert Topology.IsInstance(copy2, "Topology"), "Topology.Copy. Should be topologic.Topology"
 
     # case 22 - Dictionary
     print("Case 22")
     # test 1
     Dic1 = Topology.Dictionary(box2)
-    assert isinstance(Dic1, topologic.Dictionary), "Topology.Dictionary. Should be topologic.Dictionary"
+    assert Topology.IsInstance(Dic1, "Dictionary"), "Topology.Dictionary. Should be topologic.Dictionary"
     # test 2
     Dic2 = Topology.Dictionary(prism3)
-    assert isinstance(Dic2, topologic.Dictionary), "Topology.Dictionary. Should be topologic.Dictionary"
+    assert Topology.IsInstance(Dic2, "Dictionary"), "Topology.Dictionary. Should be topologic.Dictionary"
 
     # case 23 - Dimensionality
     print("Case 23")
@@ -367,13 +378,13 @@ def test_main():
     face2 = Face.Rectangle(v1, 20, 20, direction=[1, 180, 1])                                      # create face
     # test 1
     div1 = Topology.Divide(prism4, face1)                                              # without optional inputs
-    assert isinstance(div1, topologic.Topology), "Topology.Divide. Should be topologic.Topology"
+    assert Topology.IsInstance(div1, "Topology"), "Topology.Divide. Should be topologic.Topology"
     # to check childern of parent topology
     # divCnt1 = Topology.Contents(div1)
     # print(divCnt1," contents1")
     # test 2
     div2 = Topology.Divide(div1, face2, False, False)                                # wit optional inputs
-    assert isinstance(div2, topologic.Topology), "Topology.Divide. Should be topologic.Topology"
+    assert Topology.IsInstance(div2, "Topology"), "Topology.Divide. Should be topologic.Topology"
     # to check childern of parent topology
     # divCnt2 = Topology.Contents(div2)
     # print(divCnt2," contents2")
@@ -386,10 +397,10 @@ def test_main():
     print("Case 25")
     # test 1
     exp1 = Topology.Explode(box1)                                                    # without optional inputs
-    assert isinstance(exp1, topologic.Cluster), "Topology.Explode. Should be topologic.Cluster"
+    assert Topology.IsInstance(exp1, "Cluster"), "Topology.Explode. Should be topologic.Cluster"
     # test 2
     exp2 = Topology.Explode(prism1, v1, 1.5 , "face", "y")                  # with optional inputs
-    assert isinstance(exp2, topologic.Cluster), "Topology.Explode. Should be topologic.Cluster"
+    assert Topology.IsInstance(exp2, "Cluster"), "Topology.Explode. Should be topologic.Cluster"
     #plot geometry
     # geo1 = Plotly.DataByTopology(exp2)                       # create plotly data
     # plotfig1 = Plotly.FigureByData(geo1)
@@ -452,19 +463,19 @@ def test_main():
     #print("Case 32")
     #test 1
     #impo1 = Topology.Impose(box2, box1)                                        # without optional inputs
-    #assert isinstance(impo1, topologic.Topology),  "Topology.Impose. Should be topologic.Topology"
+    #assert Topology.IsInstance(impo1, "Topology"),  "Topology.Impose. Should be topologic.Topology"
     #test 2
     #impo2 = Topology.Impose(prism3, prism1, True, 0.0001)
-    #assert isinstance(impo2, topologic.Topology),  "Topology.Impose. Should be topologic.Topology"
+    #assert Topology.IsInstance(impo2, "Topology"),  "Topology.Impose. Should be topologic.Topology"
 
     # Case 33 - Imprint
     #print("Case 33")
     #test 1
     #impr1 = Topology.Imprint(box2, box1)                                        # without optional inputs
-    #assert isinstance(impr1, topologic.Topology),  "Topology.Impose. Should be topologic.Topology"
+    #assert Topology.IsInstance(impr1, "Topology"),  "Topology.Impose. Should be topologic.Topology"
     # test 2
     #impr2 = Topology.Imprint(prism3, prism1, True, 0.0001)
-    #assert isinstance(impr2, topologic.Topology),  "Topology.Impose. Should be topologic.Topology"
+    #assert Topology.IsInstance(impr2, "Topology"),  "Topology.Impose. Should be topologic.Topology"
 
     # Object for test case
     v00 = Vertex.ByCoordinates(0, 0, 0)          # create vertex
@@ -482,7 +493,7 @@ def test_main():
     # test 1
     cell_cy = Cell.Cylinder()
     topology_iv = Topology.InternalVertex(cell_cy)
-    assert isinstance(topology_iv, topologic.Vertex), "Topology.InternalVertex. Should be topologic.Vertex"
+    assert Topology.IsInstance(topology_iv, "Vertex"), "Topology.InternalVertex. Should be topologic.Vertex"
 
     # Case 35 - IsPlanar
     print("Case 35")
@@ -529,7 +540,7 @@ def test_main():
     # test 1
     cell_cy = Cell.Cylinder()
     topology_o = Topology.Orient(cell_cy, origin=None, dirA=[0, 0, 1], dirB=[0, 1, 0], tolerance=0.001)
-    assert isinstance(topology_o, topologic.Topology), "Topology.Orient. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_o, "Topology"), "Topology.Orient. Should be topologic.Topology"
     # plot geometry
     data_cell_cy = Plotly.DataByTopology(cell_cy)
     figure_cell_cy = Plotly.FigureByData(data_cell_cy)  
@@ -544,14 +555,14 @@ def test_main():
     topology_pl = Topology.Place(cell_cy,v00,v02)
     topology_pl_ctr = Topology.Centroid(topology_pl)            # get the centroid
     vd = Vertex.Distance(topology_pl_ctr,v02)                    # measure distance of centroid and moved origin
-    assert isinstance(topology_pl, topologic.Topology), "Topology.Place. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_pl, "Topology"), "Topology.Place. Should be topologic.Topology"
     assert vd == 0.0, "Vertex.Distance. Should be 0.0"   
 
     # Case 41 - InternalVertex
     print("Case 41")
     # test 1
     topology_iv = Topology.InternalVertex(cell_cy, 0.01)
-    assert isinstance(topology_iv, topologic.Vertex), "Topology.InternalVertex. Should be topologic.Vertex"
+    assert Topology.IsInstance(topology_iv, "Vertex"), "Topology.InternalVertex. Should be topologic.Vertex"
     cell_cy3 = Cell.Cylinder(topology_iv,radius = 0.25)
     # plot geometry
     cluster_bs = Cluster.ByTopologies([cell_cy,cell_cy3])
@@ -575,7 +586,7 @@ def test_main():
     print("Case 43")
     # test 1
     topology_rc = Topology.RemoveContent(cell_cy, [e00,e01])
-    assert isinstance(topology_rc, topologic.Topology), "Topology.RemoveContent. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_rc, "Topology"), "Topology.RemoveContent. Should be topologic.Topology"
     # plot geometry
     data_topology_rc = Plotly.DataByTopology(topology_rc)
     figure_topology_rc = Plotly.FigureByData(data_topology_rc)  
@@ -588,21 +599,21 @@ def test_main():
     shell_faces = Shell.Faces(shell_r)
     topology_rcf = Topology.RemoveCoplanarFaces(shell_r)
     assert len(shell_faces) == 9, "Shell.Faces. List length should be 9"
-    assert isinstance(topology_rcf, topologic.Face), "Topology.RemoveCoplanarFaces. Should be topologic.Face"
+    assert Topology.IsInstance(topology_rcf, "Face"), "Topology.RemoveCoplanarFaces. Should be topologic.Face"
     # test 2 
     cell_box5 = Cell.Box(uSides= 5, vSides = 5)
     topology_rcf = Topology.RemoveCoplanarFaces(cell_box5)
     cell_f = Cell.Faces(cell_box5)
     cell_f2 = Cell.Faces(topology_rcf)
     assert len(cell_f) == 70, "Cell.Faces. List length should be 70"
-    assert isinstance(topology_rcf, topologic.Topology), "Topology.RemoveCoplanarFaces. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_rcf, "Topology"), "Topology.RemoveCoplanarFaces. Should be topologic.Topology"
     assert len(cell_f2) == 6, "Topology.RemoveCoplanarFaces. List length should be 6"
 
     # Case 45 - Rotate
     print("Case 45")
     # test 1
     topology_rot = Topology.Rotate(cell_cy, axis=[1,0,1], angle=45)
-    assert isinstance(topology_rot, topologic.Topology), "Topology.Rotate. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_rot, "Topology"), "Topology.Rotate. Should be topologic.Topology"
     # plot geometry
     #data_topology_rot = Plotly.DataByTopology(topology_rot)
     #figure_topology_rot = Plotly.FigureByData(data_topology_rot) 
@@ -612,10 +623,10 @@ def test_main():
     print("Case 46")
     # test 1
     topology_scale = Topology.Scale(cell_cy)                                      # without optional inputs
-    assert isinstance(topology_scale, topologic.Topology), "Topology.Scale. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_scale, "Topology"), "Topology.Scale. Should be topologic.Topology"
     # test 2
     topology_scale02 = Topology.Scale(cell_cy,origin = v00, x = 5, y = 5, z = 1)    # with optional inputs
-    assert isinstance(topology_scale02, topologic.Topology), "Topology.Scale. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_scale02, "Topology"), "Topology.Scale. Should be topologic.Topology"
     # plot geometry
     #data_topology_scale = Plotly.DataByTopology(topology_scale)
     #figure_topology_scale = Plotly.FigureByData(data_topology_scale) 
@@ -629,15 +640,15 @@ def test_main():
     # test 1
     """NameError: name 'topologyType' is not defined. Did you mean: 'subTopologyType'"""
     topology_sst = Topology.SelectSubTopology(cluster_bs, selector = v00, subTopologyType = "vertex")
-    assert isinstance(topology_sst, topologic.Vertex), "Topology.SelectSubTopology. Should be topologic.Vertex"
+    assert Topology.IsInstance(topology_sst, "Vertex"), "Topology.SelectSubTopology. Should be topologic.Vertex"
 
     # Case 48 - SelfMerge
     print("Case 48")
     # test 1
     clus_edges = Cluster.ByTopologies([e4,e5])
     topology_sm = Topology.SelfMerge(clus_edges)
-    assert isinstance(topology_sm, topologic.Topology), "Topology.SelfMerge. Should be topologic.Topology"
-    assert isinstance(topology_sm, topologic.Wire), "Topology.SelfMerge. Should be topologic.Wire"
+    assert Topology.IsInstance(topology_sm, "Topology"), "Topology.SelfMerge. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_sm, "Wire"), "Topology.SelfMerge. Should be topologic.Wire"
 
     # Case 49 - SetDictionary
     print("Case 49")
@@ -646,7 +657,7 @@ def test_main():
     val = [1,2,3]
     top_dict = Dictionary.ByKeysValues(k,val)
     topology_sd = Topology.SetDictionary(cell_cy,top_dict)
-    assert isinstance(topology_sd, topologic.Topology), "Topology.SetDictionary. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_sd, "Topology"), "Topology.SetDictionary. Should be topologic.Topology"
     #print(topology_sd)
 
     # Case 50 - SharedTopologies
@@ -686,7 +697,7 @@ def test_main():
     # test 1
     topology_spin = Topology.Spin(cell_cy, origin=v00, triangulate=False,
                                     direction = [0,1,0], angle=90, sides=2, tolerance=0.001)
-    assert isinstance(topology_spin, topologic.Topology), "Topology.Spin. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_spin, "Topology"), "Topology.Spin. Should be topologic.Topology"
     # plot geometry
     #data_top_spin = Plotly.DataByTopology(topology_spin)
     #figure_top_spin = Plotly.FigureByData(data_top_spin) 
@@ -723,7 +734,7 @@ def test_main():
     # test 1
     cell_cy4 = Cell.Cylinder(origin = Vertex.ByCoordinates(0,0.125,0),radius = 0.25)
     topology_sym = Topology.SymmetricDifference(cell_cy, cell_cy4, tranDict = False)
-    assert isinstance(topology_sym, topologic.Topology), "Topology.SymmetricDifference. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_sym, "Topology"), "Topology.SymmetricDifference. Should be topologic.Topology"
     # plot geometry
     data_top_sym = Plotly.DataByTopology(topology_sym)
     figure_top_sym = Plotly.FigureByData(data_top_sym)
@@ -747,9 +758,9 @@ def test_main():
     # Case 59 -  Transform
     print("Case 59")
     # test 1
-    mat_rot = Matrix.ByRotation(rx=0, ry=45, rz=0, order='xyz')     # Create rotation matrix
+    mat_rot = Matrix.ByRotation(angleX=0, angleY=45, angleZ=0, order='xyz')     # Create rotation matrix
     topology_transform = Topology.Transform(cell_cy3, mat_rot)
-    assert isinstance(topology_transform, topologic.Topology), "Topology.Transform. Should be topologic.Topology" 
+    assert Topology.IsInstance(topology_transform, "Topology"), "Topology.Transform. Should be topologic.Topology" 
     # plot geometry
     data_top_transform = Plotly.DataByTopology(topology_transform)
     figure_top_transform = Plotly.FigureByData(data_top_transform)
@@ -761,14 +772,14 @@ def test_main():
     topology_trans = Topology.Translate(cell_cy3, x=0, y=0, z=1)
     center_tcy = Topology.Centroid(topology_trans)
     z_tcy = Vertex.Z(center_tcy)                          # Get the z value of the translated geometry's centroid
-    assert isinstance(topology_trans, topologic.Topology), "Topology.Translate. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_trans, "Topology"), "Topology.Translate. Should be topologic.Topology"
     assert z_tcy == 1.0, "Vertex.Z. should be 1.0"
 
     # Case 61 -  Triangulate
     print("Case 61")
     # test 1
     topology_tr = Topology.Triangulate(cell_cy, tolerance = 0.001)
-    assert isinstance(topology_tr, topologic.Topology), "Topology.Triangulate. Should be topologic.Topology"
+    assert Topology.IsInstance(topology_tr, "Topology"), "Topology.Triangulate. Should be topologic.Topology"
     # plot geometry
     data_top_tr = Plotly.DataByTopology(topology_tr)
     figure_top_tr = Plotly.FigureByData(data_top_tr) 

@@ -15,7 +15,7 @@ from topologicpy.Plotly import Plotly
 
 def test_main():
     print("Start")
-    print("40 Cases")
+    print("43 Cases")
     # creating objects for test 
     # vertices
     v0 = Vertex.ByCoordinates(0, 0, 0)                 # create vertex
@@ -60,10 +60,10 @@ def test_main():
     rec3 = Wire.Rectangle(v6, .4, .4)                       # create wire
     # test 1
     intB1 = Face.AddInternalBoundaries(f1, [w1])
-    assert isinstance(intB1, topologic.Face), "Face.AddInternalBoundaries. Should be topologic.Face"
+    assert Topology.IsInstance(intB1, "Face"), "Face.AddInternalBoundaries. Should be topologic.Face"
     # test 2
     intB2 = Face.AddInternalBoundaries(c1, [rec1, rec2])
-    assert isinstance(intB2, topologic.Face), "Face.AddInternalBoundaries. Should be topologic.Face"
+    assert Topology.IsInstance(intB2, "Face"), "Face.AddInternalBoundaries. Should be topologic.Face"
  
     # Case 2 - AddInternalBoundariesCluster
     print("Case 2")
@@ -72,10 +72,10 @@ def test_main():
     clu2 = Cluster.ByTopologies([rec1, rec2, rec3])         # create cluster
     # test 1
     intB_C1 = Face.AddInternalBoundariesCluster(c1, clu1)
-    assert isinstance(intB_C1, topologic.Face), "Face.AddInternalBoundariesCluster. Should be topologic.Face"
+    assert Topology.IsInstance(intB_C1, "Face"), "Face.AddInternalBoundariesCluster. Should be topologic.Face"
     # test 2
     intB_C2 = Face.AddInternalBoundariesCluster(c1, clu2)
-    assert isinstance(intB_C2, topologic.Face), "Face.AddInternalBoundariesCluster. Should be topologic.Face"
+    assert Topology.IsInstance(intB_C2, "Face"), "Face.AddInternalBoundariesCluster. Should be topologic.Face"
 
     # Case 3 - Angle
     print("Case 3")
@@ -104,10 +104,10 @@ def test_main():
     print("Case 5")
     # test 1
     bF1 = Face.BoundingRectangle(f1)
-    assert isinstance(bF1, topologic.Face), "Face.BoundingRectangle. Should be topologic.Face"
+    assert Topology.IsInstance(bF1, "Face"), "Face.BoundingRectangle. Should be topologic.Face"
     # test 2
     bF2 = Face.BoundingRectangle(c1)
-    assert isinstance(bF1, topologic.Face), "Face.BoundingRectangle. Should be topologic.Face"
+    assert Topology.IsInstance(bF1, "Face"), "Face.BoundingRectangle. Should be topologic.Face"
 
     # Case 6 - BoundingRectangle
     print("Case 6")
@@ -115,19 +115,19 @@ def test_main():
     starF0 = Face.Star(v10, 6.0, 2.5, 6)                   # create face                                          
     # test 1
     bR1 = Face.BoundingRectangle(starF, 5)
-    assert isinstance(bR1, topologic.Face), "Face.BoundingRectangle. Should be topologic.Face"
+    assert Topology.IsInstance(bR1, "Face"), "Face.BoundingRectangle. Should be topologic.Face"
     # test 2
     bR2 = Face.BoundingRectangle(starF0, 10)
-    assert isinstance(bR2, topologic.Face), "Face.BoundingRectangle. Should be topologic.Face"
+    assert Topology.IsInstance(bR2, "Face"), "Face.BoundingRectangle. Should be topologic.Face"
 
     # Case 7 - ByEdges
     print("Case 7")
     # test 1
     fE1 = Face.ByEdges([e1, e2, e3, e4])
-    assert isinstance(fE1, topologic.Face), "Face.ByEdges. Should be topologic.Face"
+    assert Topology.IsInstance(fE1, "Face"), "Face.ByEdges. Should be topologic.Face"
     # test 2
     fE2 = Face.ByEdges([te1, te2, te3, te4])
-    assert isinstance(fE2, topologic.Face), "Face.ByEdges. Should be topologic.Face"
+    assert Topology.IsInstance(fE2, "Face"), "Face.ByEdges. Should be topologic.Face"
 
     # Case 8 - ByEdgesCluster
     print("Case 8")
@@ -136,19 +136,19 @@ def test_main():
     Clu4 = Cluster.ByTopologies([te1, te2, te3, te4])              # create cluster
     # test 1
     fcE1 = Face.ByEdgesCluster(Clu3)                                   
-    assert isinstance(fcE1, topologic.Face), "Face.ByEdgesCluster. Should be topologic.Fac"
+    assert Topology.IsInstance(fcE1, "Face"), "Face.ByEdgesCluster. Should be topologic.Fac"
     # test 2
     fcE2 = Face.ByEdgesCluster(Clu4)
-    assert isinstance(fcE2, topologic.Face), "Face.ByEdgesCluster. Should be topologic.Fac"
+    assert Topology.IsInstance(fcE2, "Face"), "Face.ByEdgesCluster. Should be topologic.Fac"
  
     # Case 9 - ByOffset
     print("Case 9")
     # test 1
     offF1 = Face.ByOffset(f1)                                                       # without optional inputs 
-    assert isinstance(offF1, topologic.Face), "Face.ByOffset. Should be topologic.Face"
+    assert Topology.IsInstance(offF1, "Face"), "Face.ByOffset. Should be topologic.Face"
     # test 2
     offF2 = Face.ByOffset(c1, .5, True, miterThreshold= 2.0)       # without optional inputs 
-    assert isinstance(offF2, topologic.Face), "Face.ByOffset. Should be topologic.Face"
+    assert Topology.IsInstance(offF2, "Face"), "Face.ByOffset. Should be topologic.Face"
     #  plot geometry
     # geo1 = Plotly.DataByTopology(offF2)       # create plotly data
     # plotfig1 = Plotly.FigureByData(geo1)
@@ -169,17 +169,17 @@ def test_main():
     sh1 = Shell.ByFaces([fV1, fV2])                                   # create shell
     # test 1
     fs1 = Face.ByShell(sh1)                                               # without optional inputs
-    assert isinstance(fs1, topologic.Face), "Face.ByShell. Should be topologic.Face"
+    assert Topology.IsInstance(fs1, "Face"), "Face.ByShell. Should be topologic.Face"
 
     # Case 11 - ByVertices
     print("Case 11")
     #fV = Face by vertices
     # test 1
     fV1 = Face.ByVertices([v1, v2, v3, v4])                       # with four vertices
-    assert isinstance(fV1, topologic.Face), "Face.ByVertices. Should be topologic.Face"
+    assert Topology.IsInstance(fV1, "Face"), "Face.ByVertices. Should be topologic.Face"
     # test 2
     fV2 = Face.ByVertices([tv1, tv2, tv3])                         # with three vertices
-    assert isinstance(fV2, topologic.Face), "Face.ByVertices. Should be topologic.Face"
+    assert Topology.IsInstance(fV2, "Face"), "Face.ByVertices. Should be topologic.Face"
     # plot geometry
     # face1 = Plotly.DataByTopology(fV2)                           # create plotly data
     # plotfig1 = Plotly.FigureByData(face1)
@@ -209,10 +209,10 @@ def test_main():
     traW2 = Wire.Trapezoid(v0, 10, 20)                                             # create Wire
     # test 1
     fWs1 = Face.ByWires(cW1, [rec1, rec2, rec3])                             # with three wires
-    assert isinstance(fWs1, topologic.Face), "Face.ByWires. Should be topologic.Face"
+    assert Topology.IsInstance(fWs1, "Face"), "Face.ByWires. Should be topologic.Face"
     # test 2
     fWs2 = Face.ByWires(traW2, [cW2, cW3, cW4, cW5])                # with four wires
-    assert isinstance(fWs2, topologic.Face), "Face.ByWires. Should be topologic.Face"
+    assert Topology.IsInstance(fWs2, "Face"), "Face.ByWires. Should be topologic.Face"
  
     # Case 14 - ByWiresCluster
     print("Case 14")
@@ -221,23 +221,23 @@ def test_main():
     clu6 = Cluster.ByTopologies([cW2, cW3, cW4, cW5])                # create cluster
     # test 1
     fcW1 = Face.ByWiresCluster(cW1, clu5)                                    # with optional inputs
-    assert isinstance(fcW1, topologic.Face), "Face.ByWiresCluster, Should be topologic.Face"
+    assert Topology.IsInstance(fcW1, "Face"), "Face.ByWiresCluster, Should be topologic.Face"
     # test 2
     fcW2 = Face.ByWiresCluster(cW1, clu6)                                    # with optional inputs
-    assert isinstance(fcW2, topologic.Face), "Face.ByWiresCluster, Should be topologic.Face"
+    assert Topology.IsInstance(fcW2, "Face"), "Face.ByWiresCluster, Should be topologic.Face"
 
     # Case 15 - Circle
     print("Case 15")
     # test 1
     cF1 = Face.Circle()                                                                    # without optional inputs
-    assert isinstance(cF1, topologic.Face), "Face.Circle. Should be topologic.Face"
+    assert Topology.IsInstance(cF1, "Face"), "Face.Circle. Should be topologic.Face"
     # test 2
     cF2 = Face.Circle(v2, 4.85, 16, direction=[0, 1, 0], tolerance= 0.01)         # with optional inputs
-    assert isinstance(cF2, topologic.Face), "Face.Circle. Should be topologic.Face"
+    assert Topology.IsInstance(cF2, "Face"), "Face.Circle. Should be topologic.Face"
     # test 3
     cF3 = Face.Circle(v2, 2.5, 16, fromAngle=45, toAngle=270,    # with optional inputs
                                 direction=[5, 1, -45], placement='lowerleft', tolerance= 0.01)
-    assert isinstance(cF3, topologic.Face), "Face.Circle. Should be topologic.Face"
+    assert Topology.IsInstance(cF3, "Face"), "Face.Circle. Should be topologic.Face"
  
     # Case 16 - Compactness
     print("Case 16")
@@ -274,19 +274,19 @@ def test_main():
     print("Case 21")
     #test 1
     hF1 = Face.Harmonize(rec4)
-    assert isinstance(hF1, topologic.Face), "Face.Harmonize. Should be topologic.Face"
+    assert Topology.IsInstance(hF1, "Face"), "Face.Harmonize. Should be topologic.Face"
     #test 2
     hF2 = Face.Harmonize(rec5)
-    assert isinstance(hF2, topologic.Face), "Face.Harmonize. Should be topologic.Face"
+    assert Topology.IsInstance(hF2, "Face"), "Face.Harmonize. Should be topologic.Face"
 
     # Case 22 - ExternalBoundary
     print("Case 22")
     # test 1
     ExtB1 = Face.ExternalBoundary(intB1)
-    assert isinstance(ExtB1, topologic.Wire), "Face.ExternalBoundary. Should be topologic.Wire"
+    assert Topology.IsInstance(ExtB1, "Wire"), "Face.ExternalBoundary. Should be topologic.Wire"
     # test 2
     ExtB2 = Face.ExternalBoundary(intB2)
-    assert isinstance(ExtB2, topologic.Wire), "Face.ExternalBoundary. Should be topologic.Wire"
+    assert Topology.IsInstance(ExtB2, "Wire"), "Face.ExternalBoundary. Should be topologic.Wire"
 
     # Case 23 - InternalBoundaries
     print("Case 23")
@@ -301,19 +301,19 @@ def test_main():
     print("Case 24")
     # test 1
     iv1 = Face.InternalVertex(f1)                                                     # without optional inputs
-    assert isinstance(iv1, topologic.Vertex), "Face.InternalVertex. Should be topologic.Vertex"
+    assert Topology.IsInstance(iv1, "Vertex"), "Face.InternalVertex. Should be topologic.Vertex"
     # test 2
     iv2 = Face.InternalVertex(c1, 0.005)                                          # with optional inputs
-    assert isinstance(iv2, topologic.Vertex), "Face.InternalVertex. Should be topologic.Vertex"
+    assert Topology.IsInstance(iv2, "Vertex"), "Face.InternalVertex. Should be topologic.Vertex"
  
     # Case 25 - Invert
     print("Case 25")
     # test 1
     IntF1 = Face.Invert(f1)
-    assert isinstance(IntF1, topologic.Face), "Face.Invert. Should be topologic.Face"
+    assert Topology.IsInstance(IntF1, "Face"), "Face.Invert. Should be topologic.Face"
     # test 2
     IntF2 = Face.Invert(c1)
-    assert isinstance(IntF2, topologic.Face), "Face.Invert. Should be topologic.Face"
+    assert Topology.IsInstance(IntF2, "Face"), "Face.Invert. Should be topologic.Face"
 
     # Case 26 - IsCoplanar
     print("Case 26")
@@ -329,10 +329,10 @@ def test_main():
     # test 1
     mAxis1 = Face.Skeleton(fs1)
     #mAxis1 = Face.MedialAxis(fs1, resolution=10, externalVertices=False, internalVertices=False, toLeavesOnly=False, angTolerance=2, tolerance=0.0001)
-    assert isinstance(mAxis1, topologic.Wire), "Face.MedialAxis. Should be topologic.Wire "
+    assert Topology.IsInstance(mAxis1, "Wire"), "Face.MedialAxis. Should be topologic.Wire "
     # test 2
     #mAxis2 = Face.MedialAxis(fs1, 5, True, True, True, 0.002, 0.5)
-    #assert isinstance(mAxis2, topologic.Wire), "Face.MedialAxis. Should be topologic.Wire "
+    #assert Topology.IsInstance(mAxis2, "Wire"), "Face.MedialAxis. Should be topologic.Wire "
 
     # Case 28 - NormalAtParameters
     print("Case 28")
@@ -369,10 +369,10 @@ def test_main():
     r1 = Face.Rectangle((Vertex.ByCoordinates(3.7,2.5,5)), 10, 10, direction= [0, 0, -1])        # create face
     # test 1
     pf1 = Face.Project(c4, r1)                                                              # without optional inputs
-    assert isinstance(pf1, topologic.Face), "Face.Project. Should be topologic.Face"
+    assert Topology.IsInstance(pf1, "Face"), "Face.Project. Should be topologic.Face"
     # test 2
     pf2 = Face.Project(c5, r1, [0,0,-1], 2)                                   # with optional inputs
-    assert isinstance(pf2, topologic.Face), "Face.Project. Should be topologic.Face"
+    assert Topology.IsInstance(pf2, "Face"), "Face.Project. Should be topologic.Face"
     # plot geometry
     # geo1 = Plotly.DataByTopology(pf2)                                          # create plotly data
     # plotfig1 = Plotly.FigureByData(geo1)
@@ -382,19 +382,19 @@ def test_main():
     print("Case 30")
     # test 1
     RecF1 = Face.Rectangle()                                                                     # without optional inputs
-    assert isinstance(RecF1, topologic.Face), "Face.Rectangle. Should be topologic.Face"
+    assert Topology.IsInstance(RecF1, "Face"), "Face.Rectangle. Should be topologic.Face"
     # test 2
     RecF2 = Face.Rectangle(v8, 3.45, 6.78, [1, 1, 1], 'lowerleft', 0.01)           # with optional inputs
-    assert isinstance(RecF1, topologic.Face), "Face.Rectangle. Should be topologic.Face"
+    assert Topology.IsInstance(RecF1, "Face"), "Face.Rectangle. Should be topologic.Face"
 
     # Case 31 - Star
     print("Case 31")
     # test 1
     StarF1 = Face.Star()                                                                                  # without optional inputs
-    assert isinstance(StarF1, topologic.Face), "Face.Star. Should be topologic.Face"
+    assert Topology.IsInstance(StarF1, "Face"), "Face.Star. Should be topologic.Face"
     # test 2
     StarF2 = Face.Star(v2, 2.5,.8,8, direction=[0, 1, 0], tolerance=0.001)             # with optional inputs
-    assert isinstance(StarF2, topologic.Face), "Face.Star. Should be topologic.Face"
+    assert Topology.IsInstance(StarF2, "Face"), "Face.Star. Should be topologic.Face"
     # plot geometry
     # star1 = Plotly.DataByTopology(StarF1)                                      # create plotly data
     # plotfig1 = Plotly.FigureByData(star1)
@@ -404,10 +404,10 @@ def test_main():
     print("Case 32")
     # test 1
     TraF1 = Face.Trapezoid()                                                                       # without optional inputs
-    assert isinstance(TraF1, topologic.Face), "Face.Trapezoid. Should be topologic.Face"
+    assert Topology.IsInstance(TraF1, "Face"), "Face.Trapezoid. Should be topologic.Face"
     # test 2
     TraF2 = Face.Trapezoid(v7, 2.7, 1.15, .75, .25, direction= [1, 0, 0])             # with optional inputs
-    assert isinstance(TraF2, topologic.Face), "Face.Trapezoid. Should be topologic.Face"
+    assert Topology.IsInstance(TraF2, "Face"), "Face.Trapezoid. Should be topologic.Face"
     # plot geometry
     # tra1 = Plotly.DataByTopology(TraF1)                                       # create plotly data
     # plotfig1 = Plotly.FigureByData(tra1)
@@ -432,10 +432,10 @@ def test_main():
                            )                                                     
     # test 1
     to1 = Face.TrimByWire(fV1, tw1)                                                # without optional inputs
-    assert isinstance(to1, topologic.Face), "Face.TrimByWire. Should be topologic.Face"
+    assert Topology.IsInstance(to1, "Face"), "Face.TrimByWire. Should be topologic.Face"
     # test 2
     to2 = Face.TrimByWire(fV2, tw1, True)                                        # with optional inputs
-    assert isinstance(to2, topologic.Face), "Face.TrimByWire. Should be topologic.Face"
+    assert Topology.IsInstance(to2, "Face"), "Face.TrimByWire. Should be topologic.Face"
     # plot geometry
     # trim1 = Plotly.DataByTopology(to2)                                         # create plotly data
     # plotfig1 = Plotly.FigureByData(trim1)
@@ -445,10 +445,10 @@ def test_main():
     print("Case 35")
     # test 1
     vp1 = Face.VertexByParameters(c1)                                                 # without optional inputs
-    assert isinstance(vp1, topologic.Vertex), "Face.VertexByParameters. Should be topologic.Vertex"
+    assert Topology.IsInstance(vp1, "Vertex"), "Face.VertexByParameters. Should be topologic.Vertex"
     # test 2
     vp2 = Face.VertexByParameters(c1, .277, .65)                                  # with optional inputs
-    assert isinstance(vp1, topologic.Vertex), "Face.VertexByParameters. Should be topologic.Vertex"
+    assert Topology.IsInstance(vp1, "Vertex"), "Face.VertexByParameters. Should be topologic.Vertex"
 
     # Case 36 - VertexParameters
     print("Case 36")
@@ -484,14 +484,49 @@ def test_main():
     Clu8 = Cluster.ByTopologies([tv1, tv2, tv3])                   # create cluster
     # test 1
     fcV1 = Face.ByVerticesCluster(clu7)
-    assert isinstance(fcV1, topologic.Face), "Face.ByVerticesCluster. Should be topologic.Face"
+    assert Topology.IsInstance(fcV1, "Face"), "Face.ByVerticesCluster. Should be topologic.Face"
     # test 2
     fcV2 = Face.ByVerticesCluster(Clu8)
-    assert isinstance(fcV2, topologic.Face), "Face.ByVerticesCluster. Should be topologic.Face"
+    assert Topology.IsInstance(fcV2, "Face"), "Face.ByVerticesCluster. Should be topologic.Face"
 
     # Case 40 - Einstein
     print("Case 40")
     # test 1
     ein = Face.Einstein()
-    assert isinstance(ein, topologic.Face), "Wire.Einstein. Should be a face"
+    assert Topology.IsInstance(ein, "Face"), "Face.Einstein. Should be a face"
+
+    # Case 41 - Isovist
+    print("Case 41")
+    # test 1
+    r1 = Face.Rectangle(width=10, length=5)
+    r2 = Face.Rectangle(origin=Vertex.ByCoordinates(0,2,0), width=2, length=2)
+    r1 = Topology.Difference(r1, r2)
+    r2 = Topology.Translate(r2, -1.5, 0.4, 0)
+
+    r1 = Topology.Merge(r1, r2)
+    r1 = Shell.ExternalBoundary(r1)
+
+    r2 = Face.Rectangle()
+    r3 = Topology.Translate(r2, -0.3,-0.4,0)
+    r2 = Topology.SelfMerge(Topology.Union(r2, r3))
+    r4 = Wire.Rectangle(origin=Vertex.ByCoordinates(-4.5, -2, 0), width=0.2, length=0.2)
+    r2 = Shell.ExternalBoundary(r2)
+    r5 = Topology.Translate(r2, 3, -1.5, 0)
+    r6 = Topology.Translate(r5, 0.2, 0.4, 0)
+    face = Face.ByWires(r1, [r2,r4,r5])
+
+    v = Vertex.ByCoordinates(-3,-0.9,0)
+    iso = Isovist(face, v, obstacles=[r6], fromAngle=0, toAngle=360, tolerance=0.001)
+    assert Topology.IsInstance(iso, "Face"), "Face.Isovist. Should be a face"
+
+    # Case 42 - Simplify
+    print("Case 42")
+    c = Face.Circle(sides=180)
+    c2 = Face.Simplify(c, tolerance=0.01)
+    assert Topology.IsInstance(c2, "Face"), "Face.Simplify. Should be a face"
+
+    # Case 43 - Squircle
+    print("Case 43")
+    c = Face.Squircle()
+    assert Topology.IsInstance(c, "Face"), "Face.Squircle. Should be a face"
     print("End")

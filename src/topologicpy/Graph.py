@@ -15,9 +15,6 @@
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
 import topologic_core as topologic
-from topologicpy.Dictionary import Dictionary
-from topologicpy.Topology import Topology
-from topologicpy.Vertex import Vertex
 import random
 import time
 import os
@@ -152,7 +149,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         vertexKey : str , optional
             If set, the returned list of vertices is sorted according to the dicitonary values stored under this key. The default is None.
@@ -185,7 +182,7 @@ class Graph:
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.AdjacencyMatrix - Error: The input graph is not a valid graph. Returning None.")
             return None
         
@@ -251,7 +248,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         vertexKey : str , optional
             If set, the returned list of vertices is sorted according to the dicitonary values stored under this key. The default is None.
@@ -266,10 +263,11 @@ class Graph:
             The adjacency list.
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.AdjacencyList - Error: The input graph is not a valid graph. Returning None.")
             return None
         vertices = Graph.Vertices(graph)
@@ -303,9 +301,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        edges : topologic.Edge
+        edge : topologic_core.Edge
             The input edge.
         transferDictionaries : bool, optional
             If set to True, the dictionaries of the edge and its vertices are transfered to the graph.
@@ -314,7 +312,7 @@ class Graph:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The input graph with the input edge added to it.
 
         """
@@ -349,10 +347,10 @@ class Graph:
                 graph_vertices.append(vertex)
             return [graph_vertices, returnVertex]
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.AddEdge - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(edge, topologic.Edge):
+        if not Topology.IsInstance(edge, "Edge"):
             print("Graph.AddEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
         graph_vertices = Graph.Vertices(graph)
@@ -380,23 +378,25 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The input graph with the input vertex added to it.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.AddVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.AddVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         _ = graph.AddVertices([vertex], tolerance)
@@ -409,7 +409,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         vertices : list
             The input list of vertices.
@@ -418,17 +418,19 @@ class Graph:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The input graph with the input vertex added to it.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.AddVertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(vertices, list):
             print("Graph.AddVertices - Error: The input list of vertices is not a valid list. Returning None.")
             return None
-        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) < 1:
             print("Graph.AddVertices - Error: Could not find any valid vertices in the input list of vertices. Returning None.")
             return None
@@ -442,9 +444,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             the input vertex.
 
         Returns
@@ -453,10 +455,12 @@ class Graph:
             The list of adjacent vertices.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.AdjacentVertices - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.AdjacentVertices - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         vertices = []
@@ -470,11 +474,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertexA : topologic.Vertex
+        vertexA : topologic_core.Vertex
             The first input vertex.
-        vertexB : topologic.Vertex
+        vertexB : topologic_core.Vertex
             The second input vertex.
         timeLimit : int , optional
             The time limit in second. The default is 10 seconds.
@@ -485,13 +489,15 @@ class Graph:
             The list of all paths (wires) found within the time limit.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.AllPaths - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexA, topologic.Vertex):
+        if not Topology.IsInstance(vertexA, "Vertex"):
             print("Graph.AllPaths - Error: The input vertexA is not a valid vertex. Returning None.")
             return None
-        if not isinstance(vertexB, topologic.Vertex):
+        if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.AllPaths - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         paths = []
@@ -505,7 +511,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
@@ -516,10 +522,9 @@ class Graph:
             The average clustering coefficient of the input graph.
 
         """
-        from topologicpy.Vertex import Vertex
-        import topologic_core as topologic
+        from topologicpy.Topology import Topology
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
         vertices = Graph.Vertices(graph)
@@ -559,7 +564,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         bidirectional : bool , optional
             If set to True, reverse relationships are created wherever possible. Otherwise, they are not. The default is False.
@@ -608,6 +613,8 @@ class Graph:
         """
 
         from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
         import os
         import warnings
         
@@ -648,7 +655,7 @@ class Graph:
         bot_graph.add((site_uri, rdf.type, bot.Site))
         if includeLabel:
             bot_graph.add((site_uri, RDFS.label, Literal(siteLabel)))
-        if isinstance(siteDictionary, topologic.Dictionary):
+        if Topology.IsInstance(siteDictionary, "Dictionary"):
             keys = Dictionary.Keys(siteDictionary)
             for key in keys:
                 value = Dictionary.ValueAtKey(siteDictionary, key)
@@ -659,7 +666,7 @@ class Graph:
         bot_graph.add((building_uri, rdf.type, bot.Building))
         if includeLabel:
             bot_graph.add((building_uri, RDFS.label, Literal(buildingLabel)))
-        if isinstance(buildingDictionary, topologic.Dictionary):
+        if Topology.IsInstance(buildingDictionary, "Dictionary"):
             keys = Dictionary.Keys(buildingDictionary)
             for key in keys:
                 value = Dictionary.ValueAtKey(buildingDictionary, key)
@@ -789,7 +796,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         format : str , optional
             The desired output format, the options are listed below. Thde default is "turtle".
@@ -876,7 +883,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         vertices : list , optional
             The input list of vertices. The default is None which means all vertices in the input graph are considered.
@@ -894,8 +901,7 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
-        import sys
-        import subprocess
+        from topologicpy.Topology import Topology
 
         def betweeness(vertices, topologies, tolerance=0.001):
             returnList = [0] * len(vertices)
@@ -907,28 +913,28 @@ class Graph:
                         returnList[index] = returnList[index]+1
             return returnList
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.BetweenessCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
         graphVertices = Graph.Vertices(graph)
         if not isinstance(vertices, list):
             vertices = graphVertices
         else:
-            vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+            vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) < 1:
             print("Graph.BetweenessCentrality - Error: The input list of vertices does not contain valid vertices. Returning None.")
             return None
         if not isinstance(sources, list):
             sources = graphVertices
         else:
-            sources = [v for v in sources if isinstance(v, topologic.Vertex)]
+            sources = [v for v in sources if Topology.IsInstance(v, "Vertex")]
         if len(sources) < 1:
             print("Graph.BetweenessCentrality - Error: The input list of sources does not contain valid vertices. Returning None.")
             return None
         if not isinstance(destinations, list):
             destinations = graphVertices
         else:
-            destinations = [v for v in destinations if isinstance(v, topologic.Vertex)]
+            destinations = [v for v in destinations if Topology.IsInstance(v, "Vertex")]
         if len(destinations) < 1:
             print("Graph.BetweenessCentrality - Error: The input list of destinations does not contain valid vertices. Returning None.")
             return None
@@ -972,7 +978,7 @@ class Graph:
         
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The created graph.
         
         """
@@ -1008,7 +1014,7 @@ class Graph:
         
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The created graph.
         
         """
@@ -1429,7 +1435,7 @@ class Graph:
                     z = z + random.randrange(70000,90000, 1000)
                 verts.append([x, y, z])
                 v = Vertex.ByCoordinates(x, y, z)
-                if isinstance(v, topologic.Vertex):
+                if Topology.IsInstance(v, "Vertex"):
                     if len(nodeFeaturesKeys) == 0:
                         values = [node_id, label, mask, features]
                     else:
@@ -1438,7 +1444,7 @@ class Graph:
                         featureList = [float(s) for s in featureList]
                         values = [node_id, label, mask]+featureList
                     d = Dictionary.ByKeysValues(node_keys, values)
-                    if isinstance(d, topologic.Dictionary):
+                    if Topology.IsInstance(d, "Dictionary"):
                         v = Topology.SetDictionary(v, d)
                     else:
                         print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created vertex.")
@@ -1479,9 +1485,9 @@ class Graph:
                 if not (src_id == dst_id) and not [src_id, dst_id] in es and not [dst_id, src_id] in es:
                     es.append([src_id, dst_id])
                     edge = Edge.ByVertices([vertices[src_id], vertices[dst_id]], tolerance=tolerance)
-                    if isinstance(edge, topologic.Edge):
+                    if Topology.IsInstance(edge, "Edge"):
                         d = Dictionary.ByKeysValues(edge_keys, values)
-                        if isinstance(d, topologic.Dictionary):
+                        if Topology.IsInstance(d, "Dictionary"):
                             edge = Topology.SetDictionary(edge, d)
                         else:
                             print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created edge.")
@@ -1501,7 +1507,7 @@ class Graph:
             g = Graph.ByVerticesEdges(vertices, edges)
             temp_v = Graph.Vertices(g)
             temp_e = Graph.Edges(g)
-            if isinstance(g, topologic.Graph):
+            if Topology.IsInstance(g, "Graph"):
                 if len(graphFeaturesKeys) == 0:
                     values = [graph_ids[i], graph_labels[i], graph_features[i]]
                 else:
@@ -1515,7 +1521,7 @@ class Graph:
                     print("Graph.ByCSVPath - Error: The length of the keys and values lists do not match. Returning None.")
                     return None
                 d = Dictionary.ByKeysValues(graph_keys, values)
-                if isinstance(d, topologic.Dictionary):
+                if Topology.IsInstance(d, "Dictionary"):
                     g = Graph.SetDictionary(g, d)
                 else:
                     print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created graph.")
@@ -1643,7 +1649,7 @@ class Graph:
                     e = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance)
                     edges.append(e)
             index+=n_nodes
-            graphs.append(topologic.Graph.ByVerticesEdges(vertices, edges))
+            graphs.append(Graph.ByVerticesEdges(vertices, edges))
         return {'graphs':graphs, 'labels':labels}
 
 
@@ -1679,7 +1685,7 @@ class Graph:
         
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The created graph.
         
         """
@@ -1906,7 +1912,7 @@ class Graph:
         
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The created graph.
         
         """
@@ -1962,13 +1968,15 @@ class Graph:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The created graph
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
         g_vertices = []
         for i, v in enumerate(vertices):
             g_v = Vertex.ByCoordinates(v[0], v[1], v[2])
@@ -2005,7 +2013,7 @@ class Graph:
 
         Parameters
         ----------
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology.
         direct : bool , optional
             If set to True, connect the subtopologies directly with a single edge. The default is True.
@@ -2036,11 +2044,12 @@ class Graph:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The created graph.
 
         """
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
@@ -2323,14 +2332,14 @@ class Graph:
                                 contents = []
                                 _ = sharedTopology.Contents(contents)
                                 for content in contents:
-                                    if isinstance(content, topologic.Aperture):
+                                    if Topology.IsInstance(content, "Aperture"):
                                         content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
                                     d1 = content.GetDictionary()
-                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X(), vst2.Y(), vst2.Z())
+                                    vst2 = Vertex.ByCoordinates(vst2.X(), vst2.Y(), vst2.Z())
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                         d3 = mergeDictionaries2([d1, d2])
@@ -2350,7 +2359,7 @@ class Graph:
                             else:
                                 vsa = sharedAp.CenterOfMass()
                             d1 = sharedAp.GetDictionary()
-                            vsa = topologic.Vertex.ByCoordinates(vsa.X()+(tolerance*100), vsa.Y()+(tolerance*100), vsa.Z()+(tolerance*100))
+                            vsa = Vertex.ByCoordinates(vsa.X()+(tolerance*100), vsa.Y()+(tolerance*100), vsa.Z()+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2385,14 +2394,14 @@ class Graph:
                                 contents = []
                                 _ = exteriorTopology.Contents(contents)
                                 for content in contents:
-                                    if isinstance(content, topologic.Aperture):
+                                    if Topology.IsInstance(content, "Aperture"):
                                         content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
                                     d1 = content.GetDictionary()
-                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                         d3 = mergeDictionaries2([d1, d2])
@@ -2412,7 +2421,7 @@ class Graph:
                             else:
                                 vea = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vea = topologic.Vertex.ByCoordinates(vea.X()+(tolerance*100), vea.Y()+(tolerance*100), vea.Z()+(tolerance*100))
+                            vea = Vertex.ByCoordinates(vea.X()+(tolerance*100), vea.Y()+(tolerance*100), vea.Z()+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2428,13 +2437,13 @@ class Graph:
                         contents = []
                         _ = aCell.Contents(contents)
                         for content in contents:
-                            if isinstance(content, topologic.Aperture):
+                            if Topology.IsInstance(content, "Aperture"):
                                 content = Aperture.Topology(content)
                             if useInternalVertex == True:
                                 vcn = Topology.InternalVertex(content, tolerance)
                             else:
                                 vcn = content.CenterOfMass()
-                            vcn = topologic.Vertex.ByCoordinates(vcn.X()+(tolerance*100), vcn.Y()+(tolerance*100), vcn.Z()+(tolerance*100))
+                            vcn = Vertex.ByCoordinates(vcn.X()+(tolerance*100), vcn.Y()+(tolerance*100), vcn.Z()+(tolerance*100))
                             d1 = content.GetDictionary()
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2534,13 +2543,13 @@ class Graph:
                                 contents = []
                                 _ = exteriorTopology.Contents(contents)
                                 for content in contents:
-                                    if isinstance(content, topologic.Aperture):
+                                    if Topology.IsInstance(content, "Aperture"):
                                         content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2561,7 +2570,7 @@ class Graph:
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2577,13 +2586,13 @@ class Graph:
                         contents = []
                         _ = topology.Contents(contents)
                         for content in contents:
-                            if isinstance(content, topologic.Aperture):
+                            if Topology.IsInstance(content, "Aperture"):
                                 content = Aperture.Topology(content)
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
                                 vst = content.CenterOfMass()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             d1 = content.GetDictionary()
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2732,13 +2741,13 @@ class Graph:
                                 contents = []
                                 _ = sharedTopology.Contents(contents)
                                 for content in contents:
-                                    if isinstance(content, topologic.Aperture):
+                                    if Topology.IsInstance(content, "Aperture"):
                                         content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2759,7 +2768,7 @@ class Graph:
                             else:
                                 vst = sharedAp.CenterOfMass()
                             d1 = sharedAp.GetDictionary()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2793,13 +2802,13 @@ class Graph:
                                 contents = []
                                 _ = exteriorTopology.Contents(contents)
                                 for content in contents:
-                                    if isinstance(content, topologic.Aperture):
+                                    if Topology.IsInstance(content, "Aperture"):
                                         content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2820,7 +2829,7 @@ class Graph:
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2836,13 +2845,13 @@ class Graph:
                         contents = []
                         _ = aFace.Contents(contents)
                         for content in contents:
-                            if isinstance(content, topologic.Aperture):
+                            if Topology.IsInstance(content, "Aperture"):
                                 content = Aperture.Topology(content)
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
                                 vst = content.CenterOfMass()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             d1 = content.GetDictionary()
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2982,13 +2991,13 @@ class Graph:
                                 contents = []
                                 _ = exteriorTopology.Contents(contents)
                                 for content in contents:
-                                    if isinstance(content, topologic.Aperture):
+                                    if Topology.IsInstance(content, "Aperture"):
                                         content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3009,7 +3018,7 @@ class Graph:
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3025,13 +3034,13 @@ class Graph:
                         contents = []
                         _ = topology.Contents(contents)
                         for content in contents:
-                            if isinstance(content, topologic.Aperture):
+                            if Topology.IsInstance(content, "Aperture"):
                                 content = Aperture.Topology(content)
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
                                 vst = content.CenterOfMass()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             d1 = content.GetDictionary()
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3069,11 +3078,11 @@ class Graph:
                             sharedt = Topology.SharedVertices(topEdges[i], topEdges[j])
                             if len(sharedt) > 0:
                                 try:
-                                    v1 = topologic.EdgeUtility.PointAtParameter(topEdges[i], 0.5)
+                                    v1 = Edge.VertexByParameter(topEdges[i], 0.5)
                                 except:
                                     v1 = topEdges[j].CenterOfMass()
                                 try:
-                                    v2 = topologic.EdgeUtility.PointAtParameter(topEdges[j], 0.5)
+                                    v2 = Edge.VertexByParameter(topEdges[j], 0.5)
                                 except:
                                     v2 = topEdges[j].CenterOfMass()
                                 e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
@@ -3114,11 +3123,11 @@ class Graph:
                                         break
                                 if apertureExists:
                                     try:
-                                        v1 = topologic.EdgeUtility.PointAtParameter(topEdges[i], 0.5)
+                                        v1 = Edge.VertexByParameter(topEdges[i], 0.5)
                                     except:
                                         v1 = topEdges[j].CenterOfMass()
                                     try:
-                                        v2 = topologic.EdgeUtility.PointAtParameter(topEdges[j], 0.5)
+                                        v2 = Edge.VertexByParameter(topEdges[j], 0.5)
                                     except:
                                         v2 = topEdges[j].CenterOfMass()
                                     e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
@@ -3135,7 +3144,7 @@ class Graph:
             if (viaSharedTopologies == True) or (viaSharedApertures == True) or (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
                 for anEdge in topEdges:
                     try:
-                        vEdge = topologic.EdgeUtility.PointAtParameter(anEdge, 0.5)
+                        vEdge = Edge.VertexByParameter(anEdge, 0.5)
                     except:
                         vEdge = anEdge.CenterOfMass()
                     d1 = anEdge.GetDictionary()
@@ -3188,13 +3197,13 @@ class Graph:
                                 contents = []
                                 _ = sharedTopology.Contents(contents)
                                 for content in contents:
-                                    if isinstance(content, topologic.Aperture):
+                                    if Topology.IsInstance(content, "Aperture"):
                                         content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3215,7 +3224,7 @@ class Graph:
                             else:
                                 vst = sharedAp.CenterOfMass()
                             d1 = sharedAp.GetDictionary()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3239,13 +3248,13 @@ class Graph:
                                 contents = []
                                 _ = vst.Contents(contents)
                                 for content in contents:
-                                    if isinstance(content, topologic.Aperture):
+                                    if Topology.IsInstance(content, "Aperture"):
                                         content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3266,7 +3275,7 @@ class Graph:
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3282,13 +3291,13 @@ class Graph:
                         contents = []
                         _ = anEdge.Contents(contents)
                         for content in contents:
-                            if isinstance(content, topologic.Aperture):
+                            if Topology.IsInstance(content, "Aperture"):
                                 content = Aperture.Topology(content)
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
                                 vst = content.CenterOfMass()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             d1 = content.GetDictionary()
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3303,7 +3312,7 @@ class Graph:
                             edges.append(tempe)
             for anEdge in topEdges:
                 try:
-                    vEdge = topologic.EdgeUtility.PointAtParameter(anEdge, 0.5)
+                    vEdge = Edge.VertexByParameter(anEdge, 0.5)
                 except:
                     vEdge = anEdge.CenterOfMass()
                 d1 = anEdge.GetDictionary()
@@ -3360,7 +3369,7 @@ class Graph:
 
             if useInternalVertex == True:
                 try:
-                    vEdge = topologic.EdgeUtility.PointAtParameter(topology, 0.5)
+                    vEdge = Edge.VertexByParameter(topology, 0.5)
                 except:
                     vEdge = topology.CenterOfMass()
             else:
@@ -3434,13 +3443,13 @@ class Graph:
                                 contents = []
                                 _ = vst.Contents(contents)
                                 for content in contents:
-                                    if isinstance(content, topologic.Aperture):
+                                    if Topology.IsInstance(content, "Aperture"):
                                         content = Aperture.Topology(content)
                                     if useInternalVertex == True:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = topologic.Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3461,7 +3470,7 @@ class Graph:
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3486,14 +3495,14 @@ class Graph:
                 contents = []
                 _ = topology.Contents(contents)
                 for content in contents:
-                    if isinstance(content, topologic.Aperture):
+                    if Topology.IsInstance(content, "Aperture"):
                         content = Aperture.Topology(content)
                     if useInternalVertex == True:
                         vst = Topology.InternalVertex(content, tolerance)
                     else:
                         vst = content.CenterOfMass()
                     d1 = content.GetDictionary()
-                    vst = topologic.Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                    vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
                     if storeBREP:
                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                         d3 = mergeDictionaries2([d1, d2])
@@ -3534,28 +3543,28 @@ class Graph:
             return [vertices, edges]
 
         
-        if not isinstance(topology, topologic.Topology):
+        if not Topology.IsInstance(topology, "Topology"):
             print("Graph.ByTopology - Error: The input topology is not a valid topology. Returning None.")
             return None
         graph = None
         item = [topology, None, None, None, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, None, useInternalVertex, storeBREP, tolerance]
         vertices = []
         edges = []
-        if isinstance(topology, topologic.CellComplex):
+        if Topology.IsInstance(topology, "CellComplex"):
             vertices, edges = processCellComplex(item)
-        elif isinstance(topology, topologic.Cell):
+        elif Topology.IsInstance(topology, "Cell"):
             vertices, edges = processCell(item)
-        elif isinstance(topology, topologic.Shell):
+        elif Topology.IsInstance(topology, "Shell"):
             vertices, edges = processShell(item)
-        elif isinstance(topology, topologic.Face):
+        elif Topology.IsInstance(topology, "Face"):
             vertices, edges = processFace(item)
-        elif isinstance(topology, topologic.Wire):
+        elif Topology.IsInstance(topology, "Wire"):
             vertices, edges = processWire(item)
-        elif isinstance(topology, topologic.Edge):
+        elif Topology.IsInstance(topology, "Edge"):
             vertices, edges = processEdge(item)
-        elif isinstance(topology, topologic.Vertex):
+        elif Topology.IsInstance(topology, "Vertex"):
             vertices, edges = processVertex(item)
-        elif isinstance(topology, topologic.Cluster):
+        elif Topology.IsInstance(topology, "Cluster"):
             c_cellComplexes = Topology.CellComplexes(topology)
             c_cells = Cluster.FreeCells(topology, tolerance=tolerance)
             c_shells = Cluster.FreeShells(topology, tolerance=tolerance)
@@ -3596,7 +3605,7 @@ class Graph:
                 edges += e
         else:
             return None
-        return topologic.Graph.ByVerticesEdges(vertices, edges)
+        return Graph.ByVerticesEdges(vertices, edges)
     
     @staticmethod
     def ByVerticesEdges(vertices, edges):
@@ -3612,28 +3621,30 @@ class Graph:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The created graph.
 
         """
+        from topologicpy.Topology import Topology
+
         if not isinstance(vertices, list):
             print("Graph.ByVerticesEdges - Error: The input list of vertices is not a valid list. Returning None.")
             return None
         if not isinstance(edges, list):
             print("Graph.ByVerticesEdges - Error: The input list of edges is not a valid list. Returning None.")
             return None
-        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
-        edges = [e for e in edges if isinstance(e, topologic.Edge)]
-        return topologic.Graph.ByVerticesEdges(vertices, edges)
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
+        return topologic.Graph.ByVerticesEdges(vertices, edges) # Hook to Core
     
     @staticmethod
-    def ChromaticNumber(graph: topologic.Graph, maxColors: int = 3, silent: bool = False):
+    def ChromaticNumber(graph, maxColors: int = 3, silent: bool = False):
         """
         Returns the chromatic number of the input graph. See https://en.wikipedia.org/wiki/Graph_coloring.
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         maxColors : int , optional
             The desired maximum number of colors to test against. The default is 3.
@@ -3648,6 +3659,8 @@ class Graph:
         """
         # This is based on code from https://www.geeksforgeeks.org/graph-coloring-applications/
         
+        from topologicpy.Topology import Topology
+
         def is_safe(graph, v, color, c):
             for i in range(len(graph)):
                 if graph[v][i] == 1 and color[i] == c:
@@ -3678,7 +3691,7 @@ class Graph:
                     return m
                 m += 1
         
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             if not silent:
                 print("Graph.ChromaticNumber - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
@@ -3697,7 +3710,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         oldKey : str , optional
             The existing dictionary key to use to read any pre-existing color information. The default is "color".
@@ -3710,7 +3723,7 @@ class Graph:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The input graph, but with its vertices colored.
 
         """
@@ -3755,7 +3768,7 @@ class Graph:
                 return None
             return [x-1 for x in colors]
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Color - Error: The input graph is not a valid graph. Returning None.")
             return None
         
@@ -3790,9 +3803,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        edge : topologic.Edge
+        edge : topologic_core.Edge
             The input graph edge that needs to be contracted.
         vertex : topollogic.Vertex , optional
             The vertex to replace the contracted edge. If set to None, the centroid of the edge is chosen. The default is None.
@@ -3801,10 +3814,11 @@ class Graph:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The input graph, but with input edge contracted into a single vertex.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -3817,10 +3831,10 @@ class Graph:
             if d1 < d2:
                 return [ev, 1]
             return [sv, 0]
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.ContractEdge - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
-        if not isinstance(edge, topologic.Edge):
+        if not Topology.IsInstance(edge, "Edge"):
             print("Graph.ContractEdge - Error: The input edge parameter is not a valid edge. Returning None.")
             return None
         if vertex == None:
@@ -3890,7 +3904,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         vertices : list , optional
             The input list of vertices. The default is None.
@@ -3903,15 +3917,16 @@ class Graph:
             The closeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
 
         """
+        from topologicpy.Topology import Topology
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
         graphVertices = Graph.Vertices(graph)
         if not isinstance(vertices, list):
             vertices = graphVertices
         else:
-            vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+            vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) < 1:
             print("Graph.ClosenessCentrality - Error: The input list of vertices does not contain any valid vertices. Returning None.")
             return None
@@ -3922,7 +3937,7 @@ class Graph:
             for va in tqdm(vertices, desc="Computing Closeness Centrality", leave=False):
                 top_dist = 0
                 for vb in graphVertices:
-                    if topologic.Topology.IsSame(va, vb):
+                    if Topology.IsSame(va, vb):
                         d = 0
                     else:
                         d = Graph.TopologicalDistance(graph, va, vb, tolerance)
@@ -3936,7 +3951,7 @@ class Graph:
             for va in vertices:
                 top_dist = 0
                 for vb in graphVertices:
-                    if topologic.Topology.IsSame(va, vb):
+                    if Topology.IsSame(va, vb):
                         d = 0
                     else:
                         d = Graph.TopologicalDistance(graph, va, vb, tolerance)
@@ -3954,22 +3969,24 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         verticesA : list
             The first list of input vertices.
-        verticesB : topologic.Vertex
+        verticesB : topologic_core.Vertex
             The second list of input vertices.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The input graph with the connected input vertices.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Connect - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(verticesA, list):
@@ -3978,8 +3995,8 @@ class Graph:
         if not isinstance(verticesB, list):
             print("Graph.Connect - Error: The input list of verticesB is not a valid list. Returning None.")
             return None
-        verticesA = [v for v in verticesA if isinstance(v, topologic.Vertex)]
-        verticesB = [v for v in verticesB if isinstance(v, topologic.Vertex)]
+        verticesA = [v for v in verticesA if Topology.IsInstance(v, "Vertex")]
+        verticesB = [v for v in verticesB if Topology.IsInstance(v, "Vertex")]
         if len(verticesA) < 1:
             print("Graph.Connect - Error: The input list of verticesA does not contain any valid vertices. Returning None.")
             return None
@@ -3999,9 +4016,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        edge : topologic.Edge
+        edge : topologic_core.Edge
             The input edge.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -4012,10 +4029,12 @@ class Graph:
             True if the input graph contains the input edge. False otherwise.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.ContainsEdge - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(edge, topologic.Edge):
+        if not Topology.IsInstance(edge, "Edge"):
             print("Graph.ContainsEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
         return graph.ContainsEdge(edge, tolerance)
@@ -4027,9 +4046,9 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input Vertex.
         tolerance : float , optional
             Ther desired tolerance. The default is 0.0001.
@@ -4040,10 +4059,12 @@ class Graph:
             True if the input graph contains the input vertex. False otherwise.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.ContainsVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.ContainsVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         return graph.ContainsVertex(vertex, tolerance)
@@ -4055,7 +4076,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
@@ -4064,7 +4085,9 @@ class Graph:
             The degree sequence of the input graph.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.DegreeSequence - Error: The input graph is not a valid graph. Returning None.")
             return None
         sequence = []
@@ -4078,7 +4101,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
@@ -4087,7 +4110,9 @@ class Graph:
             The density of the input graph.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Density - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.Density()
@@ -4099,7 +4124,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         vertices : list , optional
             The input list of vertices. The default is None.
@@ -4112,14 +4137,16 @@ class Graph:
             The depth map of the input list of vertices within the input graph.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.DepthMap - Error: The input graph is not a valid graph. Returning None.")
             return None
         graphVertices = Graph.Vertices(graph)
         if not isinstance(vertices, list):
             vertices = graphVertices
         else:
-            vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+            vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) < 1:
             print("Graph.DepthMap - Error: The input list of vertices does not contain any valid vertices. Returning None.")
             return None
@@ -4127,7 +4154,7 @@ class Graph:
         for va in vertices:
             depth = 0
             for vb in graphVertices:
-                if topologic.Topology.IsSame(va, vb):
+                if Topology.IsSame(va, vb):
                     dist = 0
                 else:
                     dist = Graph.TopologicalDistance(graph, va, vb, tolerance)
@@ -4142,7 +4169,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
@@ -4151,7 +4178,9 @@ class Graph:
             The diameter of the input graph.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Diameter - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.Diameter()
@@ -4163,16 +4192,18 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
         -------
-        topologic.Dictionary
+        topologic_core.Dictionary
             The dictionary of the input graph.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Dictionary - Error: the input graph parameter is not a valid graph. Returning None.")
             return None
         return graph.GetDictionary()
@@ -4184,11 +4215,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertexA : topologic.Vertex
+        vertexA : topologic_core.Vertex
             The first input vertex.
-        vertexB : topologic.Vertex
+        vertexB : topologic_core.Vertex
             The second input vertex.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -4199,13 +4230,15 @@ class Graph:
             The shortest-path distance between the input vertices.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Distance - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexA, topologic.Vertex):
+        if not Topology.IsInstance(vertexA, "Vertex"):
             print("Graph.Distance - Error: The input vertexA is not a valid vertex. Returning None.")
             return None
-        if not isinstance(vertexB, topologic.Vertex):
+        if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.Distance - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         return graph.TopologicalDistance(vertexA, vertexB, tolerance)
@@ -4217,28 +4250,30 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertexA : topologic.Vertex
+        vertexA : topologic_core.Vertex
             The first input vertex.
-        vertexB : topologic.Vertex
+        vertexB : topologic_core.Vertex
             The second input Vertex.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Edge
+        topologic_core.Edge
             The edge in the input graph that connects the input vertices.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Edge - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexA, topologic.Vertex):
+        if not Topology.IsInstance(vertexA, "Vertex"):
             print("Graph.Edge - Error: The input vertexA is not a valid vertex. Returning None.")
             return None
-        if not isinstance(vertexB, topologic.Vertex):
+        if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.Edge - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         return graph.Edge(vertexA, vertexB, tolerance)
@@ -4250,7 +4285,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         vertices : list , optional
             An optional list of vertices to restrict the returned list of edges only to those connected to this list.
@@ -4263,7 +4298,9 @@ class Graph:
             The list of edges in the graph.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Edges - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not vertices:
@@ -4271,7 +4308,7 @@ class Graph:
             _ = graph.Edges(edges, tolerance)
             return edges
         else:
-            vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+            vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) < 1:
             print("Graph.Edges - Error: The input list of vertices does not contain any valid vertices. Returning None.")
             return None
@@ -4337,7 +4374,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         format : str , optional
             The desired output format, the options are listed below. Thde default is "turtle".
@@ -4488,7 +4525,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph
         path : str
             The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
@@ -4587,7 +4624,7 @@ class Graph:
         from os.path import exists
         
         
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.ExportToCSV - Error: The input graph parameter is not a valid topologic graph. Returning None.")
             return None
         
@@ -4844,7 +4881,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph
         path : str
             The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
@@ -4983,7 +5020,7 @@ class Graph:
             else:
                 return 'string'
         
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.ExportToGEXF - Error: the input graph parameter is not a valid graph. Returning None.")
             return None
         if not isinstance(path, str):
@@ -5181,7 +5218,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         path : str
             The path to the JSON file.
@@ -5251,7 +5288,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         layout : str , optional
             The desired mode for flattening. If set to 'spring', the algorithm uses a simplified version of the Fruchterman-Reingold force-directed algorithm to flatten and distribute the vertices.
@@ -5263,16 +5300,17 @@ class Graph:
             The desired random seed to use. The default is None.
         iterations : int , optional
             The desired maximum number of iterations to solve the forces in the 'spring' mode. The default is 50.
-        rootVertex : topologic.Vertex , optional
+        rootVertex : topologic_core.Vertex , optional
             The desired vertex to use as the root of the tree and radial layouts.
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The flattened graph.
 
         """
-        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
         import numpy as np
 
         def buchheim(tree):
@@ -5569,7 +5607,7 @@ class Graph:
             i = degrees.index(max(degrees))
             return vertices[i], i
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Flatten - Error: The input graph is not a valid topologic graph. Returning None.")
             return None
         d = Graph.MeshData(graph)
@@ -5604,7 +5642,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         Returns
         -------
@@ -5612,7 +5650,7 @@ class Graph:
             The computed global clustering coefficient.
 
         """
-        import topologic_core as topologic
+        from topologicpy.Topology import Topology
 
         def global_clustering_coefficient(adjacency_matrix):
             total_triangles = 0
@@ -5641,7 +5679,7 @@ class Graph:
 
             return global_clustering_coeff
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
         adjacency_matrix = Graph.AdjacencyMatrix(graph)
@@ -5654,25 +5692,27 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Guid - Error: the input graph parameter is not a valid graph. Returning None.")
             return None
         return graph.GetGUID()
 
     @staticmethod
-    def IncomingEdges(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
+    def IncomingEdges(graph, vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
         """
         Returns the incoming edges connected to a vertex. An edge is considered incoming if its end vertex is
         coincident with the input vertex.
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         directed : bool , optional
             If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
@@ -5685,11 +5725,14 @@ class Graph:
             The list of incoming edges
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.IncomingEdges - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.IncomingEdges - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         
@@ -5704,16 +5747,16 @@ class Graph:
         return incoming_edges
     
     @staticmethod
-    def IncomingVertices(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
+    def IncomingVertices(graph, vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
         """
         Returns the incoming vertices connected to a vertex. A vertex is considered incoming if it is an adjacent vertex to the input vertex
         and the the edge connecting it to the input vertex is an incoming edge.
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         directed : bool , optional
             If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
@@ -5727,10 +5770,12 @@ class Graph:
 
         """
         from topologicpy.Edge import Edge
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.IncomingVertices - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.IncomingVertices - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         
@@ -5750,7 +5795,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -5763,6 +5808,9 @@ class Graph:
         """
         # From https://www.geeksforgeeks.org/bipartite-graph/
         # This code is contributed by divyesh072019.
+
+        from topologicpy.Topology import Topology
+
         def isBipartite(V, adj):
             # vector to store colour of vertex
             # assigning all to -1 i.e. uncoloured
@@ -5814,7 +5862,7 @@ class Graph:
             # if all vertexes are coloured such that
             # no two connected vertex have same colours
             return True
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.IsBipartite - Error: The input graph is not a valid graph. Returning None.")
             return None
         order = Graph.Order(graph)
@@ -5828,7 +5876,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
@@ -5837,7 +5885,9 @@ class Graph:
             True if the input graph is complete. False otherwise
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.IsComplete - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.IsComplete()
@@ -5849,7 +5899,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         sequence : list
             The input sequence.
@@ -5860,7 +5910,9 @@ class Graph:
             True if the input sequence satisfies the Erdős–Gallai theorem. False otherwise.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.IsErdoesGallai - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.IsErdoesGallai(sequence)
@@ -5872,7 +5924,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
@@ -5881,7 +5933,9 @@ class Graph:
             The list of isolated vertices.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.IsolatedVertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         vertices = []
@@ -5906,7 +5960,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         verticesKey : str , optional
             The desired key name to call vertices. The default is "vertices".
@@ -6020,7 +6074,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         verticesKey : str , optional
             The desired key name to call vertices. The default is "vertices".
@@ -6063,7 +6117,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         vertices : list , optional
             The input list of vertices. If set to None, the local clustering coefficient of all vertices will be computed.
@@ -6077,7 +6131,7 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
-        import topologic_core as topologic
+        from topologicpy.Topology import Topology
 
         def local_clustering_coefficient(adjacency_matrix, node):
             """
@@ -6107,14 +6161,14 @@ class Graph:
             local_clustering_coeff = 2.0 * num_connections / (num_neighbors * (num_neighbors - 1))
 
             return local_clustering_coeff
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
         if vertices == None:
             vertices = Graph.Vertices(graph)
-        if isinstance(vertices, topologic.Vertex):
+        if Topology.IsInstance(vertices, "Vertex"):
             vertices = [vertices]
-        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) < 1:
             print("Graph.LocalClusteringCoefficient - Error: The input vertices parameter does not contain valid vertices. Returning None.")
             return None
@@ -6136,11 +6190,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertexA : topologic.Vertex
+        vertexA : topologic_core.Vertex
             The first input vertex.
-        vertexB : topologic.Vertex
+        vertexB : topologic_core.Vertex
             The second input vertex.
         vertexKey : str , optional
             The vertex key to maximize. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the longest path that maximizes the total value. The value must be numeric. The default is None.
@@ -6155,7 +6209,7 @@ class Graph:
 
         Returns
         -------
-        topologic.Wire
+        topologic_core.Wire
             The longest path between the input vertices.
 
         """
@@ -6167,13 +6221,13 @@ class Graph:
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
     
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.LongestPath - Error: the input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexA, topologic.Vertex):
+        if not Topology.IsInstance(vertexA, "Vertex"):
             print("Graph.LongestPath - Error: the input vertexA is not a valid vertex. Returning None.")
             return None
-        if not isinstance(vertexB, topologic.Vertex):
+        if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.LongestPath - Error: the input vertexB is not a valid vertex. Returning None.")
             return None
         
@@ -6224,9 +6278,9 @@ class Graph:
 
         sv = Topology.Vertices(longest_path)[0]
         if Vertex.Distance(sv, vertexB) < tolerance: # Wire is reversed. Re-reverse it
-            if isinstance(longest_path, topologic.Edges):
+            if Topology.IsInstance(longest_path, "Edge"):
                 longest_path = Edge.Reverse(longest_path)
-            if isinstance(longest_path, topologic.Wire):
+            elif Topology.IsInstance(longest_path, "Wire"):
                 longest_path = Wire.Reverse(longest_path)
                 longest_path = Wire.OrientEdges(longest_path, Wire.StartVertex(longest_path), tolerance=tolerance)
         if not costKey == None:
@@ -6242,7 +6296,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             the input graph.
 
         Returns
@@ -6251,7 +6305,9 @@ class Graph:
             The maximum delta.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.MaximumDelta - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.MaximumDelta()
@@ -6263,11 +6319,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph. This is assumed to be a directed graph
-        source : topologic.Vertex
+        source : topologic_core.Vertex
             The input source vertex.
-        sink : topologic.Vertex
+        sink : topologic_core.Vertex
             The input sink/target vertex.
         edgeKeyFwd : str , optional
             The edge dictionary key to use to find the value of the forward capacity of the edge. If not set, the length of the edge is used as its capacity. The default is None.
@@ -6289,6 +6345,9 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
         # Using BFS as a searching algorithm 
         def searching_algo_BFS(adjMatrix, s, t, parent):
 
@@ -6372,7 +6431,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
@@ -6386,8 +6445,9 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
         g_vertices = Graph.Vertices(g)
         m_vertices = []
         v_dicts = []
@@ -6419,7 +6479,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
@@ -6428,7 +6488,9 @@ class Graph:
             The minimum delta.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.MinimumDelta - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.MinimumDelta()
@@ -6440,7 +6502,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         edgeKey : string , optional
             If set, the value of the edgeKey will be used as the weight and the tree will minimize the weight. The value associated with the edgeKey must be numerical. If the key is not set, the edges will be sorted by their length. The default is None
@@ -6449,20 +6511,22 @@ class Graph:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The minimum spanning tree.
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
         def vertexInList(vertex, vertexList, tolerance=0.0001):
             for v in vertexList:
                 if Vertex.Distance(v, vertex) < tolerance:
                     return True
             return False
         
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.MinimumSpanningTree - Error: The input graph is not a valid graph. Returning None.")
             return None
         edges = Graph.Edges(graph)
@@ -6502,7 +6566,7 @@ class Graph:
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input boundary. View edges will be clipped to this face. The holes in the face are used as the obstacles
         sources : list
             The first input list of sources (vertices). Navigation edges will connect these veritces to destinations.
@@ -6515,7 +6579,7 @@ class Graph:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The navigation graph.
 
         """
@@ -6529,7 +6593,7 @@ class Graph:
         import topologic_core as topologic
         from tqdm.auto import tqdm
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             print("Graph.NavigationGraph - Error: The input face parameter is not a valid face. Returning None")
             return None
         if sources == None:
@@ -6543,17 +6607,17 @@ class Graph:
         if not isinstance(destinations, list):
             print("Graph.NavigationGraph - Error: The input destinations parameter is not a valid list. Returning None")
             return None
-        sources = [v for v in sources if isinstance(v, topologic.Vertex)]
+        sources = [v for v in sources if Topology.IsInstance(v, "Vertex")]
         if len(sources) < 1:
             print("Graph.NavigationGraph - Error: The input sources parameter does not contain any vertices. Returning None")
             return None
-        destinations = [v for v in destinations if isinstance(v, topologic.Vertex)]
+        destinations = [v for v in destinations if Topology.IsInstance(v, "Vertex")]
         #if len(destinations) < 1: #Nothing to navigate to, so return a graph made of sources
             #return Graph.ByVerticesEdges(sources, [])
 
         # Add obstuse angles of external boundary to viewpoints
         e_boundary = Face.ExternalBoundary(face)
-        if isinstance(e_boundary, topologic.Wire):
+        if Topology.IsInstance(e_boundary, "Wire"):
             vertices = Topology.Vertices(e_boundary)
             interior_angles = Wire.InteriorAngles(e_boundary)
             for i, ang in enumerate(interior_angles):
@@ -6562,7 +6626,7 @@ class Graph:
                     destinations.append(vertices[i])
         i_boundaries = Face.InternalBoundaries(face)
         for i_boundary in i_boundaries:
-            if isinstance(i_boundary, topologic.Wire):
+            if Topology.IsInstance(i_boundary, "Wire"):
                 vertices = Topology.Vertices(i_boundary)
                 interior_angles = Wire.InteriorAngles(i_boundary)
                 for i, ang in enumerate(interior_angles):
@@ -6592,7 +6656,7 @@ class Graph:
                 if Vertex.Distance(source, destination) > tolerance:
                     edge = Edge.ByVertices([source,destination])
                     e = Topology.Boolean(edge, face, operation="intersect")
-                    if isinstance(e, topologic.Edge):
+                    if Topology.IsInstance(e, "Edge"):
                         final_edges.append(edge)
                 used[i][j] = 1
                 if not index_a == None and not index_b == None:
@@ -6613,22 +6677,24 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
 
         Returns
         -------
-        topologic.Vertex
+        topologic_core.Vertex
             The vertex in the input graph that is the nearest to the input vertex.
 
         """
         from topologicpy.Vertex import Vertex
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.NearestVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.NearestVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         vertices = Graph.Vertices(graph)
@@ -6649,7 +6715,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
@@ -6677,7 +6743,7 @@ class Graph:
                 warnings.warn("Graph - Error: Could not import networkx. Please try to install networkx manually. Returning None.")
                 return None
         
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.NetworkXGraph - Error: The input graph is not a valid graph. Returning None.")
             return None
 
@@ -6723,7 +6789,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
@@ -6732,22 +6798,24 @@ class Graph:
             The number of vertices in the input graph
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Order - Error: The input graph is not a valid graph. Returning None.")
             return None
         return len(Graph.Vertices(graph))
     
     @staticmethod
-    def OutgoingEdges(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
+    def OutgoingEdges(graph, vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
         """
         Returns the outgoing edges connected to a vertex. An edge is considered outgoing if its start vertex is
         coincident with the input vertex.
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         directed : bool , optional
             If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
@@ -6760,11 +6828,14 @@ class Graph:
             The list of outgoing edges
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.IncomingEdges - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.IncomingEdges - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         
@@ -6779,16 +6850,16 @@ class Graph:
         return outgoing_edges
     
     @staticmethod
-    def OutgoingVertices(graph: topologic.Graph, vertex: topologic.Vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
+    def OutgoingVertices(graph, vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
         """
         Returns the list of outgoing vertices connected to a vertex. A vertex is considered outgoing if it is an adjacent vertex to the input vertex
         and the the edge connecting it to the input vertex is an outgoing edge.
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         directed : bool , optional
             If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
@@ -6802,10 +6873,12 @@ class Graph:
 
         """
         from topologicpy.Edge import Edge
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.OutgoingVertices - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.OutgoingVertices - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         
@@ -6825,7 +6898,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         alpha : float , optional
             The damping (dampening) factor. The default is 0.85. See https://en.wikipedia.org/wiki/PageRank.
@@ -6845,6 +6918,7 @@ class Graph:
         list
             The list of page ranks for the vertices in the graph.
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Helper import Helper
 
         vertices = Graph.Vertices(graph)
@@ -6881,34 +6955,35 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertexA : topologic.Vertex
+        vertexA : topologic_core.Vertex
             The first input vertex.
-        vertexB : topologic.Vertex
+        vertexB : topologic_core.Vertex
             The second input vertex.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Wire
+        topologic_core.Wire
             The path (wire) in the input graph that connects the input vertices.
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Path - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexA, topologic.Vertex):
+        if not Topology.IsInstance(vertexA, "Vertex"):
             print("Graph.Path - Error: The input vertexA is not a valid vertex. Returning None.")
             return None
-        if not isinstance(vertexB, topologic.Vertex):
+        if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.Path - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         path = graph.Path(vertexA, vertexB)
-        if isinstance(path, topologic.Wire):
+        if Topology.IsInstance(path, "Wire"):
             path = Wire.OrientEdges(path, Wire.StartVertex(path), tolerance=tolerance)
         return path
 
@@ -6922,7 +6997,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         path : str
             The desired file path to the HTML file into which to save the pyvis graph.
@@ -7115,23 +7190,25 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        edge : topologic.Edge
+        edge : topologic_core.Edge
             The input edge.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The input graph with the input edge removed.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.RemoveEdge - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(edge, topologic.Edge):
+        if not Topology.IsInstance(edge, "Edge"):
             print("Graph.RemoveEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
         _ = graph.RemoveEdges([edge], tolerance)
@@ -7144,23 +7221,25 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The input graph with the input vertex removed.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.RemoveVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.RemoveVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         graphVertex = Graph.NearestVertex(graph, vertex)
@@ -7174,25 +7253,26 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        dictionary : topologic.Dictionary or dict
+        dictionary : topologic_core.Dictionary or dict
             The input dictionary.
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The input graph with the input dictionary set in it.
 
         """
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.SetDictionary - Error: the input graph parameter is not a valid graph. Returning None.")
             return None
         if isinstance(dictionary, dict):
             dictionary = Dictionary.ByPythonDictionary(dictionary)
-        if not isinstance(dictionary, topologic.Dictionary):
+        if not Topology.IsInstance(dictionary, "Dictionary"):
             print("Graph.SetDictionary - Warning: the input dictionary parameter is not a valid dictionary. Returning original input.")
             return graph
         if len(dictionary.Keys()) < 1:
@@ -7208,11 +7288,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertexA : topologic.Vertex
+        vertexA : topologic_core.Vertex
             The first input vertex.
-        vertexB : topologic.Vertex
+        vertexB : topologic_core.Vertex
             The second input vertex.
         vertexKey : string , optional
             The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
@@ -7223,21 +7303,21 @@ class Graph:
         
         Returns
         -------
-        topologic.Wire
+        topologic_core.Wire
             The shortest path between the input vertices.
 
         """
-        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.ShortestPath - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexA, topologic.Vertex):
+        if not Topology.IsInstance(vertexA, "Vertex"):
             print("Graph.ShortestPath - Error: The input vertexA is not a valid vertex. Returning None.")
             return None
-        if not isinstance(vertexB, topologic.Vertex):
+        if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.ShortestPath - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         if edgeKey:
@@ -7247,11 +7327,11 @@ class Graph:
             gsv = Graph.NearestVertex(graph, vertexA)
             gev = Graph.NearestVertex(graph, vertexB)
             shortest_path = graph.ShortestPath(gsv, gev, vertexKey, edgeKey)
-            if isinstance(shortest_path, topologic.Edge):
+            if Topology.IsInstance(shortest_path, "Edge"):
                     shortest_path = Wire.ByEdges([shortest_path])
             sv = Topology.Vertices(shortest_path)[0]
             if Vertex.Distance(sv, gev) < tolerance: # Path is reversed. Correct it.
-                if isinstance(shortest_path, topologic.Wire):
+                if Topology.IsInstance(shortest_path, "Wire"):
                     shortest_path = Wire.Reverse(shortest_path)
             shortest_path = Wire.OrientEdges(shortest_path, Wire.StartVertex(shortest_path), tolerance=tolerance)
             return shortest_path
@@ -7266,11 +7346,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertexA : topologic.Vertex
+        vertexA : topologic_core.Vertex
             The first input vertex.
-        vertexB : topologic.Vertex
+        vertexB : topologic_core.Vertex
             The second input vertex.
         vertexKey : string , optional
             The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
@@ -7289,8 +7369,7 @@ class Graph:
             The list of shortest paths between the input vertices.
 
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
         
         def isUnique(paths, path):
             if path == None:
@@ -7298,19 +7377,19 @@ class Graph:
             if len(paths) < 1:
                 return True
             for aPath in paths:
-                copyPath = topologic.Topology.DeepCopy(aPath)
+                copyPath = topologic.Topology.DeepCopy(aPath) # Hook to Core
                 dif = copyPath.Difference(path, False)
                 if dif == None:
                     return False
             return True
         
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.ShortestPaths - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexA, topologic.Vertex):
+        if not Topology.IsInstance(vertexA, "Vertex"):
             print("Graph.ShortestPaths - Error: The input vertexA parameter is not a valid vertex. Returning None.")
             return None
-        if not isinstance(vertexB, topologic.Vertex):
+        if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.ShortestPaths - Error: The input vertexB parameter is not a valid vertex. Returning None.")
             return None
         shortestPaths = []
@@ -7338,7 +7417,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
@@ -7428,8 +7507,9 @@ class Graph:
 
         """
         from topologicpy.Plotly import Plotly
+        from topologicpy.Topology import Topology
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Show - Error: The input graph is not a valid graph. Returning None.")
             return None
         
@@ -7445,7 +7525,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
@@ -7454,7 +7534,9 @@ class Graph:
             The number of edges in the input graph.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Size - Error: The input graph is not a valid graph. Returning None.")
             return None
         return len(Graph.Edges(graph))
@@ -7466,11 +7548,11 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertexA : topologic.Vertex
+        vertexA : topologic_core.Vertex
             The first input vertex.
-        vertexB : topologic.Vertex
+        vertexB : topologic_core.Vertex
             The second input vertex.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -7481,13 +7563,15 @@ class Graph:
             The topological distance between the input vertices.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.TopologicalDistance - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexA, topologic.Vertex):
+        if not Topology.IsInstance(vertexA, "Vertex"):
             print("Graph.TopologicalDistance - Error: The input vertexA is not a valid vertex. Returning None.")
             return None
-        if not isinstance(vertexB, topologic.Vertex):
+        if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.TopologicalDistance - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         return graph.TopologicalDistance(vertexA, vertexB, tolerance)
@@ -7499,16 +7583,18 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
 
         Returns
         -------
-        topologic.Cluster
+        topologic_core.Cluster
             The topology of the input graph.
 
         """
-        if not isinstance(graph, topologic.Graph):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Topology - Error: The input graph is not a valid graph. Returning None.")
             return None
         return graph.Topology()
@@ -7520,29 +7606,30 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertex : topologic.Vertex , optional
+        vertex : topologic_core.Vertex , optional
             The input root vertex. If not set, the first vertex in the graph is set as the root vertex. The default is None.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The tree graph version of the input graph.
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
         
         def vertexInList(vertex, vertexList):
             if vertex and vertexList:
-                if isinstance(vertex, topologic.Vertex) and isinstance(vertexList, list):
+                if Topology.IsInstance(vertex, "Vertex") and isinstance(vertexList, list):
                     for i in range(len(vertexList)):
                         if vertexList[i]:
-                            if isinstance(vertexList[i], topologic.Vertex):
-                                if topologic.Topology.IsSame(vertex, vertexList[i]):
+                            if Topology.IsInstance(vertexList[i], "Vertex"):
+                                if Topology.IsSame(vertex, vertexList[i]):
                                     return True
             return False
 
@@ -7579,10 +7666,10 @@ class Graph:
                 dictionary = buildTree(graph, dictionary, child, vertex, tolerance)
             return dictionary
         
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Tree - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             vertex = Graph.Vertices(graph)[0]
         else:
             vertex = Graph.NearestVertex(graph, vertex)
@@ -7591,15 +7678,15 @@ class Graph:
         return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'])
     
     @staticmethod
-    def VertexDegree(graph : topologic.Graph, vertex: topologic.Vertex, edgeKey: str = None, tolerance: float = 0.0001):
+    def VertexDegree(graph, vertex, edgeKey: str = None, tolerance: float = 0.0001):
         """
         Returns the degree of the input vertex. See https://en.wikipedia.org/wiki/Degree_(graph_theory).
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         edgeKey : str , optional
             If specified, the value in the connected edges' dictionary specified by the edgeKey string will be aggregated to calculate
@@ -7617,10 +7704,10 @@ class Graph:
         from topologicpy.Dictionary import Dictionary
         import numbers
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.VertexDegree - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.VertexDegree - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         if not isinstance(edgeKey, str):
@@ -7643,7 +7730,7 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         vertexKey : str , optional
             If set, the returned list of vertices is sorted according to the dicitonary values stored under this key. The default is None.
@@ -7655,10 +7742,11 @@ class Graph:
             The list of vertices in the input graph.
 
         """
-
         from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Vertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         vertices = []
@@ -7685,7 +7773,7 @@ class Graph:
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input boundary. View edges will be clipped to this face. The holes in the face are used as the obstacles
         viewpointsA : list , optional
             The first input list of viewpoints (vertices). Visibility edges will connect these veritces to viewpointsB. If set to None, this parameters will be set to all vertices of the input face. The default is None.
@@ -7696,7 +7784,7 @@ class Graph:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The visibility graph.
 
         """
@@ -7707,7 +7795,7 @@ class Graph:
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             print("Graph.VisibilityGraph - Error: The input face parameter is not a valid face. Returning None")
             return None
         if viewpointsA == None:
@@ -7721,18 +7809,18 @@ class Graph:
         if not isinstance(viewpointsB, list):
             print("Graph.VisibilityGraph - Error: The input viewpointsB parameter is not a valid list. Returning None")
             return None
-        viewpointsA = [v for v in viewpointsA if isinstance(v, topologic.Vertex)]
+        viewpointsA = [v for v in viewpointsA if Topology.IsInstance(v, "Vertex")]
         if len(viewpointsA) < 1:
             print("Graph.VisibilityGraph - Error: The input viewpointsA parameter does not contain any vertices. Returning None")
             return None
-        viewpointsB = [v for v in viewpointsB if isinstance(v, topologic.Vertex)]
+        viewpointsB = [v for v in viewpointsB if Topology.IsInstance(v, "Vertex")]
         if len(viewpointsB) < 1: #Nothing to look at, so return a graph made of viewpointsA
             return Graph.ByVerticesEdges(viewpointsA, [])
         
         i_boundaries = Face.InternalBoundaries(face)
         obstacles = []
         for i_boundary in i_boundaries:
-            if isinstance(i_boundary, topologic.Wire):
+            if Topology.IsInstance(i_boundary, "Wire"):
                 obstacles.append(Face.ByWire(i_boundary))
         if len(obstacles) > 0:
             obstacle_cluster = Cluster.ByTopologies(obstacles)
@@ -7743,9 +7831,9 @@ class Graph:
             result = Topology.Difference(edge, obstacle_cluster)
             if result == None:
                 return True
-            if isinstance(result, topologic.Cluster):
+            if Topology.IsInstance(result, "Cluster"):
                 return True
-            if isinstance(result, topologic.Edge):
+            if Topology.IsInstance(result, "Edge"):
                 if abs(Edge.Length(edge) - Edge.Length(result)) > tolerance:
                     return True
             return False

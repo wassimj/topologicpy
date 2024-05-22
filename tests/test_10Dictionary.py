@@ -11,6 +11,7 @@ from topologicpy.Wire import Wire
 from topologicpy.Face import Face
 from topologicpy.Shell import Shell
 from topologicpy.Cell import Cell
+from topologicpy.Topology import Topology
 from topologicpy.Dictionary import Dictionary
 
 def test_main():
@@ -47,18 +48,18 @@ def test_main():
     k = ["a", "b", "c"]
     val = [1,2,3]
     dict_kv = Dictionary.ByKeysValues(k, val)
-    assert isinstance(dict_kv, topologic.Dictionary), "Dictionary.ByKeysValues. Should be topologic.Dictionary"
+    assert Topology.IsInstance(dict_kv, "Dictionary"), "Dictionary.ByKeysValues. Should be topologic.Dictionary"
     assert len(dict_kv.Keys()) == 3, "Dictionary.ByKeysValues. List length should be 3"
     # test 2
     dict_kv2 = Dictionary.ByKeysValues(["d", "e", "f"],[4, 5, 6])
-    assert isinstance(dict_kv2, topologic.Dictionary), "Dictionary.ByKeysValues. Should be topologic.Dictionary"
+    assert Topology.IsInstance(dict_kv2, "Dictionary"), "Dictionary.ByKeysValues. Should be topologic.Dictionary"
     assert len(dict_kv2.Keys()) == 3, "Dictionary.ByKeysValues. List length should be 3"
 
     # Case 2 - ByMergedDictionaries
     print("Case 2")
     # test 1
     dict_bmd = Dictionary.ByMergedDictionaries([dict_kv, dict_kv2])
-    assert isinstance(dict_bmd, topologic.Dictionary), "Dictionary.ByKeysValues. Should be topologic.Dictionary"
+    assert Topology.IsInstance(dict_bmd, "Dictionary"), "Dictionary.ByKeysValues. Should be topologic.Dictionary"
     assert len(dict_bmd.Keys()) == 6, "Dictionary.ByMergedDictionaries. List length should be 6"
     assert len(dict_bmd.Values()) == 6, "Dictionary.ByMergedDictionaries. List length should be 6"
 
@@ -67,12 +68,12 @@ def test_main():
     # test 1
     dict_py1 = {"g":7,"h":8,"i":9}
     dict_bpd = Dictionary.ByPythonDictionary(dict_py1)
-    assert isinstance(dict_bpd, topologic.Dictionary), "Dictionary.ByPythonDictionary. Should be topologic.Dictionary"
+    assert Topology.IsInstance(dict_bpd, "Dictionary"), "Dictionary.ByPythonDictionary. Should be topologic.Dictionary"
     assert len(dict_bpd.Keys()) == 3, "Dictionary.ByPythonDictionary. List length should be 3"
     # test 2
     dict_py2 = {"j":10,"k":11,"l":12}
     dict_bpd2 = Dictionary.ByPythonDictionary(dict_py2)
-    assert isinstance(dict_bpd2, topologic.Dictionary), "Dictionary.ByPythonDictionary. Should be topologic.Dictionary"
+    assert Topology.IsInstance(dict_bpd2, "Dictionary"), "Dictionary.ByPythonDictionary. Should be topologic.Dictionary"
     assert len(dict_bpd2.Keys()) == 3, "Dictionary.ByPythonDictionary. List length should be 3"
 
     # Case 4 - Keys

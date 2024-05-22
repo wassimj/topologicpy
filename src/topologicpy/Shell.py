@@ -15,7 +15,6 @@
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
 import topologic_core as topologic
-from topologicpy.Topology import Topology
 import math
 import os
 import warnings
@@ -49,7 +48,7 @@ except:
     except:
         warnings.warn("Shell - Error: Could not import scipy.")
 
-class Shell(Topology):
+class Shell():
     @staticmethod
     def ByDisjointFaces(externalBoundary, faces, maximumGap=0.5, mergeJunctions=False, threshold=0.5, uSides=1, vSides=1, transferDictionaries=False, tolerance=0.0001):
         """
@@ -57,7 +56,7 @@ class Shell(Topology):
 
         Parameters
         ----------
-        externalBoundary : topologic.Face
+        externalBoundary : topologic_core.Face
             The input external boundary of the faces. This resembles a ribbon (face with hole) where its interior boundary touches the edges of the input list of faces.
         faces : list
             The input list of faces.
@@ -78,7 +77,7 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The created Shell.
 
         """
@@ -160,7 +159,7 @@ class Shell(Topology):
         if len(skeletons) > 0:
             skeleton_cluster = Cluster.ByTopologies(skeletons+[internalBoundary])
             skEdges = Topology.SelfMerge(Cluster.ByTopologies(removeShards(Topology.Edges(skeleton_cluster), skeleton_cluster, maximumGap=maximumGap)), tolerance=tolerance)
-            if isinstance(skEdges, topologic.Edge):
+            if Topology.IsInstance(skEdges, "Edge"):
                 skEdges = extendEdges([skEdges], skEdges, maximumGap=maximumGap)
             else:
                 skEdges = extendEdges(Topology.Edges(skEdges), skEdges, maximumGap=maximumGap)
@@ -240,7 +239,7 @@ class Shell(Topology):
                 cluster = Cluster.ByTopologies(new_edges)
                 eb = Face.ByWire(Shell.ExternalBoundary(shell), tolerance=tolerance)
                 shell = Topology.Slice(eb, cluster, tolerance=tolerance)
-            if not isinstance(shell, topologic.Shell):
+            if not Topology.IsInstance(shell, "Shell"):
                 try:
                     temp_wires = [Wire.RemoveCollinearEdges(w, angTolerance=1.0) for w in Topology.Wires(shell)]
                     temp_faces = [Face.ByWire(w, tolerance=tolerance) for w in temp_wires]
@@ -259,7 +258,7 @@ class Shell(Topology):
         return None
 
     @staticmethod
-    def ByFaces(faces: list, tolerance: float = 0.0001) -> topologic.Shell:
+    def ByFaces(faces: list, tolerance: float = 0.0001):
         """
         Creates a shell from the input list of faces.
 
@@ -272,7 +271,7 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The created Shell.
 
         """
@@ -280,14 +279,14 @@ class Shell(Topology):
 
         if not isinstance(faces, list):
             return None
-        faceList = [x for x in faces if isinstance(x, topologic.Face)]
+        faceList = [x for x in faces if Topology.IsInstance(x, "Face")]
         if len(faceList) == 0:
             print("Shell.ByFaces - Error: The input faces list does not contain any valid faces. Returning None.")
             return None
-        shell = topologic.Shell.ByFaces(faceList, tolerance)
-        if not isinstance(shell, topologic.Shell):
+        shell = topologic.Shell.ByFaces(faceList, tolerance) # Hook to Core
+        if not Topology.IsInstance(shell, "Shell"):
             shell = Topology.SelfMerge(shell, tolerance=tolerance)
-            if isinstance(shell, topologic.Shell):
+            if Topology.IsInstance(shell, "Shell"):
                 return shell
             else:
                 print("Shell.ByFaces - Error: Could not create shell. Returning None.")
@@ -296,31 +295,33 @@ class Shell(Topology):
             return shell
 
     @staticmethod
-    def ByFacesCluster(cluster: topologic.Cluster, tolerance: float = 0.0001) -> topologic.Shell:
+    def ByFacesCluster(cluster, tolerance: float = 0.0001):
         """
         Creates a shell from the input cluster of faces.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster of faces.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The created shell.
 
         """
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             return None
         faces = []
         _ = cluster.Faces(None, faces)
         return Shell.ByFaces(faces, tolerance=tolerance)
 
     @staticmethod
-    def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False) -> topologic.Shell:
+    def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a shell by lofting through the input wires
         Parameters
@@ -336,31 +337,31 @@ class Shell(Topology):
         
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The creates shell.
         """
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
         if not isinstance(wires, list):
             return None
-        wireList = [x for x in wires if isinstance(x, topologic.Wire)]
+        wireList = [x for x in wires if Topology.IsInstance(x, "Wire")]
         faces = []
         for i in range(len(wireList)-1):
             wire1 = wireList[i]
             wire2 = wireList[i+1]
-            if wire1.Type() < topologic.Edge.Type() or wire2.Type() < topologic.Edge.Type():
+            if Topology.Type(wire1) < Topology.TypeID("Edge") or Topology.Type(wire2) < Topology.TypeID("Edge"):
                 return None
-            if wire1.Type() == topologic.Edge.Type():
+            if Topology.Type(wire1) == Topology.TypeID("Edge"):
                 w1_edges = [wire1]
             else:
-                w1_edges = []
-                _ = wire1.Edges(None, w1_edges)
-            if wire2.Type() == topologic.Edge.Type():
+                w1_edges = Topology.Edges(wire1)
+            if Topology.Type(wire2) == Topology.TypeID("Edge"):
                 w2_edges = [wire2]
             else:
-                w2_edges = []
-                _ = wire2.Edges(None, w2_edges)
+                w2_edges = Topology.Edges(wire2)
             if len(w1_edges) != len(w2_edges):
                 return None
             if triangulate == True:
@@ -415,13 +416,13 @@ class Shell(Topology):
         return Shell.ByFaces(faces, tolerance=tolerance)
 
     @staticmethod
-    def ByWiresCluster(cluster: topologic.Cluster, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False) -> topologic.Shell:
+    def ByWiresCluster(cluster, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a shell by lofting through the input cluster of wires
 
         Parameters
         ----------
-        wires : topologic.Cluster
+        wires : topologic_core.Cluster
             The input cluster of wires.
         triangulate : bool , optional
             If set to True, the faces will be triangulated. The default is True.
@@ -432,26 +433,28 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The creates shell.
 
         """
         from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
         if not cluster:
             return None
-        if not isinstance(cluster, topologic.Cluster):
+        if not Topology.IsInstance(cluster, "Cluster"):
             return None
         wires = Cluster.Wires(cluster)
         return Shell.ByWires(wires, triangulate=triangulate, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def Circle(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 32, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
+    def Circle(origin= None, radius: float = 0.5, sides: int = 32, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a circle.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
             The  radius of the circle. The default is 0.5.
@@ -470,13 +473,13 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The created circle.
         """
         return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=1, fromAngle=fromAngle, toAngle=toAngle, direction=direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
-    def Delaunay(vertices: list, face: topologic.Face = None, tolerance: float = 0.0001) -> topologic.Shell:
+    def Delaunay(vertices: list, face= None, tolerance: float = 0.0001):
         """
         Returns a delaunay partitioning of the input vertices. The vertices must be coplanar. See https://en.wikipedia.org/wiki/Delaunay_triangulation.
 
@@ -484,7 +487,7 @@ class Shell(Topology):
         ----------
         vertices : list
             The input list of vertices.
-        face : topologic.Face , optional
+        face : topologic_core.Face , optional
             The input face. If specified, the delaunay triangulation is clipped to the face.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -507,14 +510,14 @@ class Shell(Topology):
         
         if not isinstance(vertices, list):
             return None
-        vertices = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        vertices = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
         if len(vertices) < 3:
             return None
 
         # Create a Vertex at the world's origin (0, 0, 0)
         world_origin = Vertex.Origin()
 
-        if isinstance(face, topologic.Face):
+        if Topology.IsInstance(face, "Face"):
             # Flatten the face
             origin = Topology.Centroid(face)
             normal = Face.Normal(face)
@@ -548,7 +551,7 @@ class Shell(Topology):
         if shell == None:
             shell = Cluster.ByTopologies(faces)
         
-        if isinstance(face, topologic.Face):
+        if Topology.IsInstance(face, "Face"):
             edges = Topology.Edges(shell)
             shell = Topology.Slice(flatFace, Cluster.ByTopologies(edges))
             # Get the internal boundaries of the face
@@ -562,13 +565,13 @@ class Shell(Topology):
         return shell
 
     @staticmethod
-    def Edges(shell: topologic.Shell) -> list:
+    def Edges(shell) -> list:
         """
         Returns the edges of the input shell.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
 
         Returns
@@ -576,36 +579,37 @@ class Shell(Topology):
         list
             The list of edges.
 
-        """ 
-        if not isinstance(shell, topologic.Shell):
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(shell, "Shell"):
             return None
         edges = []
         _ = shell.Edges(None, edges)
         return edges
 
     @staticmethod
-    def ExternalBoundary(shell: topologic.Shell, tolerance: float = 0.0001) -> topologic.Wire:
+    def ExternalBoundary(shell, tolerance: float = 0.0001):
         """
         Returns the external boundary of the input shell.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        topologic.Wire or topologic.Cluster
+        topologic_core.Wire or topologic_core.Cluster
             The external boundary of the input shell. If the shell has holes, the return value will be a cluster of wires.
 
         """
-        from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
-        if not isinstance(shell, topologic.Shell):
+        if not Topology.IsInstance(shell, "Shell"):
             return None
         edges = []
         _ = shell.Edges(None, edges)
@@ -618,13 +622,13 @@ class Shell(Topology):
         return Topology.SelfMerge(Cluster.ByTopologies(obEdges), tolerance=tolerance)
 
     @staticmethod
-    def Faces(shell: topologic.Shell) -> list:
+    def Faces(shell) -> list:
         """
         Returns the faces of the input shell.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
 
         Returns
@@ -633,22 +637,24 @@ class Shell(Topology):
             The list of faces.
 
         """
-        if not isinstance(shell, topologic.Shell):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(shell, "Shell"):
             return None
         faces = []
         _ = shell.Faces(None, faces)
         return faces
     
     @staticmethod
-    def IsOnBoundary(shell: topologic.Shell, vertex: topologic.Vertex, tolerance: float = 0.0001) -> bool:
+    def IsOnBoundary(shell, vertex, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input vertex is on the boundary of the input shell. Returns False otherwise. On the boundary is defined as being on the boundary of one of the shell's external or internal boundaries
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -659,12 +665,12 @@ class Shell(Topology):
             Returns True if the input vertex is inside the input shell. Returns False otherwise.
 
         """
-
         from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
 
-        if not isinstance(shell, topologic.Shell):
+        if not Topology.IsInstance(shell, "Shell"):
             return None
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             return None
         boundary = Shell.ExternalBoundary(shell, tolerance=tolerance)
         if Vertex.IsInternal(vertex, boundary, tolerance=tolerance):
@@ -676,22 +682,22 @@ class Shell(Topology):
         return False
     
     @staticmethod
-    def HyperbolicParaboloidRectangularDomain(origin: topologic.Vertex = None, llVertex: topologic.Vertex = None, lrVertex: topologic.Vertex =None, ulVertex: topologic.Vertex =None, urVertex: topologic.Vertex = None,
-                                              uSides: int = 10, vSides: int = 10, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
+    def HyperbolicParaboloidRectangularDomain(origin= None, llVertex= None, lrVertex= None, ulVertex= None, urVertex= None,
+                                              uSides: int = 10, vSides: int = 10, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a hyperbolic paraboloid with a rectangular domain.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.
-        llVertex : topologic.Vertex , optional
+        llVertex : topologic_core.Vertex , optional
             The lower left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5, -0.5, -0.5).
-        lrVertex : topologic.Vertex , optional
+        lrVertex : topologic_core.Vertex , optional
             The lower right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5, -0.5, 0.5).
-        ulVertex : topologic.Vertex , optional
+        ulVertex : topologic_core.Vertex , optional
             The upper left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5, 0.5, 0.5).
-        urVertex : topologic.Vertex , optional
+        urVertex : topologic_core.Vertex , optional
             The upper right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5, 0.5, -0.5).
         uSides : int , optional
             The number of segments along the X axis. The default is 10.
@@ -705,7 +711,7 @@ class Shell(Topology):
             The desired tolerance. The default is 0.0001.
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The created hyperbolic paraboloid.
 
         """
@@ -713,15 +719,15 @@ class Shell(Topology):
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(llVertex, topologic.Vertex):
+        if not Topology.IsInstance(llVertex, "Vertex"):
             llVertex = Vertex.ByCoordinates(-0.5, -0.5, -0.5)
-        if not isinstance(lrVertex, topologic.Vertex):
+        if not Topology.IsInstance(lrVertex, "Vertex"):
             lrVertex = Vertex.ByCoordinates(0.5, -0.5, 0.5)
-        if not isinstance(ulVertex, topologic.Vertex):
+        if not Topology.IsInstance(ulVertex, "Vertex"):
             ulVertex = Vertex.ByCoordinates(-0.5, 0.5, 0.5)
-        if not isinstance(urVertex, topologic.Vertex):
+        if not Topology.IsInstance(urVertex, "Vertex"):
             urVertex = Vertex.ByCoordinates(0.5, 0.5, -0.5)
         e1 = Edge.ByVertices([llVertex, lrVertex], tolerance=tolerance)
         e3 = Edge.ByVertices([urVertex, ulVertex], tolerance=tolerance)
@@ -769,15 +775,15 @@ class Shell(Topology):
         return returnTopology
     
     @staticmethod
-    def HyperbolicParaboloidCircularDomain(origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 36, rings: int = 10,
+    def HyperbolicParaboloidCircularDomain(origin= None, radius: float = 0.5, sides: int = 36, rings: int = 10,
                                            A: float = 2.0, B: float = -2.0, direction: list = [0, 0, 1],
-                                           placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
+                                           placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a hyperbolic paraboloid with a circular domain. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.
         radius : float , optional
             The desired radius of the hyperbolic paraboloid. The default is 0.5.
@@ -797,14 +803,16 @@ class Shell(Topology):
             The desired tolerance. The default is 0.0001.
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The created hyperboloic paraboloid.
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        if not isinstance(origin, topologic.Vertex):
+
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         uOffset = float(360)/float(sides)
         vOffset = float(radius)/float(rings)
@@ -827,10 +835,10 @@ class Shell(Topology):
                 x4 = math.sin(a2)*r1
                 y4 = math.cos(a2)*r1
                 z4 = A*x4*x4 + B*y4*y4
-                v1 = topologic.Vertex.ByCoordinates(x1,y1,z1)
-                v2 = topologic.Vertex.ByCoordinates(x2,y2,z2)
-                v3 = topologic.Vertex.ByCoordinates(x3,y3,z3)
-                v4 = topologic.Vertex.ByCoordinates(x4,y4,z4)
+                v1 = Vertex.ByCoordinates(x1,y1,z1)
+                v2 = Vertex.ByCoordinates(x2,y2,z2)
+                v3 = Vertex.ByCoordinates(x3,y3,z3)
+                v4 = Vertex.ByCoordinates(x4,y4,z4)
                 f1 = Face.ByVertices([v1,v2,v4])
                 f2 = Face.ByVertices([v4,v2,v3])
                 faces.append(f1)
@@ -849,10 +857,10 @@ class Shell(Topology):
             x4 = math.sin(a2)*r1
             y4 = math.cos(a2)*r1
             z4 = A*x4*x4 + B*y4*y4
-            v1 = topologic.Vertex.ByCoordinates(x1,y1,z1)
-            v2 = topologic.Vertex.ByCoordinates(x2,y2,z2)
-            v3 = topologic.Vertex.ByCoordinates(x3,y3,z3)
-            v4 = topologic.Vertex.ByCoordinates(x4,y4,z4)
+            v1 = Vertex.ByCoordinates(x1,y1,z1)
+            v2 = Vertex.ByCoordinates(x2,y2,z2)
+            v3 = Vertex.ByCoordinates(x3,y3,z3)
+            v4 = Vertex.ByCoordinates(x4,y4,z4)
             f1 = Face.ByVertices([v1,v2,v4])
             f2 = Face.ByVertices([v4,v2,v3])
             faces.append(f1)
@@ -862,7 +870,7 @@ class Shell(Topology):
         x1 = 0
         y1 = 0
         z1 = 0
-        v1 = topologic.Vertex.ByCoordinates(x1,y1,z1)
+        v1 = Vertex.ByCoordinates(x1,y1,z1)
         for j in range(sides-1):
                 a1 = math.radians(uOffset)*j
                 a2 = math.radians(uOffset)*(j+1)
@@ -874,8 +882,8 @@ class Shell(Topology):
                 y3 = math.cos(a2)*r
                 z3 = A*x3*x3 + B*y3*y3
                 #z3 = 0
-                v2 = topologic.Vertex.ByCoordinates(x2,y2,z2)
-                v3 = topologic.Vertex.ByCoordinates(x3,y3,z3)
+                v2 = Vertex.ByCoordinates(x2,y2,z2)
+                v3 = Vertex.ByCoordinates(x3,y3,z3)
                 f1 = Face.ByVertices([v2,v1,v3])
                 faces.append(f1)
         a1 = math.radians(uOffset)*(sides-1)
@@ -886,13 +894,13 @@ class Shell(Topology):
         x3 = math.sin(a2)*r
         y3 = math.cos(a2)*r
         z3 = A*x3*x3 + B*y3*y3
-        v2 = topologic.Vertex.ByCoordinates(x2,y2,z2)
-        v3 = topologic.Vertex.ByCoordinates(x3,y3,z3)
+        v2 = Vertex.ByCoordinates(x2,y2,z2)
+        v3 = Vertex.ByCoordinates(x3,y3,z3)
         f1 = Face.ByVertices([v2,v1,v3])
         faces.append(f1)
-        returnTopology = topologic.Shell.ByFaces(faces, tolerance)
+        returnTopology = Shell.ByFaces(faces, tolerance)
         if not returnTopology:
-            returnTopology = topologic.Cluster.ByTopologies(faces)
+            returnTopology = Cluster.ByTopologies(faces)
         vertices = []
         _ = returnTopology.Vertices(None, vertices)
         xList = []
@@ -929,13 +937,13 @@ class Shell(Topology):
         return returnTopology
     
     @staticmethod
-    def InternalBoundaries(shell: topologic.Shell, tolerance=0.0001) -> topologic.Topology:
+    def InternalBoundaries(shell, tolerance=0.0001):
         """
         Returns the internal boundaries (closed wires) of the input shell. Internal boundaries are considered holes.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -962,13 +970,13 @@ class Shell(Topology):
 
     
     @staticmethod
-    def IsClosed(shell: topologic.Shell) -> bool:
+    def IsClosed(shell) -> bool:
         """
         Returns True if the input shell is closed. Returns False otherwise.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
 
         Returns
@@ -980,13 +988,13 @@ class Shell(Topology):
         return shell.IsClosed()
 
     @staticmethod
-    def Pie(origin: topologic.Vertex = None, radiusA: float = 0.5, radiusB: float = 0.0, sides: int = 32, rings: int = 1, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
+    def Pie(origin= None, radiusA: float = 0.5, radiusB: float = 0.0, sides: int = 32, rings: int = 1, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a pie shape.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The location of the origin of the pie. The default is None which results in the pie being placed at (0, 0, 0).
         radiusA : float , optional
             The outer radius of the pie. The default is 0.5.
@@ -1009,7 +1017,7 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The created pie.
 
         """
@@ -1018,7 +1026,7 @@ class Shell(Topology):
         from topologicpy.Topology import Topology
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             return None
         if toAngle < fromAngle:
             toAngle += 360
@@ -1105,24 +1113,24 @@ class Shell(Topology):
 
 
     @staticmethod
-    def Planarize(shell: topologic.Shell, origin: topologic.Vertex = None, mantissa: int = 6, tolerance: float = 0.0001) -> topologic.Shell:
+    def Planarize(shell, origin= None, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns a planarized version of the input shell.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The desired origin of the plane unto which the planar shell will be projected. If set to None, the centroid of the input shell will be chosen. The default is None.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The planarized shell.
 
         """
@@ -1131,12 +1139,12 @@ class Shell(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
-        if not isinstance(shell, topologic.Shell):
+        if not Topology.IsInstance(shell, "Shell"):
             print("Shell.Planarize - Error: The input wire parameter is not a valid topologic shell. Returning None.")
             return None
         if origin == None:
             origin = Vertex.Origin()
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             print("Shell.Planarize - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         
@@ -1150,15 +1158,15 @@ class Shell(Topology):
         return Topology.SelfMerge(Cluster.ByTopologies(new_faces), tolerance=tolerance)
     
     @staticmethod
-    def Rectangle(origin: topologic.Vertex = None, width: float = 1.0, length: float = 1.0,
+    def Rectangle(origin= None, width: float = 1.0, length: float = 1.0,
                   uSides: int = 2, vSides: int = 2, direction: list = [0, 0, 1],
-                  placement: str = "center", tolerance: float = 0.0001) -> topologic.Shell:
+                  placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a rectangle.
 
         Parameters
         ----------
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0, 0, 0).
         width : float , optional
             The width of the rectangle. The default is 1.0.
@@ -1177,16 +1185,18 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The created shell.
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
         if not origin:
             origin = Vertex.ByCoordinates(0, 0, 0)
-        if not isinstance(origin, topologic.Vertex):
+        if not Topology.IsInstance(origin, "Vertex"):
             return None
         uOffset = float(width)/float(uSides)
         vOffset = float(length)/float(vSides)
@@ -1209,13 +1219,13 @@ class Shell(Topology):
         return shell
 
     @staticmethod
-    def RemoveCollinearEdges(shell: topologic.Shell, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Wire:
+    def RemoveCollinearEdges(shell, angTolerance: float = 0.1, tolerance: float = 0.0001):
         """
         Removes any collinear edges in the input shell.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
         angTolerance : float , optional
             The desired angular tolerance. The default is 0.1.
@@ -1224,13 +1234,14 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The created shell without any collinear edges.
 
         """
         from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
 
-        if not isinstance(shell, topologic.Shell):
+        if not Topology.IsInstance(shell, "Shell"):
             print("Shell.RemoveCollinearEdges - Error: The input shell parameter is not a valid shell. Returning None.")
             return None
         faces = Shell.Faces(shell)
@@ -1247,7 +1258,7 @@ class Shell(Topology):
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         angle : float , optioal
             The desired angle in degrees of the roof. The default is 45.
@@ -1258,7 +1269,7 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The created roof.
 
         """
@@ -1282,7 +1293,7 @@ class Shell(Topology):
                     return vertex
             return None
         
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             return None
         angle = abs(angle)
         if angle >= 90-tolerance:
@@ -1345,13 +1356,13 @@ class Shell(Topology):
         return shell
     
     @staticmethod
-    def SelfMerge(shell: topologic.Shell, angTolerance: float = 0.1, tolerance: float = 0.0001) -> topologic.Face:
+    def SelfMerge(shell, angTolerance: float = 0.1, tolerance: float = 0.0001):
         """
         Creates a face by merging the faces of the input shell. The shell must be planar within the input angular tolerance.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
         angTolerance : float , optional
             The desired angular tolerance. The default is 0.1.
@@ -1360,7 +1371,7 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Face
+        topologic_core.Face
             The created face.
 
         """
@@ -1374,26 +1385,26 @@ class Shell(Topology):
             for aWire in wireList:
                 returnList.append(Wire.Planarize(aWire))
             return returnList
-        if not isinstance(shell, topologic.Shell):
+        if not Topology.IsInstance(shell, "Shell"):
             return None
         ext_boundary = Shell.ExternalBoundary(shell, tolerance=tolerance)
-        if isinstance(ext_boundary, topologic.Wire):
+        if Topology.IsInstance(ext_boundary, "Wire"):
             f = Face.ByWire(Topology.RemoveCollinearEdges(ext_boundary, angTolerance), tolerance=tolerance) or Face.ByWire(Wire.Planarize(Topology.RemoveCollinearEdges(ext_boundary, angTolerance), tolerance=tolerance))
             if not f:
                 print("FaceByPlanarShell - Error: The input Wire is not planar and could not be fixed. Returning None.")
                 return None
             else:
                 return f
-        elif isinstance(ext_boundary, topologic.Cluster):
+        elif Topology.IsInstance(ext_boundary, "Cluster"):
             wires = []
             _ = ext_boundary.Wires(None, wires)
             faces = []
             areas = []
             for aWire in wires:
                 try:
-                    aFace = topologic.Face.ByExternalBoundary(Topology.RemoveCollinearEdges(aWire, angTolerance))
+                    aFace = Face.ByWire(Topology.RemoveCollinearEdges(aWire, angTolerance))
                 except:
-                    aFace = topologic.Face.ByExternalBoundary(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance)))
+                    aFace = Face.ByWire(Wire.Planarize(Topology.RemoveCollinearEdges(aWire, angTolerance)))
                 anArea = Face.Area(aFace)
                 faces.append(aFace)
                 areas.append(anArea)
@@ -1422,14 +1433,14 @@ class Shell(Topology):
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The created straight skeleton.
 
         """
@@ -1439,7 +1450,7 @@ class Shell(Topology):
         import topologic_core as topologic
         import math
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             return None
         roof = Wire.Skeleton(face, tolerance=tolerance)
         if not roof:
@@ -1469,7 +1480,7 @@ class Shell(Topology):
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
         simplifyBoundary : bool , optional
             If set to True, the external boundary of the shell will be simplified as well. Otherwise, it will not be simplified. The default is True.
@@ -1478,7 +1489,7 @@ class Shell(Topology):
 
         Returns
         -------
-        topologic.Shell
+        topologic_core.Shell
             The simplified shell.
 
         """
@@ -1537,7 +1548,7 @@ class Shell(Topology):
 
             # Merge the two simplified segments
             return first_segment[:-1] + second_segment
-        if not isinstance(shell, topologic.Shell):
+        if not Topology.IsInstance(shell, "Shell"):
             print("Shell.Simplify - Error: The input shell parameter is not a valid topologic shell. Returning None.")
             return None
         # Get the external boundary of the shell. This can be simplified as well, but might cause issues at the end.
@@ -1561,18 +1572,18 @@ class Shell(Topology):
         separators = []
         wires = []
         for component in components:
-            if isinstance(component, topologic.Cluster):
+            if Topology.IsInstance(component, "Cluster"):
                 component = Topology.SelfMerge(component, tolerance=tolerance)
-                if isinstance(component, topologic.Cluster):
+                if Topology.IsInstance(component, "Cluster"):
                     separators.append(Cluster.FreeEdges(component, tolerance=tolerance))
                     wires.append(Cluster.FreeWires(component, tolerance=tolerance))
-                if isinstance(component, topologic.Edge):
+                if Topology.IsInstance(component, "Edge"):
                     separators.append(component)
-                if isinstance(component, topologic.Wire):
+                if Topology.IsInstance(component, "Wire"):
                     wires.append(component)
-            if isinstance(component, topologic.Edge):
+            if Topology.IsInstance(component, "Edge"):
                 separators.append(component)
-            if isinstance(component, topologic.Wire):
+            if Topology.IsInstance(component, "Wire"):
                 wires.append(component)
         wires = Helper.Flatten(wires)
         separators = Helper.Flatten(separators)
@@ -1607,13 +1618,13 @@ class Shell(Topology):
 
 
     @staticmethod
-    def Vertices(shell: topologic.Shell) -> list:
+    def Vertices(shell) -> list:
         """
         Returns the vertices of the input shell.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
 
         Returns
@@ -1622,14 +1633,16 @@ class Shell(Topology):
             The list of vertices.
 
         """
-        if not isinstance(shell, topologic.Shell):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(shell, "Shell"):
             return None
         vertices = []
         _ = shell.Vertices(None, vertices)
         return vertices
 
     @staticmethod
-    def Voronoi(vertices: list, face: topologic.Face = None, tolerance: float = 0.0001) -> topologic.Shell:
+    def Voronoi(vertices: list, face= None, tolerance: float = 0.0001):
         """
         Returns a voronoi partitioning of the input face based on the input vertices. The vertices must be coplanar and within the face. See https://en.wikipedia.org/wiki/Voronoi_diagram.
 
@@ -1637,7 +1650,7 @@ class Shell(Topology):
         ----------
         vertices : list
             The input list of vertices.
-        face : topologic.Face , optional
+        face : topologic_core.Face , optional
             The input face. If the face is not set an optimised bounding rectangle of the input vertices is used instead. The default is None.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -1656,13 +1669,13 @@ class Shell(Topology):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             cluster = Cluster.ByTopologies(vertices)
             br = Wire.BoundingRectangle(cluster, optimize=5)
             face = Face.ByWire(br, tolerance=tolerance)
         if not isinstance(vertices, list):
             return None
-        vertices = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        vertices = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
         if len(vertices) < 2:
             return None
 
@@ -1741,13 +1754,13 @@ class Shell(Topology):
         return shell
 
     @staticmethod
-    def Wires(shell: topologic.Shell) -> list:
+    def Wires(shell) -> list:
         """
         Returns the wires of the input shell.
 
         Parameters
         ----------
-        shell : topologic.Shell
+        shell : topologic_core.Shell
             The input shell.
 
         Returns
@@ -1756,7 +1769,9 @@ class Shell(Topology):
             The list of wires.
 
         """
-        if not isinstance(shell, topologic.Shell):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(shell, "Shell"):
             return None
         wires = []
         _ = shell.Wires(None, wires)

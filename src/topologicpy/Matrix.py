@@ -50,7 +50,7 @@ class Matrix:
         return matC
 
     @staticmethod
-    def ByRotation(rx=0, ry=0, rz=0, order="xyz"):
+    def ByRotation(angleX=0, angleY=0, angleZ=0, order="xyz"):
         """
         Description
         ----------
@@ -58,12 +58,12 @@ class Matrix:
 
         Parameters
         ----------
-        rx : float , optional
-            The desired rotation around the X axis. The default is 0.
-        ry : float , optional
-            The desired rotation around the Y axis. The default is 0.
-        rz : float , optional
-            The desired rotation around the Z axis. The default is 0.
+        angleX : float , optional
+            The desired rotation angle in degrees around the X axis. The default is 0.
+        angleY : float , optional
+            The desired rotation angle in degrees around the Y axis. The default is 0.
+        angleZ : float , optional
+            The desired rotation angle in degrees around the Z axis. The default is 0.
         order : string , optional
             The order by which the roatations will be applied. The possible values are any permutation of "xyz". This input is case insensitive. The default is "xyz".
 
@@ -102,9 +102,9 @@ class Matrix:
                     [0, 0, 1, 0],
                     [0, 0, 0, 1]]
         
-        xMat = rotateXMatrix(math.radians(rx))
-        yMat = rotateYMatrix(math.radians(ry))
-        zMat = rotateZMatrix(math.radians(rz))
+        xMat = rotateXMatrix(math.radians(angleX))
+        yMat = rotateYMatrix(math.radians(angleY))
+        zMat = rotateZMatrix(math.radians(angleZ))
         if order.lower() == "xyz":
             return Matrix.Multiply(Matrix.Multiply(zMat,yMat),xMat)
         if order.lower() == "xzy":
@@ -119,7 +119,7 @@ class Matrix:
             return Matrix.Multiply(Matrix.Multiply(xMat,yMat),zMat)
     
     @staticmethod
-    def ByScaling(sx=1.0, sy=1.0, sz=1.0):
+    def ByScaling(scaleX=1.0, scaleY=1.0, scaleZ=1.0):
         """
         Description
         ----------
@@ -127,11 +127,11 @@ class Matrix:
 
         Parameters
         ----------
-        sx : float , optional
+        scaleX : float , optional
             The desired scaling factor along the X axis. The default is 1.
-        sy : float , optional
+        scaleY : float , optional
             The desired scaling factor along the X axis. The default is 1.
-        sz : float , optional
+        scaleZ : float , optional
             The desired scaling factor along the X axis. The default is 1.
         
         Returns
@@ -140,13 +140,13 @@ class Matrix:
             The created 4X4 scaling matrix.
 
         """
-        return Matrix.Transpose([[sx,0,0,0],
-                [0,sy,0,0],
-                [0,0,sz,0],
-                [0,0,0,1]])
+        return [[scaleX,0,0,0],
+                [0,scaleY,0,0],
+                [0,0,scaleZ,0],
+                [0,0,0,1]]
     
     @staticmethod
-    def ByTranslation(tx=0, ty=0, tz=0):
+    def ByTranslation(translateX=0, translateY=0, translateZ=0):
         """
         Description
         ----------
@@ -154,11 +154,11 @@ class Matrix:
 
         Parameters
         ----------
-        tx : float , optional
+        translateX : float , optional
             The desired translation distance along the X axis. The default is 0.
-        ty : float , optional
+        translateY : float , optional
             The desired translation distance along the X axis. The default is 0.
-        tz : float , optional
+        translateZ : float , optional
             The desired translation distance along the X axis. The default is 0.
         
         Returns
@@ -167,17 +167,18 @@ class Matrix:
             The created 4X4 translation matrix.
 
         """
-        return Matrix.Transpose([[1,0,0,tx],
-                [0,1,0,ty],
-                [0,0,1,tz],
-                [0,0,0,1]])
+        return [[1,0,0,0],
+                [0,1,0,0],
+                [0,0,1,0],
+                [translateX,translateY,translateZ,1]]
     
     @staticmethod
     def Multiply(matA, matB):
         """
         Description
         ----------
-        Multiplies the two input matrices.
+        Multiplies the two input matrices. When transforming an object, the first input matrix is applied first
+        then the second input matrix.
         
         Parameters
         ----------

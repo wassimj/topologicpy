@@ -16,7 +16,7 @@
 
 import topologic_core as topologic
 
-class Grid(topologic.Cluster):
+class Grid():
     @staticmethod
     def EdgesByDistances(face=None, uOrigin=None, vOrigin=None, uRange=[-0.5,-0.25,0, 0.25,0.5], vRange=[-0.5,-0.25,0, 0.25,0.5], clip=False, tolerance=0.0001):
         """
@@ -24,11 +24,11 @@ class Grid(topologic.Cluster):
 
         Parameters
         ----------
-        face : topologic.Face , optional
+        face : topologic_core.Face , optional
             The input face. If set to None, the grid will be created on the XY plane. The default is None.
-        uOrigin : topologic.Vertex , optional
+        uOrigin : topologic_core.Vertex , optional
             The origin of the *u* grid lines. If set to None: if the face is set, the uOrigin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the uOrigin will be set to the origin. The default is None.
-        vOrigin : topologic.Vertex , optional
+        vOrigin : topologic_core.Vertex , optional
             The origin of the *v* grid lines. If set to None: if the face is set, the vOrigin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the vOrigin will be set to the origin. The default is None.
         uRange : list , optional
             A list of distances for the *u* grid lines from the uOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
@@ -41,7 +41,7 @@ class Grid(topologic.Cluster):
 
         Returns
         -------
-        topologic.Cluster
+        topologic_core.Cluster
             The created grid. Edges in the grid have an identifying dictionary with two keys: "dir" and "offset". The "dir" key can have one of two values: "u" or "v", the "offset" key contains the offset distance of that grid edge from the specified origin.
 
         """
@@ -55,17 +55,17 @@ class Grid(topologic.Cluster):
         if len(uRange) < 1 or len(vRange) < 1:
             return None
         if not uOrigin:
-            if not isinstance(face, topologic.Face):
+            if not Topology.IsInstance(face, "Face"):
                 uOrigin = Vertex.ByCoordinates(0, 0, 0)
             else:
                 uOrigin = Face.VertexByParameters(face, 0, 0)
         if not vOrigin:
-            if not isinstance(face, topologic.Face):
+            if not Topology.IsInstance(face, "Face"):
                 vOrigin = Vertex.ByCoordinates(0, 0, 0)
             else:
                 vOrigin = Face.VertexByParameters(face, 0, 0)
         
-        if isinstance(face, topologic.Face):
+        if Topology.IsInstance(face, "Face"):
             v1 = Face.VertexByParameters(face, 0, 0)
             v2 = Face.VertexByParameters(face, 1, 0)
             v3 = Face.VertexByParameters(face, 0, 0)
@@ -87,16 +87,15 @@ class Grid(topologic.Cluster):
                 v1 = Vertex.ByCoordinates(uOrigin.X()+tempVec[0], uOrigin.Y()+tempVec[1], uOrigin.Z()+tempVec[2])
                 v2 = Vertex.ByCoordinates(v1.X()+vVector[0], v1.Y()+vVector[1], v1.Z()+vVector[2])
                 e = Edge.ByVertices([v1, v2], tolerance=tolerance)
-                if clip and isinstance(face, topologic.Face):
+                if clip and Topology.IsInstance(face, "Face"):
                     e = e.Intersect(face, False)
                 if e:
-                    if isinstance(e, topologic.Edge):
+                    if Topology.IsInstance(e, "Edge"):
                         d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
                         e.SetDictionary(d)
                         gridEdges.append(e)
-                    elif e.Type() > topologic.Edge.Type():
-                        tempEdges = []
-                        _ = e.Edges(None, tempEdges)
+                    elif Topology.Type(e) > Topology.TypeID("Edge"):
+                        tempEdges = Topology.Edges(e)
                         for tempEdge in tempEdges:
                             d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
                             tempEdge.SetDictionary(d)
@@ -109,16 +108,15 @@ class Grid(topologic.Cluster):
                 v1 = Vertex.ByCoordinates(vOrigin.X()+tempVec[0], vOrigin.Y()+tempVec[1], vOrigin.Z()+tempVec[2])
                 v2 = Vertex.ByCoordinates(v1.X()+uVector[0], v1.Y()+uVector[1], v1.Z()+uVector[2])
                 e = Edge.ByVertices([v1, v2], tolerance=tolerance)
-                if clip and isinstance(face, topologic.Face):
+                if clip and Topology.IsInstance(face, "Face"):
                     e = e.Intersect(face, False)
                 if e:
-                    if isinstance(e, topologic.Edge):
+                    if Topology.IsInstance(e, "Edge"):
                         d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
                         e.SetDictionary(d)
                         gridEdges.append(e)
-                    elif e.Type() > topologic.Edge.Type():
-                        tempEdges = []
-                        _ = e.Edges(None, tempEdges)
+                    elif Topology.Type(e) > Topology.TypeID("Edge"):
+                        tempEdges = Topology.Edges(e)
                         for tempEdge in tempEdges:
                             d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
                             tempEdge.SetDictionary(d)
@@ -135,7 +133,7 @@ class Grid(topologic.Cluster):
 
         Parameters
         ----------
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         uRange : list , optional
             A list of *u* parameters for the *u* grid lines. The default is [0,0.25,0.5, 0.75, 1.0].
@@ -148,17 +146,17 @@ class Grid(topologic.Cluster):
         
         Returns
         -------
-        topologic.Cluster
+        topologic_core.Cluster
             The created grid. Edges in the grid have an identifying dictionary with two keys: "dir" and "offset". The "dir" key can have one of two values: "u" or "v", the "offset" key contains the offset parameter of that grid edge.
 
         """
-        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             return None
         if len(uRange) < 1 and len(vRange) < 1:
             return None
@@ -176,16 +174,15 @@ class Grid(topologic.Cluster):
             v1 = Face.VertexByParameters(face, u, 0)
             v2 = Face.VertexByParameters(face, u, 1)
             e = Edge.ByVertices([v1, v2], tolerance=tolerance)
-            if clip and isinstance(face, topologic.Face):
+            if clip and Topology.IsInstance(face, "Face"):
                 e = e.Intersect(face, False)
             if e:
-                if isinstance(e, topologic.Edge):
+                if Topology.IsInstance(e, "Edge"):
                     d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
                     e.SetDictionary(d)
                     gridEdges.append(e)
-                elif e.Type() > topologic.Edge.Type():
-                    tempEdges = []
-                    _ = e.Edges(None, tempEdges)
+                elif Topology.Type(e) > Topology.TypeID("Edge"):
+                    tempEdges = Topology.Edges(e)
                     for tempEdge in tempEdges:
                         d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
                         tempEdge.SetDictionary(d)
@@ -194,14 +191,14 @@ class Grid(topologic.Cluster):
             v1 = Face.VertexByParameters(face, 0, v)
             v2 = Face.VertexByParameters(face, 1, v)
             e = Edge.ByVertices([v1, v2], tolerance=tolerance)
-            if clip and isinstance(face, topologic.Face):
+            if clip and Topology.IsInstance(face, "Face"):
                 e = e.Intersect(face, False)
             if e:
-                if isinstance(e, topologic.Edge):
+                if Topology.IsInstance(e, "Edge"):
                     d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
                     e.SetDictionary(d)
                     gridEdges.append(e)
-                elif e.Type() > topologic.Edge.Type():
+                elif Topology.Type(e) > Topology.TypeID("Edge"):
                     tempEdges = []
                     _ = e.Edges(None, tempEdges)
                     for tempEdge in tempEdges:
@@ -221,9 +218,9 @@ class Grid(topologic.Cluster):
 
         Parameters
         ----------
-        face : topologic.Face , optional
+        face : topologic_core.Face , optional
             The input face. If set to None, the grid will be created on the XY plane. The default is None.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the origin will be set to (0, 0, 0). The default is None.
         uRange : list , optional
             A list of distances for the *u* grid lines from the uOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
@@ -236,7 +233,7 @@ class Grid(topologic.Cluster):
 
         Returns
         -------
-        topologic.Cluster
+        topologic_core.Cluster
             The created grid. Vertices in the grid have an identifying dictionary with two keys: "u" and "v". The "dir" key can have one of two values: "u" or "v" that contain the *u* and *v* offset distances of that grid vertex from the specified origin.
 
         """
@@ -250,12 +247,12 @@ class Grid(topologic.Cluster):
         if len(uRange) < 1 or len(vRange) < 1:
             return None
         if not origin:
-            if not isinstance(face, topologic.Face):
+            if not Topology.IsInstance(face, "Face"):
                 origin = Vertex.ByCoordinates(0, 0, 0)
             else:
                 origin = Face.VertexByParameters(face, 0, 0)
         
-        if isinstance(face, topologic.Face):
+        if Topology.IsInstance(face, "Face"):
             v1 = Face.VertexByParameters(face, 0, 0)
             v2 = Face.VertexByParameters(face, 1, 0)
             v3 = Face.VertexByParameters(face, 0, 0)
@@ -278,9 +275,9 @@ class Grid(topologic.Cluster):
                     uTempVec = Vector.Multiply(uuVector, u, tolerance)
                     vTempVec = Vector.Multiply(uvVector, v, tolerance)
                     gridVertex = Vertex.ByCoordinates(origin.X()+uTempVec[0], origin.Y()+vTempVec[1], origin.Z()+uTempVec[2])
-                    if clip and isinstance(face, topologic.Face):
+                    if clip and Topology.IsInstance(face, "Face"):
                         gridVertex = gridVertex.Intersect(face, False)
-                    if isinstance(gridVertex, topologic.Vertex):
+                    if Topology.IsInstance(gridVertex, "Vertex"):
                         d = Dictionary.ByKeysValues(["u","v"],[u,v])
                         if d:
                             gridVertex.SetDictionary(d)
@@ -297,9 +294,9 @@ class Grid(topologic.Cluster):
 
         Parameters
         ----------
-        face : topologic.Face , optional
+        face : topologic_core.Face , optional
             The input face. If set to None, the grid will be created on the XY plane. The default is None.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the origin will be set to (0, 0, 0). The default is None.
         uRange : list , optional
             A list of *u* parameters for the *u* grid lines from the uOrigin. The default is [0.0,0.25,0.5,0.75,1.0].
@@ -312,7 +309,7 @@ class Grid(topologic.Cluster):
 
         Returns
         -------
-        topologic.Cluster
+        topologic_core.Cluster
             The created grid. Vertices in the grid have an identifying dictionary with two keys: "u" and "v". The "dir" key can have one of two values: "u" or "v" that contain the *u* and *v* offset distances of that grid vertex from the specified origin.
 
         """
@@ -324,7 +321,7 @@ class Grid(topologic.Cluster):
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Vector import Vector
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             return None
         if len(uRange) < 1 or len(vRange) < 1:
             return None
@@ -341,9 +338,9 @@ class Grid(topologic.Cluster):
             for u in uRange:
                 for v in vRange:
                     gridVertex = Face.VertexByParameters(face, u, v)
-                    if clip and isinstance(face, topologic.Face):
+                    if clip and Topology.IsInstance(face, "Face"):
                         gridVertex = gridVertex.Intersect(face, False)
-                    if isinstance(gridVertex, topologic.Vertex):
+                    if Topology.IsInstance(gridVertex, "Vertex"):
                         d = Dictionary.ByKeysValues(["u","v"],[u,v])
                         if d:
                             gridVertex.SetDictionary(d)

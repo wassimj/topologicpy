@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
-from topologicpy.Topology import Topology
 import topologic_core as topologic
 import os
 import warnings
@@ -47,7 +46,7 @@ except:
     except:
         warnings.warn("Cluster - Error: Could not import scipy.")
 
-class Cluster(Topology):
+class Cluster():
     @staticmethod
     def ByFormula(formula, xRange=None, yRange=None, xString="X", yString="Y"):
         """
@@ -82,7 +81,7 @@ class Cluster(Topology):
             The string used to represent the Y independent variable. The default is 'Y' (uppercase).
 
         Returns:
-            topologic.Cluster
+            topologic_core.Cluster
                 The created cluster of vertices.
         """
         from topologicpy.Vertex import Vertex
@@ -144,7 +143,7 @@ class Cluster(Topology):
         return Cluster.ByTopologies(vertices)
     
     @staticmethod
-    def ByTopologies(*args, transferDictionaries: bool = False) -> topologic.Cluster:
+    def ByTopologies(*args, transferDictionaries: bool = False):
         """
         Creates a topologic Cluster from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.
 
@@ -157,7 +156,7 @@ class Cluster(Topology):
 
         Returns
         -------
-        topologic.Cluster
+        topologic_core.Cluster
             The created topologic Cluster.
 
         """
@@ -175,7 +174,7 @@ class Cluster(Topology):
                     print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
                     return None
                 else:
-                    topologyList = [x for x in topologies if isinstance(x, topologic.Topology)]
+                    topologyList = [x for x in topologies if Topology.IsInstance(x, "Topology")]
                     if len(topologies) == 0:
                         print("Cluster.ByTopologies - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
                         return None
@@ -184,11 +183,11 @@ class Cluster(Topology):
                 return topologies
         else:
             topologyList = Helper.Flatten(list(args))
-            topologyList = [x for x in topologyList if isinstance(x, topologic.Topology)]
+            topologyList = [x for x in topologyList if Topology.IsInstance(x, "Topology")]
         if len(topologyList) == 0:
             print("Cluster.ByTopologies - Error: The input parameters do not contain any valid topologies. Returning None.")
             return None
-        cluster = topologic.Cluster.ByTopologies(topologyList, False)
+        cluster = topologic.Cluster.ByTopologies(topologyList, False) # Hook to Core
         dictionaries = []
         for t in topologyList:
             d = Topology.Dictionary(t)
@@ -205,13 +204,13 @@ class Cluster(Topology):
         return cluster
 
     @staticmethod
-    def CellComplexes(cluster: topologic.Cluster) -> list:
+    def CellComplexes(cluster) -> list:
         """
         Returns the cellComplexes of the input cluster.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
 
         Returns
@@ -220,7 +219,9 @@ class Cluster(Topology):
             The list of cellComplexes.
 
         """
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.CellComplexes - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cellComplexes = []
@@ -228,13 +229,13 @@ class Cluster(Topology):
         return cellComplexes
 
     @staticmethod
-    def Cells(cluster: topologic.Cluster) -> list:
+    def Cells(cluster) -> list:
         """
         Returns the cells of the input cluster.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
 
         Returns
@@ -243,7 +244,9 @@ class Cluster(Topology):
             The list of cells.
 
         """
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.Cells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cells = []
@@ -358,7 +361,7 @@ class Cluster(Topology):
         if not isinstance(topologies, list):
             print("Cluster.DBSCAN - Error: The input vertices parameter is not a valid list. Returning None.")
             return None, None
-        topologyList = [t for t in topologies if isinstance(t, topologic.Topology)]
+        topologyList = [t for t in topologies if Topology.IsInstance(t, "Topology")]
         if len(topologyList) < 1:
             print("Cluster.DBSCAN - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
             return None, None
@@ -367,16 +370,16 @@ class Cluster(Topology):
             return None, None
         
         if not isinstance(selectors, list):
-            check_vertices = [t for t in topologyList if not isinstance(t, topologic.Vertex)]
+            check_vertices = [t for t in topologyList if not Topology.IsInstance(t, "Vertex")]
             if len(check_vertices) > 0:
-                print("Cluster.DBSCAN - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a topologic.Vertex. Returning None.")
+                print("Cluster.DBSCAN - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
                 return None, None
         else:
-            selectors = [s for s in selectors if isinstance(s, topologic.Vertex)]
+            selectors = [s for s in selectors if Topology.IsInstance(s, "Vertex")]
             if len(selectors) < 1:
-                check_vertices = [t for t in topologyList if not isinstance(t, topologic.Vertex)]
+                check_vertices = [t for t in topologyList if not Topology.IsInstance(t, "Vertex")]
                 if len(check_vertices) > 0:
-                    print("Cluster.DBSCAN - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic.Vertex. Returning None.")
+                    print("Cluster.DBSCAN - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
                     return None, None
             if not len(selectors) == len(topologyList):
                 print("Cluster.DBSCAN - Error: The input topologies and selectors parameters do not have the same length. Returning None.")
@@ -433,13 +436,13 @@ class Cluster(Topology):
         return tp_clusters, tp_noise
 
     @staticmethod
-    def Edges(cluster: topologic.Cluster) -> list:
+    def Edges(cluster) -> list:
         """
         Returns the edges of the input cluster.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
 
         Returns
@@ -447,8 +450,10 @@ class Cluster(Topology):
         list
             The list of edges.
 
-        """ 
-        if not isinstance(cluster, topologic.Cluster):
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.Edges - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         edges = []
@@ -456,13 +461,13 @@ class Cluster(Topology):
         return edges
 
     @staticmethod
-    def Faces(cluster: topologic.Cluster) -> list:
+    def Faces(cluster) -> list:
         """
         Returns the faces of the input cluster.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
 
         Returns
@@ -471,7 +476,9 @@ class Cluster(Topology):
             The list of faces.
 
         """
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.Faces - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         faces = []
@@ -479,13 +486,13 @@ class Cluster(Topology):
         return faces
 
     @staticmethod
-    def FreeCells(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
+    def FreeCells(cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free cells of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -499,7 +506,7 @@ class Cluster(Topology):
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Topology import Topology
 
-        if not isinstance(cluster, topologic.Cluster):
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeCells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allCells = []
@@ -520,7 +527,7 @@ class Cluster(Topology):
         resultingCluster = Topology.Boolean(allCellsCluster, cellComplexesCluster, operation="difference", tolerance=tolerance)
         if resultingCluster == None:
             return []
-        if isinstance(resultingCluster, topologic.Cell):
+        if Topology.IsInstance(resultingCluster, "Cell"):
             return [resultingCluster]
         result = Topology.SubTopologies(resultingCluster, subTopologyType="cell")
         if result == None:
@@ -528,13 +535,13 @@ class Cluster(Topology):
         return result
     
     @staticmethod
-    def FreeShells(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
+    def FreeShells(cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free shells of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
@@ -548,7 +555,7 @@ class Cluster(Topology):
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
 
-        if not isinstance(cluster, topologic.Cluster):
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeShells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allShells = []
@@ -568,7 +575,7 @@ class Cluster(Topology):
         resultingCluster = Topology.Boolean(allShellsCluster, cellsCluster, operation="difference", tolerance=tolerance)
         if resultingCluster == None:
             return []
-        if isinstance(resultingCluster, topologic.Shell):
+        if Topology.IsInstance(resultingCluster, "Shell"):
             return [resultingCluster]
         result = Topology.SubTopologies(resultingCluster, subTopologyType="shell")
         if result == None:
@@ -576,13 +583,13 @@ class Cluster(Topology):
         return result
     
     @staticmethod
-    def FreeFaces(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
+    def FreeFaces(cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free faces of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -596,7 +603,7 @@ class Cluster(Topology):
         from topologicpy.Shell import Shell
         from topologicpy.Topology import Topology
 
-        if not isinstance(cluster, topologic.Cluster):
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeFaces - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allFaces = []
@@ -616,7 +623,7 @@ class Cluster(Topology):
         resultingCluster = Topology.Boolean(allFacesCluster, shellCluster, operation="difference", tolerance=tolerance)
         if resultingCluster == None:
             return []
-        if isinstance(resultingCluster, topologic.Face):
+        if Topology.IsInstance(resultingCluster, "Face"):
             return [resultingCluster]
         result = Topology.SubTopologies(resultingCluster, subTopologyType="face")
         if result == None:
@@ -624,13 +631,13 @@ class Cluster(Topology):
         return result
 
     @staticmethod
-    def FreeWires(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
+    def FreeWires(cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free wires of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -644,7 +651,7 @@ class Cluster(Topology):
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
 
-        if not isinstance(cluster, topologic.Cluster):
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeWires - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allWires = []
@@ -664,7 +671,7 @@ class Cluster(Topology):
         resultingCluster = Topology.Boolean(allWiresCluster, facesCluster, operation="difference", tolerance=tolerance)
         if resultingCluster == None:
             return []
-        if isinstance(resultingCluster, topologic.Wire):
+        if Topology.IsInstance(resultingCluster, "Wire"):
             return [resultingCluster]
         result = Topology.SubTopologies(resultingCluster, subTopologyType="wire")
         if not result:
@@ -672,13 +679,13 @@ class Cluster(Topology):
         return result
     
     @staticmethod
-    def FreeEdges(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
+    def FreeEdges(cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free edges of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
@@ -692,7 +699,7 @@ class Cluster(Topology):
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
-        if not isinstance(cluster, topologic.Cluster):
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeEdges - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allEdges = []
@@ -712,7 +719,7 @@ class Cluster(Topology):
         resultingCluster = Topology.Boolean(allEdgesCluster, wireCluster, operation="difference", tolerance=tolerance)
         if resultingCluster == None:
             return []
-        if isinstance(resultingCluster, topologic.Edge):
+        if Topology.IsInstance(resultingCluster, "Edge"):
             return [resultingCluster]
         result = Topology.SubTopologies(resultingCluster, subTopologyType="edge")
         if result == None:
@@ -720,13 +727,13 @@ class Cluster(Topology):
         return result
     
     @staticmethod
-    def FreeVertices(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
+    def FreeVertices(cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free vertices of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -740,7 +747,7 @@ class Cluster(Topology):
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
 
-        if not isinstance(cluster, topologic.Cluster):
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeVertices - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         allVertices = []
@@ -758,7 +765,7 @@ class Cluster(Topology):
             return allVertices
         edgesCluster = Cluster.ByTopologies(edgesVertices)
         resultingCluster = Topology.Boolean(allVerticesCluster, edgesCluster, operation="difference", tolerance=tolerance)
-        if isinstance(resultingCluster, topologic.Vertex):
+        if Topology.IsInstance(resultingCluster, "Vertex"):
             return [resultingCluster]
         if resultingCluster == None:
             return []
@@ -768,13 +775,13 @@ class Cluster(Topology):
         return result
     
     @staticmethod
-    def FreeTopologies(cluster: topologic.Cluster, tolerance: float = 0.0001) -> list:
+    def FreeTopologies(cluster, tolerance: float = 0.0001) -> list:
         """
         Returns the free topologies of the input cluster that are not part of a higher topology.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -796,13 +803,13 @@ class Cluster(Topology):
         return topologies
     
     @staticmethod
-    def HighestType(cluster: topologic.Cluster) -> int:
+    def HighestType(cluster) -> int:
         """
         Returns the type of the highest dimension subtopology found in the input cluster.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
 
         Returns
@@ -811,30 +818,32 @@ class Cluster(Topology):
             The type of the highest dimension subtopology found in the input cluster.
 
         """
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.HighestType - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cellComplexes = Cluster.CellComplexes(cluster)
         if len(cellComplexes) > 0:
-            return topologic.CellComplex.Type()
+            return Topology.TypeID("CellComplex")
         cells = Cluster.Cells(cluster)
         if len(cells) > 0:
-            return topologic.Cell.Type()
+            return Topology.TypeID("Cell")
         shells = Cluster.Shells(cluster)
         if len(shells) > 0:
-            return topologic.Shell.Type()
+            return Topology.TypeID("Shell")
         faces = Cluster.Faces(cluster)
         if len(faces) > 0:
-            return topologic.Face.Type()
+            return Topology.TypeID("Face")
         wires = Cluster.Wires(cluster)
         if len(wires) > 0:
-            return topologic.Wire.Type()
+            return Topology.TypeID("Wire")
         edges = Cluster.Edges(cluster)
         if len(edges) > 0:
-            return topologic.Edge.Type()
+            return Topology.TypeID("Edge")
         vertices = Cluster.Vertices(cluster)
         if len(vertices) > 0:
-            return topologic.Vertex.Type()
+            return Topology.TypeID("Vertex")
     
     @staticmethod
     def K_Means(topologies, selectors=None, keys=["x", "y", "z"], k=4, maxIterations=100, centroidKey="k_centroid"):
@@ -910,21 +919,21 @@ class Cluster(Topology):
         if not isinstance(topologies, list):
             print("Cluster.K_Means - Error: The input topologies parameter is not a valid list. Returning None.")
             return None
-        topologies = [t for t in topologies if isinstance(t, topologic.Topology)]
+        topologies = [t for t in topologies if Topology.IsInstance(t, "Topology")]
         if len(topologies) < 1:
             print("Cluster.K_Means - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
             return None
         if not isinstance(selectors, list):
-            check_vertices = [v for v in topologies if not isinstance(v, topologic.Vertex)]
+            check_vertices = [v for v in topologies if not Topology.IsInstance(v, "Vertex")]
             if len(check_vertices) > 0:
-                print("Cluster.K_Means - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a topologic.Vertex. Returning None.")
+                print("Cluster.K_Means - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
                 return None
         else:
-            selectors = [s for s in selectors if isinstance(s, topologic.Vertex)]
+            selectors = [s for s in selectors if Topology.IsInstance(s, "Vertex")]
             if len(selectors) < 1:
-                check_vertices = [v for v in topologies if not isinstance(v, topologic.Vertex)]
+                check_vertices = [v for v in topologies if not Topology.IsInstance(v, "Vertex")]
                 if len(check_vertices) > 0:
-                    print("Cluster.K_Means - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic.Vertex. Returning None.")
+                    print("Cluster.K_Means - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
                     return None
             if not len(selectors) == len(topologies):
                 print("Cluster.K_Means - Error: The input topologies and selectors parameters do not have the same length. Returning None.")
@@ -1034,7 +1043,7 @@ class Cluster(Topology):
 
         Returns
         -------
-        topologic.Cluster
+        topologic_core.Cluster
             The created cluster with merged cells as possible.
 
         """
@@ -1064,12 +1073,12 @@ class Cluster(Topology):
 
         # Example adjacency test function (replace this with your actual implementation)
         def adjacency_test(cell1, cell2, tolerance=0.0001):
-            return isinstance(Topology.Merge(cell1, cell2, tolerance=tolerance), topologic.CellComplex)
+            return Topology.IsInstance(Topology.Merge(cell1, cell2, tolerance=tolerance), "CellComplex")
 
         if not isinstance(cells, list):
             print("Cluster.MergeCells - Error: The input cells parameter is not a valid list of cells. Returning None.")
             return None
-        #cells = [cell for cell in cells if isinstance(cell, topologic.Cell)]
+        #cells = [cell for cell in cells if Topology.IsInstance(cell, "Cell")]
         if len(cells) < 1:
             print("Cluster.MergeCells - Error: The input cells parameter does not contain any valid cells. Returning None.")
             return None
@@ -1081,23 +1090,23 @@ class Cluster(Topology):
             aComplex = list(aComplex)
             if len(aComplex) > 1:
                 cc = CellComplex.ByCells(aComplex, silent=True)
-                if isinstance(cc, topologic.CellComplex):
+                if Topology.IsInstance(cc, "CellComplex"):
                     cellComplexes.append(cc)
             elif len(aComplex) == 1:
-                if isinstance(aComplex[0], topologic.Cell):
+                if Topology.IsInstance(aComplex[0], "Cell"):
                     cells.append(aComplex[0])
         return Cluster.ByTopologies(cellComplexes+cells)
     
     @staticmethod
-    def MysticRose(wire: topologic.Wire = None, origin: topologic.Vertex = None, radius: float = 0.5, sides: int = 16, perimeter: bool = True, direction: list = [0, 0, 1], placement:str = "center", tolerance: float = 0.0001) -> topologic.Cluster:
+    def MysticRose(wire= None, origin= None, radius: float = 0.5, sides: int = 16, perimeter: bool = True, direction: list = [0, 0, 1], placement:str = "center", tolerance: float = 0.0001):
         """
         Creates a mystic rose.
 
         Parameters
         ----------
-        wire : topologic.Wire , optional
+        wire : topologic_core.Wire , optional
             The input Wire. if set to None, a circle with the input parameters is created. Otherwise, the input parameters are ignored.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
             The radius of the mystic rose. The default is 1.
@@ -1114,7 +1123,7 @@ class Cluster(Topology):
 
         Returns
         -------
-        topologic.cluster
+        topologic_core.Cluster
             The created mystic rose (cluster of edges).
 
         """
@@ -1141,13 +1150,13 @@ class Cluster(Topology):
         return Cluster.ByTopologies(edges)
     
     @staticmethod
-    def Shells(cluster: topologic.Cluster) -> list:
+    def Shells(cluster) -> list:
         """
         Returns the shells of the input cluster.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
 
         Returns
@@ -1156,7 +1165,9 @@ class Cluster(Topology):
             The list of shells.
 
         """
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.Shells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         shells = []
@@ -1164,22 +1175,24 @@ class Cluster(Topology):
         return shells
 
     @staticmethod
-    def Simplify(cluster: topologic.Cluster):
+    def Simplify(cluster):
         """
         Simplifies the input cluster if possible. For example, if the cluster contains only one cell, that cell is returned.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
 
         Returns
         -------
-        topologic.Topology or list
+        topologic_core.Topology or list
             The simplification of the cluster.
 
         """
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.Simplify - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         resultingTopologies = []
@@ -1241,13 +1254,13 @@ class Cluster(Topology):
         return cluster
 
     @staticmethod
-    def Vertices(cluster: topologic.Cluster) -> list:
+    def Vertices(cluster) -> list:
         """
         Returns the vertices of the input cluster.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
 
         Returns
@@ -1256,7 +1269,9 @@ class Cluster(Topology):
             The list of vertices.
 
         """
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.Vertices - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         vertices = []
@@ -1264,13 +1279,13 @@ class Cluster(Topology):
         return vertices
 
     @staticmethod
-    def Wires(cluster: topologic.Cluster) -> list:
+    def Wires(cluster) -> list:
         """
         Returns the wires of the input cluster.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input cluster.
 
         Returns
@@ -1279,7 +1294,9 @@ class Cluster(Topology):
             The list of wires.
 
         """
-        if not isinstance(cluster, topologic.Cluster):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.Wires - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         wires = []

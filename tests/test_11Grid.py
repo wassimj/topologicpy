@@ -11,6 +11,7 @@ from topologicpy.Wire import Wire
 from topologicpy.Face import Face
 from topologicpy.Shell import Shell
 from topologicpy.Cell import Cell
+from topologicy.Topology import Topology
 from topologicpy.Grid import Grid
 
 def test_main():
@@ -42,37 +43,37 @@ def test_main():
     print("Case 1")
     # test 1
     clus_ed = Grid.EdgesByDistances()
-    assert isinstance(clus_ed, topologic.Cluster), "Grid.ByDistances. topologic.Cluster"
+    assert Topology.IsInstance(clus_ed, "Cluster"), "Grid.ByDistances. topologic.Cluster"
     # test 2
     clus_ed1 = Grid.EdgesByDistances(face=face0, uOrigin=v0, vOrigin=v1, uRange=[-0.5, -0.25, 0, 0.25, 0.5],
                                 vRange=[-0.5, -0.25, 0, 0.25, 0.5], clip=True, tolerance=0.001)
-    assert isinstance(clus_ed1, topologic.Cluster), "Grid.ByDistances. topologic.Cluster"
+    assert Topology.IsInstance(clus_ed1, "Cluster"), "Grid.ByDistances. topologic.Cluster"
     # test 3
     clus_ed2 = Grid.EdgesByDistances(face=face5, uOrigin=v1, vOrigin=v2, uRange=[-0.5, -0.25, 0, 0.25, 0.5],
                                 vRange=[-0.5, -0.25, 0, 0.25, 0.5], clip=False, tolerance=0.001)
-    assert isinstance(clus_ed2, topologic.Cluster), "Grid.ByDistances. topologic.Cluster"
+    assert Topology.IsInstance(clus_ed2, "Cluster"), "Grid.ByDistances. topologic.Cluster"
 
     # Case 2 - EdgesByParameters
     print("Case 2")
     # test 1
     clus_ep = Grid.EdgesByParameters(face1)
-    assert isinstance(clus_ep, topologic.Cluster), "Grid.ByParameters. topologic.Cluster"
+    assert Topology.IsInstance(clus_ep, "Cluster"), "Grid.ByParameters. topologic.Cluster"
     # test 2
     clus_ep1 = Grid.EdgesByParameters(face2, uRange=[0, 0.25, 0.5, 0.75, 1.0],
                                 vRange=[0, 0.25, 0.5, 0.75, 1.0], clip=False)
-    assert isinstance(clus_ep1, topologic.Cluster), "Grid.ByParameters. topologic.Cluster"
+    assert Topology.IsInstance(clus_ep1, "Cluster"), "Grid.ByParameters. topologic.Cluster"
 
     # Case 3 - VerticesByDistances
     print("Case 3")
     # test 1
     clus_vd = Grid.VerticesByDistances()
-    assert isinstance(clus_vd, topologic.Cluster), "Grid.VerticesByDistances. topologic.Cluster"
+    assert Topology.IsInstance(clus_vd, "Cluster"), "Grid.VerticesByDistances. topologic.Cluster"
     # test 2
     clus_vd1 = Grid.VerticesByDistances(face=face3, origin=v2, uRange=[-0.5, -0.25, 0, 0.25, 0.5],
                                         vRange=[-0.5, -0.25, 0, 0.25, 0.5], clip=False, tolerance=0.001)
-    assert isinstance(clus_vd1, topologic.Cluster), "Grid.VerticesByDistances. topologic.Cluster"
+    assert Topology.IsInstance(clus_vd1, "Cluster"), "Grid.VerticesByDistances. topologic.Cluster"
     # test 3
     clus_vd2 = Grid.VerticesByDistances(face=face4, origin=v1, uRange=[-0.5, -0.25, 0, 0.25, 0.5],
                                         vRange=[-0.5, -0.25, 0, 0.25, 0.5], clip=True, tolerance=0.001)
-    assert isinstance(clus_vd2, topologic.Cluster), "Grid.VerticesByDistances. topologic.Cluster"
+    assert Topology.IsInstance(clus_vd2, "Cluster"), "Grid.VerticesByDistances. topologic.Cluster"
     print("End")

@@ -14,23 +14,22 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
-import topologicpy
 import topologic_core as topologic
 
-class Aperture(topologic.Aperture):
+class Aperture():
     @staticmethod
-    def Topology(aperture: topologic.Aperture) -> topologic.Topology:
+    def Topology(aperture):
         """
         Returns the topology of the input aperture.
         
         Parameters
         ----------
-        aperture : topologic.Aperture
+        aperture : Aperture
             The input aperture.
 
         Returns
         -------
-        topologic.Topology
+        Topology
             The topology of the input aperture.
 
         """
@@ -38,36 +37,36 @@ class Aperture(topologic.Aperture):
         if not Topology.IsInstance(aperture, "aperture"):
             print("Aperture.Topology - Error: The input aperture parameter is not a valid topologic aperture. Returning None.")
             return None
-        return topologic.Aperture.Topology(aperture)
+        return topologic.Aperture.Topology(aperture) # Hook to Core
 
     @staticmethod
-    def ByTopologyContext(topology: topologic.Topology, context: topologic.Context) -> topologic.Aperture:
+    def ByTopologyContext(topology, context):
         """
         Creates an aperture object represented by the input topology and one that belongs to the input context.
 
         Parameters
         ----------
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology that represents the aperture.
-        context : topologic.Context
+        context : Context
             The context of the aperture. See Context class.
 
         Returns
         -------
-        topologic.Aperture
+        Aperture
             The created aperture.
 
         """
         from topologicpy.Topology import Topology
-        if not Topology.IsInstance(topology, "topology"):
+        if not Topology.IsInstance(topology, "Topology"):
             print("Aperture.ByTopologyContext - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
-        if not isinstance(context, topologic.Context):
+        if not Topology.IsInstance(context, "Context"):
             print("Aperture.ByTopologyContext - Error: The input context parameter is not a valid topologic context. Returning None.")
             return None
         aperture = None
         try:
-            aperture = topologic.Aperture.ByTopologyContext(topology, context)
+            aperture = topologic.Aperture.ByTopologyContext(topology, context) # Hook to Core
         except:
             print("Aperture.ByTopologyContext - Error: The operation failed. Returning None.")
             aperture = None

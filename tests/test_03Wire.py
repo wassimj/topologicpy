@@ -15,7 +15,7 @@ from topologicpy.Plotly import Plotly
 
 def test_main():
     print("Start")
-    print("23 Cases")
+    print("24 Cases")
     #Objects for test case
     # Creating vertices by coordinates
     v1 = Vertex.ByCoordinates(0, 0, 0)                # create vertex
@@ -44,19 +44,19 @@ def test_main():
     cir3 = Wire.Circle()                                                       # create circle
     # test 1
     bRec1 = Wire.BoundingRectangle(Star)                       # without optional inputs
-    assert isinstance(bRec1, topologic.Wire), "Wire.BoundingRectangle. Should be topologic.Wire"
+    assert Topology.IsInstance(bRec1, "Wire"), "Wire.BoundingRectangle. Should be topologic.Wire"
     # test 2
     bCir1 = Wire.BoundingRectangle(cir3, 5)                     # with optional inputs
-    assert isinstance(bCir1, topologic.Wire), "Wire.BoundingRectangle. Should be topologic.Wire"
+    assert Topology.IsInstance(bCir1, "Wire"), "Wire.BoundingRectangle. Should be topologic.Wire"
 
     # Case 2 - ByEdges
     print("Case 2")
     # test 1
     w1 = Wire.ByEdges([e1, e2])                   
-    assert isinstance(w1, topologic.Wire), "Wire.ByEdges. Should be topologic.Wire"
+    assert Topology.IsInstance(w1, "Wire"), "Wire.ByEdges. Should be topologic.Wire"
     # test 2
     w2 = Wire.ByEdges([e1, e2, e3])            
-    assert isinstance(w2, topologic.Wire), "Wire.ByEdges. Should be topologic.Wire"
+    assert Topology.IsInstance(w2, "Wire"), "Wire.ByEdges. Should be topologic.Wire"
 
     # Case 3 - ByEdgesCluster
     print("Case 3")
@@ -65,10 +65,10 @@ def test_main():
     clE2 = Cluster.ByTopologies([e3, e4, e1])       # create cluster
     # test 1
     clw1 = Wire.ByEdgesCluster(clE1)                
-    assert isinstance(clw1, topologic.Wire), "Wire.ByEdgesCluster. Should be topologic.Wire"
+    assert Topology.IsInstance(clw1, "Wire"), "Wire.ByEdgesCluster. Should be topologic.Wire"
     # test 2
     clw2 = Wire.ByEdgesCluster(clE2)                
-    assert isinstance(clw2, topologic.Wire), "Wire.ByEdgesCluster. Should be topologic.Wire"
+    assert Topology.IsInstance(clw2, "Wire"), "Wire.ByEdgesCluster. Should be topologic.Wire"
 
     # Case 4 - ByOffset
     print("Case 4")
@@ -78,20 +78,20 @@ def test_main():
     Cir0 = Wire.Circle(v1, 5, 16)                                               # create wire
     # test 1
     offR1 = Wire.ByOffset(rec1)                                              # without optional inputs
-    assert isinstance(offR1, topologic.Wire),"Wire.ByOffset. Should be topologic.Wire"
+    assert Topology.IsInstance(offR1, "Wire"),"Wire.ByOffset. Should be topologic.Wire"
     # test 2        
     offC1 = Wire.ByOffset(Cir0, offset=1, miter=True, miterThreshold=.5,                    # with optional inputs
                                         offsetKey='offCircleEdg', miterThresholdKey='offCircleVer', step=False)                                                                                                                     
-    assert isinstance(offC1, topologic.Wire),"Wire.ByOffset. Should be topologic.Wire"
+    assert Topology.IsInstance(offC1, "Wire"),"Wire.ByOffset. Should be topologic.Wire"
 
     # Case 5 - ByVertices
     print("Case 5")
     # test 1
     w3 = Wire.ByVertices([v1,v2,v3,v4], False)                                              # with optional inputs
-    assert isinstance(w3, topologic.Wire), "Wire.ByVertices. Should be topologic.wire"
+    assert Topology.IsInstance(w3, "Wire"), "Wire.ByVertices. Should be topologic.wire"
     # test 2
     w4 = Wire.ByVertices([v2, v3, v4])                                                          # without optional inputs
-    assert isinstance(w4, topologic.Wire), "Wire.ByVertices. Should be topologic.wire"
+    assert Topology.IsInstance(w4, "Wire"), "Wire.ByVertices. Should be topologic.wire"
  
     # Case 6 - ByVerticesCluster
     print("Case 6")
@@ -100,20 +100,20 @@ def test_main():
     clV2 = Cluster.ByTopologies([v5, v6, v7, v8])               # create cluster
     # test 1
     clw3 = Wire.ByVerticesCluster(clV1)                            # without optional inputs
-    assert isinstance(clw3, topologic.Wire), "Wire.ByVerticesCluster. Should be topologic.Wire"
+    assert Topology.IsInstance(clw3, "Wire"), "Wire.ByVerticesCluster. Should be topologic.Wire"
     # test 2
     clw4 = Wire.ByVerticesCluster(clV2, close=False)        # with optional inputs
-    assert isinstance(clw4, topologic.Wire), "Wire.ByVerticesCluster. Should be topologic.Wire"
+    assert Topology.IsInstance(clw4, "Wire"), "Wire.ByVerticesCluster. Should be topologic.Wire"
 
     # Case 7 - Circle
     print("Case 7")
     # test 1
     Cir1 = Wire.Circle()                                                                                                  # without optional inputs
-    assert isinstance(Cir1, topologic.Wire), "Wire.CirclE. Should be topologic.Wire"
+    assert Topology.IsInstance(Cir1, "Wire"), "Wire.CirclE. Should be topologic.Wire"
     # test 2
     Cir2 = Wire.Circle(origin=v1, radius=3, sides=21, fromAngle=30, toAngle=360,  # with optional inputs
                                  close=False, direction=[0,1,1], placement='center', tolerance=0.0001)               
-    assert isinstance(Cir2, topologic.Wire), "Wire.CirclE. Should be topologic.Wire"    
+    assert Topology.IsInstance(Cir2, "Wire"), "Wire.CirclE. Should be topologic.Wire"    
  
     # Case 8 - Cycles
     print("Case 8")
@@ -138,16 +138,16 @@ def test_main():
     print("Case 10")
     # test 1
     Elp1 = Wire.Ellipse()                                                                                                                                             # without optional inputs
-    assert isinstance(Elp1, topologic.Wire), "Wire.Ellipse. Should be topologic.Wire"
+    assert Topology.IsInstance(Elp1, "Wire"), "Wire.Ellipse. Should be topologic.Wire"
     # test 2
     Elp2 = Wire.Ellipse(origin=None, inputMode=1, width=2.0, length=1.0, focalLength=0.866025, 
                         eccentricity=0.866025, majorAxisLength=1.0, minorAxisLength=0.5, sides=32, fromAngle=0,
                         toAngle=360, close=True, direction=[0 ,1, 1], placement='center', tolerance=0.0001)            # with optional inputs
-    assert isinstance(Elp2, topologic.Wire), "Wire.Ellipse. Should be topologic.Wire"
+    assert Topology.IsInstance(Elp2, "Wire"), "Wire.Ellipse. Should be topologic.Wire"
     # test 3
     Elp3 = Wire.Ellipse(v2, 2, 3.5, 2.5, 0.866025, 0.866025, 1.0, 1, 16, 15, 270, [1, 0, 1], 
                         placement='lowerleft', tolerance= 0.0001)                                                                                       # with optional input
-    assert isinstance(Elp3, topologic.Wire), "Wire.Ellipse. Should be topologic.Wire"
+    assert Topology.IsInstance(Elp3, "Wire"), "Wire.Ellipse. Should be topologic.Wire"
 
     # Case 11 - EllipseAll
     print("Case 11")
@@ -186,39 +186,8 @@ def test_main():
     Chk_W5 = Wire.IsSimilar(Rec1, Cir1, 0.01, 0.5)                      # with optional inputs
     assert isinstance(Chk_W5, bool), "Wire.IsSimilar. Should be boolean"
 
-    # Case 14 - Isovist
+    # Case 14 - Length
     print("Case 14")
-    # boundary Rectangle
-    bRec = Wire.Rectangle(v1, 20, 20)                           # create wire
-    # Vertices
-    obV1 = Vertex.ByCoordinates(-1, 4, 0)                    # create vertex
-    obV2 = Vertex.ByCoordinates(-4, 1, 0)                    # create vertex
-    obV3 = Vertex.ByCoordinates(-4, -1, 0)                  # create vertex
-    obV4 = Vertex.ByCoordinates(-1, -4, 0)                  # create vertex
-    obV5 = Vertex.ByCoordinates(1, -4, 0)                   # create vertex
-    obV6 = Vertex.ByCoordinates(4, -1, 0)                   # create vertex
-    obV7 = Vertex.ByCoordinates(-4, 0, 0)                   # create vertex
-    obV8 = Vertex.ByCoordinates(0, -4, 0)                   # create vertex
-    obV9 = Vertex.ByCoordinates(4, 0, 0)                    # create vertex
-    obV10 = Vertex.ByCoordinates(0, 4, 0)                  # create vertex
-    # obstacles Wire
-    obW1 = Wire.ByVertices([obV1, obV2, obV3])      # create vertex
-    obW2 = Wire.ByVertices([obV4, obV5, obV6])      # create vertex
-    obW3 = Wire.ByVertices([obV2, obV7, obV3])      # create wire
-    obW4 = Wire.ByVertices([obV4, obV8, obV5])      # create wire
-    obW5 = Wire.ByVertices([obV6, obV9, obV1])      # create wire
-    # obstaclesCluster
-    ObsW_C1 = Cluster.ByTopologies([obW1, obW2])                      # create cluster
-    ObsW_C2 = Cluster.ByTopologies([obW3, obW4, obW5])          # create cluster
-    # test 1
-    isoV1 = Wire.Isovist(bRec, v1, ObsW_C1)                                    # without optional inputs
-    assert isinstance(isoV1, list), "Wire.Isovist. Should be list"
-    # test 2
-    isoV2 = Wire.Isovist(bRec, v1, ObsW_C2, 0.002)                          # with optional inputs
-    assert isinstance(isoV2, list), "Wire.Isovist. Should be list"
-
-    # Case 15 - Length
-    print("Case 15")
     # test 1
     wLen1 = Wire.Length(w1)                 # without optional inputs
     assert isinstance(wLen1, float), "Wire.Length. Should be float"
@@ -226,21 +195,21 @@ def test_main():
     wLen2 = Wire.Length(w4, 6)             # with optional inputs
     assert isinstance(wLen2, float), "Wire.Length. Should be float"
  
-    # Case 16 - Planarize
-    print("Case 16")
+    # Case 15 - Planarize
+    print("Case 15")
     # npW = Nonplanar_Wire, pW = Planar_Wire
     # creating objects
     npW1 = Wire.ByVertices([v1, v2, v3])                       # create wire
     npW2 = Wire.ByVertices([v6, v4, v3, v1])                 # create wire
     # test 1
     pW1 = Wire.Planarize(npW1)
-    assert isinstance(pW1, topologic.Wire), "Wire.Planarize. Should be topologic.Wire"
+    assert Topology.IsInstance(pW1, "Wire"), "Wire.Planarize. Should be topologic.Wire"
     # test 2
     pW2 = Wire.Planarize(npW2)
-    assert isinstance(npW2, topologic.Wire), "Wire.Planarize. Should be topologic.Wire"
+    assert Topology.IsInstance(npW2, "Wire"), "Wire.Planarize. Should be topologic.Wire"
 
-    # Case 17 - Project
-    print("Case 17")
+    # Case 16 - Project
+    print("Case 16")
     # creating objects
     p1 = Vertex.ByCoordinates(1, 1, 1)                        # create vertex
     p2 = Vertex.ByCoordinates(0, 0, 1)                        # create vertex
@@ -252,22 +221,22 @@ def test_main():
     w7 = Wire.ByVertices([p1, p3, p4])                       # create wire
     # test 1
     pro1 = Wire.Project(w6, f1)                                  # without optional inputs
-    assert isinstance(pro1, topologic.Wire),"Wire.Project. Should be topologic.Wire"
+    assert Topology.IsInstance(pro1, "Wire"),"Wire.Project. Should be topologic.Wire"
     # test 2
     pro2 = Wire.Project(w7, f2, [0,0,-1])                     # with optional inputs               
-    assert isinstance(pro2, topologic.Wire),"Wire.Project. Should be topologic.Wire"
+    assert Topology.IsInstance(pro2, "Wire"),"Wire.Project. Should be topologic.Wire"
 
-    # Case 18 - Rectangle
-    print("Case 18")
+    # Case 17 - Rectangle
+    print("Case 17")
     # test 1
     rec1 = Wire.Rectangle()                                                    # without optional inputs
-    assert isinstance(rec1, topologic.Wire), "Wire.Rectangle. Should be topologic.Wire"
+    assert Topology.IsInstance(rec1, "Wire"), "Wire.Rectangle. Should be topologic.Wire"
     # test 2
     rec2 = Wire.Rectangle(v2, 3, 7, [1, 0, 0], 'center', 0.005)     # with optional inputs
-    assert isinstance(rec2, topologic.Wire), "Wire.Rectangle. Should be topologic.Wire"
+    assert Topology.IsInstance(rec2, "Wire"), "Wire.Rectangle. Should be topologic.Wire"
  
-    # Case 19 -  Split
-    print("Case 19")
+    # Case 18 -  Split
+    print("Case 18")
     # creating Wire
     w7 = Wire.ByVertices([v5, v7, v8, v6])                      # create wire
     w8 = Wire.ByVertices([v8, v6, v7, v11, v12, v5])       # create wire
@@ -278,27 +247,27 @@ def test_main():
     Spl2 = Wire.Split(w8)
     assert isinstance(Spl2, list), "Wire.Split. Should be list"
 
-    # Case 20 - Star
-    print("Case 20")
+    # Case 19 - Star
+    print("Case 19")
     # test 1
     s1 = Wire.Star(v3, 2, 5, 6, [1, 1, 1], 'lowerleft', 0.0001)                                                             # with optional inputs
-    assert isinstance(s1, topologic.Wire), "Wire.Star. Should be topologic.Wire"
+    assert Topology.IsInstance(s1, "Wire"), "Wire.Star. Should be topologic.Wire"
     # test 2
     s2 = Wire.Star()                                                                                                                       # without optional inputs
-    assert isinstance(s2, topologic.Wire), "Wire.Star. Should be topologic.Wire"
+    assert Topology.IsInstance(s2, "Wire"), "Wire.Star. Should be topologic.Wire"
  
-    # Case 21 - Trapezoid
-    print("Case 21")
+    # Case 20 - Trapezoid
+    print("Case 20")
     # test 1
     t1 = Wire.Trapezoid()                                                                                                              # without optional inputs
-    assert isinstance(t1, topologic.Wire), "Wire.Trapezoid. Should be topologic.Wire"
+    assert Topology.IsInstance(t1, "Wire"), "Wire.Trapezoid. Should be topologic.Wire"
     # test 2
     t2 =Wire.Trapezoid(origin=v5, widthA=1.3, widthB=0.85, offsetA=0.8, offsetB=0.7, 
                        length=2.0, direction=[1, 0, 1], placement='center', tolerance=0.0001)            # with optional inputs
-    assert isinstance(t2, topologic.Wire), "Wire.Trapezoid. Should be topologic.Wire"
+    assert Topology.IsInstance(t2, "Wire"), "Wire.Trapezoid. Should be topologic.Wire"
 
-    # Case 22 - Vertices
-    print("Case 22")
+    # Case 21 - Vertices
+    print("Case 21")
     # wv = wire_vertices
     # test 1
     wv1 = Wire.Vertices(w3)
@@ -307,9 +276,20 @@ def test_main():
     wv2 = Wire.Vertices(w6)
     assert isinstance(wv2, list), "Wire.Vertices. Should be list"
 
-    # Case 23 - Einstein
-    print("Case 23")
+    # Case 22 - Einstein
+    print("Case 22")
     # test 1
     ein = Wire.Einstein()
-    assert isinstance(ein, topologic.Wire), "Wire.Einstein. Should be a wire"
+    assert Topology.IsInstance(ein, "Wire"), "Wire.Einstein. Should be a wire"
+
+    # Case 23 - Simplify
+    print("Case 23")
+    c = Wire.Circle(sides=180)
+    c2 = Wire.Simplify(c, tolerance=0.01)
+    assert Topology.IsInstance(c2, "Wire"), "Wire.Simplify. Should be a wire"
+
+    # Case 24 - Squircle
+    print("Case 24
+    c = Wire.Squircle()
+    assert Topology.IsInstance(c, "Wire"), "Wire.Squircle. Should be a wire"
     print("End")

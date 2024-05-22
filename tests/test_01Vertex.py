@@ -28,7 +28,7 @@ def test_main():
     print("Case 1")
     # test 1
     v0 = Vertex.ByCoordinates(0, 0, 0)          # create vertex
-    assert isinstance(v0, topologic.Vertex), "Vertex.ByCoordinates. Should be topologic.Vertex"
+    assert Topology.IsInstance(v0, "Vertex"), "Vertex.ByCoordinates. Should be topologic_core.Vertex"
 
     # If the above passes, we can create the rest of the vertices
     v1 = Vertex.ByCoordinates(0, 10, 1)         # create vertex

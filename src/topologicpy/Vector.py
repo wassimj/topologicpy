@@ -188,7 +188,7 @@ class Vector(list):
             # Compute bisecting vector
             bisecting_vector = (vector1_norm + vector2_norm) / np.linalg.norm(vector1_norm + vector2_norm)
     
-        return bisecting_vector
+        return list(bisecting_vector)
     
     @staticmethod
     def ByAzimuthAltitude(azimuth, altitude, north=0, reverse=False, tolerance=0.0001):
@@ -267,12 +267,13 @@ class Vector(list):
         """
 
         from topologicpy.Vertex import Vertex
-        import topologic_core as topologic
+        from topologicpy.Topology import Topology
+
         if not isinstance(vertices, list):
             return None
         if not isinstance(normalize, bool):
             return None
-        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) < 2:
             return None
         v1 = vertices[0]

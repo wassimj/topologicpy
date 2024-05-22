@@ -14,10 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
-import topologicpy
 import topologic_core as topologic
-from topologicpy.Face import Face
-from topologicpy.Topology import Topology
 import collections
 import os
 import warnings
@@ -36,7 +33,7 @@ except:
     except:
         warnings.warn("Vertex - Error: Could not import numpy.")
 
-class Vertex(Topology):
+class Vertex():
     @staticmethod
     def AreCollinear(vertices: list, tolerance: float = 0.0001):
         """
@@ -73,7 +70,7 @@ class Vertex(Topology):
         if not isinstance(vertices, list):
             print("Vertex.AreCollinear - Error: The input list of vertices is not a valid list. Returning None.")
             return None
-        vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
         if len(vertexList) < 2:
             print("Vertex.AreCollinear - Error: The input list of vertices does not contain sufficient valid vertices. Returning None.")
             return None
@@ -90,7 +87,7 @@ class Vertex(Topology):
         return True
     
     @staticmethod
-    def AreIpsilateral(vertices: list, face: topologic.Face) -> bool:
+    def AreIpsilateral(vertices: list, face) -> bool:
         """
         Returns True if the input list of vertices are on one side of a face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
 
@@ -98,7 +95,7 @@ class Vertex(Topology):
         ----------
         vertices : list
             The input list of vertices.
-        face : topologic.Face
+        face : topologic_core.Face
             The input face
 
         Returns
@@ -127,10 +124,11 @@ class Vertex(Topology):
     
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
 
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             return None
-        vertexList = [x for x in vertices if isinstance(x, topologic.Vertex)]
+        vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
         if len(vertexList) < 2:
             return None
         pointA = Vertex.Coordinates(vertexList[0])
@@ -146,15 +144,15 @@ class Vertex(Topology):
         return True
     
     @staticmethod
-    def AreIpsilateralCluster(cluster: topologic.Cluster, face: topologic.Face) -> bool:
+    def AreIpsilateralCluster(cluster, face) -> bool:
         """
         Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input list of vertices.
-        face : topologic.Face
+        face : topologic_core.Face
             The input face
 
         Returns
@@ -164,13 +162,13 @@ class Vertex(Topology):
 
         """
         from topologicpy.Topology import Topology
-        if not isinstance(cluster, topologic.Topology):
+        if not Topology.IsInstance(cluster, "Topology"):
             return None
         vertices = Topology.SubTopologies(cluster, subTopologyType="vertex")
         return Vertex.AreIpsilateral(vertices, face)
     
     @staticmethod
-    def AreOnSameSide(vertices: list, face: topologicpy.Face.Face) -> bool:
+    def AreOnSameSide(vertices: list, face) -> bool:
         """
         Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
 
@@ -178,7 +176,7 @@ class Vertex(Topology):
         ----------
         vertices : list
             The input list of vertices.
-        face : topologic.Face
+        face : topologic_core.Face
             The input face
 
         Returns
@@ -190,15 +188,15 @@ class Vertex(Topology):
         return Vertex.AreIpsilateral(vertices, face)
 
     @staticmethod
-    def AreOnSameSideCluster(cluster: topologic.Cluster, face: topologic.Face) -> bool:
+    def AreOnSameSideCluster(cluster, face) -> bool:
         """
         Returns True if the two input vertices are on the same side of the input face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
 
         Parameters
         ----------
-        cluster : topologic.Cluster
+        cluster : topologic_core.Cluster
             The input list of vertices.
-        face : topologic.Face
+        face : topologic_core.Face
             The input face
 
         Returns
@@ -208,13 +206,13 @@ class Vertex(Topology):
 
         """
         from topologicpy.Topology import Topology
-        if not isinstance(cluster, topologic.Topology):
+        if not Topology.IsInstance(cluster, "Topology"):
             return None
         vertices = Topology.SubTopologies(cluster, subTopologyType="vertex")
         return Vertex.AreIpsilateral(vertices, face)
 
     @staticmethod
-    def ByCoordinates(*args, **kwargs) -> topologic.Vertex:
+    def ByCoordinates(*args, **kwargs):
         """
         Creates a vertex at the coordinates specified by the x, y, z inputs. You can call this method using a list of coordinates or individually.
         Examples:
@@ -233,7 +231,7 @@ class Vertex(Topology):
 
         Returns
         -------
-        topologic.Vertex
+        topologic_core.Vertex
             The created vertex.
 
         """
@@ -301,7 +299,7 @@ class Vertex(Topology):
         
         vertex = None
         try:
-            vertex = topologic.Vertex.ByCoordinates(x, y, z)
+            vertex = topologic.Vertex.ByCoordinates(x, y, z) # Hook to Core
         except:
             vertex = None
             print("Vertex.ByCoordinates - Error: Could not create a topologic vertex. Returning None.")
@@ -319,14 +317,16 @@ class Vertex(Topology):
 
         Return
         ----------
-        topologic.Vertex
+        topologic_core.Vertex
             The computed centroid of the input list of vertices
+        
         """
+        from topologicpy.Topology import Topology
 
         if not isinstance(vertices, list):
             print("Vertex.Centroid - Error: The input vertices parameter is not a valid list. Returning None.")
             return None
-        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) < 1:
             print("Vertex.Centroid - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
             return None
@@ -356,13 +356,13 @@ class Vertex(Topology):
         return list(reversed(Vertex.CounterClockwise2D(vertices)))
     
     @staticmethod
-    def Coordinates(vertex: topologic.Vertex, outputType: str = "xyz", mantissa: int = 6) -> list:
+    def Coordinates(vertex, outputType: str = "xyz", mantissa: int = 6) -> list:
         """
         Returns the coordinates of the input vertex.
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         outputType : string, optional
             The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". The default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
@@ -375,7 +375,9 @@ class Vertex(Topology):
             The coordinates of the input vertex.
 
         """
-        if not isinstance(vertex, topologic.Vertex):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(vertex, "Vertex"):
             return None
         x = round(vertex.X(), mantissa)
         y = round(vertex.Y(), mantissa)
@@ -425,15 +427,15 @@ class Vertex(Topology):
         return vertices
 
     @staticmethod
-    def Degree(vertex: topologic.Vertex, hostTopology: topologic.Topology, topologyType: str = "edge"):
+    def Degree(vertex, hostTopology, topologyType: str = "edge"):
         """
         Returns the vertex degree (the number of super topologies connected to it). See https://en.wikipedia.org/wiki/Degree_(graph_theory).
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
-        hostTopology : topologic.Topology
+        hostTopology : topologic_core.Topology
             The input host topology in which to search for the connected super topologies.
         topologyType : str , optional
             The topology type to search for. This can be any of "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. If set to None, the immediate supertopology type is searched for. The default is None.
@@ -446,25 +448,25 @@ class Vertex(Topology):
         """
         from topologicpy.Topology import Topology
 
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Vertex.Degree - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
-        if not isinstance(hostTopology, topologic.Topology):
+        if not Topology.IsInstance(hostTopology, "Topology"):
             print("Vertex.Degree - Error: The input hostTopology parameter is not a valid topologic topology. Returning None.")
         superTopologies = Topology.SuperTopologies(topology=vertex, hostTopology=hostTopology, topologyType=topologyType)
         return len(superTopologies)
 
 
     @staticmethod
-    def Distance(vertex: topologic.Vertex, topology: topologic.Topology, includeCentroid: bool =True,
+    def Distance(vertex, topology, includeCentroid: bool =True,
                  mantissa: int = 6) -> float:
         """
         Returns the distance between the input vertex and the input topology. This method returns the distance to the closest sub-topology in the input topology, optionally including its centroid.
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology.
         includeCentroid : bool
             If set to True, the centroid of the input topology will be considered in finding the nearest subTopology to the input vertex. The default is True.
@@ -479,6 +481,7 @@ class Vertex(Topology):
         """
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
         import math
 
         def distance_point_to_point(point1, point2):
@@ -557,13 +560,13 @@ class Vertex(Topology):
             if e == 0:
                 return 0
             return d/e
-        if not isinstance(vertex, topologic.Vertex) or not isinstance(topology, topologic.Topology):
+        if not Topology.IsInstance(vertex, "Vertex") or not Topology.IsInstance(topology, "Topology"):
             return None
-        if isinstance(topology, topologic.Vertex):
+        if Topology.IsInstance(topology, "Vertex"):
             return round(distance_to_vertex(vertex,topology), mantissa)
-        elif isinstance(topology, topologic.Edge):
+        elif Topology.IsInstance(topology, "Edge"):
             return round(distance_to_edge(vertex,topology), mantissa)
-        elif isinstance(topology, topologic.Wire):
+        elif Topology.IsInstance(topology, "Wire"):
             vertices = Topology.Vertices(topology)
             distances = [distance_to_vertex(vertex, v) for v in vertices]
             edges = Topology.Edges(topology)
@@ -571,7 +574,7 @@ class Vertex(Topology):
             if includeCentroid:
                 distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
             return round(min(distances), mantissa)
-        elif isinstance(topology, topologic.Face):
+        elif Topology.IsInstance(topology, "Face"):
             vertices = Topology.Vertices(topology)
             distances = [distance_to_vertex(vertex, v) for v in vertices]
             edges = Topology.Edges(topology)
@@ -580,7 +583,7 @@ class Vertex(Topology):
             if includeCentroid:
                 distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
             return round(min(distances), mantissa)
-        elif isinstance(topology, topologic.Shell) or isinstance(topology, topologic.Cell) or isinstance(topology, topologic.CellComplex) or isinstance(topology, topologic.Cluster):
+        elif Topology.IsInstance(topology, "Shell") or Topology.IsInstance(topology, "Cell") or Topology.IsInstance(topology, "CellComplex") or Topology.IsInstance(topology, "Cluster"):
             vertices = Topology.Vertices(topology)
             distances = [distance_to_vertex(vertex, v) for v in vertices]
             edges = Topology.Edges(topology)
@@ -595,15 +598,15 @@ class Vertex(Topology):
             return None
     
     @staticmethod
-    def EnclosingCell(vertex: topologic.Vertex, topology: topologic.Topology, exclusive: bool = True, tolerance: float = 0.0001) -> list:
+    def EnclosingCell(vertex, topology, exclusive: bool = True, tolerance: float = 0.0001) -> list:
         """
         Returns the list of Cells found in the input topology that enclose the input vertex.
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology.
         exclusive : bool , optional
             If set to True, return only the first found enclosing cell. The default is True.
@@ -616,6 +619,8 @@ class Vertex(Topology):
             The list of enclosing cells.
 
         """
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
         
         def boundingBox(cell):
             vertices = []
@@ -629,9 +634,9 @@ class Vertex(Topology):
                 z.append(aVertex.Z())
             return ([min(x), min(y), min(z), max(x), max(y), max(z)])
         
-        if isinstance(topology, topologic.Cell):
+        if Topology.IsInstance(topology, "Cell"):
             cells = [topology]
-        elif isinstance(topology, topologic.Cluster) or isinstance(topology, topologic.CellComplex):
+        elif Topology.IsInstance(topology, "Cluster") or Topology.IsInstance(topology, "CellComplex"):
             cells = []
             _ = topology.Cells(None, cells)
         else:
@@ -642,7 +647,7 @@ class Vertex(Topology):
         for i in range(len(cells)):
             bbox = boundingBox(cells[i])
             if ((vertex.X() < bbox[0]) or (vertex.Y() < bbox[1]) or (vertex.Z() < bbox[2]) or (vertex.X() > bbox[3]) or (vertex.Y() > bbox[4]) or (vertex.Z() > bbox[5])) == False:
-                if topologic.CellUtility.Contains(cells[i], vertex, tolerance) == 0:
+                if Vertex.IsInternal(vertex, cells[i], tolerance=tolerance):
                     if exclusive:
                         return([cells[i]])
                     else:
@@ -669,7 +674,7 @@ class Vertex(Topology):
             The list of fused vertices. This list contains the same number of vertices and in the same order as the input list of vertices. However, the coordinates
             of these vertices have now been modified so that they are exactly the same with other vertices that are within the tolerance distance.
         """
-
+        from topologicpy.Topology import Topology
         import numpy as np
 
         def fuse_vertices(vertices, tolerance):
@@ -714,7 +719,7 @@ class Vertex(Topology):
         if not isinstance(vertices, list):
             print("Vertex.Fuse - Error: The input vertices parameter is not a valid list. Returning None.")
             return None
-        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) == 0:
             print("Vertex.Fuse - Error: The input vertices parameter does not contain any valid topologic vertices. Returning None.")
             return None
@@ -725,13 +730,13 @@ class Vertex(Topology):
         return return_vertices
 
     @staticmethod
-    def Index(vertex: topologic.Vertex, vertices: list, strict: bool = False, tolerance: float = 0.0001) -> int:
+    def Index(vertex, vertices: list, strict: bool = False, tolerance: float = 0.0001) -> int:
         """
         Returns index of the input vertex in the input list of vertices
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         vertices : list
             The input list of vertices.
@@ -747,11 +752,11 @@ class Vertex(Topology):
 
         """
         from topologicpy.Topology import Topology
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             return None
         if not isinstance(vertices, list):
             return None
-        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) == 0:
             return None
         for i in range(len(vertices)):
@@ -771,7 +776,7 @@ class Vertex(Topology):
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         vertices : list
             The input list of vertices.
@@ -784,7 +789,7 @@ class Vertex(Topology):
 
         Returns
         -------
-        topologic.vertex
+        topologic_core.vertex
             The input vertex with the interpolated value stored in its dictionary at the key specified by the input key. Other keys and values in the dictionary are preserved.
 
         """
@@ -846,12 +851,12 @@ class Vertex(Topology):
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             return None
         if not isinstance(vertices, list):
             return None
         
-        vertices = [v for v in vertices if isinstance(v, topologic.Vertex)]
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) == 0:
             return None
         
@@ -874,15 +879,15 @@ class Vertex(Topology):
         return vertex
 
     @staticmethod
-    def IsCoincident(vertexA: topologic.Vertex, vertexB: topologic.Vertex, tolerance: float = 0.0001, silent: bool = False) -> bool:
+    def IsCoincident(vertexA, vertexB, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
         Returns True if the input vertexA is coincident with the input vertexB. Returns False otherwise.
 
         Parameters
         ----------
-        vertexA : topologic.Vertex
+        vertexA : topologic_core.Vertex
             The first input vertex.
-        vertexB : topologic.Vertex
+        vertexB : topologic_core.Vertex
             The second input vertex.
         tolerance : float , optional
             The tolerance for computing if the input vertexA is coincident with the input vertexB. The default is 0.0001.
@@ -893,26 +898,28 @@ class Vertex(Topology):
             True if the input vertexA is coincident with the input vertexB. False otherwise.
 
         """
-        if not isinstance(vertexA, topologic.Vertex):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(vertexA, "Vertex"):
             if not silent:
                 print("Vertex.IsCoincident - Error: The input vertexA parameter is not a valid vertex. Returning None.")
             return None
-        if not isinstance(vertexB, topologic.Vertex):
+        if not Topology.IsInstance(vertexB, "Vertex"):
             if not silent:
                 print("Vertex.IsICoincident - Error: The input vertexB parameter is not a valid vertex. Returning None.")
             return None
         return Vertex.IsInternal(vertexA, vertexB, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def IsExternal(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
+    def IsExternal(vertex, topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
         Returns True if the input vertex is external to the input topology. Returns False otherwise.
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology.
         tolerance : float , optional
             The tolerance for computing if the input vertex is external to the input topology. The default is 0.0001.
@@ -925,27 +932,28 @@ class Vertex(Topology):
             True if the input vertex is external to the input topology. False otherwise.
 
         """
+        from topologicpy.Topology import Topology
 
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             if not silent:
                 print("Vertex.IsExternal - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
-        if not isinstance(topology, topologic.Topology):
+        if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Vertex.IsExternal - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
         return not (Vertex.IsPeripheral(vertex, topology, tolerance=tolerance, silent=silent) or Vertex.IsInternal(vertex, topology, tolerance=tolerance, silent=silent))
     
     @staticmethod
-    def IsInternal(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
+    def IsInternal(vertex, topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
         Returns True if the input vertex is inside the input topology. Returns False otherwise.
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology.
         tolerance : float , optional
             The tolerance for computing if the input vertex is internal to the input topology. The default is 0.0001.
@@ -961,28 +969,30 @@ class Vertex(Topology):
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Shell import Shell
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        if not isinstance(vertex, topologic.Vertex):
+
+        if not Topology.IsInstance(vertex, "Vertex"):
             if not silent:
                 print("Vertex.IsInternal - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
-        if not isinstance(topology, topologic.Topology):
+        if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Vertex.IsInternal - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
 
-        if isinstance(topology, topologic.Vertex):
+        if Topology.IsInstance(topology, "Vertex"):
             return Vertex.Distance(vertex, topology) < tolerance
-        elif isinstance(topology, topologic.Edge):
+        elif Topology.IsInstance(topology, "Edge"):
             try:
-                parameter = topologic.EdgeUtility.ParameterAtPoint(topology, vertex)
+                parameter = Edge.ParameterAtVertex(topology, vertex)
             except:
                 parameter = 400 #aribtrary large number greater than 1
+            if parameter == None:
+                return False
             return 0 <= parameter <= 1
-        elif isinstance(topology, topologic.Wire):
+        elif Topology.IsInstance(topology, "Wire"):
             vertices = [v for v in Topology.Vertices(topology) if Vertex.Degree(v, topology) > 1]
             edges = Wire.Edges(topology)
             sub_list = vertices + edges
@@ -990,7 +1000,7 @@ class Vertex(Topology):
                 if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
                     return True
             return False
-        elif isinstance(topology, topologic.Face):
+        elif Topology.IsInstance(topology, "Face"):
             # Test the distance first
             if Vertex.PerpendicularDistance(vertex, topology) > tolerance:
                 return False
@@ -1005,7 +1015,7 @@ class Vertex(Topology):
             if intersect == None:
                 return False
             return True
-        elif isinstance(topology, topologic.Shell):
+        elif Topology.IsInstance(topology, "Shell"):
             if Vertex.IsPeripheral(vertex, topology, tolerance=tolerance, silent=silent):
                 return False
             else:
@@ -1018,12 +1028,12 @@ class Vertex(Topology):
                     if Vertex.IsInternal(vertex, face, tolerance=tolerance, silent=silent):
                         return True
                 return False
-        elif isinstance(topology, topologic.Cell):
-            return topologic.CellUtility.Contains(topology, vertex, tolerance) == 0
-        elif isinstance(topology, topologic.CellComplex):
+        elif Topology.IsInstance(topology, "Cell"):
+            return topologic.CellUtility.Contains(topology, vertex, tolerance) == 0 # Hook to Core
+        elif Topology.IsInstance(topology, "CellComplex"):
             ext_boundary = CellComplex.ExternalBoundary(topology)
             return Vertex.IsInternal(vertex, ext_boundary, tolerance=tolerance, silent=silent)
-        elif isinstance(topology, topologic.Cluster):
+        elif Topology.IsInstance(topology, "Cluster"):
             sub_list = Cluster.FreeTopologies(topology)
             for sub in sub_list:
                 if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
@@ -1033,7 +1043,7 @@ class Vertex(Topology):
     
     
     @staticmethod
-    def IsPeripheral(vertex: topologic.Vertex, topology: topologic.Topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
+    def IsPeripheral(vertex, topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
         Returns True if the input vertex is peripheral to the input topology. Returns False otherwise.
         A vertex is said to be peripheral to the input topology if:
@@ -1050,9 +1060,9 @@ class Vertex(Topology):
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology.
         tolerance : float , optional
             The tolerance for computing if the input vertex is peripheral to the input topology. The default is 0.0001.
@@ -1073,24 +1083,24 @@ class Vertex(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             if not silent:
                 print("Vertex.IsPeripheral - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
-        if not isinstance(topology, topologic.Topology):
+        if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Vertex.IsPeripheral - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
 
-        if isinstance(topology, topologic.Vertex):
+        if Topology.IsInstance(topology, "Vertex"):
             return Vertex.IsInternal(vertex, topology, tolerance=tolerance, silent=silent)
-        elif isinstance(topology, topologic.Edge):
+        elif Topology.IsInstance(topology, "Edge"):
             sv = Edge.StartVertex(topology)
             ev = Edge.EndVertex(topology)
             f1 = Vertex.IsInternal(vertex, sv, tolerance=tolerance, silent=silent)
             f2 = Vertex.IsInternal(vertex, ev, tolerance=tolerance, silent=silent)
             return f1 or f2
-        elif isinstance(topology, topologic.Wire):
+        elif Topology.IsInstance(topology, "Wire"):
             if Wire.IsManifold(topology):
                 if not Wire.IsClosed(topology):
                     sv = Wire.StartVertex(topology)
@@ -1110,33 +1120,33 @@ class Vertex(Topology):
                     if Vertex.IsPeripheral(vertex, sub, tolerance=tolerance, silent=silent):
                         return True
                 return False
-        elif isinstance(topology, topologic.Face):
+        elif Topology.IsInstance(topology, "Face"):
             sub_list = Topology.Vertices(topology) + Topology.Edges(topology)
             for sub in sub_list:
                 if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
                     return True
             return False
-        elif isinstance(topology, topologic.Shell):
+        elif Topology.IsInstance(topology, "Shell"):
             ext_boundary = Shell.ExternalBoundary(topology)
             sub_list = Topology.Vertices(ext_boundary) + Topology.Edges(ext_boundary)
             for sub in sub_list:
                 if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
                     return True
             return False
-        elif isinstance(topology, topologic.Cell):
+        elif Topology.IsInstance(topology, "Cell"):
             sub_list = Topology.Vertices(topology) + Topology.Edges(topology) + Topology.Faces(topology)
             for sub in sub_list:
                 if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
                     return True
             return False
-        elif isinstance(topology, topologic.CellComplex):
+        elif Topology.IsInstance(topology, "CellComplex"):
             ext_boundary = CellComplex.ExternalBoundary(topology)
             sub_list = Topology.Vertices(ext_boundary) + Topology.Edges(ext_boundary) + Topology.Faces(ext_boundary)
             for sub in sub_list:
                 if Vertex.IsInternal(vertex, sub, tolerance=tolerance, silent=silent):
                     return True
             return False
-        elif isinstance(topology, topologic.Cluster):
+        elif Topology.IsInstance(topology, "Cluster"):
             sub_list = Cluster.FreeTopologies(topology)
             for sub in sub_list:
                 if Vertex.IsPeripheral(vertex, sub, tolerance=tolerance, silent=silent):
@@ -1145,25 +1155,27 @@ class Vertex(Topology):
         return False
     
     @staticmethod
-    def NearestVertex(vertex: topologic.Vertex, topology: topologic.Topology, useKDTree: bool = True) -> topologic.Vertex:
+    def NearestVertex(vertex, topology, useKDTree: bool = True):
         """
         Returns the vertex found in the input topology that is the nearest to the input vertex.
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology to be searched for the nearest vertex.
         useKDTree : bool , optional
             if set to True, the algorithm will use a KDTree method to search for the nearest vertex. The default is True.
 
         Returns
         -------
-        topologic.Vertex
+        topologic_core.Vertex
             The nearest vertex.
 
-        """        
+        """
+        from topologicpy.Topology import Topology
+
         def SED(a, b):
             """Compute the squared Euclidean distance between X and Y."""
             p1 = (a.X(), a.Y(), a.Z())
@@ -1200,7 +1212,7 @@ class Vertex(Topology):
             return vertices
         
         def kdtree(topology):
-            assert isinstance(topology, topologic.Topology), "Vertex.NearestVertex: The input is not a Topology."
+            assert Topology.IsInstance(topology, "Topology"), "Vertex.NearestVertex: The input is not a Topology."
             vertices = []
             _ = topology.Vertices(None, vertices)
             assert (len(vertices) > 0), "Vertex.NearestVertex: Could not find any vertices in the input Topology"
@@ -1288,7 +1300,7 @@ class Vertex(Topology):
         return vertices[sorted_indices[0]]
 
     @staticmethod
-    def Origin() -> topologic.Vertex:
+    def Origin():
         """
         Returns a vertex with coordinates (0, 0, 0)
 
@@ -1297,20 +1309,20 @@ class Vertex(Topology):
 
         Return
         -----------
-        topologic.Vertex
+        topologic_core.Vertex
         """
         return Vertex.ByCoordinates(0, 0, 0)
     
     @staticmethod
-    def PerpendicularDistance(vertex: topologic.Vertex, face: topologic.Face, mantissa: int = 6):
+    def PerpendicularDistance(vertex, face, mantissa: int = 6):
         """
         Returns the perpendicular distance between the input vertex and the input face. The face is considered to be infinite.
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
-        face : topologic.Face
+        face : topologic_core.Face
             The input face.
         mantissa: int , optional
             The desired length of the mantissa. The default is 6.
@@ -1322,6 +1334,7 @@ class Vertex(Topology):
 
         """
         from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
         import math
 
         def distance_point_to_line(point, line_start, line_end):
@@ -1355,10 +1368,10 @@ class Vertex(Topology):
             distance = np.linalg.norm(point - closest_point)
             
             return distance
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             print("Vertex.PerpendicularDistance - Error: The input vertex is not a valid topologic vertex. Returning None.")
             return None
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             print("Vertex.PerpendicularDistance - Error: The input face is not a valid topologic face. Returning None.")
             return None
         dic = Face.PlaneEquation(face)
@@ -1431,7 +1444,7 @@ class Vertex(Topology):
         return {"a":a, "b":b, "c":c, "d":d}
     
     @staticmethod
-    def Point(x=0, y=0, z=0) -> topologic.Vertex:
+    def Point(x=0, y=0, z=0):
         """
         Creates a point (vertex) using the input parameters
 
@@ -1446,21 +1459,21 @@ class Vertex(Topology):
 
         Return
         -----------
-        topologic.Vertex
+        topologic_core.Vertex
         """
         
         return Vertex.ByCoordinates(x, y, z)
 
     @staticmethod
-    def Project(vertex: topologic.Vertex, face: topologic.Face, direction: bool = None, mantissa: int = 6) -> topologic.Vertex:
+    def Project(vertex, face, direction: bool = None, mantissa: int = 6):
         """
         Returns a vertex that is the projection of the input vertex unto the input face.
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex to project unto the input face.
-        face : topologic.Face
+        face : topologic_core.Face
             The input face that receives the projection of the input vertex.
         direction : vector, optional
             The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. The default is None.
@@ -1471,11 +1484,12 @@ class Vertex(Topology):
 
         Returns
         -------
-        topologic.Vertex
+        topologic_core.Vertex
             The projected vertex.
 
         """
         from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
         
         def project_point_onto_plane(point, plane_coeffs, direction_vector):
             """
@@ -1508,9 +1522,9 @@ class Vertex(Topology):
 
             return [x_proj, y_proj, z_proj]
 
-        if not isinstance(vertex, topologic.Vertex):
+        if not Topology.IsInstance(vertex, "Vertex"):
             return None
-        if not isinstance(face, topologic.Face):
+        if not Topology.IsInstance(face, "Face"):
             return None
         eq = Face.PlaneEquation(face, mantissa= mantissa)
         if direction == None or direction == []:
@@ -1519,13 +1533,13 @@ class Vertex(Topology):
         return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 
     @staticmethod
-    def X(vertex: topologic.Vertex, mantissa: int = 6) -> float:
+    def X(vertex, mantissa: int = 6) -> float:
         """
         Returns the X coordinate of the input vertex.
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
@@ -1536,18 +1550,20 @@ class Vertex(Topology):
             The X coordinate of the input vertex.
 
         """
-        if not isinstance(vertex, topologic.Vertex):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(vertex, "Vertex"):
             return None
         return round(vertex.X(), mantissa)
 
     @staticmethod
-    def Y(vertex: topologic.Vertex, mantissa: int = 6) -> float:
+    def Y(vertex, mantissa: int = 6) -> float:
         """
         Returns the Y coordinate of the input vertex.
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
@@ -1558,18 +1574,19 @@ class Vertex(Topology):
             The Y coordinate of the input vertex.
 
         """
-        if not isinstance(vertex, topologic.Vertex):
+        from topologicpy.Topology import Topology
+        if not Topology.IsInstance(vertex, "Vertex"):
             return None
         return round(vertex.Y(), mantissa)
 
     @staticmethod
-    def Z(vertex: topologic.Vertex, mantissa: int = 6) -> float:
+    def Z(vertex, mantissa: int = 6) -> float:
         """
         Returns the Z coordinate of the input vertex.
 
         Parameters
         ----------
-        vertex : topologic.Vertex
+        vertex : topologic_core.Vertex
             The input vertex.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
@@ -1580,7 +1597,9 @@ class Vertex(Topology):
             The Z coordinate of the input vertex.
 
         """
-        if not isinstance(vertex, topologic.Vertex):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(vertex, "Vertex"):
             return None
         return round(vertex.Z(), mantissa)
            

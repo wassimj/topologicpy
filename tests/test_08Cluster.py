@@ -68,19 +68,19 @@ def test_main():
     # test 1
 
     cT1 = Cluster.ByTopologies([v0, e1, v1, e2, w1, f1, sh1, cyl1])
-    assert isinstance(cT1, topologic.Cluster), "Cluster.ByTopologies. Should be topologic.Cluster"
+    assert Topology.IsInstance(cT1, "Cluster"), "Cluster.ByTopologies. Should be topologic.Cluster"
     # test 2
 
     cT2 = Cluster.ByTopologies([v10, e2, e3, fV2, cyl2, sh1, cyl1])
-    assert isinstance(cT2, topologic.Cluster), "Cluster.ByTopologies. Should be topologic.Cluster"
+    assert Topology.IsInstance(cT2, "Cluster"), "Cluster.ByTopologies. Should be topologic.Cluster"
     # test 3
     print("  Test 3")
     cT3 = Cluster.ByTopologies([cyl3, sh1, w1, e1, v4, cyl4])
-    assert isinstance(cT3, topologic.Cluster), "Cluster.ByTopologies. Should be topologic.Cluster"
+    assert Topology.IsInstance(cT3, "Cluster"), "Cluster.ByTopologies. Should be topologic.Cluster"
     # test 4
     print("  Test 4")
     cT4 = Cluster.ByTopologies([sh2, v12, cyl4, f3])
-    assert isinstance(cT4, topologic.Cluster), "Cluster.ByTopologies. Should be topologic.Cluster"
+    assert Topology.IsInstance(cT4, "Cluster"), "Cluster.ByTopologies. Should be topologic.Cluster"
 
     # Case 2 - CellComplexes
     print("Case 2")
@@ -222,11 +222,11 @@ def test_main():
     # test 1
 
     cMys1 = Cluster.MysticRose()                                                                                # without optional inputs
-    assert isinstance(cMys1, topologic.Cluster), "Cluster.MysticRose. Should be topologic.Cluster"
+    assert Topology.IsInstance(cMys1, "Cluster"), "Cluster.MysticRose. Should be topologic.Cluster"
     # test 2
 
     cMys2 = Cluster.MysticRose(w3, v10, 1.6, 8, direction=[1, 1, 0])                   # with optional inputs
-    assert isinstance(cMys2, topologic.Cluster), "Cluster.MysticRose. Should be topologic.Cluster"
+    assert Topology.IsInstance(cMys2, "Cluster"), "Cluster.MysticRose. Should be topologic.Cluster"
 
     # Case 14 - Shells
     print("Case 14")

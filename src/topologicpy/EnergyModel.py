@@ -114,8 +114,8 @@ class EnergyModel:
         return osModel
     
     @staticmethod
-    def ByTopology(building : topologic.Topology,
-                   shadingSurfaces : topologic.Topology = None,
+    def ByTopology(building,
+                   shadingSurfaces  = None,
                    osModelPath : str = None,
                    weatherFilePath : str = None,
                    designDayFilePath  : str = None,
@@ -134,9 +134,9 @@ class EnergyModel:
 
         Parameters
         ----------
-        building : topologic.CellComplex or topologic.Cell
+        building : topologic_core.CellComplex or topologic_core.Cell
             The input building topology.
-        shadingSurfaces : topologic.Topology , optional
+        shadingSurfaces : topologic_core.Topology , optional
             The input topology for shading surfaces. The default is None.
         osModelPath : str , optional
             The path to the template OSM file. The default is "./assets/EnergyModel/OSMTemplate-OfficeBuilding-3.5.0.osm".
@@ -176,6 +176,7 @@ class EnergyModel:
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Aperture import Aperture
         try:
             import openstudio
             openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
@@ -215,13 +216,13 @@ class EnergyModel:
             from topologicpy.Cell import Cell
             from topologicpy.CellComplex import CellComplex
 
-            if isinstance(building, topologic.CellComplex):
+            if Topology.IsInstance(building, "CellComplex"):
                 d = CellComplex.Decompose(building)
                 bhf = d['bottomHorizontalFaces']
                 ihf = d['internalHorizontalFaces']
                 thf = d ['topHorizontalFaces']
                 hf = bhf+ihf+thf
-            elif isinstance(building, topologic.Cell):
+            elif Topology.IsInstance(building, "Cell"):
                 d = Cell.Decompose(building)
                 bhf = d['bottomHorizontalFaces']
                 thf = d ['topHorizontalFaces']
@@ -287,9 +288,9 @@ class EnergyModel:
         osBuildingStorys.sort(key=lambda x: x.nominalZCoordinate().get())
         osSpaces = []
         spaceNames = []
-        if isinstance(building, topologic.CellComplex):
+        if Topology.IsInstance(building, "CellComplex"):
             building_cells = Topology.SubTopologies(building, "Cell")
-        elif isinstance(building, topologic.Cell):
+        elif Topology.IsInstance(building, "Cell"):
             building_cells = [building]
         for spaceNumber, buildingCell in enumerate(building_cells):
             osSpace = openstudio.model.Space(osModel)
@@ -373,8 +374,7 @@ class EnergyModel:
                             if len(apertures) > 0:
                                 for aperture in apertures:
                                     osSubSurfacePoints = []
-                                    #apertureFace = TopologySubTopologies.processItem([aperture, topologic.Face])[0]
-                                    apertureFace = topologic.Aperture.Topology(aperture)
+                                    apertureFace = Aperture.Topology(aperture)
                                     for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
                                         osSubSurfacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
                                     osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
@@ -412,8 +412,7 @@ class EnergyModel:
                         if len(apertures) > 0:
                             for aperture in apertures:
                                 osSubSurfacePoints = []
-                                #apertureFace = TopologySubTopologies.processItem([aperture, "Face"])[0]
-                                apertureFace = topologic.Aperture.Topology(aperture)
+                                apertureFace = Aperture.Topology(aperture)
                                 for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
                                     osSubSurfacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
                                 osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
@@ -1006,6 +1005,7 @@ class EnergyModel:
             - "shadingFaces"
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
@@ -1013,20 +1013,22 @@ class EnergyModel:
         from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Aperture import Aperture
+        from topologicpy.Context import Context
         from topologicpy.Topology import Topology
 
         def surfaceToFace(surface):
             surfaceEdges = []
             surfaceVertices = surface.vertices()
             for i in range(len(surfaceVertices)-1):
-                sv = topologic.Vertex.ByCoordinates(surfaceVertices[i].x(), surfaceVertices[i].y(), surfaceVertices[i].z())
-                ev = topologic.Vertex.ByCoordinates(surfaceVertices[i+1].x(), surfaceVertices[i+1].y(), surfaceVertices[i+1].z())
+                sv = Vertex.ByCoordinates(surfaceVertices[i].x(), surfaceVertices[i].y(), surfaceVertices[i].z())
+                ev = Vertex.ByCoordinates(surfaceVertices[i+1].x(), surfaceVertices[i+1].y(), surfaceVertices[i+1].z())
                 edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance, silent=False)
                 if not edge:
                     continue
                 surfaceEdges.append(edge)
-            sv = topologic.Vertex.ByCoordinates(surfaceVertices[len(surfaceVertices)-1].x(), surfaceVertices[len(surfaceVertices)-1].y(), surfaceVertices[len(surfaceVertices)-1].z())
-            ev = topologic.Vertex.ByCoordinates(surfaceVertices[0].x(), surfaceVertices[0].y(), surfaceVertices[0].z())
+            sv = Vertex.ByCoordinates(surfaceVertices[len(surfaceVertices)-1].x(), surfaceVertices[len(surfaceVertices)-1].y(), surfaceVertices[len(surfaceVertices)-1].z())
+            ev = Vertex.ByCoordinates(surfaceVertices[0].x(), surfaceVertices[0].y(), surfaceVertices[0].z())
             edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance, silent=False)
             surfaceEdges.append(edge)
             surfaceWire = Wire.ByEdges(surfaceEdges, tolerance=tolerance)
@@ -1047,12 +1049,11 @@ class EnergyModel:
                     u = 0.5
                     v = 0.5
                     w = 0.5
-                context = topologic.Context.ByTopologyParameters(face, u, v, w)
-                _ = topologic.Aperture.ByTopologyContext(aperture, context)
+                context = Context.ByTopologyParameters(face, u, v, w)
+                _ = Aperture.ByTopologyContext(aperture, context)
             return face
         spaces = list(model.getSpaces())
         
-        vertexIndex = 0
         cells = []
         apertures = []
         shadingFaces = []
@@ -1098,22 +1099,20 @@ class EnergyModel:
             for aSurface in surfaces:
                 aFace = surfaceToFace(aSurface)
                 aFace = topologic.TopologyUtility.Transform(aFace, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33)
-                #aFace.__class__ = topologic.Face
                 subSurfaces = aSurface.subSurfaces()
                 for aSubSurface in subSurfaces:
                     aperture = surfaceToFace(aSubSurface)
                     aperture = topologic.TopologyUtility.Transform(aperture, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33)
-                    # aperture.__class__ = topologic.Face
                     apertures.append(aperture)
                 addApertures(aFace, apertures)
                 spaceFaces.append(aFace)
-            spaceFaces = [x for x in spaceFaces if isinstance(x, topologic.Face)]
+            spaceFaces = [x for x in spaceFaces if Topology.IsInstance(x, "Face")]
             spaceCell = Cell.ByFaces(spaceFaces, tolerance=tolerance)
             if not spaceCell:
                 spaceCell = Shell.ByFaces(spaceFaces, tolerance=tolerance)
-            if not isinstance(spaceCell, topologic.Cell):
+            if not Topology.IsInstance(spaceCell, "Cell"):
                 spaceCell = Cluster.ByTopologies(spaceFaces)
-            if isinstance(spaceCell, topologic.Topology): #debugging
+            if Topology.IsInstance(spaceCell, "Topology"): #debugging
                 # Set Dictionary for Cell
                 keys = []
                 values = []

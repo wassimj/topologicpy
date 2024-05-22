@@ -24,7 +24,7 @@ class Context:
 
         Parameters
         ----------
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology.
         u : float , optional
             The input *u* parameter. This defines the relative parameteric location of the content object along the *u* axis.
@@ -35,17 +35,19 @@ class Context:
 
         Returns
         -------
-        topologic.Context
+        topologic_core.Context
             The created context object. See Aperture.ByObjectContext.
 
         """
-        if not isinstance(topology, topologic.Topology):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(topology, "Topology"):
             print("Context.ByTopologyParameters - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
         
         context = None
         try:
-            context = topologic.Context.ByTopologyParameters(topology, u, v, w)
+            context = topologic.Context.ByTopologyParameters(topology, u, v, w) # Hook to Core
         except:
             print("Context.ByTopologyParameters - Error: The operation failed. Returning None.")
             context = None
@@ -58,16 +60,18 @@ class Context:
         
         Parameters
         ----------
-        context : topologic.Context
+        context : topologic_core.Context
             The input context.
 
         Returns
         -------
-        topologic.Topology
+        topologic_core.Topology
             The topology of the input context.
 
         """
-        if not isinstance(context, topologic.Context):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(context, "Context"):
             print("Context.Topology - Error: The input context parameter is not a valid topologic context. Returning None.")
             return None
         topology = None

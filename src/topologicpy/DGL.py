@@ -1619,7 +1619,7 @@ class DGL:
 
         Parameters
         ----------
-        topologicGraph : topologic.Graph
+        topologicGraph : topologic_core.Graph
             The input topologic graph.
         bidirectional : bool , optional
             If set to True, the output DGL graph is forced to be bidirectional. The defaul is True.

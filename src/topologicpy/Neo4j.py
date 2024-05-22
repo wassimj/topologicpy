@@ -50,7 +50,7 @@ class Neo4j:
 
         Returns
         -------
-        topologic.Vertex
+        topologic_core.Vertex
             The output topologic vertex.
 
         """
@@ -111,7 +111,7 @@ class Neo4j:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The output topologic graph.
 
         """
@@ -199,7 +199,7 @@ class Neo4j:
 
         Returns
         -------
-        topologic.Graph
+        topologic_core.Graph
             The output topologic graph.
 
         """
@@ -284,7 +284,7 @@ class Neo4j:
         ----------
         neo4jGraph : Neo4j.Graph
             The input neo4j graph.
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input topologic graph.
         categoryKey : str
             The category key in the dictionary under which to look for the category value.
@@ -435,7 +435,7 @@ class Neo4j:
         ----------
         neo4jGraph : Neo4j.Graph
             The input neo4j graph.
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input topologic graph.
         labelKey : str , optional
             The dictionary key under which to find the vertex's label value. The default is None which means the vertex gets the name 'TopologicGraphVertex'.

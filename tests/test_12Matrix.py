@@ -20,17 +20,17 @@ def test_main():
     # Case 1 - ByRotation
     print("Case 1")
     # test 1
-    mat_rot = Matrix.ByRotation(rx=0, ry=0, rz=0, order='xyz')
+    mat_rot = Matrix.ByRotation(angleX=0, angleY=0, angleZ=0, order='xyz')
     assert isinstance(mat_rot, list), "Matrix.ByRotation. list"
     assert len(mat_rot) == 4, "Matrix.ByRotation. List length should be 4"
     assert len(mat_rot[0]) == 4, "Matrix.ByRotation. List length should be 4"
     # test 2
-    mat_rot1 = Matrix.ByRotation(rx=30, ry=90, rz=0, order='xyz')
+    mat_rot1 = Matrix.ByRotation(angleX=30, angleY=90, angleZ=0, order='xyz')
     assert isinstance(mat_rot1, list), "Matrix.ByRotation. list"
     assert len(mat_rot1) == 4, "Matrix.ByRotation. List length should be 4"
     assert len(mat_rot1[0]) == 4, "Matrix.ByRotation. List length should be 4"
     # test 3
-    mat_rot2 = Matrix.ByRotation(rx=30, ry=90, rz=10, order='xyz')
+    mat_rot2 = Matrix.ByRotation(angleX=30, angleY=90, angleZ=10, order='xyz')
     assert isinstance(mat_rot2, list), "Matrix.ByRotation. list"
     assert len(mat_rot2) == 4, "Matrix.ByRotation. List length should be 4"
     assert len(mat_rot2[0]) == 4, "Matrix.ByRotation. List length should be 4"
@@ -39,12 +39,12 @@ def test_main():
     # Case 2 - ByScaling
     print("Case 2")
     # test 1
-    mat_scal = Matrix.ByScaling(sx=4, sy=4, sz=4)
+    mat_scal = Matrix.ByScaling(scaleX=4, scaleY=4, scaleZ=4)
     assert isinstance(mat_scal, list), "Matrix.ByScaling. list"
     assert len(mat_scal) == 4, "Matrix.ByRotation. List length should be 4"
     assert len(mat_scal[0]) == 4, "Matrix.ByRotation. List length should be 4"
     # test 2
-    mat_scal1 = Matrix.ByScaling(sx=4.5, sy=4.2, sz=4.1)
+    mat_scal1 = Matrix.ByScaling(scaleX=4.5, scaleY=4.2, scaleZ=4.1)
     assert isinstance(mat_scal1, list), "Matrix.ByScaling. list"
     assert len(mat_scal1) == 4, "Matrix.ByRotation. List length should be 4"
     assert len(mat_scal1[0]) == 4, "Matrix.ByRotation. List length should be 4"
@@ -71,12 +71,12 @@ def test_main():
     # Case 4 - ByTranslation
     print("Case 4")
     # test 1
-    mat_tansl = Matrix.ByTranslation(tx=3, ty=4, tz=2)
+    mat_tansl = Matrix.ByTranslation(translateX=3, translateY=4, translateZ=2)
     assert isinstance(mat_tansl, list), "Matrix.ByTranslation. list"
     assert len(mat_tansl) == 4, "Matrix.ByRotation. List length should be 4"
     assert len(mat_tansl[0]) == 4, "Matrix.ByRotation. List length should be 4"
     # test 2
-    mat_tansl1 = Matrix.ByTranslation(tx=-3, ty=-4, tz=-2)
+    mat_tansl1 = Matrix.ByTranslation(translateX=-3, translateY=-4, translateZ=-2)
     assert isinstance(mat_tansl1, list), "Matrix.ByTranslation. list"
     assert len(mat_tansl1) == 4, "Matrix.ByRotation. List length should be 4"
     assert len(mat_tansl1[0]) == 4, "Matrix.ByRotation. List length should be 4"

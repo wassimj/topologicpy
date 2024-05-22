@@ -14,39 +14,10 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
-import topologicpy
 import topologic_core as topologic
 
-from topologicpy.Wire import Wire
-from topologicpy.Face import Face
 import os
 import warnings
-
-try:
-    import numpy as np
-except:
-    print("Plotly - Installing required numpy library.")
-    try:
-        os.system("pip install numpy")
-    except:
-        os.system("pip install numpy --user")
-    try:
-        import numpy as np
-    except:
-        warnings.warn("Plotly - Error: Could not import numpy.")
-
-try:
-    import pandas as pd
-except:
-    print("Plotly - Installing required pandas library.")
-    try:
-        os.system("pip install pandas")
-    except:
-        os.system("pip install pandas --user")
-    try:
-        import pandas as pd
-    except:
-        warnings.warn("Plotly - Error: Could not import pandas.")
 
 try:
     import plotly
@@ -93,6 +64,7 @@ class Plotly:
             The units used in the color bar. The default is ""
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
         mantissa : int , optional
             The desired length of the mantissa for the values listed on the color bar. The default is 6.
         Returns
@@ -121,7 +93,7 @@ class Plotly:
             showlegend=False,
             marker=dict(
                 size=0,
-                colorscale=colorScale, # choose the colorscale
+                colorscale=Plotly.ColorScale(colorScale), # choose the colorscale
                 cmin=minValue,
                 cmax=maxValue,
                 color=['rgba(0,0,0,0)'],
@@ -202,7 +174,58 @@ class Plotly:
                 "violet","wheat","white",
                 "whitesmoke","yellow","yellowgreen"]
 
+    @staticmethod
+    def ColorScale(colorScale: str = "viridis"):
+        
+        # Colors recommended by various sources for color-blind-friendly palettes
+        protanopia_colors = [
+            "#E69F00", # orange
+            "#56B4E9", # sky blue
+            "#009E73", # bluish green
+            "#F0E442", # yellow
+            "#0072B2", # blue
+            "#D55E00", # vermillion
+            "#CC79A7", # reddish purple
+        ]
 
+        deuteranopia_colors = [
+            "#377EB8", # blue
+            "#FF7F00", # orange
+            "#4DAF4A", # green
+            "#F781BF", # pink
+            "#A65628", # brown
+            "#984EA3", # purple
+            "#999999", # grey
+        ]
+
+        tritanopia_colors = [
+            "#E69F00", # orange
+            "#56B4E9", # sky blue
+            "#009E73", # bluish green
+            "#F0E442", # yellow
+            "#0072B2", # blue
+            "#D55E00", # vermillion
+            "#CC79A7", # reddish purple
+        ]
+
+        # Create colorscales for Plotly
+        def create_colorscale(colors):
+            colorscale = []
+            num_colors = len(colors)
+            for i, color in enumerate(colors):
+                position = i / (num_colors - 1)
+                colorscale.append((position, color))
+            return colorscale
+        
+        if "prota" in colorScale.lower():
+            return create_colorscale(protanopia_colors)
+        elif "deutera" in colorScale.lower():
+            return create_colorscale(deuteranopia_colors)
+        elif "trita"in colorScale.lower():
+            return create_colorscale(tritanopia_colors)
+        else:
+            return colorScale
+    
     @staticmethod
     def DataByDGL(data, labels):
         """
@@ -222,6 +245,20 @@ class Plotly:
 
         """
 
+        try:
+            import pandas as pd
+        except:
+            print("Plotly - Installing required pandas library.")
+            try:
+                os.system("pip install pandas")
+            except:
+                os.system("pip install pandas --user")
+            try:
+                import pandas as pd
+            except:
+                warnings.warn("Plotly.DataByDGL - Error: Could not import pandas. Please install the pandas library manually. Returning None")
+                return None
+        
         if isinstance(data[labels[0]][0], int):
             xAxis_list = list(range(1, data[labels[0]][0]+1))
         else:
@@ -241,7 +278,7 @@ class Plotly:
 
         Parameters
         ----------
-        graph : topologic.Graph
+        graph : topologic_core.Graph
             The input graph.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
@@ -298,7 +335,7 @@ class Plotly:
         from topologicpy.Graph import Graph
         import plotly.graph_objs as go
 
-        if not isinstance(graph, topologic.Graph):
+        if not Topology.IsInstance(graph, "Graph"):
             return None
         v_labels = []
         v_groupList = []
@@ -352,7 +389,7 @@ class Plotly:
                 marker=dict(symbol='circle',
                                 size=vertexSize,
                                 color=v_groupList,
-                                colorscale=colorScale,
+                                colorscale=Plotly.ColorScale(colorScale),
                                 line=dict(color=edgeColor, width=0.5)
                                 ),
                 text=v_labels,
@@ -448,13 +485,13 @@ class Plotly:
                        faceMinGroup=None, faceMaxGroup=None, 
                        showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
                        faceLegendGroup=3, 
-                       intensityKey=None, intensities=[], colorScale="Viridis", mantissa=6, tolerance=0.0001):
+                       intensityKey=None, intensities=[], colorScale="viridis", mantissa=6, tolerance=0.0001):
         """
         Creates plotly face, edge, and vertex data.
 
         Parameters
         ----------
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology. This must contain faces and or edges.
 
         showVertices : bool , optional
@@ -737,7 +774,7 @@ class Plotly:
         def faceData(vertices, faces, dictionaries=None, color="#FAFAFA",
                      opacity=0.5, labelKey=None, groupKey=None,
                      minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Faces",
-                     legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="Viridis"):
+                     legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="viridis"):
             x = []
             y = []
             z = []
@@ -820,7 +857,7 @@ class Plotly:
                     legendrank = legendRank,
                     color = color,
                     facecolor = groupList,
-                    colorscale = colorScale,
+                    colorscale = Plotly.ColorScale(colorScale),
                     cmin = 0,
                     cmax = 1,
                     intensity = intensities,
@@ -834,11 +871,13 @@ class Plotly:
                 )
             return fData
         
+        from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from time import time
-        if not isinstance(topology, topologic.Topology):
+
+        if not Topology.IsInstance(topology, "Topology"):
             return None
     
         intensityList = []
@@ -846,7 +885,7 @@ class Plotly:
         data = []
         v_list = []
         
-        if topology.Type() == topologic.Vertex.Type():
+        if Topology.Type(topology) == Topology.TypeID("Vertex"):
             tp_vertices = [topology]
         else:
             tp_vertices = Topology.Vertices(topology)
@@ -902,8 +941,8 @@ class Plotly:
                         vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
                 data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
             
-        if showEdges and topology.Type() > topologic.Vertex.Type():
-            if topology.Type() == topologic.Edge.Type():
+        if showEdges and Topology.Type(topology) > Topology.TypeID("Vertex"):
+            if Topology.Type(topology) == Topology.TypeID("Edge"):
                 tp_edges = [topology]
             else:
                 tp_edges = Topology.Edges(topology)
@@ -918,8 +957,8 @@ class Plotly:
                 edges = geo['edges']
                 data.append(edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, width=edgeWidth, labelKey=edgeLabelKey, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
         
-        if showFaces and topology.Type() >= topologic.Face.Type():
-            if isinstance(topology, topologic.Face):
+        if showFaces and Topology.Type(topology) >= Topology.TypeID("Face"):
+            if Topology.IsInstance(topology, "Face"):
                 tp_faces = [topology]
             else:
                 tp_faces = Topology.Faces(topology)
@@ -934,7 +973,7 @@ class Plotly:
                         #ibList = [Wire.RemoveCollinearEdges(ib) for ib in ibList]
                         #ibList = [ib for ib in ibList if not ib == None]
                         #new_f = Face.ByWires(eb, ibList, silent=False)
-                        #if isinstance(new_f, topologic.Face):
+                        #if Topology.IsInstance(new_f, "Face"):
                             #if faceLabelKey or faceGroupKey:
                                 #d = Topology.Dictionary(tp_faces[i])
                                 #keys = Dictionary.Keys(d)
@@ -973,7 +1012,7 @@ class Plotly:
              width=950,
              height=500,
              showScale = True,
-             colorScale='Viridis',
+             colorScale='viridis',
              colorSamples=10,
              backgroundColor='rgba(0,0,0,0)',
              marginLeft=0,
@@ -1027,6 +1066,20 @@ class Plotly:
             The desired bottom margin in pixels. The default is 0.
 
         """
+        try:
+            import numpy as np
+        except:
+            print("Plotly.FigureByConfusionMatrix - Installing required numpy library.")
+            try:
+                os.system("pip install numpy")
+            except:
+                os.system("pip install numpy --user")
+            try:
+                import numpy as np
+            except:
+                warnings.warn("Plotly.FigureByConfusionMatrix - Error: Could not import numpy. Please install numpy manually. Returning None.")
+                return None
+        
         if not isinstance(matrix, list) and not isinstance(matrix, np.ndarray):
             print("Plotly.FigureByConfusionMatrix - Error: The input matrix is not of the correct type. Returning None.")
             return None
@@ -1040,7 +1093,7 @@ class Plotly:
              width=width,
              height=height,
              showScale=showScale,
-             colorScale=colorScale,
+             colorScale=Plotly.ColorScale(colorScale),
              colorSamples=colorSamples,
              backgroundColor=backgroundColor,
              marginLeft=marginLeft,
@@ -1126,6 +1179,20 @@ class Plotly:
         import plotly.graph_objects as go
         import plotly.express as px
 
+        try:
+            import numpy as np
+        except:
+            print("Plotly.FigureByMatrix - Installing required numpy library.")
+            try:
+                os.system("pip install numpy")
+            except:
+                os.system("pip install numpy --user")
+            try:
+                import numpy as np
+            except:
+                warnings.warn("Plotly.FigureByMatrix - Error: Could not import numpy. Please install numpy manually. Returning None.")
+                return None
+
         if not isinstance(matrix, list) and not isinstance(matrix, np.ndarray):
             print("Plotly.FigureByMatrix - Error: The input matrix is not of the correct type. Returning None.")
             return None
@@ -1134,7 +1201,7 @@ class Plotly:
 
         if isinstance(matrix, list):
             matrix = np.array(matrix)
-        colors = px.colors.sample_colorscale(colorScale, [n/(colorSamples -1) for n in range(colorSamples)])
+        colors = px.colors.sample_colorscale(Plotly.ColorScale(colorScale), [n/(colorSamples -1) for n in range(colorSamples)])
 
         if not xCategories:
             xCategories = [x for x in range(len(matrix[0]))]
@@ -1471,6 +1538,21 @@ class Plotly:
         """
 
         import plotly.express as px
+
+        try:
+            import pandas as pd
+        except:
+            print("Plotly.FigureByPieChart - Installing required pandas library.")
+            try:
+                os.system("pip install pandas")
+            except:
+                os.system("pip install pandas --user")
+            try:
+                import pandas as pd
+            except:
+                warnings.warn("Plotly.FigureByPieChart - Error: Could not import pandas. Please install the pandas library manually. Returning None")
+                return None
+            
         dlist = list(map(list, zip(*data)))
         df = pd.DataFrame(dlist, columns=data['names'])
         fig = px.pie(df, values=values, names=names)
@@ -1502,13 +1584,13 @@ class Plotly:
              marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, showScale=False,
              
              cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
-             cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=6, tolerance=0.0001):
+             cbSubTitle="", cbUnits="", colorScale="viridis", mantissa=6, tolerance=0.0001):
         """
         Creates a figure from the input topology.
 
         Parameters
         ----------
-        topology : topologic.Topology
+        topology : topologic_core.Topology
             The input topology. This must contain faces and or edges.
 
         showVertices : bool , optional
@@ -1669,7 +1751,9 @@ class Plotly:
         Plotly figure
 
         """
-        if not isinstance(topology, topologic.Topology):
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(topology, "Topology"):
             print("Plotly.FigureByTopology - Error: the input topology is not a valid topology. Returning None.")
             return None
         data = Plotly.DataByTopology(topology=topology,

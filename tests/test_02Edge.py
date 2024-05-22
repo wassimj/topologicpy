@@ -8,6 +8,7 @@ import topologic_core as topologic
 from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
 from topologicpy.Cluster import Cluster
+from topologicpy.Topology import Topology
 
 def test_main():
     print("Start")
@@ -27,37 +28,37 @@ def test_main():
     print("Case 1")
     # test 1
     e1 = Edge.ByStartVertexEndVertex(v0,v1)                    # without tolerance
-    assert isinstance(e1, topologic.Edge), "Edge.ByStartVertexEndVertex. Should be topologic.Edge"
+    assert Topology.IsInstance(e1, "Edge"), "Edge.ByStartVertexEndVertex. Should be topologic.Edge"
     # test 2
     e1 = Edge.ByStartVertexEndVertex(v0,v1, tolerance=0.001)   # with tolerance (optional)
-    assert isinstance(e1, topologic.Edge), "Edge.ByStartVertexEndVertex. Should be topologic.Edge"
+    assert Topology.IsInstance(e1, "Edge"), "Edge.ByStartVertexEndVertex. Should be topologic.Edge"
     # test 3
     e2 = Edge.ByStartVertexEndVertex(v1, v3)                   # without tolerance
-    assert isinstance(e2, topologic.Edge), "Edge.ByStartVertexEndVertex. Should be topologic.Edge"
+    assert Topology.IsInstance(e2, "Edge"), "Edge.ByStartVertexEndVertex. Should be topologic.Edge"
 
     # Case 2 - Create an edge ByVertices
     print("Case 2")
     # test 1
     e3 = Edge.ByVertices(list_v)                    # without tolerance
-    assert isinstance(e3, topologic.Edge), "Edge.ByVertices. Should be topologic.Edge"
+    assert Topology.IsInstance(e3, "Edge"), "Edge.ByVertices. Should be topologic.Edge"
     # test 2
     e3 = Edge.ByVertices(list_v, tolerance=0.001)   # with tolerance (optional) 
-    assert isinstance(e3, topologic.Edge), "Edge.ByVertices. Should be topologic.Edge"
+    assert Topology.IsInstance(e3, "Edge"), "Edge.ByVertices. Should be topologic.Edge"
     # test 3
     e4 = Edge.ByVertices(list_v1, tolerance=0.001)  # with tolerance (optional) 
-    assert isinstance(e4, topologic.Edge), "Edge.ByVertices. Should be topologic.Edge"                                                  
+    assert Topology.IsInstance(e4, "Edge"), "Edge.ByVertices. Should be topologic.Edge"                                                  
 
     # Case 3 - Create an edge ByVerticesCluster
     print("Case 3")
     # test 1
     e5 = Edge.ByVerticesCluster(cluster_1)                  # without tolerance
-    assert isinstance(e5, topologic.Edge), "Edge.ByVerticesCluster. Should be topologic.Edge"
+    assert Topology.IsInstance(e5, "Edge"), "Edge.ByVerticesCluster. Should be topologic.Edge"
     # test 2
     e5 = Edge.ByVerticesCluster(cluster_1, tolerance=0.001) # with tolerance (optional)
-    assert isinstance(e5, topologic.Edge), "Edge.ByVerticesCluster. Should be topologic.Edge"
+    assert Topology.IsInstance(e5, "Edge"), "Edge.ByVerticesCluster. Should be topologic.Edge"
     # test 3
     e6 = Edge.ByVerticesCluster(cluster_2)                  # without tolerance
-    assert isinstance(e6, topologic.Edge), "Edge.ByVerticesCluster. Should be topologic.Edge"
+    assert Topology.IsInstance(e6, "Edge"), "Edge.ByVerticesCluster. Should be topologic.Edge"
 
     # Case 4 - Angle
     print("Case 4")
@@ -76,10 +77,10 @@ def test_main():
     print("Case 5")
     # test 1
     e_bis = Edge.Bisect(e1, eB)                                                # without optional inputs
-    assert isinstance(e_bis, topologic.Edge), "Edge.Bisect. Should be topologic.Edge" 
+    assert Topology.IsInstance(e_bis, "Edge"), "Edge.Bisect. Should be topologic.Edge" 
     # test 2
     e_bis = Edge.Bisect(e1, eB, length=1.0, placement=1, tolerance=0.001)      # with optional inputs
-    assert isinstance(e_bis, topologic.Edge), "Edge.Bisect. Should be topologic.Edge" 
+    assert Topology.IsInstance(e_bis, "Edge"), "Edge.Bisect. Should be topologic.Edge" 
 
     # Case 6 - Direction
     print("Case 6")
@@ -97,22 +98,22 @@ def test_main():
     print("Case 7")
     # test 1
     end2 = Edge.EndVertex(e2)
-    assert isinstance(end2, topologic.Vertex), "Edge.EndVertex. Should be topologic.Vertex"
+    assert Topology.IsInstance(end2, "Vertex"), "Edge.EndVertex. Should be topologic.Vertex"
     # test 2
     end3 = Edge.EndVertex(e3)
-    assert isinstance(end3, topologic.Vertex), "Edge.EndVertex. Should be topologic.Vertex"
+    assert Topology.IsInstance(end3, "Vertex"), "Edge.EndVertex. Should be topologic.Vertex"
 
     # Case 8 - Extend
     print("Case 8")
     # test 1
     extend2 = Edge.Extend(e2)                                                               # without optional inputs
-    assert isinstance(extend2, topologic.Edge), "Edge.Extend. Should be topologic.Edge"
+    assert Topology.IsInstance(extend2, "Edge"), "Edge.Extend. Should be topologic.Edge"
     # test 2
     extend3 = Edge.Extend(e3)                                                               # without optional inputs
-    assert isinstance(extend3, topologic.Edge), "Edge.Extend. Should be topologic.Edge"
+    assert Topology.IsInstance(extend3, "Edge"), "Edge.Extend. Should be topologic.Edge"
     # test 3
     extend3 = Edge.Extend(e3,distance=2, bothSides=False, reverse=True, tolerance=0.001)    # with optional inputs
-    assert isinstance(extend3, topologic.Edge), "Edge.Extend. Should be topologic.Edge"
+    assert Topology.IsInstance(extend3, "Edge"), "Edge.Extend. Should be topologic.Edge"
 
     # Case 9 - IsCollinear (True)
     print("Case 9")
@@ -155,13 +156,13 @@ def test_main():
     print("Case 12")
     # test 1
     normal_3 = Edge.Normalize(e3)                     # without optional inputs
-    assert isinstance(normal_3, topologic.Edge), "Edge.Normalize. Should be topologic.Edge"
+    assert Topology.IsInstance(normal_3, "Edge"), "Edge.Normalize. Should be topologic.Edge"
     # test 2
     normal_4 = Edge.Normalize(e4)                     # without optional inputs
-    assert isinstance(normal_4, topologic.Edge), "Edge.Normalize. Should be topologic.Edge"
+    assert Topology.IsInstance(normal_4, "Edge"), "Edge.Normalize. Should be topologic.Edge"
     # test 3
     normal_4 = Edge.Normalize(e4, useEndVertex=True)  # with optional inputs
-    assert isinstance(normal_4, topologic.Edge), "Edge.Normalize. Should be topologic.Edge"
+    assert Topology.IsInstance(normal_4, "Edge"), "Edge.Normalize. Should be topologic.Edge"
 
     # Case 13 - ParameterAtVertex
     print("Case 13")
@@ -176,67 +177,67 @@ def test_main():
     print("Case 14")
     # test 1
     reverse3 = Edge.Reverse(e3)
-    assert isinstance(reverse3, topologic.Edge), "Edge.Reverse. Should be topologic.Edge"
+    assert Topology.IsInstance(reverse3, "Edge"), "Edge.Reverse. Should be topologic.Edge"
     # test 2
     reverse4 = Edge.Reverse(e4)
-    assert isinstance(reverse4, topologic.Edge), "Edge.Reverse. Should be topologic.Edge"
+    assert Topology.IsInstance(reverse4, "Edge"), "Edge.Reverse. Should be topologic.Edge"
 
     # Case 15 - SetLength
     print("Case 15")
     # test 1
     SetLen1 = Edge.SetLength(e1)                                                            # without optional inputs
-    assert isinstance(SetLen1, topologic.Edge), "Edge.SetLength. Should be topologic.Edge"
+    assert Topology.IsInstance(SetLen1, "Edge"), "Edge.SetLength. Should be topologic.Edge"
     # test 2
     SetLen2 = Edge.SetLength(e2)                                                            # without optional inputs
-    assert isinstance(SetLen2, topologic.Edge), "Edge.SetLength. Should be topologic.Edge"
+    assert Topology.IsInstance(SetLen2, "Edge"), "Edge.SetLength. Should be topologic.Edge"
     # test 3
     SetLen1 = Edge.SetLength(e1, length=2, bothSides=False, reverse=True, tolerance=0.001)  # with optional inputs
-    assert isinstance(SetLen1, topologic.Edge), "Edge.SetLength. Should be topologic.Edge"
+    assert Topology.IsInstance(SetLen1, "Edge"), "Edge.SetLength. Should be topologic.Edge"
 
     # Case 16 - StartVertex
     print("Case 16")
     # test 1
     iV = Edge.StartVertex(e1)
-    assert isinstance(iV, topologic.Vertex), "Edge.StartVertex. Should be topologic.Vertex"
+    assert Topology.IsInstance(iV, "Vertex"), "Edge.StartVertex. Should be topologic.Vertex"
     # test 2
     iV1 = Edge.StartVertex(e2)
-    assert isinstance(iV1, topologic.Vertex), "Edge.StartVertex. Should be topologic.Vertex"
+    assert Topology.IsInstance(iV1, "Vertex"), "Edge.StartVertex. Should be topologic.Vertex"
 
     # Case 17 - Trim
     print("Case 17")
     # test 1
     trim3 = Edge.Trim(e3)                                                               # without optional inputs
-    assert isinstance(trim3, topologic.Edge), "Edge.Trim. Should be topologic.Edge"
+    assert Topology.IsInstance(trim3, "Edge"), "Edge.Trim. Should be topologic.Edge"
     # test 2
     trim4 = Edge.Trim(e4)                                                               # without optional inputs
-    assert isinstance(trim4, topologic.Edge), "Edge.Trim. Should be topologic.Edge"
+    assert Topology.IsInstance(trim4, "Edge"), "Edge.Trim. Should be topologic.Edge"
     # test 3
     trim4 = Edge.Trim(e4, distance=1, bothSides=False, reverse=True, tolerance=0.001)   # with optional inputs
-    assert isinstance(trim4, topologic.Edge), "Edge.Trim. Should be topologic.Edge"
+    assert Topology.IsInstance(trim4, "Edge"), "Edge.Trim. Should be topologic.Edge"
 
     # Case 18 - VertexByDistance
     print("Case 18")
     # test 1
     dist1 = Edge.VertexByDistance(e1)                                           # without optional inputs
-    assert isinstance(dist1, topologic.Vertex), "Edge.VertexByDistance. Should be topologic.Vertex"
+    assert Topology.IsInstance(dist1, "Vertex"), "Edge.VertexByDistance. Should be topologic.Vertex"
     # test 2
     dist2 = Edge.VertexByDistance(e2)                                           # without optional inputs
-    assert isinstance(dist2, topologic.Vertex), "Edge.VertexByDistance. Should be topologic.Vertex"
+    assert Topology.IsInstance(dist2, "Vertex"), "Edge.VertexByDistance. Should be topologic.Vertex"
     # test 3
     dist2 = Edge.VertexByDistance(e2, distance=1, origin=v3, tolerance=0.001)   # with optional inputs
-    assert isinstance(dist2, topologic.Vertex), "Edge.VertexByDistance. Should be topologic.Vertex"
+    assert Topology.IsInstance(dist2, "Vertex"), "Edge.VertexByDistance. Should be topologic.Vertex"
 
     # Case 19 - VertexByParameter
     print("Case 19")
     # test 1
     ByParam3 = Edge.VertexByParameter(e3)                  # without optional inputs
-    assert isinstance(ByParam3, topologic.Vertex), "Edge.VertexByParameter. Should be topologic.Vertex"
+    assert Topology.IsInstance(ByParam3, "Vertex"), "Edge.VertexByParameter. Should be topologic.Vertex"
     # test 2
     ByParam4 = Edge.VertexByParameter(e4)                  # without optional inputs
-    assert isinstance(ByParam4, topologic.Vertex), "Edge.VertexByParameter. Should be topologic.Vertex"
+    assert Topology.IsInstance(ByParam4, "Vertex"), "Edge.VertexByParameter. Should be topologic.Vertex"
     # test 3
     ByParam4 = Edge.VertexByParameter(e4, u=0.7)   # with optional inputs
-    assert isinstance(ByParam4, topologic.Vertex), "Edge.VertexByParameter. Should be topologic.Vertex"
+    assert Topology.IsInstance(ByParam4, "Vertex"), "Edge.VertexByParameter. Should be topologic.Vertex"
 
     #Case 20 - Vertices
     print("Case 20")
@@ -253,7 +254,7 @@ def test_main():
     from topologicpy.Face import Face
     face = Face.Rectangle()
     edge = Edge.ByFaceNormal(face)
-    assert isinstance(edge, topologic.Edge), "Edge.ByFaceNormal. Should be topologic.Edge"
+    assert Topology.IsInstance(edge, "Edge"), "Edge.ByFaceNormal. Should be topologic.Edge"
     # test 2
     face = Face.Rectangle()
     edge = Edge.ByFaceNormal(face, length=3)
@@ -267,7 +268,7 @@ def test_main():
     v2 = Vertex.ByCoordinates(10,0,0)
     edge = Edge.ByVertices([v1, v2])
     edge2 = Edge.ByOffset2D(edge, offset=1)
-    assert isinstance(edge2, topologic.Edge), "Edge.ByOffset2D. Should be topologic.Edge"
+    assert Topology.IsInstance(edge2, "Edge"), "Edge.ByOffset2D. Should be topologic.Edge"
     centroid = Topology.Centroid(edge2)
     assert Vertex.X(centroid) == 5, "Edge.ByOffset2D. X Should be 5"
     assert Vertex.Y(centroid) == 1, "Edge.ByOffset2D. Y Should be 1"
@@ -282,7 +283,7 @@ def test_main():
     v2 = Vertex.ByCoordinates(20,10,0)
     edge2 = Edge.ByVertices([v1, v2])
     edge3 = Edge.ExtendToEdge2D(edge, edge2)
-    assert isinstance(edge3, topologic.Edge), "Edge.ExtendToEdge2D. Should be topologic.Edge"
+    assert Topology.IsInstance(edge3, "Edge"), "Edge.ExtendToEdge2D. Should be topologic.Edge"
     assert Edge.Length(edge3) == 20, "Edge.ExtendToEdge2D. Length should be 3"
     centroid = Topology.Centroid(edge3)
     assert Vertex.X(centroid) == 10, "Edge.ExtendToEdge2D. X Should be 5"
@@ -298,7 +299,7 @@ def test_main():
     v2 = Vertex.ByCoordinates(5,10,0)
     edge2 = Edge.ByVertices([v1, v2])
     v3 = Edge.Intersect2D(edge, edge2)
-    assert isinstance(v3, topologic.Vertex), "Edge.Intersect2D. Should be topologic.Edge"
+    assert Topology.IsInstance(v3, "Vertex"), "Edge.Intersect2D. Should be topologic.Edge"
     assert Vertex.X(v3) == 5, "Edge.Intersect2D. X Should be 5"
     assert Vertex.Y(v3) == 0, "Edge.Intersect2D. Y Should be 0"
     print("End")

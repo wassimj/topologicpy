@@ -67,13 +67,13 @@ def test_main():
     # test 1
 
     box1 = CellComplex.Box()                                                                  # without optional inputs
-    assert isinstance(box1, topologic.CellComplex), "CellComplex.Box. Should be topologic.CellComplex"
+    assert Topology.IsInstance(box1, "CellComplex"), "CellComplex.Box. Should be topologic.CellComplex"
     # test 2
 
     box2 = CellComplex.Box(v1, width= 3.4, length=5.6, height=7.8, 
                             uSides=3, vSides=4, wSides=6,direction=[1, 0, 0],
                             placement= 'lowerleft')                     # with optional inputs
-    assert isinstance(box2, topologic.CellComplex), "CellComplex.Box. Should be topologic.CellComplex"
+    assert Topology.IsInstance(box2, "CellComplex"), "CellComplex.Box. Should be topologic.CellComplex"
 
     # Case 2 - ByCells
     print("Case 2")
@@ -89,11 +89,11 @@ def test_main():
     # test 1
 
     comC1 = CellComplex.ByCells([cellCyc1, cellCyc2])                                        # without optional inputs
-    assert isinstance(comC1, topologic.CellComplex), "CellComplex.ByCells. Should be topologic.CellComplex"
+    assert Topology.IsInstance(comC1, "CellComplex"), "CellComplex.ByCells. Should be topologic.CellComplex"
     # test 2
 
     comC2 = CellComplex.ByCells([cellCyc1, cellCyc2], 0.002)                             # with optional inputs
-    assert isinstance(comC2, topologic.CellComplex), "CellComplex.ByCells. Should be topologic.CellComplex"
+    assert Topology.IsInstance(comC2, "CellComplex"), "CellComplex.ByCells. Should be topologic.CellComplex"
 
     # Case 3 - ByCellsCluster
     print("Case 3")
@@ -102,22 +102,22 @@ def test_main():
     # test 1
 
     cClu1 = CellComplex.ByCellsCluster(cluC1)                                            # without optional inputs
-    assert isinstance(cClu1, topologic.CellComplex),  "CellComplex.ByCellsCluster. Should be topologic.CellComplex"
+    assert Topology.IsInstance(cClu1, "CellComplex"),  "CellComplex.ByCellsCluster. Should be topologic.CellComplex"
     # test 2
 
     cClu2 = CellComplex.ByCellsCluster(cluC1, 0.002)                                 # with optional inputs
-    assert isinstance(cClu2, topologic.CellComplex),  "CellComplex.ByCellsCluster. Should be topologic.CellComplex"
+    assert Topology.IsInstance(cClu2, "CellComplex"),  "CellComplex.ByCellsCluster. Should be topologic.CellComplex"
  
     # Case 4 - ByFaces
     print("Case 4")
     # test 1
 
     cube1 = CellComplex.ByFaces([boxf1, boxRf2, boxTf3, boxLf4])                                         # without optional inputs
-    assert isinstance(cube1, topologic.CellComplex), "CellComplex.ByFaces, Should be topologic.CellComplex"
+    assert Topology.IsInstance(cube1, "CellComplex"), "CellComplex.ByFaces, Should be topologic.CellComplex"
     # test 2
 
     cone1 = CellComplex.ByFaces([ConeS1, ConeS2, ConeS3, ConeS4], 0.001)                        # with optional inputs
-    assert isinstance(cone1, topologic.CellComplex), "CellComplex.ByFaces, Should be topologic.CellComplex"
+    assert Topology.IsInstance(cone1, "CellComplex"), "CellComplex.ByFaces, Should be topologic.CellComplex"
  
     # Case 5 - ByFacesCluster
     print("Case 5")
@@ -126,11 +126,11 @@ def test_main():
     # test 1
 
     cubeC1 = CellComplex.ByFacesCluster(fc1)                                                                        # without optional inputs
-    assert isinstance(cubeC1, topologic.CellComplex), "CellComplex.ByFacesCluster. Should be topologic.CellComplex"
+    assert Topology.IsInstance(cubeC1, "CellComplex"), "CellComplex.ByFacesCluster. Should be topologic.CellComplex"
     # test 2
 
     coneC1 = CellComplex.ByFacesCluster(fc2, 0.01)                                                                # with optional inputs
-    assert isinstance(coneC1, topologic.CellComplex), "CellComplex.ByFacesCluster. Should be topologic.CellComplex"
+    assert Topology.IsInstance(coneC1, "CellComplex"), "CellComplex.ByFacesCluster. Should be topologic.CellComplex"
 
     # Case 6 - ByWires
     print("Case 6")
@@ -147,14 +147,14 @@ def test_main():
     # test 1
 
     LoftW1 = CellComplex.ByWires([wS1, wS2, wS3])                                                                # without optional inputs
-    assert isinstance(LoftW1, topologic.CellComplex), "CellComplex.ByWires. Should be topologic.CellComplex"
+    assert Topology.IsInstance(LoftW1, "CellComplex"), "CellComplex.ByWires. Should be topologic.CellComplex"
     # test 2
 
     LoftW2 = CellComplex.ByWires([wC1, wC2, wC3], False, 0.0002)                                        # with optional inputs
-    assert isinstance(LoftW2, topologic.CellComplex), "CellComplex.ByWires. Should be topologic.CellComplex"
+    assert Topology.IsInstance(LoftW2, "CellComplex"), "CellComplex.ByWires. Should be topologic.CellComplex"
     #test 3
     LoftW3 = CellComplex.ByWires([wSt1, wSt2, wSt3])                                                           # without optional inputs
-    assert isinstance(LoftW3, topologic.CellComplex), "CellComplex.ByWires. Should be topologic.CellComplex"
+    assert Topology.IsInstance(LoftW3, "CellComplex"), "CellComplex.ByWires. Should be topologic.CellComplex"
 
     # Case 7 - ByWiresCluster
     print("Case 7")
@@ -164,14 +164,14 @@ def test_main():
     # test 1
 
     LoftW4 = CellComplex.ByWiresCluster(cluW1, False, 0.002)                                               # with optional inputs
-    assert isinstance(LoftW4, topologic.CellComplex), "CellComplex.ByWiresCluster. Should be topologic.CellComplex"
+    assert Topology.IsInstance(LoftW4, "CellComplex"), "CellComplex.ByWiresCluster. Should be topologic.CellComplex"
     # test 2
 
     LoftW5 = CellComplex.ByWiresCluster(cluW2)                                                                   # without optional inputs
-    assert isinstance(LoftW5, topologic.CellComplex), "CellComplex.ByWiresCluster. Should be topologic.CellComplex"
+    assert Topology.IsInstance(LoftW5, "CellComplex"), "CellComplex.ByWiresCluster. Should be topologic.CellComplex"
     # test 3
     LoftW6 = CellComplex.ByWiresCluster(cluW3, False, 0.0003)                                             # with optional inputs
-    assert isinstance(LoftW6, topologic.CellComplex), "CellComplex.ByWiresCluster. Should be topologic.CellComplex"
+    assert Topology.IsInstance(LoftW6, "CellComplex"), "CellComplex.ByWiresCluster. Should be topologic.CellComplex"
 
     # Case 8 - Cells
     print("Case 8")
@@ -211,11 +211,11 @@ def test_main():
     # test 1
 
     bEB1 = CellComplex.ExternalBoundary(box1)
-    assert isinstance(bEB1, topologic.Cell), "CellComplex.ExternalBoundary. Should be topologic.Cell"
+    assert Topology.IsInstance(bEB1, "Cell"), "CellComplex.ExternalBoundary. Should be topologic.Cell"
     # test 2
 
     bEB2 = CellComplex.ExternalBoundary(box2)
-    assert isinstance(bEB2, topologic.Cell), "CellComplex.ExternalBoundary. Should be topologic.Cell"
+    assert Topology.IsInstance(bEB2, "Cell"), "CellComplex.ExternalBoundary. Should be topologic.Cell"
 
     # Case 12 -ExternalFaces
     print("Case 12")
@@ -223,12 +223,12 @@ def test_main():
     # test 1
 
     ExF1 = CellComplex.ExternalFaces(box1)
-    # assert isinstance(ExF1, topologic.Cell),  
+    # assert Topology.IsInstance(ExF1, "Cell"),  
     # "Cell.Complex.ExternalFaces. Should be topologic.Cell"
     # test 2
 
     ExF2 = CellComplex.ExternalFaces(box2)
-    # assert isinstance(ExF2, topologic.Cell), "Cell.Complex.ExternalFaces. Should be topologic.Cell"
+    # assert Topology.IsInstance(ExF2, "Cell"), "Cell.Complex.ExternalFaces. Should be topologic.Cell"
     # print("External Faces1", ExF1, "External Faces2", ExF2 )
 
     # Case 13 - Faces
@@ -267,12 +267,12 @@ def test_main():
     # test 1
 
     p1 = CellComplex.Prism()                                                                                                              #  without optional inputs                                                                               
-    assert isinstance(p1, topologic.CellComplex), "CellComplex.Prism, Should be topologic.CellComplex"
+    assert Topology.IsInstance(p1, "CellComplex"), "CellComplex.Prism, Should be topologic.CellComplex"
     # test 2
 
     p2 = CellComplex.Prism(v1, width=4.9, length= 8, height= 10, uSides=3, vSides=3,
                                             wSides=6, direction = [1, 1, 0], placement='lowerleft')                    #  with optional inputs
-    assert isinstance(p2, topologic.CellComplex), "CellComplex.Prism, Should be topologic.CellComplex"
+    assert Topology.IsInstance(p2, "CellComplex"), "CellComplex.Prism, Should be topologic.CellComplex"
 
     # Case 17 - Shells
     print("Case 17")

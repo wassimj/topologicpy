@@ -264,7 +264,7 @@ class Honeybee:
             else:
                 return createUniqueName(name,nameList, number+1)
         
-        if not isinstance(tpBuilding, topologic.Topology):
+        if not Topology.IsInstance(tpBuilding, "Topology"):
             return None
         rooms = []
         tpCells = []

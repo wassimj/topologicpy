@@ -37,55 +37,55 @@ def test_main():
     print("Case 1")
     # test 1
     shell_f = Shell.ByFaces(f_list)             # without tolerance
-    assert isinstance(shell_f, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_f, "Shell"), "Shell.ByFaces. Should be topologic.Shell"
     # test 2
     shell_f = Shell.ByFaces(f_list,0.001)       # with tolerance
-    assert isinstance(shell_f, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_f, "Shell"), "Shell.ByFaces. Should be topologic.Shell"
 
     # Case 2 - ByFacesCluster
     print("Case 2")
     # test 1
     shell_fc = Shell.ByFacesCluster(c_faces)
-    assert isinstance(shell_fc, topologic.Shell), "Shell.ByFacesCluster. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_fc, "Shell"), "Shell.ByFacesCluster. Should be topologic.Shell"
 
     # Case 3 - ByWires
     print("Case 3")
     # test 1
     shell_w = Shell.ByWires(w_list, silent=True)                                     # without optional inputs
-    assert isinstance(shell_w, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_w, "Shell"), "Shell.ByFaces. Should be topologic.Shell"
     # test 2
     shell_w = Shell.ByWires(w_list, triangulate=True, tolerance=0.001, silent=True)  # with optional inputs
-    assert isinstance(shell_w, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_w, "Shell"), "Shell.ByFaces. Should be topologic.Shell"
     # test 3
     #print(" Test 3")
     ##shell_w = Shell.ByWires(w_list, triangulate=False, tolerance=0.001)  # with optional inputs
     #print(len(w_list), w_list[0], w_list[1])
     #Topology.Show(w_list[1], renderer="offline")
     #Topology.Show(shell_w, renderer="offline")
-    #assert isinstance(shell_w, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
+    #assert Topology.IsInstance(shell_w, "Shell"), "Shell.ByFaces. Should be topologic.Shell"
 
     # Case 4 - ByWiresCluster
     print("Case 4")
     # test 1
     shell_wc = Shell.ByWiresCluster(w_cluster, silent=True)               # without optional inputs
-    assert isinstance(shell_wc, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_wc, "Shell"), "Shell.ByFaces. Should be topologic.Shell"
     # test 2
     shell_wc = Shell.ByWiresCluster(w_cluster, triangulate=True, tolerance=0.001, silent=True)   # with optional inputs
-    assert isinstance(shell_wc, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_wc, "Shell"), "Shell.ByFaces. Should be topologic.Shell"
     # test 3
     #print(" Test 3")
     #shell_wc = Shell.ByWiresCluster(w_cluster, triangulate=False, tolerance=0.001)   # with optional inputs
-    #assert isinstance(shell_wc, topologic.Shell), "Shell.ByFaces. Should be topologic.Shell"
+    #assert Topology.IsInstance(shell_wc, "Shell"), "Shell.ByFaces. Should be topologic.Shell"
 
     # Case 5 - Circle
     print("Case 5")
     # test 1
     shell_c = Shell.Circle()                                                                 # without optional inputs
-    assert isinstance(shell_c, topologic.Shell), "Shell.Circle. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_c, "Shell"), "Shell.Circle. Should be topologic.Shell"
     # test 2
     shell_c = Shell.Circle(v1, radius=2, sides=64, fromAngle=90, toAngle=180,
                             direction = [0, 0, 1], placement='lowerleft', tolerance=0.001)  # with optional inputs
-    assert isinstance(shell_c, topologic.Shell), "Shell.Circle. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_c, "Shell"), "Shell.Circle. Should be topologic.Shell"
 
     # Case 6 - Edges
     print("Case 6")
@@ -100,10 +100,10 @@ def test_main():
     print("Case 7")
     # test 1
     eb_shell = Shell.ExternalBoundary(shell_c)
-    assert isinstance(eb_shell, topologic.Wire), "Shell.ExternalBoundary. Should be Wire"
+    assert Topology.IsInstance(eb_shell, "Wire"), "Shell.ExternalBoundary. Should be Wire"
     # test 2
     eb_shell2 = Shell.ExternalBoundary(shell_wc)
-    assert isinstance(eb_shell2, topologic.Wire), "Shell.ExternalBoundary. Should be Wire"
+    assert Topology.IsInstance(eb_shell2, "Wire"), "Shell.ExternalBoundary. Should be Wire"
 
     # Case 8 - Faces
     print("Case 8")
@@ -118,22 +118,22 @@ def test_main():
     print("Case 9")
     # test 1
     shell_hpcd = Shell.HyperbolicParaboloidCircularDomain()                                                 # without optional inputs
-    assert isinstance(shell_hpcd, topologic.Shell), "Shell.HyperbolicParaboloidCircularDomain. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_hpcd, "Shell"), "Shell.HyperbolicParaboloidCircularDomain. Should be topologic.Shell"
     # test 2
 
     shell_hpcd = Shell.HyperbolicParaboloidCircularDomain(v2, radius=3.7, sides=64, rings=21, A=3, B=-3,
                                                             direction = [0, 0, 1], placement='lowerleft')  # with optional inputs
-    assert isinstance(shell_hpcd, topologic.Shell), "Shell.HyperbolicParaboloidCircularDomain. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_hpcd, "Shell"), "Shell.HyperbolicParaboloidCircularDomain. Should be topologic.Shell"
 
     # Case 10 - HyperbolicParaboloidRectangularDomain
     print("Case 10")
     # test 1
     shell_hprd = Shell.HyperbolicParaboloidRectangularDomain()                                                      # without optional inputs
-    assert isinstance(shell_hprd, topologic.Shell), "Shell.HyperbolicParaboloidRectangularDomain. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_hprd, "Shell"), "Shell.HyperbolicParaboloidRectangularDomain. Should be topologic.Shell"
     # test 2
     shell_hprd = Shell.HyperbolicParaboloidRectangularDomain(v3, llVertex=None, lrVertex=None, ulVertex=None, urVertex=None, uSides=20,
                                                             vSides=20, direction = [0, 0, 1], placement='lowerleft')    # with optional inputs
-    assert isinstance(shell_hprd, topologic.Shell), "Shell.HyperbolicParaboloidRectangularDomain. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_hprd, "Shell"), "Shell.HyperbolicParaboloidRectangularDomain. Should be topologic.Shell"
 
     # Case 11 - InternalBoundaries
     print("Case 11")
@@ -161,35 +161,35 @@ def test_main():
     # test 1
 
     shell_p = Shell.Pie()                                                           # without optional inputs
-    assert isinstance(shell_p, topologic.Shell), "Shell.Pie. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_p, "Shell"), "Shell.Pie. Should be topologic.Shell"
     # test 2
 
     shell_p = Shell.Pie(v1, radiusA=10, radiusB=5, sides=64, rings=2, fromAngle=0, toAngle=90,
                         direction = [0, 0, 1], placement='lowerleft', tolerance=0.001)             # with optional inputs
-    assert isinstance(shell_p, topologic.Shell), "Shell.Pie. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_p, "Shell"), "Shell.Pie. Should be topologic.Shell"
 
     # Case 14 - Rectangle
     print("Case 14")
     # test 1
 
     shell_r = Shell.Rectangle()                                             # without optional inputs
-    assert isinstance(shell_r, topologic.Shell), "Shell.Rectangle. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_r, "Shell"), "Shell.Rectangle. Should be topologic.Shell"
     # test 2
 
     shell_r = Shell.Rectangle(v2, width=2, length=4, uSides=3, vSides=3, direction = [0, 0, 1],
                             placement='lowerleft', tolerance=0.001)         # with optional inputs
-    assert isinstance(shell_r, topologic.Shell), "Shell.Rectangle. Should be topologic.Shell"
+    assert Topology.IsInstance(shell_r, "Shell"), "Shell.Rectangle. Should be topologic.Shell"
 
     # Case 15 - SelfMerge
     print("Case 15")
     # test 1
 
     f_smshell = Shell.SelfMerge(shell_f,0.1)
-    assert isinstance(f_smshell, topologic.Face), "Shell.SelfMerge. Should be list topologic.Face"
+    assert Topology.IsInstance(f_smshell, "Face"), "Shell.SelfMerge. Should be list topologic.Face"
     # test 2
 
     f_smshell2 = Shell.SelfMerge(shell_r,0.1)
-    assert isinstance(f_smshell2, topologic.Face), "Shell.SelfMerge. Should be list topologic.Face"
+    assert Topology.IsInstance(f_smshell2, "Face"), "Shell.SelfMerge. Should be list topologic.Face"
 
     # Case 16 - Vertices
     print("Case 16")

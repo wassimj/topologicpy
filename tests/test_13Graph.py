@@ -66,22 +66,22 @@ def test_main():
     print("Case 1")
     # test 1
     graph_ve = Graph.ByVerticesEdges(list_v,list_e)
-    assert isinstance(graph_ve, topologic.Graph), "Graph.ByVerticesEdges. Should be topologic.Graph"
+    assert Topology.IsInstance(graph_ve, "Graph"), "Graph.ByVerticesEdges. Should be topologic.Graph"
     # test 2
     graph_ve1 = Graph.ByVerticesEdges(list_v2,list_e)
-    assert isinstance(graph_ve1, topologic.Graph), "Graph.ByVerticesEdges. Should be topologic.Graph"
+    assert Topology.IsInstance(graph_ve1, "Graph"), "Graph.ByVerticesEdges. Should be topologic.Graph"
 
     # Case 2 - AddEdge
     print("Case 2")
     # test 1
     graph_ae = Graph.AddEdge(graph_ve, e4)                   # without optional inputs
     graph_ae_numE = len(Graph.Edges(graph_ae))
-    assert isinstance(graph_ae, topologic.Graph), "Graph.AddEdge. Should be topologic.Graph"
+    assert Topology.IsInstance(graph_ae, "Graph"), "Graph.AddEdge. Should be topologic.Graph"
     assert graph_ae_numE == 5, "Graph.AddEdge. Should be 5"  
     # test 2
     graph_ae1 = Graph.AddEdge(graph_ve1, e4, tolerance=0.001) # with optional inputs
     graph_ae1_numE = len(Graph.Edges(graph_ae1)) 
-    assert isinstance(graph_ae1, topologic.Graph), "Graph.AddEdge. Should be topologic.Graph"
+    assert Topology.IsInstance(graph_ae1, "Graph"), "Graph.AddEdge. Should be topologic.Graph"
     assert graph_ae1_numE == 5, "Graph.AddEdge. Should be 5" 
 
     # Case 3 - AddVertex
@@ -89,12 +89,12 @@ def test_main():
     # test 1
     graph_av = Graph.AddVertex(graph_ve, v5)                      # without optional inputs
     graph_av_numV = len(Graph.Vertices(graph_av))
-    assert isinstance(graph_av, topologic.Graph), "Graph.AddVertex. Should be topologic.Graph"
+    assert Topology.IsInstance(graph_av, "Graph"), "Graph.AddVertex. Should be topologic.Graph"
     assert graph_av_numV == 6, "Graph.AddVertex. Should be 6"  
     # test 2
     graph_av1 = Graph.AddVertex(graph_ve1, v5, tolerance=0.001)   # with optional inputs
     graph_av1_numV = len(Graph.Vertices(graph_av1))
-    assert isinstance(graph_av1, topologic.Graph), "Graph.AddVertex. Should be topologic.Graph"
+    assert Topology.IsInstance(graph_av1, "Graph"), "Graph.AddVertex. Should be topologic.Graph"
     assert graph_av1_numV == 6, "Graph.AddVertex. Should be 6"  
 
     # Case 4 - AddVertices
@@ -102,12 +102,12 @@ def test_main():
     # test 1
     graph_avs = Graph.AddVertices(graph_ve, list_v1)                       # without optional inputs
     graph_avs_numV = len(Graph.Vertices(graph_avs))
-    assert isinstance(graph_avs, topologic.Graph), "Graph.AddVertices. Should be topologic.Graph"
+    assert Topology.IsInstance(graph_avs, "Graph"), "Graph.AddVertices. Should be topologic.Graph"
     assert graph_avs_numV == 8, "Graph.AddVertices. Should be 8"
     # test 2
     graph_avs1 = Graph.AddVertices(graph_ve, list_v2, tolerance=0.001)    # with optional inputs
     graph_avs1_numV = len(Graph.Vertices(graph_avs1))
-    assert isinstance(graph_avs1, topologic.Graph), "Graph.AddVertices. Should be topologic.Graph"
+    assert Topology.IsInstance(graph_avs1, "Graph"), "Graph.AddVertices. Should be topologic.Graph"
     assert graph_avs1_numV == 8, "Graph.AddVertices. Should be 8"
 
     # Case 5 - AdjacencyList
@@ -162,10 +162,10 @@ def test_main():
     print("Case 10")
     # test 1
     graph_con = Graph.Connect(graph_ve, list_v1, list_v2)                         # without optional inputs
-    assert isinstance(graph_con, topologic.Graph), "Graph.Connect. Should be topologic.Graph"
+    assert Topology.IsInstance(graph_con, "Graph"), "Graph.Connect. Should be topologic.Graph"
     # test 2
     graph_con1 = Graph.Connect(graph_ve1, list_v1, list_v2, tolerance=0.001)      # with optional inputs
-    assert isinstance(graph_con1, topologic.Graph), "Graph.Connect. Should be topologic.Graph"
+    assert Topology.IsInstance(graph_con1, "Graph"), "Graph.Connect. Should be topologic.Graph"
 
     # Case 11 - ContainsEdge
     print("Case 11")
@@ -240,13 +240,13 @@ def test_main():
     graph_edge = Graph.Edge(graph_ve, v0, v2)                    # without optional inputs
     EL_e1 = Edge.Length(e1)
     EL_graph_edge = Edge.Length(graph_edge)
-    assert isinstance(graph_edge, topologic.Edge), "Edge.Length. Should be topologic.Edge"
+    assert Topology.IsInstance(graph_edge, "Edge"), "Edge.Length. Should be topologic.Edge"
     assert EL_graph_edge == EL_e1, "Graph.Distance. Should be the same value"
     # test 2
     graph_edge1 = Graph.Edge(graph_ae, v0, v3, tolerance=0.001)  # with optional inputs
     EL_e2 = Edge.Length(e2)
     EL_graph_edge1 = Edge.Length(graph_edge1)
-    assert isinstance(graph_edge1, topologic.Edge), "Edge.Length. Should be topologic.Edge"
+    assert Topology.IsInstance(graph_edge1, "Edge"), "Edge.Length. Should be topologic.Edge"
     assert EL_graph_edge1 == EL_e2, "Graph.Distance. Should be the same value"
 
     # Case 19 - Edges
@@ -323,19 +323,19 @@ def test_main():
     print("Case 26")
     # test 1
     mSpan1 = Graph.MinimumSpanningTree(graph_ve2, 5, 0.002)                         # with optional inputs
-    assert isinstance(mSpan1, topologic.Graph), "Graph.MinimumSpanningTree. Should be topologic.Graph"
+    assert Topology.IsInstance(mSpan1, "Graph"), "Graph.MinimumSpanningTree. Should be topologic.Graph"
     # test 2
     mSpan2 = Graph.MinimumSpanningTree(graph_ve1)                                       # without optional inputs    
-    assert isinstance(mSpan2, topologic.Graph), "Graph.MinimumSpanningTree. Should be topologic.Graph"
+    assert Topology.IsInstance(mSpan2, "Graph"), "Graph.MinimumSpanningTree. Should be topologic.Graph"
 
     # Case 27 - NearestVertex
     print("Case 27")
     # test 1
     graphNV1 = Graph.NearestVertex(graph_ve1, v8)
-    assert isinstance(graphNV1, topologic.Vertex), "Graph.NearestVertex. Should be topologic.Vertex"
+    assert Topology.IsInstance(graphNV1, "Vertex"), "Graph.NearestVertex. Should be topologic.Vertex"
     # test 2
     graphNV2 = Graph.NearestVertex(graph_ve2, v6)
-    assert isinstance(graphNV2, topologic.Vertex), "Graph.NearestVertex. Should be topologic.Vertex"
+    assert Topology.IsInstance(graphNV2, "Vertex"), "Graph.NearestVertex. Should be topologic.Vertex"
 
     # Case 28 - Order
     print("Case 28")
@@ -350,34 +350,34 @@ def test_main():
     print("Case 29")
     # test 1
     path1 = Graph.Path(graph_ve1, v1, v4)
-    assert isinstance(path1, topologic.Wire), "Graph.Path. Should be topologic.Wire"
+    assert Topology.IsInstance(path1, "Wire"), "Graph.Path. Should be topologic.Wire"
     # test 2
     path2 = Graph.Path(graph_ve2, v0, v3)
-    assert isinstance(path1, topologic.Wire), "Graph.Path. Should be topologic.Wire"
+    assert Topology.IsInstance(path1, "Wire"), "Graph.Path. Should be topologic.Wire"
 
     # Case 30 - RemoveEdge
     print("Case 30")
     # test 1
     remEdg1 = Graph.RemoveEdge(graph_ve1, e2)                          # without optional inputs
-    assert isinstance(remEdg1, topologic.Graph), "Graph.RemoveEdge. Should be topologic.Graph"
+    assert Topology.IsInstance(remEdg1, "Graph"), "Graph.RemoveEdge. Should be topologic.Graph"
     # test 2
     remEdg2 = Graph.RemoveEdge(graph_ve2,e0, 0.0001)            # with optional inputs
-    assert isinstance(remEdg2, topologic.Graph), "Graph.RemoveEdge. Should be topologic.Graph"
+    assert Topology.IsInstance(remEdg2, "Graph"), "Graph.RemoveEdge. Should be topologic.Graph"
 
     # Case 31 - RemoveVertex
     print("Case 31")
     # test 1
     remVer1 = Graph.RemoveVertex(graph_ve2, v0)                          # without optional inputs
-    assert isinstance(remVer1, topologic.Graph), "Graph.RemoveVertex. Should be topologic.Graph"
+    assert Topology.IsInstance(remVer1, "Graph"), "Graph.RemoveVertex. Should be topologic.Graph"
     # test 2
     remVer2 = Graph.RemoveVertex(graph_ve1, v1, 0.0001)           # with optional inputs
-    assert isinstance(remVer2, topologic.Graph), "Graph.RemoveVertex. Should be topologic.Graph"
+    assert Topology.IsInstance(remVer2, "Graph"), "Graph.RemoveVertex. Should be topologic.Graph"
 
     # Case 32 - ShortestPath
     print("Case 32")
     # test 1
     sp1 = Graph.ShortestPath(graph_ve,v1,v4)
-    assert isinstance(sp1, topologic.Wire), "Graph.ShortestPath. Should be topologic.Wire"
+    assert Topology.IsInstance(sp1, "Wire"), "Graph.ShortestPath. Should be topologic.Wire"
 
     # Case 33 - ShortestPaths
     print("Case 33")
@@ -419,10 +419,10 @@ def test_main():
     g_temp = Graph.ByTopology(c, toExteriorTopologies=True)
     v_temp = Graph.Vertices(g_temp)[0]
     graphTr1 = Graph.Tree(g_temp)                               # without optional inputs
-    assert isinstance(graphTr1, topologic.Graph), "Graph.Tree. Should be topologic.Graph"
+    assert Topology.IsInstance(graphTr1, "Graph"), "Graph.Tree. Should be topologic.Graph"
     # test 2
     graphTr2 = Graph.Tree(g_temp, v_temp, 0.0001)                   # with optional inputs
-    assert isinstance(graphTr1, topologic.Graph), "Graph.Tree. Should be topologic.Graph"
+    assert Topology.IsInstance(graphTr1, "Graph"), "Graph.Tree. Should be topologic.Graph"
 
     # Case 38 - VertexDegree
     print("Case 38")
@@ -453,7 +453,7 @@ def test_main():
     f = Face.ByWires(Bound1, [Bound2])
     va = Topology.Vertices(Bound1)
     graphVG1 = Graph.VisibilityGraph(f, viewpointsA=va, viewpointsB=[])
-    assert isinstance(graphVG1, topologic.Graph), "Graph.VisibilityGraph. Should be topologic.Graph"
+    assert Topology.IsInstance(graphVG1, "Graph"), "Graph.VisibilityGraph. Should be topologic.Graph"
 
     # case 41 - NavigationGraph
     print("Case 41")
@@ -463,5 +463,5 @@ def test_main():
     f = Face.ByWires(Bound1, [Bound2])
     va = Topology.Vertices(Bound1)
     graphNG1 = Graph.NavigationGraph(f, sources=va, destinations=va, tolerance=0.001, progressBar=False)
-    assert isinstance(graphVG1, topologic.Graph), "Graph.NavigationGraph. Should be topologic.Graph"
+    assert Topology.IsInstance(graphVG1, "Graph"), "Graph.NavigationGraph. Should be topologic.Graph"
     print("End")
