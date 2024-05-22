@@ -1,18 +1,31 @@
 # Grid Classes unit test
 
-# importing libraries
+#Importing libraries
 import sys
-import topologicpy
+
+import topologicpy 
 import topologic_core as topologic
+from topologicpy.Aperture import Aperture
 from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
-from topologicpy.Cluster import Cluster
 from topologicpy.Wire import Wire
 from topologicpy.Face import Face
 from topologicpy.Shell import Shell
 from topologicpy.Cell import Cell
-from topologicy.Topology import Topology
+from topologicpy.CellComplex import CellComplex
+from topologicpy.Cluster import Cluster
+from topologicpy.Topology import Topology
+from topologicpy.Graph import Graph
+from topologicpy.Dictionary import Dictionary
+from topologicpy.Helper import Helper
+from topologicpy.Vector import Vector
+from topologicpy.Matrix import Matrix
+from topologicpy.Plotly import Plotly
+from topologicpy.Color import Color
+from topologicpy.Context import Context
 from topologicpy.Grid import Grid
+from topologicpy.Sun import Sun
+import math
 
 def test_main():
     print("Start")
