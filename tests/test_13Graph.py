@@ -355,7 +355,7 @@ def test_main():
     assert isinstance(graphO1, int), "Graph.Order. Should be integer"
     # test 2
     graphO2 = Graph.Order(graph_ve2)
-    assert isinstance(graphO1, int), "Graph.Order. Should be integer"
+    assert isinstance(graphO2, int), "Graph.Order. Should be integer"
 
     # Case 29 - Path
     print("Case 29")
@@ -364,7 +364,7 @@ def test_main():
     assert Topology.IsInstance(path1, "Wire"), "Graph.Path. Should be topologic.Wire"
     # test 2
     path2 = Graph.Path(graph_ve2, v0, v3)
-    assert Topology.IsInstance(path1, "Wire"), "Graph.Path. Should be topologic.Wire"
+    assert Topology.IsInstance(path2, "Wire"), "Graph.Path. Should be topologic.Wire"
 
     # Case 30 - RemoveEdge
     print("Case 30")
@@ -433,7 +433,7 @@ def test_main():
     assert Topology.IsInstance(graphTr1, "Graph"), "Graph.Tree. Should be topologic.Graph"
     # test 2
     graphTr2 = Graph.Tree(g_temp, v_temp, 0.0001)                   # with optional inputs
-    assert Topology.IsInstance(graphTr1, "Graph"), "Graph.Tree. Should be topologic.Graph"
+    assert Topology.IsInstance(graphTr2, "Graph"), "Graph.Tree. Should be topologic.Graph"
 
     # Case 38 - VertexDegree
     print("Case 38")
@@ -445,7 +445,7 @@ def test_main():
     assert isinstance(graphVD1, int), "Graph.VertexDegree. Should be integer"
     # test 2
     graphVD2 = Graph.VertexDegree(graph_ve2, v9)
-    assert isinstance(graphVD1, int), "Graph.VertexDegree. Should be integer"
+    assert isinstance(graphVD2, int), "Graph.VertexDegree. Should be integer"
 
     # Case  39 - Vertices
     print("Case 39")
@@ -474,5 +474,5 @@ def test_main():
     f = Face.ByWires(Bound1, [Bound2])
     va = Topology.Vertices(Bound1)
     graphNG1 = Graph.NavigationGraph(f, sources=va, destinations=va, tolerance=0.001, progressBar=False)
-    assert Topology.IsInstance(graphVG1, "Graph"), "Graph.NavigationGraph. Should be topologic.Graph"
+    assert Topology.IsInstance(graphNG1, "Graph"), "Graph.NavigationGraph. Should be topologic.Graph"
     print("End")
