@@ -139,14 +139,14 @@ def test_main():
     print("Case 9")
     e5 = Edge.ByStartVertexEndVertex(v0,v3)
     # test 1
-    col_1 = Edge.IsCollinear(e1,e5, mantissa=3)                                         # without optional inputs
+    col_1 = Edge.IsCollinear(e1,e5)                                         # without optional inputs
     assert isinstance(col_1, bool), "Edge.IsCollinear. Should be bool"
     # test 2
     col_2 = Edge.IsCollinear(e1,e3, mantissa=3)                                         # without optional inputs
     assert isinstance(col_2, bool), "Edge.IsCollinear. Should be bool"
     # test 3
-    col_1 = Edge.IsCollinear(e1,e5, mantissa=3, tolerance=0.001)     # with optional inputs
-    assert isinstance(col_1, bool), "Edge.IsCollinear. Should be bool"
+    col_3 = Edge.IsCollinear(e1,e5, mantissa=3, tolerance=0.001)     # with optional inputs
+    assert isinstance(col_3, bool), "Edge.IsCollinear. Should be bool"
 
     # Case 10 - IsParallel
     print("Case 10")

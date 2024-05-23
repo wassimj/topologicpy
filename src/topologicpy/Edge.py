@@ -620,7 +620,21 @@ class Edge():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
         import numpy as np
+
+        if not Topology.IsInstance(edgeA, "Edge"):
+            print("Edge.IsCollinear - Error: The input parameter edgeA is not a valid edge. Returning None")
+            return None
+        if not Topology.IsInstance(edgeB, "Edge"):
+            print("Edge.IsCollinear - Error: The input parameter edgeB is not a valid edge. Returning None")
+            return None
+        if Edge.Length(edgeA) < tolerance:
+            print("Edge.IsCollinear - Error: The length of edgeA is less than the tolerance. Returning None")
+            return None
+        if Edge.Length(edgeB) < tolerance:
+            print("Edge.IsCollinear - Error: The length of edgeB is less than the tolerance. Returning None")
+            return None
         # Calculate coefficients A, B, C from edgeA
         start_a = Edge.StartVertex(edgeA)
         end_a = Edge.EndVertex(edgeA)
@@ -642,7 +656,7 @@ class Edge():
         distance_end = abs(A * x0 + B * y0 + C)
 
         # Check if both distances are within tolerance
-        return distance_start < tolerance and distance_end < tolerance
+        return bool(distance_start < tolerance) and bool(distance_end < tolerance)
     
     @staticmethod
     def IsParallel(edgeA, edgeB, mantissa: int = 6, angTolerance: float = 0.1) -> bool:
