@@ -3199,6 +3199,146 @@ class Topology():
             return True
         return False
 
+
+    def ExportToDXF(topologies, path,  overwrite=False):
+        """
+        Exports the input topology to a DXF file. See https://en.wikipedia.org/wiki/AutoCAD_DXF.
+        THe DXF version is 'R2010'
+        This is experimental and only geometry is exported.
+
+        Parameters
+        ----------
+        topologies : list or topologic_core.Topology
+            The input list of topologies. This can also be a single topologic_core.Topology.
+        path : str
+            The input file path.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+
+        Returns
+        -------
+        bool
+            True if the export operation is successful. False otherwise.
+
+        """
+        import os
+        import warnings
+
+        try:
+            import ezdxf
+        except:
+            print("Topology.ExportToDXF - Information: Installing required ezdxf library.")
+            try:
+                os.system("pip install ezdxf")
+            except:
+                os.system("pip install ezdxf --user")
+            try:
+                import ezdxf
+                print("Topology.ExportToDXF - Information: ezdxf library installed successfully.")
+            except:
+                warnings.warn("Topology.ExportToDXF - Error: Could not import ezdxf library. Please install it manually. Returning None.")
+                return None
+        
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
+        from os.path import exists
+        if not isinstance(topologies, list):
+            topologies = [topologies]
+        topologies = [topology for topology in topologies if Topology.IsInstance(topology, "Topology")]
+        if len(topologies) < 1:
+            print("Topology.ExportToDXF - Error: The inupt list parameter topologies does not contain any valid topologies. Returning None.")
+        # Make sure the file extension is .brep
+        ext = path[len(path)-4:len(path)]
+        if ext.lower() != ".dxf":
+            path = path+".dxf"
+        if not overwrite and exists(path):
+            print("Topology.ExportToDXF - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
+        
+        def add_vertices(vertices, msp):
+            for v in vertices:
+                if Topology.IsInstance(v, "Vertex"):
+                    msp.add_point((Vertex.X(v), Vertex.Y(v), Vertex.Z(v)))
+        def add_edges(edges, msp):
+            for e in edges:
+                if Topology.IsInstance(e, "Edge"):
+                    sv = Edge.StartVertex(e)
+                    ev = Edge.EndVertex(e)
+                    start = (Vertex.X(sv), Vertex.Y(sv), Vertex.Z(sv))
+                    end = (Vertex.X(ev), Vertex.Y(ev), Vertex.Z(ev))
+                    msp.add_line(start, end)
+        def add_wires(wires, msp):
+            for i, w in enumerate(wires):
+                if Topology.IsInstance(w, "Wire"):
+                    block_name = "Wire_"+str(i+1).zfill(3)
+                    block = doc.blocks.new(name=block_name)
+                    # Add edges to the block
+                    edges = Topology.Edges(w)
+                    for edge in edges:
+                        sv = Edge.StartVertex(edge)
+                        ev = Edge.EndVertex(edge)
+                        start = (Vertex.X(sv), Vertex.Y(sv), Vertex.Z(sv))
+                        end = (Vertex.X(ev), Vertex.Y(ev), Vertex.Z(ev))
+                        block.add_line(start, end)
+                    # Insert the block into the model space
+                    msp.add_blockref(block_name, insert=(0, 0, 0))
+        def add_meshes(meshes, msp):
+            for m in meshes:
+                data = Topology.Geometry(m)
+                vertices = data['vertices']
+                faces = data['faces']
+                mesh = msp.add_mesh()
+                mesh.dxf.subdivision_levels = 0
+                with mesh.edit_data() as mesh_data:
+                    mesh_data.vertices = vertices
+                    mesh_data.faces = faces
+        # Create a new DXF document
+        doc = ezdxf.new(dxfversion='R2010')
+        msp = doc.modelspace()
+        i = 1
+        for topology in topologies:
+            if Topology.IsInstance(topology, "Vertex"):
+                add_vertices([topology], msp)
+            elif Topology.IsInstance(topology, "Edge"):
+                add_edges([topology], msp)
+            elif Topology.IsInstance(topology, "Wire"):
+                add_wires([topology], msp)
+            elif Topology.IsInstance(topology, "Face"):
+                add_meshes([topology], msp)
+            elif Topology.IsInstance(topology, "Shell"):
+                add_meshes([topology], msp)
+            elif Topology.IsInstance(topology, "Cell"):
+                add_meshes([topology], msp)
+            elif Topology.IsInstance(topology, "CellComplex"):
+                add_meshes([topology], msp)
+            elif Topology.IsInstance(topology, "Cluster"):
+                cellComplexes = Topology.CellComplexes(topology)
+                add_meshes(cellComplexes, msp)
+                cells = Cluster.FreeCells(topology)
+                add_meshes(cells, msp)
+                shells = Cluster.FreeShells(topology)
+                add_meshes(shells, msp)
+                faces = Cluster.FreeFaces(topology)
+                add_meshes(faces, msp)
+                wires = Cluster.FreeWires(topology)
+                add_wires(wires, msp)
+                edges = Cluster.FreeEdges(topology)
+                add_edges(edges, msp)
+                vertices = Cluster.FreeVertices(topology)
+                add_vertices(vertices, msp)
+        
+        # Save the DXF document
+        status = False
+        try:
+            doc.saveas(path)
+            status = True
+        except:
+            status = False
+        return status
+
     '''
     @staticmethod
     def ExportToIPFS(topology, url, port, user, password):

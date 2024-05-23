@@ -635,25 +635,45 @@ class Edge():
         if Edge.Length(edgeB) < tolerance:
             print("Edge.IsCollinear - Error: The length of edgeB is less than the tolerance. Returning None")
             return None
-        # Calculate coefficients A, B, C from edgeA
+        
+        # Get start and end points of the first edge
         start_a = Edge.StartVertex(edgeA)
         end_a = Edge.EndVertex(edgeA)
-        A = Vertex.Y(end_a, mantissa=mantissa) - Vertex.Y(start_a, mantissa=mantissa)
-        B = -(Vertex.X(end_a, mantissa=mantissa) - Vertex.X(start_a, mantissa=mantissa))
-        norm = np.sqrt(A ** 2 + B ** 2)
-        A /= norm
-        B /= norm
-        C = -(A * Vertex.X(start_a, mantissa=mantissa) + B * Vertex.Y(start_a, mantissa=mantissa))
+        start_a_coords = np.array([Vertex.X(start_a), Vertex.Y(start_a), Vertex.Z(start_a)])
+        end_a_coords = np.array(
+            [Vertex.X(end_a, mantissa=mantissa), Vertex.Y(end_a, mantissa=mantissa), Vertex.Z(end_a, mantissa=mantissa)])
 
-        # Calculate perpendicular distance for start vertex of edgeB
+        # Calculate the direction vector of the first edge
+        direction_a = end_a_coords - start_a_coords
+
+        # Normalize the direction vector
+        norm_a = np.linalg.norm(direction_a)
+        if norm_a == 0:
+            print("Edge.IsCollinear - Error: Division by zero. Returning None.")
+            return None
+        direction_a /= norm_a
+
+        # Function to calculate perpendicular distance from a point to the line defined by a point and direction vector
+        def distance_from_line(point, line_point, line_dir):
+            point = np.array([Vertex.X(point, mantissa=mantissa), Vertex.Y(point, mantissa=mantissa),
+                            Vertex.Z(point, mantissa=mantissa)])
+            line_point = np.array(line_point)
+            diff = point - line_point
+            cross_product = np.cross(diff, line_dir)
+            line_dir_norm = np.linalg.norm(line_dir)
+            if line_dir_norm == 0:
+                print("Edge.IsCollinear - Error: Division by zero. Returning None.")
+                return None
+            distance = np.linalg.norm(cross_product) / np.linalg.norm(line_dir)
+            return distance
+
+        # Get start and end points of the second edge
         start_b = Edge.StartVertex(edgeB)
-        x0, y0 = Vertex.X(start_b, mantissa=mantissa), Vertex.Y(start_b, mantissa=mantissa)
-        distance_start = abs(A * x0 + B * y0 + C)
-
-        # Calculate perpendicular distance for end vertex of edgeB
         end_b = Edge.EndVertex(edgeB)
-        x0, y0 = Vertex.X(end_b, mantissa=mantissa), Vertex.Y(end_b, mantissa=mantissa)
-        distance_end = abs(A * x0 + B * y0 + C)
+
+        # Calculate distances for start and end vertices of the second edge to the line defined by the first edge
+        distance_start = distance_from_line(start_b, start_a_coords, direction_a)
+        distance_end = distance_from_line(end_b, start_a_coords, direction_a)
 
         # Check if both distances are within tolerance
         return bool(distance_start < tolerance) and bool(distance_end < tolerance)
