@@ -266,7 +266,7 @@ class Wire(Topology):
         return boundingRectangle
 
     @staticmethod
-    def ByEdges(edges: list, tolerance: float = 0.0001):
+    def ByEdges(edges: list, orient: bool = False, tolerance: float = 0.0001):
         """
         Creates a wire from the input list of edges.
 
@@ -274,6 +274,8 @@ class Wire(Topology):
         ----------
         edges : list
             The input list of edges.
+        orient : bool , optional
+            If set to True the edges are oriented head to tail. Otherwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001
 
@@ -285,6 +287,7 @@ class Wire(Topology):
         """
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+
         if not isinstance(edges, list):
             return None
         edgeList = [x for x in edges if Topology.IsInstance(x, "Edge")]
@@ -299,7 +302,8 @@ class Wire(Topology):
             print("Wire.ByEdges - Error: The operation failed. Returning None.")
             wire = None
         if Wire.IsManifold(wire):
-            wire = Wire.OrientEdges(wire, Wire.StartVertex(wire), tolerance=tolerance)
+            if orient == True:
+                wire = Wire.OrientEdges(wire, Wire.StartVertex(wire), tolerance=tolerance)
         return wire
 
     @staticmethod
@@ -570,7 +574,7 @@ class Wire(Topology):
             print("Wire.ByVertices - Error: The number of edges is less than 1. Returning None.")
             return None
         elif len(edges) == 1:
-            wire = Wire.ByEdges(edges)
+            wire = Wire.ByEdges(edges, orient=False)
         else:
             wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
         return wire
@@ -1937,7 +1941,6 @@ class Wire(Topology):
             return None
         oriented_edges = []
         remaining_edges = Topology.Edges(wire)
-
         current_vertex = vertexA
         while remaining_edges:
             next_edge = None
