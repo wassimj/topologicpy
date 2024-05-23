@@ -526,7 +526,6 @@ class Vector(list):
         if np.isclose(dot_product, 1.0) or np.isclose(dot_product, -1.0):
             return True
         else:
-            # Compute bisecting vector
             return False
     
     @staticmethod

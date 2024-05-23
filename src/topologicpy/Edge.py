@@ -597,9 +597,10 @@ class Edge():
 
 
     @staticmethod
-    def IsCollinear(edgeA, edgeB, mantissa: int = 6, angTolerance: float = 0.1, tolerance: float = 0.0001) -> bool:
+    def IsCollinear(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001) -> bool:
         """
         Return True if the two input edges are collinear. Returns False otherwise.
+        This code is based on a contribution by https://github.com/gaoxipeng
 
         Parameters
         ----------
@@ -609,8 +610,6 @@ class Edge():
             The second input edge.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
-        angTolerance : float , optional
-            The angular tolerance used for the test. The default is 0.1.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -621,26 +620,29 @@ class Edge():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
+        import numpy as np
+        # Calculate coefficients A, B, C from edgeA
+        start_a = Edge.StartVertex(edgeA)
+        end_a = Edge.EndVertex(edgeA)
+        A = Vertex.Y(end_a, mantissa=mantissa) - Vertex.Y(start_a, mantissa=mantissa)
+        B = -(Vertex.X(end_a, mantissa=mantissa) - Vertex.X(start_a, mantissa=mantissa))
+        norm = np.sqrt(A ** 2 + B ** 2)
+        A /= norm
+        B /= norm
+        C = -(A * Vertex.X(start_a, mantissa=mantissa) + B * Vertex.Y(start_a, mantissa=mantissa))
 
-        if not Topology.IsInstance(edgeA, "Edge"):
-            print("Edge.IsCollinear - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
-            return None
-        if not Topology.IsInstance(edgeB, "Edge"):
-            print("Edge.IsCollinear - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
-            return None
-        ang = Edge.Angle(edgeA, edgeB, mantissa=mantissa, bracket=True)
-        svA = Edge.StartVertex(edgeA)
-        evA = Edge.EndVertex(edgeA)
-        svB = Edge.StartVertex(edgeB)
-        evB = Edge.EndVertex(edgeB)
-        d1 = Vertex.Distance(svA, svB)
-        d2 = Vertex.Distance(svA, evB)
-        d3 = Vertex.Distance(evA, svB)
-        d4 = Vertex.Distance(evA, evB)
-        if (d1 < tolerance or d2 < tolerance or d3 < tolerance or d4 < tolerance) and (abs(ang) < angTolerance or (abs(180 - ang) < angTolerance)):
-            return True
-        return False
+        # Calculate perpendicular distance for start vertex of edgeB
+        start_b = Edge.StartVertex(edgeB)
+        x0, y0 = Vertex.X(start_b, mantissa=mantissa), Vertex.Y(start_b, mantissa=mantissa)
+        distance_start = abs(A * x0 + B * y0 + C)
+
+        # Calculate perpendicular distance for end vertex of edgeB
+        end_b = Edge.EndVertex(edgeB)
+        x0, y0 = Vertex.X(end_b, mantissa=mantissa), Vertex.Y(end_b, mantissa=mantissa)
+        distance_end = abs(A * x0 + B * y0 + C)
+
+        # Check if both distances are within tolerance
+        return distance_start < tolerance and distance_end < tolerance
     
     @staticmethod
     def IsParallel(edgeA, edgeB, mantissa: int = 6, angTolerance: float = 0.1) -> bool:

@@ -485,7 +485,7 @@ class Wire(Topology):
                     if len(st) > 1:
                         e1 = st[0]
                         e2 = st[1]
-                        if not Edge.IsCollinear(e1, e2, angTolerance=angTolerance, tolerance=tolerance):
+                        if not Edge.IsCollinear(e1, e2, tolerance=tolerance):
                             e1 = Edge.Reverse(e1, tolerance=tolerance)
                             bisector = Edge.ByVertices([vertices[i], newVertices[i]], tolerance=tolerance)
                             nv = Edge.VertexByDistance(bisector, distance=finalMiterThreshold, origin=Edge.StartVertex(bisector), tolerance=0.0001)
@@ -510,7 +510,7 @@ class Wire(Topology):
             for v in vertices:
                 edges = Topology.SuperTopologies(v, c, topologyType="edge")
                 if len(edges) == 2:
-                    if not Edge.IsCollinear(edges[0], edges[1], angTolerance=angTolerance, tolerance=tolerance):
+                    if not Edge.IsCollinear(edges[0], edges[1], tolerance=tolerance):
                         adjacentVertices = Topology.AdjacentTopologies(v, c)
                         total = 0
                         for adjV in adjacentVertices:
@@ -2210,7 +2210,7 @@ class Wire(Topology):
                 edges = []
                 _ = aVertex.Edges(wire, edges)
                 if len(edges) > 1:
-                    if not Edge.IsCollinear(edges[0], edges[1], angTolerance=angTolerance, tolerance=tolerance):
+                    if not Edge.IsCollinear(edges[0], edges[1], tolerance=tolerance):
                         wire_verts.append(aVertex)
                 else:
                     wire_verts.append(aVertex)

@@ -3979,6 +3979,8 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Vector import Vector
         
         def getSubTopologies(topology, subTopologyClass):
             topologies = []
@@ -4053,6 +4055,7 @@ class Topology():
         elif (Topology.Type(topology) > Topology.TypeID("Face")):
             _ = topology.Faces(None, topFaces)
         for aFace in topFaces:
+            f_dir = Face.Normal(aFace)
             ib = []
             _ = aFace.InternalBoundaries(ib)
             if(len(ib) > 0):
@@ -4060,6 +4063,10 @@ class Topology():
                 for aTriFace in triFaces:
                     wire = aTriFace.ExternalBoundary()
                     faceVertices = getSubTopologies(wire, topologic.Vertex)
+                    temp_face = Face.ByWire(wire)
+                    temp_dir = Face.Normal(temp_face)
+                    if Vector.IsAntiParallel(f_dir, temp_dir):
+                        faceVertices.reverse()
                     f = []
                     for aVertex in faceVertices:
                         try:
@@ -4073,6 +4080,10 @@ class Topology():
                 wire =  aFace.ExternalBoundary()
                 #wire = topologic.WireUtility.RemoveCollinearEdges(wire, 0.1) #This is an angle Tolerance
                 faceVertices = getSubTopologies(wire, topologic.Vertex)
+                temp_face = Face.ByWire(wire)
+                temp_dir = Face.Normal(temp_face)
+                if Vector.IsAntiParallel(f_dir, temp_dir):
+                    faceVertices.reverse()
                 f = []
                 for aVertex in faceVertices:
                     try:

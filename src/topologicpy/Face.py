@@ -927,7 +927,19 @@ class Face():
             The external boundary of the input face.
 
         """
-        return face.ExternalBoundary()
+        from topologicpy.Vector import Vector
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        eb = face.ExternalBoundary()
+        f_dir = Face.Normal(face)
+        faceVertices = Topology.Vertices(eb)
+        temp_face = Face.ByWire(eb)
+        temp_dir = Face.Normal(temp_face)
+        if Vector.IsAntiParallel(f_dir, temp_dir):
+            faceVertices.reverse()
+        eb = Wire.ByVertices(faceVertices)
+        return eb
     
     @staticmethod
     def FacingToward(face, direction: list = [0,0,-1], asVertex: bool = False, tolerance: float = 0.0001) -> bool:
@@ -2313,7 +2325,7 @@ class Face():
             The external boundary of the input face.
 
         """
-        return face.ExternalBoundary()
+        return Face.ExternalBoundary(face)
     
     @staticmethod
     def Wires(face) -> list:
