@@ -1503,7 +1503,7 @@ class Topology():
     @staticmethod
     def ByBREPPath(path):
         """
-        IMports a topology from a BREP file path.
+        Imports a topology from a BREP file path.
 
         Parameters
         ----------
@@ -1525,7 +1525,172 @@ class Topology():
             print("Topology.ByBREPPath - Error: the BREP file is not a valid file. Returning None.")
             return None
         return Topology.ByBREPFile(file)
-    
+
+    @staticmethod
+    def ByDXFFile(file):
+        """
+        Imports a list of topologies from a DXF file.
+        This is an experimental method with limited capabilities.
+
+        Parameters
+        ----------
+        file : a DXF file object
+            The DXF file object.
+
+        Returns
+        -------
+        list
+            The list of imported topologies.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Topology import Topology
+
+        try:
+            import ezdxf
+        except:
+            print("Topology.ByDXFFile - Information: Installing required ezdxf library.")
+            try:
+                os.system("pip install ezdxf")
+            except:
+                os.system("pip install ezdxf --user")
+            try:
+                import ezdxf
+                print("Topology.ByDXFFile - Information: ezdxf library installed successfully.")
+            except:
+                warnings.warn("Topology.ByDXFFile - Error: Could not import ezdxf library. Please install it manually. Returning None.")
+                return None
+
+        if not file:
+            print("Topology.ByDXFFile - Error: the input file parameter is not a valid file. Returning None.")
+            return None
+        
+        def convert_entity(entity):
+            entity_type = entity.dxftype()
+            converted_entity = None
+
+            if entity_type == 'POINT':
+                x, y, z = entity.dxf.location.x, entity.dxf.location.y, entity.dxf.location.z
+                converted_entity = Vertex.ByCoordinates(x, y, z)
+
+            elif entity_type == 'LINE':
+                start = Vertex.ByCoordinates(entity.dxf.start.x, entity.dxf.start.y, entity.dxf.start.z)
+                end = Vertex.ByCoordinates(entity.dxf.end.x, entity.dxf.end.y, entity.dxf.end.z)
+                converted_entity = Edge.ByVertices(start, end)
+
+            elif entity_type == 'CIRCLE':
+                origin = Vertex.ByCoordinates(entity.dxf.center.x, entity.dxf.center.y, entity.dxf.center.z)
+                radius = entity.dxf.radius
+                converted_entity = Wire.Circle(origin, radius)
+
+            elif entity_type in ['POLYLINE', 'LWPOLYLINE']:
+                vertices = [Vertex.ByCoordinates(p[0], p[1], p[2]) for p in entity.points()]
+                converted_entity = Wire.ByVertices(vertices)
+
+            elif entity_type == 'ARC':
+                vertices = [Vertex.ByCoordinates(p.x, p.y, p.z) for p in entity.vertices()]
+                converted_entity = Wire.ByVertices(vertices)
+
+            elif entity_type == 'MESH':
+                vertices = [list(v) for v in entity.vertices]
+                faces = [list(face) for face in entity.faces]
+                converted_entity = Topology.SelfMerge(Topology.ByGeometry(vertices=vertices, faces=faces))
+                # Try Cell
+                temp = Cell.ByFaces(Topology.Faces(converted_entity), silent=True)
+                if not Topology.IsInstance(temp, "Cell"):
+                    temp = CellComplex.ByFaces(Topology.Faces(converted_entity))
+                    if not Topology.IsInstance(temp, "CellComplex"):
+                        temp = Shell.ByFaces(Topology.Faces(converted_entity))
+                        if not Topology.IsInstance(temp, "Shell"):
+                            temp = converted_entity
+                converted_entity = temp
+            return converted_entity
+
+        def convert_insert(entity, file):
+            block_name = entity.dxf.name
+            block = file.blocks.get(block_name)
+            converted_entities = []
+
+            for block_entity in block:
+                converted_entity = convert_entity(block_entity)
+                if converted_entity is not None:
+                    converted_entities.append(converted_entity)
+
+            x, y, z = [entity.dxf.insert.x, entity.dxf.insert.y, entity.dxf.insert.z]
+            return [Topology.Translate(obj, x, y, z) for obj in converted_entities]
+
+        def convert_dxf_to_custom_types(file):
+            # Read the DXF file
+            msp = file.modelspace()
+
+            # Store the converted entities
+            converted_entities = []
+
+            # Process each entity in the model space
+            for entity in msp:
+                entity_type = entity.dxftype()
+                if entity_type in ['TEXT', 'MTEXT']:
+                    continue  # Ignore TEXT and MTEXT
+
+                if entity_type == 'INSERT':
+                    converted_entities.extend(convert_insert(entity, file))
+                else:
+                    converted_entity = convert_entity(entity)
+                    if converted_entity is not None:
+                        converted_entities.append(converted_entity)
+
+            return converted_entities
+        converted_entities = convert_dxf_to_custom_types(file)
+        return converted_entities
+
+    @staticmethod
+    def ByDXFPath(path):
+        """
+        Imports a list of topologies from a DXF file path.
+        This is an experimental method with limited capabilities.
+
+        Parameters
+        ----------
+        path : str
+            The path to the DXF file.
+
+        Returns
+        -------
+        list
+            The list of imported topologies.
+
+        """
+        try:
+            import ezdxf
+        except:
+            print("Topology.ExportToDXF - Information: Installing required ezdxf library.")
+            try:
+                os.system("pip install ezdxf")
+            except:
+                os.system("pip install ezdxf --user")
+            try:
+                import ezdxf
+                print("Topology.ByDXFPath - Information: ezdxf library installed successfully.")
+            except:
+                warnings.warn("Topology.ByDXFPath - Error: Could not import ezdxf library. Please install it manually. Returning None.")
+                return None
+        if not path:
+            print("Topology.ByDXFPath - Error: the input path parameter is not a valid path. Returning None.")
+            return None
+        try:
+            file = ezdxf.readfile(path)
+        except:
+            file = None
+        if not file:
+            print("Topology.ByDXFPath - Error: the input file parameter is not a valid file. Returning None.")
+            return None
+        return Topology.ByDXFFile(file)
+
     @staticmethod
     def ByIFCFile(file, transferDictionaries=False, includeTypes=[], excludeTypes=[]):
         """
@@ -1648,7 +1813,6 @@ class Topology():
         try:
             file = ifcopenshell.open(path)
         except:
-            print("Topology.ByIFCPath - Error: the input file parameter is not a valid file. Returning None.")
             file = None
         if not file:
             print("Topology.ByIFCPath - Error: the input file parameter is not a valid file. Returning None.")
