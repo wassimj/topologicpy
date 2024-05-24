@@ -1909,7 +1909,7 @@ class Face():
         return Face.ByWire(wire)
     
     @staticmethod
-    def Star(origin= None, radiusA: float = 1.0, radiusB: float = 0.4, rays: int = 5, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+    def Star(origin= None, radiusA: float = 0.5, radiusB: float = 0.2, rays: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a star.
 

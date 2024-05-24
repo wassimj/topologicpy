@@ -871,6 +871,7 @@ class Topology():
         See Topology.Boolean().
 
         """
+        from topologicpy.Cluster import Cluster
 
         if topologyA == None:
             return None
@@ -884,27 +885,24 @@ class Topology():
             topologyA = topologyB
             topologyB = temp
         
-        if Topology.IsInstance(topologyB, "CellComplex") or Topology.IsInstance(topologyB, "Cluster"):
-            merge = Topology.Merge(topologyA, topologyB)
-            symdif = Topology.SymDif(topologyA, topologyB)
-            return Topology.Difference(merge, symdif)
+        results = []
+        if Topology.IsInstance(topologyA, "CellComplex"):
+           cellsA = Topology.Cells(topologyA)
         else:
-        # Vertex:
-            if Topology.IsInstance(topologyA, "Vertex"):
-                # Vertex:
-                if Topology.IsInstance(topologyB, "Vertex"):
-                    if Vertex.Distance(topologyA, topologyB) < tolerance:
-                        return topologyA
-                    else:
-                        return None
-                # Edge/Wire/Face/Shell/Cell:
-                else:
-                    if Vertex.IsInternal(topologyA, topologyB):
-                        return topologyA
-                    else:
-                        return None
+            cellsA = [topologyA]
+        for cellA in cellsA:
+            if Topology.IsInstance(topologyB, "CellComplex"):
+                cellsB = Topology.Cells(topologyB)
             else:
-                return topologyA.Intersect(topologyB)
+                cellsB = [topologyB]
+            for cellB in cellsB:
+                cellC = cellA.Intersect(cellB)
+                results.append(cellC)
+        results = [x for x in results if results is not None]
+        if len(results) == 1:
+            return results[0]
+        else:
+            return Topology.SelfMerge(Topology.SelfMerge(Cluster.ByTopologies(results)))
     
     @staticmethod
     def SymmetricDifference(topologyA, topologyB, tranDict=False, tolerance=0.0001):
