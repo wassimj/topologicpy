@@ -248,7 +248,7 @@ class Vector(list):
         return [x, y, z]
     
     @staticmethod
-    def ByVertices(vertices, normalize=True):
+    def ByVertices(vertices, normalize: bool = True, mantissa: int = 6):
         """
         Creates a vector by the specified input list of vertices.
 
@@ -258,6 +258,8 @@ class Vector(list):
             The the input list of topologic vertices. The first element in the list is considered the start vertex. The last element in the list is considered the end vertex.
         normalize : bool , optional
             If set to True, the resulting vector is normalized (i.e. its length is set to 1)
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -278,7 +280,7 @@ class Vector(list):
             return None
         v1 = vertices[0]
         v2 = vertices[-1]
-        vector = [Vertex.X(v2)-Vertex.X(v1), Vertex.Y(v2)-Vertex.Y(v1), Vertex.Z(v2)-Vertex.Z(v1)]
+        vector = [Vertex.X(v2, mantissa=mantissa)-Vertex.X(v1, mantissa=mantissa), Vertex.Y(v2, mantissa=mantissa)-Vertex.Y(v1, mantissa=mantissa), Vertex.Z(v2, mantissa=mantissa)-Vertex.Z(v1, mantissa=mantissa)]
         if normalize:
             vector = Vector.Normalize(vector)
         return vector

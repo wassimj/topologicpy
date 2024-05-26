@@ -348,6 +348,7 @@ class Edge():
             The direction of the input edge.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Vector import Vector
         from topologicpy.Topology import Topology
 
@@ -356,9 +357,9 @@ class Edge():
             return None
         ev = edge.EndVertex()
         sv = edge.StartVertex()
-        x = ev.X() - sv.X()
-        y = ev.Y() - sv.Y()
-        z = ev.Z() - sv.Z()
+        x = Vertex.X(ev, mantissa=mantissa) - Vertex.X(sv, mantissa=mantissa)
+        y = Vertex.Y(ev, mantissa=mantissa) - Vertex.Y(sv, mantissa=mantissa)
+        z = Vertex.Z(ev, mantissa=mantissa) - Vertex.Z(sv, mantissa=mantissa)
         uvec = Vector.Normalize([x,y,z])
         x = round(uvec[0], mantissa)
         y = round(uvec[1], mantissa)
@@ -538,7 +539,7 @@ class Edge():
         return None
 
     @staticmethod
-    def Intersect2D(edgeA, edgeB, silent: bool = False):
+    def Intersect2D(edgeA, edgeB, mantissa: int = 6, silent: bool = False):
         """
         Returns the intersection of the two input edges as a topologic_core.Vertex. This works only in the XY plane. Z coordinates are ignored.
 
@@ -548,6 +549,8 @@ class Edge():
             The first input edge.
         edgeB : topologic_core.Edge
             The second input edge.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         silent : bool , optional
             If set to False, error and warning messages are displayed. Otherwise they are not. The default is False.
 
@@ -573,14 +576,14 @@ class Edge():
         svb = Edge.StartVertex(edgeB)
         evb = Edge.EndVertex(edgeB)
         # Line AB represented as a1x + b1y = c1
-        a1 = Vertex.Y(eva) - Vertex.Y(sva)
-        b1 = Vertex.X(sva) - Vertex.X(eva)
-        c1 = a1*(Vertex.X(sva)) + b1*(Vertex.Y(sva))
+        a1 = Vertex.Y(eva, mantissa=mantissa) - Vertex.Y(sva, mantissa=mantissa)
+        b1 = Vertex.X(sva, mantissa=mantissa) - Vertex.X(eva, mantissa=mantissa)
+        c1 = a1*(Vertex.X(sva, mantissa=mantissa)) + b1*(Vertex.Y(sva, mantissa=mantissa))
  
         # Line CD represented as a2x + b2y = c2
-        a2 = Vertex.Y(evb) - Vertex.Y(svb)
-        b2 = Vertex.X(svb) - Vertex.X(evb)
-        c2 = a2*(Vertex.X(svb)) + b2*(Vertex.Y(svb))
+        a2 = Vertex.Y(evb, mantissa=mantissa) - Vertex.Y(svb, mantissa=mantissa)
+        b2 = Vertex.X(svb, mantissa=mantissa) - Vertex.X(evb, mantissa=mantissa)
+        c2 = a2*(Vertex.X(svb, mantissa=mantissa)) + b2*(Vertex.Y(svb, mantissa=mantissa))
  
         determinant = a1*b2 - a2*b1
  
@@ -639,7 +642,7 @@ class Edge():
         # Get start and end points of the first edge
         start_a = Edge.StartVertex(edgeA)
         end_a = Edge.EndVertex(edgeA)
-        start_a_coords = np.array([Vertex.X(start_a), Vertex.Y(start_a), Vertex.Z(start_a)])
+        start_a_coords = np.array([Vertex.X(start_a, mantissa=mantissa), Vertex.Y(start_a, mantissa=mantissa), Vertex.Z(start_a, mantissa=mantissa)])
         end_a_coords = np.array(
             [Vertex.X(end_a, mantissa=mantissa), Vertex.Y(end_a, mantissa=mantissa), Vertex.Z(end_a, mantissa=mantissa)])
 
@@ -1158,7 +1161,7 @@ class Edge():
         return edgeA
 
     @staticmethod
-    def VertexByDistance(edge, distance: float = 0.0, origin= None, tolerance: float = 0.0001):
+    def VertexByDistance(edge, distance: float = 0.0, origin= None, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates a vertex along the input edge offset by the input distance from the input origin.
 
@@ -1170,6 +1173,8 @@ class Edge():
             The offset distance. The default is 0.
         origin : topologic_core.Vertex , optional
             The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. The default is None.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1193,12 +1198,12 @@ class Edge():
             return None
         sv = edge.StartVertex()
         ev = edge.EndVertex()
-        vx = ev.X() - sv.X()
-        vy = ev.Y() - sv.Y()
-        vz = ev.Z() - sv.Z()
+        vx = Vertex.X(ev, mantissa=mantissa) - Vertex.X(sv, mantissa=mantissa)
+        vy = Vertex.Y(ev, mantissa=mantissa) - Vertex.Y(sv, mantissa=mantissa)
+        vz = Vertex.Z(ev, mantissa=mantissa) - Vertex.Z(sv, mantissa=mantissa)
         vector = Vector.Normalize([vx, vy, vz])
         vector = Vector.Multiply(vector, distance, tolerance)
-        return Vertex.ByCoordinates(origin.X()+vector[0], origin.Y()+vector[1], origin.Z()+vector[2])
+        return Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+vector[0], Vertex.Y(origin, mantissa=mantissa)+vector[1], Vertex.Z(origin, mantissa=mantissa)+vector[2])
     
     @staticmethod
     def VertexByParameter(edge, u: float = 0.0):

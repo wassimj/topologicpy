@@ -143,7 +143,7 @@ class Wire(Topology):
         return arc
     
     @staticmethod
-    def BoundingRectangle(topology, optimize: int = 0, tolerance=0.0001):
+    def BoundingRectangle(topology, optimize: int = 0, mantissa: int = 6, tolerance=0.0001):
         """
         Returns a wire representing a bounding rectangle of the input topology. The returned wire contains a dictionary with key "zrot" that represents rotations around the Z axis. If applied the resulting wire will become axis-aligned.
 
@@ -153,6 +153,8 @@ class Wire(Topology):
             The input topology.
         optimize : int , optional
             If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding rectangle. The default is 0.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -177,8 +179,8 @@ class Wire(Topology):
             x = []
             y = []
             for aVertex in vertices:
-                x.append(aVertex.X())
-                y.append(aVertex.Y())
+                x.append(Vertex.X(aVertex, mantissa=mantissa))
+                y.append(Vertex.Y(aVertex, mantissa=mantissa))
             minX = min(x)
             minY = min(y)
             maxX = max(x)
@@ -205,7 +207,7 @@ class Wire(Topology):
         w = Wire.ByVertices(vList)
         f = Face.ByWire(w, tolerance=tolerance)
         f_origin = Topology.Centroid(f)
-        normal = Face.Normal(f)
+        normal = Face.Normal(f, mantissa=mantissa)
         topology = Topology.Flatten(topology, origin=f_origin, direction=normal)
         
         boundingRectangle = br(topology)
@@ -757,7 +759,7 @@ class Wire(Topology):
         return new_wire
 
     @staticmethod
-    def ConvexHull(topology, tolerance: float = 0.0001):
+    def ConvexHull(topology, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns a wire representing the 2D convex hull of the input topology. The vertices of the topology are assumed to be coplanar.
 
@@ -765,6 +767,8 @@ class Wire(Topology):
         ----------
         topology : topologic_core.Topology
             The input topology.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
                 
@@ -875,13 +879,13 @@ class Wire(Topology):
             w = Wire.ByVertices(v)
             f = Face.ByWire(w, tolerance=tolerance)
             origin = Topology.Centroid(f)
-            normal = Face.Normal(f)
+            normal = Face.Normal(f, mantissa=mantissa)
             f = Topology.Flatten(f, origin=origin, direction=normal)
         topology = Topology.Flatten(topology, origin=origin, direction=normal)
         vertices = Topology.Vertices(topology)
         points = []
         for v in vertices:
-            points.append((Vertex.X(v), Vertex.Y(v)))
+            points.append((Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa)))
         hull = convex_hull(points, len(points))
         hull_vertices = []
         for p in hull:
@@ -1031,7 +1035,7 @@ class Wire(Topology):
         return edges
 
     @staticmethod
-    def Einstein(origin= None, radius: float = 0.5, direction: list = [0, 0, 1], placement: str = "center"):
+    def Einstein(origin= None, radius: float = 0.5, direction: list = [0, 0, 1], placement: str = "center", mantissa: int = 6):
         """
         Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physist). See https://arxiv.org/abs/2303.10798
 
@@ -1045,11 +1049,18 @@ class Wire(Topology):
             The vector representing the up direction of the ellipse. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the hexagon determining the location of the tile. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
-        
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        Returns
+        -------
+        topologic_core.Wire
+            The created wire.
+
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         import math
+
         def cos(angle):
             return math.cos(math.radians(angle))
         def sin(angle):
@@ -1074,9 +1085,9 @@ class Wire(Topology):
         
         if placement.lower() == "lowerleft":
             einstein = Topology.Translate(einstein, radius, d, 0)
-        dx = Vertex.X(origin)
-        dy = Vertex.Y(origin)
-        dz = Vertex.Z(origin)
+        dx = Vertex.X(origin, mantissa=mantissa)
+        dy = Vertex.Y(origin, mantissa=mantissa)
+        dz = Vertex.Z(origin, mantissa=mantissa)
         einstein = Topology.Translate(einstein, dx, dy, dz)
         if direction != [0, 0, 1]:
             einstein = Topology.Orient(einstein, origin=origin, dirA=[0, 0, 1], dirB=direction)

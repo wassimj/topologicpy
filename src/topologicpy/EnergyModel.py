@@ -128,7 +128,9 @@ class EnergyModel:
                    heatingTemp : float = 20.0,
                    defaultSpaceType : str = "189.1-2009 - Office - WholeBuilding - Lg Office - CZ4-8",
                    spaceNameKey : str = "TOPOLOGIC_name",
-                   spaceTypeKey : str = "TOPOLOGIC_type"):
+                   spaceTypeKey : str = "TOPOLOGIC_type",
+                   mantissa : int = 6,
+                   tolerance : float = 0.0001):
         """
             Creates an EnergyModel from the input topology and parameters.
 
@@ -165,6 +167,10 @@ class EnergyModel:
             The dictionary key to use to find the space name value. The default is "Name".
         spaceTypeKey : str , optional
             The dictionary key to use to find the space type value. The default is "Type".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -172,6 +178,7 @@ class EnergyModel:
             The created OSM model.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
@@ -229,7 +236,7 @@ class EnergyModel:
                 hf = bhf+thf
             else:
                 return None
-            floorLevels = [Vertex.Z(Topology.Centroid(f)) for f in hf]
+            floorLevels = [Vertex.Z(Topology.Centroid(f), mantissa=mantissa) for f in hf]
             floorLevels = list(set(floorLevels))
             floorLevels.sort()
             return floorLevels
@@ -294,7 +301,7 @@ class EnergyModel:
             building_cells = [building]
         for spaceNumber, buildingCell in enumerate(building_cells):
             osSpace = openstudio.model.Space(osModel)
-            osSpaceZ = buildingCell.CenterOfMass().Z()
+            osSpaceZ = Vertex.Z(buildingCell.CenterOfMass(), mantissa=mantissa)
             osBuildingStory = osBuildingStorys[0]
             for x in osBuildingStorys:
                 osBuildingStoryZ = x.nominalZCoordinate().get()
@@ -344,9 +351,9 @@ class EnergyModel:
                 for faceNumber, buildingFace in enumerate(cellFaces):
                     osFacePoints = []
                     for vertex in Topology.SubTopologies(buildingFace.ExternalBoundary(), "Vertex"):
-                        osFacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
+                        osFacePoints.append(openstudio.Point3d(Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex, mantissa=mantissa)))
                     osSurface = openstudio.model.Surface(osFacePoints, osModel)
-                    faceNormal = Face.Normal(buildingFace)
+                    faceNormal = Face.Normal(buildingFace, mantissa=mantissa)
                     osFaceNormal = openstudio.Vector3d(faceNormal[0], faceNormal[1], faceNormal[2])
                     osFaceNormal.normalize()
                     if osFaceNormal.dot(osSurface.outwardNormal()) < 1e-6:
@@ -376,9 +383,9 @@ class EnergyModel:
                                     osSubSurfacePoints = []
                                     apertureFace = Aperture.Topology(aperture)
                                     for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
-                                        osSubSurfacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
+                                        osSubSurfacePoints.append(openstudio.Point3d(Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex, mantissa=mantissa)))
                                     osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
-                                    apertureFaceNormal = Face.Normal(apertureFace)
+                                    apertureFaceNormal = Face.Normal(apertureFace, mantissa=mantissa)
                                     osSubSurfaceNormal = openstudio.Vector3d(apertureFaceNormal[0], apertureFaceNormal[1], apertureFaceNormal[2])
                                     osSubSurfaceNormal.normalize()
                                     if osSubSurfaceNormal.dot(osSubSurface.outwardNormal()) < 1e-6:
@@ -414,9 +421,9 @@ class EnergyModel:
                                 osSubSurfacePoints = []
                                 apertureFace = Aperture.Topology(aperture)
                                 for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
-                                    osSubSurfacePoints.append(openstudio.Point3d(vertex.X(), vertex.Y(), vertex.Z()))
+                                    osSubSurfacePoints.append(openstudio.Point3d(Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex.Z, mantissa=mantissa)))
                                 osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
-                                apertureFaceNormal = Face.Normal(apertureFace)
+                                apertureFaceNormal = Face.Normal(apertureFace, mantissa=mantissa)
                                 osSubSurfaceNormal = openstudio.Vector3d(apertureFaceNormal[0], apertureFaceNormal[1], apertureFaceNormal[2])
                                 osSubSurfaceNormal.normalize()
                                 if osSubSurfaceNormal.dot(osSubSurface.outwardNormal()) < 1e-6:
@@ -425,10 +432,10 @@ class EnergyModel:
                                 osSubSurface.setSurface(osSurface)
 
             osThermalZone = openstudio.model.ThermalZone(osModel)
-            osThermalZone.setVolume(Cell.Volume(buildingCell))
+            osThermalZone.setVolume(Cell.Volume(buildingCell, mantissa=mantissa))
             osThermalZone.setName(osSpace.name().get() + "_THERMAL_ZONE")
             osThermalZone.setUseIdealAirLoads(True)
-            osThermalZone.setVolume(Cell.Volume(buildingCell))
+            osThermalZone.setVolume(Cell.Volume(buildingCell, mantissa=mantissa))
             osThermalZone.setThermostatSetpointDualSetpoint(osThermostat)
             osSpace.setThermalZone(osThermalZone)
 
@@ -443,9 +450,9 @@ class EnergyModel:
             for faceIndex, shadingFace in enumerate(Topology.SubTopologies(shadingSurfaces, "Face")):
                 facePoints = []
                 for aVertex in Topology.SubTopologies(shadingFace.ExternalBoundary(), "Vertex"):
-                    facePoints.append(openstudio.Point3d(aVertex.X(), aVertex.Y(), aVertex.Z()))
+                    facePoints.append(openstudio.Point3d(Vertex.X(aVertex, mantissa=mantissa), Vertex.Y(aVertex, mantissa=mantissa), Vertex.Z(aVertex, mantissa=mantissa)))
                 aShadingSurface = openstudio.model.ShadingSurface(facePoints, osModel)
-                faceNormal = Face.Normal(shadingFace)
+                faceNormal = Face.Normal(shadingFace, mantissa=mantissa)
                 osFaceNormal = openstudio.Vector3d(faceNormal[0], faceNormal[1], faceNormal[2])
                 osFaceNormal.normalize()
                 if osFaceNormal.dot(aShadingSurface.outwardNormal()) < 0:

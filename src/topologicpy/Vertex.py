@@ -35,7 +35,7 @@ except:
 
 class Vertex():
     @staticmethod
-    def AreCollinear(vertices: list, tolerance: float = 0.0001):
+    def AreCollinear(vertices: list, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns True if the input list of vertices form a straight line. Returns False otherwise.
 
@@ -43,6 +43,8 @@ class Vertex():
         ----------
         vertices : list
             The input list of vertices.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 
@@ -57,9 +59,9 @@ class Vertex():
         from topologicpy.Vector import Vector
         import sys
         def areCollinear(vertices, tolerance=0.0001):
-            point1 = [Vertex.X(vertices[0]), Vertex.Y(vertices[0]), Vertex.Z(vertices[0])]
-            point2 = [Vertex.X(vertices[1]), Vertex.Y(vertices[1]), Vertex.Z(vertices[1])]
-            point3 = [Vertex.X(vertices[2]), Vertex.Y(vertices[2]), Vertex.Z(vertices[2])]
+            point1 = Vertex.Coordinates(vertices[0], mantissa=mantissa)
+            point2 = Vertex.Coordinates(vertices[1], mantissa=mantissa)
+            point3 = Vertex.Coordinates(vertices[2], mantissa=mantissa)
 
             vector1 = [point2[0] - point1[0], point2[1] - point1[1], point2[2] - point1[2]]
             vector2 = [point3[0] - point1[0], point3[1] - point1[1], point3[2] - point1[2]]
@@ -306,7 +308,7 @@ class Vertex():
         return vertex
     
     @staticmethod
-    def Centroid(vertices):
+    def Centroid(vertices: list, mantissa: int = 6):
         """
         Returns the centroid of the input list of vertices.
 
@@ -314,6 +316,8 @@ class Vertex():
         -----------
         vertices : list
             The input list of vertices
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
 
         Return
         ----------
@@ -332,9 +336,9 @@ class Vertex():
             return None
         if len(vertices) == 1:
             return vertices[0]
-        cx = sum(Vertex.X(v) for v in vertices) / len(vertices)
-        cy = sum(Vertex.Y(v) for v in vertices) / len(vertices)
-        cz = sum(Vertex.Z(v) for v in vertices) / len(vertices)
+        cx = sum(Vertex.X(v, mantissa=mantissa) for v in vertices) / len(vertices)
+        cy = sum(Vertex.Y(v, mantissa=mantissa) for v in vertices) / len(vertices)
+        cz = sum(Vertex.Z(v, mantissa=mantissa) for v in vertices) / len(vertices)
         return Vertex.ByCoordinates(cx, cy, cz)
     
     @staticmethod
@@ -379,9 +383,9 @@ class Vertex():
 
         if not Topology.IsInstance(vertex, "Vertex"):
             return None
-        x = round(vertex.X(), mantissa)
-        y = round(vertex.Y(), mantissa)
-        z = round(vertex.Z(), mantissa)
+        x = Vertex.X(vertex, mantissa)
+        y = Vertex.Y(vertex, mantissa)
+        z = Vertex.Z(vertex, mantissa)
         matrix = [[1, 0, 0, x],
                 [0, 1, 0, y],
                 [0, 0, 1, z],
@@ -402,7 +406,7 @@ class Vertex():
         return output
 
     @staticmethod
-    def CounterClockwise2D(vertices):
+    def CounterClockwise2D(vertices: list, mantissa: int = 6):
         """
         Sorts the input list of vertices in a counterclockwise fashion. This method assumes that the vertices are on the XY plane. The Z coordinate is ignored.
 
@@ -410,6 +414,8 @@ class Vertex():
         -----------
         vertices : list
             The input list of vertices
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
 
         Return
         -----------
@@ -417,10 +423,22 @@ class Vertex():
             The input list of vertices sorted in a counter clockwise fashion
         
         """
+        from topologicpy.Topology import Topology
         import math
+
+        if not isinstance(vertices, list):
+            print("Vertex.CounterClockwise2D - Error: The input vertices parameter is not a valid list. Returning None.")
+            return None
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        if len(vertices) < 1:
+            print("Vertex.CounterClockwise2D - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+            return None
+        if len(vertices) == 1:
+            return vertices[0]
+        
         # find the centroid of the points
-        cx = sum(Vertex.X(v) for v in vertices) / len(vertices)
-        cy = sum(Vertex.Y(v) for v in vertices) / len(vertices)
+        cx = sum(Vertex.X(v, mantissa=mantissa) for v in vertices) / len(vertices)
+        cy = sum(Vertex.Y(v, mantissa=mantissa) for v in vertices) / len(vertices)
 
         # sort the points based on their angle with respect to the centroid
         vertices.sort(key=lambda v: (math.atan2(Vertex.Y(v) - cy, Vertex.X(v) - cx) + 2 * math.pi) % (2 * math.pi))
@@ -457,8 +475,7 @@ class Vertex():
 
 
     @staticmethod
-    def Distance(vertex, topology, includeCentroid: bool =True,
-                 mantissa: int = 6) -> float:
+    def Distance(vertex, topology, includeCentroid: bool =True, mantissa: int = 6) -> float:
         """
         Returns the distance between the input vertex and the input topology. This method returns the distance to the closest sub-topology in the input topology, optionally including its centroid.
 
@@ -527,16 +544,16 @@ class Vertex():
             return distance
         
         def distance_to_vertex(vertexA, vertexB):
-            a = (Vertex.X(vertexA), Vertex.Y(vertexA), Vertex.Z(vertexA))
-            b = (Vertex.X(vertexB), Vertex.Y(vertexB), Vertex.Z(vertexB))
+            a = (Vertex.X(vertexA, mantissa=mantissa), Vertex.Y(vertexA, mantissa=mantissa), Vertex.Z(vertexA, mantissa=mantissa))
+            b = (Vertex.X(vertexB, mantissa=mantissa), Vertex.Y(vertexB, mantissa=mantissa), Vertex.Z(vertexB, mantissa=mantissa))
             return distance_point_to_point(a, b)
         
         def distance_to_edge(vertex, edge):
-            a = (Vertex.X(vertex), Vertex.Y(vertex), Vertex.Z(vertex))
+            a = (Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex, mantissa=mantissa))
             sv = Edge.StartVertex(edge)
             ev = Edge.EndVertex(edge)
-            svp = (Vertex.X(sv), Vertex.Y(sv), Vertex.Z(sv))
-            evp = (Vertex.X(ev), Vertex.Y(ev), Vertex.Z(ev))
+            svp = (Vertex.X(sv, mantissa=mantissa), Vertex.Y(sv, mantissa=mantissa), Vertex.Z(sv, mantissa=mantissa))
+            evp = (Vertex.X(ev, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa), Vertex.Z(ev, mantissa=mantissa))
             return distance_point_to_line(a,svp, evp)
         
         def distance_to_face(vertex, face, includeCentroid):
@@ -554,7 +571,7 @@ class Vertex():
             b = dic["b"]
             c = dic["c"]
             d = dic["d"]
-            x1, y1, z1 = Vertex.Coordinates(vertex)
+            x1, y1, z1 = Vertex.Coordinates(vertex, mantissa=mantissa)
             d = abs((a * x1 + b * y1 + c * z1 + d))
             e = (math.sqrt(a * a + b * b + c * c))
             if e == 0:
@@ -598,7 +615,7 @@ class Vertex():
             return None
     
     @staticmethod
-    def EnclosingCell(vertex, topology, exclusive: bool = True, tolerance: float = 0.0001) -> list:
+    def EnclosingCell(vertex, topology, exclusive: bool = True, mantissa: int = 6, tolerance: float = 0.0001) -> list:
         """
         Returns the list of Cells found in the input topology that enclose the input vertex.
 
@@ -610,6 +627,8 @@ class Vertex():
             The input topology.
         exclusive : bool , optional
             If set to True, return only the first found enclosing cell. The default is True.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The tolerance for computing if the input vertex is enclosed in a cell. The default is 0.0001.
 
@@ -629,16 +648,15 @@ class Vertex():
             y = []
             z = []
             for aVertex in vertices:
-                x.append(aVertex.X())
-                y.append(aVertex.Y())
-                z.append(aVertex.Z())
+                x.append(Vertex.X(aVertex, mantissa=mantissa))
+                y.append(Vertex.Y(aVertex, mantissa=mantissa))
+                z.append(Vertex.Z(aVertex, mantissa=mantissa))
             return ([min(x), min(y), min(z), max(x), max(y), max(z)])
         
         if Topology.IsInstance(topology, "Cell"):
             cells = [topology]
         elif Topology.IsInstance(topology, "Cluster") or Topology.IsInstance(topology, "CellComplex"):
-            cells = []
-            _ = topology.Cells(None, cells)
+            cells = Topology.Cells(topology)
         else:
             return None
         if len(cells) < 1:
@@ -646,7 +664,7 @@ class Vertex():
         enclosingCells = []
         for i in range(len(cells)):
             bbox = boundingBox(cells[i])
-            if ((vertex.X() < bbox[0]) or (vertex.Y() < bbox[1]) or (vertex.Z() < bbox[2]) or (vertex.X() > bbox[3]) or (vertex.Y() > bbox[4]) or (vertex.Z() > bbox[5])) == False:
+            if ((Vertex.X(vertex, mantissa=mantissa) < bbox[0]) or (Vertex.Y(vertex, mantissa=mantissa) < bbox[1]) or (Vertex.Z(vertex, mantissa=mantissa) < bbox[2]) or (Vertex.X(vertex, mantissa=mantissa) > bbox[3]) or (Vertex.Y(vertex, mantissa=mantissa) > bbox[4]) or (Vertex.Z(vertex, mantissa=mantissa) > bbox[5])) == False:
                 if Vertex.IsInternal(vertex, cells[i], tolerance=tolerance):
                     if exclusive:
                         return([cells[i]])
@@ -770,7 +788,7 @@ class Vertex():
         return None
 
     @staticmethod
-    def InterpolateValue(vertex, vertices, n=3, key="intensity", tolerance=0.0001):
+    def InterpolateValue(vertex, vertices: list, n: int = 3, key: str = "intensity", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Interpolates the value of the input vertex based on the values of the *n* nearest vertices.
 
@@ -784,6 +802,8 @@ class Vertex():
             The maximum number of nearest vertices to consider. The default is 3.
         key : str , optional
             The key that holds the value to be interpolated in the dictionaries of the vertices. The default is "intensity".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The tolerance for computing if the input vertex is coincident with another vertex in the input list of vertices. The default is 0.0001.
 
@@ -860,14 +880,14 @@ class Vertex():
         if len(vertices) == 0:
             return None
         
-        point = (Vertex.X(vertex), Vertex.Y(vertex), Vertex.Z(vertex))
+        point = (Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex, mantissa=mantissa))
         data_points = []
         for v in vertices:
             d = Topology.Dictionary(v)
             value = Dictionary.ValueAtKey(d, key)
             if not value == None:
                 if type(value) == int or type(value) == float:
-                    data_points.append((Vertex.X(v), Vertex.Y(v), Vertex.Z(v), value))
+                    data_points.append((Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa), value))
         if len(data_points) == 0:
             return None
         if n > len(data_points):
@@ -1155,7 +1175,7 @@ class Vertex():
         return False
     
     @staticmethod
-    def NearestVertex(vertex, topology, useKDTree: bool = True):
+    def NearestVertex(vertex, topology, useKDTree: bool = True, mantissa: int = 6):
         """
         Returns the vertex found in the input topology that is the nearest to the input vertex.
 
@@ -1167,7 +1187,9 @@ class Vertex():
             The input topology to be searched for the nearest vertex.
         useKDTree : bool , optional
             if set to True, the algorithm will use a KDTree method to search for the nearest vertex. The default is True.
-
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        
         Returns
         -------
         topologic_core.Vertex
@@ -1178,8 +1200,8 @@ class Vertex():
 
         def SED(a, b):
             """Compute the squared Euclidean distance between X and Y."""
-            p1 = (a.X(), a.Y(), a.Z())
-            p2 = (b.X(), b.Y(), b.Z())
+            p1 = (Vertex.X(a, mantissa=mantissa), Vertex.Y(a, mantissa=mantissa), Vertex.Z(a, mantissa=mantissa))
+            p2 = (Vertex.X(b, mantissa=mantissa), Vertex.Y(b, mantissa=mantissa), Vertex.Z(b, mantissa=mantissa))
             return sum((i-j)**2 for i, j in zip(p1, p2))
         
         BT = collections.namedtuple("BT", ["value", "left", "right"])
@@ -1188,19 +1210,19 @@ class Vertex():
         right-subtrees.
         """
         def firstItem(v):
-            return v.X()
+            return Vertex.X(v, mantissa=mantissa)
         def secondItem(v):
-            return v.Y()
+            return Vertex.Y(v, mantissa=mantissa)
         def thirdItem(v):
-            return v.Z()
+            return Vertex.Z(v, mantissa=mantissa)
 
         def itemAtIndex(v, index):
             if index == 0:
-                return v.X()
+                return Vertex.X(v, mantissa=mantissa)
             elif index == 1:
-                return v.Y()
+                return Vertex.Y(v, mantissa=mantissa)
             elif index == 2:
-                return v.Z()
+                return Vertex.Z(v, mantissa=mantissa)
 
         def sortList(vertices, index):
             if index == 0:

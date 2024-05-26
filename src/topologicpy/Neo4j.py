@@ -276,7 +276,7 @@ class Neo4j:
         return Graph.ByVerticesEdges(vertices,edges)
     
     @staticmethod
-    def AddGraph(neo4jGraph, graph, labelKey=None, relationshipKey=None, bidirectional=True, deleteAll=True, tolerance=0.0001):
+    def AddGraph(neo4jGraph, graph, labelKey=None, relationshipKey=None, bidirectional=True, deleteAll=True, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Adds the input topologic graph to the input neo4j graph
 
@@ -288,6 +288,8 @@ class Neo4j:
             The input topologic graph.
         categoryKey : str
             The category key in the dictionary under which to look for the category value.
+        mantissa : int, optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -301,6 +303,7 @@ class Neo4j:
         from topologicpy.Topology import Topology
         from topologicpy.Graph import Graph
         from topologicpy.Dictionary import Dictionary
+
         gmt = time.gmtime()
         timestamp =  str(gmt.tm_zone)+"_"+str(gmt.tm_year)+"_"+str(gmt.tm_mon)+"_"+str(gmt.tm_wday)+"_"+str(gmt.tm_hour)+"_"+str(gmt.tm_min)+"_"+str(gmt.tm_sec)
         vertices = Graph.Vertices(graph)
@@ -316,11 +319,11 @@ class Neo4j:
             keys.append("z")
             keys.append("timestamp")
             keys.append("location")
-            values.append(vertices[i].X())
-            values.append(vertices[i].Y())
-            values.append(vertices[i].Z())
+            values.append(Vertex.X(vertices[i], mantissa=mantissa))
+            values.append(Vertex.Y(vertices[i], mantissa=mantissa))
+            values.append(Vertex.Z(vertices[i], mantissa=mantissa))
             values.append(timestamp)
-            values.append(sp.CartesianPoint([vertices[i].X(),vertices[i].Y(),vertices[i].Z()]))
+            values.append(sp.CartesianPoint([Vertex.X(vertices[i], mantissa=mantissa), Vertex.Y(vertices[i], mantissa=mantissa), Vertex.Z(vertices[i], mantissa=mantissa)]))
             zip_iterator = zip(keys, values)
             pydict = dict(zip_iterator)
             if labelKey == 'None':
@@ -427,7 +430,14 @@ class Neo4j:
         return list(neo4jGraph.schema.relationship_types)
     
     @staticmethod
-    def SetGraph(neo4jGraph, graph, labelKey=None, relationshipKey=None, bidirectional=True, deleteAll=True, tolerance=0.0001):
+    def SetGraph(neo4jGraph,
+                 graph,
+                 labelKey: str = None,
+                 relationshipKey: str = None,
+                 bidirectional: bool = True,
+                 deleteAll: bool = True,
+                 mantissa: int = 6,
+                 tolerance: float = 0.0001):
         """
         Sets the input topologic graph to the input neo4jGraph.
 
@@ -445,6 +455,8 @@ class Neo4j:
             If set to True, the edges in the neo4j graph are set to be bi-drectional.
         deleteAll : bool , optional
             If set to True, all previous entities are deleted before adding the new entities.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -484,11 +496,11 @@ class Neo4j:
             keys.append("z")
             keys.append("timestamp")
             keys.append("location")
-            values.append(vertices[i].X())
-            values.append(vertices[i].Y())
-            values.append(vertices[i].Z())
+            values.append(Vertex.X(vertices[i], mantissa=mantissa))
+            values.append(Vertex.Y(vertices[i], mantissa=mantissa))
+            values.append(Vertex.Z(vertices[i], mantissa=mantissa))
             values.append(timestamp)
-            values.append(sp.CartesianPoint([vertices[i].X(),vertices[i].Y(),vertices[i].Z()]))
+            values.append(sp.CartesianPoint([Vertex.X(vertices[i], mantissa=mantissa), Vertex.Y(vertices[i], mantissa=mantissa), Vertex.Z(vertices[i], mantissa=mantissa)]))
             zip_iterator = zip(keys, values)
             pydict = dict(zip_iterator)
             if (labelKey == 'None') or (not (labelKey)):

@@ -195,17 +195,18 @@ class Honeybee:
     @staticmethod
     def ModelByTopology(tpBuilding,
                 tpShadingFacesCluster = None,
-                buildingName = "Generic_Building",
-                defaultProgramIdentifier = "Generic Office Program",
-                defaultConstructionSetIdentifier = "Default Generic Construction Set",
-                coolingSetpoint = 25.0,
-                heatingSetpoint = 20.0,
-                humidifyingSetpoint = 30.0,
-                dehumidifyingSetpoint = 55.0,
-                roomNameKey = "TOPOLOGIC_name",
-                roomTypeKey = "TOPOLOGIC_type",
-                apertureTypeKey = "TOPOLOGIC_type",
-                addSensorGrid = False):
+                buildingName: str = "Generic_Building",
+                defaultProgramIdentifier: str = "Generic Office Program",
+                defaultConstructionSetIdentifier: str = "Default Generic Construction Set",
+                coolingSetpoint: float = 25.0,
+                heatingSetpoint: float = 20.0,
+                humidifyingSetpoint: float = 30.0,
+                dehumidifyingSetpoint: float = 55.0,
+                roomNameKey: str = "TOPOLOGIC_name",
+                roomTypeKey: str = "TOPOLOGIC_type",
+                apertureTypeKey: str = "TOPOLOGIC_type",
+                addSensorGrid: bool = False,
+                mantissa: int = 6):
         """
         Creates an HB Model from the input Topology.
 
@@ -330,11 +331,11 @@ class Honeybee:
             if tpCellFaces:
                 hbRoomFaces = []
                 for tpFaceNumber, tpCellFace in enumerate(tpCellFaces):
-                    tpCellFaceNormal = Face.NormalAtParameters(tpCellFace, 0.5, 0.5)
+                    tpCellFaceNormal = Face.Normal(tpCellFace, mantissa=mantissa)
                     hbRoomFacePoints = []
                     tpFaceVertices = Wire.Vertices(Face.ExternalBoundary(tpCellFace))
                     for tpVertex in tpFaceVertices:
-                        hbRoomFacePoints.append(Point3D(tpVertex.X(), tpVertex.Y(), tpVertex.Z()))
+                        hbRoomFacePoints.append(Point3D(Vertex.X(tpVertex, mantissa=mantissa), Vertex.Y(tpVertex, mantissa=mantissa), Vertex.Z(tpVertex, mantissa=mantissa)))
                     hbRoomFace = HBFace(tpCellName+'_Face_'+str(tpFaceNumber+1), Face3D(hbRoomFacePoints))
                     tpFaceApertures = []
                     _ = tpCellFace.Apertures(tpFaceApertures)
@@ -349,7 +350,7 @@ class Honeybee:
                             tpFaceApertureVertices = []
                             tpFaceApertureVertices = Wire.Vertices(Face.ExternalBoundary(apertureTopology))
                             for tpFaceApertureVertex in tpFaceApertureVertices:
-                                hbFaceAperturePoints.append(Point3D(tpFaceApertureVertex.X(), tpFaceApertureVertex.Y(), tpFaceApertureVertex.Z()))
+                                hbFaceAperturePoints.append(Point3D(Vertex.X(tpFaceApertureVertex, mantissa=mantissa), Vertex.Y(tpFaceApertureVertex, mantissa=mantissa), Vertex.Z(tpFaceApertureVertex, mantissa=mantissa)))
                             if(tpFaceApertureType):
                                 if ("door" in tpFaceApertureType.lower()):
                                     hbFaceAperture = HBDoor(tpCellName+'_Face_'+str(tpFaceNumber+1)+'_Door_'+str(tpFaceApertureNumber), Face3D(hbFaceAperturePoints))
@@ -398,7 +399,7 @@ class Honeybee:
                 faceVertices = Wire.Vertices(Face.ExternalBoundary(tpShadingFace))
                 facePoints = []
                 for aVertex in faceVertices:
-                    facePoints.append(Point3D(aVertex.X(), aVertex.Y(), aVertex.Z()))
+                    facePoints.append(Point3D(Vertex.X(aVertex, mantissa=mantissa), Vertex.Y(aVertex, mantissa=mantissa), Vertex.Z(aVertex, mantissa=mantissa)))
                 hbShadingFace = Face3D(facePoints, None, [])
                 hbShade = HBShade("SHADINGSURFACE_" + str(faceIndex+1), hbShadingFace)
                 hbShades.append(hbShade)

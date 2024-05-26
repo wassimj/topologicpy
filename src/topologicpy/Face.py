@@ -942,7 +942,7 @@ class Face():
         return eb
     
     @staticmethod
-    def FacingToward(face, direction: list = [0,0,-1], asVertex: bool = False, tolerance: float = 0.0001) -> bool:
+    def FacingToward(face, direction: list = [0,0,-1], asVertex: bool = False, mantissa: int = 6, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input face is facing toward the input direction.
 
@@ -954,6 +954,8 @@ class Face():
             The input direction. The default is [0,0,-1].
         asVertex : bool , optional
             If set to True, the direction is treated as an actual vertex in 3D space. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -963,22 +965,16 @@ class Face():
             True if the face is facing toward the direction. False otherwise.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Vector import Vector
 
-        faceNormal = Face.Normal(face)
+        faceNormal = Face.Normal(face, mantissa=mantissa)
         faceCenter = Face.VertexByParameters(face,0.5,0.5)
-        cList = [faceCenter.X(), faceCenter.Y(), faceCenter.Z()]
-        try:
-            vList = [direction.X(), direction.Y(), direction.Z()]
-        except:
-            try:
-                vList = [direction[0], direction[1], direction[2]]
-            except:
-                raise Exception("Face.FacingToward - Error: Could not get the vector from the input direction")
+        cList = [Vertex.X(faceCenter, mantissa=mantissa), Vertex.Y(faceCenter, mantissa=mantissa), Vertex.Z(faceCenter, mantissa=mantissa)]
         if asVertex:
-            dV = [vList[0]-cList[0], vList[1]-cList[1], vList[2]-cList[2]]
+            dV = [direction[0]-cList[0], direction[1]-cList[1], direction[2]-cList[2]]
         else:
-            dV = vList
+            dV = direction
         uV = Vector.Normalize(dV)
         dot = sum([i*j for (i, j) in zip(uV, faceNormal)])
         if dot < tolerance:
@@ -1322,9 +1318,10 @@ class Face():
         max_d = distances[-1]*1.05
         edges = []
         for target in targets:
-            e = Edge.ByVertices(vertex, target)
-            e = Edge.SetLength(e, length=max_d, bothSides=False)
-            edges.append(e)
+            if Vertex.Distance(vertex, target) > tolerance:
+                e = Edge.ByVertices(vertex, target)
+                e = Edge.SetLength(e, length=max_d, bothSides=False)
+                edges.append(e)
         shell = Topology.Slice(face, Cluster.ByTopologies(edges))
         faces = Topology.Faces(shell)
         final_faces = []
@@ -1987,7 +1984,7 @@ class Face():
         return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
-    def Triangulate(face, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001) -> list:
+    def Triangulate(face, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001) -> list:
         """
         Triangulates the input face and returns a list of faces.
 
@@ -1995,8 +1992,6 @@ class Face():
         ----------
         face : topologic_core.Face
             The input face.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
         mode : int , optional
             The desired mode of meshing algorithm. Several options are available:
             0: Classic
@@ -2012,6 +2007,10 @@ class Face():
         meshSize : float , optional
             The desired size of the mesh when using the "mesh" option. If set to None, it will be
             calculated automatically and set to 10% of the overall size of the face.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -2073,7 +2072,6 @@ class Face():
                     warnings.warn("Face.Triangulate - Error: Could not import gmsh. Please try to install gmsh manually. Returning None.")
                     return None
 
-            import topologic_core as topologic
             from topologicpy.Vertex import Vertex
             from topologicpy.Wire import Wire
             from topologicpy.Face import Face
@@ -2084,8 +2082,8 @@ class Face():
             if not meshSize:
                 bounding_face = Face.BoundingRectangle(face)
                 bounding_face_vertices = Face.Vertices(bounding_face)
-                bounding_face_vertices_x = [Vertex.X(i) for i in bounding_face_vertices]
-                bounding_face_vertices_y = [Vertex.Y(i) for i in bounding_face_vertices]
+                bounding_face_vertices_x = [Vertex.X(i, mantissa=mantissa) for i in bounding_face_vertices]
+                bounding_face_vertices_y = [Vertex.Y(i, mantissa=mantissa) for i in bounding_face_vertices]
                 width = max(bounding_face_vertices_x)-min(bounding_face_vertices_x)
                 length = max(bounding_face_vertices_y)-min(bounding_face_vertices_y)
                 meshSize = max([width,length])//10
@@ -2095,7 +2093,7 @@ class Face():
             external_vertices = Wire.Vertices(face_external_boundary)
             external_vertex_number = len(external_vertices)
             for i in range(external_vertex_number):
-                gmsh.model.geo.addPoint(Vertex.X(external_vertices[i]), Vertex.Y(external_vertices[i]), Vertex.Z(external_vertices[i]), meshSize, i+1)
+                gmsh.model.geo.addPoint(Vertex.X(external_vertices[i], mantissa=mantissa), Vertex.Y(external_vertices[i], mantissa=mantissa), Vertex.Z(external_vertices[i], mantissa=mantissa), meshSize, i+1)
             for i in range(external_vertex_number):
                 if i < external_vertex_number-1:
                     gmsh.model.geo.addLine(i+1, i+2, i+1)
@@ -2114,7 +2112,7 @@ class Face():
                     internal_vertices = Wire.Vertices(face_internal_boundary)
                     internal_vertex_number = len(internal_vertices)
                     for j in range(internal_vertex_number):
-                        gmsh.model.geo.addPoint(Vertex.X(internal_vertices[j]), Vertex.Y(internal_vertices[j]), Vertex.Z(internal_vertices[j]), meshSize, current_vertex_number+j+1)
+                        gmsh.model.geo.addPoint(Vertex.X(internal_vertices[j]), Vertex.Y(internal_vertices[j], mantissa=mantissa), Vertex.Z(internal_vertices[j], mantissa=mantissa), meshSize, current_vertex_number+j+1)
                     for j in range(internal_vertex_number):
                         if j < internal_vertex_number-1:
                             gmsh.model.geo.addLine(current_vertex_number+j+1, current_vertex_number+j+2, current_edge_number+j+1)
@@ -2160,7 +2158,7 @@ class Face():
         if len(vertices) == 3: # Already a triangle
             return [face]
         origin = Topology.Centroid(face)
-        normal = Face.Normal(face)
+        normal = Face.Normal(face, mantissa=mantissa)
         flatFace = Topology.Flatten(face, origin=origin, direction=normal)
 
         if mode == 0:
@@ -2179,7 +2177,7 @@ class Face():
         finalFaces = []
         for f in shell_faces:
             f = Topology.Unflatten(f, origin=origin, direction=normal)
-            if Face.Angle(face, f) > 90:
+            if Face.Angle(face, f, mantissa=mantissa) > 90:
                 wire = Face.ExternalBoundary(f)
                 wire = Wire.Invert(wire)
                 f = Face.ByWire(wire)

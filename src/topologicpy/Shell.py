@@ -50,7 +50,16 @@ except:
 
 class Shell():
     @staticmethod
-    def ByDisjointFaces(externalBoundary, faces, maximumGap=0.5, mergeJunctions=False, threshold=0.5, uSides=1, vSides=1, transferDictionaries=False, tolerance=0.0001):
+    def ByDisjointFaces(externalBoundary,
+                        faces,
+                        maximumGap: float = 0.5,
+                        mergeJunctions: bool = False,
+                        threshold: float = 0.5,
+                        uSides: int = 1,
+                        vSides: int = 1,
+                        transferDictionaries: bool = False,
+                        mantissa: int = 6,
+                        tolerance: float = 0.0001):
         """
         Creates a shell from an input list of disjointed faces. THIS IS STILL EXPERIMENTAL
 
@@ -72,6 +81,8 @@ class Shell():
             The desired number of sides along the Y axis for the grid that subdivides the input faces to aid in processing. The default is 1.
         transferDictionaries : bool, optional.
             If set to True, the dictionaries in the input list of faces are transfered to the faces of the resulting shell. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -177,7 +188,7 @@ class Shell():
                 for v in vertices:
                     for w in vertices:
                         if not Topology.IsSame(v, w) and not w in used:
-                            if Vertex.Distance(v, w) < threshold:
+                            if Vertex.Distance(v, w, mantissa=mantissa) < threshold:
                                 centers.append(v)
                                 used.append(w)
                 edges = Shell.Edges(shell)
@@ -186,9 +197,9 @@ class Shell():
                     sv = Edge.StartVertex(e)
                     ev = Edge.EndVertex(e)
                     for v in centers:
-                        if Vertex.Distance(sv, v) < threshold:
+                        if Vertex.Distance(sv, v, mantissa=mantissa) < threshold:
                             sv = v
-                        if Vertex.Distance(ev, v) < threshold:
+                        if Vertex.Distance(ev, v, mantissa=mantissa) < threshold:
                             ev = v
                     new_edges.append(Edge.ByVertices([sv,ev], tolerance=tolerance))
                 cluster = Cluster.ByTopologies(new_edges)
@@ -196,10 +207,10 @@ class Shell():
                 vertices = Topology.Vertices(cluster)
                 edges = Topology.Edges(shell)
 
-                xList = list(set([Vertex.X(v) for v in vertices]))
+                xList = list(set([Vertex.X(v, mantissa=mantissa) for v in vertices]))
                 xList.sort()
                 xList = Helper.MergeByThreshold(xList, 0.5)
-                yList = list(set([Vertex.Y(v) for v in vertices]))
+                yList = list(set([Vertex.Y(v, mantissa=mantissa) for v in vertices]))
                 yList.sort()
                 yList = Helper.MergeByThreshold(yList, 0.5)
                 yList.sort()
@@ -211,10 +222,10 @@ class Shell():
                 for e in edges:
                     sv = Edge.StartVertex(e)
                     ev = Edge.EndVertex(e)
-                    svx = Vertex.X(sv)
-                    svy = Vertex.Y(sv)
-                    evx = Vertex.X(ev)
-                    evy = Vertex.Y(ev)
+                    svx = Vertex.X(sv, mantissa=mantissa)
+                    svy = Vertex.Y(sv, mantissa=mantissa)
+                    evx = Vertex.X(ev, mantissa=mantissa)
+                    evy = Vertex.Y(ev, mantissa=mantissa)
                     for x in xList:
                         if abs(svx-x) < threshold:
                             svx = x
@@ -479,7 +490,7 @@ class Shell():
         return Shell.Pie(origin=origin, radiusA=radius, radiusB=0, sides=sides, rings=1, fromAngle=fromAngle, toAngle=toAngle, direction=direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
-    def Delaunay(vertices: list, face= None, tolerance: float = 0.0001):
+    def Delaunay(vertices: list, face= None, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns a delaunay partitioning of the input vertices. The vertices must be coplanar. See https://en.wikipedia.org/wiki/Delaunay_triangulation.
 
@@ -489,6 +500,8 @@ class Shell():
             The input list of vertices.
         face : topologic_core.Face , optional
             The input face. If specified, the delaunay triangulation is clipped to the face.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -503,10 +516,8 @@ class Shell():
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
         from random import sample
         from scipy.spatial import Delaunay as SCIDelaunay
-        import numpy as np
         
         if not isinstance(vertices, list):
             return None
@@ -514,13 +525,11 @@ class Shell():
         if len(vertices) < 3:
             return None
 
-        # Create a Vertex at the world's origin (0, 0, 0)
-        world_origin = Vertex.Origin()
 
         if Topology.IsInstance(face, "Face"):
             # Flatten the face
             origin = Topology.Centroid(face)
-            normal = Face.Normal(face)
+            normal = Face.Normal(face, mantissa=mantissa)
             flatFace = Topology.Flatten(face, origin=origin, direction=normal)
             faceVertices = Face.Vertices(face)
             vertices += faceVertices
@@ -534,7 +543,7 @@ class Shell():
             vertices = Cluster.Vertices(verticesCluster)
         points = []
         for v in vertices:
-            points.append([Vertex.X(v), Vertex.Y(v)])
+            points.append([Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa)])
         delaunay = SCIDelaunay(points)
         simplices = delaunay.simplices
 
@@ -682,8 +691,17 @@ class Shell():
         return False
     
     @staticmethod
-    def HyperbolicParaboloidRectangularDomain(origin= None, llVertex= None, lrVertex= None, ulVertex= None, urVertex= None,
-                                              uSides: int = 10, vSides: int = 10, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+    def HyperbolicParaboloidRectangularDomain(origin= None,
+                                              llVertex= None,
+                                              lrVertex= None,
+                                              ulVertex= None,
+                                              urVertex= None,
+                                              uSides: int = 10,
+                                              vSides: int = 10,
+                                              direction: list = [0, 0, 1],
+                                              placement: str = "center",
+                                              mantissa: int = 6,
+                                              tolerance: float = 0.0001):
         """
         Creates a hyperbolic paraboloid with a rectangular domain.
 
@@ -707,6 +725,8 @@ class Shell():
             The vector representing the up direction of the hyperbolic parabolid. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the hyperbolic parabolid. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         Returns
@@ -751,12 +771,13 @@ class Shell():
         xOffset = 0
         yOffset = 0
         zOffset = 0
-        minX = min([llVertex.X(), lrVertex.X(), ulVertex.X(), urVertex.X()])
-        maxX = max([llVertex.X(), lrVertex.X(), ulVertex.X(), urVertex.X()])
-        minY = min([llVertex.Y(), lrVertex.Y(), ulVertex.Y(), urVertex.Y()])
-        maxY = max([llVertex.Y(), lrVertex.Y(), ulVertex.Y(), urVertex.Y()])
-        minZ = min([llVertex.Z(), lrVertex.Z(), ulVertex.Z(), urVertex.Z()])
-        maxZ = max([llVertex.Z(), lrVertex.Z(), ulVertex.Z(), urVertex.Z()])
+        minX = min([Vertex.X(llVertex, mantissa=mantissa), Vertex.X(lrVertex, mantissa=mantissa), Vertex.X(ulVertex, mantissa=mantissa), Vertex.X(urVertex, mantissa=mantissa)])
+        maxX = max([Vertex.X(llVertex, mantissa=mantissa), Vertex.X(lrVertex, mantissa=mantissa), Vertex.X(ulVertex, mantissa=mantissa), Vertex.X(urVertex, mantissa=mantissa)])
+        minY = min([Vertex.Y(llVertex, mantissa=mantissa), Vertex.Y(lrVertex, mantissa=mantissa), Vertex.Y(ulVertex, mantissa=mantissa), Vertex.Y(urVertex, mantissa=mantissa)])
+        maxY = max([Vertex.Y(llVertex, mantissa=mantissa), Vertex.Y(lrVertex, mantissa=mantissa), Vertex.Y(ulVertex, mantissa=mantissa), Vertex.Y(urVertex, mantissa=mantissa)])
+        minZ = min([Vertex.Z(llVertex, mantissa=mantissa), Vertex.Z(lrVertex, mantissa=mantissa), Vertex.Z(ulVertex, mantissa=mantissa), Vertex.Z(urVertex, mantissa=mantissa)])
+        maxZ = max([Vertex.Z(llVertex, mantissa=mantissa), Vertex.Z(lrVertex, mantissa=mantissa), Vertex.Z(ulVertex, mantissa=mantissa), Vertex.Z(urVertex, mantissa=mantissa)])
+
         if placement.lower() == "lowerleft":
             xOffset = -minX
             yOffset = -minY
@@ -777,7 +798,7 @@ class Shell():
     @staticmethod
     def HyperbolicParaboloidCircularDomain(origin= None, radius: float = 0.5, sides: int = 36, rings: int = 10,
                                            A: float = 2.0, B: float = -2.0, direction: list = [0, 0, 1],
-                                           placement: str = "center", tolerance: float = 0.0001):
+                                           placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates a hyperbolic paraboloid with a circular domain. See https://en.wikipedia.org/wiki/Compactness_measure_of_a_shape
 
@@ -799,6 +820,8 @@ class Shell():
             The  vector representing the up direction of the hyperbolic paraboloid. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the circle. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         Returns
@@ -907,9 +930,9 @@ class Shell():
         yList = []
         zList = []
         for aVertex in vertices:
-            xList.append(aVertex.X())
-            yList.append(aVertex.Y())
-            zList.append(aVertex.Z())
+            xList.append(Vertex.X(aVertex, mantissa=mantissa))
+            yList.append(Vertex.Y(aVertex, mantissa=mantissa))
+            zList.append(Vertex.Z(aVertex, mantissa=mantissa))
         minX = min(xList)
         maxX = max(xList)
         minY = min(yList)
@@ -1251,7 +1274,7 @@ class Shell():
         return Shell.ByFaces(clean_faces, tolerance=tolerance)
     
     @staticmethod
-    def Roof(face, angle: float = 45, epsilon: float = 0.01, tolerance: float = 0.001):
+    def Roof(face, angle: float = 45, epsilon: float = 0.01, mantissa: int = 6, tolerance: float = 0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
             This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
@@ -1264,6 +1287,8 @@ class Shell():
             The desired angle in degrees of the roof. The default is 45.
         epsilon : float , optional
             The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)
+        manitssa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
 
@@ -1277,19 +1302,15 @@ class Shell():
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
-        from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        import topologic_core as topologic
-        import math
 
         def nearest_vertex_2d(v, vertices, tolerance=0.001):
             for vertex in vertices:
-                x2 = Vertex.X(vertex)
-                y2 = Vertex.Y(vertex)
-                temp_v = Vertex.ByCoordinates(x2, y2, Vertex.Z(v))
-                if Vertex.Distance(v, temp_v) <= tolerance:
+                x2 = Vertex.X(vertex, mantissa=mantissa)
+                y2 = Vertex.Y(vertex, mantissa=mantissa)
+                temp_v = Vertex.ByCoordinates(x2, y2, Vertex.Z(v, mantissa=mantissa))
+                if Vertex.Distance(v, temp_v, mantissa=mantissa) <= tolerance:
                     return vertex
             return None
         
@@ -1301,7 +1322,7 @@ class Shell():
         if angle < tolerance:
             return None
         origin = Topology.Centroid(face)
-        normal = Face.Normal(face)
+        normal = Face.Normal(face, mantissa=mantissa)
         flat_face = Topology.Flatten(face, origin=origin, direction=normal)
         roof = Wire.Roof(flat_face, angle=angle, tolerance=tolerance)
         if not roof:
@@ -1323,7 +1344,7 @@ class Shell():
         roof_vertices = Topology.Vertices(roof)
         flat_vertices = []
         for rv in roof_vertices:
-            flat_vertices.append(Vertex.ByCoordinates(Vertex.X(rv), Vertex.Y(rv), 0))
+            flat_vertices.append(Vertex.ByCoordinates(Vertex.X(rv, mantissa=mantissa), Vertex.Y(rv, mantissa=mantissa), 0))
 
         final_triangles = []
         for triangle in triangles:
@@ -1473,7 +1494,7 @@ class Shell():
         return shell
 
     @staticmethod
-    def Simplify(shell, simplifyBoundary=True, tolerance=0.0001):
+    def Simplify(shell, simplifyBoundary: bool = True, mantissa: int = 6, tolerance: float = 0.0001):
         """
             Simplifies the input shell edges based on the Douglas Peucker algorthim. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
             Part of this code was contributed by gaoxipeng. See https://github.com/wassimj/topologicpy/issues/35
@@ -1484,6 +1505,8 @@ class Shell():
             The input shell.
         simplifyBoundary : bool , optional
             If set to True, the external boundary of the shell will be simplified as well. Otherwise, it will not be simplified. The default is True.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
         tolerance : float , optional
             The desired tolerance. The default is 0.0001. Edges shorter than this length will be removed.
 
@@ -1503,12 +1526,12 @@ class Shell():
         
         def perpendicular_distance(point, line_start, line_end):
             # Calculate the perpendicular distance from a point to a line segment
-            x0 = point.X()
-            y0 = point.Y()
-            x1 = line_start.X()
-            y1 = line_start.Y()
-            x2 = line_end.X()
-            y2 = line_end.Y()
+            x0 = Vertex.X(point, mantissa=mantissa)
+            y0 = Vertex.Y(point, mantissa=mantissa)
+            x1 = Vertex.X(line_start, mantissa=mantissa)
+            y1 = Vertex.Y(line_start, mantissa=mantissa)
+            x2 = Vertex.X(line_end, mantissa=mantissa)
+            y2 = Vertex.Y(line_end, mantissa=mantissa)
 
             numerator = abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1)
             denominator = Vertex.Distance(line_start, line_end)
@@ -1642,7 +1665,7 @@ class Shell():
         return vertices
 
     @staticmethod
-    def Voronoi(vertices: list, face= None, tolerance: float = 0.0001):
+    def Voronoi(vertices: list, face= None, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns a voronoi partitioning of the input face based on the input vertices. The vertices must be coplanar and within the face. See https://en.wikipedia.org/wiki/Voronoi_diagram.
 
@@ -1652,6 +1675,8 @@ class Shell():
             The input list of vertices.
         face : topologic_core.Face , optional
             The input face. If the face is not set an optimised bounding rectangle of the input vertices is used instead. The default is None.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -1681,17 +1706,17 @@ class Shell():
 
         # Flatten the input face
         origin = Topology.Centroid(face)
-        normal = Face.Normal(face)
+        normal = Face.Normal(face, mantissa=mantissa)
         flatFace = Topology.Flatten(face, origin=origin, direction=normal)
         eb = Face.ExternalBoundary(flatFace)
         ibList = Face.InternalBoundaries(flatFace)
         temp_verts = Topology.Vertices(eb)
-        new_verts = [Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), 0) for v in temp_verts]
+        new_verts = [Vertex.ByCoordinates(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), 0) for v in temp_verts]
         eb = Wire.ByVertices(new_verts, close=True)
         new_ibList = []
         for ib in ibList:
             temp_verts = Topology.Vertices(ib)
-            new_verts = [Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), 0) for v in temp_verts]
+            new_verts = [Vertex.ByCoordinates(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), 0) for v in temp_verts]
             new_ibList.append(Wire.ByVertices(new_verts, close=True))
         flatFace = Face.ByWires(eb, new_ibList)
 
@@ -1701,10 +1726,10 @@ class Shell():
         # Flatten the cluster using the same transformations
         verticesCluster = Topology.Flatten(verticesCluster, origin=origin, direction=normal)
         flatVertices = Topology.Vertices(verticesCluster)
-        flatVertices = [Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), 0) for v in flatVertices]
+        flatVertices = [Vertex.ByCoordinates(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), 0) for v in flatVertices]
         points = []
         for flatVertex in flatVertices:
-            points.append([flatVertex.X(), flatVertex.Y()])
+            points.append([Vertex.X(flatVertex, mantissa=mantissa), Vertex.Y(flatVertex, mantissa=mantissa)])
 
         br = Wire.BoundingRectangle(flatFace)
         br_vertices = Wire.Vertices(br)
@@ -1736,7 +1761,7 @@ class Shell():
             tempWire = []
             if len(region) > 1 and not -1 in region:
                 for v in region:
-                    tempWire.append(Vertex.ByCoordinates(voronoiVertices[v].X(), voronoiVertices[v].Y(), 0))
+                    tempWire.append(Vertex.ByCoordinates(Vertex.X(voronoiVertices[v], mantissa=mantissa), Vertex.Y(voronoiVertices[v], mantissa=mantissa), 0))
                 temp_verts = []
                 for v in tempWire:
                     if len(temp_verts) == 0:

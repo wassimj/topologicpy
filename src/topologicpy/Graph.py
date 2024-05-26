@@ -62,8 +62,6 @@ except:
     except:
         warnings.warn("Graph - Error: Could not import tqdm.")
 
-
-
 class _Tree:
     def __init__(self, node="", *children):
         self.node = node
@@ -92,7 +90,6 @@ class _Tree:
 
     def __len__(self):
         return len(self.children)
-
 
 
 class _DrawTree(object):
@@ -557,7 +554,8 @@ class Graph:
                 slabType = "slab",
                 doorType = "door",
                 windowType = "window",
-                contentType = "content"
+                contentType = "content",
+                namespace = "http://github.com/wassimj/topologicpy/resources"
                 ):
         """
         Creates an RDF graph according to the BOT ontology. See https://w3c-lbd-cg.github.io/bot/.
@@ -621,7 +619,7 @@ class Graph:
         try:
             from rdflib import Graph as RDFGraph
             from rdflib import URIRef, Literal, Namespace
-            from rdflib.namespace import RDF, RDFS
+            from rdflib.namespace import RDF, RDFS, XSD
         except:
             print("Graph.BOTGraph - Information: Installing required rdflib library.")
             try:
@@ -646,9 +644,12 @@ class Graph:
         # Define namespaces
         rdf = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
         bot = Namespace("https://w3id.org/bot#")
+        top = Namespace(namespace)
         
         # Define a custom prefix mapping
         bot_graph.namespace_manager.bind("bot", bot)
+        bot_graph.namespace_manager.bind("xsd", XSD)
+        bot_graph.namespace_manager.bind("top", top)
         
         # Add site
         site_uri = URIRef(siteLabel)
@@ -705,7 +706,7 @@ class Graph:
         
         # Add vertices as RDF resources
         for node, attributes in json_data['vertices'].items():
-            node_uri = URIRef(node)
+            node_uri = URIRef(top[node])
             if spaceType.lower() in attributes[typeKey].lower():
                 bot_graph.add((node_uri, rdf.type, bot.Space))
                 # Find the storey it is on
@@ -730,6 +731,8 @@ class Graph:
             
             if includeAttributes:
                 for key, value in attributes.items():
+                    if key == "brepType":
+                        print("Key = brepType, Value =", value, value.__class__)
                     if key == geometryKey:
                         if includeGeometry:
                             bot_graph.add((node_uri, bot.hasSimpleGeometry, Literal(value)))
@@ -737,7 +740,17 @@ class Graph:
                         if includeLabel:
                             bot_graph.add((node_uri, RDFS.label, Literal(value)))
                     elif key != typeKey and key != geometryKey:
-                        bot_graph.add((node_uri, bot[key], Literal(value)))
+                        if isinstance(value, float):
+                            datatype = XSD.float
+                        elif isinstance(value, bool):
+                            print("got boolean")
+                            datatype = XSD.boolean
+                        elif isinstance(value, int):
+                            print("got integer")
+                            datatype = XSD.integer
+                        elif isinstance(value, str):
+                            datatype = XSD.string
+                        bot_graph.add((node_uri, top[key], Literal(value, datatype=datatype)))
             if includeLabel:
                 for key, value in attributes.items():
                     if key == labelKey:
@@ -747,8 +760,8 @@ class Graph:
         for edge, attributes in json_data['edges'].items():
             source = attributes["source"]
             target = attributes["target"]
-            source_uri = URIRef(source)
-            target_uri = URIRef(target)
+            source_uri = URIRef(top[source])
+            target_uri = URIRef(top[target])
             if spaceType.lower() in json_data['vertices'][source][typeKey].lower() and spaceType.lower() in json_data['vertices'][target][typeKey].lower():
                 bot_graph.add((source_uri, bot.adjacentTo, target_uri))
                 if bidirectional:
@@ -4347,6 +4360,7 @@ class Graph:
     def ExportToBOT(graph,
                     path,
                     format="turtle",
+                    namespace = "http://github.com/wassimj/topologicpy/resources",
                     overwrite = False,
                     bidirectional=False,
                     includeAttributes=False,
@@ -4386,6 +4400,8 @@ class Graph:
             trig : Trig , Turtle-like format for RDF triples + context (RDF quads) and thus multiple graphs
             trix : Trix , RDF/XML-like format for RDF quads
             nquads : N-Quads , N-Triples-like format for RDF quads
+        namespace : str , optional
+            The desired namespace for creating IRIs for entities. The default is "http://github.com/wassimj/topologicpy/resources".
         path : str
             The desired path to where the RDF/BOT file will be saved.
         overwrite : bool , optional
@@ -4465,7 +4481,8 @@ class Graph:
                             slabType = slabType,
                             doorType = doorType,
                             windowType = windowType,
-                            contentType = contentType
+                            contentType = contentType,
+                            namespace = namespace
                             )
         if "turtle" in format.lower() or "ttl" in format.lower() or "turtle2" in format.lower():
             ext = ".ttl"
@@ -4759,7 +4776,7 @@ class Graph:
                     node_features = node_features + ","+ str(round(float(Dictionary.ValueAtKey(nd, node_feature_key)),mantissa))
                 else:
                     node_features = str(round(float(Dictionary.ValueAtKey(nd, node_feature_key)),mantissa))
-            single_node_data = [graph_id, i, vLabel, train_mask, validate_mask, test_mask, node_features, round(float(Vertex.X(v)),mantissa), round(float(Vertex.Y(v)),mantissa), round(float(Vertex.Z(v)),mantissa)]
+            single_node_data = [graph_id, i, vLabel, train_mask, validate_mask, test_mask, node_features, float(Vertex.X(v, mantissa=mantissa)), float(Vertex.Y(v,mantissa)), float(Vertex.Z(v,mantissa))]
             node_data.append(single_node_data)
 
         # Write Node Data to CSV file
@@ -4871,11 +4888,11 @@ class Graph:
         return True
     
     @staticmethod
-    def ExportToGEXF(graph, path, graphWidth=20, graphLength=20, graphHeight=20,
-                    defaultVertexColor="black", defaultVertexSize=3,
-                    vertexLabelKey=None, vertexColorKey=None, vertexSizeKey=None, 
-                    defaultEdgeColor="black", defaultEdgeWeight=1, defaultEdgeType="undirected",
-                    edgeLabelKey=None, edgeColorKey=None, edgeWeightKey=None, overwrite=False):
+    def ExportToGEXF(graph, path: str = None, graphWidth: float = 20, graphLength: float = 20, graphHeight: float = 20,
+                    defaultVertexColor: str = "black", defaultVertexSize: float = 3,
+                    vertexLabelKey: str = None, vertexColorKey: str = None, vertexSizeKey: str = None, 
+                    defaultEdgeColor: str = "black", defaultEdgeWeight: float = 1, defaultEdgeType: str = "undirected",
+                    edgeLabelKey: str = None, edgeColorKey: str = None, edgeWeightKey: str = None, overwrite: bool = False, mantissa: int = 6):
         """
         Exports the input graph to a Graph Exchange XML (GEXF) file format. See https://gexf.net/
 
@@ -4921,6 +4938,8 @@ class Graph:
             the edge weight is set to the value defined by defaultEdgeWeight parameter. The default is None.
         overwrite : bool , optional
             If set to True, any existing file is overwritten. Otherwise, it is not. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -5049,9 +5068,9 @@ class Graph:
                         'size': 'double'}
         nodes = {}
         # Resize the graph
-        xList = [Vertex.X(v) for v in g_vertices]
-        yList = [Vertex.Y(v) for v in g_vertices]
-        zList = [Vertex.Z(v) for v in g_vertices]
+        xList = [Vertex.X(v, mantissa=mantissa) for v in g_vertices]
+        yList = [Vertex.Y(v, mantissa=mantissa) for v in g_vertices]
+        zList = [Vertex.Z(v, mantissa=mantissa) for v in g_vertices]
         xMin = min(xList)
         xMax = max(xList)
         yMin = min(yList)
@@ -5073,9 +5092,9 @@ class Graph:
             d = Topology.Dictionary(v)
             keys = Dictionary.Keys(d)
             values = Dictionary.Values(d)
-            x = (Vertex.X(v) - x_avg)*x_sf + x_avg
-            y = (Vertex.Y(v) - y_avg)*y_sf + y_avg
-            z = (Vertex.Z(v) - z_avg)*z_sf + z_avg
+            x = (Vertex.X(v, mantissa=mantissa) - x_avg)*x_sf + x_avg
+            y = (Vertex.Y(v, mantissa=mantissa) - y_avg)*y_sf + y_avg
+            z = (Vertex.Z(v, mantissa=mantissa) - z_avg)*z_sf + z_avg
             node_dict['x'] = x
             node_dict['y'] = y
             node_dict['z'] = z
@@ -5944,17 +5963,17 @@ class Graph:
     
     @staticmethod
     def JSONData(graph,
-                 verticesKey="vertices",
-                 edgesKey="edges",
-                 vertexLabelKey="",
-                 edgeLabelKey="",
-                 sourceKey="source",
-                 targetKey="target",
-                 xKey="x",
-                 yKey="y",
-                 zKey="z",
-                 geometryKey="brep",
-                 mantissa=6):
+                 verticesKey: str = "vertices",
+                 edgesKey: str = "edges",
+                 vertexLabelKey: str = "",
+                 edgeLabelKey: str = "",
+                 sourceKey: str = "source",
+                 targetKey: str = "target",
+                 xKey: str = "x",
+                 yKey: str = "y",
+                 zKey: str = "z",
+                 geometryKey: str = "brep",
+                 mantissa: int = 6):
         """
         Converts the input graph into JSON data.
 
@@ -5975,7 +5994,7 @@ class Graph:
         sourceKey : str , optional
             The dictionary key used to store the source vertex. The default is "source".
         targetKey : str , optional
-            The dictionary key used to store the target vertex. The default is "source".
+            The dictionary key used to store the target vertex. The default is "target".
         xKey : str , optional
             The desired key name to use for x-coordinates. The default is "x".
         yKey : str , optional
@@ -6709,7 +6728,7 @@ class Graph:
         return nearestVertex
 
     @staticmethod
-    def NetworkXGraph(graph, tolerance=0.0001):
+    def NetworkXGraph(graph, mantissa: int = 6, tolerance: float = 0.0001):
         """
         converts the input graph into a NetworkX Graph. See http://networkx.org
 
@@ -6717,6 +6736,10 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -6763,7 +6786,7 @@ class Graph:
                     values = []
                 keys += ["x","y","z"]
                 import random
-                values += [Vertex.X(v), Vertex.Y(v), Vertex.Z(v)]
+                values += [Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)]
                 d = Dictionary.ByKeysValues(keys,values)
                 pythonD = Dictionary.PythonDictionary(d)
                 nodes.append((i, pythonD))
@@ -6776,7 +6799,7 @@ class Graph:
             for adjVertex in adjVertices:
                 adjIndex = Vertex.Index(vertex=adjVertex, vertices=vertices, strict=True, tolerance=tolerance)
                 if not adjIndex == None:
-                    nxGraph.add_edge(i,adjIndex, length=(Vertex.Distance(v, adjVertex)))
+                    nxGraph.add_edge(i,adjIndex, length=(Vertex.Distance(v, adjVertex, mantissa=mantissa)))
 
         pos=nx.spring_layout(nxGraph, k=0.2)
         nx.set_node_attributes(nxGraph, pos, "pos")

@@ -831,7 +831,7 @@ class CellComplex():
     def Prism(origin= None,
               width: float = 1.0, length: float = 1.0, height: float = 1.0,
               uSides: int = 2, vSides: int = 2, wSides: int = 2,
-              direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+              direction: list = [0, 0, 1], placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates a prismatic cellComplex with internal cells.
 
@@ -855,6 +855,8 @@ class CellComplex():
             The vector representing the up direction of the prism. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -876,9 +878,9 @@ class CellComplex():
             y = []
             z = []
             for aVertex in vertices:
-                x.append(aVertex.X())
-                y.append(aVertex.Y())
-                z.append(aVertex.Z())
+                x.append(Vertex.X(aVertex, mantissa=mantissa))
+                y.append(Vertex.Y(aVertex, mantissa=mantissa))
+                z.append(Vertex.Z(aVertex, mantissa=mantissa))
             minX = min(x)
             minY = min(y)
             minZ = min(z)
@@ -890,19 +892,19 @@ class CellComplex():
         def slice(topology, uSides, vSides, wSides):
             minX, minY, minZ, maxX, maxY, maxZ = bb(topology)
             centroid = Vertex.ByCoordinates(minX+(maxX-minX)*0.5, minY+(maxY-minY)*0.5, minZ+(maxZ-minZ)*0.5)
-            wOrigin = Vertex.ByCoordinates(Vertex.X(centroid), Vertex.Y(centroid), minZ)
+            wOrigin = Vertex.ByCoordinates(Vertex.X(centroid, mantissa=mantissa), Vertex.Y(centroid, mantissa=mantissa), minZ)
             wFace = Face.Rectangle(origin=wOrigin, width=(maxX-minX)*1.1, length=(maxY-minY)*1.1)
             wFaces = []
             wOffset = (maxZ-minZ)/wSides
             for i in range(wSides-1):
                 wFaces.append(Topology.Translate(wFace, 0,0,wOffset*(i+1)))
-            uOrigin = Vertex.ByCoordinates(minX, Vertex.Y(centroid), Vertex.Z(centroid))
+            uOrigin = Vertex.ByCoordinates(minX, Vertex.Y(centroid, mantissa=mantissa), Vertex.Z(centroid, mantissa=mantissa))
             uFace = Face.Rectangle(origin=uOrigin, width=(maxZ-minZ)*1.1, length=(maxY-minY)*1.1, direction=[1,0,0])
             uFaces = []
             uOffset = (maxX-minX)/uSides
             for i in range(uSides-1):
                 uFaces.append(Topology.Translate(uFace, uOffset*(i+1),0,0))
-            vOrigin = Vertex.ByCoordinates(Vertex.X(centroid), minY, Vertex.Z(centroid))
+            vOrigin = Vertex.ByCoordinates(Vertex.X(centroid, mantissa=mantissa), minY, Vertex.Z(centroid, mantissa=mantissa))
             vFace = Face.Rectangle(origin=vOrigin, width=(maxX-minX)*1.1, length=(maxZ-minZ)*1.1, direction=[0,1,0])
             vFaces = []
             vOffset = (maxY-minY)/vSides
@@ -917,7 +919,7 @@ class CellComplex():
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
 
-        c = Cell.Prism(origin=origin, width=width, length=length, height=height, uSides=1, vSides=1, wSides=1, placement=placement, tolerance=tolerance)
+        c = Cell.Prism(origin=origin, width=width, length=length, height=height, uSides=1, vSides=1, wSides=1, placement=placement, mantissa=mantissa, tolerance=tolerance)
         prism = slice(c, uSides=uSides, vSides=vSides, wSides=wSides)
         if prism:
             prism = Topology.Orient(prism, origin=origin, dirA=[0, 0, 1], dirB=direction)

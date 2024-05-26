@@ -638,7 +638,7 @@ class Cell():
     
     @staticmethod
     def Cone(origin = None, baseRadius: float = 0.5, topRadius: float = 0, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
-                 dirZ: float = 1, placement: str = "center", tolerance: float = 0.0001):
+                 dirZ: float = 1, placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates a cone.
 
@@ -658,6 +658,8 @@ class Cell():
             The vector representing the up direction of the cone. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the cone. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -719,13 +721,13 @@ class Cell():
         for i in range(uSides):
             angle = math.radians(360/uSides)*i
             if baseRadius > 0:
-                baseX = math.cos(angle)*baseRadius + origin.X() + xOffset
-                baseY = math.sin(angle)*baseRadius + origin.Y() + yOffset
-                baseZ = origin.Z() + zOffset
+                baseX = math.cos(angle)*baseRadius + Vertex.X(origin, mantissa=mantissa) + xOffset
+                baseY = math.sin(angle)*baseRadius + Vertex.Y(origin, mantissa=mantissa) + yOffset
+                baseZ = Vertex.Z(origin, mantissa=mantissa) + zOffset
                 baseV.append(Vertex.ByCoordinates(baseX,baseY,baseZ))
             if topRadius > 0:
-                topX = math.cos(angle)*topRadius + origin.X() + xOffset
-                topY = math.sin(angle)*topRadius + origin.Y() + yOffset
+                topX = math.cos(angle)*topRadius + Vertex.X(origin, mantissa=mantissa) + xOffset
+                topY = math.sin(angle)*topRadius + Vertex.Y(origin, mantissa=mantissa) + yOffset
                 topV.append(Vertex.ByCoordinates(topX,topY,topZ))
         if baseRadius > 0:
             baseWire = Wire.ByVertices(baseV)
@@ -735,8 +737,8 @@ class Cell():
             topWire = Wire.ByVertices(topV)
         else:
             topWire = None
-        baseVertex = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset)
-        topVertex = Vertex.ByCoordinates(origin.X()+xOffset, origin.Y()+yOffset, origin.Z()+zOffset+height)
+        baseVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+xOffset, Vertex.Y(origin, mantissa=mantissa)+yOffset, Vertex.Z(origin, mantissa=mantissa)+zOffset)
+        topVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+xOffset, Vertex.Y(origin, mantissa=mantissa)+yOffset, Vertex.Z(origin, mantissa=mantissa)+zOffset+height)
         cone = createCone(baseWire, topWire, baseVertex, topVertex, tolerance)
         if cone == None:
             print("Cell.Cone - Error: Could not create a cone. Returning None.")
@@ -744,11 +746,11 @@ class Cell():
         
         if vSides > 1:
             cutting_planes = []
-            baseX = origin.X() + xOffset
-            baseY = origin.Y() + yOffset
+            baseX = Vertex.X(origin, mantissa=mantissa) + xOffset
+            baseY = Vertex.Y(origin, mantissa=mantissa) + yOffset
             size = max(baseRadius, topRadius)*3
             for i in range(1, vSides):
-                baseZ = origin.Z() + zOffset + float(height)/float(vSides)*i
+                baseZ = Vertex.Z(origin, mantissa=mantissa) + zOffset + float(height)/float(vSides)*i
                 tool_origin = Vertex.ByCoordinates(baseX, baseY, baseZ)
                 cutting_planes.append(Face.ByWire(Wire.Rectangle(origin=tool_origin, width=size, length=size), tolerance=tolerance))
             cutting_planes_cluster = Cluster.ByTopologies(cutting_planes)
@@ -800,7 +802,7 @@ class Cell():
  
     @staticmethod
     def Cylinder(origin = None, radius: float = 0.5, height: float = 1, uSides: int = 16, vSides: int = 1, direction: list = [0, 0, 1],
-                     placement: str = "center", tolerance: float = 0.0001):
+                     placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates a cylinder.
 
@@ -820,6 +822,8 @@ class Cell():
             The vector representing the up direction of the cylinder. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the cylinder. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -848,7 +852,7 @@ class Cell():
         elif placement.lower() == "lowerleft":
             xOffset = radius
             yOffset = radius
-        circle_origin = Vertex.ByCoordinates(origin.X() + xOffset, origin.Y() + yOffset, origin.Z() + zOffset)
+        circle_origin = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa) + xOffset, Vertex.Y(origin, mantissa=mantissa) + yOffset, Vertex.Z(origin, mantissa=mantissa) + zOffset)
         
         baseWire = Wire.Circle(origin=circle_origin, radius=radius, sides=uSides, fromAngle=0, toAngle=360, close=True, direction=[0, 0, 1], placement="center", tolerance=tolerance)
         baseFace = Face.ByWire(baseWire, tolerance=tolerance)
@@ -856,8 +860,8 @@ class Cell():
                             tolerance=tolerance)
         if vSides > 1:
             cutting_planes = []
-            baseX = origin.X() + xOffset
-            baseY = origin.Y() + yOffset
+            baseX = Vertex.X(origin, mantissa=mantissa) + xOffset
+            baseY = Vertex.Y(origin, mantissa=mantissa) + yOffset
             size = radius*3
             for i in range(1, vSides):
                 baseZ = origin.Z() + zOffset + float(height)/float(vSides)*i
@@ -1212,7 +1216,7 @@ class Cell():
 
     @staticmethod
     def Hyperboloid(origin = None, baseRadius: float = 0.5, topRadius: float = 0.5, height: float = 1, sides: int = 24, direction: list = [0, 0, 1],
-                        twist: float = 60, placement: str = "center", tolerance: float = 0.0001):
+                        twist: float = 60, placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates a hyperboloid.
 
@@ -1234,6 +1238,8 @@ class Cell():
             The angle to twist the base cylinder. The default is 60.
         placement : str , optional
             The description of the placement of the origin of the hyperboloid. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1243,10 +1249,10 @@ class Cell():
             The created hyperboloid.
 
         """
-        from topologicpy.Cluster import Cluster
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         import math
 
@@ -1295,13 +1301,13 @@ class Cell():
         for i in range(sides):
             angle = math.radians(360/sides)*i
             if baseRadius > 0:
-                baseX = math.sin(angle+math.radians(twist))*baseRadius + w_origin.X() + xOffset
-                baseY = math.cos(angle+math.radians(twist))*baseRadius + w_origin.Y() + yOffset
-                baseZ = w_origin.Z() + zOffset
+                baseX = math.sin(angle+math.radians(twist))*baseRadius + Vertex.X(w_origin, mantissa=mantissa) + xOffset
+                baseY = math.cos(angle+math.radians(twist))*baseRadius + Vertex.Y(w_origin, mantissa=mantissa) + yOffset
+                baseZ = Vertex.Z(w_origin, mantissa=mantissa) + zOffset
                 baseV.append(Vertex.ByCoordinates(baseX,baseY,baseZ))
             if topRadius > 0:
-                topX = math.sin(angle-math.radians(twist))*topRadius + w_origin.X() + xOffset
-                topY = math.cos(angle-math.radians(twist))*topRadius + w_origin.Y() + yOffset
+                topX = math.sin(angle-math.radians(twist))*topRadius + Vertex.X(w_origin, mantissa=mantissa) + xOffset
+                topY = math.cos(angle-math.radians(twist))*topRadius + Vertex.Y(w_origin, mantissa=mantissa) + yOffset
                 topV.append(Vertex.ByCoordinates(topX,topY,topZ))
 
         hyperboloid = createHyperboloid(baseV, topV, tolerance)
@@ -1546,7 +1552,7 @@ class Cell():
         return octahedron
     
     @staticmethod
-    def Pipe(edge, profile = None, radius: float = 0.5, sides: int = 16, startOffset: float = 0, endOffset: float = 0, endcapA = None, endcapB = None) -> dict:
+    def Pipe(edge, profile = None, radius: float = 0.5, sides: int = 16, startOffset: float = 0, endOffset: float = 0, endcapA = None, endcapB = None, mantissa: int = 6) -> dict:
         """
         Description
         ----------
@@ -1570,7 +1576,9 @@ class Cell():
             The topology to place at the start vertex of the centerline edge. The positive Z direction of the end cap will be oriented in the direction of the centerline edge.
         endcapB, optional
             The topology to place at the end vertex of the centerline edge. The positive Z direction of the end cap will be oriented in the inverse direction of the centerline edge.
-
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
+        
         Returns
         -------
         dict
@@ -1580,7 +1588,6 @@ class Cell():
             'endcapB'
 
         """
-
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
@@ -1596,12 +1603,12 @@ class Cell():
         endU = 1.0 - (endOffset / length)
         sv = Edge.VertexByParameter(edge, startU)
         ev = Edge.VertexByParameter(edge, endU)
-        x1 = sv.X()
-        y1 = sv.Y()
-        z1 = sv.Z()
-        x2 = ev.X()
-        y2 = ev.Y()
-        z2 = ev.Z()
+        x1 = Vertex.X(sv, mantissa=mantissa)
+        y1 = Vertex.Y(sv, mantissa=mantissa)
+        z1 = Vertex.Z(sv, mantissa=mantissa)
+        x2 = Vertex.X(ev, mantissa=mantissa)
+        y2 = Vertex.Y(ev, mantissa=mantissa)
+        z2 = Vertex.Z(ev, mantissa=mantissa)
         dx = x2 - x1
         dy = y2 - y1
         dz = z2 - z1
@@ -1615,9 +1622,9 @@ class Cell():
         else:
             for i in range(sides):
                 angle = math.radians(360/sides)*i
-                x = math.sin(angle)*radius + sv.X()
-                y = math.cos(angle)*radius + sv.Y()
-                z = sv.Z()
+                x = math.sin(angle)*radius + Vertex.X(sv, mantissa=mantissa)
+                y = math.cos(angle)*radius + Vertex.Y(sv, mantissa=mantissa)
+                z = Vertex.Z(sv, mantissa=mantissa)
                 baseV.append(Vertex.ByCoordinates(x, y, z))
                 topV.append(Vertex.ByCoordinates(x, y, z+dist))
 
@@ -1635,12 +1642,12 @@ class Cell():
         zzz = Vertex.ByCoordinates(0, 0, 0)
         if endcapA:
             origin = edge.StartVertex()
-            x1 = origin.X()
-            y1 = origin.Y()
-            z1 = origin.Z()
-            x2 = edge.EndVertex().X()
-            y2 = edge.EndVertex().Y()
-            z2 = edge.EndVertex().Z()
+            x1 = Vertex.X(origin, mantissa=mantissa)
+            y1 = Vertex.Y(origin, mantissa=mantissa)
+            z1 = Vertex.Z(origin, mantissa=mantissa)
+            x2 = Vertex.X(edge.EndVertex(), mantissa=mantissa)
+            y2 = Vertex.Y(edge.EndVertex(), mantissa=mantissa)
+            z2 = Vertex.Z(edge.EndVertex(), mantissa=mantissa)
             dx = x2 - x1
             dy = y2 - y1
             dz = z2 - z1    
@@ -1653,15 +1660,15 @@ class Cell():
             endcapA = Topology.Copy(endcapA)
             endcapA = Topology.Rotate(endcapA, origin=zzz, axis=[0, 1, 0], angle=theta)
             endcapA = Topology.Rotate(endcapA, origin=zzz, axis=[0, 0, 1], angle=phi+180)
-            endcapA = Topology.Translate(endcapA, origin.X(), origin.Y(), origin.Z())
+            endcapA = Topology.Translate(endcapA, Vertex.X(origin, mantissa=mantissa), Vertex.Y(origin, mantissa=mantissa), Vertex.Z(origin, mantissa=mantissa))
         if endcapB:
             origin = edge.EndVertex()
-            x1 = origin.X()
-            y1 = origin.Y()
-            z1 = origin.Z()
-            x2 = edge.StartVertex().X()
-            y2 = edge.StartVertex().Y()
-            z2 = edge.StartVertex().Z()
+            x1 = Vertex.X(origin, mantissa=mantissa)
+            y1 = Vertex.Y(origin, mantissa=mantissa)
+            z1 = Vertex.Z(origin, mantissa=mantissa)
+            x2 = Vertex.X(edge.StartVertex(), mantissa=mantissa)
+            y2 = Vertex.Y(edge.StartVertex(), mantissa=mantissa)
+            z2 = Vertex.Z(edge.StartVertex(), mantissa=mantissa)
             dx = x2 - x1
             dy = y2 - y1
             dz = z2 - z1    
@@ -1674,12 +1681,12 @@ class Cell():
             endcapB = Topology.Copy(endcapB)
             endcapB = Topology.Rotate(endcapB, origin=zzz, axis=[0, 1, 0], angle=theta)
             endcapB = Topology.Rotate(endcapB, origin=zzz, axis=[0, 0, 1], angle=phi+180)
-            endcapB = Topology.Translate(endcapB, origin.X(), origin.Y(), origin.Z())
+            endcapB = Topology.Translate(endcapB, Vertex.X(origin, mantissa=mantissa), Vertex.Y(origin, mantissa=mantissa), Vertex.Z(origin, mantissa=mantissa))
         return {'pipe': pipe, 'endcapA': endcapA, 'endcapB': endcapB}
     
     @staticmethod
     def Prism(origin= None, width: float = 1, length: float = 1, height: float = 1, uSides: int = 1, vSides: int = 1, wSides: int = 1,
-                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
+                  direction: list = [0, 0, 1], placement: str ="center", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Description
         ----------
@@ -1705,6 +1712,8 @@ class Cell():
             The vector representing the up direction of the prism. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -1755,10 +1764,10 @@ class Cell():
         elif placement.lower() == "lowerleft":
             xOffset = width*0.5
             yOffset = length*0.5
-        vb1 = Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z()+zOffset)
-        vb2 = Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z()+zOffset)
-        vb3 = Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z()+zOffset)
-        vb4 = Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z()+zOffset)
+        vb1 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)-width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)-length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
+        vb2 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)-length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
+        vb3 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)+length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
+        vb4 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)-width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)+length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
         baseFace = Face.ByWire(baseWire, tolerance=tolerance)

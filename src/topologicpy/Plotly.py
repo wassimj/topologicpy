@@ -272,7 +272,23 @@ class Plotly:
         return df
 
     @staticmethod
-    def DataByGraph(graph, vertexColor="black", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, showVertexLegend=False, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, showEdgeLegend=False, colorScale="viridis"):
+    def DataByGraph(graph,
+                    vertexColor: str = "black",
+                    vertexSize: float = 6,
+                    vertexLabelKey: str = None,
+                    vertexGroupKey: str = None,
+                    vertexGroups: list = [],
+                    showVertices: bool = True,
+                    showVertexLegend: bool = False,
+                    edgeColor: str = "black",
+                    edgeWidth: float = 1,
+                    edgeLabelKey: str = None,
+                    edgeGroupKey: str = None,
+                    edgeGroups: list = [],
+                    showEdges: bool = True,
+                    showEdgeLegend: bool = False,
+                    colorScale: str = "viridis",
+                    mantissa: int = 6):
         """
         Creates plotly vertex and edge data from the input graph.
 
@@ -344,9 +360,9 @@ class Plotly:
             vertices = Graph.Vertices(graph)
             if vertexLabelKey or vertexGroupKey:
                 for v in vertices:
-                    Xn=[round(Vertex.X(v), 4) for v in vertices] # x-coordinates of nodes
-                    Yn=[round(Vertex.Y(v), 4) for v in vertices] # y-coordinates of nodes
-                    Zn=[round(Vertex.Z(v), 4) for v in vertices] # x-coordinates of nodes
+                    Xn=[Vertex.X(v, mantissa=mantissa) for v in vertices] # x-coordinates of nodes
+                    Yn=[Vertex.Y(v, mantissa=mantissa) for v in vertices] # y-coordinates of nodes
+                    Zn=[Vertex.Z(v, mantissa=mantissa) for v in vertices] # x-coordinates of nodes
                     v_label = ""
                     v_group = ""
                     d = Topology.Dictionary(v)
@@ -371,9 +387,9 @@ class Plotly:
                     v_labels.append(v_label)
             else:
                 for v in vertices:
-                    Xn=[round(Vertex.X(v), 4) for v in vertices] # x-coordinates of nodes
-                    Yn=[round(Vertex.Y(v), 4) for v in vertices] # y-coordinates of nodes
-                    Zn=[round(Vertex.Z(v), 4) for v in vertices] # x-coordinates of nodes
+                    Xn=[Vertex.X(v, mantissa=mantissa) for v in vertices] # x-coordinates of nodes
+                    Yn=[Vertex.Y(v, mantissa=mantissa) for v in vertices] # y-coordinates of nodes
+                    Zn=[Vertex.Z(v, mantissa=mantissa) for v in vertices] # x-coordinates of nodes
             if len(list(set(v_groupList))) < 2:
                 v_groupList = vertexColor
             if len(v_labels) < 1:
@@ -409,9 +425,9 @@ class Plotly:
                 for e in edges:
                     sv = Edge.StartVertex(e)
                     ev = Edge.EndVertex(e)
-                    Xe+=[round(Vertex.X(sv), 4), round(Vertex.X(ev), 4), None] # x-coordinates of edge ends
-                    Ye+=[round(Vertex.Y(sv), 4), round(Vertex.Y(ev), 4), None] # y-coordinates of edge ends
-                    Ze+=[round(Vertex.Z(sv), 4), round(Vertex.Z(ev), 4), None] # z-coordinates of edge ends
+                    Xe+=[Vertex.X(sv, mantissa=mantissa), Vertex.X(ev, mantissa=mantissa), None] # x-coordinates of edge ends
+                    Ye+=[Vertex.Y(sv, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa), None] # y-coordinates of edge ends
+                    Ze+=[Vertex.Z(sv, mantissa=mantissa), Vertex.Z(ev, mantissa=mantissa), None] # z-coordinates of edge ends
                     e_label = ""
                     e_group = ""
                     d = Topology.Dictionary(e)
@@ -435,9 +451,9 @@ class Plotly:
                 for e in edges:
                     sv = Edge.StartVertex(e)
                     ev = Edge.EndVertex(e)
-                    Xe+=[round(Vertex.X(sv), 4), round(Vertex.X(ev), 4), None] # x-coordinates of edge ends
-                    Ye+=[round(Vertex.Y(sv), 4), round(Vertex.Y(ev), 4), None] # y-coordinates of edge ends
-                    Ze+=[round(Vertex.Z(sv), 4), round(Vertex.Z(ev), 4), None] # z-coordinates of edge ends
+                    Xe+=[Vertex.X(sv, mantissa=mantissa), Vertex.X(ev, mantissa=mantissa), None] # x-coordinates of edge ends
+                    Ye+=[Vertex.Y(sv, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa), None] # y-coordinates of edge ends
+                    Ze+=[Vertex.Z(sv, mantissa=mantissa), Vertex.Z(ev, mantissa=mantissa), None] # z-coordinates of edge ends
 
             if len(list(set(e_groupList))) < 2:
                 e_groupList = edgeColor
@@ -459,14 +475,6 @@ class Plotly:
             data.append(e_trace)
 
         return data
-
-
-
-
-
-
-
-
 
     @staticmethod
     def DataByTopology(topology,
@@ -603,6 +611,9 @@ class Plotly:
             The vertex, edge, and face data list.
 
         """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Color import Color
@@ -634,9 +645,9 @@ class Plotly:
                     minGroup = 0
                     maxGroup = 1
                 for m, v in enumerate(vertices):
-                    x.append(round(v[0], mantissa))
-                    y.append(round(v[1], mantissa))
-                    z.append(round(v[2], mantissa))
+                    x.append(v[0])
+                    y.append(v[1])
+                    z.append(v[2])
                     label = ""
                     group = ""
                     if len(dictionaries) > 0:
@@ -666,9 +677,9 @@ class Plotly:
                         labels.append(label)
             else:
                 for v in vertices:
-                    x.append(round(v[0], mantissa))
-                    y.append(round(v[1], mantissa))
-                    z.append(round(v[2], mantissa))
+                    x.append(v[0])
+                    y.append(v[1])
+                    z.append(v[2])
             
             if len(list(set(groupList))) < 2:
                 groupList = color
@@ -714,9 +725,9 @@ class Plotly:
                 for m, e in enumerate(edges):
                     sv = vertices[e[0]]
                     ev = vertices[e[1]]
-                    x+=[round(sv[0], mantissa),round(ev[0], mantissa), None] # x-coordinates of edge ends
-                    y+=[round(sv[1], mantissa),round(ev[1], mantissa), None] # y-coordinates of edge ends
-                    z+=[round(sv[2], mantissa),round(ev[2], mantissa), None] # z-coordinates of edge ends
+                    x+=[sv[0], ev[0], None] # x-coordinates of edge ends
+                    y+=[sv[1], ev[1], None] # y-coordinates of edge ends
+                    z+=[sv[2], ev[2], None] # z-coordinates of edge ends
                     label = ""
                     group = ""
                     if len(dictionaries) > 0:
@@ -748,9 +759,9 @@ class Plotly:
                 for e in edges:
                     sv = vertices[e[0]]
                     ev = vertices[e[1]]
-                    x+=[round(sv[0],mantissa),round(ev[0],mantissa), None] # x-coordinates of edge ends
-                    y+=[round(sv[1],mantissa),round(ev[1],mantissa), None] # y-coordinates of edge ends
-                    z+=[round(sv[2],mantissa),round(ev[2],mantissa), None] # z-coordinates of edge ends
+                    x+=[sv[0], ev[0], None] # x-coordinates of edge ends
+                    y+=[sv[1], ev[1], None] # y-coordinates of edge ends
+                    z+=[sv[2], ev[2], None] # z-coordinates of edge ends
                 
             if len(list(set(groupList))) < 2:
                     groupList = color
@@ -779,9 +790,9 @@ class Plotly:
             y = []
             z = []
             for v in vertices:
-                x.append(round(v[0], mantissa))
-                y.append(round(v[1], mantissa))
-                z.append(round(v[2], mantissa))
+                x.append(v[0])
+                y.append(v[1])
+                z.append(v[2])
             i = []
             j = []
             k = []
@@ -870,12 +881,6 @@ class Plotly:
                     lighting = {"facenormalsepsilon": 0},
                 )
             return fData
-        
-        from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        from time import time
 
         if not Topology.IsInstance(topology, "Topology"):
             return None
@@ -901,7 +906,7 @@ class Plotly:
             
             if intensityKey:
                 for i, tp_v in enumerate(tp_vertices):
-                    vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
+                    vertices.append([Vertex.X(tp_v, mantissa=mantissa), Vertex.Y(tp_v, mantissa=mantissa), Vertex.Z(tp_v, mantissa=mantissa)])
                     d = Topology.Dictionary(tp_v)
                     if d:
                         v = Dictionary.ValueAtKey(d, key=intensityKey)
@@ -938,7 +943,7 @@ class Plotly:
                         if vertexLabelKey or vertexGroupKey:
                             d = Topology.Dictionary(tp_v)
                             v_dictionaries.append(d)
-                        vertices.append([tp_v.X(), tp_v.Y(), tp_v.Z()])
+                        vertices.append([Vertex.X(tp_v, mantissa=mantissa), Vertex.Y(tp_v, mantissa=mantissa), Vertex.Z(tp_v, mantissa=mantissa)])
                 data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
             
         if showEdges and Topology.Type(topology) > Topology.TypeID("Vertex"):
@@ -963,24 +968,6 @@ class Plotly:
             else:
                 tp_faces = Topology.Faces(topology)
             if not(tp_faces == None or tp_faces == []):
-                # rebuild faces to remove any degenerate faces
-                #new_faces = []
-                #for i, f in enumerate(tp_faces):
-                    #eb = Face.ExternalBoundary(f)
-                    #eb = Topology.RemoveCollinearEdges(eb)
-                    #if not eb == None:
-                        #ibList = Face.InternalBoundaries(f)
-                        #ibList = [Wire.RemoveCollinearEdges(ib) for ib in ibList]
-                        #ibList = [ib for ib in ibList if not ib == None]
-                        #new_f = Face.ByWires(eb, ibList, silent=False)
-                        #if Topology.IsInstance(new_f, "Face"):
-                            #if faceLabelKey or faceGroupKey:
-                                #d = Topology.Dictionary(tp_faces[i])
-                                #keys = Dictionary.Keys(d)
-                                #if len(keys) > 0:
-                                    #new_f = Topology.SetDictionary(new_f, d)
-                            #new_faces.append(new_f)
-                
                 f_dictionaries = []
                 all_triangles = []
                 for tp_face in tp_faces:

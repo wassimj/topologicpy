@@ -1111,7 +1111,7 @@ class Topology():
 
     
     @staticmethod
-    def BoundingBox(topology, optimize=0, axes="xyz", tolerance=0.0001):
+    def BoundingBox(topology, optimize: int = 0, axes: str ="xyz", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns a cell representing a bounding box of the input topology. The returned cell contains a dictionary with keys "xrot", "yrot", and "zrot" that represents rotations around the X, Y, and Z axes. If applied in the order of Z, Y, X, the resulting box will become axis-aligned.
 
@@ -1123,6 +1123,8 @@ class Topology():
             If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding box so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding box. The default is 0.
         axes : str , optional
             Sets what axes are to be used for rotating the bounding box. This can be any permutation or substring of "xyz". It is not case sensitive. The default is "xyz".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -1138,6 +1140,7 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
+
         def bb(topology):
             vertices = []
             _ = topology.Vertices(None, vertices)
@@ -1145,9 +1148,9 @@ class Topology():
             y = []
             z = []
             for aVertex in vertices:
-                x.append(aVertex.X())
-                y.append(aVertex.Y())
-                z.append(aVertex.Z())
+                x.append(Vertex.X(aVertex, mantissa=mantissa))
+                y.append(Vertex.Y(aVertex, mantissa=mantissa))
+                z.append(Vertex.Z(aVertex, mantissa=mantissa))
             minX = min(x)
             minY = min(y)
             minZ = min(z)
@@ -2954,7 +2957,7 @@ class Topology():
         return contexts
 
     @staticmethod
-    def ConvexHull(topology, tolerance=0.0001):
+    def ConvexHull(topology, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates a convex hull
 
@@ -2962,6 +2965,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input Topology.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -2985,7 +2990,7 @@ class Topology():
                 _ = item.Vertices(None, vertices)
                 pointList = []
                 for v in vertices:
-                    pointList.append([v.X(), v.Y(), v.Z()])
+                    pointList.append(Vertex.Coordinates(v, mantissa=mantissa))
                 points = np.array(pointList)
                 if option:
                     hull = ConvexHull(points, qhull_options=option)
@@ -3118,8 +3123,8 @@ class Topology():
             The input topology with the divided topologies added to it as contents.
 
         """
-        
         from topologicpy.Dictionary import Dictionary
+
         if not Topology.IsInstance(topologyA, "Topology"):
             print("Topology.Divide - Error: the input topologyA parameter is not a valid topology. Returning None.")
             return None
@@ -3186,7 +3191,7 @@ class Topology():
         return topologyA
     
     @staticmethod
-    def Explode(topology, origin=None, scale=1.25, typeFilter=None, axes="xyz", tolerance=0.0001):
+    def Explode(topology, origin=None, scale: float = 1.25, typeFilter: str = None, axes: str = "xyz", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Explodes the input topology. See https://en.wikipedia.org/wiki/Exploded-view_drawing.
 
@@ -3202,6 +3207,8 @@ class Topology():
             The type of the subtopologies to explode. This can be any of "vertex", "edge", "face", or "cell". If set to None, a subtopology one level below the type of the input topology will be used. The default is None.
         axes : str , optional
             Sets what axes are to be used for exploding the topology. This can be any permutation or substring of "xyz". It is not case sensitive. The default is "xyz".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -3288,19 +3295,19 @@ class Topology():
             topologies = Topology.SubTopologies(topology, subTopologyType=typeFilter.lower())
         for aTopology in topologies:
             c = Topology.InternalVertex(aTopology, tolerance=tolerance)
-            oldX = c.X()
-            oldY = c.Y()
-            oldZ = c.Z()
+            oldX = Vertex.X(c, mantissa=mantissa)
+            oldY = Vertex.Y(c, mantissa=mantissa)
+            oldZ = Vertex.Z(c, mantissa=mantissa)
             if x_flag:
-                newX = (oldX - origin.X())*scale + origin.X()
+                newX = (oldX - Vertex.X(origin, mantissa=mantissa))*scale + Vertex.X(origin, mantissa=mantissa)
             else:
                 newX = oldX
             if y_flag:
-                newY = (oldY - origin.Y())*scale + origin.Y()
+                newY = (oldY - Vertex.Y(origin, mantissa=mantissa))*scale + Vertex.Y(origin, mantissa=mantissa)
             else:
                 newY = oldY
             if z_flag:
-                newZ = (oldZ - origin.Z())*scale + origin.Z()
+                newZ = (oldZ - Vertex.Z(origin, mantissa=mantissa))*scale + Vertex.Z(origin, mantissa=mantissa)
             else:
                 newZ = oldZ
             xT = newX - oldX
@@ -3362,7 +3369,7 @@ class Topology():
         return False
 
 
-    def ExportToDXF(topologies, path,  overwrite=False):
+    def ExportToDXF(topologies, path: str,  overwrite: bool = False, mantissa: int = 6):
         """
         Exports the input topology to a DXF file. See https://en.wikipedia.org/wiki/AutoCAD_DXF.
         THe DXF version is 'R2010'
@@ -3376,6 +3383,8 @@ class Topology():
             The input file path.
         overwrite : bool , optional
             If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -3423,14 +3432,14 @@ class Topology():
         def add_vertices(vertices, msp):
             for v in vertices:
                 if Topology.IsInstance(v, "Vertex"):
-                    msp.add_point((Vertex.X(v), Vertex.Y(v), Vertex.Z(v)))
+                    msp.add_point((Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)))
         def add_edges(edges, msp):
             for e in edges:
                 if Topology.IsInstance(e, "Edge"):
                     sv = Edge.StartVertex(e)
                     ev = Edge.EndVertex(e)
-                    start = (Vertex.X(sv), Vertex.Y(sv), Vertex.Z(sv))
-                    end = (Vertex.X(ev), Vertex.Y(ev), Vertex.Z(ev))
+                    start = (Vertex.X(sv, mantissa=mantissa), Vertex.Y(sv, mantissa=mantissa), Vertex.Z(sv, mantissa=mantissa))
+                    end = (Vertex.X(ev, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa), Vertex.Z(ev, mantissa=mantissa))
                     msp.add_line(start, end)
         def add_wires(wires, msp):
             for i, w in enumerate(wires):
@@ -3442,8 +3451,8 @@ class Topology():
                     for edge in edges:
                         sv = Edge.StartVertex(edge)
                         ev = Edge.EndVertex(edge)
-                        start = (Vertex.X(sv), Vertex.Y(sv), Vertex.Z(sv))
-                        end = (Vertex.X(ev), Vertex.Y(ev), Vertex.Z(ev))
+                        start = (Vertex.X(sv, mantissa=mantissa), Vertex.Y(sv, mantissa=mantissa), Vertex.Z(sv, mantissa=mantissa))
+                        end = (Vertex.X(ev, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa), Vertex.Z(ev, mantissa=mantissa))
                         block.add_line(start, end)
                     # Insert the block into the model space
                     msp.add_blockref(block_name, insert=(0, 0, 0))
@@ -4229,7 +4238,7 @@ class Topology():
         return {"filtered": filteredTopologies, "other": otherTopologies}
 
     @staticmethod
-    def Flatten(topology, origin=None, direction=[0, 0, 1]):
+    def Flatten(topology, origin=None, direction: list = [0, 0, 1], mantissa: int = 6):
         """
         Flattens the input topology such that the input origin is located at the world origin and the input topology is rotated such that the input vector is pointed in the Up direction (see Vector.Up()).
 
@@ -4239,8 +4248,10 @@ class Topology():
             The input topology.
         origin : topologic_core.Vertex , optional
             The input origin. If set to None, The object's centroid will be used to place the world origin. The default is None.
-        vector : list , optional
+        direction : list , optional
             The input direction vector. The input topology will be rotated such that this vector is pointed in the positive Z axis.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -4257,13 +4268,13 @@ class Topology():
         if origin == None:
             origin = Topology.Centroid(topology)
         up = Vector.Up()
-        flat_topology = Topology.Translate(topology, -Vertex.X(origin), -Vertex.Y(origin), -Vertex.Z(origin))
+        flat_topology = Topology.Translate(topology, -Vertex.X(origin, mantissa=mantissa), -Vertex.Y(origin, mantissa=mantissa), -Vertex.Z(origin, mantissa=mantissa))
         tran_mat = Vector.TransformationMatrix(direction, up)
         flat_topology = Topology.Transform(flat_topology, tran_mat)
         return flat_topology
     
     @staticmethod
-    def Geometry(topology, mantissa=6):
+    def Geometry(topology, mantissa: int = 6):
         """
         Returns the geometry (mesh data format) of the input topology as a dictionary of vertices, edges, and faces.
 
@@ -4543,7 +4554,7 @@ class Topology():
             return None
 
     @staticmethod
-    def IsPlanar(topology, tolerance=0.0001):
+    def IsPlanar(topology, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns True if all the vertices of the input topology are co-planar. Returns False otherwise.
 
@@ -4551,6 +4562,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -4560,7 +4573,8 @@ class Topology():
             True if all the vertices of the input topology are co-planar. False otherwise.
 
         """
-        
+        from topologicpy.Vertex import Vertex
+
         def isOnPlane(v, plane, tolerance):
             x, y, z = v
             a, b, c, d = plane
@@ -4569,16 +4583,16 @@ class Topology():
             return False
 
         def plane(v1, v2, v3):
-            a1 = v2.X() - v1.X() 
-            b1 = v2.Y() - v1.Y() 
-            c1 = v2.Z() - v1.Z() 
-            a2 = v3.X() - v1.X() 
-            b2 = v3.Y() - v1.Y() 
-            c2 = v3.Z() - v1.Z() 
+            a1 = Vertex.X(v2, mantissa=mantissa) - Vertex.X(v1, mantissa=mantissa)
+            b1 = Vertex.Y(v2, mantissa=mantissa) - Vertex.Y(v1, mantissa=mantissa)
+            c1 = Vertex.Z(v2, mantissa=mantissa) - Vertex.Z(v1, mantissa=mantissa)
+            a2 = Vertex.X(v3, mantissa=mantissa) - Vertex.X(v1, mantissa=mantissa)
+            b2 = Vertex.Y(v3, mantissa=mantissa) - Vertex.Y(v1, mantissa=mantissa)
+            c2 = Vertex.Z(v3, mantissa=mantissa) - Vertex.Z(v1, mantissa=mantissa)
             a = b1 * c2 - b2 * c1 
             b = a2 * c1 - a1 * c2 
             c = a1 * b2 - b1 * a2 
-            d = (- a * v1.X() - b * v1.Y() - c * v1.Z())
+            d = (- a * Vertex.X(v1, mantissa=mantissa) - b * Vertex.Y(v1, mantissa=mantissa) - c * Vertex.Z(v1, mantissa=mantissa))
             return [a, b, c, d]
 
         if not Topology.IsInstance(topology, "Topology"):
@@ -4592,7 +4606,7 @@ class Topology():
         else:
             p = plane(vertices[0], vertices[1], vertices[2])
             for i in range(len(vertices)):
-                if isOnPlane([vertices[i].X(), vertices[i].Y(), vertices[i].Z()], p, tolerance) == False:
+                if isOnPlane([Vertex.X(vertices[i], mantissa=mantissa), Vertex.Y(vertices[i], mantissa=mantissa), Vertex.Z(vertices[i], mantissa=mantissa)], p, tolerance) == False:
                     result = False
                     break
         return result
@@ -4846,7 +4860,7 @@ class Topology():
         return return_topology
 
     @staticmethod
-    def Place(topology, originA=None, originB=None):
+    def Place(topology, originA=None, originB=None, mantissa: int = 6):
         """
         Places the input topology at the specified location.
 
@@ -4858,6 +4872,8 @@ class Topology():
             The old location to use as the origin of the movement. If set to None, the centroid of the input topology is used. The default is None.
         originB : topologic_core.Vertex , optional
             The new location at which to place the topology. If set to None, the world origin (0, 0, 0) is used. The default is None.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
 
         Returns
         -------
@@ -4873,9 +4889,9 @@ class Topology():
         if not Topology.IsInstance(originA, "Vertex"):
             originA = Vertex.ByCoordinates(0, 0, 0)
 
-        x = originB.X() - originA.X()
-        y = originB.Y() - originA.Y()
-        z = originB.Z() - originA.Z()
+        x = Vertex.X(originB, mantissa=mantissa) - Vertex.X(originA, mantissa=mantissa)
+        y = Vertex.Y(originB, mantissa=mantissa) - Vertex.Y(originA, mantissa=mantissa)
+        z = Vertex.Z(originB, mantissa=mantissa) - Vertex.Z(originA, mantissa=mantissa)
         newTopology = None
         try:
             newTopology = Topology.Translate(topology, x, y, z)
@@ -5304,7 +5320,7 @@ class Topology():
         return topology
 
     @staticmethod
-    def ReplaceVertices(topology, verticesA=[], verticesB=[], mantissa=6, tolerance=0.0001):
+    def ReplaceVertices(topology, verticesA: list = [], verticesB: list = [], mantissa: int = 6, tolerance: float = 0.0001):
         """
         Replaces the vertices in the first input list with the vertices in the second input list and rebuilds the input topology. The two lists must be of the same length.
 
@@ -5341,7 +5357,7 @@ class Topology():
             n = Vertex.Index(v, verts, tolerance=tolerance)
             if not n == None:
                 new_verts[n] = verticesB[i]
-        new_g_verts = [[Vertex.X(v),Vertex.Y(v),Vertex.Z(v)] for v in new_verts]
+        new_g_verts = [[Vertex.X(v, mantissa=mantissa),Vertex.Y(v, mantissa=mantissa),Vertex.Z(v, mantissa=mantissa)] for v in new_verts]
         new_topology = Topology.ByGeometry(vertices=new_g_verts, edges=g_edges, faces=g_faces)
         return new_topology
 
@@ -6286,7 +6302,7 @@ class Topology():
         return returnTopology
     
     @staticmethod
-    def Taper(topology, origin=None, ratioRange=[0, 1], triangulate=False, tolerance=0.0001):
+    def Taper(topology, origin=None, ratioRange: list = [0, 1], triangulate: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Tapers the input topology. This method tapers the input geometry along its Z-axis based on the ratio range input.
 
@@ -6300,6 +6316,8 @@ class Topology():
             The desired ratio range. This will specify a linear range from bottom to top for tapering the vertices. 0 means no tapering, and 1 means maximum (inward) tapering. Negative numbers mean that tapering will be outwards.
         triangulate : bool , optional
             If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. Vertices will not be moved if the calculated distance is at or less than this tolerance.
 
@@ -6321,17 +6339,17 @@ class Topology():
         if origin == None:
             origin = Topology.Centroid(topology)
         vertices = Topology.Vertices(topology)
-        zList = [Vertex.Z(v) for v in vertices]
+        zList = [Vertex.Z(v, mantissa=mantissa) for v in vertices]
         minZ = min(zList)
         maxZ = max(zList)
         new_vertices = []
         for v in vertices:
             ht = (Vertex.Z(v)-minZ)/(maxZ - minZ)
             rt = ratioRange[0] + ht*(ratioRange[1] - ratioRange[0])
-            new_origin = Vertex.ByCoordinates(Vertex.X(origin), Vertex.Y(origin), Vertex.Z(v))
-            new_dist = Vertex.Distance(new_origin, v)*rt
-            c_a = Vertex.Coordinates(new_origin)
-            c_b = Vertex.Coordinates(v)
+            new_origin = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa), Vertex.Y(origin, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa))
+            new_dist = Vertex.Distance(new_origin, v, mantissa=mantissa)*rt
+            c_a = Vertex.Coordinates(new_origin, mantissa=mantissa)
+            c_b = Vertex.Coordinates(v, mantissa=mantissa)
             new_dir = [(c_a[0]-c_b[0]), (c_a[1]-c_b[1]), 0]
             if abs(new_dist) > tolerance:
                 new_v = Topology.TranslateByDirectionDistance(v, direction=new_dir, distance=new_dist)
@@ -6342,7 +6360,7 @@ class Topology():
         return return_topology
     
     @staticmethod
-    def Twist(topology, origin=None, angleRange=[45, 90], triangulate=False):
+    def Twist(topology, origin=None, angleRange: list = [45, 90], triangulate: bool = False, mantissa: int = 6):
         """
         Twists the input topology. This method twists the input geometry along its Z-axis based on the degree range input.
 
@@ -6356,6 +6374,8 @@ class Topology():
             The desired angle range in degrees. This will specify a linear range from bottom to top for twisting the vertices. positive numbers mean a clockwise rotation.
         triangulate : bool , optional
             If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         
         Returns
         -------
@@ -6373,7 +6393,7 @@ class Topology():
             origin = Topology.Centroid(topology)
             
         vertices = Topology.Vertices(topology)
-        zList = [Vertex.Z(v) for v in vertices]
+        zList = [Vertex.Z(v, mantissa=mantissa) for v in vertices]
         minZ = min(zList)
         maxZ = max(zList)
         h = maxZ - minZ
@@ -6381,7 +6401,7 @@ class Topology():
         for v in vertices:
             ht = (Vertex.Z(v)-minZ)/(maxZ - minZ)
             new_rot = angleRange[0] + ht*(angleRange[1] - angleRange[0])
-            orig = Vertex.ByCoordinates(Vertex.X(origin), Vertex.Y(origin), Vertex.Z(v))
+            orig = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa), Vertex.Y(origin, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa))
             new_vertices.append(Topology.Rotate(v, origin=orig, axis=[0, 0, 1], angle=new_rot))
         return_topology = Topology.ReplaceVertices(topology, vertices, new_vertices)
         return_topology = Topology.Fix(return_topology, topologyType=Topology.TypeAsString(topology))
@@ -7142,3 +7162,28 @@ class Topology():
         elif name == "topology":
             typeID = 4096
         return typeID
+    
+    @staticmethod
+    def UUID(topology, namespace="topologicpy"):
+        """
+        Generate a UUID v5 based on the provided content and a fixed namespace.
+        
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology
+        namespace : str , optional
+            The base namescape to use for generating the UUID
+
+        Returns
+        -------
+        UUID
+            The uuid of the input topology.
+
+        """
+        import uuid
+
+        predefined_namespace_dns = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
+        namespace_uuid = uuid.uuid5(predefined_namespace_dns, namespace)
+        brep_string = Topology.BREPString(topology)
+        return uuid.uuid5(namespace_uuid, brep_string)

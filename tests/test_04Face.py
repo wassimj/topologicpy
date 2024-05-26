@@ -278,7 +278,7 @@ def test_main():
     # Case 19 - FacingToward
     print("Case 19")
     # test 1
-    ft1 = Face.FacingToward(f1, [0, 0, 1], True, 0.005)                   # with optional inputs
+    ft1 = Face.FacingToward(f1, [0, 0, 1], True, tolerance=0.005)                   # with optional inputs
     assert isinstance(ft1, bool), "Face.FacingToward. Should be Boolean"
     # test 2
     ft2 = Face.FacingToward(cF1)                                                 # without optional inputs

@@ -1,0 +1,218 @@
+@prefix top: <http://github.com/wassimj/topologicpy/resources#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+top:3DSpatialModelingOntology a owl:Ontology .
+
+# Classes
+top:Topology a owl:Class ;
+    rdfs:comment "A superclass of Vertex, Edge, Wire, Face, Shell, Cell, CellComplex, and Cluster" .
+
+top:Vertex a top:Topology ;
+    rdfs:comment "A point in 3D space defined by coordinates." .
+
+top:Edge a top:Topology ;
+    rdfs:comment "A line segment connecting two vertices." .
+
+top:Wire a top:Topology ;
+    rdfs:comment "A sequence of connected edges." .
+
+top:Face a top:Topology ;
+    rdfs:comment "A flat surface bounded by a wire(loop) of edges and optional holes." .
+
+top:Shell a top:Topology ;
+    rdfs:comment "A collection of faces that share edges forming a segmented surface." .
+
+top:Cell a top:Topology ;
+    rdfs:comment "A volumetric element bounded by faces." .
+
+top:CellComplex a top:Topology ;
+    rdfs:comment "A collection of cells that share faces forming a segmented volumetric element." .
+
+top:Cluster a top:Topology ;
+    rdfs:comment "A group of related objects (e.g., cells, faces)." .
+
+top:Grid a top:Topology ;
+    rdfs:comment "A spatial structure dividing space into regular intervals." .
+
+top:Dictionary a owl:Class ;
+    rdfs:comment "A key-value store for metadata." .
+
+top:Aperture a top:Topology ;
+    rdfs:comment "An opening or hole in a face or shell." .
+
+top:Context a owl:Class ;
+    rdfs:comment "The environment or settings in which objects exist." .
+
+top:Vector a owl:Class ;
+    rdfs:comment "A mathematical entity with magnitude and direction." .
+
+top:Matrix a owl:Class ;
+    rdfs:comment "A rectangular 4x4 array of numbers used for transformations." .
+
+top:Graph a top:Topology ;
+    rdfs:comment "A collection of nodes (vertices) and edges representing relationships." .
+
+# Object Properties
+top:hasDictionary a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Dictionary ;
+    owl:maxCardinality 1 ;
+    rdfs:comment "The dictionary of a topology." .
+
+top:hasStartVertex a owl:ObjectProperty ;
+    rdfs:domain top:Edge ;
+    rdfs:range top:Vertex ;
+    owl:minCardinality 1 ;
+    owl:maxCardinality 1 ;
+    rdfs:comment "The starting vertex of an edge." .
+
+top:hasEndVertex a owl:ObjectProperty ;
+    rdfs:domain top:Edge ;
+    rdfs:range top:Vertex ;
+    owl:minCardinality 1 ;
+    owl:maxCardinality 1 ;
+    rdfs:comment "The ending vertex of an edge." .
+
+top:hasEdges a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Edge ;
+    owl:maxCardinality owl:many ;
+    rdfs:comment "The edges that belong to a topology." .
+
+top:hasVertices a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Vertex ;
+    owl:minCardinality 1 ;
+    owl:maxCardinality owl:many ;
+    rdfs:comment "The vertices that belong to an object." .
+
+top:hasExternalBoundary a owl:ObjectProperty ;
+    rdfs:domain top:Face, top:Shell ;
+    rdfs:range top:Wire, top:Face ;
+    owl:minCardinality 1 ;
+    owl:maxCardinality 1 ;
+    rdfs:comment "The external boundary wire of a face or boundary face of a shell." .
+
+top:hasInternalBoundaries a owl:ObjectProperty ;
+    rdfs:domain top:Face, top:Cell ;
+    rdfs:range top:Wire, top:Shell ;
+    owl:maxCardinality owl:many ;
+    rdfs:comment "The internal boundary wires of a face or shells of a Cell." .
+
+top:hasFaces a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Face ;
+    owl:maxCardinality owl:many ;
+    rdfs:comment "The faces that belong to an object." .
+
+top:hasWires a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Wire ;
+    owl:maxCardinality owl:many ;
+    rdfs:comment "The wires that belong to an object." .
+
+top:hasShells a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Shell ;
+    owl:maxCardinality owl:many ;
+    rdfs:comment "The shells that belong to an object." .
+
+top:hasCells a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Cell ;
+    owl:maxCardinality owl:many ;
+    rdfs:comment "The cells that belong to an object." .
+
+top:hasAdjacentTopologies a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;  # Can link to any object type
+    owl:maxCardinality owl:many ;
+    rdfs:comment "An adjacent topology of a topology" .
+
+top:hasSuperTopologies a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;  # Can link to any object type
+    owl:maxCardinality owl:many ;
+    rdfs:comment "A parent/super topology of a topology" .
+
+top:hasSubTopologies a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;  # Can link to any object type
+    owl:maxCardinality owl:many ;
+    rdfs:comment "A parent/super topology of a topology" .
+
+top:hasContents a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;  # Can link to any object type
+    owl:maxCardinality owl:many ;
+    rdfs:comment "A content topology of a topology" .
+
+top:hasApertures a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;  # Can link to any object type
+    owl:maxCardinality owl:many ;
+    rdfs:comment "A content topology of a topology" .
+
+top:hasKeys a owl:ObjectProperty ;
+    rdfs:domain top:Dictionary ;
+    rdfs:range rdf:Property ;
+    rdfs:comment "The keys in a dictionary." .
+
+top:hasValues a owl:ObjectProperty ;
+    rdfs:domain top:Dictionary ;
+    rdfs:range rdfs:Literal ;
+    rdfs:comment "The values in a dictionary." .
+
+# Data Properties
+top:hasX a owl:DatatypeProperty ;
+    rdfs:domain top:Vertex ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The X coordinate of a vertex." .
+
+top:hasY a owl:DatatypeProperty ;
+    rdfs:domain top:Vertex ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The Y coordinate of a vertex." .
+
+top:hasZ a owl:DatatypeProperty ;
+    rdfs:domain top:Vertex ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The Z coordinate of a vertex." .
+
+top:hasLength a owl:DatatypeProperty ;
+    rdfs:domain top:Edge, top:Wire ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The length of an edge or wire." .
+
+top:hasArea a owl:DatatypeProperty ;
+    rdfs:domain top:Face, top:Shell, top:Cell, top:CellComplex ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The area of a face, shell, cell, or cell complex." .
+
+top:hasVolume a owl:DatatypeProperty ;
+    rdfs:domain top:Cell, top:CellComplex ;
+    rdfs:range xsd:float ;
+    rdfs:comment "The volume of a cell or cell complex." .
+
+top:hasMantissa a owl:DatatypeProperty ;
+    rdfs:domain [ rdfs:subClassOf [ a owl:Class ; owl:unionOf ( top:Vertex top:Edge top:Wire top:Face top:Shell top:Cell top:CellComplex ) ] ] ;
+    rdfs:range xsd:int ;
+    rdfs:comment "The number of digits after the decimal point to use to report the value." .
+
+top:hasUnit a owl:DatatypeProperty ;
+    rdfs:domain [ rdfs:subClassOf [ a owl:Class ; owl:unionOf ( top:Vertex top:Edge top:Wire top:Face top:Shell top:Cell top:CellComplex ) ] ] ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The unit of measurement for numeric values." .
+
+top:createdAt a owl:DatatypeProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The creation date and time of an object." .
+
+top:updatedAt a owl:DatatypeProperty ;
+    rdfs:domain owl:Thing ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The last update date and time of an object." .

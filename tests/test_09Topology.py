@@ -512,7 +512,7 @@ def test_main():
     assert topology_ip == True, "Topology.IsPlanar. Should be True"
     # test 2
     cluster_pts2 = Cluster.ByTopologies([v00,v01,v02,v04])
-    topology_ip2 = Topology.IsPlanar(cluster_pts2,0.01)   # with optional inputs
+    topology_ip2 = Topology.IsPlanar(cluster_pts2, tolerance=0.01)   # with optional inputs
     assert isinstance(topology_ip2, bool), "Topology.IsPlanar. Should be bool"
     assert topology_ip2 == False, "Topology.IsPlanar. Should be False"
 
