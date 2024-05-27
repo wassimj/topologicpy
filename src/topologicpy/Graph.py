@@ -2121,7 +2121,21 @@ class Graph:
         return Graph.ByVerticesEdges(g_vertices, g_edges)
     
     @staticmethod
-    def ByTopology(topology, direct=True, directApertures=False, viaSharedTopologies=False, viaSharedApertures=False, toExteriorTopologies=False, toExteriorApertures=False, toContents=False, toOutposts=False, idKey="TOPOLOGIC_ID", outpostsKey="outposts", useInternalVertex=True, storeBREP=False, tolerance=0.0001):
+    def ByTopology(topology,
+                   direct: bool = True,
+                   directApertures: bool = False,
+                   viaSharedTopologies: bool = False,
+                   viaSharedApertures: bool = False,
+                   toExteriorTopologies: bool = False,
+                   toExteriorApertures: bool = False,
+                   toContents: bool = False,
+                   toOutposts: bool = False,
+                   idKey: str = "TOPOLOGIC_ID",
+                   outpostsKey: str = "outposts",
+                   useInternalVertex: bool =True,
+                   storeBREP: bool =False,
+                   mantissa: int = 6,
+                   tolerance: float = 0.0001):
         """
         Creates a graph.See https://en.wikipedia.org/wiki/Graph_(discrete_mathematics).
 
@@ -2453,7 +2467,7 @@ class Graph:
                                     else:
                                         vst2 = content.CenterOfMass()
                                     d1 = content.GetDictionary()
-                                    vst2 = Vertex.ByCoordinates(vst2.X(), vst2.Y(), vst2.Z())
+                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa), Vertex.Y(vst2, mantissa=mantissa), Vertex.Z(vst2, mantissa=mantissa))
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                         d3 = mergeDictionaries2([d1, d2])
@@ -2473,7 +2487,7 @@ class Graph:
                             else:
                                 vsa = sharedAp.CenterOfMass()
                             d1 = sharedAp.GetDictionary()
-                            vsa = Vertex.ByCoordinates(vsa.X()+(tolerance*100), vsa.Y()+(tolerance*100), vsa.Z()+(tolerance*100))
+                            vsa = Vertex.ByCoordinates(Vertex.X(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Y(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Z(vsa, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2515,7 +2529,7 @@ class Graph:
                                     else:
                                         vst2 = content.CenterOfMass()
                                     d1 = content.GetDictionary()
-                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                         d3 = mergeDictionaries2([d1, d2])
@@ -2535,7 +2549,7 @@ class Graph:
                             else:
                                 vea = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vea = Vertex.ByCoordinates(vea.X()+(tolerance*100), vea.Y()+(tolerance*100), vea.Z()+(tolerance*100))
+                            vea = Vertex.ByCoordinates(Vertex.X(vea, mantissa=mantissa)+(tolerance*100), Vertex.Y(vea, mantissa=mantissa)+(tolerance*100), Vertex.Z(vea, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2557,7 +2571,7 @@ class Graph:
                                 vcn = Topology.InternalVertex(content, tolerance)
                             else:
                                 vcn = content.CenterOfMass()
-                            vcn = Vertex.ByCoordinates(vcn.X()+(tolerance*100), vcn.Y()+(tolerance*100), vcn.Z()+(tolerance*100))
+                            vcn = Vertex.ByCoordinates(Vertex.X(vcn, mantissa=mantissa)+(tolerance*100), Vertex.Y(vcn, mantissa=mantissa)+(tolerance*100), Vertex.Z(vcn, mantissa=mantissa)+(tolerance*100))
                             d1 = content.GetDictionary()
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2663,7 +2677,7 @@ class Graph:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2684,7 +2698,7 @@ class Graph:
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2706,7 +2720,7 @@ class Graph:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
                                 vst = content.CenterOfMass()
-                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             d1 = content.GetDictionary()
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2861,7 +2875,7 @@ class Graph:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2882,7 +2896,7 @@ class Graph:
                             else:
                                 vst = sharedAp.CenterOfMass()
                             d1 = sharedAp.GetDictionary()
-                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2922,7 +2936,7 @@ class Graph:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2943,7 +2957,7 @@ class Graph:
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2965,7 +2979,7 @@ class Graph:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
                                 vst = content.CenterOfMass()
-                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             d1 = content.GetDictionary()
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3111,7 +3125,7 @@ class Graph:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3132,7 +3146,7 @@ class Graph:
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3154,7 +3168,7 @@ class Graph:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
                                 vst = content.CenterOfMass()
-                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             d1 = content.GetDictionary()
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3317,7 +3331,7 @@ class Graph:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3338,7 +3352,7 @@ class Graph:
                             else:
                                 vst = sharedAp.CenterOfMass()
                             d1 = sharedAp.GetDictionary()
-                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3368,7 +3382,7 @@ class Graph:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3389,7 +3403,7 @@ class Graph:
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3411,7 +3425,7 @@ class Graph:
                                 vst = Topology.InternalVertex(content, tolerance)
                             else:
                                 vst = content.CenterOfMass()
-                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             d1 = content.GetDictionary()
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3563,7 +3577,7 @@ class Graph:
                                         vst2 = Topology.InternalVertex(content, tolerance)
                                     else:
                                         vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(vst2.X()+(tolerance*100), vst2.Y()+(tolerance*100), vst2.Z()+(tolerance*100))
+                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3584,7 +3598,7 @@ class Graph:
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
-                            vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3616,7 +3630,7 @@ class Graph:
                     else:
                         vst = content.CenterOfMass()
                     d1 = content.GetDictionary()
-                    vst = Vertex.ByCoordinates(vst.X()+(tolerance*100), vst.Y()+(tolerance*100), vst.Z()+(tolerance*100))
+                    vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                     if storeBREP:
                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                         d3 = mergeDictionaries2([d1, d2])

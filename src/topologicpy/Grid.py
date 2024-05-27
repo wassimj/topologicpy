@@ -215,7 +215,13 @@ class Grid():
 
 
     @staticmethod
-    def VerticesByDistances(face=None, origin=None, uRange=[-0.5,-0.25,0, 0.25,0.5], vRange=[-0.5,-0.25,0,0.25,0.5], clip=False, tolerance=0.0001):
+    def VerticesByDistances(face=None,
+                            origin=None,
+                            uRange: list = [-0.5,-0.25,0, 0.25,0.5],
+                            vRange: list = [-0.5,-0.25,0,0.25,0.5],
+                            clip: bool = False,
+                            mantissa: int = 6,
+                            tolerance: float = 0.0001):
         """
         Creates a grid (cluster of vertices).
 
@@ -231,6 +237,8 @@ class Grid():
             A list of distances for the *v* grid lines from the vOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
         clip : bool , optional
             If True the grid will be clipped by the shape of the input face. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -247,6 +255,7 @@ class Grid():
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Vector import Vector
+
         if len(uRange) < 1 or len(vRange) < 1:
             return None
         if not origin:
@@ -266,8 +275,8 @@ class Grid():
             v3 = Vertex.ByCoordinates(0, 0, 0)
             v4 = Vertex.ByCoordinates(0,max(vRange),0)
 
-        uVector = [v2.X()-v1.X(), v2.Y()-v1.Y(),v2.Z()-v1.Z()]
-        vVector = [v4.X()-v3.X(), v4.Y()-v3.Y(),v4.Z()-v3.Z()]
+        uVector = [Vertex.X(v2, mantissa=mantissa)-Vertex.X(v1, mantissa=mantissa), Vertex.Y(v2, mantissa=mantissa)-Vertex.Y(v1, mantissa=mantissa),Vertex.Z(v2, mantissa=mantissa)-Vertex.Z(v1, mantissa=mantissa)]
+        vVector = [Vertex.X(v4, mantissa=mantissa)-Vertex.X(v3, mantissa=mantissa), Vertex.Y(v4, mantissa=mantissa)-Vertex.Y(v3, mantissa=mantissa),Vertex.Z(v4, mantissa=mantissa)-Vertex.Z(v3, mantissa=mantissa)]
         gridVertices = []
         if len(uRange) > 0:
             uRange.sort()
@@ -277,7 +286,7 @@ class Grid():
                 for v in vRange:
                     uTempVec = Vector.Multiply(uuVector, u, tolerance)
                     vTempVec = Vector.Multiply(uvVector, v, tolerance)
-                    gridVertex = Vertex.ByCoordinates(origin.X()+uTempVec[0], origin.Y()+vTempVec[1], origin.Z()+uTempVec[2])
+                    gridVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+uTempVec[0], Vertex.Y(origin, mantissa=mantissa)+vTempVec[1], Vertex.Z(origin, mantissa=mantissa)+uTempVec[2])
                     if clip and Topology.IsInstance(face, "Face"):
                         gridVertex = gridVertex.Intersect(face, False)
                     if Topology.IsInstance(gridVertex, "Vertex"):
