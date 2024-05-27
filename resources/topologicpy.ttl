@@ -8,211 +8,310 @@ top:3DSpatialModelingOntology a owl:Ontology .
 
 # Classes
 top:Topology a owl:Class ;
-    rdfs:comment "A superclass of Vertex, Edge, Wire, Face, Shell, Cell, CellComplex, and Cluster" .
+    rdfs:comment "A superclass of Vertex, Edge, Wire, Face, Shell, Cell, CellComplex, and Cluster."@en, 
+                 "Une superclasse de Vertex, Edge, Wire, Face, Shell, Cell, CellComplex, et Cluster."@fr, 
+                 "Een superklasse van Vertex, Edge, Wire, Face, Shell, Cell, CellComplex, en Cluster."@nl .
 
-top:Vertex a top:Topology ;
-    rdfs:comment "A point in 3D space defined by coordinates." .
+top:Vertex a owl:class ;
+    rdfs:subClassOf top:Topology ;
+    rdfs:comment "A point in 3D space defined by X,Y,Z coordinates."@en ,
+                 "Un point dans l'espace 3D défini par des X,Y,Z coordonnées."@fr , 
+                 "Een punt in 3D-ruimte gedefinieerd door X,Y,Z coördinaten."@nl .
 
-top:Edge a top:Topology ;
-    rdfs:comment "A line segment connecting two vertices." .
+top:Edge a owl:class ;
+    rdfs:subClassOf top:Topology ;
+    rdfs:comment "A line segment connecting two vertices."@en  ,
+                 "Un segment de ligne reliant deux sommets."@fr , 
+                 "Een lijnsegment dat twee toppen verbindt."@nl .
 
-top:Wire a top:Topology ;
-    rdfs:comment "A sequence of connected edges." .
+top:Wire a owl:class ;
+    rdfs:subClassOf top:Topology ;
+    rdfs:comment "A sequence of connected edges."@en ,
+                 "Une séquence d'arêtes connectées."@fr , 
+                 "Een reeks verbonden randen."@nl .
 
-top:Face a top:Topology ;
-    rdfs:comment "A flat surface bounded by a wire(loop) of edges and optional holes." .
+top:Face a owl:class ;
+    rdfs:subClassOf top:Topology ;
+    rdfs:comment "A flat surface bounded by a wire(loop) of edges and optional holes."@en ,
+                 "Une surface plane délimitée par une boucle d'arêtes et des trous optionnels."@fr , 
+                 "Een vlak oppervlak begrensd door een lus van randen en optionele gaten."@nl .
 
-top:Shell a top:Topology ;
-    rdfs:comment "A collection of faces that share edges forming a segmented surface." .
+top:Shell a owl:class ;
+    rdfs:subClassOf top:Topology ;
+    rdfs:comment "A collection of faces that share edges forming a segmented surface."@en ,
+                 "Une collection de faces formant une surface fermée."@fr , 
+                 "Een verzameling gezichten die een gesloten oppervlak vormen."@nl .
 
-top:Cell a top:Topology ;
-    rdfs:comment "A volumetric element bounded by faces." .
+top:Cell a owl:class ;
+    rdfs:subClassOf top:Topology ;
+    rdfs:comment "A volumetric element bounded by faces."@en ,
+                 "Un élément volumétrique délimité par des faces."@fr , 
+                 "Een volumetrisch element begrensd door gezichten."@nl .
 
-top:CellComplex a top:Topology ;
-    rdfs:comment "A collection of cells that share faces forming a segmented volumetric element." .
+top:CellComplex a owl:Class ;
+    rdfs:subClassOf top:Topology ;
+    rdfs:comment "A collection of cells that share faces forming a segmented volumetric element."@en , 
+                 "Une collection de cellules partageant des faces formant un élément volumétrique segmenté."@fr , 
+                 "Een verzameling cellen die gezichten delen en een gesegmenteerd volumetrisch element vormen."@nl .
 
-top:Cluster a top:Topology ;
-    rdfs:comment "A group of related objects (e.g., cells, faces)." .
+top:Cluster a owl:Class ;
+    rdfs:subClassOf top:Topology ;
+    rdfs:comment "A group of related objects (e.g., cells, faces)."@en , 
+                 "Un groupe d'objets liés (par exemple, cellules, faces)."@fr , 
+                 "Een groep gerelateerde objecten (bijv. cellen, gezichten)."@nl .
 
-top:Grid a top:Topology ;
-    rdfs:comment "A spatial structure dividing space into regular intervals." .
+top:Grid a owl:Class ;
+    rdfs:comment "A spatial structure dividing space into regular intervals."@en, 
+                 "Une structure spatiale divisant l'espace en intervalles réguliers."@fr, 
+                 "Een ruimtelijke structuur die de ruimte verdeelt in regelmatige intervallen."@nl .
 
 top:Dictionary a owl:Class ;
-    rdfs:comment "A key-value store for metadata." .
+    rdfs:comment "A key-value store for metadata."@en, 
+                 "Un magasin de clés-valeurs pour les métadonnées."@fr, 
+                 "Een sleutel-waarde-opslag voor metadata."@nl .
 
-top:Aperture a top:Topology ;
-    rdfs:comment "An opening or hole in a face or shell." .
+top:Aperture a owl:Class ;
+    rdfs:subClassOf top:Face ;
+    rdfs:comment "An element indicating an opening or a hole."@en, 
+                 "Un élément indiquant une ouverture ou un trou."@fr, 
+                 "Een element dat een opening of een gat aangeeft."@nl .
 
 top:Context a owl:Class ;
-    rdfs:comment "The environment or settings in which objects exist." .
+    rdfs:comment "The environment or settings in which objects exist."@en, 
+                 "L'environnement ou les paramètres dans lesquels les objets existent."@fr, 
+                 "De omgeving of instellingen waarin objecten bestaan."@nl .
 
 top:Vector a owl:Class ;
-    rdfs:comment "A mathematical entity with magnitude and direction." .
+    rdfs:comment "A mathematical entity with magnitude and direction."@en, 
+                 "Une entité mathématique avec une magnitude et une direction."@fr, 
+                 "Een wiskundige entiteit met grootte en richting."@nl .
 
 top:Matrix a owl:Class ;
-    rdfs:comment "A rectangular 4x4 array of numbers used for transformations." .
+    rdfs:comment "A rectangular array of numbers used for transformations."@en, 
+                 "Un tableau rectangulaire de nombres utilisé pour les transformations."@fr, 
+                 "Een rechthoekige array van getallen die worden gebruikt voor transformaties."@nl .
 
-top:Graph a top:Topology ;
-    rdfs:comment "A collection of nodes (vertices) and edges representing relationships." .
+top:Graph a owl:Class ;
+    rdfs:comment "A collection of nodes (vertices) and edges representing relationships."@en, 
+                 "Une collection de nœuds (sommets) et d'arêtes représentant des relations."@fr, 
+                 "Een verzameling knooppunten (toppen) en randen die relaties vertegenwoordigen."@nl .
 
 # Object Properties
 top:hasDictionary a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
+    rdfs:domain owl:class ;
     rdfs:range top:Dictionary ;
     owl:maxCardinality 1 ;
-    rdfs:comment "The dictionary of a topology." .
+    rdfs:comment "The dictionary of a topology."@en .
 
 top:hasStartVertex a owl:ObjectProperty ;
     rdfs:domain top:Edge ;
     rdfs:range top:Vertex ;
     owl:minCardinality 1 ;
     owl:maxCardinality 1 ;
-    rdfs:comment "The starting vertex of an edge." .
+    rdfs:comment "The starting vertex of an edge."@en .
 
 top:hasEndVertex a owl:ObjectProperty ;
     rdfs:domain top:Edge ;
     rdfs:range top:Vertex ;
     owl:minCardinality 1 ;
     owl:maxCardinality 1 ;
-    rdfs:comment "The ending vertex of an edge." .
+    rdfs:comment "The ending vertex of an edge."@en .
 
 top:hasEdges a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
+    rdfs:domain top:Wire, top:Shell, top:Cell, top:CellComplex, top:Cluster, top:Graph ;
     rdfs:range top:Edge ;
-    owl:maxCardinality owl:many ;
-    rdfs:comment "The edges that belong to a topology." .
+    rdfs:comment "The edges that belong to an object."@en , 
+                 "Les arêtes appartenant à un objet."@fr , 
+                 "De randen die bij een object horen."@nl .
 
 top:hasVertices a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
+    rdfs:domain top:Wire, top:Shell, top:Cell, top:CellComplex, top:Cluster, top:Graph ;
     rdfs:range top:Vertex ;
-    owl:minCardinality 1 ;
-    owl:maxCardinality owl:many ;
-    rdfs:comment "The vertices that belong to an object." .
+    rdfs:comment "The vertices that belong to an object."@en , 
+                 "Les sommets appartenant à un objet."@fr , 
+                 "De toppen die bij een object horen."@nl .
 
 top:hasExternalBoundary a owl:ObjectProperty ;
-    rdfs:domain top:Face, top:Shell ;
-    rdfs:range top:Wire, top:Face ;
-    owl:minCardinality 1 ;
-    owl:maxCardinality 1 ;
-    rdfs:comment "The external boundary wire of a face or boundary face of a shell." .
+    rdfs:domain top:Face, top:Shell, top:Cell, top:CellComplex ;
+    rdfs:range [ rdf:type owl:Class ;
+                 owl:unionOf (top:Wire top:Shell top:Cell) ] ;
+    rdfs:comment "The external boundary of an object."@en , 
+                 "La limite externe d'un objet."@fr , 
+                 "De externe grens van een object."@nl .
 
 top:hasInternalBoundaries a owl:ObjectProperty ;
     rdfs:domain top:Face, top:Cell ;
-    rdfs:range top:Wire, top:Shell ;
+    rdfs:range [ rdf:type owl:Class ;
+                 owl:unionOf (top:Wire top:Shell) ] ;
     owl:maxCardinality owl:many ;
-    rdfs:comment "The internal boundary wires of a face or shells of a Cell." .
+    rdfs:comment "The internal boundary wires of a face or the internal boundary shells of a cell."@en , 
+                 "Les fils de frontière interne d'une face ou les coques de frontière interne d'une cellule."@fr , 
+                 "De interne grensdraden van een gezicht of de interne grensschalen van een cel."@nl .
 
 top:hasFaces a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
+    rdfs:domain top:Shell, top:Cell, top:CellComplex, top:Cluster ;
     rdfs:range top:Face ;
-    owl:maxCardinality owl:many ;
-    rdfs:comment "The faces that belong to an object." .
+    rdfs:comment "The faces that belong to an object."@en , 
+                 "Les faces appartenant à un objet."@fr , 
+                 "De gezichten die bij een object horen."@nl .
 
 top:hasWires a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
+    rdfs:domain top:Cell, top:CellComplex, top:Cluster ;
     rdfs:range top:Wire ;
-    owl:maxCardinality owl:many ;
-    rdfs:comment "The wires that belong to an object." .
+    rdfs:comment "The wires that belong to an object."@en , 
+                 "Les fils appartenant à un objet."@fr , 
+                 "De draden die bij een object horen."@nl .
 
 top:hasShells a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
+    rdfs:domain top:Cell, top:CellComplex, top:Cluster ;
     rdfs:range top:Shell ;
-    owl:maxCardinality owl:many ;
-    rdfs:comment "The shells that belong to an object." .
+    rdfs:comment "The shells that belong to an object."@en , 
+                 "Les coques appartenant à un objet."@fr , 
+                 "De schalen die bij een object horen."@nl .
 
 top:hasCells a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
+    rdfs:domain top:CellComplex, top:Cluster ;
     rdfs:range top:Cell ;
-    owl:maxCardinality owl:many ;
-    rdfs:comment "The cells that belong to an object." .
+    rdfs:comment "The cells that belong to an object."@en , 
+                 "Les cellules appartenant à un objet."@fr , 
+                 "De cellen die bij een object horen."@nl .
 
-top:hasAdjacentTopologies a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Topology ;  # Can link to any object type
-    owl:maxCardinality owl:many ;
-    rdfs:comment "An adjacent topology of a topology" .
+top:hasClusterMember a owl:ObjectProperty ;
+    rdfs:domain top:Cluster ;
+    rdfs:range owl:Thing ;  # Can link to any object
+    rdfs:comment "The members that belong to a cluster."@en , 
+                 "Les membres appartenant à un cluster."@fr , 
+                 "De leden die bij een cluster horen."@nl .
 
-top:hasSuperTopologies a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Topology ;  # Can link to any object type
-    owl:maxCardinality owl:many ;
-    rdfs:comment "A parent/super topology of a topology" .
+# Additional Object Properties for Cluster
+top:hasFreeCells a owl:ObjectProperty ;
+    rdfs:domain top:Cluster ;
+    rdfs:range top:Cell ;
+    rdfs:comment "Free cells in a cluster."@en , 
+                 "Cellules libres dans un cluster."@fr , 
+                 "Vrije cellen in een cluster."@nl .
 
-top:hasSubTopologies a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Topology ;  # Can link to any object type
-    owl:maxCardinality owl:many ;
-    rdfs:comment "A parent/super topology of a topology" .
+top:hasFreeShells a owl:ObjectProperty ;
+    rdfs:domain top:Cluster ;
+    rdfs:range top:Shell ;
+    rdfs:comment "Free shells in a cluster."@en , 
+                 "Coques libres dans un cluster."@fr , 
+                 "Vrije schalen in een cluster."@nl .
 
-top:hasContents a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Topology ;  # Can link to any object type
-    owl:maxCardinality owl:many ;
-    rdfs:comment "A content topology of a topology" .
+top:hasFreeFaces a owl:ObjectProperty ;
+    rdfs:domain top:Cluster ;
+    rdfs:range top:Face ;
+    rdfs:comment "Free faces in a cluster."@en , 
+                 "Faces libres dans un cluster."@fr , 
+                 "Vrije gezichten in een cluster."@nl .
 
-top:hasApertures a owl:ObjectProperty ;
-    rdfs:domain top:Topology ;
-    rdfs:range top:Topology ;  # Can link to any object type
-    owl:maxCardinality owl:many ;
-    rdfs:comment "A content topology of a topology" .
+top:hasFreeWires a owl:ObjectProperty ;
+    rdfs:domain top:Cluster ;
+    rdfs:range top:Wire ;
+    rdfs:comment "Free wires in a cluster."@en , 
+                 "Fils libres dans un cluster."@fr , 
+                 "Vrije draden in een cluster."@nl .
 
+top:hasFreeEdges a owl:ObjectProperty ;
+    rdfs:domain top:Cluster ;
+    rdfs:range top:Edge ;
+    rdfs:comment "Free edges in a cluster."@en , 
+                 "Arêtes libres dans un cluster."@fr , 
+                 "Vrije randen in een cluster."@nl .
+
+top:hasFreeVertices a owl:ObjectProperty ;
+    rdfs:domain top:Cluster ;
+    rdfs:range top:Vertex ;
+    rdfs:comment "Free vertices in a cluster."@en , 
+                 "Sommets libres dans un cluster."@fr , 
+                 "Vrije toppen in een cluster."@nl .
+
+# Dictionary Properties
 top:hasKeys a owl:ObjectProperty ;
     rdfs:domain top:Dictionary ;
-    rdfs:range rdf:Property ;
-    rdfs:comment "The keys in a dictionary." .
+    rdfs:range rdfs:Literal ;
+    rdfs:comment "Keys in a dictionary."@en , 
+                 "Clés dans un dictionnaire."@fr , 
+                 "Sleutels in een woordenboek."@nl .
 
 top:hasValues a owl:ObjectProperty ;
     rdfs:domain top:Dictionary ;
     rdfs:range rdfs:Literal ;
-    rdfs:comment "The values in a dictionary." .
+    rdfs:comment "Values in a dictionary."@en , 
+                 "Valeurs dans un dictionnaire."@fr , 
+                 "Waarden in een woordenboek."@nl .
 
 # Data Properties
 top:hasX a owl:DatatypeProperty ;
     rdfs:domain top:Vertex ;
-    rdfs:range xsd:float ;
-    rdfs:comment "The X coordinate of a vertex." .
+    rdfs:range xsd:decimal ;
+    rdfs:comment "The X coordinate of a vertex."@en , 
+                 "La coordonnée X d'un sommet."@fr , 
+                 "De X-coördinaat van een top."@nl .
 
 top:hasY a owl:DatatypeProperty ;
     rdfs:domain top:Vertex ;
-    rdfs:range xsd:float ;
-    rdfs:comment "The Y coordinate of a vertex." .
+    rdfs:range xsd:decimal ;
+    rdfs:comment "The Y coordinate of a vertex."@en , 
+                 "La coordonnée Y d'un sommet."@fr , 
+                 "De Y-coördinaat van een top."@nl .
 
 top:hasZ a owl:DatatypeProperty ;
     rdfs:domain top:Vertex ;
-    rdfs:range xsd:float ;
-    rdfs:comment "The Z coordinate of a vertex." .
+    rdfs:range xsd:decimal ;
+    rdfs:comment "The Z coordinate of a vertex."@en , 
+                 "La coordonnée Z d'un sommet."@fr , 
+                 "De Z-coördinaat van een top."@nl .
 
 top:hasLength a owl:DatatypeProperty ;
     rdfs:domain top:Edge, top:Wire ;
-    rdfs:range xsd:float ;
-    rdfs:comment "The length of an edge or wire." .
+    rdfs:range xsd:decimal ;
+    rdfs:comment "The length of an edge or wire."@en , 
+                 "La longueur d'une arête ou d'un fil."@fr , 
+                 "De lengte van een rand of draad."@nl .
 
 top:hasArea a owl:DatatypeProperty ;
     rdfs:domain top:Face, top:Shell, top:Cell, top:CellComplex ;
-    rdfs:range xsd:float ;
-    rdfs:comment "The area of a face, shell, cell, or cell complex." .
+    rdfs:range xsd:decimal ;
+    rdfs:comment "The area of a face, shell, cell, or cell complex."@en , 
+                 "La superficie d'une face, d'une coque, d'une cellule ou d'un complexe cellulaire."@fr , 
+                 "Het oppervlak van een gezicht, schaal, cel of celcomplex."@nl .
 
 top:hasVolume a owl:DatatypeProperty ;
     rdfs:domain top:Cell, top:CellComplex ;
-    rdfs:range xsd:float ;
-    rdfs:comment "The volume of a cell or cell complex." .
+    rdfs:range xsd:decimal ;
+    rdfs:comment "The volume of a cell or cell complex."@en , 
+                 "Le volume d'une cellule ou d'un complexe cellulaire."@fr , 
+                 "Het volume van een cel of celcomplex."@nl .
 
 top:hasMantissa a owl:DatatypeProperty ;
-    rdfs:domain [ rdfs:subClassOf [ a owl:Class ; owl:unionOf ( top:Vertex top:Edge top:Wire top:Face top:Shell top:Cell top:CellComplex ) ] ] ;
-    rdfs:range xsd:int ;
-    rdfs:comment "The number of digits after the decimal point to use to report the value." .
+    rdfs:domain [ rdf:type owl:Class ;
+                 owl:unionOf (top:Vertex top:Edge top:Wire top:Face top:Shell top:Cell top:CellComplex) ] ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The number of digits after the decimal point to report the value."@en , 
+                 "Le nombre de chiffres après la virgule pour rapporter la valeur."@fr , 
+                 "Het aantal cijfers na de komma om de waarde te rapporteren."@nl .
 
 top:hasUnit a owl:DatatypeProperty ;
-    rdfs:domain [ rdfs:subClassOf [ a owl:Class ; owl:unionOf ( top:Vertex top:Edge top:Wire top:Face top:Shell top:Cell top:CellComplex ) ] ] ;
+    rdfs:domain [ rdf:type owl:Class ;
+                 owl:unionOf (top:Vertex top:Edge top:Wire top:Face top:Shell top:Cell top:CellComplex) ] ;
     rdfs:range xsd:string ;
-    rdfs:comment "The unit of measurement for numeric values." .
+    rdfs:comment "The unit of measurement."@en , 
+                 "L'unité de mesure."@fr , 
+                 "De meeteenheid."@nl .
 
 top:createdAt a owl:DatatypeProperty ;
-    rdfs:domain owl:Thing ;
+    rdfs:domain [ rdf:type owl:Class ;
+                 owl:unionOf (top:Vertex top:Edge top:Wire top:Face top:Shell top:Cell top:CellComplex) ] ;
     rdfs:range xsd:dateTime ;
-    rdfs:comment "The creation date and time of an object." .
+    rdfs:comment "The creation timestamp."@en , 
+                 "Le timestamp de création."@fr , 
+                 "De aanmaaktijdstempel."@nl .
 
 top:updatedAt a owl:DatatypeProperty ;
-    rdfs:domain owl:Thing ;
+    rdfs:domain [ rdf:type owl:Class ;
+                 owl:unionOf (top:Vertex top:Edge top:Wire top:Face top:Shell top:Cell top:CellComplex) ] ;
     rdfs:range xsd:dateTime ;
-    rdfs:comment "The last update date and time of an object." .
+    rdfs:comment "The last update timestamp."@en , 
+                 "Le timestamp de la dernière mise à jour."@fr , 
+                 "De laatste bijwerktijdstempel."@nl .
