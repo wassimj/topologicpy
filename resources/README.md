@@ -1,9 +1,12 @@
-# topologicpy
+<img src="https://topologic.app/wp-content/uploads/2023/02/topologicpy-logo-no-loop.gif" alt="topologicpy logo" width="100" loop="4">
 
-<img src="https://topologic.app/wp-content/uploads/2023/02/topologicpy-logo-no-loop.gif" alt="topologicpy logo" width="250" loop="1">
+# The topologicpy Ontology 
+<p align="center">
+    <img src=https://topologic.app/wp-content/uploads/2024/05/top_diagram_3D.png alt="3D Diagram of the topologicpy ontology" />
+</p>
 
 ## Ontology Overview
-The TopologicPy 3D Spatial Modeling Ontology is designed to facilitate the detailed representation and manipulation of 3D models through non-manifold BREP (Boundary Representation) structures. Its primary purpose is to provide a comprehensive and structured framework for defining the topology of 3D models, encompassing various elements such as vertices, edges, wires, faces, shells, cells, cell complexes, and clusters. The ontology addresses the domain of computational geometry and spatial modeling, specifically targeting applications in CAD (Computer-Aided Design), BIM (Building Information Modeling), and other 3D modeling environments. By standardizing the representation of complex topological relationships, this ontology aims to enhance interoperability, data exchange, and the accuracy of 3D spatial analysis and visualization.
+The TopologicPy 3D Spatial Modeling Ontology is designed to facilitate the detailed representation and manipulation of 3D models through non-manifold BREP (Boundary Representation) structures. Its primary purpose is to provide a comprehensive and structured framework for defining the topology of 3D models, encompassing various elements such as vertices, edges, wires, faces, shells, cells, cell complexes, and clusters. The ontology is heavily inspired by the BOT ontology (https://w3c-lbd-cg.github.io/bot/) and there are plans in the near future to add alignments with BOT. The ontology addresses the domain of computational geometry and spatial modeling, specifically targeting applications in CAD (Computer-Aided Design), BIM (Building Information Modeling), and other 3D modeling environments. By standardizing the representation of complex topological relationships, this ontology aims to enhance interoperability, data exchange, and the accuracy of 3D spatial analysis and visualization.
 
 ## Prefix and Namespace
 The TopologicPy 3D Spatial Modeling Ontology uses the following prefix and namespace:
@@ -33,6 +36,10 @@ Name: Theo Dounas
 Email: Theo.Dounas@uantwerpen.be
 
 ## Class Descriptions
+
+<p align="center">
+<img src="https://topologic.app/wp-content/uploads/2018/12/ClassHierarchy.jpg" alt="topologicpy Class Hierarchy" />
+</p>
 
 * Topology: The base class for all topological elements.
 * Vertex: Represents a point in 3D space.
@@ -81,7 +88,21 @@ Email: Theo.Dounas@uantwerpen.be
 
 ## Usage
 This ontology provides a structured way to describe 3D models and their topological relationships. It can be used in various applications, including CAD systems, BIM (Building Information Modeling), and other 3D modeling environments.
-
+Here is a snippet of how a top:Space (top:Cell) can connect to other top:Space elements and can contain other elements (e.g. furniture):
+```
+top:1edf15de-85be-5120-9ac7-187656f4f0f7 a bot:Space ;
+    rdfs:label "1edf15de-85be-5120-9ac7-187656f4f0f7" ;
+    top:hasVolume "18.0"^^xsd:float ;
+    top:hasX "6.5"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    top:name "Bathroom"^^xsd:string ;
+    bot:connectsTo top:bdbaf36b-df6b-56ff-8ece-3fccd38fb7ca,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_4 ;
+    bot:containsElement top:6aa9f5cf-3a34-5cef-8e18-2947d82d896f,
+        top:6b9c19ad-eca7-5b56-af62-961f4f4d0c0a,
+        top:6f8202d4-d3f2-5be9-b5b9-fc0f16ee42b2 .
+```
 ## License
 This ontology is released under the MIT License. For more information, see the LICENSE file.
 
