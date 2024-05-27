@@ -106,8 +106,6 @@ top:1edf15de-85be-5120-9ac7-187656f4f0f7 a bot:Space ;
 ## License
 This ontology is released under the MIT License. For more information, see the LICENSE file.
 
-## Usage
-This ontology provides a structured way to describe 3D models and their topological relationships. It can be used in various applications, including CAD systems, BIM (Building Information Modeling), and other 3D modeling environments.
 ## License
 This ontology is licensed under the MIT License.
 For more information, see the LICENSE file included with this repository.
