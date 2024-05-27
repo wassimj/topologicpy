@@ -536,26 +536,35 @@ class Graph:
     
     @staticmethod
     def BOTGraph(graph,
-                bidirectional=False,
-                includeAttributes=False,
-                includeLabel=False,
-                includeGeometry=False,
-                siteLabel = "Site_0001",
-                siteDictionary = None,
-                buildingLabel = "Building_0001",
-                buildingDictionary = None , 
-                storeyPrefix = "Storey",
-                floorLevels =[],
-                labelKey="label",
-                typeKey="type",
-                geometryKey="brep",
-                spaceType = "space",
-                wallType = "wall",
-                slabType = "slab",
-                doorType = "door",
-                windowType = "window",
-                contentType = "content",
-                namespace = "http://github.com/wassimj/topologicpy/resources"
+                bidirectional: bool = False,
+                includeAttributes: bool = False,
+                includeLabel: bool = False,
+                includeGeometry: bool = False,
+                siteLabel: str = "Site_0001",
+                siteDictionary: dict = None,
+                buildingLabel: str = "Building_0001",
+                buildingDictionary: dict = None , 
+                storeyPrefix: str = "Storey",
+                floorLevels: list = [],
+                vertexLabelKey: str = "label",
+                typeKey: str = "type",
+                verticesKey: str = "vertices",
+                edgesKey: str = "edges",
+                edgeLabelKey: str = "",
+                sourceKey: str = "source",
+                targetKey: str = "target",
+                xKey: str = "hasX",
+                yKey: str = "hasY",
+                zKey: str = "hasZ",
+                geometryKey: str = "brep",
+                spaceType: str = "space",
+                wallType: str = "wall",
+                slabType: str = "slab",
+                doorType: str = "door",
+                windowType: str = "window",
+                contentType: str = "content",
+                namespace: str = "http://github.com/wassimj/topologicpy/resources",
+                mantissa: int = 6
                 ):
         """
         Creates an RDF graph according to the BOT ontology. See https://w3c-lbd-cg.github.io/bot/.
@@ -584,9 +593,29 @@ class Graph:
             The desired prefixed to use for each building storey. The default is "Storey".
         floorLevels : list , optional
             The list of floor levels. This should be a numeric list, sorted from lowest to highest.
-            If not provided, floorLevels will be computed automatically based on the vertices' 'z' attribute.
-        labelKey : str , optional
-            The dictionary key to use to look up the label of the node. The default is "label".
+            If not provided, floorLevels will be computed automatically based on the vertices' (zKey)) attribute. See below.
+        verticesKey : str , optional
+            The desired key name to call vertices. The default is "vertices".
+        edgesKey : str , optional
+            The desired key name to call edges. The default is "edges".
+        vertexLabelKey : str , optional
+            If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
+            Note: If vertex labels are not unique, they will be forced to be unique.
+        edgeLabelKey : str , optional
+            If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
+            Note: If edge labels are not unique, they will be forced to be unique.
+        sourceKey : str , optional
+            The dictionary key used to store the source vertex. The default is "source".
+        targetKey : str , optional
+            The dictionary key used to store the target vertex. The default is "target".
+        xKey : str , optional
+            The desired key name to use for x-coordinates. The default is "hasX".
+        yKey : str , optional
+            The desired key name to use for y-coordinates. The default is "hasY".
+        zKey : str , optional
+            The desired key name to use for z-coordinates. The default is "hasZ".
+        geometryKey : str , optional
+            The desired key name to use for geometry. The default is "brep".
         typeKey : str , optional
             The dictionary key to use to look up the type of the node. The default is "type".
         geometryKey : str , optional
@@ -603,7 +632,12 @@ class Graph:
             The dictionary string value to use to look up vertices of type "window". The default is "window".
         contentType : str , optional
             The dictionary string value to use to look up vertices of type "content". The default is "contents".
+        namespace : str , optional
+            The desired namespace to use in the BOT graph. The default is "http://github.com/wassimj/topologicpy/resources".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
 
+            
         Returns
         -------
         rdflib.graph.Graph
@@ -637,7 +671,20 @@ class Graph:
         
         if floorLevels == None:
             floorLevels = []
-        json_data = Graph.JSONData(graph, vertexLabelKey=labelKey)
+        
+        json_data = Graph.JSONData(graph,
+                                   verticesKey=verticesKey,
+                                   edgesKey=edgesKey,
+                                   vertexLabelKey=vertexLabelKey,
+                                   edgeLabelKey=edgeLabelKey,
+                                   sourceKey=sourceKey,
+                                   targetKey=targetKey,
+                                   xKey=xKey,
+                                   yKey=yKey,
+                                   zKey=zKey,
+                                   geometryKey=geometryKey,
+                                   mantissa=mantissa)
+        
         # Create an empty RDF graph
         bot_graph = RDFGraph()
         
@@ -660,28 +707,41 @@ class Graph:
             keys = Dictionary.Keys(siteDictionary)
             for key in keys:
                 value = Dictionary.ValueAtKey(siteDictionary, key)
-                if not (key == labelKey) and not (key == typeKey):
-                    bot_graph.add((site_uri, bot[key], Literal(value)))
+                if not (key == vertexLabelKey) and not (key == typeKey):
+                    if isinstance(value, float):
+                        datatype = XSD.float
+                    elif isinstance(value, bool):
+                        datatype = XSD.boolean
+                    elif isinstance(value, int):
+                        datatype = XSD.integer
+                    elif isinstance(value, str):
+                        datatype = XSD.string
+                    bot_graph.add((site_uri, top[key], Literal(value, datatype=datatype)))
         # Add building
         building_uri = URIRef(buildingLabel)
         bot_graph.add((building_uri, rdf.type, bot.Building))
         if includeLabel:
             bot_graph.add((building_uri, RDFS.label, Literal(buildingLabel)))
         if Topology.IsInstance(buildingDictionary, "Dictionary"):
-            keys = Dictionary.Keys(buildingDictionary)
+            keys = Dictionary.Keys(siteDictionary)
             for key in keys:
-                value = Dictionary.ValueAtKey(buildingDictionary, key)
-                if key == labelKey:
-                    if includeLabel:
-                        bot_graph.add((building_uri, RDFS.label, Literal(value)))
-                    elif key != typeKey:
-                        bot_graph.add((building_uri, bot[key], Literal(value)))
+                value = Dictionary.ValueAtKey(siteDictionary, key)
+                if not (key == vertexLabelKey) and not (key == typeKey):
+                    if isinstance(value, float):
+                        datatype = XSD.float
+                    elif isinstance(value, bool):
+                        datatype = XSD.boolean
+                    elif isinstance(value, int):
+                        datatype = XSD.integer
+                    elif isinstance(value, str):
+                        datatype = XSD.string
+                    bot_graph.add((building_uri, top[key], Literal(value, datatype=datatype)))
         # Add stories
         # if floor levels are not given, then need to be computed
         if len(floorLevels) == 0:
-            for node, attributes in json_data['vertices'].items():
+            for node, attributes in json_data[verticesKey].items():
                 if slabType.lower() in attributes[typeKey].lower():
-                    floorLevels.append(attributes["z"])
+                    floorLevels.append(attributes[zKey])
             floorLevels = list(set(floorLevels))
             floorLevels.sort()
             floorLevels = floorLevels[:-1]
@@ -705,12 +765,12 @@ class Graph:
                 bot_graph.add((storey_uri, bot.isPartOf, building_uri)) # might not be needed
         
         # Add vertices as RDF resources
-        for node, attributes in json_data['vertices'].items():
+        for node, attributes in json_data[verticesKey].items():
             node_uri = URIRef(top[node])
             if spaceType.lower() in attributes[typeKey].lower():
                 bot_graph.add((node_uri, rdf.type, bot.Space))
                 # Find the storey it is on
-                z = attributes["z"]
+                z = attributes[zKey]
                 level = Helper.Position(z, floorLevels)
                 if level > len(storey_uris):
                     level = len(storey_uris)
@@ -731,46 +791,42 @@ class Graph:
             
             if includeAttributes:
                 for key, value in attributes.items():
-                    if key == "brepType":
-                        print("Key = brepType, Value =", value, value.__class__)
                     if key == geometryKey:
                         if includeGeometry:
                             bot_graph.add((node_uri, bot.hasSimpleGeometry, Literal(value)))
-                    if key == labelKey:
+                    if key == vertexLabelKey:
                         if includeLabel:
                             bot_graph.add((node_uri, RDFS.label, Literal(value)))
                     elif key != typeKey and key != geometryKey:
                         if isinstance(value, float):
                             datatype = XSD.float
                         elif isinstance(value, bool):
-                            print("got boolean")
                             datatype = XSD.boolean
                         elif isinstance(value, int):
-                            print("got integer")
                             datatype = XSD.integer
                         elif isinstance(value, str):
                             datatype = XSD.string
                         bot_graph.add((node_uri, top[key], Literal(value, datatype=datatype)))
             if includeLabel:
                 for key, value in attributes.items():
-                    if key == labelKey:
+                    if key == vertexLabelKey:
                         bot_graph.add((node_uri, RDFS.label, Literal(value)))
         
         # Add edges as RDF triples
-        for edge, attributes in json_data['edges'].items():
-            source = attributes["source"]
-            target = attributes["target"]
+        for edge, attributes in json_data[edgesKey].items():
+            source = attributes[sourceKey]
+            target = attributes[targetKey]
             source_uri = URIRef(top[source])
             target_uri = URIRef(top[target])
-            if spaceType.lower() in json_data['vertices'][source][typeKey].lower() and spaceType.lower() in json_data['vertices'][target][typeKey].lower():
+            if spaceType.lower() in json_data[verticesKey][source][typeKey].lower() and spaceType.lower() in json_data[verticesKey][target][typeKey].lower():
                 bot_graph.add((source_uri, bot.adjacentTo, target_uri))
                 if bidirectional:
                     bot_graph.add((target_uri, bot.adjacentTo, source_uri))
-            elif spaceType.lower() in json_data['vertices'][source][typeKey].lower() and wallType.lower() in json_data['vertices'][target][typeKey].lower():
+            elif spaceType.lower() in json_data[verticesKey][source][typeKey].lower() and wallType.lower() in json_data[verticesKey][target][typeKey].lower():
                 bot_graph.add((target_uri, bot.interfaceOf, source_uri))
-            elif spaceType.lower() in json_data['vertices'][source][typeKey].lower() and slabType.lower() in json_data['vertices'][target][typeKey].lower():
+            elif spaceType.lower() in json_data[verticesKey][source][typeKey].lower() and slabType.lower() in json_data['vertices'][target][typeKey].lower():
                 bot_graph.add((target_uri, bot.interfaceOf, source_uri))
-            elif spaceType.lower() in json_data['vertices'][source][typeKey].lower() and contentType.lower() in json_data['vertices'][target][typeKey].lower():
+            elif spaceType.lower() in json_data[verticesKey][source][typeKey].lower() and contentType.lower() in json_data[verticesKey][target][typeKey].lower():
                 bot_graph.add((source_uri, bot.containsElement, target_uri))
                 if bidirectional:
                     bot_graph.add((target_uri, bot.isPartOf, source_uri))
@@ -782,26 +838,36 @@ class Graph:
 
     @staticmethod
     def BOTString(graph,
-                format="turtle",
-                bidirectional=False,
-                includeAttributes=False,
-                includeLabel=False,
-                includeGeometry=False,
-                siteLabel = "Site_0001",
-                siteDictionary = None,
-                buildingLabel = "Building_0001",
-                buildingDictionary = None , 
-                storeyPrefix = "Storey",
-                floorLevels =[],
-                labelKey="label",
-                typeKey="type",
-                geometryKey="brep",
-                spaceType = "space",
-                wallType = "wall",
-                slabType = "slab",
-                doorType = "door",
-                windowType = "window",
-                contentType = "content",
+                  format="turtle",
+                  bidirectional: bool = False,
+                  includeAttributes: bool = False,
+                  includeLabel: bool = False,
+                  includeGeometry: bool = False,
+                  siteLabel: str = "Site_0001",
+                  siteDictionary: dict = None,
+                  buildingLabel: str = "Building_0001",
+                  buildingDictionary: dict = None , 
+                  storeyPrefix: str = "Storey",
+                  floorLevels: list = [],
+                  vertexLabelKey: str = "label",
+                  typeKey: str = "type",
+                  verticesKey: str = "vertices",
+                  edgesKey: str = "edges",
+                  edgeLabelKey: str = "",
+                  sourceKey: str = "source",
+                  targetKey: str = "target",
+                  xKey: str = "hasX",
+                  yKey: str = "hasY",
+                  zKey: str = "hasZ",
+                  geometryKey: str = "brep",
+                  spaceType: str = "space",
+                  wallType: str = "wall",
+                  slabType: str = "slab",
+                  doorType: str = "door",
+                  windowType: str = "window",
+                  contentType: str = "content",
+                  namespace: str = "http://github.com/wassimj/topologicpy/resources",
+                  mantissa: int = 6
                 ):
         
         """
@@ -841,11 +907,33 @@ class Graph:
             The desired prefixed to use for each building storey. The default is "Storey".
         floorLevels : list , optional
             The list of floor levels. This should be a numeric list, sorted from lowest to highest.
-            If not provided, floorLevels will be computed automatically based on the vertices' 'z' attribute.
+            If not provided, floorLevels will be computed automatically based on the vertices' (zKey)) attribute. See below.
+        verticesKey : str , optional
+            The desired key name to call vertices. The default is "vertices".
+        edgesKey : str , optional
+            The desired key name to call edges. The default is "edges".
+        vertexLabelKey : str , optional
+            If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
+            Note: If vertex labels are not unique, they will be forced to be unique.
+        edgeLabelKey : str , optional
+            If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
+            Note: If edge labels are not unique, they will be forced to be unique.
+        sourceKey : str , optional
+            The dictionary key used to store the source vertex. The default is "source".
+        targetKey : str , optional
+            The dictionary key used to store the target vertex. The default is "target".
+        xKey : str , optional
+            The desired key name to use for x-coordinates. The default is "hasX".
+        yKey : str , optional
+            The desired key name to use for y-coordinates. The default is "hasY".
+        zKey : str , optional
+            The desired key name to use for z-coordinates. The default is "hasZ".
+        geometryKey : str , optional
+            The desired key name to use for geometry. The default is "brep".
         typeKey : str , optional
             The dictionary key to use to look up the type of the node. The default is "type".
-        labelKey : str , optional
-            The dictionary key to use to look up the label of the node. The default is "label".
+        geometryKey : str , optional
+            The dictionary key to use to look up the geometry of the node. The default is "brep".
         spaceType : str , optional
             The dictionary string value to use to look up vertices of type "space". The default is "space".
         wallType : str , optional
@@ -858,6 +946,10 @@ class Graph:
             The dictionary string value to use to look up vertices of type "window". The default is "window".
         contentType : str , optional
             The dictionary string value to use to look up vertices of type "content". The default is "contents".
+        namespace : str , optional
+            The desired namespace to use in the BOT graph. The default is "http://github.com/wassimj/topologicpy/resources".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
 
         
         Returns
@@ -866,27 +958,36 @@ class Graph:
             The rdf graph serialized string using the BOT ontology.
         """
         
-        bot_graph = Graph.BOTGraph(graph,
-                            bidirectional=bidirectional,
-                            includeAttributes=includeAttributes,
-                            includeLabel=includeLabel,
-                            includeGeometry=includeGeometry,
-                            siteLabel=siteLabel,
-                            siteDictionary=siteDictionary,
-                            buildingLabel=buildingLabel,
-                            buildingDictionary=buildingDictionary, 
-                            storeyPrefix=storeyPrefix,
-                            floorLevels=floorLevels,
-                            labelKey=labelKey,
-                            typeKey=typeKey,
-                            geometryKey=geometryKey,
-                            spaceType = spaceType,
-                            wallType = wallType,
-                            slabType = slabType,
-                            doorType = doorType,
-                            windowType = windowType,
-                            contentType = contentType
-                            )
+        bot_graph = Graph.BOTGraph(graph= graph,
+                                   bidirectional= bidirectional,
+                                   includeAttributes= includeAttributes,
+                                   includeLabel= includeLabel,
+                                   includeGeometry= includeGeometry,
+                                   siteLabel= siteLabel,
+                                   siteDictionary= siteDictionary,
+                                   buildingLabel= buildingLabel,
+                                   buildingDictionary=  buildingDictionary,
+                                   storeyPrefix= storeyPrefix,
+                                   floorLevels= floorLevels,
+                                   vertexLabelKey= vertexLabelKey,
+                                   typeKey= typeKey,
+                                   verticesKey= verticesKey,
+                                   edgesKey= edgesKey,
+                                   edgeLabelKey= edgeLabelKey,
+                                   sourceKey= sourceKey,
+                                   targetKey= targetKey,
+                                   xKey= xKey,
+                                   yKey= yKey,
+                                   zKey= zKey,
+                                   geometryKey= geometryKey,
+                                   spaceType= spaceType,
+                                   wallType= wallType,
+                                   slabType= slabType,
+                                   doorType= doorType,
+                                   windowType= windowType,
+                                   contentType= contentType,
+                                   namespace= namespace,
+                                   mantissa= mantissa)
         return bot_graph.serialize(format=format)
 
     @staticmethod
@@ -4358,38 +4459,49 @@ class Graph:
 
     @staticmethod
     def ExportToBOT(graph,
-                    path,
-                    format="turtle",
-                    namespace = "http://github.com/wassimj/topologicpy/resources",
-                    overwrite = False,
-                    bidirectional=False,
-                    includeAttributes=False,
-                    includeLabel=False,
-                    includeGeometry=False,
-                    siteLabel = "Site_0001",
-                    siteDictionary = None,
-                    buildingLabel = "Building_0001",
-                    buildingDictionary = None , 
-                    storeyPrefix = "Storey",
-                    floorLevels =[],
-                    labelKey="label",
-                    typeKey="type",
-                    geometryKey="brep",
-                    spaceType = "space",
-                    wallType = "wall",
-                    slabType = "slab",
-                    doorType = "door",
-                    windowType = "window",
-                    contentType = "content",
+                    path: str,
+                    format: str = "turtle",
+                    overwrite: bool = False,
+                    bidirectional: bool = False,
+                    includeAttributes: bool = False,
+                    includeLabel: bool = False,
+                    includeGeometry: bool = False,
+                    siteLabel: str = "Site_0001",
+                    siteDictionary: dict = None,
+                    buildingLabel: str = "Building_0001",
+                    buildingDictionary: dict = None , 
+                    storeyPrefix: str = "Storey",
+                    floorLevels: list = [],
+                    vertexLabelKey: str = "label",
+                    typeKey: str = "type",
+                    verticesKey: str = "vertices",
+                    edgesKey: str = "edges",
+                    edgeLabelKey: str = "",
+                    sourceKey: str = "source",
+                    targetKey: str = "target",
+                    xKey: str = "hasX",
+                    yKey: str = "hasY",
+                    zKey: str = "hasZ",
+                    geometryKey: str = "brep",
+                    spaceType: str = "space",
+                    wallType: str = "wall",
+                    slabType: str = "slab",
+                    doorType: str = "door",
+                    windowType: str = "window",
+                    contentType: str = "content",
+                    namespace: str = "http://github.com/wassimj/topologicpy/resources",
+                    mantissa: int = 6
                     ):
         
         """
-        Returns an RDF graph serialized string according to the BOT ontology. See https://w3c-lbd-cg.github.io/bot/.
+        Exports the input graph to an RDF graph serialized according to the BOT ontology. See https://w3c-lbd-cg.github.io/bot/.
 
         Parameters
         ----------
         graph : topologic_core.Graph
             The input graph.
+        path : str
+            The desired path to where the RDF/BOT file will be saved.
         format : str , optional
             The desired output format, the options are listed below. Thde default is "turtle".
             turtle, ttl or turtle2 : Turtle, turtle2 is just turtle with more spacing & linebreaks
@@ -4400,10 +4512,6 @@ class Graph:
             trig : Trig , Turtle-like format for RDF triples + context (RDF quads) and thus multiple graphs
             trix : Trix , RDF/XML-like format for RDF quads
             nquads : N-Quads , N-Triples-like format for RDF quads
-        namespace : str , optional
-            The desired namespace for creating IRIs for entities. The default is "http://github.com/wassimj/topologicpy/resources".
-        path : str
-            The desired path to where the RDF/BOT file will be saved.
         overwrite : bool , optional
             If set to True, any existing file is overwritten. Otherwise, it is not. The default is False.
         bidirectional : bool , optional
@@ -4413,7 +4521,7 @@ class Graph:
         includeLabel : bool , optional
             If set to True, a label is attached to each node. Otherwise, it is not. The default is False.
         includeGeometry : bool , optional
-            If set to True, the geometry associated with vertices in the graph are written out. Otherwise, it is not. The default is False.
+            If set to True, the geometry associated with vertices in the graph are written out. Otherwise, they are not. The default is False.
         siteLabel : str , optional
             The desired site label. The default is "Site_0001".
         siteDictionary : dict , optional
@@ -4426,35 +4534,49 @@ class Graph:
             The desired prefixed to use for each building storey. The default is "Storey".
         floorLevels : list , optional
             The list of floor levels. This should be a numeric list, sorted from lowest to highest.
-            If not provided, floorLevels will be computed automatically based on the nodes' 'z' attribute.
+            If not provided, floorLevels will be computed automatically based on the vertices' (zKey)) attribute. See below.
+        verticesKey : str , optional
+            The desired key name to call vertices. The default is "vertices".
+        edgesKey : str , optional
+            The desired key name to call edges. The default is "edges".
+        vertexLabelKey : str , optional
+            If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
+            Note: If vertex labels are not unique, they will be forced to be unique.
+        edgeLabelKey : str , optional
+            If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
+            Note: If edge labels are not unique, they will be forced to be unique.
+        sourceKey : str , optional
+            The dictionary key used to store the source vertex. The default is "source".
+        targetKey : str , optional
+            The dictionary key used to store the target vertex. The default is "target".
+        xKey : str , optional
+            The desired key name to use for x-coordinates. The default is "hasX".
+        yKey : str , optional
+            The desired key name to use for y-coordinates. The default is "hasY".
+        zKey : str , optional
+            The desired key name to use for z-coordinates. The default is "hasZ".
+        geometryKey : str , optional
+            The desired key name to use for geometry. The default is "brep".
         typeKey : str , optional
             The dictionary key to use to look up the type of the node. The default is "type".
-        labelKey : str , optional
-            The dictionary key to use to look up the label of the node. The default is "label".
         geometryKey : str , optional
-            The dictionary key to use to look up the label of the node. The default is "brep".
+            The dictionary key to use to look up the geometry of the node. The default is "brep".
         spaceType : str , optional
-            The dictionary string value to use to look up nodes of type "space". The default is "space".
+            The dictionary string value to use to look up vertices of type "space". The default is "space".
         wallType : str , optional
-            The dictionary string value to use to look up nodes of type "wall". The default is "wall".
+            The dictionary string value to use to look up vertices of type "wall". The default is "wall".
         slabType : str , optional
-            The dictionary string value to use to look up nodes of type "slab". The default is "slab".
+            The dictionary string value to use to look up vertices of type "slab". The default is "slab".
         doorType : str , optional
-            The dictionary string value to use to look up nodes of type "door". The default is "door".
+            The dictionary string value to use to look up vertices of type "door". The default is "door".
         windowType : str , optional
-            The dictionary string value to use to look up nodes of type "window". The default is "window".
+            The dictionary string value to use to look up vertices of type "window". The default is "window".
         contentType : str , optional
-            The dictionary string value to use to look up nodes of type "content". The default is "contents".
-        format : str , optional
-            The desired output format, the options are listed below. Thde default is "turtle".
-            turtle, ttl or turtle2 : Turtle, turtle2 is just turtle with more spacing & linebreaks
-            xml or pretty-xml : RDF/XML, Was the default format, rdflib < 6.0.0
-            json-ld : JSON-LD , There are further options for compact syntax and other JSON-LD variants
-            ntriples, nt or nt11 : N-Triples , nt11 is exactly like nt, only utf8 encoded
-            n3 : Notation-3 , N3 is a superset of Turtle that also caters for rules and a few other things
-            trig : Trig , Turtle-like format for RDF triples + context (RDF quads) and thus multiple graphs
-            trix : Trix , RDF/XML-like format for RDF quads
-            nquads : N-Quads , N-Triples-like format for RDF quads
+            The dictionary string value to use to look up vertices of type "content". The default is "contents".
+        namespace : str , optional
+            The desired namespace to use in the BOT graph. The default is "http://github.com/wassimj/topologicpy/resources".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         
         Returns
         -------
@@ -4462,28 +4584,37 @@ class Graph:
             The rdf graph serialized string using the BOT ontology.
         """
         from os.path import exists
-        bot_graph = Graph.BOTGraph(graph,
-                            bidirectional=bidirectional,
-                            includeAttributes=includeAttributes,
-                            includeLabel=includeLabel,
-                            includeGeometry=includeGeometry,
-                            siteLabel=siteLabel,
-                            siteDictionary=siteDictionary,
-                            buildingLabel=buildingLabel,
-                            buildingDictionary=buildingDictionary, 
-                            storeyPrefix=storeyPrefix,
-                            floorLevels=floorLevels,
-                            labelKey=labelKey,
-                            typeKey=typeKey,
-                            geometryKey=geometryKey,
-                            spaceType = spaceType,
-                            wallType = wallType,
-                            slabType = slabType,
-                            doorType = doorType,
-                            windowType = windowType,
-                            contentType = contentType,
-                            namespace = namespace
-                            )
+        bot_graph = Graph.BOTGraph(graph= graph,
+                                   bidirectional= bidirectional,
+                                   includeAttributes= includeAttributes,
+                                   includeLabel= includeLabel,
+                                   includeGeometry= includeGeometry,
+                                   siteLabel= siteLabel,
+                                   siteDictionary= siteDictionary,
+                                   buildingLabel= buildingLabel,
+                                   buildingDictionary=  buildingDictionary,
+                                   storeyPrefix= storeyPrefix,
+                                   floorLevels= floorLevels,
+                                   vertexLabelKey= vertexLabelKey,
+                                   typeKey= typeKey,
+                                   verticesKey= verticesKey,
+                                   edgesKey= edgesKey,
+                                   edgeLabelKey= edgeLabelKey,
+                                   sourceKey= sourceKey,
+                                   targetKey= targetKey,
+                                   xKey= xKey,
+                                   yKey= yKey,
+                                   zKey= zKey,
+                                   geometryKey= geometryKey,
+                                   spaceType= spaceType,
+                                   wallType= wallType,
+                                   slabType= slabType,
+                                   doorType= doorType,
+                                   windowType= windowType,
+                                   contentType= contentType,
+                                   namespace= namespace,
+                                   mantissa= mantissa)
+        
         if "turtle" in format.lower() or "ttl" in format.lower() or "turtle2" in format.lower():
             ext = ".ttl"
         elif "xml" in format.lower() or "pretty=xml" in format.lower() or "rdf/xml" in format.lower():
@@ -6032,7 +6163,7 @@ class Graph:
             d = Dictionary.SetValueAtKey(d, zKey, Vertex.Z(v, mantissa=mantissa))
             if geometryKey:
                 v_d = Topology.Dictionary(v)
-                brep = Dictionary.ValueAtKey(v_d,"brep")
+                brep = Dictionary.ValueAtKey(v_d, geometryKey)
                 if brep:
                     d = Dictionary.SetValueAtKey(d, geometryKey, brep)
             v_dict = Dictionary.PythonDictionary(d)
