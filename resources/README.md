@@ -86,6 +86,9 @@ Email: Theo.Dounas@uantwerpen.be
 * hasZ: The Z coordinate of a vertex.
 * hasAngle: The angle at the start vertex of an edge.
 * hasLength: The length of an edge.
+* hasDirection: The direction of an edge or a face (the normal to the face).
+* hasArea: The surface area of a face, a shell, a cell, or a cellComplex.
+* hasVolume: The volume of a cell or a cellComplex.
 
 ## Usage
 This ontology provides a structured way to describe 3D models and their topological relationships. It can be used in various applications, including CAD systems, BIM (Building Information Modeling), and other 3D modeling environments.
