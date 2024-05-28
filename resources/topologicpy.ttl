@@ -1,10 +1,13 @@
 @prefix top: <http://github.com/wassimj/topologicpy/resources#> .
+@prefix bot: <https://w3id.org/bot#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 top:3DSpatialModelingOntology a owl:Ontology .
+
+# version 2024-05-28
 
 # Classes
 top:Topology a owl:Class ;
@@ -101,21 +104,27 @@ top:hasDictionary a owl:ObjectProperty ;
     rdfs:domain owl:class ;
     rdfs:range top:Dictionary ;
     owl:maxCardinality 1 ;
-    rdfs:comment "The dictionary of a topology."@en .
+    rdfs:comment "The dictionary of an element."@en ,
+                 "Le dictionnaire d’un élément."@fr , 
+                 "Het woordenboek van een element."@nl .
 
 top:hasStartVertex a owl:ObjectProperty ;
     rdfs:domain top:Edge ;
     rdfs:range top:Vertex ;
     owl:minCardinality 1 ;
     owl:maxCardinality 1 ;
-    rdfs:comment "The starting vertex of an edge."@en .
+    rdfs:comment "The starting vertex of an edge."@en ,
+                 "Le sommet de départ d’une arête."@fr , 
+                 "Het beginpunt van een rand."@nl .
 
 top:hasEndVertex a owl:ObjectProperty ;
     rdfs:domain top:Edge ;
     rdfs:range top:Vertex ;
     owl:minCardinality 1 ;
     owl:maxCardinality 1 ;
-    rdfs:comment "The ending vertex of an edge."@en .
+    rdfs:comment "The ending vertex of an edge."@en ,
+                 "Le sommet final d’une arête."@fr , 
+                 "Het eindpunt van een rand."@nl .
 
 top:hasEdges a owl:ObjectProperty ;
     rdfs:domain top:Wire, top:Shell, top:Cell, top:CellComplex, top:Cluster, top:Graph ;
@@ -176,14 +185,51 @@ top:hasCells a owl:ObjectProperty ;
                  "Les cellules appartenant à un objet."@fr , 
                  "De cellen die bij een object horen."@nl .
 
-top:hasClusterMember a owl:ObjectProperty ;
-    rdfs:domain top:Cluster ;
-    rdfs:range owl:Thing ;  # Can link to any object
-    rdfs:comment "The members that belong to a cluster."@en , 
-                 "Les membres appartenant à un cluster."@fr , 
-                 "De leden die bij een cluster horen."@nl .
+# Adjacencies
+top:connectsTo a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;
+    rdfs:comment "The objects that are connected to an object."@en , 
+                 "Les objets connectés à un objet."@fr , 
+                 "De objecten die verbonden zijn met een object."@nl .
+
+top:adjacentTo a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;
+    rdfs:comment "The objects that are adjacent to an object."@en , 
+                 "Les objets adjacents à un objet."@fr , 
+                 "De objecten die aan een object grenzen."@nl .
+
+top:interfaceOf a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;
+    rdfs:comment "The objects connected or separated by an object."@en , 
+                 "Les objets connectés ou séparés par un objet."@fr , 
+                 "De objecten die met elkaar verbonden of gescheiden zijn door een object."@nl .
+
+# Containment
+top:isPartOf a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;
+    rdfs:comment "The objects that contain an object."@en , 
+                 "Les objets qui contiennent un objet."@fr , 
+                 "De objecten die een object bevatten."@nl .
+
+top:containsElement a owl:ObjectProperty ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;
+    rdfs:comment "The objects that are contain within an object."@en , 
+                 "Les objets contenus dans un objet."@fr , 
+                 "De objecten die zich in een object bevinden."@nl .
 
 # Additional Object Properties for Cluster
+top:hasCellComplexes a owl:ObjectProperty ;
+    rdfs:domain top:Cluster ;
+    rdfs:range top:CellComplex ;
+    rdfs:comment "The cellcomplexes that belong to an object."@en , 
+                 "Les complexe cellulaire appartenant à un objet."@fr , 
+                 "De celcomplex die bij een object horen."@nl .
+
 top:hasFreeCells a owl:ObjectProperty ;
     rdfs:domain top:Cluster ;
     rdfs:range top:Cell ;
@@ -284,6 +330,14 @@ top:hasVolume a owl:DatatypeProperty ;
                  "Le volume d'une cellule ou d'un complexe cellulaire."@fr , 
                  "Het volume van een cel of celcomplex."@nl .
 
+top:hasDirection a owl:ObjectProperty ;
+    rdfs:domain [ rdf:type owl:Class ;
+                  owl:unionOf ( top:Edge top:Face ) ] ;
+    rdfs:range rdf:List ;
+    rdfs:comment "The vector (list of X Y Z) representing the direction of an element."@en ,
+                 "Le vecteur (liste de X, Y, Z) représentant la direction d’un élément.  "@fr , 
+                 "De vector (lijst van X, Y, Z) die de richting van een element voorstelt."@nl .
+
 top:hasMantissa a owl:DatatypeProperty ;
     rdfs:domain [ rdf:type owl:Class ;
                  owl:unionOf (top:Vertex top:Edge top:Wire top:Face top:Shell top:Cell top:CellComplex) ] ;
@@ -315,3 +369,35 @@ top:updatedAt a owl:DatatypeProperty ;
     rdfs:comment "The last update timestamp."@en , 
                  "Le timestamp de la dernière mise à jour."@fr , 
                  "De laatste bijwerktijdstempel."@nl .
+
+# Aligning Classes
+top:Vertex rdfs:subClassOf bot:Element , bot:Interface .
+top:Edge rdfs:subClassOf bot:Element , bot:Interface .
+top:Wire rdfs:subClassOf bot:Element .
+top:Face rdfs:subClassOf bot:Element , bot:Interface .
+top:Shell rdfs:subClassOf bot:Element .
+top:Cell rdfs:subClassOf bot:Space , bot:Zone , bot:Interface .
+top:CellComplex rdfs:subClassOf bot:Element, bot:Building .
+top:Cluster rdfs:subClassOf bot:Element .
+top:Topology rdfs:subClassOf bot:Element .
+
+# Aligning Object Properties
+top:hasVertices rdfs:subPropertyOf bot:hasSubElement .
+top:hasEdges rdfs:subPropertyOf bot:hasSubElement .
+top:hasWires rdfs:subPropertyOf bot:hasSubElement .
+top:hasFaces rdfs:subPropertyOf bot:hasSubElement .
+top:hasShells rdfs:subPropertyOf bot:hasSubElement .
+top:hasCells rdfs:subPropertyOf bot:hasSubElement .
+top:hasCellComplexes rdfs:subPropertyOf bot:hasSubElement .
+top:hasFreeVertices rdfs:subPropertyOf bot:hasSubElement .
+top:hasFreeEdges rdfs:subPropertyOf bot:hasSubElement .
+top:hasFreeWires rdfs:subPropertyOf bot:hasSubElement .
+top:hasFreeFaces rdfs:subPropertyOf bot:hasSubElement .
+top:hasFreeShells rdfs:subPropertyOf bot:hasSubElement .
+top:hasFreeCells rdfs:subPropertyOf bot:hasSubElement .
+top:connectsTo rdfs:subPropertyOf bot:connectsTo .
+top:adjacentTo rdfs:subPropertyOf bot:adjacentTo .
+top:interfaceOf rdfs:subPropertyOf bot:interfaceOf .
+top:containsElement rdfs:subPropertyOf bot:containsElement .
+top:isPartOf rdfs:subPropertyOf bot:isPartOf .
+
