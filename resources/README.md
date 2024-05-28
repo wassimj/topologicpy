@@ -2,7 +2,7 @@
 
 # The topologicpy Ontology 
 <p align="center">
-    <img src=https://topologic.app/wp-content/uploads/2024/05/top_diagram_3D.png alt="3D Diagram of the topologicpy ontology" />
+    <img src=https://github.com/wassimj/topologicpy/blob/main/resources/top_diagram_3D.png alt="3D Diagram of the topologicpy ontology" />
 </p>
 
 ## Ontology Overview
