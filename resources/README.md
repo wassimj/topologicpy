@@ -39,7 +39,7 @@ Email: Theo.Dounas@uantwerpen.be
 ## Class Descriptions
 
 <p align="center">
-<img src="https://topologic.app/wp-content/uploads/2018/12/ClassHierarchy.jpg" alt="topologicpy Class Hierarchy" />
+<img src="https://topologic.app/wp-content/uploads/2018/12/ClassHierarchy.jpg" alt="topologicpy Class Hierarchy" width=500 />
 </p>
 
 * Topology: The base class for all topological elements.
