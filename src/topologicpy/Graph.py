@@ -146,23 +146,26 @@ class WorkerProcess(Process):
         self.message_queue = message_queue
         self.used = used
         self.face = face
-        self.sources = sources
+        self.sources =  sources
         self.destinations = destinations
         self.tolerance = tolerance
 
     def run(self):
         edges = []
-        for i in range(len(self.sources)):
-            source = self.sources[i]
-            index_b = Vertex.Index(source, self.destinations)
-            for j in range(len(self.destinations)):
-                destination = self.destinations[j]
-                index_a = Vertex.Index(destination, self.sources)
+        face = Topology.ByBREPString(self.face)
+        sources = [Topology.ByBREPString(s) for s in self.sources]
+        destinations = [Topology.ByBREPString(s) for s in self.destinations]
+        for i in range(len(sources)):
+            source = sources[i]
+            index_b = Vertex.Index(source, destinations)
+            for j in range(len(destinations)):
+                destination = destinations[j]
+                index_a = Vertex.Index(destination, sources)
                 if self.used[i + self.start_index][j] == 1 or self.used[j][i + self.start_index]:
                     continue
                 if Vertex.Distance(source, destination) > self.tolerance:
                     edge = Edge.ByVertices([source, destination])
-                    e = Topology.Boolean(edge, self.face, operation="intersect")
+                    e = Topology.Boolean(edge, face, operation="intersect")
                     if Topology.IsInstance(e, "Edge"):
                         edges.append(edge)
                 self.used[i + self.start_index][j] = 1
@@ -6934,12 +6937,15 @@ class Graph:
         mergingProcess = MergingProcess(queue)
         mergingProcess.start()
 
+        sources_str = [Topology.BREPString(s) for s in sources]
+        destinations_str = [Topology.BREPString(s) for s in destinations]
+        face_str = Topology.BREPString(face)
         workerProcessPool = WorkerProcessPool(numWorkers,
                                               queue,
                                               used,
-                                              face,
-                                              sources,
-                                              destinations,
+                                              face_str,
+                                              sources_str,
+                                              destinations_str,
                                               tolerance)
         workerProcessPool.startProcesses()
         workerProcessPool.join()
