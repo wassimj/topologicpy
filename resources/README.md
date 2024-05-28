@@ -13,7 +13,7 @@ The TopologicPy 3D Spatial Modeling Ontology uses the following prefix and names
 
 Prefix: top
 
-Namespace URI: http://w3id.org/topologicpy/#
+Namespace URI: http://w3id.org/topologicpy/# (coming soon, hopefully!)
 
 The full namespace declaration in Turtle (TTL) format is:
 ```
