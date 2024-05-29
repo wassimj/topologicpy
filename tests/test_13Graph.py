@@ -473,6 +473,6 @@ def test_main():
     Bound2 = Topology.Rotate(Bound2, origin=Topology.Centroid(Bound2), axis=[0, 0, 1], angle=45)
     f = Face.ByWires(Bound1, [Bound2])
     va = Topology.Vertices(Bound1)
-    graphNG1 = Graph.NavigationGraph(f, sources=va, destinations=va, tolerance=0.001, progressBar=False)
+    graphNG1 = Graph.NavigationGraph(f, sources=va, destinations=va, tolerance=0.001, numWorkers=None)
     assert Topology.IsInstance(graphNG1, "Graph"), "Graph.NavigationGraph. Should be topologic.Graph"
     print("End")

@@ -20,6 +20,9 @@ import time
 import os
 import warnings
 
+from collections import namedtuple
+from multiprocessing import Process, Queue
+
 try:
     import numpy as np
 except:
@@ -61,6 +64,133 @@ except:
         print("Graph - tqdm library installed correctly.")
     except:
         warnings.warn("Graph - Error: Could not import tqdm.")
+
+
+GraphQueueItem = namedtuple('GraphQueueItem', ['edges'])
+
+class WorkerProcessPool(object):
+    """
+    Create and manage a list of Worker processes. Each worker process
+    creates a 2D navigation graph.
+    """
+    def __init__(self,
+                 num_workers,
+                 message_queue,
+                 used,
+                 face,
+                 sources,
+                 destinations,
+                 tolerance=0.0001):
+        self.num_workers = num_workers
+        self.message_queue = message_queue
+        self.used = used
+        self.face = face
+        self.sources = sources
+        self.destinations = destinations
+        self.tolerance = tolerance
+        self.process_list = []
+
+    def startProcesses(self):
+        num_item_per_worker = len(self.sources) // self.num_workers
+        for i in range(self.num_workers):
+            if i == self.num_workers - 1:
+                begin = i * num_item_per_worker
+                sub_sources = self.sources[begin:]
+            else:
+                begin = i * num_item_per_worker
+                end = begin + num_item_per_worker
+                sub_sources = self.sources[begin : end]
+            wp = WorkerProcess(begin,
+                               self.message_queue,
+                               self.used,
+                               self.face,
+                               sub_sources,
+                               self.destinations,
+                               self.tolerance)
+            wp.start()
+            self.process_list.append(wp)
+
+    def stopProcesses(self):
+        for p in self.process_list:
+            p.join()
+        self.process_list = []
+
+    def join(self):
+        for p in self.process_list:
+            p.join()
+
+
+class WorkerProcess(Process):
+    """
+    Creates a 2D navigation graph from a subset of sources and the list of destinations.
+    """
+    def __init__(self,
+                 start_index,
+                 message_queue,
+                 used,
+                 face,
+                 sources,
+                 destinations,
+                 tolerance=0.0001):
+        Process.__init__(self, target=self.run)
+        self.start_index = start_index
+        self.message_queue = message_queue
+        self.used = used
+        self.face = face
+        self.sources =  sources
+        self.destinations = destinations
+        self.tolerance = tolerance
+
+    def run(self):
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+
+        edges = []
+        face = Topology.ByBREPString(self.face)
+        sources = [Topology.ByBREPString(s) for s in self.sources]
+        destinations = [Topology.ByBREPString(s) for s in self.destinations]
+        for i in range(len(sources)):
+            source = sources[i]
+            index_b = Vertex.Index(source, destinations)
+            for j in range(len(destinations)):
+                destination = destinations[j]
+                index_a = Vertex.Index(destination, sources)
+                if self.used[i + self.start_index][j] == 1 or self.used[j][i + self.start_index]:
+                    continue
+                if Vertex.Distance(source, destination) > self.tolerance:
+                    edge = Edge.ByVertices([source, destination])
+                    e = Topology.Boolean(edge, face, operation="intersect")
+                    if Topology.IsInstance(e, "Edge"):
+                        edges.append(edge)
+                self.used[i + self.start_index][j] = 1
+                if not index_a == None and not index_b == None:
+                    self.used[j][i + self.start_index] = 1
+        if len(edges) > 0:
+            edges_str = [Topology.BREPString(s) for s in edges]
+            self.message_queue.put(GraphQueueItem(edges_str))
+
+
+class MergingProcess(Process):
+    """
+    Receive message from other processes and merging the result
+    """
+    def __init__(self, message_queue):
+        Process.__init__(self, target=self.wait_message)
+        self.message_queue = message_queue
+        self.final_edges = []
+
+    def wait_message(self):
+        while True:
+            try:
+                item = self.message_queue.get()
+                if item is None:
+                    self.message_queue.put(GraphQueueItem(self.final_edges))
+                    break
+                self.final_edges.extend(item.edges)
+            except Exception as e:
+                print(str(e))
+
 
 class _Tree:
     def __init__(self, node="", *children):
@@ -6724,7 +6854,7 @@ class Graph:
         return mst
 
     @staticmethod
-    def NavigationGraph(face, sources=None, destinations=None, tolerance=0.0001, progressBar=True):
+    def NavigationGraph(face, sources=None, destinations=None, tolerance=0.0001, numWorkers=None):
         """
         Creates a 2D navigation graph.
 
@@ -6738,8 +6868,8 @@ class Graph:
             The input list of destinations (vertices). Navigation edges will connect these vertices to sources.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
-        tqdm : bool , optional
-            If set to True, a tqdm progress bar is shown. Otherwise, it is not. The default is True.
+        numWorkers : int, optional
+            Number of workers run in parallel to process. The default is None which sets the number to twice the number of CPU cores.
 
         Returns
         -------
@@ -6747,15 +6877,15 @@ class Graph:
             The navigation graph.
 
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
+
+        from topologicpy.Topology import Topology
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Graph import Graph
         from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
-        import topologic_core as topologic
-        from tqdm.auto import tqdm
+
+        if not numWorkers:
+            import multiprocessing
+            numWorkers = multiprocessing.cpu_count()*2
 
         if not Topology.IsInstance(face, "Face"):
             print("Graph.NavigationGraph - Error: The input face parameter is not a valid face. Returning None")
@@ -6776,8 +6906,6 @@ class Graph:
             print("Graph.NavigationGraph - Error: The input sources parameter does not contain any vertices. Returning None")
             return None
         destinations = [v for v in destinations if Topology.IsInstance(v, "Vertex")]
-        #if len(destinations) < 1: #Nothing to navigate to, so return a graph made of sources
-            #return Graph.ByVerticesEdges(sources, [])
 
         # Add obstuse angles of external boundary to viewpoints
         e_boundary = Face.ExternalBoundary(face)
@@ -6804,27 +6932,28 @@ class Graph:
                 temp_row.append(0)
             used.append(temp_row)
 
-        final_edges = []
-        if progressBar:
-            the_range = tqdm(range(len(sources)))
-        else:
-            the_range = range(len(sources))
-        for i in the_range:
-            source = sources[i]
-            index_b = Vertex.Index(source, destinations)
-            for j in range(len(destinations)):
-                destination = destinations[j]
-                index_a = Vertex.Index(destination, sources)
-                if used[i][j] == 1 or used[j][i]:
-                    continue
-                if Vertex.Distance(source, destination) > tolerance:
-                    edge = Edge.ByVertices([source,destination])
-                    e = Topology.Boolean(edge, face, operation="intersect")
-                    if Topology.IsInstance(e, "Edge"):
-                        final_edges.append(edge)
-                used[i][j] = 1
-                if not index_a == None and not index_b == None:
-                    used[j][i] = 1
+        queue = Queue()
+        mergingProcess = MergingProcess(queue)
+        mergingProcess.start()
+
+        sources_str = [Topology.BREPString(s) for s in sources]
+        destinations_str = [Topology.BREPString(s) for s in destinations]
+        face_str = Topology.BREPString(face)
+        workerProcessPool = WorkerProcessPool(numWorkers,
+                                              queue,
+                                              used,
+                                              face_str,
+                                              sources_str,
+                                              destinations_str,
+                                              tolerance)
+        workerProcessPool.startProcesses()
+        workerProcessPool.join()
+
+        queue.put_nowait(None)
+        it = queue.get()
+        final_edges = [Topology.ByBREPString(edge_str) for edge_str in it.edges]
+        mergingProcess.join()
+
         if len(i_boundaries) > 0:
             holes_edges = Topology.Edges(Cluster.ByTopologies(i_boundaries))
             final_edges += holes_edges

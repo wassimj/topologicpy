@@ -6718,7 +6718,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         numWorkers : int, optional
-            Number of workers run in parallel to process.
+            Number of workers run in parallel to process. The default is None which sets the number to twice the number of CPU cores.
 
         Returns
         -------
