@@ -23,6 +23,7 @@ dependencies = [
     "tqdm",
     "plotly",
     "lark",
+    "specklepy",
     "topologic_core>=7.0.1",
 ]
 
