@@ -35,7 +35,7 @@ test = [
 [project.urls]
 "Homepage" = "https://github.com/wassimj/TopologicPy"
 "Bug Tracker" = "https://github.com/wassimj/TopologicPy/issues"
-"Documentation" = "https://topologic.app/topologicpy_doc/"
+"Documentation" = "https://topologicpy.readthedocs.io"
 
 [tool.setuptools.dynamic]
 # https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html#dynamic-metadata
