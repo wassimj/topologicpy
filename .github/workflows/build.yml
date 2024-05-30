@@ -42,7 +42,7 @@ jobs:
 
   build-docs:
     runs-on: ubuntu-latest
-    name: Generate Documentation
+    name: Generate Documentation using Sphinx
     needs: [prepare-build-info]
     steps:
       - uses: actions/checkout@v4
@@ -79,31 +79,11 @@ jobs:
           name: docs
           path: docs/build/html/
           if-no-files-found: error
-          retention-days: 60
-
-  deploy-docs:
-    runs-on: ubuntu-latest
-    name: Deploy Documentation
-    needs: [build-docs]
-    steps:
-      - name: Download docs artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: docs/build/html/
-      - name: Display new structure of downloaded files
-        run: |
-          find ./docs/build/html/ -type f
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        #if: github.ref == 'refs/heads/main'
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/build/html
 
   build:
     runs-on: ubuntu-latest
     name: Build Universal Wheel
-    needs: [prepare-build-info,deploy-docs]
+    needs: [prepare-build-info]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -196,6 +176,29 @@ jobs:
         with:
           packages-dir: dist/
           print-hash: true
+
+  deploy-docs:
+    runs-on: ubuntu-latest
+    name: Consider & Deploy Documentation on GH Pages
+    needs:
+      - prepare-build-info
+      - publish-pypi-release
+      - build-docs
+    if: ${{ startsWith(needs.prepare-build-info.outputs.tagname, 'v') && github.event_name != 'pull_request' && needs.prepare-build-info.outputs.branchname == 'main' }}
+    steps:
+      - name: Download docs artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: docs/build/html/
+      - name: Display new structure of downloaded files
+        run: |
+          find ./docs/build/html/ -type f
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        #if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: docs/build/html
 
   draft-github-release:
     needs:

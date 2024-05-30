@@ -7,7 +7,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'topologicpy'
-copyright = '2023, Wassim Jabi'
+copyright = '2024, Wassim Jabi'
 author = 'Wassim Jabi'
 
 from topologicpy.version import __version__
