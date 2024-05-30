@@ -1519,17 +1519,26 @@ class Wire(Topology):
         normal = Face.Normal(f)
         origin = Topology.Centroid(f)
         w = Topology.Flatten(wire, origin=origin, direction=normal)
+        flat_f = Topology.Flatten(f, origin=origin, direction=normal)
+        flat_normal = Face.Normal(flat_f)
+        if flat_normal[2] < 0:
+            w = Topology.Rotate(w, origin=origin, axis=[1,0,0], angle=180)
         angles = []
         edges = Topology.Edges(w)
         for i in range(len(edges)-1):
             e1 = edges[i]
             e2 = edges[i+1]
-            a = round(360 - Vector.CompassAngle(Edge.Direction(e1), Edge.Direction(e2)), mantissa)
+            a = round(Vector.Angle(Edge.Direction(e1), Vector.Reverse(Edge.Direction(e2))), mantissa)
             angles.append(a)
         e1 = edges[len(edges)-1]
         e2 = edges[0]
-        a = round(360 - Vector.CompassAngle(Edge.Direction(e1), Edge.Direction(e2)), mantissa)
+        a = round(Vector.Angle(Edge.Direction(e1), Vector.Reverse(Edge.Direction(e2))), mantissa)
         angles = [a]+angles
+        # if abs(sum(angles)-(len(angles)-2)*180)<tolerance:
+        #     return angles
+        # else:
+        #     angles = [360-ang for ang in angles]
+        #     return angles
         return angles
 
     @staticmethod

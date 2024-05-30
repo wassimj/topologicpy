@@ -1317,32 +1317,71 @@ class Face():
             obstacles = [obs for obs in obstacles if Topology.IsInstance(obs, "Wire")]
         else:
             obstacles = []
+        
+        origin = Vertex.Origin()
+        normal = Face.Normal(face)
+        flat_face = Topology.Flatten(face, origin=origin, direction=normal)
+        flat_vertex = Topology.Flatten(vertex, origin=origin, direction=normal)
+        eb = Face.ExternalBoundary(flat_face)
+        vertices = Topology.Vertices(eb)
+        coords = [Vertex.Coordinates(v, outputType="xy") for v in vertices]
+        new_vertices = [Vertex.ByCoordinates(coord) for coord in coords]
+        eb = Wire.ByVertices(new_vertices, close=True)
+
+        ib_list = Face.InternalBoundaries(flat_face)
+        new_ib_list = []
+        for ib in ib_list:
+            vertices = Topology.Vertices(ib)
+            coords = [Vertex.Coordinates(v, outputType="xy") for v in vertices]
+            new_vertices = [Vertex.ByCoordinates(coord) for coord in coords]
+            new_ib_list.append(Wire.ByVertices(new_vertices, close=True))
+
+        flat_face = Face.ByWires(eb, new_ib_list)
         for obs in obstacles:
-            face = Topology.Difference(face, Face.ByWire(obs))
-        targets = Topology.Vertices(face)
+            flat_face = Topology.Difference(flat_face, Face.ByWire(obs))
+        targets = Topology.Vertices(flat_face)
         distances = []
         for target in targets:
-            distances.append(Vertex.Distance(vertex, target))
+            distances.append(Vertex.Distance(flat_vertex, target))
         distances.sort()
         max_d = distances[-1]*1.05
         edges = []
         for target in targets:
-            if Vertex.Distance(vertex, target) > tolerance:
-                e = Edge.ByVertices(vertex, target, silent=True)
+            if Vertex.Distance(flat_vertex, target) > tolerance:
+                e = Edge.ByVertices(flat_vertex, target, silent=True)
                 e = Edge.SetLength(e, length=max_d, bothSides=False, tolerance=tolerance)
                 edges.append(e)
-        shell = Topology.Slice(face, Cluster.ByTopologies(edges))
+        shell = Topology.Slice(flat_face, Cluster.ByTopologies(edges))
         faces = Topology.Faces(shell)
         final_faces = []
-        for face in faces:
-            if vertexPartofFace(vertex, face, tolerance=0.001):
-                final_faces.append(face)
+        for f in faces:
+            if vertexPartofFace(flat_vertex, f, tolerance=0.001):
+                final_faces.append(f)
         shell = Shell.ByFaces(final_faces)
-        return_face = Topology.RemoveCoplanarFaces(shell)
+        return_face = Topology.RemoveCoplanarFaces(shell, epsilon=0.1)
+        if not Topology.IsInstance(return_face, "face"):
+            temp = Shell.ExternalBoundary(shell)
+            if Topology.IsInstance(temp, "Wire"):
+                return_face = Face.ByWire(temp)
+            elif Topology.IsInstance(temp, "Cluster"):
+                edges = Topology.Edges(temp)
+                vertices = Topology.Vertices(temp)
+                vertices = Vertex.Fuse(vertices, tolerance=0.01)
+                new_edges = []
+                for edge in edges:
+                    sv = vertices[Vertex.Index(Edge.StartVertex(edge), vertices, tolerance=0.01)]
+                    ev = vertices[Vertex.Index(Edge.EndVertex(edge), vertices, tolerance=0.01)]
+                    if Vertex.Distance(sv, ev) > tolerance:
+                        new_edges.append(Edge.ByVertices([sv,ev]))
+                w = Wire.ByEdges(new_edges, tolerance=0.01)
+                return_face = Face.ByWire(w)
+            if not Topology.IsInstance(return_face, "Face"):
+                print("Face.Isovist - Error: Could not create isovist. Returning None.")
+                return None 
+
         compAngle = 0
         if fov == 360:
-            c = Wire.Circle(origin= vertex, radius=max_d, sides=180, close = True)
-            pie = Face.ByWire(c)
+            pie = Face.Circle(origin= vertex, radius=max_d, sides=180)
         else:
             compAngle = Vector.CompassAngle(Vector.North(), direction, mantissa=mantissa, tolerance=tolerance) - 90
             fromAngle = -fov*0.5 - compAngle
@@ -1358,7 +1397,10 @@ class Face():
         if return_face == None:
             print("Face.Isovist - Error: Could not create isovist. Returning None.")
             return None
-        return return_face
+        simpler_face = Face.RemoveCollinearEdges(return_face)
+        if Topology.IsInstance(simpler_face, "face"):
+            return Topology.Unflatten(simpler_face, origin=origin, direction=normal)
+        return Topology.Unflatten(return_face, origin=origin, direction=normal)
 
     @staticmethod
     def MedialAxis(face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001):
