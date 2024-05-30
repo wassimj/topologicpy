@@ -1478,11 +1478,12 @@ class Wire(Topology):
         # Unflatten the wire
         return_wire = Topology.Unflatten(flat_wire, origin=Vertex.Origin(), direction=normal)
         return return_wire
-
+    
     @staticmethod
     def InteriorAngles(wire, tolerance: float = 0.0001, mantissa: int = 6) -> list:
         """
         Returns the interior angles of the input wire in degrees. The wire must be planar, manifold, and closed.
+        This code has been contributed by Yidan Xue.
         
         Parameters
         ----------
@@ -1519,27 +1520,22 @@ class Wire(Topology):
         normal = Face.Normal(f)
         origin = Topology.Centroid(f)
         w = Topology.Flatten(wire, origin=origin, direction=normal)
-        flat_f = Topology.Flatten(f, origin=origin, direction=normal)
-        flat_normal = Face.Normal(flat_f)
-        if flat_normal[2] < 0:
-            w = Topology.Rotate(w, origin=origin, axis=[1,0,0], angle=180)
         angles = []
         edges = Topology.Edges(w)
+        e1 = edges[len(edges)-1]
+        e2 = edges[0]
+        a = Vector.CompassAngle(Vector.Reverse(Edge.Direction(e1)), Edge.Direction(e2))
+        angles.append(a)
         for i in range(len(edges)-1):
             e1 = edges[i]
             e2 = edges[i+1]
-            a = round(Vector.Angle(Edge.Direction(e1), Vector.Reverse(Edge.Direction(e2))), mantissa)
-            angles.append(a)
-        e1 = edges[len(edges)-1]
-        e2 = edges[0]
-        a = round(Vector.Angle(Edge.Direction(e1), Vector.Reverse(Edge.Direction(e2))), mantissa)
-        angles = [a]+angles
-        # if abs(sum(angles)-(len(angles)-2)*180)<tolerance:
-        #     return angles
-        # else:
-        #     angles = [360-ang for ang in angles]
-        #     return angles
-        return angles
+            a = Vector.CompassAngle(Vector.Reverse(Edge.Direction(e1)), Edge.Direction(e2))
+            angles.append(round(a, mantissa))
+        if abs(sum(angles)-(len(angles)-2)*180)<tolerance:
+            return angles
+        else:
+            angles = [360-ang for ang in angles]
+            return angles
 
     @staticmethod
     def Interpolate(wires: list, n: int = 5, outputType: str = "default", mapping: str = "default", tolerance: float = 0.0001):

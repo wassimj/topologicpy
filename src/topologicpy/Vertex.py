@@ -748,6 +748,45 @@ class Vertex():
         return return_vertices
 
     @staticmethod
+    def IncomingEdges(vertex, hostTopology, tolerance: float = 0.0001) -> list:
+        """
+        Returns the incoming edges connected to a vertex. An edge is considered incoming if its end vertex is
+        coincident with the input vertex.
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex.
+        hostTopology : topologic_core.Topology
+            The input host topology to which the vertex belongs.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of incoming edges
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            print("Vertex.IncomingEdges - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        if not Topology.IsInstance(hostTopology, "Topology"):
+            print("Vertex.IncomingEdges - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        
+        edges = Topology.SuperTopologies(vertex, hostTopology=hostTopology, topologyType="Edge")
+        incoming_edges = []
+        for edge in edges:
+            ev = Edge.EndVertex(edge)
+            if Vertex.Distance(vertex, ev) < tolerance:
+                incoming_edges.append(edge)
+        return incoming_edges
+    
+    @staticmethod
     def Index(vertex, vertices: list, strict: bool = False, tolerance: float = 0.0001) -> int:
         """
         Returns index of the input vertex in the input list of vertices
@@ -1334,6 +1373,45 @@ class Vertex():
         topologic_core.Vertex
         """
         return Vertex.ByCoordinates(0, 0, 0)
+    
+    @staticmethod
+    def OutgoingEdges(vertex, hostTopology, tolerance: float = 0.0001) -> list:
+        """
+        Returns the outgoing edges connected to a vertex. An edge is considered incoming if its start vertex is
+        coincident with the input vertex.
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex.
+        hostTopology : topologic_core.Topology
+            The input host topology to which the vertex belongs.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of outgoing edges
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            print("Vertex.OutgoingEdges - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        if not Topology.IsInstance(hostTopology, "Topology"):
+            print("Vertex.OutgoingEdges - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        
+        edges = Topology.SuperTopologies(vertex, hostTopology=hostTopology, topologyType="Edge")
+        outgoing_edges = []
+        for edge in edges:
+            sv = Edge.StartVertex(edge)
+            if Vertex.Distance(vertex, sv) < tolerance:
+                outgoing_edges.append(edge)
+        return outgoing_edges
     
     @staticmethod
     def PerpendicularDistance(vertex, face, mantissa: int = 6):
