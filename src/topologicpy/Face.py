@@ -1254,7 +1254,7 @@ class Face():
         return Vector.IsCollinear(dirA, dirB)
 
     @staticmethod
-    def Isovist(face, vertex, obstacles = None, fromAngle=0, toAngle=360, tolerance: float = 0.0001):
+    def Isovist(face, vertex, obstacles: list = [], direction: list = [1,0,0], fov: float = 360, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the face representing the isovist projection from the input viewpoint.
         This method assumes all input is in 2D. Z coordinates are ignored.
@@ -1267,14 +1267,17 @@ class Face():
             The vertex representing the location of the viewpoint of the isovist.
         obstacles : list , optional
             A list of wires representing the obstacles within the face. All obstacles are assumed to be within the
-            boundary of the face.
-        fromAngle : float , optional
-            The angle in degrees from which to start creating the arc of the circle. The default is 0.
-            0 is considered to be in the positive X-axis direction. 90 is considered to be in the
-            positive Y-axis direction.
-        toAngle : float , optional
-            The angle in degrees at which to end creating the arc of the circle. The default is 360.
-            Angles are measured in an anti-clockwise fashion.
+            boundary of the face. The default is [].
+        direction : list, optional
+            The vector representing the direction (in the XY plane) in which the observer is facing. The Z component is ignored.
+            The direction follows the Vector.CompassAngle convention where [0,1,0] (North) is considered to be
+            in the positive Y direction, [1,0,0] (East) is considered to be in the positive X-direction.
+            Angles are measured in a clockwise fashion. The default is [0,1,0] (North).
+        fov : float , optional
+            The horizontal field of view (fov) angle in degrees. See https://en.wikipedia.org/wiki/Field_of_view.
+            The acceptable range is 1 to 360. The default is 360.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional:
             The desired tolerance. The default is 0.0001.
 
@@ -1282,7 +1285,7 @@ class Face():
         -------
         topologic_core.Face
             The face representing the isovist projection from the input viewpoint.
-        
+
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
@@ -1291,7 +1294,8 @@ class Face():
         from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        
+        from topologicpy.Vector import Vector
+
         def vertexPartofFace(vertex, face, tolerance):
             vertices = []
             _ = face.Vertices(None, vertices)
@@ -1299,15 +1303,20 @@ class Face():
                 if Vertex.Distance(vertex, v) < tolerance:
                     return True
             return False
-        
+
         if not Topology.IsInstance(face, "Face"):
             print("Face.Isovist - Error: The input boundary parameter is not a valid Face. Returning None")
             return None
         if not Topology.IsInstance(vertex, "Vertex"):
             print("Face.Isovist - Error: The input viewPoint parameter is not a valid Vertex. Returning None")
             return None
+        if fov < 1 or fov > 360:
+            print("Face.Isovist - Error: The input fov parameter is outside the acceptable range of 0 to 360 degrees. Returning None")
+            return None
         if isinstance(obstacles, list):
             obstacles = [obs for obs in obstacles if Topology.IsInstance(obs, "Wire")]
+        else:
+            obstacles = []
         for obs in obstacles:
             face = Topology.Difference(face, Face.ByWire(obs))
         targets = Topology.Vertices(face)
@@ -1319,8 +1328,8 @@ class Face():
         edges = []
         for target in targets:
             if Vertex.Distance(vertex, target) > tolerance:
-                e = Edge.ByVertices(vertex, target)
-                e = Edge.SetLength(e, length=max_d, bothSides=False)
+                e = Edge.ByVertices(vertex, target, silent=True)
+                e = Edge.SetLength(e, length=max_d, bothSides=False, tolerance=tolerance)
                 edges.append(e)
         shell = Topology.Slice(face, Cluster.ByTopologies(edges))
         faces = Topology.Faces(shell)
@@ -1330,13 +1339,20 @@ class Face():
                 final_faces.append(face)
         shell = Shell.ByFaces(final_faces)
         return_face = Topology.RemoveCoplanarFaces(shell)
-        if abs(360 - toAngle - fromAngle) > tolerance:
-            c = Wire.Circle(origin= vertex, radius=max_d, sides=180, fromAngle=fromAngle, toAngle=toAngle, close = False)
-            e1 = Edge.ByVertices(Wire.StartVertex(c), vertex)
-            e2 = Edge.ByVertices(Wire.EndVertex(c), vertex)
-            edges = Topology.Edges(c) + [e1,e2]
-            pie = Face.ByWire(Topology.SelfMerge(Cluster.ByTopologies(edges)))
-            return_face = Topology.Intersect(pie, return_face)
+        compAngle = 0
+        if fov == 360:
+            fromAngle = 0
+            toAngle = 360
+        else:
+            compAngle = Vector.CompassAngle(Vector.North(), direction, mantissa=mantissa, tolerance=tolerance) - 90
+            fromAngle = -fov*0.5 - compAngle
+            toAngle = fov*0.5 - compAngle
+        c = Wire.Circle(origin= vertex, radius=max_d, sides=180, fromAngle=fromAngle, toAngle=toAngle, close = False)
+        e1 = Edge.ByVertices(Wire.StartVertex(c), vertex, silent=True)
+        e2 = Edge.ByVertices(Wire.EndVertex(c), vertex, silent=True)
+        edges = Topology.Edges(c) + [e1,e2]
+        pie = Face.ByWire(Topology.SelfMerge(Cluster.ByTopologies(edges)))
+        return_face = Topology.Intersect(pie, return_face)
         return return_face
 
     @staticmethod

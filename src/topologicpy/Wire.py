@@ -2203,7 +2203,8 @@ class Wire(Topology):
                 sv = vertices[Vertex.Index(sv, vertices)]
                 ev = Edge.EndVertex(edge)
                 ev = vertices[Vertex.Index(ev, vertices)]
-                new_edges.append(Edge.ByVertices([sv,ev]))
+                if Vertex.Distance(sv, ev) > tolerance:
+                    new_edges.append(Edge.ByVertices([sv,ev]))
             new_wire = Topology.SelfMerge(Cluster.ByTopologies(new_edges), tolerance=tolerance)
             return new_wire
         

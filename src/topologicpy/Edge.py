@@ -221,7 +221,7 @@ class Edge():
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
-
+        
         edge = None
         if not Topology.IsInstance(vertexA, "Vertex"):
             if not silent:
@@ -297,7 +297,11 @@ class Edge():
             if not silent:
                 print("Edge.ByVertices - Error: The input vertices parameter has less than two vertices. Returning None.")
             return None
-        return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance=tolerance, silent=silent)
+        edge = Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance=tolerance, silent=silent)
+        if not edge:
+            if not silent:
+                print("Edge.ByVertices - Error: Could not create an edge. Returning None.")
+        return edge
     
     @staticmethod
     def ByVerticesCluster(cluster, tolerance: float = 0.0001):
