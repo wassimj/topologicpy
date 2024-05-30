@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>topologicpy.EnergyModel module &mdash; topologicpy 0.7.12 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="topologicpy.Face module" href="topologicpy.Face.html" />
+    <link rel="prev" title="topologicpy.Edge module" href="topologicpy.Edge.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> topologicpy
+          </a>
+              <div class="version">
+                0.7.12
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">topologicpy</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="topologicpy.html">topologicpy package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="topologicpy.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.DGL.html">topologicpy.DGL module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.EnergyModel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Polyskel.html">topologicpy.Polyskel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Wire.html">topologicpy.Wire module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.version.html">topologicpy.version module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.html#module-topologicpy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">topologicpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">topologicpy</a> &raquo;</li>
+          <li><a href="topologicpy.html">topologicpy package</a> &raquo;</li>
+      <li>topologicpy.EnergyModel module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/topologicpy.EnergyModel.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-topologicpy.EnergyModel">
+<span id="topologicpy-energymodel-module"></span><h1>topologicpy.EnergyModel module<a class="headerlink" href="#module-topologicpy.EnergyModel" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.EnergyModel.</span></span><span class="sig-name descname"><span class="pre">EnergyModel</span></span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>&#64;staticmethod
+def ByOSMFile(file):</p>
+<blockquote>
+<div><p>“””
+Creates an EnergyModel from the input OSM file path.</p>
+</div></blockquote>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">string</span></dt><dd><p>The path to the input .OSM file.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>openstudio.openstudiomodelcore.Model</dt><dd><p>The OSM model.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>“””</dt><dd></dd>
+<dt>if not file:</dt><dd><p>print(“EnergyModel.ByOSMFile - Error: The input path is not valid. Returning None.”)
+return None</p>
+</dd>
+<dt>osModel = file.read()</dt><dd></dd>
+<dt>if osModel.isNull():</dt><dd><p>print(“EnergyModel.ByOSMFile - Error: The openstudio model is null. Returning None.”)
+return None</p>
+</dd>
+<dt>else:</dt><dd><p>osModel = osModel.get()</p>
+</dd>
+<dt>return osModel</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.ByOSMPath" title="topologicpy.EnergyModel.EnergyModel.ByOSMPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOSMPath</span></code></a>(path)</p></td>
+<td><p>Creates an EnergyModel from the input OSM file path.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.ByTopology" title="topologicpy.EnergyModel.EnergyModel.ByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopology</span></code></a>(building[, shadingSurfaces, ...])</p></td>
+<td><p>Creates an EnergyModel from the input topology and parameters.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.ColumnNames" title="topologicpy.EnergyModel.EnergyModel.ColumnNames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ColumnNames</span></code></a>(model, reportName, tableName)</p></td>
+<td><p>Returns the list of column names given an OSM model, report name, and table name.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.DefaultConstructionSets" title="topologicpy.EnergyModel.EnergyModel.DefaultConstructionSets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultConstructionSets</span></code></a>(model)</p></td>
+<td><p>Returns the default construction sets in the input OSM model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.DefaultScheduleSets" title="topologicpy.EnergyModel.EnergyModel.DefaultScheduleSets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultScheduleSets</span></code></a>(model)</p></td>
+<td><p>Returns the default schedule sets found in the input OSM model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.ExportToGBXML" title="topologicpy.EnergyModel.EnergyModel.ExportToGBXML"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGBXML</span></code></a>(model, path[, overwrite])</p></td>
+<td><p>Exports the input OSM model to a GBXML file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.ExportToOSM" title="topologicpy.EnergyModel.EnergyModel.ExportToOSM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToOSM</span></code></a>(model, path[, overwrite])</p></td>
+<td><p>Exports the input OSM model to an OSM file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.GBXMLString" title="topologicpy.EnergyModel.EnergyModel.GBXMLString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GBXMLString</span></code></a>(model)</p></td>
+<td><p>Returns the GBXML string of the input OSM model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.Query" title="topologicpy.EnergyModel.EnergyModel.Query"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Query</span></code></a>(model[, reportName, reportForString, ...])</p></td>
+<td><p>Queries the model for values.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.ReportNames" title="topologicpy.EnergyModel.EnergyModel.ReportNames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReportNames</span></code></a>(model)</p></td>
+<td><p>Returns the report names found in the input OSM model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.RowNames" title="topologicpy.EnergyModel.EnergyModel.RowNames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RowNames</span></code></a>(model, reportName, tableName)</p></td>
+<td><p>Returns the list of row names given an OSM model, report name, and table name.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.Run" title="topologicpy.EnergyModel.EnergyModel.Run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Run</span></code></a>(model[, weatherFilePath, osBinaryPath, ...])</p></td>
+<td><p>Runs an energy simulation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.SpaceColors" title="topologicpy.EnergyModel.EnergyModel.SpaceColors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpaceColors</span></code></a>(model)</p></td>
+<td><p>Return the space colors found in the input OSM model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.SpaceDictionaries" title="topologicpy.EnergyModel.EnergyModel.SpaceDictionaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpaceDictionaries</span></code></a>(model)</p></td>
+<td><p>Return the space dictionaries found in the input OSM model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.SpaceTypeNames" title="topologicpy.EnergyModel.EnergyModel.SpaceTypeNames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpaceTypeNames</span></code></a>(model)</p></td>
+<td><p>Return the space type names found in the input OSM model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.SpaceTypes" title="topologicpy.EnergyModel.EnergyModel.SpaceTypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpaceTypes</span></code></a>(model)</p></td>
+<td><p>Return the space types found in the input OSM model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.SqlFile" title="topologicpy.EnergyModel.EnergyModel.SqlFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SqlFile</span></code></a>(model)</p></td>
+<td><p>Returns the SQL file found in the input OSM model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.TableNames" title="topologicpy.EnergyModel.EnergyModel.TableNames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TableNames</span></code></a>(model, reportName)</p></td>
+<td><p>Returns the table names found in the input OSM model and report name.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.Topologies" title="topologicpy.EnergyModel.EnergyModel.Topologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topologies</span></code></a>(model[, tolerance])</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.Units" title="topologicpy.EnergyModel.EnergyModel.Units"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Units</span></code></a>(model, reportName, tableName, columnName)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.ByOSMPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOSMPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.ByOSMPath" title="Permalink to this definition"></a></dt>
+<dd><p>Creates an EnergyModel from the input OSM file path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">string</span></dt><dd><p>The path to the input .OSM file.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>openstudio.openstudiomodelcore.Model</dt><dd><p>The OSM model.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.ByTopology">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByTopology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">building</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shadingSurfaces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">osModelPath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weatherFilePath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">designDayFilePath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">floorLevels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buildingName</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TopologicBuilding'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buildingType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Commercial'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">northAxis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">glazingRatio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coolingTemp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">25.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heatingTemp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultSpaceType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'189.1-2009</span> <span class="pre">-</span> <span class="pre">Office</span> <span class="pre">-</span> <span class="pre">WholeBuilding</span> <span class="pre">-</span> <span class="pre">Lg</span> <span class="pre">Office</span> <span class="pre">-</span> <span class="pre">CZ4-8'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spaceNameKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TOPOLOGIC_name'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spaceTypeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TOPOLOGIC_type'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.ByTopology" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Creates an EnergyModel from the input topology and parameters.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>building</strong><span class="classifier">topologic_core.CellComplex or topologic_core.Cell</span></dt><dd><p>The input building topology.</p>
+</dd>
+<dt><strong>shadingSurfaces</strong><span class="classifier">topologic_core.Topology , optional</span></dt><dd><p>The input topology for shading surfaces. The default is None.</p>
+</dd>
+<dt><strong>osModelPath</strong><span class="classifier">str , optional</span></dt><dd><p>The path to the template OSM file. The default is “./assets/EnergyModel/OSMTemplate-OfficeBuilding-3.5.0.osm”.</p>
+</dd>
+<dt><strong>weatherFilePath</strong><span class="classifier">str , optional</span></dt><dd><p>The input energy plus weather (epw) file. The default is “./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.epw”.</p>
+</dd>
+<dt><strong>designDayFilePath</strong><span class="classifier">str , optional</span></dt><dd><p>The input design day (ddy) file path. The default is “./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.ddy”,</p>
+</dd>
+<dt><strong>floorLevels</strong><span class="classifier">list , optional</span></dt><dd><p>The list of floor level Z heights including the lowest most and the highest most levels. If set to None, this method will attempt to
+find the floor levels from the horizontal faces of the input topology</p>
+</dd>
+<dt><strong>buildingName</strong><span class="classifier">str , optional</span></dt><dd><p>The desired name of the building. The default is “TopologicBuilding”.</p>
+</dd>
+<dt><strong>buildingType</strong><span class="classifier">str , optional</span></dt><dd><p>The building type. The default is “Commercial”.</p>
+</dd>
+<dt><strong>defaultSpaceType</strong><span class="classifier">str , optional</span></dt><dd><p>The default space type to apply to spaces that do not have a type assigned in their dictionary. The default is “189.1-2009 - Office - WholeBuilding - Lg Office - CZ4-8”.</p>
+</dd>
+<dt><strong>northAxis</strong><span class="classifier">float , optional</span></dt><dd><p>The counter-clockwise angle in degrees from the positive Y-axis representing the direction of the north axis. The default is 0.0.</p>
+</dd>
+<dt><strong>glazingRatio</strong><span class="classifier">float , optional</span></dt><dd><p>The glazing ratio (ratio of windows to wall) to use for exterior vertical walls that do not have apertures. If you do not wish to use a glazing ratio, set it to 0. The default is 0.</p>
+</dd>
+<dt><strong>coolingTemp</strong><span class="classifier">float , optional</span></dt><dd><p>The desired temperature in degrees at which the cooling system should activate. The default is 25.0.</p>
+</dd>
+<dt><strong>heatingTemp</strong><span class="classifier">float , optional</span></dt><dd><p>The desired temperature in degrees at which the heating system should activate. The default is 25.0..</p>
+</dd>
+<dt><strong>spaceNameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to find the space name value. The default is “Name”.</p>
+</dd>
+<dt><strong>spaceTypeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to find the space type value. The default is “Type”.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>openstudio.openstudiomodelcore.Model</dt><dd><p>The created OSM model.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.ColumnNames">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ColumnNames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reportName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tableName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.ColumnNames" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Returns the list of column names given an OSM model, report name, and table name.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+<dt><strong>reportName</strong><span class="classifier">str</span></dt><dd><p>The input report name.</p>
+</dd>
+<dt><strong>tableName</strong><span class="classifier">str</span></dt><dd><p>The input table name.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>the list of column names.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.DefaultConstructionSets">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DefaultConstructionSets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.DefaultConstructionSets" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Returns the default construction sets in the input OSM model.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The default construction sets.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.DefaultScheduleSets">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DefaultScheduleSets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.DefaultScheduleSets" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Returns the default schedule sets found in the input OSM model.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of default schedule sets.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.ExportToGBXML">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToGBXML</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.ExportToGBXML" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Exports the input OSM model to a GBXML file.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path for saving the file.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True any file with the same name is over-written. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the file is written successfully. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.ExportToOSM">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToOSM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.ExportToOSM" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Exports the input OSM model to an OSM file.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path for saving the file.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True any file with the same name is over-written. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the file is written successfully. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.GBXMLString">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GBXMLString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.GBXMLString" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Returns the GBXML string of the input OSM model.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The gbxml string.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.Query">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reportName</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'HVACSizingSummary'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reportForString</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Entire</span> <span class="pre">Facility'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tableName</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Zone</span> <span class="pre">Sensible</span> <span class="pre">Cooling'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columnName</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Calculated</span> <span class="pre">Design</span> <span class="pre">Load'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rowNames</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'W'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.Query" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Queries the model for values.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+<dt><strong>reportName</strong><span class="classifier">str , optional</span></dt><dd><p>The input report name. The default is “HVACSizingSummary”.</p>
+</dd>
+<dt><strong>reportForString</strong><span class="classifier">str, optional</span></dt><dd><p>The input report for string. The default is “Entire Facility”.</p>
+</dd>
+<dt><strong>tableName</strong><span class="classifier">str , optional</span></dt><dd><p>The input table name. The default is “Zone Sensible Cooling”.</p>
+</dd>
+<dt><strong>columnName</strong><span class="classifier">str , optional</span></dt><dd><p>The input column name. The default is “Calculated Design Load”.</p>
+</dd>
+<dt><strong>rowNames</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of row names. The default is [].</p>
+</dd>
+<dt><strong>units</strong><span class="classifier">str , optional</span></dt><dd><p>The input units. The default is “W”.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of values.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.ReportNames">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ReportNames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.ReportNames" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Returns the report names found in the input OSM model.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of report names found in the input OSM model.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.RowNames">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RowNames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reportName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tableName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.RowNames" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Returns the list of row names given an OSM model, report name, and table name.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+<dt><strong>reportName</strong><span class="classifier">str</span></dt><dd><p>The input name of the report.</p>
+</dd>
+<dt><strong>tableName</strong><span class="classifier">str</span></dt><dd><p>The input name of the table.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of row names.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.Run">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weatherFilePath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">osBinaryPath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputFolder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removeFiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.Run" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Runs an energy simulation.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+<dt><strong>weatherFilePath</strong><span class="classifier">str</span></dt><dd><p>The path to the epw weather file.</p>
+</dd>
+<dt><strong>osBinaryPath</strong><span class="classifier">str</span></dt><dd><p>The path to the openstudio binary.</p>
+</dd>
+<dt><strong>outputFolder</strong><span class="classifier">str</span></dt><dd><p>The path to the output folder.</p>
+</dd>
+<dt><strong>removeFiles</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the working files are removed at the end of the process. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The simulated OSM model.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.SpaceColors">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SpaceColors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.SpaceColors" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Return the space colors found in the input OSM model.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of space colors. Each item is a three-item list representing the red, green, and blue values of the color.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.SpaceDictionaries">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SpaceDictionaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.SpaceDictionaries" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Return the space dictionaries found in the input OSM model.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>The dictionary of space types, names, and colors found in the input OSM model. The dictionary has the following keys:
+- “types”
+- “names”
+- “colors”</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.SpaceTypeNames">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SpaceTypeNames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.SpaceTypeNames" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Return the space type names found in the input OSM model.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of space type names</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.SpaceTypes">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SpaceTypes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.SpaceTypes" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Return the space types found in the input OSM model.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of space types</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.SqlFile">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SqlFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.SqlFile" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Returns the SQL file found in the input OSM model.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>SQL file</dt><dd><p>The SQL file found in the input OSM model.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.TableNames">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TableNames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reportName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.TableNames" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Returns the table names found in the input OSM model and report name.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+<dt><strong>reportName</strong><span class="classifier">str</span></dt><dd><p>The input report name.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of table names found in the input OSM model and report name.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.Topologies">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Topologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.Topologies" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>The dictionary of topologies found in the input OSM model. The keys of the dictionary are:
+- “cells”
+- “apertures”
+- “shadingFaces”</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.Units">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reportName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tableName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columnName</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.Units" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
+</dd>
+<dt><strong>reportName</strong><span class="classifier">str</span></dt><dd><p>The input report name.</p>
+</dd>
+<dt><strong>tableName</strong><span class="classifier">str</span></dt><dd><p>The input table name.</p>
+</dd>
+<dt><strong>columnName</strong><span class="classifier">str</span></dt><dd><p>The input column name.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The units string found in the input OSM model, report name, table name, and column name.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="topologicpy.Edge.html" class="btn btn-neutral float-left" title="topologicpy.Edge module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topologicpy.Face.html" class="btn btn-neutral float-right" title="topologicpy.Face module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Wassim Jabi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

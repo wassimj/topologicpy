@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>topologicpy package &mdash; topologicpy 0.7.12 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="topologicpy.Aperture module" href="topologicpy.Aperture.html" />
+    <link rel="prev" title="topologicpy" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> topologicpy
+          </a>
+              <div class="version">
+                0.7.12
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">topologicpy</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">topologicpy package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.DGL.html">topologicpy.DGL module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Polyskel.html">topologicpy.Polyskel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Wire.html">topologicpy.Wire module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.version.html">topologicpy.version module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-topologicpy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">topologicpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">topologicpy</a> &raquo;</li>
+      <li>topologicpy package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/topologicpy.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="topologicpy-package">
+<h1>topologicpy package<a class="headerlink" href="#topologicpy-package" title="Permalink to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Aperture.html#topologicpy.Aperture.Aperture"><code class="docutils literal notranslate"><span class="pre">Aperture</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Aperture.html#topologicpy.Aperture.Aperture.ByTopologyContext"><code class="docutils literal notranslate"><span class="pre">Aperture.ByTopologyContext()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Aperture.html#topologicpy.Aperture.Aperture.Topology"><code class="docutils literal notranslate"><span class="pre">Aperture.Topology()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell"><code class="docutils literal notranslate"><span class="pre">Cell</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Area"><code class="docutils literal notranslate"><span class="pre">Cell.Area()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Box"><code class="docutils literal notranslate"><span class="pre">Cell.Box()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.ByFaces"><code class="docutils literal notranslate"><span class="pre">Cell.ByFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.ByOffset"><code class="docutils literal notranslate"><span class="pre">Cell.ByOffset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.ByShell"><code class="docutils literal notranslate"><span class="pre">Cell.ByShell()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.ByThickenedFace"><code class="docutils literal notranslate"><span class="pre">Cell.ByThickenedFace()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.ByThickenedShell"><code class="docutils literal notranslate"><span class="pre">Cell.ByThickenedShell()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.ByWires"><code class="docutils literal notranslate"><span class="pre">Cell.ByWires()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.ByWiresCluster"><code class="docutils literal notranslate"><span class="pre">Cell.ByWiresCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Capsule"><code class="docutils literal notranslate"><span class="pre">Cell.Capsule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Compactness"><code class="docutils literal notranslate"><span class="pre">Cell.Compactness()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Cone"><code class="docutils literal notranslate"><span class="pre">Cell.Cone()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.ContainmentStatus"><code class="docutils literal notranslate"><span class="pre">Cell.ContainmentStatus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Cylinder"><code class="docutils literal notranslate"><span class="pre">Cell.Cylinder()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Decompose"><code class="docutils literal notranslate"><span class="pre">Cell.Decompose()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Dodecahedron"><code class="docutils literal notranslate"><span class="pre">Cell.Dodecahedron()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Edges"><code class="docutils literal notranslate"><span class="pre">Cell.Edges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Egg"><code class="docutils literal notranslate"><span class="pre">Cell.Egg()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.ExternalBoundary"><code class="docutils literal notranslate"><span class="pre">Cell.ExternalBoundary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Faces"><code class="docutils literal notranslate"><span class="pre">Cell.Faces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Hyperboloid"><code class="docutils literal notranslate"><span class="pre">Cell.Hyperboloid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Icosahedron"><code class="docutils literal notranslate"><span class="pre">Cell.Icosahedron()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.InternalBoundaries"><code class="docutils literal notranslate"><span class="pre">Cell.InternalBoundaries()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.InternalVertex"><code class="docutils literal notranslate"><span class="pre">Cell.InternalVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.IsOnBoundary"><code class="docutils literal notranslate"><span class="pre">Cell.IsOnBoundary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Octahedron"><code class="docutils literal notranslate"><span class="pre">Cell.Octahedron()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Pipe"><code class="docutils literal notranslate"><span class="pre">Cell.Pipe()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Prism"><code class="docutils literal notranslate"><span class="pre">Cell.Prism()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.RemoveCollinearEdges"><code class="docutils literal notranslate"><span class="pre">Cell.RemoveCollinearEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Roof"><code class="docutils literal notranslate"><span class="pre">Cell.Roof()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Sets"><code class="docutils literal notranslate"><span class="pre">Cell.Sets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Shells"><code class="docutils literal notranslate"><span class="pre">Cell.Shells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Sphere"><code class="docutils literal notranslate"><span class="pre">Cell.Sphere()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.SurfaceArea"><code class="docutils literal notranslate"><span class="pre">Cell.SurfaceArea()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Tetrahedron"><code class="docutils literal notranslate"><span class="pre">Cell.Tetrahedron()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Torus"><code class="docutils literal notranslate"><span class="pre">Cell.Torus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Vertices"><code class="docutils literal notranslate"><span class="pre">Cell.Vertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Volume"><code class="docutils literal notranslate"><span class="pre">Cell.Volume()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Wires"><code class="docutils literal notranslate"><span class="pre">Cell.Wires()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex"><code class="docutils literal notranslate"><span class="pre">CellComplex</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Box"><code class="docutils literal notranslate"><span class="pre">CellComplex.Box()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.ByCells"><code class="docutils literal notranslate"><span class="pre">CellComplex.ByCells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.ByCellsCluster"><code class="docutils literal notranslate"><span class="pre">CellComplex.ByCellsCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.ByFaces"><code class="docutils literal notranslate"><span class="pre">CellComplex.ByFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.ByFacesCluster"><code class="docutils literal notranslate"><span class="pre">CellComplex.ByFacesCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.ByWires"><code class="docutils literal notranslate"><span class="pre">CellComplex.ByWires()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.ByWiresCluster"><code class="docutils literal notranslate"><span class="pre">CellComplex.ByWiresCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Cells"><code class="docutils literal notranslate"><span class="pre">CellComplex.Cells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Decompose"><code class="docutils literal notranslate"><span class="pre">CellComplex.Decompose()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Delaunay"><code class="docutils literal notranslate"><span class="pre">CellComplex.Delaunay()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Edges"><code class="docutils literal notranslate"><span class="pre">CellComplex.Edges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.ExternalBoundary"><code class="docutils literal notranslate"><span class="pre">CellComplex.ExternalBoundary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.ExternalFaces"><code class="docutils literal notranslate"><span class="pre">CellComplex.ExternalFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Faces"><code class="docutils literal notranslate"><span class="pre">CellComplex.Faces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.InternalFaces"><code class="docutils literal notranslate"><span class="pre">CellComplex.InternalFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.NonManifoldFaces"><code class="docutils literal notranslate"><span class="pre">CellComplex.NonManifoldFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Octahedron"><code class="docutils literal notranslate"><span class="pre">CellComplex.Octahedron()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Prism"><code class="docutils literal notranslate"><span class="pre">CellComplex.Prism()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.RemoveCollinearEdges"><code class="docutils literal notranslate"><span class="pre">CellComplex.RemoveCollinearEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Shells"><code class="docutils literal notranslate"><span class="pre">CellComplex.Shells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Vertices"><code class="docutils literal notranslate"><span class="pre">CellComplex.Vertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Volume"><code class="docutils literal notranslate"><span class="pre">CellComplex.Volume()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Voronoi"><code class="docutils literal notranslate"><span class="pre">CellComplex.Voronoi()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Wires"><code class="docutils literal notranslate"><span class="pre">CellComplex.Wires()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster"><code class="docutils literal notranslate"><span class="pre">Cluster</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.ByFormula"><code class="docutils literal notranslate"><span class="pre">Cluster.ByFormula()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.ByTopologies"><code class="docutils literal notranslate"><span class="pre">Cluster.ByTopologies()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.CellComplexes"><code class="docutils literal notranslate"><span class="pre">Cluster.CellComplexes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.Cells"><code class="docutils literal notranslate"><span class="pre">Cluster.Cells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.DBSCAN"><code class="docutils literal notranslate"><span class="pre">Cluster.DBSCAN()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.Edges"><code class="docutils literal notranslate"><span class="pre">Cluster.Edges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.Faces"><code class="docutils literal notranslate"><span class="pre">Cluster.Faces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.FreeCells"><code class="docutils literal notranslate"><span class="pre">Cluster.FreeCells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.FreeEdges"><code class="docutils literal notranslate"><span class="pre">Cluster.FreeEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.FreeFaces"><code class="docutils literal notranslate"><span class="pre">Cluster.FreeFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.FreeShells"><code class="docutils literal notranslate"><span class="pre">Cluster.FreeShells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.FreeTopologies"><code class="docutils literal notranslate"><span class="pre">Cluster.FreeTopologies()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.FreeVertices"><code class="docutils literal notranslate"><span class="pre">Cluster.FreeVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.FreeWires"><code class="docutils literal notranslate"><span class="pre">Cluster.FreeWires()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.HighestType"><code class="docutils literal notranslate"><span class="pre">Cluster.HighestType()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.K_Means"><code class="docutils literal notranslate"><span class="pre">Cluster.K_Means()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.MergeCells"><code class="docutils literal notranslate"><span class="pre">Cluster.MergeCells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.MysticRose"><code class="docutils literal notranslate"><span class="pre">Cluster.MysticRose()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.Shells"><code class="docutils literal notranslate"><span class="pre">Cluster.Shells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.Simplify"><code class="docutils literal notranslate"><span class="pre">Cluster.Simplify()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.Vertices"><code class="docutils literal notranslate"><span class="pre">Cluster.Vertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.Wires"><code class="docutils literal notranslate"><span class="pre">Cluster.Wires()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Color.html#topologicpy.Color.Color"><code class="docutils literal notranslate"><span class="pre">Color</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Color.html#topologicpy.Color.Color.ByCSSNamedColor"><code class="docutils literal notranslate"><span class="pre">Color.ByCSSNamedColor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Color.html#topologicpy.Color.Color.ByHEX"><code class="docutils literal notranslate"><span class="pre">Color.ByHEX()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Color.html#topologicpy.Color.Color.ByValueInRange"><code class="docutils literal notranslate"><span class="pre">Color.ByValueInRange()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Color.html#topologicpy.Color.Color.CSSNamedColor"><code class="docutils literal notranslate"><span class="pre">Color.CSSNamedColor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Color.html#topologicpy.Color.Color.CSSNamedColors"><code class="docutils literal notranslate"><span class="pre">Color.CSSNamedColors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Color.html#topologicpy.Color.Color.PlotlyColor"><code class="docutils literal notranslate"><span class="pre">Color.PlotlyColor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Color.html#topologicpy.Color.Color.RGBToHex"><code class="docutils literal notranslate"><span class="pre">Color.RGBToHex()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Context.html#topologicpy.Context.Context"><code class="docutils literal notranslate"><span class="pre">Context</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Context.html#topologicpy.Context.Context.ByTopologyParameters"><code class="docutils literal notranslate"><span class="pre">Context.ByTopologyParameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Context.html#topologicpy.Context.Context.Topology"><code class="docutils literal notranslate"><span class="pre">Context.Topology()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.DGL.html">topologicpy.DGL module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary"><code class="docutils literal notranslate"><span class="pre">Dictionary</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.ByKeyValue"><code class="docutils literal notranslate"><span class="pre">Dictionary.ByKeyValue()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.ByKeysValues"><code class="docutils literal notranslate"><span class="pre">Dictionary.ByKeysValues()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.ByMergedDictionaries"><code class="docutils literal notranslate"><span class="pre">Dictionary.ByMergedDictionaries()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.ByPythonDictionary"><code class="docutils literal notranslate"><span class="pre">Dictionary.ByPythonDictionary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.Keys"><code class="docutils literal notranslate"><span class="pre">Dictionary.Keys()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.ListAttributeValues"><code class="docutils literal notranslate"><span class="pre">Dictionary.ListAttributeValues()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.PythonDictionary"><code class="docutils literal notranslate"><span class="pre">Dictionary.PythonDictionary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.RemoveKey"><code class="docutils literal notranslate"><span class="pre">Dictionary.RemoveKey()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.SetValueAtKey"><code class="docutils literal notranslate"><span class="pre">Dictionary.SetValueAtKey()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.ValueAtKey"><code class="docutils literal notranslate"><span class="pre">Dictionary.ValueAtKey()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.Values"><code class="docutils literal notranslate"><span class="pre">Dictionary.Values()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge"><code class="docutils literal notranslate"><span class="pre">Edge</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Angle"><code class="docutils literal notranslate"><span class="pre">Edge.Angle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Bisect"><code class="docutils literal notranslate"><span class="pre">Edge.Bisect()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.ByFaceNormal"><code class="docutils literal notranslate"><span class="pre">Edge.ByFaceNormal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.ByOffset2D"><code class="docutils literal notranslate"><span class="pre">Edge.ByOffset2D()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.ByStartVertexEndVertex"><code class="docutils literal notranslate"><span class="pre">Edge.ByStartVertexEndVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.ByVertices"><code class="docutils literal notranslate"><span class="pre">Edge.ByVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.ByVerticesCluster"><code class="docutils literal notranslate"><span class="pre">Edge.ByVerticesCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Direction"><code class="docutils literal notranslate"><span class="pre">Edge.Direction()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.EndVertex"><code class="docutils literal notranslate"><span class="pre">Edge.EndVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Extend"><code class="docutils literal notranslate"><span class="pre">Edge.Extend()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.ExtendToEdge2D"><code class="docutils literal notranslate"><span class="pre">Edge.ExtendToEdge2D()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Index"><code class="docutils literal notranslate"><span class="pre">Edge.Index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Intersect2D"><code class="docutils literal notranslate"><span class="pre">Edge.Intersect2D()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.IsCollinear"><code class="docutils literal notranslate"><span class="pre">Edge.IsCollinear()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.IsParallel"><code class="docutils literal notranslate"><span class="pre">Edge.IsParallel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Length"><code class="docutils literal notranslate"><span class="pre">Edge.Length()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Line"><code class="docutils literal notranslate"><span class="pre">Edge.Line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Normal"><code class="docutils literal notranslate"><span class="pre">Edge.Normal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.NormalAsEdge"><code class="docutils literal notranslate"><span class="pre">Edge.NormalAsEdge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Normalize"><code class="docutils literal notranslate"><span class="pre">Edge.Normalize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.ParameterAtVertex"><code class="docutils literal notranslate"><span class="pre">Edge.ParameterAtVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Reverse"><code class="docutils literal notranslate"><span class="pre">Edge.Reverse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.SetLength"><code class="docutils literal notranslate"><span class="pre">Edge.SetLength()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.StartVertex"><code class="docutils literal notranslate"><span class="pre">Edge.StartVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Trim"><code class="docutils literal notranslate"><span class="pre">Edge.Trim()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.TrimByEdge2D"><code class="docutils literal notranslate"><span class="pre">Edge.TrimByEdge2D()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.VertexByDistance"><code class="docutils literal notranslate"><span class="pre">Edge.VertexByDistance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.VertexByParameter"><code class="docutils literal notranslate"><span class="pre">Edge.VertexByParameter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Edge.html#topologicpy.Edge.Edge.Vertices"><code class="docutils literal notranslate"><span class="pre">Edge.Vertices()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel"><code class="docutils literal notranslate"><span class="pre">EnergyModel</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.ByOSMPath"><code class="docutils literal notranslate"><span class="pre">EnergyModel.ByOSMPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.ByTopology"><code class="docutils literal notranslate"><span class="pre">EnergyModel.ByTopology()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.ColumnNames"><code class="docutils literal notranslate"><span class="pre">EnergyModel.ColumnNames()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.DefaultConstructionSets"><code class="docutils literal notranslate"><span class="pre">EnergyModel.DefaultConstructionSets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.DefaultScheduleSets"><code class="docutils literal notranslate"><span class="pre">EnergyModel.DefaultScheduleSets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.ExportToGBXML"><code class="docutils literal notranslate"><span class="pre">EnergyModel.ExportToGBXML()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.ExportToOSM"><code class="docutils literal notranslate"><span class="pre">EnergyModel.ExportToOSM()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.GBXMLString"><code class="docutils literal notranslate"><span class="pre">EnergyModel.GBXMLString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.Query"><code class="docutils literal notranslate"><span class="pre">EnergyModel.Query()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.ReportNames"><code class="docutils literal notranslate"><span class="pre">EnergyModel.ReportNames()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.RowNames"><code class="docutils literal notranslate"><span class="pre">EnergyModel.RowNames()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.Run"><code class="docutils literal notranslate"><span class="pre">EnergyModel.Run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.SpaceColors"><code class="docutils literal notranslate"><span class="pre">EnergyModel.SpaceColors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.SpaceDictionaries"><code class="docutils literal notranslate"><span class="pre">EnergyModel.SpaceDictionaries()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.SpaceTypeNames"><code class="docutils literal notranslate"><span class="pre">EnergyModel.SpaceTypeNames()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.SpaceTypes"><code class="docutils literal notranslate"><span class="pre">EnergyModel.SpaceTypes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.SqlFile"><code class="docutils literal notranslate"><span class="pre">EnergyModel.SqlFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.TableNames"><code class="docutils literal notranslate"><span class="pre">EnergyModel.TableNames()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.Topologies"><code class="docutils literal notranslate"><span class="pre">EnergyModel.Topologies()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.Units"><code class="docutils literal notranslate"><span class="pre">EnergyModel.Units()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face"><code class="docutils literal notranslate"><span class="pre">Face</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.AddInternalBoundaries"><code class="docutils literal notranslate"><span class="pre">Face.AddInternalBoundaries()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.AddInternalBoundariesCluster"><code class="docutils literal notranslate"><span class="pre">Face.AddInternalBoundariesCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Angle"><code class="docutils literal notranslate"><span class="pre">Face.Angle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Area"><code class="docutils literal notranslate"><span class="pre">Face.Area()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.BoundingRectangle"><code class="docutils literal notranslate"><span class="pre">Face.BoundingRectangle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByEdges"><code class="docutils literal notranslate"><span class="pre">Face.ByEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByEdgesCluster"><code class="docutils literal notranslate"><span class="pre">Face.ByEdgesCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByOffset"><code class="docutils literal notranslate"><span class="pre">Face.ByOffset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByShell"><code class="docutils literal notranslate"><span class="pre">Face.ByShell()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByVertices"><code class="docutils literal notranslate"><span class="pre">Face.ByVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByVerticesCluster"><code class="docutils literal notranslate"><span class="pre">Face.ByVerticesCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByWire"><code class="docutils literal notranslate"><span class="pre">Face.ByWire()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByWires"><code class="docutils literal notranslate"><span class="pre">Face.ByWires()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ByWiresCluster"><code class="docutils literal notranslate"><span class="pre">Face.ByWiresCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Circle"><code class="docutils literal notranslate"><span class="pre">Face.Circle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Compactness"><code class="docutils literal notranslate"><span class="pre">Face.Compactness()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.CompassAngle"><code class="docutils literal notranslate"><span class="pre">Face.CompassAngle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Edges"><code class="docutils literal notranslate"><span class="pre">Face.Edges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Einstein"><code class="docutils literal notranslate"><span class="pre">Face.Einstein()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ExteriorAngles"><code class="docutils literal notranslate"><span class="pre">Face.ExteriorAngles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.ExternalBoundary"><code class="docutils literal notranslate"><span class="pre">Face.ExternalBoundary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.FacingToward"><code class="docutils literal notranslate"><span class="pre">Face.FacingToward()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Fillet"><code class="docutils literal notranslate"><span class="pre">Face.Fillet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Harmonize"><code class="docutils literal notranslate"><span class="pre">Face.Harmonize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.InteriorAngles"><code class="docutils literal notranslate"><span class="pre">Face.InteriorAngles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.InternalBoundaries"><code class="docutils literal notranslate"><span class="pre">Face.InternalBoundaries()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.InternalVertex"><code class="docutils literal notranslate"><span class="pre">Face.InternalVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Invert"><code class="docutils literal notranslate"><span class="pre">Face.Invert()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.IsCoplanar"><code class="docutils literal notranslate"><span class="pre">Face.IsCoplanar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Isovist"><code class="docutils literal notranslate"><span class="pre">Face.Isovist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.MedialAxis"><code class="docutils literal notranslate"><span class="pre">Face.MedialAxis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Normal"><code class="docutils literal notranslate"><span class="pre">Face.Normal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.NormalAtParameters"><code class="docutils literal notranslate"><span class="pre">Face.NormalAtParameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.NormalEdge"><code class="docutils literal notranslate"><span class="pre">Face.NormalEdge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.NormalEdgeAtParameters"><code class="docutils literal notranslate"><span class="pre">Face.NormalEdgeAtParameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.NorthArrow"><code class="docutils literal notranslate"><span class="pre">Face.NorthArrow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Planarize"><code class="docutils literal notranslate"><span class="pre">Face.Planarize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.PlaneEquation"><code class="docutils literal notranslate"><span class="pre">Face.PlaneEquation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Project"><code class="docutils literal notranslate"><span class="pre">Face.Project()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Rectangle"><code class="docutils literal notranslate"><span class="pre">Face.Rectangle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.RectangleByPlaneEquation"><code class="docutils literal notranslate"><span class="pre">Face.RectangleByPlaneEquation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.RemoveCollinearEdges"><code class="docutils literal notranslate"><span class="pre">Face.RemoveCollinearEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Simplify"><code class="docutils literal notranslate"><span class="pre">Face.Simplify()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Skeleton"><code class="docutils literal notranslate"><span class="pre">Face.Skeleton()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Square"><code class="docutils literal notranslate"><span class="pre">Face.Square()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Squircle"><code class="docutils literal notranslate"><span class="pre">Face.Squircle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Star"><code class="docutils literal notranslate"><span class="pre">Face.Star()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Trapezoid"><code class="docutils literal notranslate"><span class="pre">Face.Trapezoid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Triangulate"><code class="docutils literal notranslate"><span class="pre">Face.Triangulate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.TrimByWire"><code class="docutils literal notranslate"><span class="pre">Face.TrimByWire()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.VertexByParameters"><code class="docutils literal notranslate"><span class="pre">Face.VertexByParameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.VertexParameters"><code class="docutils literal notranslate"><span class="pre">Face.VertexParameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Vertices"><code class="docutils literal notranslate"><span class="pre">Face.Vertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Wire"><code class="docutils literal notranslate"><span class="pre">Face.Wire()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Wires"><code class="docutils literal notranslate"><span class="pre">Face.Wires()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph"><code class="docutils literal notranslate"><span class="pre">Graph</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AddEdge"><code class="docutils literal notranslate"><span class="pre">Graph.AddEdge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AddVertex"><code class="docutils literal notranslate"><span class="pre">Graph.AddVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AddVertices"><code class="docutils literal notranslate"><span class="pre">Graph.AddVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AdjacencyList"><code class="docutils literal notranslate"><span class="pre">Graph.AdjacencyList()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AdjacencyMatrix"><code class="docutils literal notranslate"><span class="pre">Graph.AdjacencyMatrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AdjacentVertices"><code class="docutils literal notranslate"><span class="pre">Graph.AdjacentVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AllPaths"><code class="docutils literal notranslate"><span class="pre">Graph.AllPaths()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AverageClusteringCoefficient"><code class="docutils literal notranslate"><span class="pre">Graph.AverageClusteringCoefficient()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.BOTGraph"><code class="docutils literal notranslate"><span class="pre">Graph.BOTGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.BOTString"><code class="docutils literal notranslate"><span class="pre">Graph.BOTString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.BetweenessCentrality"><code class="docutils literal notranslate"><span class="pre">Graph.BetweenessCentrality()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByAdjacencyMatrix"><code class="docutils literal notranslate"><span class="pre">Graph.ByAdjacencyMatrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath"><code class="docutils literal notranslate"><span class="pre">Graph.ByAdjacencyMatrixCSVPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByBOTGraph"><code class="docutils literal notranslate"><span class="pre">Graph.ByBOTGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByBOTPath"><code class="docutils literal notranslate"><span class="pre">Graph.ByBOTPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByCSVPath"><code class="docutils literal notranslate"><span class="pre">Graph.ByCSVPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByDGCNNFile"><code class="docutils literal notranslate"><span class="pre">Graph.ByDGCNNFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByDGCNNPath"><code class="docutils literal notranslate"><span class="pre">Graph.ByDGCNNPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByDGCNNString"><code class="docutils literal notranslate"><span class="pre">Graph.ByDGCNNString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByIFCFile"><code class="docutils literal notranslate"><span class="pre">Graph.ByIFCFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByIFCPath"><code class="docutils literal notranslate"><span class="pre">Graph.ByIFCPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByMeshData"><code class="docutils literal notranslate"><span class="pre">Graph.ByMeshData()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByTopology"><code class="docutils literal notranslate"><span class="pre">Graph.ByTopology()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByVerticesEdges"><code class="docutils literal notranslate"><span class="pre">Graph.ByVerticesEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ChromaticNumber"><code class="docutils literal notranslate"><span class="pre">Graph.ChromaticNumber()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ClosenessCentrality"><code class="docutils literal notranslate"><span class="pre">Graph.ClosenessCentrality()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Color"><code class="docutils literal notranslate"><span class="pre">Graph.Color()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Connect"><code class="docutils literal notranslate"><span class="pre">Graph.Connect()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ContainsEdge"><code class="docutils literal notranslate"><span class="pre">Graph.ContainsEdge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ContainsVertex"><code class="docutils literal notranslate"><span class="pre">Graph.ContainsVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ContractEdge"><code class="docutils literal notranslate"><span class="pre">Graph.ContractEdge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.DegreeSequence"><code class="docutils literal notranslate"><span class="pre">Graph.DegreeSequence()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Density"><code class="docutils literal notranslate"><span class="pre">Graph.Density()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.DepthMap"><code class="docutils literal notranslate"><span class="pre">Graph.DepthMap()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Diameter"><code class="docutils literal notranslate"><span class="pre">Graph.Diameter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Dictionary"><code class="docutils literal notranslate"><span class="pre">Graph.Dictionary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Distance"><code class="docutils literal notranslate"><span class="pre">Graph.Distance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Edge"><code class="docutils literal notranslate"><span class="pre">Graph.Edge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Edges"><code class="docutils literal notranslate"><span class="pre">Graph.Edges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ExportToAdjacencyMatrixCSV"><code class="docutils literal notranslate"><span class="pre">Graph.ExportToAdjacencyMatrixCSV()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ExportToBOT"><code class="docutils literal notranslate"><span class="pre">Graph.ExportToBOT()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ExportToCSV"><code class="docutils literal notranslate"><span class="pre">Graph.ExportToCSV()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ExportToGEXF"><code class="docutils literal notranslate"><span class="pre">Graph.ExportToGEXF()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ExportToJSON"><code class="docutils literal notranslate"><span class="pre">Graph.ExportToJSON()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Flatten"><code class="docutils literal notranslate"><span class="pre">Graph.Flatten()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.GlobalClusteringCoefficient"><code class="docutils literal notranslate"><span class="pre">Graph.GlobalClusteringCoefficient()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Guid"><code class="docutils literal notranslate"><span class="pre">Graph.Guid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.IncomingEdges"><code class="docutils literal notranslate"><span class="pre">Graph.IncomingEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.IncomingVertices"><code class="docutils literal notranslate"><span class="pre">Graph.IncomingVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.IsBipartite"><code class="docutils literal notranslate"><span class="pre">Graph.IsBipartite()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.IsComplete"><code class="docutils literal notranslate"><span class="pre">Graph.IsComplete()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.IsErdoesGallai"><code class="docutils literal notranslate"><span class="pre">Graph.IsErdoesGallai()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.IsolatedVertices"><code class="docutils literal notranslate"><span class="pre">Graph.IsolatedVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.JSONData"><code class="docutils literal notranslate"><span class="pre">Graph.JSONData()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.JSONString"><code class="docutils literal notranslate"><span class="pre">Graph.JSONString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.LocalClusteringCoefficient"><code class="docutils literal notranslate"><span class="pre">Graph.LocalClusteringCoefficient()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.LongestPath"><code class="docutils literal notranslate"><span class="pre">Graph.LongestPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MaximumDelta"><code class="docutils literal notranslate"><span class="pre">Graph.MaximumDelta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MaximumFlow"><code class="docutils literal notranslate"><span class="pre">Graph.MaximumFlow()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MeshData"><code class="docutils literal notranslate"><span class="pre">Graph.MeshData()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MinimumDelta"><code class="docutils literal notranslate"><span class="pre">Graph.MinimumDelta()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MinimumSpanningTree"><code class="docutils literal notranslate"><span class="pre">Graph.MinimumSpanningTree()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.NavigationGraph"><code class="docutils literal notranslate"><span class="pre">Graph.NavigationGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.NearestVertex"><code class="docutils literal notranslate"><span class="pre">Graph.NearestVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.NetworkXGraph"><code class="docutils literal notranslate"><span class="pre">Graph.NetworkXGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Order"><code class="docutils literal notranslate"><span class="pre">Graph.Order()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.OutgoingEdges"><code class="docutils literal notranslate"><span class="pre">Graph.OutgoingEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.OutgoingVertices"><code class="docutils literal notranslate"><span class="pre">Graph.OutgoingVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.PageRank"><code class="docutils literal notranslate"><span class="pre">Graph.PageRank()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Path"><code class="docutils literal notranslate"><span class="pre">Graph.Path()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.PyvisGraph"><code class="docutils literal notranslate"><span class="pre">Graph.PyvisGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.RemoveEdge"><code class="docutils literal notranslate"><span class="pre">Graph.RemoveEdge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.RemoveVertex"><code class="docutils literal notranslate"><span class="pre">Graph.RemoveVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.SetDictionary"><code class="docutils literal notranslate"><span class="pre">Graph.SetDictionary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ShortestPath"><code class="docutils literal notranslate"><span class="pre">Graph.ShortestPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ShortestPaths"><code class="docutils literal notranslate"><span class="pre">Graph.ShortestPaths()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Show"><code class="docutils literal notranslate"><span class="pre">Graph.Show()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Size"><code class="docutils literal notranslate"><span class="pre">Graph.Size()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.TopologicalDistance"><code class="docutils literal notranslate"><span class="pre">Graph.TopologicalDistance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Topology"><code class="docutils literal notranslate"><span class="pre">Graph.Topology()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Tree"><code class="docutils literal notranslate"><span class="pre">Graph.Tree()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.VertexDegree"><code class="docutils literal notranslate"><span class="pre">Graph.VertexDegree()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Vertices"><code class="docutils literal notranslate"><span class="pre">Graph.Vertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.VisibilityGraph"><code class="docutils literal notranslate"><span class="pre">Graph.VisibilityGraph()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.GraphQueueItem"><code class="docutils literal notranslate"><span class="pre">GraphQueueItem</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.GraphQueueItem.edges"><code class="docutils literal notranslate"><span class="pre">GraphQueueItem.edges</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.MergingProcess"><code class="docutils literal notranslate"><span class="pre">MergingProcess</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.MergingProcess.wait_message"><code class="docutils literal notranslate"><span class="pre">MergingProcess.wait_message()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.WorkerProcess"><code class="docutils literal notranslate"><span class="pre">WorkerProcess</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.WorkerProcess.run"><code class="docutils literal notranslate"><span class="pre">WorkerProcess.run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.WorkerProcessPool"><code class="docutils literal notranslate"><span class="pre">WorkerProcessPool</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.WorkerProcessPool.join"><code class="docutils literal notranslate"><span class="pre">WorkerProcessPool.join()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.WorkerProcessPool.startProcesses"><code class="docutils literal notranslate"><span class="pre">WorkerProcessPool.startProcesses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.WorkerProcessPool.stopProcesses"><code class="docutils literal notranslate"><span class="pre">WorkerProcessPool.stopProcesses()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Grid.html#topologicpy.Grid.Grid"><code class="docutils literal notranslate"><span class="pre">Grid</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Grid.html#topologicpy.Grid.Grid.EdgesByDistances"><code class="docutils literal notranslate"><span class="pre">Grid.EdgesByDistances()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Grid.html#topologicpy.Grid.Grid.EdgesByParameters"><code class="docutils literal notranslate"><span class="pre">Grid.EdgesByParameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Grid.html#topologicpy.Grid.Grid.VerticesByDistances"><code class="docutils literal notranslate"><span class="pre">Grid.VerticesByDistances()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Grid.html#topologicpy.Grid.Grid.VerticesByParameters"><code class="docutils literal notranslate"><span class="pre">Grid.VerticesByParameters()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper"><code class="docutils literal notranslate"><span class="pre">Helper</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.ClosestMatch"><code class="docutils literal notranslate"><span class="pre">Helper.ClosestMatch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Flatten"><code class="docutils literal notranslate"><span class="pre">Helper.Flatten()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Iterate"><code class="docutils literal notranslate"><span class="pre">Helper.Iterate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.K_Means"><code class="docutils literal notranslate"><span class="pre">Helper.K_Means()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.MakeUnique"><code class="docutils literal notranslate"><span class="pre">Helper.MakeUnique()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.MergeByThreshold"><code class="docutils literal notranslate"><span class="pre">Helper.MergeByThreshold()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Normalize"><code class="docutils literal notranslate"><span class="pre">Helper.Normalize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Position"><code class="docutils literal notranslate"><span class="pre">Helper.Position()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Repeat"><code class="docutils literal notranslate"><span class="pre">Helper.Repeat()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Sort"><code class="docutils literal notranslate"><span class="pre">Helper.Sort()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Transpose"><code class="docutils literal notranslate"><span class="pre">Helper.Transpose()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Trim"><code class="docutils literal notranslate"><span class="pre">Helper.Trim()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Version"><code class="docutils literal notranslate"><span class="pre">Helper.Version()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee"><code class="docutils literal notranslate"><span class="pre">Honeybee</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee.ConstructionSetByIdentifier"><code class="docutils literal notranslate"><span class="pre">Honeybee.ConstructionSetByIdentifier()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee.ConstructionSets"><code class="docutils literal notranslate"><span class="pre">Honeybee.ConstructionSets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee.ExportToHBJSON"><code class="docutils literal notranslate"><span class="pre">Honeybee.ExportToHBJSON()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee.ModelByTopology"><code class="docutils literal notranslate"><span class="pre">Honeybee.ModelByTopology()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee.ProgramTypeByIdentifier"><code class="docutils literal notranslate"><span class="pre">Honeybee.ProgramTypeByIdentifier()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee.ProgramTypes"><code class="docutils literal notranslate"><span class="pre">Honeybee.ProgramTypes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee.String"><code class="docutils literal notranslate"><span class="pre">Honeybee.String()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Matrix.html#topologicpy.Matrix.Matrix"><code class="docutils literal notranslate"><span class="pre">Matrix</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Matrix.html#topologicpy.Matrix.Matrix.Add"><code class="docutils literal notranslate"><span class="pre">Matrix.Add()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Matrix.html#topologicpy.Matrix.Matrix.ByRotation"><code class="docutils literal notranslate"><span class="pre">Matrix.ByRotation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Matrix.html#topologicpy.Matrix.Matrix.ByScaling"><code class="docutils literal notranslate"><span class="pre">Matrix.ByScaling()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Matrix.html#topologicpy.Matrix.Matrix.ByTranslation"><code class="docutils literal notranslate"><span class="pre">Matrix.ByTranslation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Matrix.html#topologicpy.Matrix.Matrix.Multiply"><code class="docutils literal notranslate"><span class="pre">Matrix.Multiply()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Matrix.html#topologicpy.Matrix.Matrix.Subtract"><code class="docutils literal notranslate"><span class="pre">Matrix.Subtract()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Matrix.html#topologicpy.Matrix.Matrix.Transpose"><code class="docutils literal notranslate"><span class="pre">Matrix.Transpose()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j"><code class="docutils literal notranslate"><span class="pre">Neo4j</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.AddGraph"><code class="docutils literal notranslate"><span class="pre">Neo4j.AddGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.ByParameters"><code class="docutils literal notranslate"><span class="pre">Neo4j.ByParameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.DeleteAll"><code class="docutils literal notranslate"><span class="pre">Neo4j.DeleteAll()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.ExportToGraph"><code class="docutils literal notranslate"><span class="pre">Neo4j.ExportToGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.NodeLabels"><code class="docutils literal notranslate"><span class="pre">Neo4j.NodeLabels()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.NodeToVertex"><code class="docutils literal notranslate"><span class="pre">Neo4j.NodeToVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.NodesByCypher"><code class="docutils literal notranslate"><span class="pre">Neo4j.NodesByCypher()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.NodesBySubGraph"><code class="docutils literal notranslate"><span class="pre">Neo4j.NodesBySubGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.RelationshipTypes"><code class="docutils literal notranslate"><span class="pre">Neo4j.RelationshipTypes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.SetGraph"><code class="docutils literal notranslate"><span class="pre">Neo4j.SetGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.SubGraphByCypher"><code class="docutils literal notranslate"><span class="pre">Neo4j.SubGraphByCypher()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.SubGraphExportToGraph"><code class="docutils literal notranslate"><span class="pre">Neo4j.SubGraphExportToGraph()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly"><code class="docutils literal notranslate"><span class="pre">Plotly</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.AddColorBar"><code class="docutils literal notranslate"><span class="pre">Plotly.AddColorBar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.ColorScale"><code class="docutils literal notranslate"><span class="pre">Plotly.ColorScale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.Colors"><code class="docutils literal notranslate"><span class="pre">Plotly.Colors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.DataByDGL"><code class="docutils literal notranslate"><span class="pre">Plotly.DataByDGL()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.DataByGraph"><code class="docutils literal notranslate"><span class="pre">Plotly.DataByGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.DataByTopology"><code class="docutils literal notranslate"><span class="pre">Plotly.DataByTopology()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.ExportToImage"><code class="docutils literal notranslate"><span class="pre">Plotly.ExportToImage()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByConfusionMatrix"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureByConfusionMatrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByData"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureByData()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByDataFrame"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureByDataFrame()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByJSONFile"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureByJSONFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByJSONPath"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureByJSONPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByMatrix"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureByMatrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByPieChart"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureByPieChart()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByTopology"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureByTopology()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureExportToJSON"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureExportToJSON()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureExportToPDF"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureExportToPDF()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureExportToPNG"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureExportToPNG()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureExportToSVG"><code class="docutils literal notranslate"><span class="pre">Plotly.FigureExportToSVG()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.Renderer"><code class="docutils literal notranslate"><span class="pre">Plotly.Renderer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.Renderers"><code class="docutils literal notranslate"><span class="pre">Plotly.Renderers()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.SetCamera"><code class="docutils literal notranslate"><span class="pre">Plotly.SetCamera()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.Show"><code class="docutils literal notranslate"><span class="pre">Plotly.Show()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Polyskel.html">topologicpy.Polyskel module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Polyskel.html#topologicpy.Polyskel.Debug"><code class="docutils literal notranslate"><span class="pre">Debug</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Polyskel.html#topologicpy.Polyskel.Debug.line"><code class="docutils literal notranslate"><span class="pre">Debug.line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Polyskel.html#topologicpy.Polyskel.Debug.rectangle"><code class="docutils literal notranslate"><span class="pre">Debug.rectangle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Polyskel.html#topologicpy.Polyskel.Debug.show"><code class="docutils literal notranslate"><span class="pre">Debug.show()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Polyskel.html#topologicpy.Polyskel.Subtree"><code class="docutils literal notranslate"><span class="pre">Subtree</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Polyskel.html#topologicpy.Polyskel.Subtree.height"><code class="docutils literal notranslate"><span class="pre">Subtree.height</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Polyskel.html#topologicpy.Polyskel.Subtree.sinks"><code class="docutils literal notranslate"><span class="pre">Subtree.sinks</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Polyskel.html#topologicpy.Polyskel.Subtree.source"><code class="docutils literal notranslate"><span class="pre">Subtree.source</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Polyskel.html#topologicpy.Polyskel.set_debug"><code class="docutils literal notranslate"><span class="pre">set_debug()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Polyskel.html#topologicpy.Polyskel.skeletonize"><code class="docutils literal notranslate"><span class="pre">skeletonize()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell"><code class="docutils literal notranslate"><span class="pre">Shell</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.ByDisjointFaces"><code class="docutils literal notranslate"><span class="pre">Shell.ByDisjointFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.ByFaces"><code class="docutils literal notranslate"><span class="pre">Shell.ByFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.ByFacesCluster"><code class="docutils literal notranslate"><span class="pre">Shell.ByFacesCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.ByWires"><code class="docutils literal notranslate"><span class="pre">Shell.ByWires()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.ByWiresCluster"><code class="docutils literal notranslate"><span class="pre">Shell.ByWiresCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Circle"><code class="docutils literal notranslate"><span class="pre">Shell.Circle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Delaunay"><code class="docutils literal notranslate"><span class="pre">Shell.Delaunay()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Edges"><code class="docutils literal notranslate"><span class="pre">Shell.Edges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.ExternalBoundary"><code class="docutils literal notranslate"><span class="pre">Shell.ExternalBoundary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Faces"><code class="docutils literal notranslate"><span class="pre">Shell.Faces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.HyperbolicParaboloidCircularDomain"><code class="docutils literal notranslate"><span class="pre">Shell.HyperbolicParaboloidCircularDomain()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.HyperbolicParaboloidRectangularDomain"><code class="docutils literal notranslate"><span class="pre">Shell.HyperbolicParaboloidRectangularDomain()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.InternalBoundaries"><code class="docutils literal notranslate"><span class="pre">Shell.InternalBoundaries()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.IsClosed"><code class="docutils literal notranslate"><span class="pre">Shell.IsClosed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.IsOnBoundary"><code class="docutils literal notranslate"><span class="pre">Shell.IsOnBoundary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Pie"><code class="docutils literal notranslate"><span class="pre">Shell.Pie()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Planarize"><code class="docutils literal notranslate"><span class="pre">Shell.Planarize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Rectangle"><code class="docutils literal notranslate"><span class="pre">Shell.Rectangle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.RemoveCollinearEdges"><code class="docutils literal notranslate"><span class="pre">Shell.RemoveCollinearEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Roof"><code class="docutils literal notranslate"><span class="pre">Shell.Roof()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.SelfMerge"><code class="docutils literal notranslate"><span class="pre">Shell.SelfMerge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Simplify"><code class="docutils literal notranslate"><span class="pre">Shell.Simplify()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Skeleton"><code class="docutils literal notranslate"><span class="pre">Shell.Skeleton()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Vertices"><code class="docutils literal notranslate"><span class="pre">Shell.Vertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Voronoi"><code class="docutils literal notranslate"><span class="pre">Shell.Voronoi()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Wires"><code class="docutils literal notranslate"><span class="pre">Shell.Wires()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle"><code class="docutils literal notranslate"><span class="pre">Speckle</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.BranchesByStream"><code class="docutils literal notranslate"><span class="pre">Speckle.BranchesByStream()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.ClientByURL"><code class="docutils literal notranslate"><span class="pre">Speckle.ClientByURL()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.CommitByID"><code class="docutils literal notranslate"><span class="pre">Speckle.CommitByID()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.CommitsByBranch"><code class="docutils literal notranslate"><span class="pre">Speckle.CommitsByBranch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.Object"><code class="docutils literal notranslate"><span class="pre">Speckle.Object()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.Send"><code class="docutils literal notranslate"><span class="pre">Speckle.Send()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleBranchByID"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleBranchByID()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleCommitByURL"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleCommitByURL()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleCommitDelete"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleCommitDelete()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleGlobalsByStream"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleGlobalsByStream()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleSendObjects"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleSendObjects()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleStreamByID"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleStreamByID()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleStreamByURL"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleStreamByURL()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.StreamsByClient"><code class="docutils literal notranslate"><span class="pre">Speckle.StreamsByClient()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.mesh_to_speckle"><code class="docutils literal notranslate"><span class="pre">Speckle.mesh_to_speckle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.mesh_to_speckle_mesh"><code class="docutils literal notranslate"><span class="pre">Speckle.mesh_to_speckle_mesh()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun"><code class="docutils literal notranslate"><span class="pre">Sun</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.Altitude"><code class="docutils literal notranslate"><span class="pre">Sun.Altitude()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.AutumnEquinox"><code class="docutils literal notranslate"><span class="pre">Sun.AutumnEquinox()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.Azimuth"><code class="docutils literal notranslate"><span class="pre">Sun.Azimuth()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.Diagram"><code class="docutils literal notranslate"><span class="pre">Sun.Diagram()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.Edge"><code class="docutils literal notranslate"><span class="pre">Sun.Edge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.PathByDate"><code class="docutils literal notranslate"><span class="pre">Sun.PathByDate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.PathByHour"><code class="docutils literal notranslate"><span class="pre">Sun.PathByHour()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.Position"><code class="docutils literal notranslate"><span class="pre">Sun.Position()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.SpringEquinox"><code class="docutils literal notranslate"><span class="pre">Sun.SpringEquinox()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.SummerSolstice"><code class="docutils literal notranslate"><span class="pre">Sun.SummerSolstice()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.Sunrise"><code class="docutils literal notranslate"><span class="pre">Sun.Sunrise()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.Sunset"><code class="docutils literal notranslate"><span class="pre">Sun.Sunset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.Vector"><code class="docutils literal notranslate"><span class="pre">Sun.Vector()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.Vertex"><code class="docutils literal notranslate"><span class="pre">Sun.Vertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.VerticesByDate"><code class="docutils literal notranslate"><span class="pre">Sun.VerticesByDate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.VerticesByHour"><code class="docutils literal notranslate"><span class="pre">Sun.VerticesByHour()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.WinterSolstice"><code class="docutils literal notranslate"><span class="pre">Sun.WinterSolstice()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.MergingProcess"><code class="docutils literal notranslate"><span class="pre">MergingProcess</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.MergingProcess.wait_message"><code class="docutils literal notranslate"><span class="pre">MergingProcess.wait_message()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.QueueItem"><code class="docutils literal notranslate"><span class="pre">QueueItem</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.QueueItem.ID"><code class="docutils literal notranslate"><span class="pre">QueueItem.ID</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.QueueItem.sinkKeys"><code class="docutils literal notranslate"><span class="pre">QueueItem.sinkKeys</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.QueueItem.sinkValues"><code class="docutils literal notranslate"><span class="pre">QueueItem.sinkValues</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.SinkItem"><code class="docutils literal notranslate"><span class="pre">SinkItem</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.SinkItem.ID"><code class="docutils literal notranslate"><span class="pre">SinkItem.ID</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.SinkItem.sink_str"><code class="docutils literal notranslate"><span class="pre">SinkItem.sink_str</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology"><code class="docutils literal notranslate"><span class="pre">Topology</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.AddApertures"><code class="docutils literal notranslate"><span class="pre">Topology.AddApertures()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.AddContent"><code class="docutils literal notranslate"><span class="pre">Topology.AddContent()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.AddDictionary"><code class="docutils literal notranslate"><span class="pre">Topology.AddDictionary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.AdjacentTopologies"><code class="docutils literal notranslate"><span class="pre">Topology.AdjacentTopologies()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Analyze"><code class="docutils literal notranslate"><span class="pre">Topology.Analyze()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ApertureTopologies"><code class="docutils literal notranslate"><span class="pre">Topology.ApertureTopologies()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Apertures"><code class="docutils literal notranslate"><span class="pre">Topology.Apertures()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.BREPString"><code class="docutils literal notranslate"><span class="pre">Topology.BREPString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Boolean"><code class="docutils literal notranslate"><span class="pre">Topology.Boolean()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.BoundingBox"><code class="docutils literal notranslate"><span class="pre">Topology.BoundingBox()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByBREPFile"><code class="docutils literal notranslate"><span class="pre">Topology.ByBREPFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByBREPPath"><code class="docutils literal notranslate"><span class="pre">Topology.ByBREPPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByBREPString"><code class="docutils literal notranslate"><span class="pre">Topology.ByBREPString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByDXFFile"><code class="docutils literal notranslate"><span class="pre">Topology.ByDXFFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByDXFPath"><code class="docutils literal notranslate"><span class="pre">Topology.ByDXFPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByGeometry"><code class="docutils literal notranslate"><span class="pre">Topology.ByGeometry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByIFCFile"><code class="docutils literal notranslate"><span class="pre">Topology.ByIFCFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByIFCPath"><code class="docutils literal notranslate"><span class="pre">Topology.ByIFCPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByJSONFile"><code class="docutils literal notranslate"><span class="pre">Topology.ByJSONFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByJSONPath"><code class="docutils literal notranslate"><span class="pre">Topology.ByJSONPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByJSONString"><code class="docutils literal notranslate"><span class="pre">Topology.ByJSONString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByOBJFile"><code class="docutils literal notranslate"><span class="pre">Topology.ByOBJFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByOBJPath"><code class="docutils literal notranslate"><span class="pre">Topology.ByOBJPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByOBJString"><code class="docutils literal notranslate"><span class="pre">Topology.ByOBJString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByOCCTShape"><code class="docutils literal notranslate"><span class="pre">Topology.ByOCCTShape()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByXYZFile"><code class="docutils literal notranslate"><span class="pre">Topology.ByXYZFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByXYZPath"><code class="docutils literal notranslate"><span class="pre">Topology.ByXYZPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.CellComplexes"><code class="docutils literal notranslate"><span class="pre">Topology.CellComplexes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Cells"><code class="docutils literal notranslate"><span class="pre">Topology.Cells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.CenterOfMass"><code class="docutils literal notranslate"><span class="pre">Topology.CenterOfMass()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Centroid"><code class="docutils literal notranslate"><span class="pre">Topology.Centroid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Cleanup"><code class="docutils literal notranslate"><span class="pre">Topology.Cleanup()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ClusterFaces"><code class="docutils literal notranslate"><span class="pre">Topology.ClusterFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ClusterFaces_orig"><code class="docutils literal notranslate"><span class="pre">Topology.ClusterFaces_orig()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Clusters"><code class="docutils literal notranslate"><span class="pre">Topology.Clusters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Contents"><code class="docutils literal notranslate"><span class="pre">Topology.Contents()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Contexts"><code class="docutils literal notranslate"><span class="pre">Topology.Contexts()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ConvexHull"><code class="docutils literal notranslate"><span class="pre">Topology.ConvexHull()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Copy"><code class="docutils literal notranslate"><span class="pre">Topology.Copy()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Degree"><code class="docutils literal notranslate"><span class="pre">Topology.Degree()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Dictionary"><code class="docutils literal notranslate"><span class="pre">Topology.Dictionary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Difference"><code class="docutils literal notranslate"><span class="pre">Topology.Difference()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Dimensionality"><code class="docutils literal notranslate"><span class="pre">Topology.Dimensionality()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Divide"><code class="docutils literal notranslate"><span class="pre">Topology.Divide()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Edges"><code class="docutils literal notranslate"><span class="pre">Topology.Edges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Explode"><code class="docutils literal notranslate"><span class="pre">Topology.Explode()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ExportToBREP"><code class="docutils literal notranslate"><span class="pre">Topology.ExportToBREP()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ExportToDXF"><code class="docutils literal notranslate"><span class="pre">Topology.ExportToDXF()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ExportToJSON"><code class="docutils literal notranslate"><span class="pre">Topology.ExportToJSON()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ExportToOBJ"><code class="docutils literal notranslate"><span class="pre">Topology.ExportToOBJ()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Faces"><code class="docutils literal notranslate"><span class="pre">Topology.Faces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Filter"><code class="docutils literal notranslate"><span class="pre">Topology.Filter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Fix"><code class="docutils literal notranslate"><span class="pre">Topology.Fix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Flatten"><code class="docutils literal notranslate"><span class="pre">Topology.Flatten()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Geometry"><code class="docutils literal notranslate"><span class="pre">Topology.Geometry()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.HighestType"><code class="docutils literal notranslate"><span class="pre">Topology.HighestType()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Impose"><code class="docutils literal notranslate"><span class="pre">Topology.Impose()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Imprint"><code class="docutils literal notranslate"><span class="pre">Topology.Imprint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.InternalVertex"><code class="docutils literal notranslate"><span class="pre">Topology.InternalVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Intersect"><code class="docutils literal notranslate"><span class="pre">Topology.Intersect()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.IsInstance"><code class="docutils literal notranslate"><span class="pre">Topology.IsInstance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.IsPlanar"><code class="docutils literal notranslate"><span class="pre">Topology.IsPlanar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.IsSame"><code class="docutils literal notranslate"><span class="pre">Topology.IsSame()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.JSONString"><code class="docutils literal notranslate"><span class="pre">Topology.JSONString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Merge"><code class="docutils literal notranslate"><span class="pre">Topology.Merge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.MergeAll"><code class="docutils literal notranslate"><span class="pre">Topology.MergeAll()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.NonPlanarFaces"><code class="docutils literal notranslate"><span class="pre">Topology.NonPlanarFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.OBJString"><code class="docutils literal notranslate"><span class="pre">Topology.OBJString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.OCCTShape"><code class="docutils literal notranslate"><span class="pre">Topology.OCCTShape()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.OpenEdges"><code class="docutils literal notranslate"><span class="pre">Topology.OpenEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.OpenFaces"><code class="docutils literal notranslate"><span class="pre">Topology.OpenFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.OpenVertices"><code class="docutils literal notranslate"><span class="pre">Topology.OpenVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Orient"><code class="docutils literal notranslate"><span class="pre">Topology.Orient()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Place"><code class="docutils literal notranslate"><span class="pre">Topology.Place()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveCollinearEdges"><code class="docutils literal notranslate"><span class="pre">Topology.RemoveCollinearEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveContent"><code class="docutils literal notranslate"><span class="pre">Topology.RemoveContent()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveCoplanarFaces"><code class="docutils literal notranslate"><span class="pre">Topology.RemoveCoplanarFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveEdges"><code class="docutils literal notranslate"><span class="pre">Topology.RemoveEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveFaces"><code class="docutils literal notranslate"><span class="pre">Topology.RemoveFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveFacesBySelectors"><code class="docutils literal notranslate"><span class="pre">Topology.RemoveFacesBySelectors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveVertices"><code class="docutils literal notranslate"><span class="pre">Topology.RemoveVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ReplaceVertices"><code class="docutils literal notranslate"><span class="pre">Topology.ReplaceVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Rotate"><code class="docutils literal notranslate"><span class="pre">Topology.Rotate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Scale"><code class="docutils literal notranslate"><span class="pre">Topology.Scale()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SelectSubTopology"><code class="docutils literal notranslate"><span class="pre">Topology.SelectSubTopology()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SelfMerge"><code class="docutils literal notranslate"><span class="pre">Topology.SelfMerge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SetDictionary"><code class="docutils literal notranslate"><span class="pre">Topology.SetDictionary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SetSnapshot"><code class="docutils literal notranslate"><span class="pre">Topology.SetSnapshot()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SharedEdges"><code class="docutils literal notranslate"><span class="pre">Topology.SharedEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SharedFaces"><code class="docutils literal notranslate"><span class="pre">Topology.SharedFaces()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SharedTopologies"><code class="docutils literal notranslate"><span class="pre">Topology.SharedTopologies()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SharedVertices"><code class="docutils literal notranslate"><span class="pre">Topology.SharedVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SharedWires"><code class="docutils literal notranslate"><span class="pre">Topology.SharedWires()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Shells"><code class="docutils literal notranslate"><span class="pre">Topology.Shells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Show"><code class="docutils literal notranslate"><span class="pre">Topology.Show()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Slice"><code class="docutils literal notranslate"><span class="pre">Topology.Slice()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Snapshots"><code class="docutils literal notranslate"><span class="pre">Topology.Snapshots()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SortBySelectors"><code class="docutils literal notranslate"><span class="pre">Topology.SortBySelectors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Spin"><code class="docutils literal notranslate"><span class="pre">Topology.Spin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SubTopologies"><code class="docutils literal notranslate"><span class="pre">Topology.SubTopologies()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SuperTopologies"><code class="docutils literal notranslate"><span class="pre">Topology.SuperTopologies()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SymDif"><code class="docutils literal notranslate"><span class="pre">Topology.SymDif()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.SymmetricDifference"><code class="docutils literal notranslate"><span class="pre">Topology.SymmetricDifference()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Taper"><code class="docutils literal notranslate"><span class="pre">Topology.Taper()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.TransferDictionaries"><code class="docutils literal notranslate"><span class="pre">Topology.TransferDictionaries()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.TransferDictionariesBySelectors"><code class="docutils literal notranslate"><span class="pre">Topology.TransferDictionariesBySelectors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Transform"><code class="docutils literal notranslate"><span class="pre">Topology.Transform()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Translate"><code class="docutils literal notranslate"><span class="pre">Topology.Translate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.TranslateByDirectionDistance"><code class="docutils literal notranslate"><span class="pre">Topology.TranslateByDirectionDistance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Triangulate"><code class="docutils literal notranslate"><span class="pre">Topology.Triangulate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Twist"><code class="docutils literal notranslate"><span class="pre">Topology.Twist()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Type"><code class="docutils literal notranslate"><span class="pre">Topology.Type()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.TypeAsString"><code class="docutils literal notranslate"><span class="pre">Topology.TypeAsString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.TypeID"><code class="docutils literal notranslate"><span class="pre">Topology.TypeID()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.UUID"><code class="docutils literal notranslate"><span class="pre">Topology.UUID()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Unflatten"><code class="docutils literal notranslate"><span class="pre">Topology.Unflatten()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Union"><code class="docutils literal notranslate"><span class="pre">Topology.Union()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Vertices"><code class="docutils literal notranslate"><span class="pre">Topology.Vertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Wires"><code class="docutils literal notranslate"><span class="pre">Topology.Wires()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.XOR"><code class="docutils literal notranslate"><span class="pre">Topology.XOR()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.WorkerProcess"><code class="docutils literal notranslate"><span class="pre">WorkerProcess</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.WorkerProcess.run"><code class="docutils literal notranslate"><span class="pre">WorkerProcess.run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.WorkerProcessPool"><code class="docutils literal notranslate"><span class="pre">WorkerProcessPool</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.WorkerProcessPool.join"><code class="docutils literal notranslate"><span class="pre">WorkerProcessPool.join()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.WorkerProcessPool.startProcesses"><code class="docutils literal notranslate"><span class="pre">WorkerProcessPool.startProcesses()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.WorkerProcessPool.stopProcesses"><code class="docutils literal notranslate"><span class="pre">WorkerProcessPool.stopProcesses()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector"><code class="docutils literal notranslate"><span class="pre">Vector</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Angle"><code class="docutils literal notranslate"><span class="pre">Vector.Angle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Average"><code class="docutils literal notranslate"><span class="pre">Vector.Average()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.AzimuthAltitude"><code class="docutils literal notranslate"><span class="pre">Vector.AzimuthAltitude()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Bisect"><code class="docutils literal notranslate"><span class="pre">Vector.Bisect()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.ByAzimuthAltitude"><code class="docutils literal notranslate"><span class="pre">Vector.ByAzimuthAltitude()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.ByCoordinates"><code class="docutils literal notranslate"><span class="pre">Vector.ByCoordinates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.ByVertices"><code class="docutils literal notranslate"><span class="pre">Vector.ByVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.CompassAngle"><code class="docutils literal notranslate"><span class="pre">Vector.CompassAngle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Coordinates"><code class="docutils literal notranslate"><span class="pre">Vector.Coordinates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Cross"><code class="docutils literal notranslate"><span class="pre">Vector.Cross()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Down"><code class="docutils literal notranslate"><span class="pre">Vector.Down()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.East"><code class="docutils literal notranslate"><span class="pre">Vector.East()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.IsAntiParallel"><code class="docutils literal notranslate"><span class="pre">Vector.IsAntiParallel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.IsCollinear"><code class="docutils literal notranslate"><span class="pre">Vector.IsCollinear()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.IsParallel"><code class="docutils literal notranslate"><span class="pre">Vector.IsParallel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Magnitude"><code class="docutils literal notranslate"><span class="pre">Vector.Magnitude()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Multiply"><code class="docutils literal notranslate"><span class="pre">Vector.Multiply()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Normalize"><code class="docutils literal notranslate"><span class="pre">Vector.Normalize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.North"><code class="docutils literal notranslate"><span class="pre">Vector.North()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.NorthEast"><code class="docutils literal notranslate"><span class="pre">Vector.NorthEast()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.NorthWest"><code class="docutils literal notranslate"><span class="pre">Vector.NorthWest()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Reverse"><code class="docutils literal notranslate"><span class="pre">Vector.Reverse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.SetMagnitude"><code class="docutils literal notranslate"><span class="pre">Vector.SetMagnitude()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.South"><code class="docutils literal notranslate"><span class="pre">Vector.South()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.SouthEast"><code class="docutils literal notranslate"><span class="pre">Vector.SouthEast()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.SouthWest"><code class="docutils literal notranslate"><span class="pre">Vector.SouthWest()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Sum"><code class="docutils literal notranslate"><span class="pre">Vector.Sum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.TransformationMatrix"><code class="docutils literal notranslate"><span class="pre">Vector.TransformationMatrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.Up"><code class="docutils literal notranslate"><span class="pre">Vector.Up()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.West"><code class="docutils literal notranslate"><span class="pre">Vector.West()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.XAxis"><code class="docutils literal notranslate"><span class="pre">Vector.XAxis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.YAxis"><code class="docutils literal notranslate"><span class="pre">Vector.YAxis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vector.html#topologicpy.Vector.Vector.ZAxis"><code class="docutils literal notranslate"><span class="pre">Vector.ZAxis()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex"><code class="docutils literal notranslate"><span class="pre">Vertex</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreCollinear"><code class="docutils literal notranslate"><span class="pre">Vertex.AreCollinear()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreIpsilateral"><code class="docutils literal notranslate"><span class="pre">Vertex.AreIpsilateral()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreIpsilateralCluster"><code class="docutils literal notranslate"><span class="pre">Vertex.AreIpsilateralCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreOnSameSide"><code class="docutils literal notranslate"><span class="pre">Vertex.AreOnSameSide()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreOnSameSideCluster"><code class="docutils literal notranslate"><span class="pre">Vertex.AreOnSameSideCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.ByCoordinates"><code class="docutils literal notranslate"><span class="pre">Vertex.ByCoordinates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Centroid"><code class="docutils literal notranslate"><span class="pre">Vertex.Centroid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Clockwise2D"><code class="docutils literal notranslate"><span class="pre">Vertex.Clockwise2D()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Coordinates"><code class="docutils literal notranslate"><span class="pre">Vertex.Coordinates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.CounterClockwise2D"><code class="docutils literal notranslate"><span class="pre">Vertex.CounterClockwise2D()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Degree"><code class="docutils literal notranslate"><span class="pre">Vertex.Degree()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Distance"><code class="docutils literal notranslate"><span class="pre">Vertex.Distance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.EnclosingCell"><code class="docutils literal notranslate"><span class="pre">Vertex.EnclosingCell()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Fuse"><code class="docutils literal notranslate"><span class="pre">Vertex.Fuse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.IncomingEdges"><code class="docutils literal notranslate"><span class="pre">Vertex.IncomingEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Index"><code class="docutils literal notranslate"><span class="pre">Vertex.Index()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.InterpolateValue"><code class="docutils literal notranslate"><span class="pre">Vertex.InterpolateValue()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.IsCoincident"><code class="docutils literal notranslate"><span class="pre">Vertex.IsCoincident()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.IsExternal"><code class="docutils literal notranslate"><span class="pre">Vertex.IsExternal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.IsInternal"><code class="docutils literal notranslate"><span class="pre">Vertex.IsInternal()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.IsPeripheral"><code class="docutils literal notranslate"><span class="pre">Vertex.IsPeripheral()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.NearestVertex"><code class="docutils literal notranslate"><span class="pre">Vertex.NearestVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Origin"><code class="docutils literal notranslate"><span class="pre">Vertex.Origin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.OutgoingEdges"><code class="docutils literal notranslate"><span class="pre">Vertex.OutgoingEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.PerpendicularDistance"><code class="docutils literal notranslate"><span class="pre">Vertex.PerpendicularDistance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.PlaneEquation"><code class="docutils literal notranslate"><span class="pre">Vertex.PlaneEquation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Point"><code class="docutils literal notranslate"><span class="pre">Vertex.Point()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Project"><code class="docutils literal notranslate"><span class="pre">Vertex.Project()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.X"><code class="docutils literal notranslate"><span class="pre">Vertex.X()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Y"><code class="docutils literal notranslate"><span class="pre">Vertex.Y()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Z"><code class="docutils literal notranslate"><span class="pre">Vertex.Z()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Wire.html">topologicpy.Wire module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire"><code class="docutils literal notranslate"><span class="pre">Wire</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Arc"><code class="docutils literal notranslate"><span class="pre">Wire.Arc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.BoundingRectangle"><code class="docutils literal notranslate"><span class="pre">Wire.BoundingRectangle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.ByEdges"><code class="docutils literal notranslate"><span class="pre">Wire.ByEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.ByEdgesCluster"><code class="docutils literal notranslate"><span class="pre">Wire.ByEdgesCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.ByOffset"><code class="docutils literal notranslate"><span class="pre">Wire.ByOffset()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.ByVertices"><code class="docutils literal notranslate"><span class="pre">Wire.ByVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.ByVerticesCluster"><code class="docutils literal notranslate"><span class="pre">Wire.ByVerticesCluster()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Circle"><code class="docutils literal notranslate"><span class="pre">Wire.Circle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Close"><code class="docutils literal notranslate"><span class="pre">Wire.Close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.ConvexHull"><code class="docutils literal notranslate"><span class="pre">Wire.ConvexHull()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Cycles"><code class="docutils literal notranslate"><span class="pre">Wire.Cycles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Edges"><code class="docutils literal notranslate"><span class="pre">Wire.Edges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Einstein"><code class="docutils literal notranslate"><span class="pre">Wire.Einstein()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Ellipse"><code class="docutils literal notranslate"><span class="pre">Wire.Ellipse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.EllipseAll"><code class="docutils literal notranslate"><span class="pre">Wire.EllipseAll()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.EndVertex"><code class="docutils literal notranslate"><span class="pre">Wire.EndVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.ExteriorAngles"><code class="docutils literal notranslate"><span class="pre">Wire.ExteriorAngles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Fillet"><code class="docutils literal notranslate"><span class="pre">Wire.Fillet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.InteriorAngles"><code class="docutils literal notranslate"><span class="pre">Wire.InteriorAngles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Interpolate"><code class="docutils literal notranslate"><span class="pre">Wire.Interpolate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Invert"><code class="docutils literal notranslate"><span class="pre">Wire.Invert()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.IsClosed"><code class="docutils literal notranslate"><span class="pre">Wire.IsClosed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.IsManifold"><code class="docutils literal notranslate"><span class="pre">Wire.IsManifold()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.IsSimilar"><code class="docutils literal notranslate"><span class="pre">Wire.IsSimilar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Length"><code class="docutils literal notranslate"><span class="pre">Wire.Length()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Line"><code class="docutils literal notranslate"><span class="pre">Wire.Line()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.OrientEdges"><code class="docutils literal notranslate"><span class="pre">Wire.OrientEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Planarize"><code class="docutils literal notranslate"><span class="pre">Wire.Planarize()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Project"><code class="docutils literal notranslate"><span class="pre">Wire.Project()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Rectangle"><code class="docutils literal notranslate"><span class="pre">Wire.Rectangle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.RemoveCollinearEdges"><code class="docutils literal notranslate"><span class="pre">Wire.RemoveCollinearEdges()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Reverse"><code class="docutils literal notranslate"><span class="pre">Wire.Reverse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Roof"><code class="docutils literal notranslate"><span class="pre">Wire.Roof()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Simplify"><code class="docutils literal notranslate"><span class="pre">Wire.Simplify()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Skeleton"><code class="docutils literal notranslate"><span class="pre">Wire.Skeleton()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Spiral"><code class="docutils literal notranslate"><span class="pre">Wire.Spiral()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Split"><code class="docutils literal notranslate"><span class="pre">Wire.Split()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Square"><code class="docutils literal notranslate"><span class="pre">Wire.Square()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Squircle"><code class="docutils literal notranslate"><span class="pre">Wire.Squircle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Star"><code class="docutils literal notranslate"><span class="pre">Wire.Star()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.StartEndVertices"><code class="docutils literal notranslate"><span class="pre">Wire.StartEndVertices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.StartVertex"><code class="docutils literal notranslate"><span class="pre">Wire.StartVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Trapezoid"><code class="docutils literal notranslate"><span class="pre">Wire.Trapezoid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.VertexByDistance"><code class="docutils literal notranslate"><span class="pre">Wire.VertexByDistance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.VertexByParameter"><code class="docutils literal notranslate"><span class="pre">Wire.VertexByParameter()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.VertexDistance"><code class="docutils literal notranslate"><span class="pre">Wire.VertexDistance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Vertices"><code class="docutils literal notranslate"><span class="pre">Wire.Vertices()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.version.html">topologicpy.version module</a></li>
+</ul>
+</div>
+</section>
+<section id="module-topologicpy">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-topologicpy" title="Permalink to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="modules.html" class="btn btn-neutral float-left" title="topologicpy" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topologicpy.Aperture.html" class="btn btn-neutral float-right" title="topologicpy.Aperture module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Wassim Jabi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

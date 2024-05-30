@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>topologicpy.Helper module &mdash; topologicpy 0.7.12 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="topologicpy.Honeybee module" href="topologicpy.Honeybee.html" />
+    <link rel="prev" title="topologicpy.Grid module" href="topologicpy.Grid.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> topologicpy
+          </a>
+              <div class="version">
+                0.7.12
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">topologicpy</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="topologicpy.html">topologicpy package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="topologicpy.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.DGL.html">topologicpy.DGL module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.Helper module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Polyskel.html">topologicpy.Polyskel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Wire.html">topologicpy.Wire module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.version.html">topologicpy.version module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.html#module-topologicpy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">topologicpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">topologicpy</a> &raquo;</li>
+          <li><a href="topologicpy.html">topologicpy package</a> &raquo;</li>
+      <li>topologicpy.Helper module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/topologicpy.Helper.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-topologicpy.Helper">
+<span id="topologicpy-helper-module"></span><h1>topologicpy.Helper module<a class="headerlink" href="#module-topologicpy.Helper" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Helper.</span></span><span class="sig-name descname"><span class="pre">Helper</span></span><a class="headerlink" href="#topologicpy.Helper.Helper" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.ClosestMatch" title="topologicpy.Helper.Helper.ClosestMatch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosestMatch</span></code></a>(item, listA)</p></td>
+<td><p>Returns the index of the closest match in the input list to the input item.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Flatten" title="topologicpy.Helper.Helper.Flatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flatten</span></code></a>(listA)</p></td>
+<td><p>Flattens the input nested list.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Iterate" title="topologicpy.Helper.Helper.Iterate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Iterate</span></code></a>(listA)</p></td>
+<td><p>Iterates the input nested list so that each sublist has the same number of members.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MakeUnique" title="topologicpy.Helper.Helper.MakeUnique"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MakeUnique</span></code></a>(listA)</p></td>
+<td><p>Forces the strings in the input list to be unique if they have duplicates.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MergeByThreshold" title="topologicpy.Helper.Helper.MergeByThreshold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeByThreshold</span></code></a>(listA[, threshold])</p></td>
+<td><p>Merges the numbers in the input list so that numbers within the input threshold are averaged into one number.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Normalize" title="topologicpy.Helper.Helper.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normalize</span></code></a>(listA[, mantissa])</p></td>
+<td><p>Normalizes the input list so that it is in the range 0 to 1</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Position" title="topologicpy.Helper.Helper.Position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Position</span></code></a>(item, listA)</p></td>
+<td><p>Returns the position of the item in the list or the position it would have been inserts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Repeat" title="topologicpy.Helper.Helper.Repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Repeat</span></code></a>(listA)</p></td>
+<td><p>Repeats the input nested list so that each sublist has the same number of members.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Sort" title="topologicpy.Helper.Helper.Sort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sort</span></code></a>(listA, *otherLists[, reverseFlags])</p></td>
+<td><p>Sorts the first input list according to the values in the subsequent input lists in order.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Transpose" title="topologicpy.Helper.Helper.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(listA)</p></td>
+<td><p>Transposes the input list (swaps rows and columns).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Trim" title="topologicpy.Helper.Helper.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(listA)</p></td>
+<td><p>Trims the input nested list so that each sublist has the same number of members.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Version" title="topologicpy.Helper.Helper.Version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Version</span></code></a>()</p></td>
+<td><p>Returns the current version of the software.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 52%" />
+<col style="width: 48%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>K_Means</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.ClosestMatch">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ClosestMatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">listA</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.ClosestMatch" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the index of the closest match in the input list to the input item.
+This works for lists made out of numeric or string values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>item</strong><span class="classifier">int, float, or str</span></dt><dd><p>The input item.</p>
+</dd>
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input list.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>int</dt><dd><p>The index of the best match in listA for the input item.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.Flatten">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Flatten</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Flatten" title="Permalink to this definition"></a></dt>
+<dd><p>Flattens the input nested list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input nested list.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The flattened list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.Iterate">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Iterate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Iterate" title="Permalink to this definition"></a></dt>
+<dd><p>Iterates the input nested list so that each sublist has the same number of members. To fill extra members, the shorter lists are iterated from their first member.
+For example Iterate([[1,2,3],[‘m’,’n’,’o’,’p’],[‘a’,’b’,’c’,’d’,’e’]]) yields [[1, 2, 3, 1, 2], [‘m’, ‘n’, ‘o’, ‘p’, ‘m’], [‘a’, ‘b’, ‘c’, ‘d’, ‘e’]]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input nested list.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The iterated list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.K_Means">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">K_Means</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxIterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.K_Means" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.MakeUnique">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MakeUnique</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.MakeUnique" title="Permalink to this definition"></a></dt>
+<dd><p>Forces the strings in the input list to be unique if they have duplicates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input list of strings.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The input list, but with each item ensured to be unique if they have duplicates.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.MergeByThreshold">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MergeByThreshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.MergeByThreshold" title="Permalink to this definition"></a></dt>
+<dd><p>Merges the numbers in the input list so that numbers within the input threshold are averaged into one number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input nested list.</p>
+</dd>
+<dt><strong>threshold</strong><span class="classifier">float , optional</span></dt><dd><p>The desired merge threshold value. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The merged list. The list is sorted in ascending numeric order.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.Normalize">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Normalize" title="Permalink to this definition"></a></dt>
+<dd><p>Normalizes the input list so that it is in the range 0 to 1</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input nested list.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mantissa value. The default is 6.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The normalized list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.Position">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">listA</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Position" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the position of the item in the list or the position it would have been inserts.
+item is assumed to be numeric. listA is assumed to contain only numeric values and sorted from lowest to highest value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>item</strong><span class="classifier">int or float</span></dt><dd><p>The input number to be positioned.</p>
+</dd>
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input sorted list.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>int</dt><dd><p>The position of the item within the list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.Repeat">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Repeat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Repeat" title="Permalink to this definition"></a></dt>
+<dd><p>Repeats the input nested list so that each sublist has the same number of members. To fill extra members, the last item in the shorter lists are repeated and appended.
+For example Iterate([[1,2,3],[‘m’,’n’,’o’,’p’],[‘a’,’b’,’c’,’d’,’e’]]) yields [[1, 2, 3, 3, 3], [‘m’, ‘n’, ‘o’, ‘p’, ‘p’], [‘a’, ‘b’, ‘c’, ‘d’, ‘e’]]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input nested list.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The repeated list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.Sort">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Sort</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">otherLists</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverseFlags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Sort" title="Permalink to this definition"></a></dt>
+<dd><p>Sorts the first input list according to the values in the subsequent input lists in order. For example,
+your first list can be a list of topologies and the next set of lists can be their volume, surface area, and z level.
+The list of topologies will then be sorted first by volume, then by surface, and lastly by z level. You can choose
+to reverse the order of sorting by including a list of TRUE/FALSE values in the reverseFlags input parameter.
+For example, if you wish to sort the volume in reverse order (from large to small), but sort the other parameters
+normally, you would include the following list for reverseFlag: [True, False, False].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The first input list to be sorts</p>
+</dd>
+<dt><strong>*otherLists</strong><span class="classifier">any number of lists to use for sorting listA, optional.</span></dt><dd><p>Any number of lists that are used to sort the listA input parameter. The order of these input
+parameters determines the order of sorting (from left to right). If no lists are included, the input list will be sorted as is.</p>
+</dd>
+<dt><strong>reverseFlags</strong><span class="classifier">list, optional.</span></dt><dd><p>The list of booleans (TRUE/FALSE) to indicated if sorting based on a particular list should be conducted in reverse order.
+The length of the reverseFlags list should match the number of the lists in the input otherLists parameter. If set to None,
+a default list of FALSE values is created to match the number of the lists in the input otherLists parameter. The default
+is None.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The sorted list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.Transpose">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Transpose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Transpose" title="Permalink to this definition"></a></dt>
+<dd><p>Transposes the input list (swaps rows and columns).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input list.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The transposed list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.Trim">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Trim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Trim" title="Permalink to this definition"></a></dt>
+<dd><p>Trims the input nested list so that each sublist has the same number of members. All lists are trimmed to match the length of the shortest list.
+For example Trim([[1,2,3],[‘m’,’n’,’o’,’p’],[‘a’,’b’,’c’,’d’,’e’]]) yields [[1, 2, 3], [‘m’, ‘n’, ‘o’], [‘a’, ‘b’, ‘c’]]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input nested list.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The repeated list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.Version">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Version</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Version" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the current version of the software.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>None</strong></dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The current version of the software.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="topologicpy.Grid.html" class="btn btn-neutral float-left" title="topologicpy.Grid module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topologicpy.Honeybee.html" class="btn btn-neutral float-right" title="topologicpy.Honeybee module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Wassim Jabi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
