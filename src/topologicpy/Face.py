@@ -1254,7 +1254,7 @@ class Face():
         return Vector.IsCollinear(dirA, dirB)
 
     @staticmethod
-    def Isovist(face, vertex, obstacles: list = [], direction: list = [1,0,0], fov: float = 360, mantissa: int = 6, tolerance: float = 0.0001):
+    def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the face representing the isovist projection from the input viewpoint.
         This method assumes all input is in 2D. Z coordinates are ignored.
@@ -1341,18 +1341,23 @@ class Face():
         return_face = Topology.RemoveCoplanarFaces(shell)
         compAngle = 0
         if fov == 360:
-            fromAngle = 0
-            toAngle = 360
+            c = Wire.Circle(origin= vertex, radius=max_d, sides=180, close = True)
+            pie = Face.ByWire(c)
         else:
             compAngle = Vector.CompassAngle(Vector.North(), direction, mantissa=mantissa, tolerance=tolerance) - 90
             fromAngle = -fov*0.5 - compAngle
             toAngle = fov*0.5 - compAngle
-        c = Wire.Circle(origin= vertex, radius=max_d, sides=180, fromAngle=fromAngle, toAngle=toAngle, close = False)
-        e1 = Edge.ByVertices(Wire.StartVertex(c), vertex, silent=True)
-        e2 = Edge.ByVertices(Wire.EndVertex(c), vertex, silent=True)
-        edges = Topology.Edges(c) + [e1,e2]
-        pie = Face.ByWire(Topology.SelfMerge(Cluster.ByTopologies(edges)))
+            c = Wire.Circle(origin= vertex, radius=max_d, sides=180, fromAngle=fromAngle, toAngle=toAngle, close = False)
+            e1 = Edge.ByVertices(Wire.StartVertex(c), vertex, silent=True)
+            e2 = Edge.ByVertices(Wire.EndVertex(c), vertex, silent=True)
+            edges = Topology.Edges(c) + [e1,e2]
+            pie = Face.ByWire(Topology.SelfMerge(Cluster.ByTopologies(edges)))
         return_face = Topology.Intersect(pie, return_face)
+        if not Topology.IsInstance(return_face, "face"):
+            return_face = Topology.SelfMerge(return_face)
+        if return_face == None:
+            print("Face.Isovist - Error: Could not create isovist. Returning None.")
+            return None
         return return_face
 
     @staticmethod

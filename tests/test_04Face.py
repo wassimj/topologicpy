@@ -529,8 +529,12 @@ def test_main():
     r6 = Topology.Translate(r5, 0.2, 0.4, 0)
     face = Face.ByWires(r1, [r2,r4,r5])
 
-    v = Vertex.ByCoordinates(-3,-0.9,0)
-    iso = Face.Isovist(face, v, obstacles=[r6], tolerance=0.001)
+    v = Vertex.ByCoordinates(-3,-0.5,0)
+    iso = Face.Isovist(face, v, obstacles=[r6])
+    assert Topology.IsInstance(iso, "Face"), "Face.Isovist. Should be a face"
+    
+    # test 1 with parameter 
+    iso = Face.Isovist(face, v, obstacles=[r6], direction=[1,0,0], fov=90)
     assert Topology.IsInstance(iso, "Face"), "Face.Isovist. Should be a face"
 
     # Case 42 - Simplify
