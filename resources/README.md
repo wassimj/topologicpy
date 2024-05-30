@@ -45,21 +45,22 @@ Email: Theo.Dounas@uantwerpen.be
 * Topology: The base class for all topological elements.
 * Vertex: Represents a point in 3D space.
 * Edge: Represents a line segment connecting two vertices.
-* Wire: Represents a sequence of connected edges.
+* Wire: Represents a sequence of connected edges. Wires can be manifold (open or closed) or non-manifold.
 * Face: Represents a flat surface bounded by a wire and optionally containing holes.
-* Shell: Represents a collection of faces forming a segmented surface.
-* Cell: Represents a volumetric element bounded by faces.
-* CellComplex: Represents a collection of cells forming a segmented volumetric element.
-* Cluster: Represents a group of related objects.
+* Shell: Represents a collection of faces, that share edges, forming a segmented surface. Shells can be open or closed.
+* Cell: Represents a closed volumetric element bounded by faces.
+* CellComplex: Represents a collection of cells, sharing faces, forming a segmented volumetric element.
+* Cluster: Represents a group of related objects. This can be a collection of any number of Vertices, Edges, Wires, Faces, Shells, Cells, and CellComplexes.
+* Aperture: An abstract class that represents an element indicating an opening or hole. An aperture has a Topology element that represents its geometry
 * Grid: Represents a spatial structure dividing space into regular intervals.
 * Dictionary: Represents a key-value store for metadata.
-* Aperture: Represents an element indicating an opening or hole.
-* Context: Represents the environment or settings in which objects exist.
+* Context: An abstract class that represents the environment or setting in which objects exist. A context has a Topology element that represents its geometry.
 * Vector: Represents a mathematical entity with magnitude and direction.
 * Matrix: Represents a rectangular array of numbers used for transformations.
-* Graph: Represents a collection of nodes and edges.
+* Graph: Represents a collection of nodes and edges. Nodes are of the class Vertex and edges are of the class Edge. A graph has a Topology element that represents its geometry.
 
 ## Object Properties
+
 * hasDictionary: Links a topology object to its dictionary.
 * hasStartVertex: Links an edge to its start vertex.
 * hasEndVertex: Links an edge to its end vertex.
@@ -80,17 +81,20 @@ Email: Theo.Dounas@uantwerpen.be
 * hasFreeVertices: Links a cluster to its free vertices.
 * hasKeys: Links a dictionary to its keys.
 * hasValues: Links a dictionary to its values.
-* Data Properties
+
+## Data Properties
+
+* hasAngle: The angle at the start vertex of an edge.
+* hasArea: The surface area of a face, a shell, a cell, or a cellComplex.
+* hasDirection: The direction of an edge or a face (the normal to the face).
+* hasLength: The length of an edge.
+* hasVolume: The volume of a cell or a cellComplex.
 * hasX: The X coordinate of a vertex.
 * hasY: The Y coordinate of a vertex.
 * hasZ: The Z coordinate of a vertex.
-* hasAngle: The angle at the start vertex of an edge.
-* hasLength: The length of an edge.
-* hasDirection: The direction of an edge or a face (the normal to the face).
-* hasArea: The surface area of a face, a shell, a cell, or a cellComplex.
-* hasVolume: The volume of a cell or a cellComplex.
 
 ## Usage
+
 This ontology provides a structured way to describe 3D models and their topological relationships. It can be used in various applications, including CAD systems, BIM (Building Information Modeling), and other 3D modeling environments.
 Here is a snippet of how a top:Space (top:Cell) can connect to other top:Space elements and can contain other elements (e.g. furniture):
 ```
