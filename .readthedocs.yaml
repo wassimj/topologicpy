@@ -1,0 +1,29 @@
+version: 2
+
+build:
+  os: ubuntu-20.04
+  tools:
+    # For available versions, see:
+    # https://docs.readthedocs.io/en/stable/config-file/v2.html#build-tools-python
+    python: "3.12"  # Keep in sync with .github/workflows/build.yml
+  jobs:
+    post_checkout:
+      - git fetch --tags
+      - echo -n "__version__ = " > src/topologicpy/version.py
+      - echo 27 | xxd -r -p >> src/topologicpy/version.py
+      - echo -n `git describe --abbrev=0 --tags --always | head -n 1 | sed s/^v//` >> src/topologicpy/version.py
+      - echo 27 | xxd -r -p >> src/topologicpy/version.py
+      - cat src/topologicpy/version.py
+
+sphinx:
+  configuration: docs/source/conf.py
+
+formats: all
+python:
+  install:
+    - requirements: docs/requirements.txt
+    - method: pip
+      path: .
+
+submodules:
+  include: all
