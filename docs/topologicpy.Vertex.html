@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vertex module &mdash; topologicpy 0.7.12 documentation</title>
+  <title>topologicpy.Vertex module &mdash; topologicpy 0.7.14 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.12
+                0.7.14
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -186,58 +186,61 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.EnclosingCell" title="topologicpy.Vertex.Vertex.EnclosingCell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EnclosingCell</span></code></a>(vertex, topology[, exclusive, ...])</p></td>
 <td><p>Returns the list of Cells found in the input topology that enclose the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Fuse" title="topologicpy.Vertex.Vertex.Fuse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fuse</span></code></a>(vertices[, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.ExternalBoundary" title="topologicpy.Vertex.Vertex.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(vertex)</p></td>
+<td><p>Returns the external boundary (self) of the input vertex.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Fuse" title="topologicpy.Vertex.Vertex.Fuse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fuse</span></code></a>(vertices[, mantissa, tolerance])</p></td>
 <td><p>Returns a list of vertices where vertices within a specified tolerance distance are fused while retaining duplicates, ensuring that vertices with nearly identical coordinates are replaced by a single shared coordinate.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IncomingEdges" title="topologicpy.Vertex.Vertex.IncomingEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IncomingEdges</span></code></a>(vertex, hostTopology[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IncomingEdges" title="topologicpy.Vertex.Vertex.IncomingEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IncomingEdges</span></code></a>(vertex, hostTopology[, tolerance])</p></td>
 <td><p>Returns the incoming edges connected to a vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Index" title="topologicpy.Vertex.Vertex.Index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Index</span></code></a>(vertex, vertices[, strict, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Index" title="topologicpy.Vertex.Vertex.Index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Index</span></code></a>(vertex, vertices[, strict, tolerance])</p></td>
 <td><p>Returns index of the input vertex in the input list of vertices</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.InterpolateValue" title="topologicpy.Vertex.Vertex.InterpolateValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InterpolateValue</span></code></a>(vertex, vertices[, n, key, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.InterpolateValue" title="topologicpy.Vertex.Vertex.InterpolateValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InterpolateValue</span></code></a>(vertex, vertices[, n, key, ...])</p></td>
 <td><p>Interpolates the value of the input vertex based on the values of the <em>n</em> nearest vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsCoincident" title="topologicpy.Vertex.Vertex.IsCoincident"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoincident</span></code></a>(vertexA, vertexB[, tolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsCoincident" title="topologicpy.Vertex.Vertex.IsCoincident"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoincident</span></code></a>(vertexA, vertexB[, tolerance, ...])</p></td>
 <td><p>Returns True if the input vertexA is coincident with the input vertexB.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsExternal" title="topologicpy.Vertex.Vertex.IsExternal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsExternal</span></code></a>(vertex, topology[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsExternal" title="topologicpy.Vertex.Vertex.IsExternal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsExternal</span></code></a>(vertex, topology[, tolerance, silent])</p></td>
 <td><p>Returns True if the input vertex is external to the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsInternal" title="topologicpy.Vertex.Vertex.IsInternal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsInternal</span></code></a>(vertex, topology[, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsInternal" title="topologicpy.Vertex.Vertex.IsInternal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsInternal</span></code></a>(vertex, topology[, tolerance, silent])</p></td>
 <td><p>Returns True if the input vertex is inside the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsPeripheral" title="topologicpy.Vertex.Vertex.IsPeripheral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsPeripheral</span></code></a>(vertex, topology[, tolerance, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsPeripheral" title="topologicpy.Vertex.Vertex.IsPeripheral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsPeripheral</span></code></a>(vertex, topology[, tolerance, ...])</p></td>
 <td><p>Returns True if the input vertex is peripheral to the input topology. Returns False otherwise. A vertex is said to be peripheral to the input topology if:     01. Vertex: If it is internal to it (i.e. coincident with it). 02. Edge: If it is internal to its start or end vertices. 03. Manifold open wire: If it is internal to its start or end vertices. 04. Manifold closed wire: If it is internal to any of its vertices. 05. Non-manifold wire: If it is internal to any of its vertices that has a vertex degree of 1. 06. Face: If it is internal to any of its edges or vertices. 07. Shell: If it is internal to external boundary     08. Cell: If it is internal to any of its faces, edges, or vertices. 09. CellComplex: If it is peripheral to its external boundary. 10. Cluster: If it is peripheral to any of its free topologies. (See Cluster.FreeTopologies).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.NearestVertex" title="topologicpy.Vertex.Vertex.NearestVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NearestVertex</span></code></a>(vertex, topology[, useKDTree, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.NearestVertex" title="topologicpy.Vertex.Vertex.NearestVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NearestVertex</span></code></a>(vertex, topology[, useKDTree, ...])</p></td>
 <td><p>Returns the vertex found in the input topology that is the nearest to the input vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Origin" title="topologicpy.Vertex.Vertex.Origin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Origin</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Origin" title="topologicpy.Vertex.Vertex.Origin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Origin</span></code></a>()</p></td>
 <td><p>Returns a vertex with coordinates (0, 0, 0)</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.OutgoingEdges" title="topologicpy.Vertex.Vertex.OutgoingEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OutgoingEdges</span></code></a>(vertex, hostTopology[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.OutgoingEdges" title="topologicpy.Vertex.Vertex.OutgoingEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OutgoingEdges</span></code></a>(vertex, hostTopology[, tolerance])</p></td>
 <td><p>Returns the outgoing edges connected to a vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.PerpendicularDistance" title="topologicpy.Vertex.Vertex.PerpendicularDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PerpendicularDistance</span></code></a>(vertex, face[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.PerpendicularDistance" title="topologicpy.Vertex.Vertex.PerpendicularDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PerpendicularDistance</span></code></a>(vertex, face[, mantissa])</p></td>
 <td><p>Returns the perpendicular distance between the input vertex and the input face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.PlaneEquation" title="topologicpy.Vertex.Vertex.PlaneEquation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlaneEquation</span></code></a>(vertices[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.PlaneEquation" title="topologicpy.Vertex.Vertex.PlaneEquation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlaneEquation</span></code></a>(vertices[, mantissa])</p></td>
 <td><p>Returns the equation of the average plane passing through a list of vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Point" title="topologicpy.Vertex.Vertex.Point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Point</span></code></a>([x, y, z])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Point" title="topologicpy.Vertex.Vertex.Point"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Point</span></code></a>([x, y, z])</p></td>
 <td><p>Creates a point (vertex) using the input parameters</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Project" title="topologicpy.Vertex.Vertex.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(vertex, face[, direction, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Project" title="topologicpy.Vertex.Vertex.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(vertex, face[, direction, mantissa])</p></td>
 <td><p>Returns a vertex that is the projection of the input vertex unto the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.X" title="topologicpy.Vertex.Vertex.X"><code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code></a>(vertex[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.X" title="topologicpy.Vertex.Vertex.X"><code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code></a>(vertex[, mantissa])</p></td>
 <td><p>Returns the X coordinate of the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Y" title="topologicpy.Vertex.Vertex.Y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Y</span></code></a>(vertex[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Y" title="topologicpy.Vertex.Vertex.Y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Y</span></code></a>(vertex[, mantissa])</p></td>
 <td><p>Returns the Y coordinate of the input vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Z" title="topologicpy.Vertex.Vertex.Z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Z</span></code></a>(vertex[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Z" title="topologicpy.Vertex.Vertex.Z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Z</span></code></a>(vertex[, mantissa])</p></td>
 <td><p>Returns the Z coordinate of the input vertex.</p></td>
 </tr>
 </tbody>
@@ -524,6 +527,26 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The list of enclosing cells.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Vertex.Vertex.ExternalBoundary">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExternalBoundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vertex.Vertex.ExternalBoundary" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the external boundary (self) of the input vertex. This method is trivial, but included for completeness.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Vertex</dt><dd><p>The external boundary of the input vertex. This is the input vertex itself.</p>
 </dd>
 </dl>
 </dd>
@@ -886,8 +909,6 @@ coincident with the input vertex.</p>
 <dt><strong>direction</strong><span class="classifier">vector, optional</span></dt><dd><p>The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. The default is None.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
 </dl>
 </dd>

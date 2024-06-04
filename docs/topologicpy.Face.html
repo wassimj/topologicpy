@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Face module &mdash; topologicpy 0.7.12 documentation</title>
+  <title>topologicpy.Face module &mdash; topologicpy 0.7.14 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.12
+                0.7.14
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -195,7 +195,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Compactness" title="topologicpy.Face.Face.Compactness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compactness</span></code></a>(face[, mantissa])</p></td>
 <td><p>Returns the compactness measure of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CompassAngle" title="topologicpy.Face.Face.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(face[, north, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CompassAngle" title="topologicpy.Face.Face.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(face[, north, mantissa, tolerance])</p></td>
 <td><p>Returns the horizontal compass angle in degrees between the normal vector of the input face and the input vector.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Edges" title="topologicpy.Face.Face.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(face)</p></td>
@@ -231,7 +231,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Invert" title="topologicpy.Face.Face.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(face[, tolerance])</p></td>
 <td><p>Creates a face that is an inverse (mirror) of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsCoplanar" title="topologicpy.Face.Face.IsCoplanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoplanar</span></code></a>(faceA, faceB[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsCoplanar" title="topologicpy.Face.Face.IsCoplanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoplanar</span></code></a>(faceA, faceB[, mantissa, tolerance])</p></td>
 <td><p>Returns True if the two input faces are coplanar.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Isovist" title="topologicpy.Face.Face.Isovist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Isovist</span></code></a>(face, vertex[, obstacles, ...])</p></td>
@@ -716,7 +716,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.CompassAngle">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CompassAngle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#topologicpy.Face.Face.CompassAngle" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CompassAngle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#topologicpy.Face.Face.CompassAngle" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the horizontal compass angle in degrees between the normal vector of the input face and the input vector. The angle is measured in counter-clockwise fashion. Only the first two elements of the vectors are considered.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1004,7 +1004,7 @@ internal boundaries are considered to be those interior to the original face. Th
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.IsCoplanar">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsCoplanar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">faceA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Face.Face.IsCoplanar" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsCoplanar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">faceA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Face.Face.IsCoplanar" title="Permalink to this definition"></a></dt>
 <dd><p>Returns True if the two input faces are coplanar. Returns False otherwise.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1013,19 +1013,15 @@ internal boundaries are considered to be those interior to the original face. Th
 </dd>
 <dt><strong>faceB</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The second input face</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The deafault is 0.0001.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>bool</dt><dd><p>True if the two input faces are coplanar. False otherwise.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-odd">Raises</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>Exception</dt><dd><p>Raises an exception if the angle between the two input faces cannot be determined.</p>
 </dd>
 </dl>
 </dd>

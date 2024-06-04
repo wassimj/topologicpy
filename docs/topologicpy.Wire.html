@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Wire module &mdash; topologicpy 0.7.12 documentation</title>
+  <title>topologicpy.Wire module &mdash; topologicpy 0.7.14 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.12
+                0.7.14
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -183,149 +183,161 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.BoundingRectangle" title="topologicpy.Wire.Wire.BoundingRectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BoundingRectangle</span></code></a>(topology[, optimize, ...])</p></td>
 <td><p>Returns a wire representing a bounding rectangle of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPFile</span></code>(file)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMFile</span></code>(file[, guidKey, colorKey, ...])</p></td>
+<td><p>Imports topologies from the input BIM (dotbimpy.file.File) file object.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMPath</span></code>(path[, guidKey, colorKey, ...])</p></td>
+<td><p>Imports topologies from the input BIM file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMString</span></code>(string[, guidKey, colorKey, ...])</p></td>
+<td><p>Imports topologies from the input BIM file.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPFile</span></code>(file)</p></td>
 <td><p>Imports a topology from a BREP file.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPPath</span></code>(path)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPPath</span></code>(path)</p></td>
 <td><p>Imports a topology from a BREP file path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPString</span></code>(string)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPString</span></code>(string)</p></td>
 <td><p>Creates a topology from the input brep string</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFFile</span></code>(file)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFFile</span></code>(file)</p></td>
 <td><p>Imports a list of topologies from a DXF file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFPath</span></code>(path)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFPath</span></code>(path)</p></td>
 <td><p>Imports a list of topologies from a DXF file path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByEdges" title="topologicpy.Wire.Wire.ByEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByEdges</span></code></a>(edges[, orient, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByEdges" title="topologicpy.Wire.Wire.ByEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByEdges</span></code></a>(edges[, orient, tolerance])</p></td>
 <td><p>Creates a wire from the input list of edges.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByEdgesCluster" title="topologicpy.Wire.Wire.ByEdgesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByEdgesCluster</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByEdgesCluster" title="topologicpy.Wire.Wire.ByEdgesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByEdgesCluster</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Creates a wire from the input cluster of edges.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByGeometry</span></code>([vertices, edges, faces, color, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByGeometry</span></code>([vertices, edges, faces, color, ...])</p></td>
 <td><p>Create a topology by the input lists of vertices, edges, and faces.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile</span></code>(file[, transferDictionaries, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile</span></code>(file[, transferDictionaries, ...])</p></td>
 <td><p>Create a topology by importing it from an IFC file.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCPath</span></code>(path[, transferDictionaries, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCPath</span></code>(path[, transferDictionaries, ...])</p></td>
 <td><p>Create a topology by importing it from an IFC file path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONFile</span></code>(file[, tolerance])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONFile</span></code>(file[, tolerance])</p></td>
 <td><p>Imports the topology from a JSON file.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONPath</span></code>(path[, tolerance])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONPath</span></code>(path[, tolerance])</p></td>
 <td><p>Imports the topology from a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONString</span></code>(string[, progressBar, tolerance])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONString</span></code>(string[, progressBar, tolerance])</p></td>
 <td><p>Imports the topology from a JSON string.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJFile</span></code>(file[, transposeAxes, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJFile</span></code>(file[, transposeAxes, ...])</p></td>
 <td><p>Imports the topology from a Weverfront OBJ file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJPath</span></code>(path[, transposeAxes, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJPath</span></code>(path[, transposeAxes, ...])</p></td>
 <td><p>Imports the topology from a Weverfront OBJ file path.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJString</span></code>(string[, transposeAxes, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJString</span></code>(string[, transposeAxes, ...])</p></td>
 <td><p>Creates a topology from the input Waverfront OBJ string.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOCCTShape</span></code>(occtShape)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOCCTShape</span></code>(occtShape)</p></td>
 <td><p>Creates a topology from the input OCCT shape.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByOffset" title="topologicpy.Wire.Wire.ByOffset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset</span></code></a>(wire[, offset, miter, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByOffset" title="topologicpy.Wire.Wire.ByOffset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset</span></code></a>(wire[, offset, miter, ...])</p></td>
 <td><p>Creates an offset wire from the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByVertices" title="topologicpy.Wire.Wire.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(vertices[, close, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByVertices" title="topologicpy.Wire.Wire.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(vertices[, close, tolerance])</p></td>
 <td><p>Creates a wire from the input list of vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByVerticesCluster" title="topologicpy.Wire.Wire.ByVerticesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesCluster</span></code></a>(cluster[, close])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByVerticesCluster" title="topologicpy.Wire.Wire.ByVerticesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesCluster</span></code></a>(cluster[, close])</p></td>
 <td><p>Creates a wire from the input cluster of vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByXYZFile</span></code>(file[, frameIdKey, vertexIdKey])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByXYZFile</span></code>(file[, frameIdKey, vertexIdKey])</p></td>
 <td><p>Imports the topology from an XYZ file path.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByXYZPath</span></code>(path[, frameIdKey, vertexIdKey])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByXYZPath</span></code>(path[, frameIdKey, vertexIdKey])</p></td>
 <td><p>Imports the topology from an XYZ file path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">CellComplexes</span></code>(topology)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">CellComplexes</span></code>(topology)</p></td>
 <td><p>Returns the cellcomplexes of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cells</span></code>(topology)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cells</span></code>(topology)</p></td>
 <td><p>Returns the cells of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">CenterOfMass</span></code>(topology)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">CenterOfMass</span></code>(topology)</p></td>
 <td><p>Returns the center of mass of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Centroid</span></code>(topology)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Centroid</span></code>(topology)</p></td>
 <td><p>Returns the centroid of the vertices of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Circle" title="topologicpy.Wire.Wire.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Circle" title="topologicpy.Wire.Wire.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
 <td><p>Creates a circle.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cleanup</span></code>([topology])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cleanup</span></code>([topology])</p></td>
 <td><p>Cleans up all resources in which are managed by topologic library.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Close" title="topologicpy.Wire.Wire.Close"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Close</span></code></a>(wire[, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Close" title="topologicpy.Wire.Wire.Close"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Close</span></code></a>(wire[, mantissa, tolerance])</p></td>
 <td><p>Closes the input wire</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterFaces</span></code>(topology[, angTolerance, tolerance])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterFaces</span></code>(topology[, angTolerance, tolerance])</p></td>
 <td><p>Clusters the faces of the input topology by their direction.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterFaces_orig</span></code>(topology[, angTolerance, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterFaces_orig</span></code>(topology[, angTolerance, ...])</p></td>
 <td><p>Clusters the faces of the input topology by their direction.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Clusters</span></code>(topology)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Clusters</span></code>(topology)</p></td>
 <td><p>Returns the clusters of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contents</span></code>(topology)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contents</span></code>(topology)</p></td>
 <td><p>Returns the contents of the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contexts</span></code>(topology)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contexts</span></code>(topology)</p></td>
 <td><p>Returns the list of contexts of the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ConvexHull" title="topologicpy.Wire.Wire.ConvexHull"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvexHull</span></code></a>(topology[, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ConvexHull" title="topologicpy.Wire.Wire.ConvexHull"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvexHull</span></code></a>(topology[, mantissa, tolerance])</p></td>
 <td><p>Returns a wire representing the 2D convex hull of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Copy</span></code>(topology[, deep])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Copy</span></code>(topology[, deep])</p></td>
 <td><p>Returns a copy of the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Cycles" title="topologicpy.Wire.Wire.Cycles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cycles</span></code></a>(wire[, maxVertices, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Cycles" title="topologicpy.Wire.Wire.Cycles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cycles</span></code></a>(wire[, maxVertices, tolerance])</p></td>
 <td><p>Returns the closed circuits of wires found within the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Degree</span></code>(topology, hostTopology)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Degree</span></code>(topology, hostTopology)</p></td>
 <td><p>Returns the number of immediate super topologies that use the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dictionary</span></code>(topology)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dictionary</span></code>(topology)</p></td>
 <td><p>Returns the dictionary of the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Difference</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Difference</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dimensionality</span></code>(topology)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dimensionality</span></code>(topology)</p></td>
 <td><p>Returns the dimensionality of the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Divide</span></code>(topologyA, topologyB[, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Divide</span></code>(topologyA, topologyB[, ...])</p></td>
 <td><p>Divides the input topology by the input tool and places the results in the contents of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Edges" title="topologicpy.Wire.Wire.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(wire)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Edges" title="topologicpy.Wire.Wire.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(wire)</p></td>
 <td><p>Returns the edges of the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Einstein" title="topologicpy.Wire.Wire.Einstein"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Einstein</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Einstein" title="topologicpy.Wire.Wire.Einstein"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Einstein</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physist).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Ellipse" title="topologicpy.Wire.Wire.Ellipse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ellipse</span></code></a>([origin, inputMode, width, length, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Ellipse" title="topologicpy.Wire.Wire.Ellipse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ellipse</span></code></a>([origin, inputMode, width, length, ...])</p></td>
 <td><p>Creates an ellipse and returns all its geometry and parameters.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.EllipseAll" title="topologicpy.Wire.Wire.EllipseAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EllipseAll</span></code></a>([origin, inputMode, width, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.EllipseAll" title="topologicpy.Wire.Wire.EllipseAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EllipseAll</span></code></a>([origin, inputMode, width, ...])</p></td>
 <td><p>Creates an ellipse and returns all its geometry and parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.EndVertex" title="topologicpy.Wire.Wire.EndVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EndVertex</span></code></a>(wire)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.EndVertex" title="topologicpy.Wire.Wire.EndVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EndVertex</span></code></a>(wire)</p></td>
 <td><p>Returns the end vertex of the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Explode</span></code>(topology[, origin, scale, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Explode</span></code>(topology[, origin, scale, ...])</p></td>
 <td><p>Explodes the input topology.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToBIM</span></code>(topologies, path[, overwrite, ...])</p></td>
+<td><p>Exports the input topology to a BIM file.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToBREP</span></code>(topology, path[, overwrite, ...])</p></td>
 <td><p>Exports the input topology to a BREP file.</p></td>
@@ -342,292 +354,301 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ExteriorAngles" title="topologicpy.Wire.Wire.ExteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExteriorAngles</span></code></a>(wire[, tolerance, mantissa])</p></td>
 <td><p>Returns the exterior angles of the input wire in degrees.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ExternalBoundary" title="topologicpy.Wire.Wire.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(wire)</p></td>
+<td><p>Returns the external boundary (cluster of vertices where degree == 1) of the input wire.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code>(topology)</p></td>
 <td><p>Returns the faces of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Fillet" title="topologicpy.Wire.Wire.Fillet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fillet</span></code></a>(wire[, radius, radiusKey, tolerance, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Fillet" title="topologicpy.Wire.Wire.Fillet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fillet</span></code></a>(wire[, radius, radiusKey, tolerance, ...])</p></td>
 <td><p>Fillets (rounds) the interior and exterior corners of the input wire given the input radius.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Filter</span></code>(topologies[, topologyType, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Filter</span></code>(topologies[, topologyType, ...])</p></td>
 <td><p>Filters the input list of topologies based on the input parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fix</span></code>(topology[, topologyType, tolerance])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fix</span></code>(topology[, topologyType, tolerance])</p></td>
 <td><p>Attempts to fix the input topology to matched the desired output type.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flatten</span></code>(topology[, origin, direction, mantissa])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flatten</span></code>(topology[, origin, direction, mantissa])</p></td>
 <td><p>Flattens the input topology such that the input origin is located at the world origin and the input topology is rotated such that the input vector is pointed in the Up direction (see Vector.Up()).</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Geometry</span></code>(topology[, mantissa])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Geometry</span></code>(topology[, mantissa])</p></td>
 <td><p>Returns the geometry (mesh data format) of the input topology as a dictionary of vertices, edges, and faces.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">HighestType</span></code>(topology)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">HighestType</span></code>(topology)</p></td>
 <td><p>Returns the highest topology type found in the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Impose</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Impose</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Imprint</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Imprint</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.InteriorAngles" title="topologicpy.Wire.Wire.InteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InteriorAngles</span></code></a>(wire[, tolerance, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.InteriorAngles" title="topologicpy.Wire.Wire.InteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InteriorAngles</span></code></a>(wire[, tolerance, mantissa])</p></td>
 <td><p>Returns the interior angles of the input wire in degrees.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalVertex</span></code>(topology[, tolerance])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalVertex</span></code>(topology[, tolerance])</p></td>
 <td><p>Returns a vertex guaranteed to be inside the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Interpolate" title="topologicpy.Wire.Wire.Interpolate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Interpolate</span></code></a>(wires[, n, outputType, mapping, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Interpolate" title="topologicpy.Wire.Wire.Interpolate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Interpolate</span></code></a>(wires[, n, outputType, mapping, ...])</p></td>
 <td><p>Creates <em>n</em> number of wires that interpolate between wireA and wireB.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Intersect</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Intersect</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Invert" title="topologicpy.Wire.Wire.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(wire)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Invert" title="topologicpy.Wire.Wire.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(wire)</p></td>
 <td><p>Creates a wire that is an inverse (mirror) of the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsClosed" title="topologicpy.Wire.Wire.IsClosed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsClosed</span></code></a>(wire)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsClosed" title="topologicpy.Wire.Wire.IsClosed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsClosed</span></code></a>(wire)</p></td>
 <td><p>Returns True if the input wire is closed.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsInstance</span></code>(topology, type)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsInstance</span></code>(topology, type)</p></td>
 <td><p>Returns True if the input topology is an instance of the class specified by the input type string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsManifold" title="topologicpy.Wire.Wire.IsManifold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsManifold</span></code></a>(wire)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsManifold" title="topologicpy.Wire.Wire.IsManifold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsManifold</span></code></a>(wire)</p></td>
 <td><p>Returns True if the input wire is manifold.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsPlanar</span></code>(topology[, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsPlanar</span></code>(topology[, mantissa, tolerance])</p></td>
 <td><p>Returns True if all the vertices of the input topology are co-planar.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSame</span></code>(topologyA, topologyB)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSame</span></code>(topologyA, topologyB)</p></td>
 <td><p>Returns True if the input topologies are the same topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsSimilar" title="topologicpy.Wire.Wire.IsSimilar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSimilar</span></code></a>(wireA, wireB[, angTolerance, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsSimilar" title="topologicpy.Wire.Wire.IsSimilar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSimilar</span></code></a>(wireA, wireB[, angTolerance, ...])</p></td>
 <td><p>Returns True if the input wires are similar.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONString</span></code>(topologies[, mantissa])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONString</span></code>(topologies[, mantissa])</p></td>
 <td><p>Exports the input list of topologies to a JSON string</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Length" title="topologicpy.Wire.Wire.Length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Length</span></code></a>(wire[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Length" title="topologicpy.Wire.Wire.Length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Length</span></code></a>(wire[, mantissa])</p></td>
 <td><p>Returns the length of the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Line" title="topologicpy.Wire.Wire.Line"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Line</span></code></a>([origin, length, direction, sides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Line" title="topologicpy.Wire.Wire.Line"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Line</span></code></a>([origin, length, direction, sides, ...])</p></td>
 <td><p>Creates a straight line wire using the input parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Merge</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Merge</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeAll</span></code>(topologies[, tolerance])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeAll</span></code>(topologies[, tolerance])</p></td>
 <td><p>Merge all the input topologies.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">NonPlanarFaces</span></code>(topology[, tolerance])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">NonPlanarFaces</span></code>(topology[, tolerance])</p></td>
 <td><p>Returns any nonplanar faces in the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OBJString</span></code>(topology[, transposeAxes, mode, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OBJString</span></code>(topology[, transposeAxes, mode, ...])</p></td>
 <td><p>Returns the Wavefront string of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OCCTShape</span></code>(topology)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OCCTShape</span></code>(topology)</p></td>
 <td><p>Returns the occt shape of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenEdges</span></code>(topology)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenEdges</span></code>(topology)</p></td>
 <td><p>Returns the edges that border only one face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenFaces</span></code>(topology)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenFaces</span></code>(topology)</p></td>
 <td><p>Returns the faces that border no cells.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenVertices</span></code>(topology)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenVertices</span></code>(topology)</p></td>
 <td><p>Returns the vertices that border only one edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Orient</span></code>(topology[, origin, dirA, dirB, tolerance])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Orient</span></code>(topology[, origin, dirA, dirB, tolerance])</p></td>
 <td><p>Orients the input topology such that the input such that the input dirA vector is parallel to the input dirB vector.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.OrientEdges" title="topologicpy.Wire.Wire.OrientEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OrientEdges</span></code></a>(wire, vertexA[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.OrientEdges" title="topologicpy.Wire.Wire.OrientEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OrientEdges</span></code></a>(wire, vertexA[, tolerance])</p></td>
 <td><p>Returns a correctly oriented head-to-tail version of the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Place</span></code>(topology[, originA, originB, mantissa])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Place</span></code>(topology[, originA, originB, mantissa])</p></td>
 <td><p>Places the input topology at the specified location.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Planarize" title="topologicpy.Wire.Wire.Planarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planarize</span></code></a>(wire[, origin, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Planarize" title="topologicpy.Wire.Wire.Planarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planarize</span></code></a>(wire[, origin, mantissa, tolerance])</p></td>
 <td><p>Returns a planarized version of the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Project" title="topologicpy.Wire.Wire.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(wire, face[, direction, mantissa, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Project" title="topologicpy.Wire.Wire.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(wire, face[, direction, mantissa, ...])</p></td>
 <td><p>Creates a projection of the input wire unto the input face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Rectangle" title="topologicpy.Wire.Wire.Rectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rectangle</span></code></a>([origin, width, length, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Rectangle" title="topologicpy.Wire.Wire.Rectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rectangle</span></code></a>([origin, width, length, ...])</p></td>
 <td><p>Creates a rectangle.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.RemoveCollinearEdges" title="topologicpy.Wire.Wire.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(wire[, angTolerance, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.RemoveCollinearEdges" title="topologicpy.Wire.Wire.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(wire[, angTolerance, ...])</p></td>
 <td><p>Removes any collinear edges in the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveContent</span></code>(topology, contents)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveContent</span></code>(topology, contents)</p></td>
 <td><p>Removes the input content list from the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCoplanarFaces</span></code>(topology[, epsilon, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCoplanarFaces</span></code>(topology[, epsilon, ...])</p></td>
 <td><p>Removes coplanar faces in the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEdges</span></code>(topology[, edges, tolerance])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEdges</span></code>(topology[, edges, tolerance])</p></td>
 <td><p>Removes the input list of faces from the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFaces</span></code>(topology[, faces, tolerance])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFaces</span></code>(topology[, faces, tolerance])</p></td>
 <td><p>Removes the input list of faces from the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFacesBySelectors</span></code>(topology[, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFacesBySelectors</span></code>(topology[, ...])</p></td>
 <td><p>Removes faces that contain the input list of selectors (vertices) from the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveVertices</span></code>(topology[, vertices, tolerance])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveVertices</span></code>(topology[, vertices, tolerance])</p></td>
 <td><p>Removes the input list of vertices from the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReplaceVertices</span></code>(topology[, verticesA, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReplaceVertices</span></code>(topology[, verticesA, ...])</p></td>
 <td><p>Replaces the vertices in the first input list with the vertices in the second input list and rebuilds the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Reverse" title="topologicpy.Wire.Wire.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(wire[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Reverse" title="topologicpy.Wire.Wire.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(wire[, tolerance])</p></td>
 <td><p>Creates a wire that has the reverse direction of the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Roof" title="topologicpy.Wire.Wire.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Roof" title="topologicpy.Wire.Wire.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, tolerance])</p></td>
 <td><p>Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rotate</span></code>(topology[, origin, axis, angle, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rotate</span></code>(topology[, origin, axis, angle, ...])</p></td>
 <td><p>Rotates the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Scale</span></code>(topology[, origin, x, y, z])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RotateByEulerAngles</span></code>(topology[, origin, ...])</p></td>
+<td><p>Rotates the input topology using Euler angles (roll, pitch, yaw).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">RotateByQuaternion</span></code>(topology[, origin, ...])</p></td>
+<td><p>Rotates the input topology using Quaternion rotations.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Scale</span></code>(topology[, origin, x, y, z])</p></td>
 <td><p>Scales the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelectSubTopology</span></code>(topology, selector[, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelectSubTopology</span></code>(topology, selector[, ...])</p></td>
 <td><p>Returns the subtopology within the input topology based on the input selector and the subTopologyType.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelfMerge</span></code>(topology[, transferDictionaries, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelfMerge</span></code>(topology[, transferDictionaries, ...])</p></td>
 <td><p>Self merges the input topology to return the most logical topology type given the input data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code>(topology, dictionary)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code>(topology, dictionary)</p></td>
 <td><p>Sets the input topology's dictionary to the input dictionary</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedEdges</span></code>(topologyA, topologyB)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedEdges</span></code>(topologyA, topologyB)</p></td>
 <td><p>Returns the shared edges between the two input topologies</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedFaces</span></code>(topologyA, topologyB)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedFaces</span></code>(topologyA, topologyB)</p></td>
 <td><p>Returns the shared faces between the two input topologies</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedTopologies</span></code>(topologyA, topologyB)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedTopologies</span></code>(topologyA, topologyB)</p></td>
 <td><p>Returns the shared topologies between the two input topologies</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedVertices</span></code>(topologyA, topologyB)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedVertices</span></code>(topologyA, topologyB)</p></td>
 <td><p>Returns the shared vertices between the two input topologies</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedWires</span></code>(topologyA, topologyB)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedWires</span></code>(topologyA, topologyB)</p></td>
 <td><p>Returns the shared wires between the two input topologies</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code>(topology)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code>(topology)</p></td>
 <td><p>Returns the shells of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code>(*topologies[, showVertices, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code>(*topologies[, showVertices, ...])</p></td>
 <td><p>Shows the input topology on screen.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Simplify" title="topologicpy.Wire.Wire.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(wire[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Simplify" title="topologicpy.Wire.Wire.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(wire[, tolerance])</p></td>
 <td><p>Simplifies the input wire edges based on the Douglas Peucker algorthim.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Skeleton" title="topologicpy.Wire.Wire.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>(face[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Skeleton" title="topologicpy.Wire.Wire.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>(face[, tolerance])</p></td>
 <td><p>Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Slice</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Slice</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SortBySelectors</span></code>(topologies, selectors[, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SortBySelectors</span></code>(topologies, selectors[, ...])</p></td>
 <td><p>Sorts the input list of topologies according to the input list of selectors.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spin</span></code>(topology[, origin, triangulate, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spin</span></code>(topology[, origin, triangulate, ...])</p></td>
 <td><p>Spins the input topology around an axis to create a new topology.See <a class="reference external" href="https://en.wikipedia.org/wiki/Solid_of_revolution">https://en.wikipedia.org/wiki/Solid_of_revolution</a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Spiral" title="topologicpy.Wire.Wire.Spiral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spiral</span></code></a>([origin, radiusA, radiusB, height, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Spiral" title="topologicpy.Wire.Wire.Spiral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spiral</span></code></a>([origin, radiusA, radiusB, height, ...])</p></td>
 <td><p>Creates a spiral.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Split" title="topologicpy.Wire.Wire.Split"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Split</span></code></a>(wire)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Split" title="topologicpy.Wire.Wire.Split"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Split</span></code></a>(wire)</p></td>
 <td><p>Splits the input wire into segments at its intersections (i.e.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Square" title="topologicpy.Wire.Wire.Square"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Square</span></code></a>([origin, size, direction, placement, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Square" title="topologicpy.Wire.Wire.Square"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Square</span></code></a>([origin, size, direction, placement, ...])</p></td>
 <td><p>Creates a square.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Squircle" title="topologicpy.Wire.Wire.Squircle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Squircle</span></code></a>([origin, radius, sides, a, b, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Squircle" title="topologicpy.Wire.Wire.Squircle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Squircle</span></code></a>([origin, radius, sides, a, b, ...])</p></td>
 <td><p>Creates a Squircle which is a hybrid between a circle and a square.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Star" title="topologicpy.Wire.Wire.Star"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Star</span></code></a>([origin, radiusA, radiusB, rays, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Star" title="topologicpy.Wire.Wire.Star"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Star</span></code></a>([origin, radiusA, radiusB, rays, ...])</p></td>
 <td><p>Creates a star.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.StartEndVertices" title="topologicpy.Wire.Wire.StartEndVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartEndVertices</span></code></a>(wire)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.StartEndVertices" title="topologicpy.Wire.Wire.StartEndVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartEndVertices</span></code></a>(wire)</p></td>
 <td><p>Returns the start and end vertices of the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.StartVertex" title="topologicpy.Wire.Wire.StartVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartVertex</span></code></a>(wire)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.StartVertex" title="topologicpy.Wire.Wire.StartVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartVertex</span></code></a>(wire)</p></td>
 <td><p>Returns the start vertex of the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubTopologies</span></code>(topology[, subTopologyType])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubTopologies</span></code>(topology[, subTopologyType])</p></td>
 <td><p>Returns the subtopologies of the input topology as specified by the subTopologyType input string.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SuperTopologies</span></code>(topology, hostTopology[, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SuperTopologies</span></code>(topology, hostTopology[, ...])</p></td>
 <td><p>Returns the supertopologies connected to the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymDif</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymDif</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code>(topologyA, topologyB[, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code>(topologyA, topologyB[, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Taper</span></code>(topology[, origin, ratioRange, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Taper</span></code>(topology[, origin, ratioRange, ...])</p></td>
 <td><p>Tapers the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionaries</span></code>(sources, sinks[, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionaries</span></code>(sources, sinks[, ...])</p></td>
 <td><p>Transfers the dictionaries from the list of sources to the list of sinks.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionariesBySelectors</span></code>(topology, ...)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionariesBySelectors</span></code>(topology, ...)</p></td>
 <td><p>Transfers the dictionaries of the list of selectors to the subtopologies of the input topology based on the input parameters.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transform</span></code>(topology, matrix)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transform</span></code>(topology, matrix)</p></td>
 <td><p>Transforms the input topology by the input 4X4 transformation matrix.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Translate</span></code>(topology[, x, y, z])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Translate</span></code>(topology[, x, y, z])</p></td>
 <td><p>Translates (moves) the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">TranslateByDirectionDistance</span></code>(topology[, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">TranslateByDirectionDistance</span></code>(topology[, ...])</p></td>
 <td><p>Translates (moves) the input topology along the input direction by the specified distance.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Trapezoid" title="topologicpy.Wire.Wire.Trapezoid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trapezoid</span></code></a>([origin, widthA, widthB, offsetA, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Trapezoid" title="topologicpy.Wire.Wire.Trapezoid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trapezoid</span></code></a>([origin, widthA, widthB, offsetA, ...])</p></td>
 <td><p>Creates a trapezoid.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triangulate</span></code>(topology[, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triangulate</span></code>(topology[, ...])</p></td>
 <td><p>Triangulates the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Twist</span></code>(topology[, origin, angleRange, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Twist</span></code>(topology[, origin, angleRange, ...])</p></td>
 <td><p>Twists the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Type</span></code>(topology)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Type</span></code>(topology)</p></td>
 <td><p>Returns the type of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">TypeAsString</span></code>(topology)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">TypeAsString</span></code>(topology)</p></td>
 <td><p>Returns the type of the input topology as a string.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">TypeID</span></code>([name])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">TypeID</span></code>([name])</p></td>
 <td><p>Returns the type id of the input name string.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">UUID</span></code>(topology[, namespace])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">UUID</span></code>(topology[, namespace])</p></td>
 <td><p>Generate a UUID v5 based on the provided content and a fixed namespace.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Unflatten</span></code>(topology[, origin, direction])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Unflatten</span></code>(topology[, origin, direction])</p></td>
 <td><p>Unflattens the input topology such that the world origin is translated to the input origin and the input topology is rotated such that the Up direction (see Vector.Up()) is aligned with the input vector.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean()</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexByDistance" title="topologicpy.Wire.Wire.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(wire[, distance, origin, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexByDistance" title="topologicpy.Wire.Wire.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(wire[, distance, origin, ...])</p></td>
 <td><p>Creates a vertex along the input wire offset by the input distance from the input origin.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexByParameter" title="topologicpy.Wire.Wire.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(wire[, u])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexByParameter" title="topologicpy.Wire.Wire.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(wire[, u])</p></td>
 <td><p>Creates a vertex along the input wire offset by the input <em>u</em> parameter.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexDistance" title="topologicpy.Wire.Wire.VertexDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDistance</span></code></a>(wire, vertex[, origin, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexDistance" title="topologicpy.Wire.Wire.VertexDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDistance</span></code></a>(wire, vertex[, origin, ...])</p></td>
 <td><p>Returns the distance, computed along the input wire of the input vertex from the input origin vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Vertices" title="topologicpy.Wire.Wire.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(wire)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Vertices" title="topologicpy.Wire.Wire.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(wire)</p></td>
 <td><p>Returns the list of vertices of the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code>(topology)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code>(topology)</p></td>
 <td><p>Returns the wires of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code>(topologyA, topologyB[, tranDict, tolerance])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code>(topologyA, topologyB[, tranDict, tolerance])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
 </tbody>
@@ -1122,6 +1143,26 @@ Based on the inputMode value, only the following inputs will be considered. The 
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The list of exterior angles.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Wire.Wire.ExternalBoundary">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExternalBoundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.ExternalBoundary" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the external boundary (cluster of vertices where degree == 1) of the input wire.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cluster</dt><dd><p>The external boundary of the input wire. This is a cluster of vertices of degree == 1.</p>
 </dd>
 </dl>
 </dd>

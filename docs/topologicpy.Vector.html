@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vector module &mdash; topologicpy 0.7.12 documentation</title>
+  <title>topologicpy.Vector module &mdash; topologicpy 0.7.14 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.12
+                0.7.14
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -147,35 +147,41 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Angle" title="topologicpy.Vector.Vector.Angle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Angle</span></code></a>(vectorA, vectorB[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Add" title="topologicpy.Vector.Vector.Add"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Add</span></code></a>(vectorA, vectorB)</p></td>
+<td><p>Adds the two input vectors.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Angle" title="topologicpy.Vector.Vector.Angle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Angle</span></code></a>(vectorA, vectorB[, mantissa])</p></td>
 <td><p>Returns the angle in degrees between the two input vectors</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Average" title="topologicpy.Vector.Vector.Average"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Average</span></code></a>(vectors)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Average" title="topologicpy.Vector.Vector.Average"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Average</span></code></a>(vectors)</p></td>
 <td><p>Returns the average vector of the input vectors.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.AzimuthAltitude" title="topologicpy.Vector.Vector.AzimuthAltitude"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AzimuthAltitude</span></code></a>(vector[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.AzimuthAltitude" title="topologicpy.Vector.Vector.AzimuthAltitude"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AzimuthAltitude</span></code></a>(vector[, mantissa])</p></td>
 <td><p>Returns a dictionary of azimuth and altitude angles in degrees for the input vector.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Bisect" title="topologicpy.Vector.Vector.Bisect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bisect</span></code></a>(vectorA, vectorB)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Bisect" title="topologicpy.Vector.Vector.Bisect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bisect</span></code></a>(vectorA, vectorB)</p></td>
 <td><p>Compute the bisecting vector of two input vectors.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.ByAzimuthAltitude" title="topologicpy.Vector.Vector.ByAzimuthAltitude"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAzimuthAltitude</span></code></a>(azimuth, altitude[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.ByAzimuthAltitude" title="topologicpy.Vector.Vector.ByAzimuthAltitude"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAzimuthAltitude</span></code></a>(azimuth, altitude[, ...])</p></td>
 <td><p>Returns the vector specified by the input azimuth and altitude angles.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.ByCoordinates" title="topologicpy.Vector.Vector.ByCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCoordinates</span></code></a>(x, y, z)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.ByCoordinates" title="topologicpy.Vector.Vector.ByCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCoordinates</span></code></a>(x, y, z)</p></td>
 <td><p>Creates a vector by the specified x, y, z inputs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.ByVertices" title="topologicpy.Vector.Vector.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(vertices[, normalize, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.ByVertices" title="topologicpy.Vector.Vector.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(vertices[, normalize, mantissa])</p></td>
 <td><p>Creates a vector by the specified input list of vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.CompassAngle" title="topologicpy.Vector.Vector.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(vectorA, vectorB[, mantissa, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.CompassAngle" title="topologicpy.Vector.Vector.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(vectorA, vectorB[, mantissa, ...])</p></td>
 <td><p>Returns the horizontal compass angle in degrees between the two input vectors.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Coordinates" title="topologicpy.Vector.Vector.Coordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Coordinates</span></code></a>(vector[, outputType, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Coordinates" title="topologicpy.Vector.Vector.Coordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Coordinates</span></code></a>(vector[, outputType, mantissa])</p></td>
 <td><p>Returns the coordinates of the input vector.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Cross" title="topologicpy.Vector.Vector.Cross"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cross</span></code></a>(vectorA, vectorB[, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Cross" title="topologicpy.Vector.Vector.Cross"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cross</span></code></a>(vectorA, vectorB[, mantissa, tolerance])</p></td>
 <td><p>Returns the cross product of the two input vectors.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Dot" title="topologicpy.Vector.Vector.Dot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dot</span></code></a>(vectorA, vectorB[, mantissa])</p></td>
+<td><p>Returns the dot product of the two input vectors which is a measure of how much they are aligned.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Down" title="topologicpy.Vector.Vector.Down"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Down</span></code></a>()</p></td>
 <td><p>Returns the vector representing the <em>down</em> direction.</p></td>
@@ -191,6 +197,12 @@
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.IsParallel" title="topologicpy.Vector.Vector.IsParallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsParallel</span></code></a>(vectorA, vectorB)</p></td>
 <td><p>Returns True if the input vectors are parallel.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.IsSame" title="topologicpy.Vector.Vector.IsSame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSame</span></code></a>(vectorA, vectorB[, tolerance])</p></td>
+<td><p>Returns True if the input vectors are the same.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Length" title="topologicpy.Vector.Vector.Length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Length</span></code></a>(vector[, mantissa])</p></td>
+<td><p>Returns the length of the input vector.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Magnitude" title="topologicpy.Vector.Vector.Magnitude"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Magnitude</span></code></a>(vector[, mantissa])</p></td>
 <td><p>Returns the magnitude of the input vector.</p></td>
@@ -225,62 +237,87 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.SouthWest" title="topologicpy.Vector.Vector.SouthWest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SouthWest</span></code></a>()</p></td>
 <td><p>Returns the vector representing the <em>southwest</em> direction.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Sum" title="topologicpy.Vector.Vector.Sum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sum</span></code></a>(vectors)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Subtract" title="topologicpy.Vector.Vector.Subtract"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subtract</span></code></a>(vectorA, vectorB)</p></td>
+<td><p>Subtracts the second input vector from the first input vector.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Sum" title="topologicpy.Vector.Vector.Sum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sum</span></code></a>(vectors)</p></td>
 <td><p>Returns the sum vector of the input vectors.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.TransformationMatrix" title="topologicpy.Vector.Vector.TransformationMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransformationMatrix</span></code></a>(vectorA, vectorB)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.TransformationMatrix" title="topologicpy.Vector.Vector.TransformationMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransformationMatrix</span></code></a>(vectorA, vectorB)</p></td>
 <td><p>Returns the transformation matrix needed to align vectorA with vectorB.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Up" title="topologicpy.Vector.Vector.Up"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Up</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Up" title="topologicpy.Vector.Vector.Up"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Up</span></code></a>()</p></td>
 <td><p>Returns the vector representing the up direction.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.West" title="topologicpy.Vector.Vector.West"><code class="xref py py-obj docutils literal notranslate"><span class="pre">West</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.West" title="topologicpy.Vector.Vector.West"><code class="xref py py-obj docutils literal notranslate"><span class="pre">West</span></code></a>()</p></td>
 <td><p>Returns the vector representing the <em>west</em> direction.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.XAxis" title="topologicpy.Vector.Vector.XAxis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XAxis</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.XAxis" title="topologicpy.Vector.Vector.XAxis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XAxis</span></code></a>()</p></td>
 <td><p>Returns the vector representing the XAxis ([1, 0, 0])</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.YAxis" title="topologicpy.Vector.Vector.YAxis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">YAxis</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.YAxis" title="topologicpy.Vector.Vector.YAxis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">YAxis</span></code></a>()</p></td>
 <td><p>Returns the vector representing the YAxis ([0, 1, 0])</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.ZAxis" title="topologicpy.Vector.Vector.ZAxis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ZAxis</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.ZAxis" title="topologicpy.Vector.Vector.ZAxis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ZAxis</span></code></a>()</p></td>
 <td><p>Returns the vector representing the ZAxis ([0, 0, 1])</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">append</span></code>(object, /)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">append</span></code>(object, /)</p></td>
 <td><p>Append object to the end of the list.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear</span></code>(/)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">clear</span></code>(/)</p></td>
 <td><p>Remove all items from list.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>(/)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code>(/)</p></td>
 <td><p>Return a shallow copy of the list.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">count</span></code>(value, /)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">count</span></code>(value, /)</p></td>
 <td><p>Return number of occurrences of value.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">extend</span></code>(iterable, /)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">extend</span></code>(iterable, /)</p></td>
 <td><p>Extend list by appending elements from the iterable.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code>(value[, start, stop])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code>(value[, start, stop])</p></td>
 <td><p>Return first index of value.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">insert</span></code>(index, object, /)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">insert</span></code>(index, object, /)</p></td>
 <td><p>Insert object before index.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pop</span></code>([index])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">pop</span></code>([index])</p></td>
 <td><p>Remove and return item at index (default last).</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove</span></code>(value, /)</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove</span></code>(value, /)</p></td>
 <td><p>Remove first occurrence of value.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reverse</span></code>(/)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">reverse</span></code>(/)</p></td>
 <td><p>Reverse <em>IN PLACE</em>.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sort</span></code>(*[, key, reverse])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">sort</span></code>(*[, key, reverse])</p></td>
 <td><p>Sort the list in ascending order and return None.</p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Vector.Vector.Add">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Add" title="Permalink to this definition"></a></dt>
+<dd><p>Adds the two input vectors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vectorA</strong><span class="classifier">list</span></dt><dd><p>The first vector.</p>
+</dd>
+<dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second vector.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The sum vector of the two input vectors.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.Angle">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Angle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Angle" title="Permalink to this definition"></a></dt>
@@ -373,7 +410,7 @@ If the altitude is -90 or 90, the azimuth is assumed to be 0.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.ByAzimuthAltitude">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByAzimuthAltitude</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">azimuth</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">altitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.ByAzimuthAltitude" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByAzimuthAltitude</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">azimuth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">altitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.ByAzimuthAltitude" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the vector specified by the input azimuth and altitude angles.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -386,6 +423,8 @@ If the altitude is -90 or 90, the azimuth is assumed to be 0.</p>
 90 is along the positive X-axis, 180 is along the negative Y-axis, and 270 along the negative Y-axis.</p>
 </dd>
 <dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the direction of the vector is computed from the end point towards the origin. Otherwise, it is computed from the origin towards the end point.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mantissa. The default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
@@ -527,6 +566,30 @@ Only the first two elements in the input vectors are considered.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Vector.Vector.Dot">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Dot" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the dot product of the two input vectors which is a measure of how much they are aligned.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vectorA</strong><span class="classifier">list</span></dt><dd><p>The first vector.</p>
+</dd>
+<dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second vector.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The vector representing the cross product of the two input vectors.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.Down">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Down</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Down" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the vector representing the <em>down</em> direction. In Topologic, the negative ZAxis direction is considered <em>down</em> ([0, 0, -1]).</p>
@@ -614,6 +677,52 @@ Only the first two elements in the input vectors are considered.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>bool</dt><dd><p>True if the input vectors are parallel. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Vector.Vector.IsSame">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsSame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.IsSame" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True if the input vectors are the same. Returns False otherwise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vectorA</strong><span class="classifier">list</span></dt><dd><p>The first input vector.</p>
+</dd>
+<dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second input vector.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the input vectors are the same. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Vector.Vector.Length">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Length" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the length of the input vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vector</strong><span class="classifier">list</span></dt><dd><p>The input vector.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>The length of the input vector.</p>
 </dd>
 </dl>
 </dd>
@@ -806,6 +915,28 @@ Only the first two elements in the input vectors are considered.</p>
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><dl class="simple">
 <dt>list</dt><dd><p>The vector representing the <em>southwest</em> direction.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Vector.Vector.Subtract">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Subtract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Subtract" title="Permalink to this definition"></a></dt>
+<dd><p>Subtracts the second input vector from the first input vector.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vectorA</strong><span class="classifier">list</span></dt><dd><p>The first vector.</p>
+</dd>
+<dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second vector.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The vector resulting from subtracting the second input vector from the first input vector.</p>
 </dd>
 </dl>
 </dd>

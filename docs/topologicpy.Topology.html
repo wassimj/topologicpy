@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.7.12 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.7.14 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.12
+                0.7.14
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -342,113 +342,125 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.BoundingBox" title="topologicpy.Topology.Topology.BoundingBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BoundingBox</span></code></a>(topology[, optimize, axes, ...])</p></td>
 <td><p>Returns a cell representing a bounding box of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPFile" title="topologicpy.Topology.Topology.ByBREPFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPFile</span></code></a>(file)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBIMFile" title="topologicpy.Topology.Topology.ByBIMFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMFile</span></code></a>(file[, guidKey, colorKey, ...])</p></td>
+<td><p>Imports topologies from the input BIM (dotbimpy.file.File) file object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBIMPath" title="topologicpy.Topology.Topology.ByBIMPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMPath</span></code></a>(path[, guidKey, colorKey, ...])</p></td>
+<td><p>Imports topologies from the input BIM file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBIMString" title="topologicpy.Topology.Topology.ByBIMString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMString</span></code></a>(string[, guidKey, colorKey, ...])</p></td>
+<td><p>Imports topologies from the input BIM file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPFile" title="topologicpy.Topology.Topology.ByBREPFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPFile</span></code></a>(file)</p></td>
 <td><p>Imports a topology from a BREP file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPPath" title="topologicpy.Topology.Topology.ByBREPPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPPath</span></code></a>(path)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPPath" title="topologicpy.Topology.Topology.ByBREPPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPPath</span></code></a>(path)</p></td>
 <td><p>Imports a topology from a BREP file path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPString" title="topologicpy.Topology.Topology.ByBREPString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPString</span></code></a>(string)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPString" title="topologicpy.Topology.Topology.ByBREPString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPString</span></code></a>(string)</p></td>
 <td><p>Creates a topology from the input brep string</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFFile" title="topologicpy.Topology.Topology.ByDXFFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFFile</span></code></a>(file)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFFile" title="topologicpy.Topology.Topology.ByDXFFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFFile</span></code></a>(file)</p></td>
 <td><p>Imports a list of topologies from a DXF file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFPath" title="topologicpy.Topology.Topology.ByDXFPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFPath</span></code></a>(path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFPath" title="topologicpy.Topology.Topology.ByDXFPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFPath</span></code></a>(path)</p></td>
 <td><p>Imports a list of topologies from a DXF file path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByGeometry" title="topologicpy.Topology.Topology.ByGeometry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByGeometry</span></code></a>([vertices, edges, faces, color, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByGeometry" title="topologicpy.Topology.Topology.ByGeometry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByGeometry</span></code></a>([vertices, edges, faces, color, ...])</p></td>
 <td><p>Create a topology by the input lists of vertices, edges, and faces.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByIFCFile" title="topologicpy.Topology.Topology.ByIFCFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile</span></code></a>(file[, transferDictionaries, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByIFCFile" title="topologicpy.Topology.Topology.ByIFCFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile</span></code></a>(file[, transferDictionaries, ...])</p></td>
 <td><p>Create a topology by importing it from an IFC file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByIFCPath" title="topologicpy.Topology.Topology.ByIFCPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCPath</span></code></a>(path[, transferDictionaries, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByIFCPath" title="topologicpy.Topology.Topology.ByIFCPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCPath</span></code></a>(path[, transferDictionaries, ...])</p></td>
 <td><p>Create a topology by importing it from an IFC file path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONFile" title="topologicpy.Topology.Topology.ByJSONFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONFile</span></code></a>(file[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONFile" title="topologicpy.Topology.Topology.ByJSONFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONFile</span></code></a>(file[, tolerance])</p></td>
 <td><p>Imports the topology from a JSON file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONPath" title="topologicpy.Topology.Topology.ByJSONPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONPath</span></code></a>(path[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONPath" title="topologicpy.Topology.Topology.ByJSONPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONPath</span></code></a>(path[, tolerance])</p></td>
 <td><p>Imports the topology from a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONString" title="topologicpy.Topology.Topology.ByJSONString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONString</span></code></a>(string[, progressBar, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONString" title="topologicpy.Topology.Topology.ByJSONString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONString</span></code></a>(string[, progressBar, tolerance])</p></td>
 <td><p>Imports the topology from a JSON string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJFile" title="topologicpy.Topology.Topology.ByOBJFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJFile</span></code></a>(file[, transposeAxes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJFile" title="topologicpy.Topology.Topology.ByOBJFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJFile</span></code></a>(file[, transposeAxes, ...])</p></td>
 <td><p>Imports the topology from a Weverfront OBJ file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJPath" title="topologicpy.Topology.Topology.ByOBJPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJPath</span></code></a>(path[, transposeAxes, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJPath" title="topologicpy.Topology.Topology.ByOBJPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJPath</span></code></a>(path[, transposeAxes, ...])</p></td>
 <td><p>Imports the topology from a Weverfront OBJ file path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJString" title="topologicpy.Topology.Topology.ByOBJString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJString</span></code></a>(string[, transposeAxes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJString" title="topologicpy.Topology.Topology.ByOBJString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJString</span></code></a>(string[, transposeAxes, ...])</p></td>
 <td><p>Creates a topology from the input Waverfront OBJ string.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOCCTShape" title="topologicpy.Topology.Topology.ByOCCTShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOCCTShape</span></code></a>(occtShape)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOCCTShape" title="topologicpy.Topology.Topology.ByOCCTShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOCCTShape</span></code></a>(occtShape)</p></td>
 <td><p>Creates a topology from the input OCCT shape.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByXYZFile" title="topologicpy.Topology.Topology.ByXYZFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByXYZFile</span></code></a>(file[, frameIdKey, vertexIdKey])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByXYZFile" title="topologicpy.Topology.Topology.ByXYZFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByXYZFile</span></code></a>(file[, frameIdKey, vertexIdKey])</p></td>
 <td><p>Imports the topology from an XYZ file path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByXYZPath" title="topologicpy.Topology.Topology.ByXYZPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByXYZPath</span></code></a>(path[, frameIdKey, vertexIdKey])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByXYZPath" title="topologicpy.Topology.Topology.ByXYZPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByXYZPath</span></code></a>(path[, frameIdKey, vertexIdKey])</p></td>
 <td><p>Imports the topology from an XYZ file path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.CellComplexes" title="topologicpy.Topology.Topology.CellComplexes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CellComplexes</span></code></a>(topology)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.CellComplexes" title="topologicpy.Topology.Topology.CellComplexes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CellComplexes</span></code></a>(topology)</p></td>
 <td><p>Returns the cellcomplexes of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Cells" title="topologicpy.Topology.Topology.Cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cells</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Cells" title="topologicpy.Topology.Topology.Cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cells</span></code></a>(topology)</p></td>
 <td><p>Returns the cells of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.CenterOfMass" title="topologicpy.Topology.Topology.CenterOfMass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CenterOfMass</span></code></a>(topology)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.CenterOfMass" title="topologicpy.Topology.Topology.CenterOfMass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CenterOfMass</span></code></a>(topology)</p></td>
 <td><p>Returns the center of mass of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Centroid" title="topologicpy.Topology.Topology.Centroid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Centroid</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Centroid" title="topologicpy.Topology.Topology.Centroid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Centroid</span></code></a>(topology)</p></td>
 <td><p>Returns the centroid of the vertices of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Cleanup" title="topologicpy.Topology.Topology.Cleanup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cleanup</span></code></a>([topology])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Cleanup" title="topologicpy.Topology.Topology.Cleanup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cleanup</span></code></a>([topology])</p></td>
 <td><p>Cleans up all resources in which are managed by topologic library.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ClusterFaces" title="topologicpy.Topology.Topology.ClusterFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterFaces</span></code></a>(topology[, angTolerance, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ClusterFaces" title="topologicpy.Topology.Topology.ClusterFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterFaces</span></code></a>(topology[, angTolerance, tolerance])</p></td>
 <td><p>Clusters the faces of the input topology by their direction.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ClusterFaces_orig" title="topologicpy.Topology.Topology.ClusterFaces_orig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterFaces_orig</span></code></a>(topology[, angTolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ClusterFaces_orig" title="topologicpy.Topology.Topology.ClusterFaces_orig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterFaces_orig</span></code></a>(topology[, angTolerance, ...])</p></td>
 <td><p>Clusters the faces of the input topology by their direction.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Clusters" title="topologicpy.Topology.Topology.Clusters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Clusters</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Clusters" title="topologicpy.Topology.Topology.Clusters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Clusters</span></code></a>(topology)</p></td>
 <td><p>Returns the clusters of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Contents" title="topologicpy.Topology.Topology.Contents"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contents</span></code></a>(topology)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Contents" title="topologicpy.Topology.Topology.Contents"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contents</span></code></a>(topology)</p></td>
 <td><p>Returns the contents of the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Contexts" title="topologicpy.Topology.Topology.Contexts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contexts</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Contexts" title="topologicpy.Topology.Topology.Contexts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Contexts</span></code></a>(topology)</p></td>
 <td><p>Returns the list of contexts of the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ConvexHull" title="topologicpy.Topology.Topology.ConvexHull"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvexHull</span></code></a>(topology[, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ConvexHull" title="topologicpy.Topology.Topology.ConvexHull"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvexHull</span></code></a>(topology[, mantissa, tolerance])</p></td>
 <td><p>Creates a convex hull</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Copy" title="topologicpy.Topology.Topology.Copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Copy</span></code></a>(topology[, deep])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Copy" title="topologicpy.Topology.Topology.Copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Copy</span></code></a>(topology[, deep])</p></td>
 <td><p>Returns a copy of the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Degree" title="topologicpy.Topology.Topology.Degree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Degree</span></code></a>(topology, hostTopology)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Degree" title="topologicpy.Topology.Topology.Degree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Degree</span></code></a>(topology, hostTopology)</p></td>
 <td><p>Returns the number of immediate super topologies that use the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Dictionary" title="topologicpy.Topology.Topology.Dictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dictionary</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Dictionary" title="topologicpy.Topology.Topology.Dictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dictionary</span></code></a>(topology)</p></td>
 <td><p>Returns the dictionary of the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Difference" title="topologicpy.Topology.Topology.Difference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Difference</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Difference" title="topologicpy.Topology.Topology.Difference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Difference</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Dimensionality" title="topologicpy.Topology.Topology.Dimensionality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dimensionality</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Dimensionality" title="topologicpy.Topology.Topology.Dimensionality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dimensionality</span></code></a>(topology)</p></td>
 <td><p>Returns the dimensionality of the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Divide" title="topologicpy.Topology.Topology.Divide"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Divide</span></code></a>(topologyA, topologyB[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Divide" title="topologicpy.Topology.Topology.Divide"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Divide</span></code></a>(topologyA, topologyB[, ...])</p></td>
 <td><p>Divides the input topology by the input tool and places the results in the contents of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Edges" title="topologicpy.Topology.Topology.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Edges" title="topologicpy.Topology.Topology.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(topology)</p></td>
 <td><p>Returns the edges of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Explode" title="topologicpy.Topology.Topology.Explode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Explode</span></code></a>(topology[, origin, scale, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Explode" title="topologicpy.Topology.Topology.Explode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Explode</span></code></a>(topology[, origin, scale, ...])</p></td>
 <td><p>Explodes the input topology.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ExportToBIM" title="topologicpy.Topology.Topology.ExportToBIM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToBIM</span></code></a>(topologies, path[, overwrite, ...])</p></td>
+<td><p>Exports the input topology to a BIM file.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ExportToBREP" title="topologicpy.Topology.Topology.ExportToBREP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToBREP</span></code></a>(topology, path[, overwrite, ...])</p></td>
 <td><p>Exports the input topology to a BREP file.</p></td>
@@ -462,208 +474,217 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ExportToOBJ" title="topologicpy.Topology.Topology.ExportToOBJ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToOBJ</span></code></a>(topology, path[, transposeAxes, ...])</p></td>
 <td><p>Exports the input topology to a Wavefront OBJ file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Faces" title="topologicpy.Topology.Topology.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(topology)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ExternalBoundary" title="topologicpy.Topology.Topology.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(topology)</p></td>
+<td><p>Returns the external boundary of the input topology.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Faces" title="topologicpy.Topology.Topology.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(topology)</p></td>
 <td><p>Returns the faces of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Filter" title="topologicpy.Topology.Topology.Filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Filter</span></code></a>(topologies[, topologyType, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Filter" title="topologicpy.Topology.Topology.Filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Filter</span></code></a>(topologies[, topologyType, ...])</p></td>
 <td><p>Filters the input list of topologies based on the input parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Fix" title="topologicpy.Topology.Topology.Fix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fix</span></code></a>(topology[, topologyType, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Fix" title="topologicpy.Topology.Topology.Fix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fix</span></code></a>(topology[, topologyType, tolerance])</p></td>
 <td><p>Attempts to fix the input topology to matched the desired output type.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Flatten" title="topologicpy.Topology.Topology.Flatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flatten</span></code></a>(topology[, origin, direction, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Flatten" title="topologicpy.Topology.Topology.Flatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flatten</span></code></a>(topology[, origin, direction, mantissa])</p></td>
 <td><p>Flattens the input topology such that the input origin is located at the world origin and the input topology is rotated such that the input vector is pointed in the Up direction (see Vector.Up()).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Geometry" title="topologicpy.Topology.Topology.Geometry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Geometry</span></code></a>(topology[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Geometry" title="topologicpy.Topology.Topology.Geometry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Geometry</span></code></a>(topology[, mantissa])</p></td>
 <td><p>Returns the geometry (mesh data format) of the input topology as a dictionary of vertices, edges, and faces.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.HighestType" title="topologicpy.Topology.Topology.HighestType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HighestType</span></code></a>(topology)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.HighestType" title="topologicpy.Topology.Topology.HighestType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HighestType</span></code></a>(topology)</p></td>
 <td><p>Returns the highest topology type found in the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Impose" title="topologicpy.Topology.Topology.Impose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Impose</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Impose" title="topologicpy.Topology.Topology.Impose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Impose</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Imprint" title="topologicpy.Topology.Topology.Imprint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Imprint</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Imprint" title="topologicpy.Topology.Topology.Imprint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Imprint</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.InternalVertex" title="topologicpy.Topology.Topology.InternalVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalVertex</span></code></a>(topology[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.InternalVertex" title="topologicpy.Topology.Topology.InternalVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalVertex</span></code></a>(topology[, tolerance])</p></td>
 <td><p>Returns a vertex guaranteed to be inside the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Intersect" title="topologicpy.Topology.Topology.Intersect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Intersect</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Intersect" title="topologicpy.Topology.Topology.Intersect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Intersect</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.IsInstance" title="topologicpy.Topology.Topology.IsInstance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsInstance</span></code></a>(topology, type)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.IsInstance" title="topologicpy.Topology.Topology.IsInstance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsInstance</span></code></a>(topology, type)</p></td>
 <td><p>Returns True if the input topology is an instance of the class specified by the input type string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.IsPlanar" title="topologicpy.Topology.Topology.IsPlanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsPlanar</span></code></a>(topology[, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.IsPlanar" title="topologicpy.Topology.Topology.IsPlanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsPlanar</span></code></a>(topology[, mantissa, tolerance])</p></td>
 <td><p>Returns True if all the vertices of the input topology are co-planar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.IsSame" title="topologicpy.Topology.Topology.IsSame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSame</span></code></a>(topologyA, topologyB)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.IsSame" title="topologicpy.Topology.Topology.IsSame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSame</span></code></a>(topologyA, topologyB)</p></td>
 <td><p>Returns True if the input topologies are the same topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.JSONString" title="topologicpy.Topology.Topology.JSONString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONString</span></code></a>(topologies[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.JSONString" title="topologicpy.Topology.Topology.JSONString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONString</span></code></a>(topologies[, mantissa])</p></td>
 <td><p>Exports the input list of topologies to a JSON string</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Merge" title="topologicpy.Topology.Topology.Merge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Merge</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Merge" title="topologicpy.Topology.Topology.Merge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Merge</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.MergeAll" title="topologicpy.Topology.Topology.MergeAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeAll</span></code></a>(topologies[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.MergeAll" title="topologicpy.Topology.Topology.MergeAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeAll</span></code></a>(topologies[, tolerance])</p></td>
 <td><p>Merge all the input topologies.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.NonPlanarFaces" title="topologicpy.Topology.Topology.NonPlanarFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NonPlanarFaces</span></code></a>(topology[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.NonPlanarFaces" title="topologicpy.Topology.Topology.NonPlanarFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NonPlanarFaces</span></code></a>(topology[, tolerance])</p></td>
 <td><p>Returns any nonplanar faces in the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OBJString" title="topologicpy.Topology.Topology.OBJString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OBJString</span></code></a>(topology[, transposeAxes, mode, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OBJString" title="topologicpy.Topology.Topology.OBJString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OBJString</span></code></a>(topology[, transposeAxes, mode, ...])</p></td>
 <td><p>Returns the Wavefront string of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OCCTShape" title="topologicpy.Topology.Topology.OCCTShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OCCTShape</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OCCTShape" title="topologicpy.Topology.Topology.OCCTShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OCCTShape</span></code></a>(topology)</p></td>
 <td><p>Returns the occt shape of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OpenEdges" title="topologicpy.Topology.Topology.OpenEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenEdges</span></code></a>(topology)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OpenEdges" title="topologicpy.Topology.Topology.OpenEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenEdges</span></code></a>(topology)</p></td>
 <td><p>Returns the edges that border only one face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OpenFaces" title="topologicpy.Topology.Topology.OpenFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenFaces</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OpenFaces" title="topologicpy.Topology.Topology.OpenFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenFaces</span></code></a>(topology)</p></td>
 <td><p>Returns the faces that border no cells.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OpenVertices" title="topologicpy.Topology.Topology.OpenVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenVertices</span></code></a>(topology)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OpenVertices" title="topologicpy.Topology.Topology.OpenVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpenVertices</span></code></a>(topology)</p></td>
 <td><p>Returns the vertices that border only one edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Orient" title="topologicpy.Topology.Topology.Orient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Orient</span></code></a>(topology[, origin, dirA, dirB, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Orient" title="topologicpy.Topology.Topology.Orient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Orient</span></code></a>(topology[, origin, dirA, dirB, tolerance])</p></td>
 <td><p>Orients the input topology such that the input such that the input dirA vector is parallel to the input dirB vector.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Place" title="topologicpy.Topology.Topology.Place"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Place</span></code></a>(topology[, originA, originB, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Place" title="topologicpy.Topology.Topology.Place"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Place</span></code></a>(topology[, originA, originB, mantissa])</p></td>
 <td><p>Places the input topology at the specified location.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveCollinearEdges" title="topologicpy.Topology.Topology.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(topology[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveCollinearEdges" title="topologicpy.Topology.Topology.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(topology[, ...])</p></td>
 <td><p>Removes the collinear edges of the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveContent" title="topologicpy.Topology.Topology.RemoveContent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveContent</span></code></a>(topology, contents)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveContent" title="topologicpy.Topology.Topology.RemoveContent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveContent</span></code></a>(topology, contents)</p></td>
 <td><p>Removes the input content list from the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveCoplanarFaces" title="topologicpy.Topology.Topology.RemoveCoplanarFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCoplanarFaces</span></code></a>(topology[, epsilon, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveCoplanarFaces" title="topologicpy.Topology.Topology.RemoveCoplanarFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCoplanarFaces</span></code></a>(topology[, epsilon, ...])</p></td>
 <td><p>Removes coplanar faces in the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveEdges" title="topologicpy.Topology.Topology.RemoveEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEdges</span></code></a>(topology[, edges, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveEdges" title="topologicpy.Topology.Topology.RemoveEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEdges</span></code></a>(topology[, edges, tolerance])</p></td>
 <td><p>Removes the input list of faces from the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveFaces" title="topologicpy.Topology.Topology.RemoveFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFaces</span></code></a>(topology[, faces, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveFaces" title="topologicpy.Topology.Topology.RemoveFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFaces</span></code></a>(topology[, faces, tolerance])</p></td>
 <td><p>Removes the input list of faces from the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveFacesBySelectors" title="topologicpy.Topology.Topology.RemoveFacesBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFacesBySelectors</span></code></a>(topology[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveFacesBySelectors" title="topologicpy.Topology.Topology.RemoveFacesBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFacesBySelectors</span></code></a>(topology[, ...])</p></td>
 <td><p>Removes faces that contain the input list of selectors (vertices) from the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveVertices" title="topologicpy.Topology.Topology.RemoveVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveVertices</span></code></a>(topology[, vertices, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveVertices" title="topologicpy.Topology.Topology.RemoveVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveVertices</span></code></a>(topology[, vertices, tolerance])</p></td>
 <td><p>Removes the input list of vertices from the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ReplaceVertices" title="topologicpy.Topology.Topology.ReplaceVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReplaceVertices</span></code></a>(topology[, verticesA, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ReplaceVertices" title="topologicpy.Topology.Topology.ReplaceVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReplaceVertices</span></code></a>(topology[, verticesA, ...])</p></td>
 <td><p>Replaces the vertices in the first input list with the vertices in the second input list and rebuilds the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Rotate" title="topologicpy.Topology.Topology.Rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rotate</span></code></a>(topology[, origin, axis, angle, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Rotate" title="topologicpy.Topology.Topology.Rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rotate</span></code></a>(topology[, origin, axis, angle, ...])</p></td>
 <td><p>Rotates the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Scale" title="topologicpy.Topology.Topology.Scale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Scale</span></code></a>(topology[, origin, x, y, z])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RotateByEulerAngles" title="topologicpy.Topology.Topology.RotateByEulerAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RotateByEulerAngles</span></code></a>(topology[, origin, ...])</p></td>
+<td><p>Rotates the input topology using Euler angles (roll, pitch, yaw).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RotateByQuaternion" title="topologicpy.Topology.Topology.RotateByQuaternion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RotateByQuaternion</span></code></a>(topology[, origin, ...])</p></td>
+<td><p>Rotates the input topology using Quaternion rotations.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Scale" title="topologicpy.Topology.Topology.Scale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Scale</span></code></a>(topology[, origin, x, y, z])</p></td>
 <td><p>Scales the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SelectSubTopology" title="topologicpy.Topology.Topology.SelectSubTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelectSubTopology</span></code></a>(topology, selector[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SelectSubTopology" title="topologicpy.Topology.Topology.SelectSubTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelectSubTopology</span></code></a>(topology, selector[, ...])</p></td>
 <td><p>Returns the subtopology within the input topology based on the input selector and the subTopologyType.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SelfMerge" title="topologicpy.Topology.Topology.SelfMerge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelfMerge</span></code></a>(topology[, transferDictionaries, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SelfMerge" title="topologicpy.Topology.Topology.SelfMerge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelfMerge</span></code></a>(topology[, transferDictionaries, ...])</p></td>
 <td><p>Self merges the input topology to return the most logical topology type given the input data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetDictionary" title="topologicpy.Topology.Topology.SetDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code></a>(topology, dictionary)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetDictionary" title="topologicpy.Topology.Topology.SetDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code></a>(topology, dictionary)</p></td>
 <td><p>Sets the input topology's dictionary to the input dictionary</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedEdges" title="topologicpy.Topology.Topology.SharedEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedEdges</span></code></a>(topologyA, topologyB)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedEdges" title="topologicpy.Topology.Topology.SharedEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedEdges</span></code></a>(topologyA, topologyB)</p></td>
 <td><p>Returns the shared edges between the two input topologies</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedFaces" title="topologicpy.Topology.Topology.SharedFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedFaces</span></code></a>(topologyA, topologyB)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedFaces" title="topologicpy.Topology.Topology.SharedFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedFaces</span></code></a>(topologyA, topologyB)</p></td>
 <td><p>Returns the shared faces between the two input topologies</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedTopologies" title="topologicpy.Topology.Topology.SharedTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedTopologies</span></code></a>(topologyA, topologyB)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedTopologies" title="topologicpy.Topology.Topology.SharedTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedTopologies</span></code></a>(topologyA, topologyB)</p></td>
 <td><p>Returns the shared topologies between the two input topologies</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedVertices" title="topologicpy.Topology.Topology.SharedVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedVertices</span></code></a>(topologyA, topologyB)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedVertices" title="topologicpy.Topology.Topology.SharedVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedVertices</span></code></a>(topologyA, topologyB)</p></td>
 <td><p>Returns the shared vertices between the two input topologies</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedWires" title="topologicpy.Topology.Topology.SharedWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedWires</span></code></a>(topologyA, topologyB)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedWires" title="topologicpy.Topology.Topology.SharedWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedWires</span></code></a>(topologyA, topologyB)</p></td>
 <td><p>Returns the shared wires between the two input topologies</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Shells" title="topologicpy.Topology.Topology.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Shells" title="topologicpy.Topology.Topology.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(topology)</p></td>
 <td><p>Returns the shells of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Show" title="topologicpy.Topology.Topology.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(*topologies[, showVertices, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Show" title="topologicpy.Topology.Topology.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(*topologies[, showVertices, ...])</p></td>
 <td><p>Shows the input topology on screen.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Slice" title="topologicpy.Topology.Topology.Slice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Slice</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Slice" title="topologicpy.Topology.Topology.Slice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Slice</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SortBySelectors" title="topologicpy.Topology.Topology.SortBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SortBySelectors</span></code></a>(topologies, selectors[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SortBySelectors" title="topologicpy.Topology.Topology.SortBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SortBySelectors</span></code></a>(topologies, selectors[, ...])</p></td>
 <td><p>Sorts the input list of topologies according to the input list of selectors.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Spin" title="topologicpy.Topology.Topology.Spin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spin</span></code></a>(topology[, origin, triangulate, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Spin" title="topologicpy.Topology.Topology.Spin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spin</span></code></a>(topology[, origin, triangulate, ...])</p></td>
 <td><p>Spins the input topology around an axis to create a new topology.See <a class="reference external" href="https://en.wikipedia.org/wiki/Solid_of_revolution">https://en.wikipedia.org/wiki/Solid_of_revolution</a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SubTopologies" title="topologicpy.Topology.Topology.SubTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubTopologies</span></code></a>(topology[, subTopologyType])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SubTopologies" title="topologicpy.Topology.Topology.SubTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubTopologies</span></code></a>(topology[, subTopologyType])</p></td>
 <td><p>Returns the subtopologies of the input topology as specified by the subTopologyType input string.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SuperTopologies" title="topologicpy.Topology.Topology.SuperTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SuperTopologies</span></code></a>(topology, hostTopology[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SuperTopologies" title="topologicpy.Topology.Topology.SuperTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SuperTopologies</span></code></a>(topology, hostTopology[, ...])</p></td>
 <td><p>Returns the supertopologies connected to the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SymDif" title="topologicpy.Topology.Topology.SymDif"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymDif</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SymDif" title="topologicpy.Topology.Topology.SymDif"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymDif</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SymmetricDifference" title="topologicpy.Topology.Topology.SymmetricDifference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code></a>(topologyA, topologyB[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SymmetricDifference" title="topologicpy.Topology.Topology.SymmetricDifference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code></a>(topologyA, topologyB[, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Taper" title="topologicpy.Topology.Topology.Taper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Taper</span></code></a>(topology[, origin, ratioRange, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Taper" title="topologicpy.Topology.Topology.Taper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Taper</span></code></a>(topology[, origin, ratioRange, ...])</p></td>
 <td><p>Tapers the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TransferDictionaries" title="topologicpy.Topology.Topology.TransferDictionaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionaries</span></code></a>(sources, sinks[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TransferDictionaries" title="topologicpy.Topology.Topology.TransferDictionaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionaries</span></code></a>(sources, sinks[, ...])</p></td>
 <td><p>Transfers the dictionaries from the list of sources to the list of sinks.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TransferDictionariesBySelectors" title="topologicpy.Topology.Topology.TransferDictionariesBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionariesBySelectors</span></code></a>(topology, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TransferDictionariesBySelectors" title="topologicpy.Topology.Topology.TransferDictionariesBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionariesBySelectors</span></code></a>(topology, ...)</p></td>
 <td><p>Transfers the dictionaries of the list of selectors to the subtopologies of the input topology based on the input parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Transform" title="topologicpy.Topology.Topology.Transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transform</span></code></a>(topology, matrix)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Transform" title="topologicpy.Topology.Topology.Transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transform</span></code></a>(topology, matrix)</p></td>
 <td><p>Transforms the input topology by the input 4X4 transformation matrix.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Translate" title="topologicpy.Topology.Topology.Translate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Translate</span></code></a>(topology[, x, y, z])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Translate" title="topologicpy.Topology.Topology.Translate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Translate</span></code></a>(topology[, x, y, z])</p></td>
 <td><p>Translates (moves) the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TranslateByDirectionDistance" title="topologicpy.Topology.Topology.TranslateByDirectionDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TranslateByDirectionDistance</span></code></a>(topology[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TranslateByDirectionDistance" title="topologicpy.Topology.Topology.TranslateByDirectionDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TranslateByDirectionDistance</span></code></a>(topology[, ...])</p></td>
 <td><p>Translates (moves) the input topology along the input direction by the specified distance.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Triangulate" title="topologicpy.Topology.Topology.Triangulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triangulate</span></code></a>(topology[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Triangulate" title="topologicpy.Topology.Topology.Triangulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triangulate</span></code></a>(topology[, ...])</p></td>
 <td><p>Triangulates the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Twist" title="topologicpy.Topology.Topology.Twist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Twist</span></code></a>(topology[, origin, angleRange, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Twist" title="topologicpy.Topology.Topology.Twist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Twist</span></code></a>(topology[, origin, angleRange, ...])</p></td>
 <td><p>Twists the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Type" title="topologicpy.Topology.Topology.Type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Type</span></code></a>(topology)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Type" title="topologicpy.Topology.Topology.Type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Type</span></code></a>(topology)</p></td>
 <td><p>Returns the type of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TypeAsString" title="topologicpy.Topology.Topology.TypeAsString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TypeAsString</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TypeAsString" title="topologicpy.Topology.Topology.TypeAsString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TypeAsString</span></code></a>(topology)</p></td>
 <td><p>Returns the type of the input topology as a string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TypeID" title="topologicpy.Topology.Topology.TypeID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TypeID</span></code></a>([name])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TypeID" title="topologicpy.Topology.Topology.TypeID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TypeID</span></code></a>([name])</p></td>
 <td><p>Returns the type id of the input name string.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.UUID" title="topologicpy.Topology.Topology.UUID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UUID</span></code></a>(topology[, namespace])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.UUID" title="topologicpy.Topology.Topology.UUID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UUID</span></code></a>(topology[, namespace])</p></td>
 <td><p>Generate a UUID v5 based on the provided content and a fixed namespace.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Unflatten" title="topologicpy.Topology.Topology.Unflatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Unflatten</span></code></a>(topology[, origin, direction])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Unflatten" title="topologicpy.Topology.Topology.Unflatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Unflatten</span></code></a>(topology[, origin, direction])</p></td>
 <td><p>Unflattens the input topology such that the world origin is translated to the input origin and the input topology is rotated such that the Up direction (see Vector.Up()) is aligned with the input vector.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Union" title="topologicpy.Topology.Topology.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Union" title="topologicpy.Topology.Topology.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean()</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Vertices" title="topologicpy.Topology.Topology.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(topology)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Vertices" title="topologicpy.Topology.Topology.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(topology)</p></td>
 <td><p>Returns the vertices of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Wires" title="topologicpy.Topology.Topology.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Wires" title="topologicpy.Topology.Topology.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(topology)</p></td>
 <td><p>Returns the wires of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.XOR" title="topologicpy.Topology.Topology.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(topologyA, topologyB[, tranDict, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.XOR" title="topologicpy.Topology.Topology.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(topologyA, topologyB[, tranDict, tolerance])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
 </tbody>
@@ -918,6 +939,144 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Cell or topologic_core.Face</dt><dd><p>The bounding box of the input topology.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByBIMFile">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByBIMFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guidKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'guid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'type'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[255,</span> <span class="pre">255,</span> <span class="pre">255,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Structure'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'author'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dateKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'date'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByBIMFile" title="Permalink to this definition"></a></dt>
+<dd><p>Imports topologies from the input BIM (dotbimpy.file.File) file object. See <a class="reference external" href="https://dotbim.net/">https://dotbim.net/</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>file</strong><span class="classifier">dotbimpy.file.File</span></dt><dd><p>The input dotbim file.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+</dd>
+<dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. The default is “1.0.0”.</p>
+</dd>
+<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. The default is “guid”.</p>
+</dd>
+<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. The default is “color”. If no color is found, the defaultColor parameter is used.</p>
+</dd>
+<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. The default is “type”. If no type is found, the defaultType parameter is used.</p>
+</dd>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. The default is [255,255,255,1] which is opaque white.</p>
+</dd>
+<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. The default is “Structure”.</p>
+</dd>
+<dt><strong>authorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the author of the topology. The default is “author”.</p>
+</dd>
+<dt><strong>dateKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the creation date of the topology. This should be in the formate “DD.MM.YYYY”. If no date is found the date of import is used.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of imported topologies</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByBIMPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByBIMPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guidKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'guid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'type'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[255,</span> <span class="pre">255,</span> <span class="pre">255,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Structure'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'author'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dateKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'date'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByBIMPath" title="Permalink to this definition"></a></dt>
+<dd><p>Imports topologies from the input BIM file. See <a class="reference external" href="https://dotbim.net/">https://dotbim.net/</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path :str</strong></dt><dd><p>The path to the .bim file.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+</dd>
+<dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. The default is “1.0.0”.</p>
+</dd>
+<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. The default is “guid”.</p>
+</dd>
+<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. The default is “color”. If no color is found, the defaultColor parameter is used.</p>
+</dd>
+<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. The default is “type”. If no type is found, the defaultType parameter is used.</p>
+</dd>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. The default is [255,255,255,1] which is opaque white.</p>
+</dd>
+<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. The default is “Structure”.</p>
+</dd>
+<dt><strong>authorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the author of the topology. The default is “author”.</p>
+</dd>
+<dt><strong>dateKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the creation date of the topology. This should be in the formate “DD.MM.YYYY”. If no date is found the date of import is used.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of imported topologies</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByBIMString">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByBIMString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guidKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'guid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'type'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[255,</span> <span class="pre">255,</span> <span class="pre">255,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Structure'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">authorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'author'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dateKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'date'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByBIMString" title="Permalink to this definition"></a></dt>
+<dd><p>Imports topologies from the input BIM file. See <a class="reference external" href="https://dotbim.net/">https://dotbim.net/</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>string :str</strong></dt><dd><p>The input dotbim str (in JSON format).</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+</dd>
+<dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. The default is “1.0.0”.</p>
+</dd>
+<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. The default is “guid”.</p>
+</dd>
+<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. The default is “color”. If no color is found, the defaultColor parameter is used.</p>
+</dd>
+<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. The default is “type”. If no type is found, the defaultType parameter is used.</p>
+</dd>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. The default is [255,255,255,1] which is opaque white.</p>
+</dd>
+<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. The default is “Structure”.</p>
+</dd>
+<dt><strong>authorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the author of the topology. The default is “author”.</p>
+</dd>
+<dt><strong>dateKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the creation date of the topology. This should be in the formate “DD.MM.YYYY”. If no date is found the date of import is used.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of imported topologies</p>
 </dd>
 </dl>
 </dd>
@@ -1770,6 +1929,50 @@ USE WITH CARE. This methods deletes dictionaries, contents, and contexts</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.ExportToBIM">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToBIM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'1.0.0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">guidKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'guid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'type'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[255,</span> <span class="pre">255,</span> <span class="pre">255,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Structure'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'topologicpy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ExportToBIM" title="Permalink to this definition"></a></dt>
+<dd><p>Exports the input topology to a BIM file. See <a class="reference external" href="https://dotbim.net/">https://dotbim.net/</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topologies</strong><span class="classifier">list or topologic_core.Topology</span></dt><dd><p>The input list of topologies or a single topology. The .bim format is restricted to triangulated meshes. No wires, edges, or vertices are supported.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+</dd>
+<dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. The default is “1.0.0”.</p>
+</dd>
+<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the guid of the topology. It is case insensitive. The default is “guid”. If no guid is found, one is generated automatically.</p>
+</dd>
+<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. It is case insensitive. The default is “color”. If no color is found, the defaultColor parameter is used.</p>
+</dd>
+<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. It is case insensitive. The default is “type”. If no type is found, the defaultType parameter is used.</p>
+</dd>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. The default is [255,255,255,1] which is opaque white.</p>
+</dd>
+<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. The default is “Structure”.</p>
+</dd>
+<dt><strong>author</strong><span class="classifier">str , optional</span></dt><dd><p>The author of the topology. The default is “topologicpy”.</p>
+</dd>
+<dt><strong>date</strong><span class="classifier">str , optional</span></dt><dd><p>The creation date of the topology. This should be in the formate “DD.MM.YYYY”. The default is None which uses the date of export.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the export operation is successful. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ExportToBREP">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToBREP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ExportToBREP" title="Permalink to this definition"></a></dt>
 <dd><p>Exports the input topology to a BREP file. See <a class="reference external" href="https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html">https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html</a>.</p>
@@ -1886,6 +2089,26 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>bool</dt><dd><p>True if the export operation is successful. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.ExternalBoundary">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExternalBoundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ExternalBoundary" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the external boundary of the input topology.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Topology</dt><dd><p>The external boundary of the input topology.</p>
 </dd>
 </dl>
 </dd>
@@ -2610,6 +2833,66 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dt><strong>axis</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the axis of rotation. The default is [0, 0, 1] which equates to the Z axis.</p>
 </dd>
 <dt><strong>angle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle of rotation in degrees. The default is 0.</p>
+</dd>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Topology</dt><dd><p>The rotated topology.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.RotateByEulerAngles">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RotateByEulerAngles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roll</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pitch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yaw</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.RotateByEulerAngles" title="Permalink to this definition"></a></dt>
+<dd><p>Rotates the input topology using Euler angles (roll, pitch, yaw). See <a class="reference external" href="https://en.wikipedia.org/wiki/Aircraft_principal_axes">https://en.wikipedia.org/wiki/Aircraft_principal_axes</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+</dd>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. The default is None.</p>
+</dd>
+<dt><strong>roll</strong><span class="classifier">float , optional</span></dt><dd><p>The rotation angle in degrees around the X-axis. The default is 0.</p>
+</dd>
+<dt><strong>pitch = float , optional</strong></dt><dd><p>The rotation angle in degrees around the Y-axis. The default is 0.</p>
+</dd>
+<dt><strong>yaw = float , optional</strong></dt><dd><p>The rotation angle in degrees around the Z-axis. The default is 0.</p>
+</dd>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Topology</dt><dd><p>The rotated topology.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.RotateByQuaternion">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RotateByQuaternion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quaternion</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.RotateByQuaternion" title="Permalink to this definition"></a></dt>
+<dd><p>Rotates the input topology using Quaternion rotations. See <a class="reference external" href="https://en.wikipedia.org/wiki/Quaternion">https://en.wikipedia.org/wiki/Quaternion</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+</dd>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. The default is None.</p>
+</dd>
+<dt><strong>quaternion</strong><span class="classifier">list or numpy array of size 4</span></dt><dd><p>The input Quaternion list. It should be in the form [x, y, z, w].</p>
 </dd>
 <dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
 </dd>

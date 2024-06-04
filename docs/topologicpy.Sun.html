@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Sun module &mdash; topologicpy 0.7.12 documentation</title>
+  <title>topologicpy.Sun module &mdash; topologicpy 0.7.14 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.12
+                0.7.14
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -183,7 +183,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Sunset" title="topologicpy.Sun.Sun.Sunset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sunset</span></code></a>(latitude, longitude, date)</p></td>
 <td><p>Returns the Sunset datetime.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Vector" title="topologicpy.Sun.Sun.Vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vector</span></code></a>(latitude, longitude, date[, north])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Vector" title="topologicpy.Sun.Sun.Vector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vector</span></code></a>(latitude, longitude, date[, north, ...])</p></td>
 <td><p>Returns the Sun as a vector.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Sun.Sun.Vertex" title="topologicpy.Sun.Sun.Vertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertex</span></code></a>(latitude, longitude, date[, origin, ...])</p></td>
@@ -559,7 +559,7 @@ The default is None.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.Vector">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Vector" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Vector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Vector" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the Sun as a vector.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
