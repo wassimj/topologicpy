@@ -335,7 +335,7 @@ def test_main():
     chkC1 = Face.IsCoplanar(fV1, fV2)               # without optional inputs
     assert isinstance(chkC1, bool), "Face.IsCoplanar. Should be boolean"
     # test 2
-    ChkC2 = Face.IsCoplanar(f1, c1, 0.005)        # with optional inputs
+    ChkC2 = Face.IsCoplanar(f1, c1, mantissa=6, tolerance=0.005)        # with optional inputs
     assert isinstance(ChkC2, bool), "Face.IsCoplanar. Should be boolean"
 
     # Case 27 - Skeleton
@@ -524,7 +524,7 @@ def test_main():
     r3 = Topology.Translate(r2, -0.3,-0.4,0)
     r2 = Topology.SelfMerge(Topology.Union(r2, r3))
     r4 = Wire.Rectangle(origin=Vertex.ByCoordinates(-4.5, -2, 0), width=0.2, length=0.2)
-    r2 = Shell.ExternalBoundary(r2)
+    r2 = Face.ExternalBoundary(r2)
     r5 = Topology.Translate(r2, 3, -1.5, 0)
     r6 = Topology.Translate(r5, 0.2, 0.4, 0)
     face = Face.ByWires(r1, [r2,r4,r5])

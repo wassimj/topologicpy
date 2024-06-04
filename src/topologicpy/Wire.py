@@ -416,7 +416,7 @@ class Wire(Topology):
         if Wire.IsClosed(wire):
             e1 = newEdges[-1]
             e2 = newEdges[0]
-            intV = Edge.Intersect2D(e1,e2)
+            intV = Topology.Intersect(e1,e2)
             if intV:
                 newVertices.append(intV)
                 dupVertices.append(vertices[0])
@@ -433,7 +433,7 @@ class Wire(Topology):
                 normal = [normal[0]*finalOffset*10, normal[1]*finalOffset*10, normal[2]*finalOffset*10]
                 tempV = Vertex.ByCoordinates(vertices[0].X()+normal[0], vertices[0].Y()+normal[1], vertices[0].Z()+normal[2])
                 tempEdge2 = Edge.ByVertices([vertices[0], tempV], tolerance=tolerance, silent=True)
-                intV = Edge.Intersect2D(tempEdge1,tempEdge2)
+                intV = Topology.Intersect(tempEdge1,tempEdge2)
                 newVertices.append(intV)
                 dupVertices.append(vertices[0])
         else:
@@ -442,7 +442,7 @@ class Wire(Topology):
         for i in range(len(newEdges)-1):
             e1 = newEdges[i]
             e2 = newEdges[i+1]
-            intV = Edge.Intersect2D(e1,e2)
+            intV = Topology.Intersect(e1,e2)
             if intV:
                 newVertices.append(intV)
                 dupVertices.append(vertices[i+1])
@@ -457,7 +457,7 @@ class Wire(Topology):
                 normal = [normal[0]*finalOffset*10, normal[1]*finalOffset*10, normal[2]*finalOffset*10]
                 tempV = Vertex.ByCoordinates(vertices[i+1].X()+normal[0], vertices[i+1].Y()+normal[1], vertices[i+1].Z()+normal[2])
                 tempEdge2 = Edge.ByVertices([vertices[i+1], tempV], tolerance=tolerance, silent=True)
-                intV = Edge.Intersect2D(tempEdge1,tempEdge2)
+                intV = Topology.Intersect(tempEdge1,tempEdge2)
                 newVertices.append(intV)
                 dupVertices.append(vertices[i+1])
 
@@ -484,6 +484,7 @@ class Wire(Topology):
                     finalMiterThreshold = miterThreshold
                 if Vertex.Distance(vertices[i], newVertices[i]) > abs(finalMiterThreshold):
                     st = Topology.SuperTopologies(newVertices[i], newWire, topologyType="edge")
+                    Topology.Show(st, wire, renderer="browser")
                     if len(st) > 1:
                         e1 = st[0]
                         e2 = st[1]
@@ -497,8 +498,11 @@ class Wire(Topology):
                             miterEdge = Edge.ByVertices([nv2,nv3], tolerance=tolerance)
                             if miterEdge:
                                 miterEdge = Edge.SetLength(miterEdge, abs(offset)*10)
-                                msv = Edge.Intersect2D(miterEdge, e1)
-                                mev = Edge.Intersect2D(miterEdge, e2)
+                                msv = Topology.Intersect(miterEdge, e1)
+                                mev = Topology.Intersect(miterEdge, e2)
+                                #if msv == None or mev == None:
+                                    #Topology.Show(miterEdge, wire, renderer="browser")
+                                    #Topology.Show(miterEdge, e2, wire, renderer="browser")
                                 if (Vertex.IsInternal(msv, e1,tolerance=0.01) and (Vertex.IsInternal(mev, e2, tolerance=0.01))):
                                     miterEdge = Edge.ByVertices([msv, mev], tolerance=tolerance)
                                     if miterEdge:
@@ -640,7 +644,7 @@ class Wire(Topology):
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Wire.Circle - Error: The input origin parameter is not a valid Vertex. Retruning None.")
@@ -1065,7 +1069,7 @@ class Wire(Topology):
             return math.cos(math.radians(angle))
         def sin(angle):
             return math.sin(math.radians(angle))
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         d = cos(30)*radius
         v1 = Vertex.ByCoordinates(0, 0, 0)
@@ -1206,7 +1210,7 @@ class Wire(Topology):
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             return None
@@ -1345,6 +1349,31 @@ class Wire(Topology):
         interior_angles = Wire.InteriorAngles(wire, mantissa=mantissa)
         exterior_angles = [round(360-a, mantissa) for a in interior_angles]
         return exterior_angles
+    
+    @staticmethod
+    def ExternalBoundary(wire):
+        """
+        Returns the external boundary (cluster of vertices where degree == 1) of the input wire.
+
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire.
+
+        Returns
+        -------
+        topologic_core.Cluster
+            The external boundary of the input wire. This is a cluster of vertices of degree == 1.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Cluster import Cluster
+
+        if not Topology.IsInstance(wire, "Wire"):
+            print("Wire.ExternalBoundary - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+        return Cluster.ByTopologies([v for v in Topology.Vertices(wire) if (Vertex.Degree(v, wire, topologyType="edge") == 1)])
     
     @staticmethod
     def Fillet(wire, radius: float = 0, radiusKey: str = None, tolerance: float = 0.0001, silent: bool = False):
@@ -1898,7 +1927,7 @@ class Wire(Topology):
         from topologicpy.Vector import Vector
         from topologicpy.Topology import Topology
 
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
         if not Topology.IsInstance(origin, "Vertex"):
             print("Wire.Line - Error: The input origin is not a valid vertex. Returning None.")
@@ -2012,7 +2041,7 @@ class Wire(Topology):
         if not Topology.IsInstance(wire, "Wire"):
             print("Wire.Planarize - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
         if not Topology.IsInstance(origin, "Vertex"):
             print("Wire.Planarize - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -2131,7 +2160,7 @@ class Wire(Topology):
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Wire.Rectangle - Error: specified origin is not a topologic vertex. Retruning None.")
@@ -2566,7 +2595,7 @@ class Wire(Topology):
         from topologicpy.Topology import Topology
         import math
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Wire.Spiral - Error: the input origin is not a valid topologic Vertex. Returning None.")
@@ -2803,7 +2832,7 @@ class Wire(Topology):
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
         
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Wire.Squircle - Error: The input origin parameter is not a valid Vertex. Retruning None.")
@@ -2874,7 +2903,7 @@ class Wire(Topology):
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             return None
@@ -3011,7 +3040,7 @@ class Wire(Topology):
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             return None
@@ -3088,7 +3117,7 @@ class Wire(Topology):
         if wire_length < tolerance:
             print("Wire.VertexDistance: The input wire parameter is a degenerate topologic wire. Returning None.")
             return None
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Wire.StartVertex(wire)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Wire.VertexDistance - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -3174,7 +3203,7 @@ class Wire(Topology):
         if not Wire.IsManifold(wire):
             print("Wire.VertexAtParameter - Error: The input wire parameter is non-manifold. Returning None.")
             return None
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Wire.StartVertex(wire)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Wire.VertexByDistance - Error: The input origin parameter is not a valid topologic vertex. Returning None.")

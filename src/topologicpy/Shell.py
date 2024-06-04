@@ -1047,7 +1047,7 @@ class Shell():
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             return None
@@ -1165,7 +1165,7 @@ class Shell():
         if not Topology.IsInstance(shell, "Shell"):
             print("Shell.Planarize - Error: The input wire parameter is not a valid topologic shell. Returning None.")
             return None
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
         if not Topology.IsInstance(origin, "Vertex"):
             print("Shell.Planarize - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -1217,7 +1217,7 @@ class Shell():
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             return None
@@ -1329,7 +1329,6 @@ class Shell():
             return None
         shell = Shell.Skeleton(flat_face, tolerance=tolerance)
         faces = Shell.Faces(shell)
-        Topology.Show(shell)
         if not faces:
             return None
         triangles = []

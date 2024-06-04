@@ -22,22 +22,167 @@ from collections import namedtuple
 import os
 import warnings
 
-try:
-	from euclid import *
-except:
-	print("Polyskel - Installing required euclid library.")
-	try:
-		os.system("pip install euclid")
-	except:
-		os.system("pip install euclid --user")
-	try:
-		from euclid import *
-	except:
-		warnings.warn("Polyskel - ERROR: Could not import euclid.")
+# try:
+# 	from euclid import *
+# except:
+# 	print("Polyskel - Installing required euclid library.")
+# 	try:
+# 		os.system("pip install euclid")
+# 	except:
+# 		os.system("pip install euclid --user")
+# 	try:
+# 		from euclid import *
+# 	except:
+# 		warnings.warn("Polyskel - ERROR: Could not import euclid.")
 
 log = logging.getLogger("__name__")
 
 EPSILON = 0.00001
+
+
+
+
+import math
+
+class Point2:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __sub__(self, other):
+        return Point2(self.x - other.x, self.y - other.y)
+
+    def __add__(self, other):
+        return Point2(self.x + other.x, self.y + other.y)
+	
+    def __mul__(self, scalar):
+        return Point2(self.x * scalar, self.y * scalar)
+	
+    def __neg__(self):
+        return Point2(-self.x, -self.y)
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
+    def __abs__(self):
+        return math.sqrt(self.x ** 2 + self.y ** 2)
+	
+    def __iter__(self):
+        yield self.x
+        yield self.y
+	
+    def cross(self, other):
+        """
+        Computes the cross product of this point with another point.
+
+        Args:
+            other (Point2): The other point to compute the cross product with.
+
+        Returns:
+            float: The cross product value.
+        """
+        return self.x * other.y - self.y * other.x
+
+    def normalized(self):
+        length = abs(self)
+        return Point2(self.x / length, self.y / length)
+
+    def dot(self, other):
+        return self.x * other.x + self.y * other.y
+
+    def distance(self, other):
+        return abs(self - other)
+
+
+class Ray2:
+    def __init__(self, p, v):
+        self.p = p
+        self.v = v.normalized()
+
+    def __str__(self):
+        return f"Ray2({self.p}, {self.v})"
+	
+    def intersect(self, other):
+        """
+        Intersects this ray with another ray.
+
+        Args:
+            other (Ray2): The other ray to intersect with.
+
+        Returns:
+            Point2 or None: The intersection point if it exists, or None if the rays do not intersect.
+        """
+        # Check if the rays are parallel
+        if abs(self.v.dot(other.v)) == 1:
+            return None  # Rays are parallel and do not intersect
+        
+        # Calculate the intersection point using vector algebra
+        t = (other.p - self.p).cross(other.v) / self.v.cross(other.v)
+        if t >= 0:
+            return self.p + self.v * t  # Intersection point
+        else:
+            return None  # Rays do not intersect or intersection point lies behind self
+
+class Line2:
+    def __init__(self, p1, p2=None):
+        if p2 is None:
+            self.p = p1.p
+            self.v = p1.v
+        else:
+            self.p = p1
+            self.v = (p2 - p1).normalized()
+
+    def intersect(self, other):
+        # Line intersection formula
+        det = self.v.x * other.v.y - self.v.y * other.v.x
+        if abs(det) < EPSILON:
+            return None  # Lines are parallel
+
+        dx = other.p.x - self.p.x
+        dy = other.p.y - self.p.y
+        t = (dx * other.v.y - dy * other.v.x) / det
+        return Point2(self.p.x + t * self.v.x, self.p.y + t * self.v.y)
+
+    def distance(self, point):
+        # Perpendicular distance from a point to the line
+        return abs((point.x - self.p.x) * self.v.y - (point.y - self.p.y) * self.v.x) / abs(self.v)
+
+    def __str__(self):
+        return f"Line2({self.p}, {self.v})"
+
+
+class LineSegment2(Line2):
+    def __init__(self, p1, p2):
+        super().__init__(p1, p2)
+        self.p2 = p2
+
+    def intersect(self, other):
+        # Check if intersection point lies on both line segments
+        inter = super().intersect(other)
+        if inter is None:
+            return None
+
+        if self._on_segment(inter) and other._on_segment(inter):
+            return inter
+        return None
+
+    def _on_segment(self, point):
+        return (min(self.p.x, self.p2.x) - EPSILON <= point.x <= max(self.p.x, self.p2.x) + EPSILON and
+                min(self.p.y, self.p2.y) - EPSILON <= point.y <= max(self.p.y, self.p2.y) + EPSILON)
+
+    def __str__(self):
+        return f"LineSegment2({self.p}, {self.p2})"
+
+
+
+
+
+
+
+
+
+
+
 
 class Debug:
 	def __init__(self, image):

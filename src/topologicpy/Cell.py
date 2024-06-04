@@ -566,7 +566,7 @@ class Cell():
         from topologicpy.Topology import Topology
         from topologicpy.Cell import Cell
         from topologicpy.Vertex import Vertex
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Capsule - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -652,8 +652,10 @@ class Cell():
             The radius of the top circle of the cone. The default is 0.
         height : float , optional
             The height of the cone. The default is 1.
-        sides : int , optional
-            The number of sides of the cone. The default is 16.
+        uSides : int , optional
+            The number of circle segments of the cylinder. The default is 16.
+        vSides : int , optional
+            The number of vertical segments of the cylinder. The default is 1.
         direction : list , optional
             The vector representing the up direction of the cone. The default is [0, 0, 1].
         placement : str , optional
@@ -697,7 +699,7 @@ class Cell():
             f = Face.ByWire(w, tolerance=tolerance)
             faces.append(f)
             return Cell.ByFaces(faces, tolerance=tolerance)
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Cone - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -839,7 +841,7 @@ class Cell():
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Cylinder - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -1014,7 +1016,7 @@ class Cell():
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Dodecahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -1113,7 +1115,7 @@ class Cell():
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Sphere - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -1280,7 +1282,7 @@ class Cell():
                 returnTopology = Cluster.ByTopologies(faces)
             return returnTopology
         
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Hyperboloid - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -1352,7 +1354,7 @@ class Cell():
         from topologicpy.Topology import Topology
         import math
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Dodecahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -1520,7 +1522,7 @@ class Cell():
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Octahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -1751,7 +1753,7 @@ class Cell():
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Prism - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -1965,7 +1967,7 @@ class Cell():
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Sphere - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -2039,7 +2041,7 @@ class Cell():
         from topologicpy.Topology import Topology
         import math
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Tetrahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -2100,7 +2102,7 @@ class Cell():
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
         
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Torus - Error: The input origin parameter is not a valid topologic vertex. Returning None.")

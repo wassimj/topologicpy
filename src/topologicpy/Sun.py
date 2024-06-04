@@ -379,7 +379,7 @@ class Sun():
         return sunset
 
     @staticmethod
-    def Vector(latitude, longitude, date, north=0):
+    def Vector(latitude: float, longitude: float, date, north: float = 0, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the Sun as a vector.
 
@@ -402,7 +402,7 @@ class Sun():
         from topologicpy.Vector import Vector
         azimuth = Sun.Azimuth(latitude=latitude, longitude=longitude, date=date)
         altitude = Sun.Altitude(latitude=latitude, longitude=longitude, date=date)
-        return Vector.ByAzimuthAltitude(azimuth=azimuth, altitude=altitude, north=north, reverse=True)
+        return Vector.ByAzimuthAltitude(azimuth=azimuth, altitude=altitude, north=north, reverse=True, mantissa=mantissa, tolerance=tolerance)
 
     @staticmethod
     def Position(latitude, longitude, date, origin=None, radius=0.5, north=0, mantissa=6):
@@ -465,7 +465,7 @@ class Sun():
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
 
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
         vector = Vector.Reverse(Sun.Vector(latitude=latitude, longitude=longitude, date=date, north=north))
         sun_v = Topology.TranslateByDirectionDistance(origin, direction=vector, distance=radius)
@@ -501,7 +501,7 @@ class Sun():
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
 
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
         vector = Vector.Reverse(Sun.Vector(latitude=latitude, longitude=longitude, date=date, north=north))
         sun_v = Topology.TranslateByDirectionDistance(origin, direction=vector, distance=radius)
@@ -591,7 +591,7 @@ class Sun():
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
 
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
         if startTime == None:
             startTime = Sun.Sunrise(latitude=latitude, longitude=longitude, date=date)
@@ -780,7 +780,7 @@ class Sun():
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
 
         cutter = Cell.Prism(origin=origin, width=radius*4, length=radius*4, height=radius*2)

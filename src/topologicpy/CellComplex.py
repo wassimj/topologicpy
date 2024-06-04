@@ -679,6 +679,29 @@ class CellComplex():
         return cellComplex.ExternalBoundary()
 
     @staticmethod
+    def ExternalBoundary(cellComplex):
+        """
+        Returns the external boundary (cell) of the input cellComplex.
+
+        Parameters
+        ----------
+        cellComplex : topologic_core.CellComplex
+            The input cellComplex.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The external boundary of the input cellComplex.
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cellComplex, "CellComplex"):
+            print("CellComplex.ExternalBoundary - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
+            return None
+        return cellComplex.ExternalBoundary()
+    
+    @staticmethod
     def ExternalFaces(cellComplex) -> list:
         """
         Returns the external faces of the input cellComplex.
@@ -795,7 +818,7 @@ class CellComplex():
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("CellComplex.Octahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")

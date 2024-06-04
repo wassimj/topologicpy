@@ -855,6 +855,34 @@ class Topology():
         See Topology.Boolean()
 
         """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+
+        if Topology.IsInstance(topologyA, "Face") and Topology.IsInstance(topologyB, "Face"):
+            if Face.IsCoplanar(topologyA, topologyB):
+                topologyC = Topology.Boolean(topologyA, topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance)
+                if Topology.IsInstance(topologyC, "Cluster"):
+                    return topologyC
+                elif Topology.IsInstance(topologyC, "Shell"):
+                    eb_list = Shell.ExternalBoundary(topologyC)
+                    if Topology.IsInstance(eb_list, "Cluster"):
+                        eb_list = Topology.Wires(eb_list)
+                    else:
+                        eb_list = [eb_list]
+                    topologyA_wire = Face.ExternalBoundary(topologyA)
+                    topologyB_wire = Face.ExternalBoundary(topologyB)
+                    internal_boundaries = []
+                    found = False
+                    for i, eb in enumerate(eb_list):
+                        v = Topology.Vertices(eb)[0]
+                        if found == False:
+                            if Vertex.IsInternal(v, topologyA_wire) or Vertex.IsInternal(v, topologyB_wire):
+                                external_boundary = eb
+                                found = True
+                        else:
+                            internal_boundaries.append(eb)
+                    return Face.ByWires(external_boundary, internal_boundaries)
         return Topology.Boolean(topologyA, topologyB, operation="union", tranDict=tranDict, tolerance=tolerance)
     
     @staticmethod
@@ -865,6 +893,59 @@ class Topology():
         """
         return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="difference", tranDict=tranDict, tolerance=tolerance)
     
+    @staticmethod
+    def ExternalBoundary(topology):
+        """
+        Returns the external boundary of the input topology.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The external boundary of the input topology.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
+
+        if not Topology.IsInstance(topology, "Topology"):
+            print("Topology.ExternalBoundary - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        
+        if Topology.IsInstance(topology, "Vertex"):
+            return Vertex.ExternalBoundary(topology)
+        elif Topology.IsInstance(topology, "Edge"):
+            return Edge.ExternalBoundary(topology)
+        elif Topology.IsInstance(topology, "Wire"):
+            return Wire.ExternalBoundary(topology)
+        elif Topology.IsInstance(topology, "Face"):
+            return Face.ExternalBoundary(topology)
+        elif Topology.IsInstance(topology, "Shell"):
+            return Shell.ExternalBoundary(topology)
+        elif Topology.IsInstance(topology, "Cell"):
+            return Cell.ExternalBoundary(topology)
+        elif Topology.IsInstance(topology, "CellComplex"):
+            return CellComplex.ExternalBoundary(topology)
+        elif Topology.IsInstance(topology, "Cluster"):
+            eb_list = Cluster.CellComplexes(topology) + Cluster.FreeCells(topology) + Cluster.FreeShells(topology) + Cluster.FreeFaces(topology) + Cluster.FreeWires(topology) + Cluster.FreeEdges(topology) + Cluster.FreeVertices(topology)
+            return_list = []
+            for item in eb_list:
+                return_list.append(Topology.ExternalBoundary(item))
+            return Cluster.ByTopologies(return_list)
+        else:
+            return None
+        
     @staticmethod
     def Intersect(topologyA, topologyB, tranDict=False, tolerance=0.0001):
         """
@@ -1475,7 +1556,259 @@ class Topology():
             topDict = Dictionary.ByKeysValues(keys, values)
             Topology.SetDictionary(returnTopology, topDict)
         return returnTopology
+    
+    @staticmethod
+    def ByBIMPath(path, guidKey: str = "guid", colorKey: str = "color", typeKey: str = "type",
+                        defaultColor: list = [255,255,255,1], defaultType: str = "Structure",
+                        authorKey="author", dateKey="date", mantissa: int = 6, angTolerance: float = 0.001, tolerance: float = 0.0001):
+        """
+        Imports topologies from the input BIM file. See https://dotbim.net/
 
+        Parameters
+        ----------
+        path :str
+            The path to the .bim file.
+        path : str
+            The input file path.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+        version : str , optional
+            The desired version number for the BIM file. The default is "1.0.0".
+        guidKey : str , optional
+            The key to use to store the the guid of the topology. The default is "guid".
+        colorKey : str , optional
+            The key to use to find the the color of the topology. The default is "color". If no color is found, the defaultColor parameter is used.
+        typeKey : str , optional
+            The key to use to find the the type of the topology. The default is "type". If no type is found, the defaultType parameter is used.
+        defaultColor : list , optional
+            The default color to use for the topology. The default is [255,255,255,1] which is opaque white.
+        defaultType : str , optional
+            The default type to use for the topology. The default is "Structure".
+        authorKey : str , optional
+            The key to use to store the author of the topology. The default is "author".
+        dateKey : str , optional
+            The key to use to store the creation date of the topology. This should be in the formate "DD.MM.YYYY". If no date is found the date of import is used.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        angTolerance : float , optional
+                The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of imported topologies
+
+        """
+        import json
+        if not path:
+            print("Topology.ByBIMPath - Error: the input path parameter is not a valid path. Returning None.")
+            return None
+        topologies = None
+        try:
+            with open(path, "r") as bim_file:
+                json_string = str(bim_file.read())
+                topologies = Topology.ByBIMString(string=json_string, guidKey=guidKey, colorKey=colorKey, typeKey=typeKey,
+                            defaultColor=defaultColor, defaultType=defaultType,
+                            authorKey=authorKey, dateKey=dateKey, mantissa=mantissa, angTolerance=angTolerance, tolerance=tolerance)
+        except:
+            print("Topology.ByBIMPath - Error: the BIM file is not a valid file. Returning None.")
+        return topologies
+    
+    @staticmethod
+    def ByBIMString(string, guidKey: str = "guid", colorKey: str = "color", typeKey: str = "type",
+                        defaultColor: list = [255,255,255,1], defaultType: str = "Structure",
+                        authorKey: str = "author", dateKey: str = "date", mantissa: int = 6, angTolerance: float = 0.001, tolerance: float = 0.0001):
+        """
+        Imports topologies from the input BIM file. See https://dotbim.net/
+
+        Parameters
+        ----------
+        string :str
+            The input dotbim str (in JSON format).
+        path : str
+            The input file path.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+        version : str , optional
+            The desired version number for the BIM file. The default is "1.0.0".
+        guidKey : str , optional
+            The key to use to store the the guid of the topology. The default is "guid".
+        colorKey : str , optional
+            The key to use to find the the color of the topology. The default is "color". If no color is found, the defaultColor parameter is used.
+        typeKey : str , optional
+            The key to use to find the the type of the topology. The default is "type". If no type is found, the defaultType parameter is used.
+        defaultColor : list , optional
+            The default color to use for the topology. The default is [255,255,255,1] which is opaque white.
+        defaultType : str , optional
+            The default type to use for the topology. The default is "Structure".
+        authorKey : str , optional
+            The key to use to store the author of the topology. The default is "author".
+        dateKey : str , optional
+            The key to use to store the creation date of the topology. This should be in the formate "DD.MM.YYYY". If no date is found the date of import is used.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        angTolerance : float , optional
+                The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of imported topologies
+
+        """
+        @staticmethod
+        def convert_JSON_to_file(json_dictionary):
+            import dotbimpy
+            schema_version = json_dictionary["schema_version"]
+            elements = json_dictionary["elements"]
+            meshes = json_dictionary["meshes"]
+            created_info = json_dictionary["info"]
+
+            created_meshes = []
+            for i in meshes:
+                created_meshes.append(dotbimpy.Mesh(
+                    mesh_id=i["mesh_id"],
+                    coordinates=i["coordinates"],
+                    indices=i["indices"]
+                ))
+
+            created_elements = []
+            for i in elements:
+                new_element = dotbimpy.Element(
+                    mesh_id=i["mesh_id"],
+                    vector=dotbimpy.Vector(x=i["vector"]["x"],
+                                y=i["vector"]["y"],
+                                z=i["vector"]["z"]),
+                    rotation=dotbimpy.Rotation(qx=i["rotation"]["qx"],
+                                    qy=i["rotation"]["qy"],
+                                    qz=i["rotation"]["qz"],
+                                    qw=i["rotation"]["qw"]),
+                    info=i["info"],
+                    color=dotbimpy.Color(r=i["color"]["r"],
+                                g=i["color"]["g"],
+                                b=i["color"]["b"],
+                                a=i["color"]["a"]),
+                    type=i["type"],
+                    guid=i["guid"]
+                )
+                try:
+                    new_element.face_colors = i["face_colors"]
+                except KeyError as e:
+                    if str(e) == "'face_colors'":
+                        pass
+                    else:
+                        raise
+                created_elements.append(new_element)
+
+            file = dotbimpy.File(schema_version=schema_version, meshes=created_meshes, elements=created_elements, info=created_info)
+            return file
+        json_dictionary = json.loads(string)
+        file = convert_JSON_to_file(json_dictionary)
+        return Topology.ByBIMFile(file, guidKey=guidKey, colorKey=colorKey, typeKey=typeKey,
+                                  defaultColor=defaultColor, defaultType=defaultType,
+                                  authorKey=authorKey, dateKey=dateKey,
+                                  mantissa=mantissa, angTolerance=angTolerance, tolerance=tolerance)
+    @staticmethod
+    def ByBIMFile(file, guidKey: str = "guid", colorKey: str = "color", typeKey: str = "type",
+                        defaultColor: list = [255,255,255,1], defaultType: str = "Structure",
+                        authorKey="author", dateKey="date", mantissa: int = 6, angTolerance: float = 0.001, tolerance: float = 0.0001):
+        """
+        Imports topologies from the input BIM (dotbimpy.file.File) file object. See https://dotbim.net/
+
+        Parameters
+        ----------
+        file : dotbimpy.file.File
+            The input dotbim file.
+        path : str
+            The input file path.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+        version : str , optional
+            The desired version number for the BIM file. The default is "1.0.0".
+        guidKey : str , optional
+            The key to use to store the the guid of the topology. The default is "guid".
+        colorKey : str , optional
+            The key to use to find the the color of the topology. The default is "color". If no color is found, the defaultColor parameter is used.
+        typeKey : str , optional
+            The key to use to find the the type of the topology. The default is "type". If no type is found, the defaultType parameter is used.
+        defaultColor : list , optional
+            The default color to use for the topology. The default is [255,255,255,1] which is opaque white.
+        defaultType : str , optional
+            The default type to use for the topology. The default is "Structure".
+        authorKey : str , optional
+            The key to use to store the author of the topology. The default is "author".
+        dateKey : str , optional
+            The key to use to store the creation date of the topology. This should be in the formate "DD.MM.YYYY". If no date is found the date of import is used.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        angTolerance : float , optional
+                The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of imported topologies
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import datetime
+
+        file_info = file.info
+        elements = file.elements
+        meshes = file.meshes
+        final_topologies = []
+        topologies = []
+        id_list = []
+        for mesh in meshes:
+            id_list.append(mesh.mesh_id)
+            coordinates = mesh.coordinates
+            indices = mesh.indices
+
+            coordinates = [coordinates[i:i + 3] for i in range(0, len(coordinates),3)]
+            indices = [indices[i:i + 3] for i in range(0, len(indices),3)]
+            topology = Topology.SelfMerge(Topology.ByGeometry(vertices=coordinates, faces=indices, tolerance=tolerance))
+            topologies.append(topology)
+        
+        for element in elements:
+            element_info = element.info
+            element_info[typeKey] = element.type
+            element_info[colorKey] = [element.color.r, element.color.g, element.color.b, float(element.color.a)/float(255)]
+            try:
+                element_info[guidKey] = element.guid
+            except:
+                element_info[guidKey] = str(uuid.uuid4())
+            try:
+                element_info[authorKey] = file_info['author']
+            except:
+                element_info[authorKey] = "topologicpy"
+            # Get the current date
+            current_date = datetime.datetime.now()
+            # Format the date as a string in DD.MM.YYYY format
+            formatted_date = current_date.strftime("%d.%m.%Y")
+            try:
+                element_info[dateKey] = file_info['date']
+            except:
+                element_info[dateKey] = formatted_date
+            d = Dictionary.ByPythonDictionary(element_info)
+            mesh_id = element.mesh_id
+            quat = element.rotation
+            quaternion = [quat.qx, quat.qy, quat.qz, quat.qw]
+            #roll, pitch, yaw = quaternion_to_euler([rot.qx, rot.qy, rot.qz, rot.qw])
+            vector = element.vector
+            topology = topologies[mesh_id]
+            topology = Topology.RotateByQuaternion(topology=topology, origin=Vertex.Origin(), quaternion=quaternion, angTolerance=angTolerance, tolerance=tolerance)
+            topology = Topology.Translate(topology, vector.x, vector.y, vector.z)
+            topology = Topology.SetDictionary(topology, d)
+            final_topologies.append(topology)
+        return final_topologies
     @staticmethod
     def ByBREPFile(file):
         """
@@ -3318,6 +3651,157 @@ class Topology():
         return Cluster.ByTopologies(newTopologies)
     
     @staticmethod
+    def ExportToBIM(topologies, path : str, overwrite: bool = False, version: str = "1.0.0",
+                    guidKey: str = "guid", colorKey: str = "color", typeKey: str = "type",
+                    defaultColor: list = [255,255,255,1], defaultType: str = "Structure",
+                    author: str = "topologicpy", date: str = None, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Exports the input topology to a BIM file. See https://dotbim.net/
+
+        Parameters
+        ----------
+        topologies : list or topologic_core.Topology
+            The input list of topologies or a single topology. The .bim format is restricted to triangulated meshes. No wires, edges, or vertices are supported.
+        path : str
+            The input file path.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+        version : str , optional
+            The desired version number for the BIM file. The default is "1.0.0".
+        guidKey : str , optional
+            The key to use to find the the guid of the topology. It is case insensitive. The default is "guid". If no guid is found, one is generated automatically.
+        colorKey : str , optional
+            The key to use to find the the color of the topology. It is case insensitive. The default is "color". If no color is found, the defaultColor parameter is used.
+        typeKey : str , optional
+            The key to use to find the the type of the topology. It is case insensitive. The default is "type". If no type is found, the defaultType parameter is used.
+        defaultColor : list , optional
+            The default color to use for the topology. The default is [255,255,255,1] which is opaque white.
+        defaultType : str , optional
+            The default type to use for the topology. The default is "Structure".
+        author : str , optional
+            The author of the topology. The default is "topologicpy".
+        date : str , optional
+            The creation date of the topology. This should be in the formate "DD.MM.YYYY". The default is None which uses the date of export.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the export operation is successful. False otherwise.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Cluster import Cluster
+        import datetime
+        from os.path import exists
+        
+        try:
+            import dotbimpy
+        except:
+            print("Topology - Installing required dotbimpy library.")
+            try:
+                os.system("pip install dotbimpy")
+            except:
+                os.system("pip install dotbimpy --user")
+            try:
+                import dotbimpy
+                print("Topology - dotbimpy library installed successfully.")
+            except:
+                warnings.warn("Topology - Error: Could not import dotbimpy. Please install the dotbimpy library manually. Returning None.")
+                return None
+        # Make sure the file extension is .brep
+        ext = path[len(path)-4:len(path)]
+        if ext.lower() != ".bim":
+            path = path+".bim"
+        if not overwrite and exists(path):
+            print("Topology.ExportToBIM - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
+        # Get the current date
+        current_date = datetime.datetime.now()
+
+        # Format the date as a string in DD.MM.YYYY format
+        formatted_date = current_date.strftime("%d.%m.%Y")
+        
+        if Topology.IsInstance(topologies, "Topology"):
+            topologies = [topologies]
+        # Prepare input data
+        final_topologies = []
+        for topology in topologies:
+            d = Topology.Dictionary(topology)
+            topology = Topology.SelfMerge(Topology.Triangulate(topology, tolerance=tolerance), tolerance=tolerance)
+            topology = Topology.SetDictionary(topology, d)
+            if Topology.IsInstance(topology, "Cluster"):
+                final_topologies += Cluster.CellComplexes(topology) + Cluster.FreeCells(topology, tolerance=tolerance) + Cluster.FreeShells(topology, tolerance=tolerance) + Cluster.FreeFaces(topology, tolerance=tolerance)
+            elif Topology.IsInstance(topology, "CellComplex") or Topology.IsInstance(topology, "Cell") or Topology.IsInstance(topology, "Shell") or Topology.IsInstance(topology, "Face"):
+                final_topologies.append(topology)
+        elements = []
+        meshes = []
+        for i, topology in enumerate(final_topologies):
+            geo_dict = Topology.Geometry(topology, mantissa=mantissa)
+            coordinates = Helper.Flatten(geo_dict['vertices'])
+            indices = Helper.Flatten(geo_dict['faces'])
+            d = Topology.Dictionary(topology)
+            color = Dictionary.ValueAtKey(d, colorKey)
+            r, g, b, a = defaultColor
+            if isinstance(color, list):
+                if len(color) > 2:
+                    r = color[0]
+                    g = color[1]
+                    b = color[2]
+                if len(color) == 3:
+                    a = color[3]
+            color = dotbimpy.Color(r=r, g=g, b=b, a=int(a*255))
+            guid = Dictionary.ValueAtKey(d, guidKey)
+            if not guid:
+                guid = str(uuid.uuid4())
+
+            type = Dictionary.ValueAtKey(d, typeKey)
+            if not type:
+                type = defaultType
+            info = Dictionary.PythonDictionary(d)
+            info['color'] = str([r,g,b,a])
+            info['guid'] = guid
+            info['type'] = type
+            print("info", info)
+            rotation = dotbimpy.Rotation(qx=0, qy=0, qz=0, qw=1.0)
+            vector = dotbimpy.Vector(x=0, y=0, z=0)
+            
+            # Instantiate Mesh object
+            mesh = dotbimpy.Mesh(mesh_id=i, coordinates=coordinates, indices=indices)
+            meshes.append(mesh)
+            # Instantiate Element object
+            element = dotbimpy.Element(mesh_id=i,
+                            vector=vector,
+                            guid=guid,
+                            info=info,
+                            rotation=rotation,
+                            type=type,
+                            color=color)
+            elements.append(element)
+
+        # File meta data
+        file_info = {
+            "Author": author,
+            "Date": formatted_date
+        }
+        
+        print("Meshes:", meshes)
+        print("Elements:", elements)
+
+        # Instantiate and save File object
+        file = dotbimpy.File(version, meshes=meshes, elements=elements, info=file_info)
+        try:
+            file.save(path)
+            return True
+        except:
+            return False
+
+    @staticmethod
     def ExportToBREP(topology, path, overwrite=False, version=3):
         """
         Exports the input topology to a BREP file. See https://dev.opencascade.org/doc/occt-6.7.0/overview/html/occt_brep_format.html.
@@ -4261,11 +4745,11 @@ class Topology():
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Vector import Vector
-
+        
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.Flatten - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Topology.Centroid(topology)
         up = Vector.Up()
         flat_topology = Topology.Translate(topology, -Vertex.X(origin, mantissa=mantissa), -Vertex.Y(origin, mantissa=mantissa), -Vertex.Z(origin, mantissa=mantissa))
@@ -5417,12 +5901,13 @@ class Topology():
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.Rotate - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Topology.Rotate - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         returnTopology = topology
+        d = Topology.Dictionary(topology)
         if abs(angle) >= angTolerance:
             try:
                 x, y, z = axis
@@ -5437,8 +5922,140 @@ class Topology():
                 rot_vertices = [Vertex.ByCoordinates(rot_v) for rot_v in rot_vertices]
                 new_topology = Topology.ReplaceVertices(topology, verticesA=Topology.Vertices(topology), verticesB=rot_vertices)
                 new_topology = Topology.SelfMerge(new_topology, tolerance=tolerance)
+                if len(Dictionary.Keys(d) > 0):
+                    new_topology = Topology.SetDictionary(new_topology, d)
                 return new_topology
+        if len(Dictionary.Keys(d)) > 0:
+                    return_topology = Topology.SetDictionary(return_topology, d)
         return returnTopology
+    
+    @staticmethod
+    def RotateByEulerAngles(topology, origin = None, roll: float = 0, pitch: float = 0, yaw: float = 0,  angTolerance: float = 0.001, tolerance: float = 0.0001):
+        """
+        Rotates the input topology using Euler angles (roll, pitch, yaw). See https://en.wikipedia.org/wiki/Aircraft_principal_axes
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        origin : topologic_core.Vertex , optional
+            The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. The default is None.
+        roll : float , optional
+            The rotation angle in degrees around the X-axis. The default is 0.
+        pitch = float , optional
+            The rotation angle in degrees around the Y-axis. The default is 0.
+        yaw = float , optional
+            The rotation angle in degrees around the Z-axis. The default is 0.
+        angTolerance : float , optional
+            The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The rotated topology.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(topology, "Topology"):
+            print("Topology.RotateByEulerAngles - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+            return None
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.ByCoordinates(0, 0, 0)
+        if not Topology.IsInstance(origin, "Vertex"):
+            print("Topology.RotateByEulerAngles - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        d = Topology.Dictionary(topology)
+        return_topology = Topology.Copy(topology)
+        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[1,0,0], angle=roll, angTolerance=angTolerance, tolerance=tolerance)
+        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[0,1,0], angle=pitch, angTolerance=angTolerance, tolerance=tolerance)
+        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[0,0,1], angle=yaw, angTolerance=angTolerance, tolerance=tolerance)
+        if len(Dictionary.Keys(d)) > 0:
+            return_topology = Topology.SetDictionary(return_topology, d)
+        return return_topology
+    
+    @staticmethod
+    def RotateByQuaternion(topology, origin=None, quaternion: list = [0,0,0,1], angTolerance: float = 0.001, tolerance: float = 0.0001):
+        """
+        Rotates the input topology using Quaternion rotations. See https://en.wikipedia.org/wiki/Quaternion
+        
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        origin : topologic_core.Vertex , optional
+            The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. The default is None.
+        quaternion : list or numpy array of size 4
+            The input Quaternion list. It should be in the form [x, y, z, w].
+        angTolerance : float , optional
+            The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The rotated topology.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
+
+        def quaternion_to_euler(quaternion):
+            """
+            Convert a quaternion into Euler angles (roll, pitch, yaw)
+            Roll is rotation around x-axis, Pitch is rotation around y-axis, and Yaw is rotation around z-axis.
+            Quaternion should be in the form [x, y, z, w]
+
+            Args:
+            quaternion: list or numpy array of size 4
+
+            Returns:
+            A list of Euler angles in degrees [roll, pitch, yaw]
+            """
+            import numpy as np
+            x, y, z, w = quaternion
+
+            # Roll (x-axis rotation)
+            sinr_cosp = 2 * (w * x + y * z)
+            cosr_cosp = 1 - 2 * (x * x + y * y)
+            roll = np.arctan2(sinr_cosp, cosr_cosp)
+
+            # Pitch (y-axis rotation)
+            sinp = 2 * (w * y - z * x)
+            if abs(sinp) >= 1:
+                pitch = np.sign(sinp) * np.pi / 2  # use 90 degrees if out of range
+            else:
+                pitch = np.arcsin(sinp)
+
+            # Yaw (z-axis rotation)
+            siny_cosp = 2 * (w * z + x * y)
+            cosy_cosp = 1 - 2 * (y * y + z * z)
+            yaw = np.arctan2(siny_cosp, cosy_cosp)
+
+            # Convert radians to degrees
+            roll = np.degrees(roll)
+            pitch = np.degrees(pitch)
+            yaw = np.degrees(yaw)
+            return [roll, pitch, yaw]
+        
+        if not Topology.IsInstance(topology, "Topology"):
+            print("Topology.RotateByQuternion - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+            return None
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.ByCoordinates(0, 0, 0)
+        if not Topology.IsInstance(origin, "Vertex"):
+            print("Topology.RotateByQuternion - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        roll, pitch, yaw = quaternion_to_euler(quaternion)
+        d = Topology.Dictionary(topology)
+        return_topology = Topology.RotateByEulerAngles(topology=topology, origin=origin, roll=roll, pitch=pitch, yaw=yaw,  angTolerance=angTolerance, tolerance=tolerance)
+        if len(Dictionary.Keys(d)) > 0:
+            return_topology = Topology.SetDictionary(return_topology, d)
+        return return_topology
     
     @staticmethod
     def Scale(topology, origin=None, x=1, y=1, z=1):
@@ -5467,7 +6084,7 @@ class Topology():
         from topologicpy.Vertex import Vertex
         if not Topology.IsInstance(topology, "Topology"):
             return None
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
             return None
@@ -6216,7 +6833,7 @@ class Topology():
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
 
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
@@ -6336,7 +6953,7 @@ class Topology():
             return topology
         if triangulate == True:
             topology = Topology.Triangulate(topology)
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Topology.Centroid(topology)
         vertices = Topology.Vertices(topology)
         zList = [Vertex.Z(v, mantissa=mantissa) for v in vertices]
@@ -6389,7 +7006,7 @@ class Topology():
             return topology
         if triangulate == True:
             topology = Topology.Triangulate(topology)
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Topology.Centroid(topology)
             
         vertices = Topology.Vertices(topology)
@@ -6433,7 +7050,7 @@ class Topology():
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.Unflatten - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
         up = Vector.Up()
         tran_mat = Vector.TransformationMatrix(up, direction)
@@ -7029,6 +7646,7 @@ class Topology():
                 if transferDictionaries:
                     selectors.append(Topology.SetDictionary(Face.Centroid(triFace), Topology.Dictionary(aFace)))
                 faceTriangles.append(triFace)
+        return_topology = None
         if t == Topology.TypeID("Face") or t == Topology.TypeID("Shell"): # Face or Shell
             return_topology = Shell.ByFaces(faceTriangles, tolerance=tolerance)
             if transferDictionaries and not return_topology == None:

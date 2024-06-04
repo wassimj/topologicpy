@@ -341,7 +341,7 @@ class Face():
             print("Face.ByShell - Error: The input shell parameter is not a valid toplogic shell. Returning None.")
             return None
         
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Topology.Centroid(shell)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Face.ByShell - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -683,7 +683,7 @@ class Face():
         """
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
         
         c = Face.Circle(origin=origin, radius=radius, sides=sides, direction=[0, 0, 1], placement="center", tolerance=tolerance)
@@ -780,7 +780,7 @@ class Face():
         return round(compactness, mantissa)
 
     @staticmethod
-    def CompassAngle(face, north: list = None, mantissa: int = 6) -> float:
+    def CompassAngle(face, north: list = None, mantissa: int = 6, tolerance: float = 0.0001) -> float:
         """
         Returns the horizontal compass angle in degrees between the normal vector of the input face and the input vector. The angle is measured in counter-clockwise fashion. Only the first two elements of the vectors are considered.
 
@@ -809,7 +809,7 @@ class Face():
         if not north:
             north = Vector.North()
         dirA = Face.NormalAtParameters(face,mantissa=mantissa)
-        return Vector.CompassAngle(vectorA=dirA, vectorB=north, mantissa=mantissa)
+        return Vector.CompassAngle(vectorA=dirA, vectorB=north, mantissa=mantissa, tolerance=tolerance)
 
     @staticmethod
     def Edges(face) -> list:
@@ -1216,7 +1216,7 @@ class Face():
         return inverted_face
 
     @staticmethod
-    def IsCoplanar(faceA, faceB, tolerance: float = 0.0001) -> bool:
+    def IsCoplanar(faceA, faceB, mantissa: int = 6, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the two input faces are coplanar. Returns False otherwise.
 
@@ -1226,13 +1226,10 @@ class Face():
             The first input face.
         faceB : topologic_core.Face
             The second input face
+        mantissa : int , optional
+            The length of the desired mantissa. The default is 6.
         tolerance : float , optional
-            The desired tolerance. The deafault is 0.0001.
-
-        Raises
-        ------
-        Exception
-            Raises an exception if the angle between the two input faces cannot be determined.
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -1240,8 +1237,23 @@ class Face():
             True if the two input faces are coplanar. False otherwise.
 
         """
-        from topologicpy.Vector import Vector
         from topologicpy.Topology import Topology
+        import warnings
+
+        try:
+            import numpy as np
+        except:
+            print("Face.IsCoplanar - Information: Installing required numpy library.")
+            try:
+                os.system("pip install numpy")
+            except:
+                os.system("pip install numpy --user")
+            try:
+                import numpy as np
+                print("Face.IsCoplanar - Information: numpy library installed successfully.")
+            except:
+                warnings.warn("Face.IsCoplanar - Error:: Could not import numpy. Please install the numpy library manually. Returning None.")
+                return None
 
         if not Topology.IsInstance(faceA, "Face"):
             print("Face.IsInide - Error: The input faceA parameter is not a valid topologic face. Returning None.")
@@ -1249,9 +1261,25 @@ class Face():
         if not Topology.IsInstance(faceB, "Face"):
             print("Face.IsInide - Error: The input faceB parameter is not a valid topologic face. Returning None.")
             return None
-        dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
-        dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
-        return Vector.IsCollinear(dirA, dirB)
+
+        def normalize_plane_coefficients(plane):
+            norm = np.linalg.norm(plane[:3])  # Normalize using the first three coefficients (a, b, c)
+            if norm == 0:
+                return plane
+            return [coef / norm for coef in plane]
+
+        def are_planes_coplanar(plane1, plane2, tolerance):
+            normalized_plane1 = normalize_plane_coefficients(plane1)
+            normalized_plane2 = normalize_plane_coefficients(plane2)
+            return np.allclose(normalized_plane1, normalized_plane2, atol=tolerance)
+        
+        eq_a = Face.PlaneEquation(faceA, mantissa=mantissa)
+        plane_a = [eq_a['a'], eq_a['b'], eq_a['c'], eq_a['d']]
+        plane_a = normalize_plane_coefficients(plane_a)
+        eq_b = Face.PlaneEquation(faceB, mantissa=mantissa)
+        plane_b = [eq_b['a'], eq_b['b'], eq_b['c'], eq_b['d']]
+        plane_b = normalize_plane_coefficients(plane_b)
+        return are_planes_coplanar(plane_a, plane_b, tolerance=tolerance)
 
     @staticmethod
     def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, mantissa: int = 6, tolerance: float = 0.0001):

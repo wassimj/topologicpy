@@ -673,6 +673,29 @@ class Vertex():
         return enclosingCells
 
     @staticmethod
+    def ExternalBoundary(vertex):
+        """
+        Returns the external boundary (self) of the input vertex. This method is trivial, but included for completeness.
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex.
+
+        Returns
+        -------
+        topologic_core.Vertex
+            The external boundary of the input vertex. This is the input vertex itself.
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            print("Vertex.ExternalBoundary - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        return vertex
+    
+    @staticmethod
     def Fuse(vertices: list, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns a list of vertices where vertices within a specified tolerance distance are fused while retaining duplicates, ensuring that vertices with nearly identical coordinates are replaced by a single shared coordinate.
@@ -1031,10 +1054,14 @@ class Vertex():
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        import inspect
 
         if not Topology.IsInstance(vertex, "Vertex"):
             if not silent:
-                print("Vertex.IsInternal - Error: The input vertex parameter is not a valid vertex. Returning None.")
+                stack = inspect.stack()
+                if len(stack) > 2:
+                    print(stack[2].function)
+                print("Vertex.IsInternal - Error: The input vertex parameter is not a valid vertex. Returning None.", vertex, topology)
             return None
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
@@ -1579,8 +1606,6 @@ class Vertex():
             The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. The default is None.
         mantissa : int , optional
             The length of the desired mantissa. The default is 6.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
 
         Returns
         -------

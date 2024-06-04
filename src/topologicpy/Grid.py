@@ -258,7 +258,7 @@ class Grid():
 
         if len(uRange) < 1 or len(vRange) < 1:
             return None
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             if not Topology.IsInstance(face, "Face"):
                 origin = Vertex.ByCoordinates(0, 0, 0)
             else:

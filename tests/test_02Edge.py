@@ -157,7 +157,7 @@ def test_main():
     par_2 = Edge.IsParallel(e1,e3)                                  # without optional inputs
     assert isinstance(par_2, bool), "Edge.IsParallel. Should be bool"
     # test 3
-    par_1 = Edge.IsParallel(e1,e4, mantissa=2, angTolerance=0.01)   # with optional inputs
+    par_1 = Edge.IsParallel(e1,e4, mantissa=2, tolerance=0.0001)   # with optional inputs
     assert isinstance(par_1, bool), "Edge.IsParallel. Should be bool"
 
     # Case 11 - Length
@@ -293,7 +293,7 @@ def test_main():
     assert Vertex.X(centroid) == 5, "Edge.ByOffset2D. X Should be 5"
     assert Vertex.Y(centroid) == 1, "Edge.ByOffset2D. Y Should be 1"
 
-    #Case 23 - ExtendToEdge2D
+    #Case 23 - ExtendToEdge
     print("Case 23")
     # test 1
     v1 = Vertex.ByCoordinates(0, 0, 0)
@@ -302,14 +302,14 @@ def test_main():
     v1 = Vertex.ByCoordinates(20,-10,0)
     v2 = Vertex.ByCoordinates(20,10,0)
     edge2 = Edge.ByVertices([v1, v2])
-    edge3 = Edge.ExtendToEdge2D(edge, edge2)
+    edge3 = Edge.ExtendToEdge(edge, edge2)
     assert Topology.IsInstance(edge3, "Edge"), "Edge.ExtendToEdge2D. Should be topologic.Edge"
     assert Edge.Length(edge3) == 20, "Edge.ExtendToEdge2D. Length should be 3"
     centroid = Topology.Centroid(edge3)
     assert Vertex.X(centroid) == 10, "Edge.ExtendToEdge2D. X Should be 5"
     assert Vertex.Y(centroid) == 0, "Edge.ExtendToEdge2D. Y Should be 1"
 
-    #Case 24 - Intersect2D
+    #Case 24 - TrimByEdge
     print("Case 24")
     # test 1
     v1 = Vertex.ByCoordinates(0, 0, 0)
@@ -318,8 +318,6 @@ def test_main():
     v1 = Vertex.ByCoordinates(5,-10,0)
     v2 = Vertex.ByCoordinates(5,10,0)
     edge2 = Edge.ByVertices([v1, v2])
-    v3 = Edge.Intersect2D(edge, edge2)
-    assert Topology.IsInstance(v3, "Vertex"), "Edge.Intersect2D. Should be topologic.Edge"
-    assert Vertex.X(v3) == 5, "Edge.Intersect2D. X Should be 5"
-    assert Vertex.Y(v3) == 0, "Edge.Intersect2D. Y Should be 0"
+    edge3 = Edge.TrimByEdge(edge, edge2)
+    assert Topology.IsInstance(edge3, "Edge"), "Edge.Intersect. Should be topologic.Edge"
     print("End")

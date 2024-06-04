@@ -38,6 +38,26 @@ except:
 
 class Vector(list):
     @staticmethod
+    def Add(vectorA, vectorB):
+        """
+        Adds the two input vectors.
+
+        Parameters
+        ----------
+        vectorA : list
+            The first vector.
+        vectorB : list
+            The second vector.
+
+        Returns
+        -------
+        list
+            The sum vector of the two input vectors.
+
+        """
+        return [a + b for a, b in zip(vectorA, vectorB)]
+    
+    @staticmethod
     def Angle(vectorA, vectorB, mantissa: int = 6):
         """
         Returns the angle in degrees between the two input vectors
@@ -191,7 +211,7 @@ class Vector(list):
         return list(bisecting_vector)
     
     @staticmethod
-    def ByAzimuthAltitude(azimuth, altitude, north=0, reverse=False, tolerance=0.0001):
+    def ByAzimuthAltitude(azimuth: float, altitude: float, north: float = 0, reverse: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the vector specified by the input azimuth and altitude angles.
 
@@ -206,6 +226,8 @@ class Vector(list):
             90 is along the positive X-axis, 180 is along the negative Y-axis, and 270 along the negative Y-axis.
         reverse : bool , optional
             If set to True the direction of the vector is computed from the end point towards the origin. Otherwise, it is computed from the origin towards the end point.
+        mantissa : int , optional
+            The desired mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -218,12 +240,13 @@ class Vector(list):
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
+        
         e = Edge.ByVertices([Vertex.Origin(), Vertex.ByCoordinates(0, 1, 0)], tolerance=tolerance)
         e = Topology.Rotate(e, origin=Vertex.Origin(), axis=[1, 0, 0], angle=altitude)
         e = Topology.Rotate(e, origin=Vertex.Origin(), axis=[0, 0, 1], angle=-azimuth-north)
         if reverse:
             return Vector.Reverse(Edge.Direction(e))
-        return Edge.Direction(e)
+        return Edge.Direction(e, mantissa=mantissa)
     
     @staticmethod
     def ByCoordinates(x, y, z):
@@ -397,6 +420,28 @@ class Vector(list):
         return [round(vecC[0], mantissa), round(vecC[1], mantissa), round(vecC[2], mantissa)]
 
     @staticmethod
+    def Dot(vectorA, vectorB, mantissa=6):
+        """
+        Returns the dot product of the two input vectors which is a measure of how much they are aligned.
+
+        Parameters
+        ----------
+        vectorA : list
+            The first vector.
+        vectorB : list
+            The second vector.
+        mantissa : int, optional
+            The length of the desired mantissa. The default is 6.
+
+        Returns
+        -------
+        list
+            The vector representing the cross product of the two input vectors.
+
+        """
+        return round(sum(a*b for a, b in zip(vectorA, vectorB)), mantissa)
+    
+    @staticmethod
     def Down():
         """
         Returns the vector representing the *down* direction. In Topologic, the negative ZAxis direction is considered *down* ([0, 0, -1]).
@@ -566,6 +611,48 @@ class Vector(list):
         else:
             # Compute bisecting vector
             return False
+    
+    @staticmethod
+    def IsSame(vectorA, vectorB, tolerance=0.0001):
+        """
+        Returns True if the input vectors are the same. Returns False otherwise.
+        
+        Parameters
+        ----------
+        vectorA : list
+            The first input vector.
+        vectorB : list
+            The second input vector.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+            
+        Returns
+        -------
+        bool
+            True if the input vectors are the same. False otherwise.
+        
+        """
+        return all(abs(a - b) < tolerance for a, b in zip(vectorA, vectorB))
+
+    @staticmethod
+    def Length(vector, mantissa: int = 6):
+        """
+        Returns the length of the input vector.
+
+        Parameters
+        ----------
+        vector : list
+            The input vector.
+        mantissa : int
+            The length of the desired mantissa. The default is 6.
+
+        Returns
+        -------
+        float
+            The length of the input vector.
+        """
+
+        return Vector.Magnitude(vector, mantissa = mantissa)
     
     @staticmethod
     def Magnitude(vector, mantissa: int = 6):
@@ -740,6 +827,26 @@ class Vector(list):
             The vector representing the *southwest* direction.
         """
         return [-1, -1, 0]
+    
+    @staticmethod
+    def Subtract(vectorA, vectorB):
+        """
+        Subtracts the second input vector from the first input vector.
+
+        Parameters
+        ----------
+        vectorA : list
+            The first vector.
+        vectorB : list
+            The second vector.
+
+        Returns
+        -------
+        list
+            The vector resulting from subtracting the second input vector from the first input vector.
+
+        """
+        return [a - b for a, b in zip(vectorA, vectorB)]
     
     @staticmethod
     def Sum(vectors: list):

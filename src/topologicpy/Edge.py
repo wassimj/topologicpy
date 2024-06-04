@@ -444,49 +444,97 @@ class Edge():
         return Edge.ByVertices([sve, eve], tolerance=tolerance, silent=True)
 
     @staticmethod
-    def ExtendToEdge2D(edgeA, edgeB, tolerance: float = 0.0001):
+    def ExtendToEdge(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-        Extends the first input edge to meet the second input edge. This works only in the XY plane. Z coordinates are ignored.
+        Extends the first input edge to meet the second input edge.
 
         Parameters
         ----------
         edgeA : topologic_core.Edge
-            The first input edge.
+            The first input edge. This edge will be extended to meet edgeB.
         edgeB : topologic_core.Edge
-            The second input edge.
+            The second input edge. This edge will be used to extend edgeA.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, not error or warning messages are printed. Otherwise, they are. The default is False.
         
         Returns
         -------
         topologic_core.Edge
-            The extended edge.
+            The trimmed edge.
 
         """
-
         from topologicpy.Vertex import Vertex
+        from topologicpy.Vector import Vector
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edgeA, "Edge"):
-            print("Edge.ExtendToEdge2D - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.ExtendToEdge - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
             return None
         if not Topology.IsInstance(edgeB, "Edge"):
-            print("Edge.ExtendToEdge2D - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.ExtendToEdge - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
+        if not Edge.IsCoplanar(edgeA, edgeB, mantissa=mantissa, tolerance=tolerance):
+            if not silent:
+                print("Edge.ExtendToEdge - Error: The input edges are not coplanar. Returning the original edge.")
+            return edgeA
+        if not Edge.IsParallel(edgeA, edgeB, tolerance=tolerance):
+            if not silent:
+                print("Edge.ExtendToEdge - Error: The input edges are parallel. Returning the original edge.")
+            return edgeA
+        
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
-        intVertex = Edge.Intersect2D(edgeA, edgeB)
-        if intVertex and not (Vertex.IsInternal(intVertex, edgeA)):
-            e1 = Edge.ByVertices([sva, intVertex], tolerance=tolerance, silent=True)
-            e2 = Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=True)
-            l1 = Edge.Length(e1)
-            l2 = Edge.Length(e2)
-            if l1 > l2:
-                return e1
-            else:
-                return e2
-        print("Edge.ExtendToEdge2D - Error: The operation failed. Returning None.")
+        d1 = Vertex.Distance(sva, edgeB)
+        d2 = Vertex.Distance(eva, edgeB)
+        edge_direction = Edge.Direction(edgeA)
+        if d1 < d2:
+            v1 = eva
+            v2 = sva
+            edge_direction = Vector.Reverse(edge_direction)
+        else:
+            v1 = sva
+            v2 = eva
+        
+        d = max(d1, d2)*2
+        v2 = Topology.TranslateByDirectionDistance(v2, direction=edge_direction, distance=d)
+        new_edge = Edge.ByVertices(v1, v2)
+        
+        svb = Edge.StartVertex(edgeB)
+        evb = Edge.EndVertex(edgeB)
+
+        intVertex = Topology.Intersect(new_edge, edgeB, tolerance=tolerance)
+        if intVertex:
+            return Edge.ByVertices([v1, intVertex], tolerance=tolerance, silent=True)
+        print("Edge.ExtendToEdge - Error: The operation failed. Returning None.")
         return None
+    
+    @staticmethod
+    def ExternalBoundary(edge):
+        """
+        Returns the external boundary (cluster of end vertices) of the input edge.
+
+        Parameters
+        ----------
+        edge : topologic_core.Edge
+            The input edge.
+
+        Returns
+        -------
+        topologic_core.Cluster
+            The external boundary of the input edge. This is a cluster of the edge's end vertices.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Cluster import Cluster
+
+        if not Topology.IsInstance(edge, "Edge"):
+            print("Edge.ExternalBoundary - Error: The input edge parameter is not a valid edge. Returning None.")
+            return None
+        return Cluster.ByTopologies([Edge.StartVertex(edge), Edge.EndVertex(edge)])
     
     @staticmethod
     def Index(edge, edges: list, strict: bool = False, tolerance: float = 0.0001) -> int:
@@ -541,67 +589,6 @@ class Edge():
                 if dsvev < tolerance and devsv < tolerance:
                     return i
         return None
-
-    @staticmethod
-    def Intersect2D(edgeA, edgeB, mantissa: int = 6, silent: bool = False):
-        """
-        Returns the intersection of the two input edges as a topologic_core.Vertex. This works only in the XY plane. Z coordinates are ignored.
-
-        Parameters
-        ----------
-        edgeA : topologic_core.Edge
-            The first input edge.
-        edgeB : topologic_core.Edge
-            The second input edge.
-        mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
-        silent : bool , optional
-            If set to False, error and warning messages are displayed. Otherwise they are not. The default is False.
-
-        Returns
-        -------
-        topologic_core.Vertex
-            The intersection of the two input edges.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(edgeA, "Edge"):
-            if not silent:
-                print("Edge.Intersect2D - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
-            return None
-        if not Topology.IsInstance(edgeB, "Edge"):
-            if not silent:
-                print("Edge.Intersect2D - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
-            return None
-        sva = Edge.StartVertex(edgeA)
-        eva = Edge.EndVertex(edgeA)
-        svb = Edge.StartVertex(edgeB)
-        evb = Edge.EndVertex(edgeB)
-        # Line AB represented as a1x + b1y = c1
-        a1 = Vertex.Y(eva, mantissa=mantissa) - Vertex.Y(sva, mantissa=mantissa)
-        b1 = Vertex.X(sva, mantissa=mantissa) - Vertex.X(eva, mantissa=mantissa)
-        c1 = a1*(Vertex.X(sva, mantissa=mantissa)) + b1*(Vertex.Y(sva, mantissa=mantissa))
- 
-        # Line CD represented as a2x + b2y = c2
-        a2 = Vertex.Y(evb, mantissa=mantissa) - Vertex.Y(svb, mantissa=mantissa)
-        b2 = Vertex.X(svb, mantissa=mantissa) - Vertex.X(evb, mantissa=mantissa)
-        c2 = a2*(Vertex.X(svb, mantissa=mantissa)) + b2*(Vertex.Y(svb, mantissa=mantissa))
- 
-        determinant = a1*b2 - a2*b1
- 
-        if (determinant == 0):
-            # The lines are parallel. This is simplified
-            # by returning a pair of FLT_MAX
-            if not silent:
-                print("Edge.Intersect2D - Warning: The input edgeA and edgeB parameters are parallel edges. Returning None.")
-            return None
-        else:
-            x = (b2*c1 - b1*c2)/determinant
-            y = (a1*c2 - a2*c1)/determinant
-            return Vertex.ByCoordinates(x,y,0)
-
 
     @staticmethod
     def IsCollinear(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001) -> bool:
@@ -686,7 +673,65 @@ class Edge():
         return bool(distance_start < tolerance) and bool(distance_end < tolerance)
     
     @staticmethod
-    def IsParallel(edgeA, edgeB, mantissa: int = 6, angTolerance: float = 0.1) -> bool:
+    def IsCoplanar(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Return True if the two input edges are coplanar. Returns False otherwise.
+
+        Parameters
+        ----------
+        edgeA : topologic_core.Edge
+            The first input edge.
+        edgeB : topologic_core.Edge
+            The second input edge.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            True if the two edges are coplanar. False otherwise.
+
+        """
+        import numpy as np
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(edgeA, "Edge"):
+            print("Edge.IsCoplanar - Error: The input parameter edgeA is not a valid edge. Returning None")
+            return None
+        if not Topology.IsInstance(edgeB, "Edge"):
+            print("Edge.IsCoplanar - Error: The input parameter edgeB is not a valid edge. Returning None")
+            return None
+        if Edge.Length(edgeA) < tolerance:
+            print("Edge.IsCoplanar - Error: The length of edgeA is less than the tolerance. Returning None")
+            return None
+        if Edge.Length(edgeB) < tolerance:
+            print("Edge.IsCoplanar - Error: The length of edgeB is less than the tolerance. Returning None")
+            return None
+        
+        # Extract points
+        sva, eva = [Topology.Vertices(edgeA)[0], Topology.Vertices(edgeA)[-1]]
+        p1 = Vertex.Coordinates(sva, mantissa=mantissa)
+        p2 = Vertex.Coordinates(eva, mantissa=mantissa)
+        svb, evb = [Topology.Vertices(edgeB)[0], Topology.Vertices(edgeB)[-1]]
+        p3 = Vertex.Coordinates(svb, mantissa=mantissa)
+        p4 = Vertex.Coordinates(evb, mantissa=mantissa)
+
+        # Create vectors
+        v1 = np.subtract(p2, p1)
+        v2 = np.subtract(p4, p3)
+        v3 = np.subtract(p3, p1)
+        
+        # Calculate the scalar triple product
+        scalar_triple_product = np.dot(np.cross(v1, v2), v3)
+        
+        # Check for coplanarity
+        return np.isclose(scalar_triple_product, 0, atol=tolerance)
+
+    @staticmethod
+    def IsParallel(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001) -> bool:
         """
         Return True if the two input edges are parallel. Returns False otherwise.
 
@@ -707,7 +752,9 @@ class Edge():
             True if the two edges are collinear. False otherwise.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+        import numpy as np
 
         if not Topology.IsInstance(edgeA, "Edge"):
             print("Edge.IsParallel - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
@@ -715,10 +762,38 @@ class Edge():
         if not Topology.IsInstance(edgeB, "Edge"):
             print("Edge.IsParallel - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
-        ang = Edge.Angle(edgeA, edgeB, mantissa=mantissa, bracket=True)
-        if abs(ang) < angTolerance or abs(180 - ang) < angTolerance:
-            return True
-        return False
+        
+        def are_lines_parallel(line1, line2, tolerance=0.0001):
+            """
+            Determines if two lines in 3D space are parallel.
+            
+            Parameters:
+            line1 (tuple): A tuple of two points defining the first line. Each point is a tuple of (x, y, z).
+            line2 (tuple): A tuple of two points defining the second line. Each point is a tuple of (x, y, z).
+            
+            Returns:
+            bool: True if the lines are parallel, False otherwise.
+            """
+            def vector_from_points(p1, p2):
+                return np.array([p2[0] - p1[0], p2[1] - p1[1], p2[2] - p1[2]])
+            
+            # Get direction vectors for both lines
+            vec1 = vector_from_points(line1[0], line1[1])
+            vec2 = vector_from_points(line2[0], line2[1])
+            
+            # Compute the cross product of the direction vectors
+            cross_product = np.cross(vec1, vec2)
+            
+            # Two vectors are parallel if their cross product is a zero vector
+            return np.allclose(cross_product, 0, atol=tolerance)
+
+        x1, y1, z1 = Vertex.Coordinates(Edge.StartVertex(edgeA), mantissa=mantissa)
+        x2, y2, z2 = Vertex.Coordinates(Edge.EndVertex(edgeA), mantissa=mantissa)
+        x3, y3, z3 = Vertex.Coordinates(Edge.StartVertex(edgeA), mantissa=mantissa)
+        x4, y4, z4 = Vertex.Coordinates(Edge.EndVertex(edgeA), mantissa=mantissa)
+        line1 = ((x1, y1, z1), (x2, y2, z2))
+        line2 = ((x3, y3, z3), (x4, y4, z4))
+        return are_lines_parallel(line1, line2, tolerance=tolerance)
 
     @staticmethod
     def Length(edge, mantissa: int = 6) -> float:
@@ -770,7 +845,7 @@ class Edge():
             1. "center" which places the center of the edge at the origin.
             2. "start" which places the start of the edge at the origin.
             3. "end" which places the end of the edge at the origin.
-            The default is "center".
+            The default is "center". It is case insensitive.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         Returns
@@ -783,7 +858,7 @@ class Edge():
         from topologicpy.Vector import Vector
         from topologicpy.Topology import Topology
 
-        if origin == None:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
         if not Topology.IsInstance(origin, "Vertex"):
             print("Edge.Line - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
@@ -1126,18 +1201,22 @@ class Edge():
         return Edge.ByVertices([sve, eve], tolerance=tolerance, silent=True)
 
     @staticmethod
-    def TrimByEdge2D(edgeA, edgeB, reverse: bool = False, tolerance: float = 0.0001):
+    def TrimByEdge(edgeA, edgeB, reverse: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-        Trims the first input edge by the second input edge. This works only in the XY plane. Z coordinates are ignored.
+        Trims the first input edge by the second input edge.
 
         Parameters
         ----------
         edgeA : topologic_core.Edge
-            The first input edge.
+            The first input edge. This edge will be trimmed by edgeB.
         edgeB : topologic_core.Edge
-            The second input edge.
+            The second input edge. This edge will be used to trim edgeA.
+        reverse : bool , optional
+            If set to True, which segment is preserved is reversed. Otherwise, it is not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, not error or warning messages are printed. Otherwise, they are. The default is False.
         
         Returns
         -------
@@ -1149,14 +1228,45 @@ class Edge():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edgeA, "Edge"):
-            print("Edge.TrimByEdge2D - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.TrimByEdge - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
             return None
         if not Topology.IsInstance(edgeB, "Edge"):
-            print("Edge.TrimByEdge2D - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.TrimByEdge - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
+        if not Edge.IsCoplanar(edgeA, edgeB, mantissa=mantissa, tolerance=tolerance):
+            if not silent:
+                print("Edge.TrimByEdge - Error: The input edges are not coplanar. Returning the original edge.")
+            return edgeA
+        if not Edge.IsParallel(edgeA, edgeB, tolerance=tolerance):
+            if not silent:
+                print("Edge.TrimByEdge - Error: The input edges are parallel. Returning the original edge.")
+            return edgeA
+        
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
-        intVertex = Edge.Intersect2D(edgeA, edgeB)
+        svb = Edge.StartVertex(edgeB)
+        evb = Edge.EndVertex(edgeB)
+        intVertex = None
+        if Edge.IsCollinear(edgeA, edgeB):
+            if Vertex.IsInternal(svb, edgeA):
+                intVertex = svb
+            elif Vertex.IsInternal(evb, edgeA):
+                intVertex = evb
+            else:
+                intVertex = None
+            if intVertex:
+                if reverse:
+                        return Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=True)
+                else:
+                    return Edge.ByVertices([sva, intVertex], tolerance=tolerance, silent=True)
+            else:
+                return None
+        
+        sva = Edge.StartVertex(edgeA)
+        eva = Edge.EndVertex(edgeA)
+        intVertex = Topology.Intersect(edgeA, edgeB)
         if intVertex and (Vertex.IsInternal(intVertex, edgeA)):
             if reverse:
                 return Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=True)
@@ -1195,7 +1305,7 @@ class Edge():
         if not Topology.IsInstance(edge, "Edge"):
             print("Edge.TrimByEdge2D - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
-        if not origin:
+        if not Topology.IsInstance(origin, "Vertex"):
             origin = edge.StartVertex()
         if not Topology.IsInstance(origin, "Vertex"):
             print("Edge.TrimByEdge2D - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
