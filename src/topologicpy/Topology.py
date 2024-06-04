@@ -3759,7 +3759,7 @@ class Topology():
                     r = color[0]
                     g = color[1]
                     b = color[2]
-                if len(color) == 3:
+                if len(color) == 4:
                     a = color[3]
             color = dotbimpy.Color(r=r, g=g, b=b, a=int(a*255))
             guid = Dictionary.ValueAtKey(d, guidKey)
@@ -3773,7 +3773,6 @@ class Topology():
             info['color'] = str([r,g,b,a])
             info['guid'] = guid
             info['type'] = type
-            print("info", info)
             rotation = dotbimpy.Rotation(qx=0, qy=0, qz=0, qw=1.0)
             vector = dotbimpy.Vector(x=0, y=0, z=0)
             
@@ -3795,9 +3794,6 @@ class Topology():
             "Author": author,
             "Date": formatted_date
         }
-        
-        print("Meshes:", meshes)
-        print("Elements:", elements)
 
         # Instantiate and save File object
         file = dotbimpy.File(version, meshes=meshes, elements=elements, info=file_info)
