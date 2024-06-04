@@ -1606,6 +1606,11 @@ class Topology():
             print("Topology.ByBIMPath - Error: the input path parameter is not a valid path. Returning None.")
             return None
         topologies = None
+        with open(path, "r") as bim_file:
+                json_string = str(bim_file.read())
+                topologies = Topology.ByBIMString(string=json_string, guidKey=guidKey, colorKey=colorKey, typeKey=typeKey,
+                            defaultColor=defaultColor, defaultType=defaultType,
+                            authorKey=authorKey, dateKey=dateKey, mantissa=mantissa, angTolerance=angTolerance, tolerance=tolerance)
         try:
             with open(path, "r") as bim_file:
                 json_string = str(bim_file.read())
@@ -1771,10 +1776,9 @@ class Topology():
             id_list.append(mesh.mesh_id)
             coordinates = mesh.coordinates
             indices = mesh.indices
-
             coordinates = [coordinates[i:i + 3] for i in range(0, len(coordinates),3)]
             indices = [indices[i:i + 3] for i in range(0, len(indices),3)]
-            topology = Topology.SelfMerge(Topology.ByGeometry(vertices=coordinates, faces=indices, tolerance=tolerance))
+            topology = Topology.ByGeometry(vertices=coordinates, faces=indices, tolerance=tolerance)
             topologies.append(topology)
         
         for element in elements:
@@ -1804,11 +1808,13 @@ class Topology():
             #roll, pitch, yaw = quaternion_to_euler([rot.qx, rot.qy, rot.qz, rot.qw])
             vector = element.vector
             topology = topologies[mesh_id]
-            topology = Topology.RotateByQuaternion(topology=topology, origin=Vertex.Origin(), quaternion=quaternion, angTolerance=angTolerance, tolerance=tolerance)
-            topology = Topology.Translate(topology, vector.x, vector.y, vector.z)
-            topology = Topology.SetDictionary(topology, d)
-            final_topologies.append(topology)
+            if Topology.IsInstance(topology, "Topology"):
+                topology = Topology.RotateByQuaternion(topology=topology, origin=Vertex.Origin(), quaternion=quaternion, angTolerance=angTolerance, tolerance=tolerance)
+                topology = Topology.Translate(topology, vector.x, vector.y, vector.z)
+                topology = Topology.SetDictionary(topology, d)
+                final_topologies.append(topology)
         return final_topologies
+    
     @staticmethod
     def ByBREPFile(file):
         """
@@ -5926,7 +5932,7 @@ class Topology():
                     new_topology = Topology.SetDictionary(new_topology, d)
                 return new_topology
         if len(Dictionary.Keys(d)) > 0:
-                    return_topology = Topology.SetDictionary(return_topology, d)
+                    returnTopology = Topology.SetDictionary(returnTopology, d)
         return returnTopology
     
     @staticmethod
@@ -6043,12 +6049,12 @@ class Topology():
             return [roll, pitch, yaw]
         
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.RotateByQuternion - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+            print("Topology.RotateByQuaternion - Error: The input topology parameter is not a valid topologic topology. Returning None.", topology)
             return None
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
-            print("Topology.RotateByQuternion - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            print("Topology.RotateByQuaternion - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         roll, pitch, yaw = quaternion_to_euler(quaternion)
         d = Topology.Dictionary(topology)
