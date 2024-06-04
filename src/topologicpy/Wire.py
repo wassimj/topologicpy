@@ -484,7 +484,6 @@ class Wire(Topology):
                     finalMiterThreshold = miterThreshold
                 if Vertex.Distance(vertices[i], newVertices[i]) > abs(finalMiterThreshold):
                     st = Topology.SuperTopologies(newVertices[i], newWire, topologyType="edge")
-                    Topology.Show(st, wire, renderer="browser")
                     if len(st) > 1:
                         e1 = st[0]
                         e2 = st[1]
