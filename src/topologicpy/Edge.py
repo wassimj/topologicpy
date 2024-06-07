@@ -789,8 +789,8 @@ class Edge():
 
         x1, y1, z1 = Vertex.Coordinates(Edge.StartVertex(edgeA), mantissa=mantissa)
         x2, y2, z2 = Vertex.Coordinates(Edge.EndVertex(edgeA), mantissa=mantissa)
-        x3, y3, z3 = Vertex.Coordinates(Edge.StartVertex(edgeA), mantissa=mantissa)
-        x4, y4, z4 = Vertex.Coordinates(Edge.EndVertex(edgeA), mantissa=mantissa)
+        x3, y3, z3 = Vertex.Coordinates(Edge.StartVertex(edgeB), mantissa=mantissa)
+        x4, y4, z4 = Vertex.Coordinates(Edge.EndVertex(edgeB), mantissa=mantissa)
         line1 = ((x1, y1, z1), (x2, y2, z2))
         line2 = ((x3, y3, z3), (x4, y4, z4))
         return are_lines_parallel(line1, line2, tolerance=tolerance)
