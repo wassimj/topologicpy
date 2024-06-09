@@ -152,10 +152,10 @@ class WorkerProcess(Process):
         destinations = [Topology.ByBREPString(s) for s in self.destinations]
         for i in range(len(sources)):
             source = sources[i]
-            index_b = Vertex.Index(source, destinations)
+            index_b = Vertex.Index(source, destinations, tolerance=self.tolerance)
             for j in range(len(destinations)):
                 destination = destinations[j]
-                index_a = Vertex.Index(destination, sources)
+                index_a = Vertex.Index(destination, sources, tolerance=self.tolerance)
                 if self.used[i + self.start_index][j] == 1 or self.used[j][i + self.start_index]:
                     continue
                 if Vertex.Distance(source, destination) > self.tolerance:
@@ -363,9 +363,10 @@ class Graph:
             if useEdgeLength:
                 valueFwd = Edge.Length(edge)
                 valueBwd = Edge.Length(edge)
-            matrix[svi][evi] = valueFwd
-            if bidir:
-                matrix[evi][svi] = valueBwd
+            if not svi == None and not evi == None:
+                matrix[svi][evi] = valueFwd
+                if bidir:
+                    matrix[evi][svi] = valueBwd
         return matrix
     
     @staticmethod
@@ -1898,7 +1899,11 @@ class Graph:
 
 
     @staticmethod
-    def ByIFCFile(file, includeTypes=[], excludeTypes=[], includeRels=[], excludeRels=[], xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5):
+    def ByIFCFile(file, includeTypes: list = [], excludeTypes: list = [],
+                  includeRels: list = [], excludeRels: list = [],
+                  xMin: float = -0.5, yMin: float = -0.5, zMin: float = -0.5,
+                  xMax: float = 0.5, yMax: float = 0.5, zMax: float = 0.5,
+                  tolerance: float = 0.0001):
         """
         Create a Graph from an IFC file. This code is partially based on code from Bruno Postle.
 
@@ -1926,6 +1931,8 @@ class Graph:
             The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
         zMax : float, optional
             The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         
         Returns
         -------
@@ -2094,19 +2101,21 @@ class Graph:
                 if source:
                     sv = vertexAtKeyValue(vertices, key="id", value=source.id())
                     if sv:
-                        si = Vertex.Index(sv, vertices)
-                        for destination in destinations:
-                            if destination == None:
-                                continue
-                            ev = vertexAtKeyValue(vertices, key="id", value=destination.id())
-                            if ev:
-                                ei = Vertex.Index(ev, vertices)
-                                if not([si,ei] in tuples or [ei,si] in tuples):
-                                    tuples.append([si,ei])
-                                    e = Edge.ByVertices([sv,ev])
-                                    d = Dictionary.ByKeysValues(["id", "name", "type"], [ifc_rel.id(), ifc_rel.Name, ifc_rel.is_a()])
-                                    e = Topology.SetDictionary(e, d)
-                                    edges.append(e)
+                        si = Vertex.Index(sv, vertices, tolerance=tolerance)
+                        if not si == None:
+                            for destination in destinations:
+                                if destination == None:
+                                    continue
+                                ev = vertexAtKeyValue(vertices, key="id", value=destination.id())
+                                if ev:
+                                    ei = Vertex.Index(ev, vertices, tolerance=tolerance)
+                                    if not ei == None:
+                                        if not([si,ei] in tuples or [ei,si] in tuples):
+                                            tuples.append([si,ei])
+                                            e = Edge.ByVertices([sv,ev])
+                                            d = Dictionary.ByKeysValues(["id", "name", "type"], [ifc_rel.id(), ifc_rel.Name, ifc_rel.is_a()])
+                                            e = Topology.SetDictionary(e, d)
+                                            edges.append(e)
             return edges
         
         ifc_types = IFCObjectTypes(file)
@@ -4811,7 +4820,7 @@ class Graph:
                        nodeTrainMaskHeader="train_mask", nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask",
                        nodeMaskKey=None,
                        nodeTrainRatio=0.8, nodeValidateRatio=0.1, nodeTestRatio=0.1,
-                       mantissa=6, overwrite=False):
+                       mantissa=6, tolerance=0.0001, overwrite=False):
         """
         Exports the input graph into a set of CSV files compatible with DGL.
 
@@ -4894,6 +4903,8 @@ class Graph:
             This value is ignored if an nodeMaskKey is foud.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         overwrite : bool , optional
             If set to True, any existing files are overwritten. Otherwise, the input list of graphs is appended to the end of each file. The default is False.
 
@@ -5138,14 +5149,15 @@ class Graph:
                 else:
                     edge_features = str(round(float(Dictionary.ValueAtKey(ed, edge_feature_key)), mantissa))
             # Get the Source and Destination vertex indices
-            src = Vertex.Index(Edge.StartVertex(edge), vertices)
-            dst = Vertex.Index(Edge.EndVertex(edge), vertices)
-            single_edge_data = [graph_id, src, dst, edge_label, train_mask, validate_mask, test_mask, edge_features]
-            edge_data.append(single_edge_data)
-
-            if bidirectional == True:
+            src = Vertex.Index(Edge.StartVertex(edge), vertices, tolerance=tolerance)
+            dst = Vertex.Index(Edge.EndVertex(edge), vertices, tolerance=tolerance)
+            if not src == None and not dst == None:
                 single_edge_data = [graph_id, src, dst, edge_label, train_mask, validate_mask, test_mask, edge_features]
                 edge_data.append(single_edge_data)
+
+                if bidirectional == True:
+                    single_edge_data = [graph_id, src, dst, edge_label, train_mask, validate_mask, test_mask, edge_features]
+                    edge_data.append(single_edge_data)
         df = pd.DataFrame(edge_data, columns=edge_columns)
 
         if graph_id == 0:
@@ -5167,7 +5179,8 @@ class Graph:
                     defaultVertexColor: str = "black", defaultVertexSize: float = 3,
                     vertexLabelKey: str = None, vertexColorKey: str = None, vertexSizeKey: str = None, 
                     defaultEdgeColor: str = "black", defaultEdgeWeight: float = 1, defaultEdgeType: str = "undirected",
-                    edgeLabelKey: str = None, edgeColorKey: str = None, edgeWeightKey: str = None, overwrite: bool = False, mantissa: int = 6):
+                    edgeLabelKey: str = None, edgeColorKey: str = None, edgeWeightKey: str = None,
+                    overwrite: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Exports the input graph to a Graph Exchange XML (GEXF) file format. See https://gexf.net/
 
@@ -5215,6 +5228,8 @@ class Graph:
             If set to True, any existing file is overwritten. Otherwise, it is not. The default is False.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -5487,20 +5502,20 @@ class Graph:
             edge_dict['weight'] = edge_weight
 
             
-            sv = g_vertices[Vertex.Index(Edge.StartVertex(edge), g_vertices)]
-            ev = g_vertices[Vertex.Index(Edge.EndVertex(edge), g_vertices)]
-            svid = Vertex.Index(sv, g_vertices)
-            edge_dict['source'] = svid
-            evid = Vertex.Index(ev, g_vertices)
-            edge_dict['target'] = evid
-            
-            edge_label = "Edge "+str(svid)+"-"+str(evid)
-            if isinstance(edgeLabelKey, str):
-                edge_label = Dictionary.ValueAtKey(d, edgeLabelKey)
-            if not isinstance(edge_label, str):
+            sv = g_vertices[Vertex.Index(Edge.StartVertex(edge), g_vertices, tolerance=tolerance)]
+            ev = g_vertices[Vertex.Index(Edge.EndVertex(edge), g_vertices, tolerance=tolerance)]
+            svid = Vertex.Index(sv, g_vertices, tolerance=tolerance)
+            evid = Vertex.Index(ev, g_vertices, tolerance=tolerance)
+            if not svid == None and not evid == None:
+                edge_dict['source'] = svid
+                edge_dict['target'] = evid
                 edge_label = "Edge "+str(svid)+"-"+str(evid)
-            edge_dict['label'] = edge_label
-            edges[(str(svid), str(evid))] = edge_dict
+                if isinstance(edgeLabelKey, str):
+                    edge_label = Dictionary.ValueAtKey(d, edgeLabelKey)
+                if not isinstance(edge_label, str):
+                    edge_label = "Edge "+str(svid)+"-"+str(evid)
+                edge_dict['label'] = edge_label
+                edges[(str(svid), str(evid))] = edge_dict
 
         create_gexf_file(nodes, edges, defaultEdgeType, node_attributes, edge_attributes, path)
         return True
@@ -5596,6 +5611,8 @@ class Graph:
             The desired maximum number of iterations to solve the forces in the 'spring' mode. The default is 50.
         rootVertex : topologic_core.Vertex , optional
             The desired vertex to use as the root of the tree and radial layouts.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -5725,9 +5742,12 @@ class Graph:
             Returns:
                 A numpy array representing the adjacency matrix.
             """
-
+            from topologicpy.Helper import Helper
             # Get the number of nodes from the edge list.
-            num_nodes = max([max(edge) for edge in edge_list]) + 1
+            flat_list = Helper.Flatten(edge_list)
+            flat_list = [x for x in flat_list if not x == None]
+            num_nodes = max(flat_list) + 1
+            print("Number of Nodes:", num_nodes)
 
             # Create an adjacency matrix.
             adjacency_matrix = np.zeros((num_nodes, num_nodes))
@@ -5913,8 +5933,9 @@ class Graph:
         if rootVertex == None:
             rootVertex, root_index = vertex_max_degree(graph, vertices)
         else:
-            root_index = Vertex.Index(rootVertex, vertices)
-
+            root_index = Vertex.Index(rootVertex, vertices, tolerance=tolerance)
+        if root_index == None:
+            root_index = 0
         if 'rad' in layout.lower():
             positions = radial_layout(edges, root_index=root_index)
         elif 'spring' in layout.lower():
@@ -6248,7 +6269,8 @@ class Graph:
                  yKey: str = "y",
                  zKey: str = "z",
                  geometryKey: str = "brep",
-                 mantissa: int = 6):
+                 mantissa: int = 6,
+                 tolerance: float = 0.0001):
         """
         Converts the input graph into JSON data.
 
@@ -6280,6 +6302,8 @@ class Graph:
             The desired key name to use for geometry. The default is "brep".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -6329,22 +6353,23 @@ class Graph:
         for i, e in enumerate(edges):
             sv = Edge.StartVertex(e)
             ev = Edge.EndVertex(e)
-            svi = Vertex.Index(sv, vertices)
-            evi = Vertex.Index(ev, vertices)
-            sv_label = v_labels[svi]
-            ev_label = v_labels[evi]
-            d = Topology.Dictionary(e)
-            
-            d = Dictionary.SetValueAtKey(d, sourceKey, sv_label)
-            d = Dictionary.SetValueAtKey(d, targetKey, ev_label)
-            e_dict = Dictionary.PythonDictionary(d)
-            e_label = Dictionary.ValueAtKey(d, edgeLabelKey)
-            if isinstance(e_label, str):
+            svi = Vertex.Index(sv, vertices, tolerance=tolerance)
+            evi = Vertex.Index(ev, vertices, tolerance=tolerance)
+            if not svi == None and not evi == None:
+                sv_label = v_labels[svi]
+                ev_label = v_labels[evi]
+                d = Topology.Dictionary(e)
+                
+                d = Dictionary.SetValueAtKey(d, sourceKey, sv_label)
+                d = Dictionary.SetValueAtKey(d, targetKey, ev_label)
+                e_dict = Dictionary.PythonDictionary(d)
                 e_label = Dictionary.ValueAtKey(d, edgeLabelKey)
-            else:
-                e_label = "Edge_"+str(i).zfill(n)
-            e_labels.append(e_label)
-            e_dicts.append(e_dict)
+                if isinstance(e_label, str):
+                    e_label = Dictionary.ValueAtKey(d, edgeLabelKey)
+                else:
+                    e_label = "Edge_"+str(i).zfill(n)
+                e_labels.append(e_label)
+                e_dicts.append(e_dict)
         e_labels = Helper.MakeUnique(e_labels)
         for i, e_label in enumerate(e_labels):
             j_data[edgesKey][e_label] = e_dicts[i]
@@ -6405,7 +6430,7 @@ class Graph:
         return json_string
     
     @staticmethod
-    def LocalClusteringCoefficient(graph, vertices=None, mantissa=6):
+    def LocalClusteringCoefficient(graph, vertices: list = None, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the local clustering coefficient of the input list of vertices within the input graph. See https://en.wikipedia.org/wiki/Clustering_coefficient.
 
@@ -6414,9 +6439,11 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertices : list , optional
-            The input list of vertices. If set to None, the local clustering coefficient of all vertices will be computed.
+            The input list of vertices. If set to None, the local clustering coefficient of all vertices will be computed. The default is None.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         
         Returns
         -------
@@ -6470,7 +6497,7 @@ class Graph:
         adjacency_matrix = Graph.AdjacencyMatrix(graph)
         lcc = []
         for v in vertices:
-            i = Vertex.Index(v, g_vertices)
+            i = Vertex.Index(v, g_vertices, tolerance=tolerance)
             if not i == None:
                 lcc.append(round(local_clustering_coefficient(adjacency_matrix, i), mantissa))
             else:
@@ -6556,9 +6583,10 @@ class Graph:
                 vertices = Topology.Vertices(path)
                 pathCost = 0
                 for vertex in vertices:
-                    index = Vertex.Index(vertex, g_vertices)
-                    d = Topology.Dictionary(g_vertices[index])
-                    value = Dictionary.ValueAtKey(d, vertexKey)
+                    index = Vertex.Index(vertex, g_vertices, tolerance=tolerance)
+                    if not index == None:
+                        d = Topology.Dictionary(g_vertices[index])
+                        value = Dictionary.ValueAtKey(d, vertexKey)
                     if not value == None:
                         pathCost += value
                 lengths[i] += pathCost
@@ -6697,29 +6725,31 @@ class Graph:
         edgeMatrix = Graph.AdjacencyMatrix(graph, edgeKeyFwd=edgeKeyFwd, edgeKeyBwd=edgeKeyBwd, bidirKey=bidirKey, bidirectional=bidirectional, useEdgeIndex = True, useEdgeLength=False, tolerance=tolerance)
         vertices = Graph.Vertices(graph)
         edges = Graph.Edges(graph)
-        sourceIndex = Vertex.Index(source, vertices)
-        sinkIndex = Vertex.Index(sink, vertices)
-        max_flow, am = ford_fulkerson(adjMatrix=adjMatrix, source=sourceIndex, sink=sinkIndex)
-        for i in range(len(am)):
-            row = am[i]
-            for j in range(len(row)):
-                residual = am[i][j]
-                edge = edges[edgeMatrix[i][j]-1]
-                d = Topology.Dictionary(edge)
-                if not d == None:
-                    keys = Dictionary.Keys(d)
-                    values = Dictionary.Values(d)
-                else:
-                    keys = []
-                    values = []
-                keys.append(residualKey)
-                values.append(residual)
-                d = Dictionary.ByKeysValues(keys, values)
-                edge = Topology.SetDictionary(edge, d)
+        sourceIndex = Vertex.Index(source, vertices, tolerance=tolerance)
+        sinkIndex = Vertex.Index(sink, vertices, tolerance=tolerance)
+        max_flow = None
+        if not sourceIndex == None and not sinkIndex == None:
+            max_flow, am = ford_fulkerson(adjMatrix=adjMatrix, source=sourceIndex, sink=sinkIndex)
+            for i in range(len(am)):
+                row = am[i]
+                for j in range(len(row)):
+                    residual = am[i][j]
+                    edge = edges[edgeMatrix[i][j]-1]
+                    d = Topology.Dictionary(edge)
+                    if not d == None:
+                        keys = Dictionary.Keys(d)
+                        values = Dictionary.Values(d)
+                    else:
+                        keys = []
+                        values = []
+                    keys.append(residualKey)
+                    values.append(residual)
+                    d = Dictionary.ByKeysValues(keys, values)
+                    edge = Topology.SetDictionary(edge, d)
         return max_flow
 
     @staticmethod
-    def MeshData(g):
+    def MeshData(g, tolerance: float = 0.0001):
         """
         Returns the mesh data of the input graph.
 
@@ -6727,6 +6757,8 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -6755,11 +6787,12 @@ class Graph:
         for g_edge in g_edges:
             sv = g_edge.StartVertex()
             ev = g_edge.EndVertex()
-            si = Vertex.Index(sv, g_vertices)
-            ei = Vertex.Index(ev, g_vertices)
-            m_edges.append([si, ei])
-            d = Dictionary.PythonDictionary(Topology.Dictionary(g_edge))
-            e_dicts.append(d)
+            si = Vertex.Index(sv, g_vertices, tolerance=tolerance)
+            ei = Vertex.Index(ev, g_vertices, tolerance=tolerance)
+            if (not si == None) and (not ei == None):
+                m_edges.append([si, ei])
+                d = Dictionary.PythonDictionary(Topology.Dictionary(g_edge))
+                e_dicts.append(d)
         return {'vertices':m_vertices,
                 'edges': m_edges,
                 'vertexDictionaries': v_dicts,
@@ -7231,7 +7264,9 @@ class Graph:
                 incoming_score = 0
                 for incoming_vertex in Graph.IncomingVertices(graph, vertex, directed=directed):
                     if len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed)) > 0:
-                        incoming_score += scores[Vertex.Index(incoming_vertex, vertices)] / len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed))
+                        vi = Vertex.Index(incoming_vertex, vertices, tolerance=tolerance)
+                        if not vi == None:
+                            incoming_score += scores[vi] / len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed))
                 new_scores[i] = alpha * incoming_score + (1 - alpha) / num_vertices
 
             # Check for convergence
@@ -7286,9 +7321,14 @@ class Graph:
 
     
     @staticmethod
-    def PyvisGraph(graph, path, overwrite=True, height=900, backgroundColor="white", fontColor="black", notebook=False,
-                   vertexSize=6, vertexSizeKey=None, vertexColor="black", vertexColorKey=None, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=None, minVertexGroup=None, maxVertexGroup=None, 
-                   edgeLabelKey=None, edgeWeight=0, edgeWeightKey=None, showNeighbours=True, selectMenu=True, filterMenu=True, colorScale="viridis"):
+    def PyvisGraph(graph, path, overwrite: bool = True, height: int = 900, backgroundColor: str = "white",
+                   fontColor: str = "black", notebook: bool = False,
+                   vertexSize: int = 6, vertexSizeKey: str = None, vertexColor: str = "black",
+                   vertexColorKey: str = None, vertexLabelKey: str = None, vertexGroupKey: str = None,
+                   vertexGroups: list = None, minVertexGroup: float = None, maxVertexGroup: float = None, 
+                   edgeLabelKey: str = None, edgeWeight: int = 0, edgeWeightKey: str = None,
+                   showNeighbours: bool = True, selectMenu: bool = True,
+                   filterMenu: bool = True, colorScale: str = "viridis", tolerance: float = 0.0001):
         """
         Displays a pyvis graph. See https://pyvis.readthedocs.io/.
 
@@ -7341,7 +7381,8 @@ class Graph:
             If set to True, a filtering menu will be displayed. The default is True.
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         Returns
         -------
         None
@@ -7443,9 +7484,10 @@ class Graph:
                     w = weightValue
             sv = Edge.StartVertex(e)
             ev = Edge.EndVertex(e)
-            svi = Vertex.Index(sv, vertices)
-            evi = Vertex.Index(ev, vertices)
-            net.add_edge(svi, evi, weight=w, label=edge_label)
+            svi = Vertex.Index(sv, vertices, tolerance=tolerance)
+            evi = Vertex.Index(ev, vertices, tolerance=tolerance)
+            if (not svi == None) and (not evi == None):
+                net.add_edge(svi, evi, weight=w, label=edge_label)
         net.inherit_edge_colors(False)
         
         # add neighbor data to node hover data and compute vertexSize

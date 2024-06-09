@@ -84,13 +84,39 @@ class Edge():
             The created bisecting edge.
 
         """
-        import numpy as np
-
+        from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
+        import numpy as np
 
+
+        def process_edges(edge1, edge2, tolerance=0.0001):
+            start1 = Edge.StartVertex(edge1)
+            end1 = Edge.EndVertex(edge1)
+            start2 = Edge.StartVertex(edge2)
+            end2 = Edge.EndVertex(edge2)
+            
+            shared_vertex = None
+            
+            if Vertex.Distance(start1, start2) < tolerance:
+                shared_vertex = start1
+            elif Vertex.Distance(start1, end2) < tolerance:
+                shared_vertex = start1
+                edge2 = Edge.Reverse(edge2)
+            elif Vertex.Distance(end1, start2) < tolerance:
+                shared_vertex = start2
+                edge1 = Edge.Reverse(edge1)
+            elif Vertex.Distance(end1, end2) < tolerance:
+                shared_vertex = end1
+                edge1 = Edge.Reverse(edge1)
+                edge2 = Edge.Reverse(edge2)
+            
+            if shared_vertex is None:
+                return [None, None]
+            return edge1, edge2
+        
         if not Topology.IsInstance(edgeA, "Edge"):
             print("Edge.Bisect - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
             return None
@@ -104,21 +130,21 @@ class Edge():
             print("Edge.Bisect - Error: The input edgeB parameter is shorter than the input tolerance parameter. Returning None.")
             return None
         
-        wire = Topology.SelfMerge(Cluster.ByTopologies([edgeA, edgeB]), tolerance=tolerance)
-        if not Topology.IsInstance(wire, "Wire"):
+        
+        edge1, edge2 = process_edges(edgeA, edgeB, tolerance=tolerance)
+        if edge1 == None or edge2 == None:
             print("Edge.Bisect - Error: The input edgeA and edgeB parameters do not share a vertex and thus cannot be bisected. Returning None.")
             return None
-        edges = Topology.Edges(wire)
-        edgeA = edges[0]
-        edgeB = edges[1]
-
-        sv = Wire.Vertices(wire)[1]
-
-        dirA = Edge.Direction(edgeA)
-        dirB = Edge.Direction(edgeB)
-        bisecting_vector = Vector.Bisect(dirA, dirB)
+        sv = Edge.StartVertex(edge1)
+        dir1 = Edge.Direction(edge1)
+        dir2 = Edge.Direction(edge2)
+        bisecting_vector = Vector.Bisect(dir1, dir2)
         ev = Topology.TranslateByDirectionDistance(sv, bisecting_vector, length)
         bisecting_edge = Edge.ByVertices([sv, ev])
+        if placement == 0:
+            bisecting_edge = Topology.TranslateByDirectionDistance(bisecting_edge, Vector.Reverse(bisecting_vector), length*0.5)
+        elif placement == 2:
+            bisecting_edge = Topology.TranslateByDirectionDistance(bisecting_edge, Vector.Reverse(bisecting_vector), length)
         return bisecting_edge
 
     @staticmethod
@@ -481,7 +507,7 @@ class Edge():
             if not silent:
                 print("Edge.ExtendToEdge - Error: The input edges are not coplanar. Returning the original edge.")
             return edgeA
-        if not Edge.IsParallel(edgeA, edgeB, tolerance=tolerance):
+        if Edge.IsParallel(edgeA, edgeB, tolerance=tolerance):
             if not silent:
                 print("Edge.ExtendToEdge - Error: The input edges are parallel. Returning the original edge.")
             return edgeA
@@ -789,8 +815,8 @@ class Edge():
 
         x1, y1, z1 = Vertex.Coordinates(Edge.StartVertex(edgeA), mantissa=mantissa)
         x2, y2, z2 = Vertex.Coordinates(Edge.EndVertex(edgeA), mantissa=mantissa)
-        x3, y3, z3 = Vertex.Coordinates(Edge.StartVertex(edgeA), mantissa=mantissa)
-        x4, y4, z4 = Vertex.Coordinates(Edge.EndVertex(edgeA), mantissa=mantissa)
+        x3, y3, z3 = Vertex.Coordinates(Edge.StartVertex(edgeB), mantissa=mantissa)
+        x4, y4, z4 = Vertex.Coordinates(Edge.EndVertex(edgeB), mantissa=mantissa)
         line1 = ((x1, y1, z1), (x2, y2, z2))
         line2 = ((x3, y3, z3), (x4, y4, z4))
         return are_lines_parallel(line1, line2, tolerance=tolerance)
@@ -1239,7 +1265,7 @@ class Edge():
             if not silent:
                 print("Edge.TrimByEdge - Error: The input edges are not coplanar. Returning the original edge.")
             return edgeA
-        if not Edge.IsParallel(edgeA, edgeB, tolerance=tolerance):
+        if Edge.IsParallel(edgeA, edgeB, tolerance=tolerance):
             if not silent:
                 print("Edge.TrimByEdge - Error: The input edges are parallel. Returning the original edge.")
             return edgeA

@@ -1057,10 +1057,8 @@ class Vertex():
         import inspect
 
         if not Topology.IsInstance(vertex, "Vertex"):
+            print("Called from:", inspect.stack()[1][3])
             if not silent:
-                stack = inspect.stack()
-                if len(stack) > 2:
-                    print(stack[2].function)
                 print("Vertex.IsInternal - Error: The input vertex parameter is not a valid vertex. Returning None.", vertex, topology)
             return None
         if not Topology.IsInstance(topology, "Topology"):

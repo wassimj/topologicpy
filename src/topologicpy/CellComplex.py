@@ -1132,7 +1132,7 @@ class CellComplex():
                 vertices = Topology.Vertices(cell)
         else:
             vertices += Topology.Vertices(cell)
-        vertices = [v for v in vertices if (Vertex.IsInternal(v, cell) or not Vertex.Index(v, Topology.Vertices(cell)) == None)]
+        vertices = [v for v in vertices if (Vertex.IsInternal(v, cell) or not Vertex.Index(v, Topology.Vertices(cell), tolerance=tolerance) == None)]
         if len(vertices) < 1:
             print("CellComplex.Voronoi - Error: The input vertices parame ter does not contain any vertices that are inside the input cell parameter. Returning None.")
             return None

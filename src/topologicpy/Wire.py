@@ -334,12 +334,9 @@ class Wire(Topology):
         return Wire.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
-    def ByOffset(wire, offset: float = 1.0,
-                 miter: bool = False, miterThreshold: float = None,
-                 offsetKey: str = None, miterThresholdKey: str = None,
-                 step: bool = True, angTolerance: float = 0.1, tolerance: float = 0.0001):
+    def ByOffset(wire, offset: float = 1.0, bisectors: bool = False, tolerance: float = 0.0001):
         """
-        Creates an offset wire from the input wire.
+        Creates an offset wire from the input wire. A positive offset value results in an offset to the interior of the anti-clockwise wire.
 
         Parameters
         ----------
@@ -347,18 +344,8 @@ class Wire(Topology):
             The input wire.
         offset : float , optional
             The desired offset distance. The default is 1.0.
-        miter : bool , optional
-            if set to True, the corners will be mitered. The default is False.
-        miterThreshold : float , optional
-            The distance beyond which a miter should be added. The default is None which means the miter threshold is set to the offset distance multiplied by the square root of 2.
-        offsetKey : str , optional
-            If specified, the dictionary of the edges will be queried for this key to specify the desired offset. The default is None.
-        miterThresholdKey : str , optional
-            If specified, the dictionary of the vertices will be queried for this key to specify the desired miter threshold distance. The default is None.
-        step : bool , optional
-            If set to True, The transition between collinear edges with different offsets will be a step. Otherwise, it will be a continous edge. The default is True.
-        angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+        bisectors : bool , optional
+            If set to True, The bisectors (seams) edges will be included in the returned wire. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -368,169 +355,76 @@ class Wire(Topology):
             The created wire.
 
         """
+        def compute_h(alpha, offset):
+            import math
+            alpha = math.radians(alpha) *0.5
+            h = offset/math.cos(alpha)
+            return h
+        
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-
-        from random import randrange, sample
+        from topologicpy.Vector import Vector
+        import math
 
         if not Topology.IsInstance(wire, "Wire"):
+            print("Wire.ByOffset - Error: The input wire parameter is not a valid wire. Returning None")
             return None
-        if not miterThreshold:
-            miterThreshold = offset*math.sqrt(2)
-        flatFace = Face.ByWire(wire, tolerance=tolerance)
-        origin = Topology.Centroid(flatFace)
-        normal = Face.Normal(flatFace)
-        flatFace = Topology.Flatten(flatFace, origin=origin, direction=normal)
-        
-        edges = Wire.Edges(wire)
-        vertices = Wire.Vertices(wire)
-        flatEdges = []
-        flatVertices = []
-        newEdges = []
-        for i in range(len(vertices)):
-            flatVertex = Topology.Flatten(vertices[i], origin=origin, direction=normal)
-            flatVertices.append(flatVertex)
-        vertices = flatVertices
-        for i in range(len(edges)):
-            flatEdge = Topology.Flatten(edges[i], origin=origin, direction=normal)
-            flatEdges.append(flatEdge)
-            if offsetKey:
-                d = Topology.Dictionary(edges[i])
-                value = Dictionary.ValueAtKey(d, key=offsetKey)
-                c = Topology.Centroid(flatEdge)
-                if value:
-                    finalOffset = value
-                else:
-                    finalOffset = offset
-            else:
-                finalOffset = offset
-            e1 = Edge.ByOffset2D(flatEdge,finalOffset)
-            newEdges.append(e1)
-        edges = flatEdges
-        newVertices = []
-        dupVertices = []
-        if Wire.IsClosed(wire):
-            e1 = newEdges[-1]
-            e2 = newEdges[0]
-            intV = Topology.Intersect(e1,e2)
-            if intV:
-                newVertices.append(intV)
-                dupVertices.append(vertices[0])
-            elif step:
-                edgeVertices= Edge.Vertices(e1)
-                newVertices.append(Vertex.NearestVertex(vertices[-1], Cluster.ByTopologies(edgeVertices), useKDTree=False))
-                edgeVertices= Edge.Vertices(e2)
-                newVertices.append(Vertex.NearestVertex(vertices[0], Cluster.ByTopologies(edgeVertices), useKDTree=False))
-                dupVertices.append(vertices[0])
-                dupVertices.append(vertices[0])
-            else:
-                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=True)
-                normal = Edge.Normal(e1)
-                normal = [normal[0]*finalOffset*10, normal[1]*finalOffset*10, normal[2]*finalOffset*10]
-                tempV = Vertex.ByCoordinates(vertices[0].X()+normal[0], vertices[0].Y()+normal[1], vertices[0].Z()+normal[2])
-                tempEdge2 = Edge.ByVertices([vertices[0], tempV], tolerance=tolerance, silent=True)
-                intV = Topology.Intersect(tempEdge1,tempEdge2)
-                newVertices.append(intV)
-                dupVertices.append(vertices[0])
-        else:
-            newVertices.append(Edge.StartVertex(newEdges[0]))
-        
-        for i in range(len(newEdges)-1):
-            e1 = newEdges[i]
-            e2 = newEdges[i+1]
-            intV = Topology.Intersect(e1,e2)
-            if intV:
-                newVertices.append(intV)
-                dupVertices.append(vertices[i+1])
-            elif step:
-                newVertices.append(Edge.EndVertex(e1))
-                newVertices.append(Edge.StartVertex(e2))
-                dupVertices.append(vertices[i+1])
-                dupVertices.append(vertices[i+1])
-            else:
-                tempEdge1 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=True)
-                normal = Edge.Normal(e1)
-                normal = [normal[0]*finalOffset*10, normal[1]*finalOffset*10, normal[2]*finalOffset*10]
-                tempV = Vertex.ByCoordinates(vertices[i+1].X()+normal[0], vertices[i+1].Y()+normal[1], vertices[i+1].Z()+normal[2])
-                tempEdge2 = Edge.ByVertices([vertices[i+1], tempV], tolerance=tolerance, silent=True)
-                intV = Topology.Intersect(tempEdge1,tempEdge2)
-                newVertices.append(intV)
-                dupVertices.append(vertices[i+1])
-
-        vertices = dupVertices
+        if abs(offset) < tolerance:
+            return wire
+        vertices = Topology.Vertices(wire)
+        if len(vertices) < 3:
+            print("Wire.ByOffset - Error: The input wire parameter contains less than three vertices. Cannot proceed. Returning None")
+            return None
         if not Wire.IsClosed(wire):
-            newVertices.append(Edge.EndVertex(newEdges[-1]))
-        newWire = Wire.ByVertices(newVertices, close=Wire.IsClosed(wire))
-        
-        newVertices = Wire.Vertices(newWire)
-        newEdges = Wire.Edges(newWire)
-        miterEdges = []
-        cleanMiterEdges = []
-        # Handle miter
-        if miter:
-            for i in range(len(newVertices)):
-                if miterThresholdKey:
-                    d = Topology.Dictionary(vertices[i])
-                    value = Dictionary.ValueAtKey(d, key=miterThresholdKey)
-                    if value:
-                        finalMiterThreshold = value
-                    else:
-                        finalMiterThreshold = miterThreshold
-                else:
-                    finalMiterThreshold = miterThreshold
-                if Vertex.Distance(vertices[i], newVertices[i]) > abs(finalMiterThreshold):
-                    st = Topology.SuperTopologies(newVertices[i], newWire, topologyType="edge")
-                    if len(st) > 1:
-                        e1 = st[0]
-                        e2 = st[1]
-                        if not Edge.IsCollinear(e1, e2, tolerance=tolerance):
-                            e1 = Edge.Reverse(e1, tolerance=tolerance)
-                            bisector = Edge.ByVertices([vertices[i], newVertices[i]], tolerance=tolerance)
-                            nv = Edge.VertexByDistance(bisector, distance=finalMiterThreshold, origin=Edge.StartVertex(bisector), tolerance=0.0001)
-                            vec = Edge.Normal(bisector)
-                            nv2 = Topology.Translate(nv, vec[0], vec[1], 0)
-                            nv3 = Topology.Translate(nv, -vec[0], -vec[1], 0)
-                            miterEdge = Edge.ByVertices([nv2,nv3], tolerance=tolerance)
-                            if miterEdge:
-                                miterEdge = Edge.SetLength(miterEdge, abs(offset)*10)
-                                msv = Topology.Intersect(miterEdge, e1)
-                                mev = Topology.Intersect(miterEdge, e2)
-                                #if msv == None or mev == None:
-                                    #Topology.Show(miterEdge, wire, renderer="browser")
-                                    #Topology.Show(miterEdge, e2, wire, renderer="browser")
-                                if (Vertex.IsInternal(msv, e1,tolerance=0.01) and (Vertex.IsInternal(mev, e2, tolerance=0.01))):
-                                    miterEdge = Edge.ByVertices([msv, mev], tolerance=tolerance)
-                                    if miterEdge:
-                                        cleanMiterEdges.append(miterEdge)
-                                        miterEdge = Edge.SetLength(miterEdge, Edge.Length(miterEdge)*1.02)
-                                        miterEdges.append(miterEdge)
-
-            c = Topology.SelfMerge(Cluster.ByTopologies(newEdges+miterEdges), tolerance=tolerance)
-            vertices = Wire.Vertices(c)
-            subtractEdges = []
-            for v in vertices:
-                edges = Topology.SuperTopologies(v, c, topologyType="edge")
-                if len(edges) == 2:
-                    if not Edge.IsCollinear(edges[0], edges[1], tolerance=tolerance):
-                        adjacentVertices = Topology.AdjacentTopologies(v, c)
-                        total = 0
-                        for adjV in adjacentVertices:
-                            tempEdges = Topology.SuperTopologies(adjV, c, topologyType="edge")
-                            total += len(tempEdges)
-                        if total == 8:
-                            subtractEdges = subtractEdges+edges
-
-            if len(subtractEdges) > 0:
-                newWire = Topology.Boolean(newWire, Cluster.ByTopologies(subtractEdges), operation="difference", tolerance=tolerance)
-                if len(cleanMiterEdges) > 0:
-                    newWire = Topology.Boolean(newWire, Cluster.ByTopologies(cleanMiterEdges), operation="merge", tolerance=tolerance)
-
-        newWire = Topology.Unflatten(newWire, origin=origin, direction=normal)
-        return newWire
+            w = Wire.ByVertices(vertices, close=True)
+        else:
+            w = wire
+        three_vertices = Wire.Vertices(w)[0:3]
+        temp_w = Wire.ByVertices(three_vertices, close=True)
+        flat_face = Face.ByWire(temp_w, tolerance=tolerance)
+        origin = Vertex.Origin()
+        normal = Face.Normal(flat_face)
+        flat_wire = Topology.Flatten(w, origin=origin, direction=normal)
+        edges = Wire.Edges(flat_wire)
+        vertices = Wire.Vertices(flat_wire)
+        int_angles = Wire.InteriorAngles(flat_wire)
+        bisector_list = []
+        final_vertices = []
+        for i in range(len(vertices)):
+            v_edges = Topology.SuperTopologies(vertices[i], flat_wire, topologyType="edge")
+            if len(v_edges) < 2:
+                continue
+            bisector = Edge.Bisect(v_edges[0], v_edges[1], length=offset, placement=1)
+            if int_angles[i] > 180:
+                bisector = Topology.TranslateByDirectionDistance(bisector, Vector.Reverse(Edge.Direction(bisector)), distance=abs(offset))
+                bisector = Edge.Reverse(bisector)
+            
+            h = abs(compute_h(180-int_angles[i], abs(offset)))
+            bisector = Edge.SetLength(bisector, length=h, bothSides=False)
+            final_vertices.append(Edge.EndVertex(bisector))        
+            bisector_list.append(bisector)
+        return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
+        vertices = Topology.Vertices(return_wire)
+        if not Wire.IsClosed(wire):
+            sv = Topology.Vertices(flat_wire)[0]
+            ev = Topology.Vertices(flat_wire)[-1]
+            first_edge = Topology.SuperTopologies(sv, flat_wire, topologyType="edge")[0]
+            first_normal = Edge.NormalAsEdge(first_edge, length=abs(offset), u = 0)
+            last_edge = Topology.SuperTopologies(ev, flat_wire, topologyType="edge")[0]
+            last_normal = Edge.NormalAsEdge(last_edge, length=abs(offset), u = 1.0)
+            sv1 = Edge.EndVertex(first_normal)
+            ev1 = Edge.EndVertex(last_normal)
+            vertices = [sv1] + vertices[1:-1] + [ev1]
+            bisector_list = [first_normal] + bisector_list[1:-1] + [last_normal]
+        return_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(wire))
+        if bisectors:
+            return_wire = Topology.SelfMerge(Cluster.ByTopologies(bisector_list, Topology.Edges(return_wire)))
+        return_wire = Topology.Unflatten(return_wire, origin=origin, direction=normal)
+        return return_wire
 
     @staticmethod
     def ByVertices(vertices: list, close: bool = True, tolerance: float = 0.0001):
@@ -671,8 +565,8 @@ class Wire(Topology):
         sides = int(math.floor(sides))
         for i in range(sides+1):
             angle = fromAngle + math.radians(angleRange/sides)*i
-            x = math.cos(angle)*radius + origin.X()
-            y = math.sin(angle)*radius + origin.Y()
+            x = math.sin(angle)*radius + origin.X()
+            y = math.cos(angle)*radius + origin.Y()
             z = origin.Z()
             xList.append(x)
             yList.append(y)
@@ -746,8 +640,8 @@ class Wire(Topology):
             nearest = nearest_vertex(end, ends)
             if not nearest in used:
                 d = Vertex.Distance(end, nearest)
-                i1 = Vertex.Index(end, vertices)
-                i2 = Vertex.Index(nearest, vertices)
+                i1 = Vertex.Index(end, vertices, tolerance=tolerance)
+                i2 = Vertex.Index(nearest, vertices, tolerance=tolerance)
                 if i1 == None or i2 == None:
                     print("Wire.Close - Error: Something went wrong. Returning None.")
                     return None
@@ -1952,6 +1846,114 @@ class Wire(Topology):
         return Wire.ByVertices(vertices)
     
     @staticmethod
+    def Miter(wire, offset: float = 0, offsetKey: str = None, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Fillets (rounds) the interior and exterior corners of the input wire given the input radius. See https://en.wikipedia.org/wiki/Fillet_(mechanics)
+
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire.
+        offset : float
+            The desired offset length of the miter along each edge.
+        offsetKey : str , optional
+            If specified, the dictionary of the vertices will be queried for this key to specify the desired offset length. The default is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The filleted wire.
+
+        """
+        def start_from(edge, v):
+            sv = Edge.StartVertex(edge)
+            ev = Edge.EndVertex(edge)
+            if Vertex.Distance(v, ev) < Vertex.Distance(v, sv):
+                return Edge.Reverse(edge)
+            return edge
+        
+        def compute_kite_edges(alpha, r):
+            # Convert angle to radians
+            alpha = math.radians(alpha) *0.5
+            h = r/math.cos(alpha)
+            a = math.sqrt(h*h - r*r)
+            return [a,h]
+        
+        import math
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Vector import Vector
+        from topologicpy.Dictionary import Dictionary
+        
+        if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Wire.Fillet - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+        if not Wire.IsManifold(wire):
+            if not silent:
+                print("Wire.Fillet - Error: The input wire parameter is not manifold. Returning None.")
+            return None
+        if not Topology.IsPlanar(wire):
+            if not silent:
+                print("Wire.Fillet - Error: The input wire parameter is not planar. Returning None.")
+            return None
+
+        orig_offset = offset
+        f = Face.BoundingRectangle(wire, tolerance=tolerance)
+        normal = Face.Normal(f)
+        flat_wire = Topology.Flatten(wire, origin=Vertex.Origin(), direction=normal)
+        vertices = Topology.Vertices(flat_wire)
+        final_vertices = []
+        miters = []
+        for v in vertices:
+            offset = orig_offset
+            edges = Topology.SuperTopologies(v, flat_wire, topologyType="edge")
+            if len(edges) == 2:
+                for edge in edges:
+                    ev = Edge.EndVertex(edge)
+                    if Vertex.Distance(v, ev) < tolerance:
+                        edge0 = edge
+                    else:
+                        edge1 = edge
+                ang = Edge.Angle(edge0, edge1)
+                e1 = start_from(edge0, v)
+                e2 = start_from(edge1, v)
+
+                dir1 = Edge.Direction(e1)
+                dir2 = Edge.Direction(e2)
+                if Vector.IsParallel(dir1, dir2) or Vector.IsAntiParallel(dir1, dir2):
+                    pass
+                else:
+                    if isinstance(offsetKey, str):
+                        d = Topology.Dictionary(v)
+                        if Topology.IsInstance(d, "Dictionary"):
+                            v_offset = Dictionary.ValueAtKey(d, offsetKey)
+                            if isinstance(v_offset, float) or isinstance(v_offset, int):
+                                if v_offset >= 0:
+                                    offset = v_offset
+                    if offset > 0 and offset <= Edge.Length(e1) and offset <=Edge.Length(e2):
+                        v1 = Topology.TranslateByDirectionDistance(v, dir1, offset)
+                        v2 = Topology.TranslateByDirectionDistance(v, dir2, offset)
+                        final_vertices += [v1,v2]
+                    else:
+                        print("Wire.Fillet - Warning: The input offset parameter is greater than the length of the edge. Skipping.")
+                        final_vertices.append(v)
+            else:
+                final_vertices.append(v)
+        flat_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
+        # Unflatten the wire
+        return_wire = Topology.Unflatten(flat_wire, origin=Vertex.Origin(), direction=normal)
+        return return_wire
+    
+    @staticmethod
     def OrientEdges(wire, vertexA, tolerance=0.0001):
         """
         Returns a correctly oriented head-to-tail version of the input wire. The input wire must be manifold.
@@ -2233,9 +2235,9 @@ class Wire(Topology):
             new_edges = []
             for edge in edges:
                 sv = Edge.StartVertex(edge)
-                sv = vertices[Vertex.Index(sv, vertices)]
+                sv = vertices[Vertex.Index(sv, vertices, tolerance=tolerance)]
                 ev = Edge.EndVertex(edge)
-                ev = vertices[Vertex.Index(ev, vertices)]
+                ev = vertices[Vertex.Index(ev, vertices, tolerance=tolerance)]
                 if Vertex.Distance(sv, ev) > tolerance:
                     new_edges.append(Edge.ByVertices([sv,ev]))
             new_wire = Topology.SelfMerge(Cluster.ByTopologies(new_edges), tolerance=tolerance)

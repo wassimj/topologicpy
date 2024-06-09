@@ -5540,7 +5540,7 @@ class Topology():
                 #final_faces.append(Face.RemoveCollinearEdges(t))
                 final_faces.append(t)
             elif Topology.IsInstance(t, "Shell"):
-                    f = Face.ByShell(t)
+                    f = Face.ByShell(t, silent=True)
                     if Topology.IsInstance(f, "Face"):
                         final_faces.append(f)
                     else:

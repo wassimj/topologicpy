@@ -331,6 +331,52 @@ class Shell():
         _ = cluster.Faces(None, faces)
         return Shell.ByFaces(faces, tolerance=tolerance)
 
+
+    @staticmethod
+    def ByThickenedWire(wire, offsetA: float = 1.0, offsetB: float = 1.0, tolerance: float = 0.0001):
+        """
+        Creates a shell by thickening the input wire. This method assumes the wire is manifold and planar.
+
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire to be thickened.
+        offsetA : float , optional
+            The desired offset to the exterior of the wire. The default is 1.0.
+        offsetB : float , optional
+            The desired offset to the interior of the wire. The default is 1.0.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created cell.
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(wire, "Wire"):
+            print("Shell.ByThickenedWire - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+        
+        f = Face.ByThickenedWire(wire, offsetA=offsetA, offsetB=offsetB, tolerance=tolerance)
+        outside_wire = Wire.ByOffset(wire, offset=abs(offsetA)*-1, bisectors = False, tolerance=tolerance)
+        inside_wire = Wire.ByOffset(wire, offset=abs(offsetB), bisectors = False, tolerance=tolerance)
+        border = Topology.Merge(outside_wire, inside_wire)
+        outside_wire = Wire.ByOffset(wire, offset=abs(offsetA)*-1, bisectors = True, tolerance=tolerance)
+        inside_wire = Wire.ByOffset(wire, offset=abs(offsetB), bisectors = True, tolerance=tolerance)
+        grid = Topology.Merge(outside_wire, inside_wire)
+        bisectors = Topology.Difference(grid, border)
+        return_shell = Topology.Slice(f, bisectors)
+        if not Topology.IsInstance(return_shell, "Shell"):
+            print("Shell.ByThickenedWire - Error: The operation failed. Returning None.")
+            return None
+        return return_shell
+
     @staticmethod
     def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -1765,7 +1811,7 @@ class Shell():
                 for v in tempWire:
                     if len(temp_verts) == 0:
                         temp_verts.append(v)
-                    elif Vertex.Index(v, temp_verts) == None:
+                    elif Vertex.Index(v, temp_verts, tolerance=tolerance) == None:
                         temp_verts.append(v)
                 tempWire = temp_verts
                 temp_w = Wire.ByVertices(tempWire, close=True)

@@ -339,8 +339,8 @@ class Neo4j:
             e = edges[i]
             sv = e.StartVertex()
             ev = e.EndVertex()
-            sn = nodes[Vertex.Index(sv, vertices, tolerance)]
-            en = nodes[Vertex.Index(ev, vertices, tolerance)]
+            sn = nodes[Vertex.Index(sv, vertices, tolerance=tolerance)]
+            en = nodes[Vertex.Index(ev, vertices, tolerance=tolerance)]
             relationshipType = Dictionary.ValueAtKey(e, relationshipKey)
             if not (relationshipType):
                 relationshipType = "Connected To"
