@@ -161,7 +161,7 @@ def test_main():
     offF1 = Face.ByOffset(f1)                                                       # without optional inputs 
     assert Topology.IsInstance(offF1, "Face"), "Face.ByOffset. Should be topologic.Face"
     # test 2
-    offF2 = Face.ByOffset(c1, .5, True, miterThreshold= 2.0)       # without optional inputs 
+    offF2 = Face.ByOffset(c1, offset=0.5)       # without optional inputs 
     assert Topology.IsInstance(offF2, "Face"), "Face.ByOffset. Should be topologic.Face"
     #  plot geometry
     # geo1 = Plotly.DataByTopology(offF2)       # create plotly data

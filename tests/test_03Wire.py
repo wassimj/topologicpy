@@ -94,8 +94,7 @@ def test_main():
     offR1 = Wire.ByOffset(rec1)                                              # without optional inputs
     assert Topology.IsInstance(offR1, "Wire"),"Wire.ByOffset. Should be topologic.Wire"
     # test 2        
-    offC1 = Wire.ByOffset(Cir0, offset=1, miter=True, miterThreshold=.5,                    # with optional inputs
-                                        offsetKey='offCircleEdg', miterThresholdKey='offCircleVer', step=False)                                                                                                                     
+    offC1 = Wire.ByOffset(Cir0, offset=1, bisectors=True)                                                                                                                     
     assert Topology.IsInstance(offC1, "Wire"),"Wire.ByOffset. Should be topologic.Wire"
 
     # Case 5 - ByVertices

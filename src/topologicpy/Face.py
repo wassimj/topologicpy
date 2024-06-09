@@ -258,11 +258,9 @@ class Face():
         return Face.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
-    def ByOffset(face, offset: float = 1.0, miter: bool = False,
-                 miterThreshold: float = None, offsetKey: str = None,
-                 miterThresholdKey: str = None, step: bool = True, tolerance: float = 0.0001):
+    def ByOffset(face, offset: float = 1.0, tolerance: float = 0.0001):
         """
-        Creates an offset face from the input face.
+        Creates an offset face from the input face. A positive offset value results in a smaller face to the inside of the input face.
 
         Parameters
         ----------
@@ -270,16 +268,6 @@ class Face():
             The input face.
         offset : float , optional
             The desired offset distance. The default is 1.0.
-        miter : bool , optional
-            if set to True, the corners will be mitered. The default is False.
-        miterThreshold : float , optional
-            The distance beyond which a miter should be added. The default is None which means the miter threshold is set to the offset distance multiplied by the square root of 2.
-        offsetKey : str , optional
-            If specified, the dictionary of the edges will be queried for this key to sepcify the desired offset. The default is None.
-        miterThresholdKey : str , optional
-            If specified, the dictionary of the vertices will be queried for this key to sepcify the desired miter threshold distance. The default is None.
-        step : bool , optional
-            If set to True, The transition between collinear edges with different offsets will be a step. Otherwise, it will be a continous edge. The default is True.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -297,14 +285,14 @@ class Face():
             return None
         eb = Face.Wire(face)
         internal_boundaries = Face.InternalBoundaries(face)
-        offset_external_boundary = Wire.ByOffset(wire=eb, offset=offset, miter=miter, miterThreshold=miterThreshold, offsetKey=offsetKey, miterThresholdKey=miterThresholdKey, step=step)
+        offset_external_boundary = Wire.ByOffset(wire=eb, offset=offset, bisectors=False, tolerance=tolerance)
         offset_internal_boundaries = []
         for internal_boundary in internal_boundaries:
-            offset_internal_boundaries.append(Wire.ByOffset(wire=internal_boundary, offset=offset, miter=miter, miterThreshold=miterThreshold, offsetKey=offsetKey, miterThresholdKey=miterThresholdKey, step=step))
+            offset_internal_boundaries.append(Wire.ByOffset(wire=internal_boundary, offset=offset, bisectors=False, tolerance=tolerance))
         return Face.ByWires(offset_external_boundary, offset_internal_boundaries, tolerance=tolerance)
     
     @staticmethod
-    def ByShell(shell, origin= None, angTolerance: float = 0.1, tolerance: float = 0.0001):
+    def ByShell(shell, origin= None, angTolerance: float = 0.1, tolerance: float = 0.0001, silent=False):
         """
         Creates a face by merging the faces of the input shell.
 
@@ -351,13 +339,13 @@ class Face():
         face = None
         ext_boundary = Wire.RemoveCollinearEdges(Shell.ExternalBoundary(shell))
         if Topology.IsInstance(ext_boundary, "Wire"):
-            face = Face.ByWire(ext_boundary)
+            face = Face.ByWire(ext_boundary, silent=silent)
         elif Topology.IsInstance(ext_boundary, "Cluster"):
             wires = Topology.Wires(ext_boundary)
-            faces = [Face.ByWire(w) for w in wires]
+            faces = [Face.ByWire(w, silent=silent) for w in wires]
             areas = [Face.Area(f) for f in faces]
             wires = Helper.Sort(wires, areas, reverseFlags=[True])
-            face = Face.ByWires(wires[0], wires[1:])
+            face = Face.ByWires(wires[0], wires[1:], silent=silent)
 
         if Topology.IsInstance(face, "Face"):
             return face
@@ -419,6 +407,68 @@ class Face():
             return face
         else:
             return None
+    
+    @staticmethod
+    def ByThickenedWire(wire, offsetA: float = 1.0, offsetB: float = 0.0, tolerance: float = 0.0001):
+        """
+        Creates a face by thickening the input wire. This method assumes the wire is manifold and planar.
+
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire to be thickened.
+        offsetA : float , optional
+            The desired offset to the exterior of the wire. The default is 1.0.
+        offsetB : float , optional
+            The desired offset to the interior of the wire. The default is 0.0.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created cell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Vector import Vector
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(wire, "Wire"):
+            print("Face.ByThickenedWire - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+
+        three_vertices = Wire.Vertices(wire)[0:3]
+        temp_w = Wire.ByVertices(three_vertices, close=True)
+        flat_face = Face.ByWire(temp_w, tolerance=tolerance)
+        origin = Vertex.Origin()
+        normal = Face.Normal(flat_face)
+        flat_wire = Topology.Flatten(wire, origin=origin, direction=normal)
+        outside_wire = Wire.ByOffset(flat_wire, offset=abs(offsetA)*-1, bisectors = False, tolerance=tolerance)
+        inside_wire = Wire.ByOffset(flat_wire, offset=abs(offsetB), bisectors = False, tolerance=tolerance)
+        inside_wire = Wire.Reverse(inside_wire)
+        if not Wire.IsClosed(flat_wire):
+            sv = Topology.Vertices(flat_wire)[0]
+            ev = Topology.Vertices(flat_wire)[-1]
+            edges = Topology.Edges(flat_wire)
+            first_edge = Topology.SuperTopologies(sv, flat_wire, topologyType="edge")[0]
+            first_normal = Edge.Normal(first_edge)
+            last_edge = Topology.SuperTopologies(ev, flat_wire, topologyType="edge")[0]
+            last_normal = Edge.Normal(last_edge)
+            sv1 = Topology.TranslateByDirectionDistance(sv, first_normal, abs(offsetB))
+            sv2 = Topology.TranslateByDirectionDistance(sv, Vector.Reverse(first_normal), abs(offsetA))
+            ev1 = Topology.TranslateByDirectionDistance(ev, last_normal, abs(offsetB))
+            ev2 = Topology.TranslateByDirectionDistance(ev, Vector.Reverse(last_normal), abs(offsetA))
+            out_vertices = Topology.Vertices(outside_wire)[1:-1]
+            in_vertices = Topology.Vertices(inside_wire)[1:-1]
+            vertices = [sv2] + out_vertices + [ev2,ev1] + in_vertices + [sv1]
+            return_face = Face.ByWire(Wire.ByVertices(vertices))
+        else:
+            return_face = Face.ByWires(outside_wire, [inside_wire])
+        return_face = Topology.Unflatten(return_face, origin=origin, direction=normal)
+        return return_face
     
     @staticmethod
     def ByVertices(vertices: list, tolerance: float = 0.0001):
@@ -868,6 +918,64 @@ class Face():
             print("Face.Einstein - Error: Could not create base wire for the Einstein tile. Returning None.")
             return None
         return Face.ByWire(wire, tolerance=tolerance)
+    
+    @staticmethod
+    def Ellipse(origin= None, inputMode: int = 1, width: float = 2.0, length: float = 1.0, focalLength: float = 0.866025, eccentricity: float = 0.866025, majorAxisLength: float = 1.0, minorAxisLength: float = 0.5, sides: float = 32, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+        """
+        Creates an ellipse and returns all its geometry and parameters.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0, 0, 0).
+        inputMode : int , optional
+            The method by wich the ellipse is defined. The default is 1.
+            Based on the inputMode value, only the following inputs will be considered. The options are:
+            1. Width and Length (considered inputs: width, length)
+            2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
+            3. Focal Length and Minor Axis Length (considered inputs: focalLength, minorAxisLength)
+            4. Major Axis Length and Minor Axis Length (considered input: majorAxisLength, minorAxisLength)
+        width : float , optional
+            The width of the ellipse. The default is 2.0. This is considered if the inputMode is 1.
+        length : float , optional
+            The length of the ellipse. The default is 1.0. This is considered if the inputMode is 1.
+        focalLength : float , optional
+            The focal length of the ellipse. The default is 0.866025. This is considered if the inputMode is 2 or 3.
+        eccentricity : float , optional
+            The eccentricity of the ellipse. The default is 0.866025. This is considered if the inputMode is 2.
+        majorAxisLength : float , optional
+            The length of the major axis of the ellipse. The default is 1.0. This is considered if the inputMode is 4.
+        minorAxisLength : float , optional
+            The length of the minor axis of the ellipse. The default is 0.5. This is considered if the inputMode is 3 or 4.
+        sides : int , optional
+            The number of sides of the ellipse. The default is 32.
+        fromAngle : float , optional
+            The angle in degrees from which to start creating the arc of the ellipse. The default is 0.
+        toAngle : float , optional
+            The angle in degrees at which to end creating the arc of the ellipse. The default is 360.
+        close : bool , optional
+            If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
+        direction : list , optional
+            The vector representing the up direction of the ellipse. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created ellipse
+
+        """
+        from topologicpy.Wire import Wire
+        w = Wire.Ellipse(origin=origin, inputMode=inputMode, width=width, length=length,
+                         focalLength=focalLength, eccentricity=eccentricity,
+                         majorAxisLength=majorAxisLength, minorAxisLength=minorAxisLength,
+                         sides=sides, fromAngle=fromAngle, toAngle=toAngle,
+                         close=close, direction=direction,
+                         placement=placement, tolerance=tolerance)
+        return Face.ByWire(w)
     
     @staticmethod
     def ExteriorAngles(face, includeInternalBoundaries=False, mantissa: int = 6) -> list:

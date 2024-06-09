@@ -196,7 +196,6 @@ class Vector(list):
         # Normalize input vectors
         vector1_norm = vector1 / np.linalg.norm(vector1)
         vector2_norm = vector2 / np.linalg.norm(vector2)
-        
         # Check if the angle between vectors is either 0 or 180 degrees
         dot_product = np.dot(vector1_norm, vector2_norm)
         if np.isclose(dot_product, 1.0) or np.isclose(dot_product, -1.0):
@@ -207,7 +206,6 @@ class Vector(list):
         else:
             # Compute bisecting vector
             bisecting_vector = (vector1_norm + vector2_norm) / np.linalg.norm(vector1_norm + vector2_norm)
-    
         return list(bisecting_vector)
     
     @staticmethod

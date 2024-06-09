@@ -1032,14 +1032,14 @@ class Cell():
         cluster = Cluster.ByTopologies(pentagons)
         
         cluster2 = Topology.Rotate(cluster, origin=Vertex.Origin(), axis=[1, 0, 0], angle=180)
-        cluster2 = Topology.Rotate(cluster2, origin=Vertex.Origin(), axis=[0, 0, 1], angle=36)
-        vertices = Topology.Vertices(cluster2)
+        #cluster2 = Topology.Rotate(cluster2, origin=Vertex.Origin(), axis=[0, 0, 1], angle=36)
+        vertices = Topology.Vertices(cluster)
         zList = [Vertex.Z(v) for v in vertices]
         zList = list(set(zList))
         zList.sort()
-        zoffset1 = zList[-1] - zList[0]
-        zoffset2 = zList[1] - zList[0]
-        cluster2 = Topology.Translate(cluster2, 0, 0, -zoffset1-zoffset2)
+        zoffset = zList[1] - zList[0]
+        total_height = zList[-1] - zList[0]
+        cluster2 = Topology.Translate(cluster2, 0, 0, total_height+zoffset)
         pentagons += Topology.Faces(cluster2)
         dodecahedron = Cell.ByFaces(pentagons, tolerance=tolerance)
         centroid = Topology.Centroid(dodecahedron)
@@ -1052,6 +1052,12 @@ class Cell():
         elif placement == "lowerleft":
             dodecahedron = Topology.Translate(dodecahedron, radius, radius, radius)
         
+        geo = Topology.Geometry(dodecahedron)
+        vertices = [Vertex.ByCoordinates(coords) for coords in geo['vertices']]
+        vertices = Vertex.Fuse(vertices)
+        coords = [Vertex.Coordinates(v) for v in vertices]
+        dodecahedron = Topology.RemoveCoplanarFaces(Topology.SelfMerge(Topology.ByGeometry(vertices=coords, faces=geo['faces'])))
+        print(dodecahedron)
         dodecahedron = Topology.Orient(dodecahedron, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
         dodecahedron = Topology.Place(dodecahedron, originA=Vertex.Origin(), originB=origin)
         return dodecahedron
