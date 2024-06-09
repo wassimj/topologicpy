@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Face module &mdash; topologicpy 0.7.15 documentation</title>
+  <title>topologicpy.Face module &mdash; topologicpy 0.7.17 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.15
+                0.7.17
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -168,41 +168,47 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByEdgesCluster" title="topologicpy.Face.Face.ByEdgesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByEdgesCluster</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Creates a face from the input cluster of edges.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByOffset" title="topologicpy.Face.Face.ByOffset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset</span></code></a>(face[, offset, miter, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByOffset" title="topologicpy.Face.Face.ByOffset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset</span></code></a>(face[, offset, tolerance])</p></td>
 <td><p>Creates an offset face from the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByShell" title="topologicpy.Face.Face.ByShell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByShell</span></code></a>(shell[, origin, angTolerance, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByShell" title="topologicpy.Face.Face.ByShell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByShell</span></code></a>(shell[, origin, angTolerance, ...])</p></td>
 <td><p>Creates a face by merging the faces of the input shell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByVertices" title="topologicpy.Face.Face.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(vertices[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByThickenedWire" title="topologicpy.Face.Face.ByThickenedWire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByThickenedWire</span></code></a>(wire[, offsetA, offsetB, ...])</p></td>
+<td><p>Creates a face by thickening the input wire.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByVertices" title="topologicpy.Face.Face.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(vertices[, tolerance])</p></td>
 <td><p>Creates a face from the input list of vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByVerticesCluster" title="topologicpy.Face.Face.ByVerticesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesCluster</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByVerticesCluster" title="topologicpy.Face.Face.ByVerticesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesCluster</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Creates a face from the input cluster of vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByWire" title="topologicpy.Face.Face.ByWire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWire</span></code></a>(wire[, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByWire" title="topologicpy.Face.Face.ByWire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWire</span></code></a>(wire[, tolerance, silent])</p></td>
 <td><p>Creates a face from the input closed wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByWires" title="topologicpy.Face.Face.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(externalBoundary[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByWires" title="topologicpy.Face.Face.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(externalBoundary[, ...])</p></td>
 <td><p>Creates a face from the input external boundary (closed wire) and the input list of internal boundaries (closed wires).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByWiresCluster" title="topologicpy.Face.Face.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(externalBoundary[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByWiresCluster" title="topologicpy.Face.Face.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(externalBoundary[, ...])</p></td>
 <td><p>Creates a face from the input external boundary (closed wire) and the input cluster of internal boundaries (closed wires).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Circle" title="topologicpy.Face.Face.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Circle" title="topologicpy.Face.Face.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
 <td><p>Creates a circle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Compactness" title="topologicpy.Face.Face.Compactness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compactness</span></code></a>(face[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Compactness" title="topologicpy.Face.Face.Compactness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compactness</span></code></a>(face[, mantissa])</p></td>
 <td><p>Returns the compactness measure of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CompassAngle" title="topologicpy.Face.Face.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(face[, north, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CompassAngle" title="topologicpy.Face.Face.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(face[, north, mantissa, tolerance])</p></td>
 <td><p>Returns the horizontal compass angle in degrees between the normal vector of the input face and the input vector.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Edges" title="topologicpy.Face.Face.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(face)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Edges" title="topologicpy.Face.Face.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(face)</p></td>
 <td><p>Returns the edges of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Einstein" title="topologicpy.Face.Face.Einstein"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Einstein</span></code></a>([origin, radius, direction, ...])</p></td>
-<td><p>Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physist).</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Einstein" title="topologicpy.Face.Face.Einstein"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Einstein</span></code></a>([origin, radius, direction, ...])</p></td>
+<td><p>Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physicist).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Ellipse" title="topologicpy.Face.Face.Ellipse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ellipse</span></code></a>([origin, inputMode, width, length, ...])</p></td>
+<td><p>Creates an ellipse and returns all its geometry and parameters.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ExteriorAngles" title="topologicpy.Face.Face.ExteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExteriorAngles</span></code></a>(face[, ...])</p></td>
 <td><p>Returns the exterior angles of the input face in degrees.</p></td>
@@ -482,24 +488,14 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.ByOffset">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOffset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">miter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">miterThreshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">miterThresholdKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ByOffset" title="Permalink to this definition"></a></dt>
-<dd><p>Creates an offset face from the input face.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOffset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ByOffset" title="Permalink to this definition"></a></dt>
+<dd><p>Creates an offset face from the input face. A positive offset value results in a smaller face to the inside of the input face.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
 </dd>
 <dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset distance. The default is 1.0.</p>
-</dd>
-<dt><strong>miter</strong><span class="classifier">bool , optional</span></dt><dd><p>if set to True, the corners will be mitered. The default is False.</p>
-</dd>
-<dt><strong>miterThreshold</strong><span class="classifier">float , optional</span></dt><dd><p>The distance beyond which a miter should be added. The default is None which means the miter threshold is set to the offset distance multiplied by the square root of 2.</p>
-</dd>
-<dt><strong>offsetKey</strong><span class="classifier">str , optional</span></dt><dd><p>If specified, the dictionary of the edges will be queried for this key to sepcify the desired offset. The default is None.</p>
-</dd>
-<dt><strong>miterThresholdKey</strong><span class="classifier">str , optional</span></dt><dd><p>If specified, the dictionary of the vertices will be queried for this key to sepcify the desired miter threshold distance. The default is None.</p>
-</dd>
-<dt><strong>step</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, The transition between collinear edges with different offsets will be a step. Otherwise, it will be a continous edge. The default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
@@ -516,7 +512,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.ByShell">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByShell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ByShell" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByShell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ByShell" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a face by merging the faces of the input shell.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -532,6 +528,32 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Face</dt><dd><p>The created face.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Face.Face.ByThickenedWire">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByThickenedWire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ByThickenedWire" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a face by thickening the input wire. This method assumes the wire is manifold and planar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire to be thickened.</p>
+</dd>
+<dt><strong>offsetA</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset to the exterior of the wire. The default is 1.0.</p>
+</dd>
+<dt><strong>offsetB</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset to the interior of the wire. The default is 0.0.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -763,7 +785,7 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Einstein">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Einstein</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Einstein" title="Permalink to this definition"></a></dt>
-<dd><p>Creates an aperiodic monotile, also called an ‘einstein’ tile (meaning one tile in German, not the name of the famous physist). See <a class="reference external" href="https://arxiv.org/abs/2303.10798">https://arxiv.org/abs/2303.10798</a></p>
+<dd><p>Creates an aperiodic monotile, also called an ‘einstein’ tile (meaning one tile in German, not the name of the famous physicist). See <a class="reference external" href="https://arxiv.org/abs/2303.10798">https://arxiv.org/abs/2303.10798</a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -782,6 +804,59 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Face</dt><dd><p>The created Einstein tile.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Face.Face.Ellipse">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Ellipse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focalLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.866025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eccentricity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.866025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">majorAxisLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minorAxisLength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fromAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Ellipse" title="Permalink to this definition"></a></dt>
+<dd><p>Creates an ellipse and returns all its geometry and parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>inputMode</strong><span class="classifier">int , optional</span></dt><dd><p>The method by which the ellipse is defined. The default is 1.
+Based on the inputMode value, only the following inputs will be considered. The options are:
+1. Width and Length (considered inputs: width, length)
+2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
+3. Focal Length and Minor Axis Length (considered inputs: focalLength, minorAxisLength)
+4. Major Axis Length and Minor Axis Length (considered input: majorAxisLength, minorAxisLength)</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the ellipse. The default is 2.0. This is considered if the inputMode is 1.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the ellipse. The default is 1.0. This is considered if the inputMode is 1.</p>
+</dd>
+<dt><strong>focalLength</strong><span class="classifier">float , optional</span></dt><dd><p>The focal length of the ellipse. The default is 0.866025. This is considered if the inputMode is 2 or 3.</p>
+</dd>
+<dt><strong>eccentricity</strong><span class="classifier">float , optional</span></dt><dd><p>The eccentricity of the ellipse. The default is 0.866025. This is considered if the inputMode is 2.</p>
+</dd>
+<dt><strong>majorAxisLength</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the major axis of the ellipse. The default is 1.0. This is considered if the inputMode is 4.</p>
+</dd>
+<dt><strong>minorAxisLength</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the minor axis of the ellipse. The default is 0.5. This is considered if the inputMode is 3 or 4.</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the ellipse. The default is 32.</p>
+</dd>
+<dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees from which to start creating the arc of the ellipse. The default is 0.</p>
+</dd>
+<dt><strong>toAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees at which to end creating the arc of the ellipse. The default is 360.</p>
+</dd>
+<dt><strong>close</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the ellipse. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the ellipse. This can be “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Face</dt><dd><p>The created ellipse</p>
 </dd>
 </dl>
 </dd>

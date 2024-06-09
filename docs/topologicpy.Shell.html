@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Shell module &mdash; topologicpy 0.7.15 documentation</title>
+  <title>topologicpy.Shell module &mdash; topologicpy 0.7.17 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.15
+                0.7.17
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -156,73 +156,76 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByFacesCluster" title="topologicpy.Shell.Shell.ByFacesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFacesCluster</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Creates a shell from the input cluster of faces.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByWires" title="topologicpy.Shell.Shell.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(wires[, triangulate, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByThickenedWire" title="topologicpy.Shell.Shell.ByThickenedWire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByThickenedWire</span></code></a>(wire[, offsetA, offsetB, ...])</p></td>
+<td><p>Creates a shell by thickening the input wire.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByWires" title="topologicpy.Shell.Shell.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(wires[, triangulate, tolerance, silent])</p></td>
 <td><p>Creates a shell by lofting through the input wires Parameters ---------- wires : list     The input list of wires. triangulate : bool , optional     If set to True, the faces will be triangulated. The default is True. tolerance : float , optional     The desired tolerance. The default is 0.0001. silent : bool , optional     If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByWiresCluster" title="topologicpy.Shell.Shell.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(cluster[, triangulate, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ByWiresCluster" title="topologicpy.Shell.Shell.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(cluster[, triangulate, ...])</p></td>
 <td><p>Creates a shell by lofting through the input cluster of wires</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Circle" title="topologicpy.Shell.Shell.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Circle" title="topologicpy.Shell.Shell.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
 <td><p>Creates a circle.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Delaunay" title="topologicpy.Shell.Shell.Delaunay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Delaunay</span></code></a>(vertices[, face, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Delaunay" title="topologicpy.Shell.Shell.Delaunay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Delaunay</span></code></a>(vertices[, face, mantissa, tolerance])</p></td>
 <td><p>Returns a delaunay partitioning of the input vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Edges" title="topologicpy.Shell.Shell.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(shell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Edges" title="topologicpy.Shell.Shell.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(shell)</p></td>
 <td><p>Returns the edges of the input shell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ExternalBoundary" title="topologicpy.Shell.Shell.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(shell[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.ExternalBoundary" title="topologicpy.Shell.Shell.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(shell[, tolerance])</p></td>
 <td><p>Returns the external boundary of the input shell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Faces" title="topologicpy.Shell.Shell.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(shell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Faces" title="topologicpy.Shell.Shell.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(shell)</p></td>
 <td><p>Returns the faces of the input shell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.HyperbolicParaboloidCircularDomain" title="topologicpy.Shell.Shell.HyperbolicParaboloidCircularDomain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HyperbolicParaboloidCircularDomain</span></code></a>([origin, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.HyperbolicParaboloidCircularDomain" title="topologicpy.Shell.Shell.HyperbolicParaboloidCircularDomain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HyperbolicParaboloidCircularDomain</span></code></a>([origin, ...])</p></td>
 <td><p>Creates a hyperbolic paraboloid with a circular domain.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.HyperbolicParaboloidRectangularDomain" title="topologicpy.Shell.Shell.HyperbolicParaboloidRectangularDomain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HyperbolicParaboloidRectangularDomain</span></code></a>([...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.HyperbolicParaboloidRectangularDomain" title="topologicpy.Shell.Shell.HyperbolicParaboloidRectangularDomain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HyperbolicParaboloidRectangularDomain</span></code></a>([...])</p></td>
 <td><p>Creates a hyperbolic paraboloid with a rectangular domain.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.InternalBoundaries" title="topologicpy.Shell.Shell.InternalBoundaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalBoundaries</span></code></a>(shell[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.InternalBoundaries" title="topologicpy.Shell.Shell.InternalBoundaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalBoundaries</span></code></a>(shell[, tolerance])</p></td>
 <td><p>Returns the internal boundaries (closed wires) of the input shell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.IsClosed" title="topologicpy.Shell.Shell.IsClosed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsClosed</span></code></a>(shell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.IsClosed" title="topologicpy.Shell.Shell.IsClosed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsClosed</span></code></a>(shell)</p></td>
 <td><p>Returns True if the input shell is closed.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.IsOnBoundary" title="topologicpy.Shell.Shell.IsOnBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsOnBoundary</span></code></a>(shell, vertex[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.IsOnBoundary" title="topologicpy.Shell.Shell.IsOnBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsOnBoundary</span></code></a>(shell, vertex[, tolerance])</p></td>
 <td><p>Returns True if the input vertex is on the boundary of the input shell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Pie" title="topologicpy.Shell.Shell.Pie"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pie</span></code></a>([origin, radiusA, radiusB, sides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Pie" title="topologicpy.Shell.Shell.Pie"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pie</span></code></a>([origin, radiusA, radiusB, sides, ...])</p></td>
 <td><p>Creates a pie shape.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Planarize" title="topologicpy.Shell.Shell.Planarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planarize</span></code></a>(shell[, origin, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Planarize" title="topologicpy.Shell.Shell.Planarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planarize</span></code></a>(shell[, origin, mantissa, tolerance])</p></td>
 <td><p>Returns a planarized version of the input shell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Rectangle" title="topologicpy.Shell.Shell.Rectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rectangle</span></code></a>([origin, width, length, uSides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Rectangle" title="topologicpy.Shell.Shell.Rectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rectangle</span></code></a>([origin, width, length, uSides, ...])</p></td>
 <td><p>Creates a rectangle.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.RemoveCollinearEdges" title="topologicpy.Shell.Shell.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(shell[, angTolerance, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.RemoveCollinearEdges" title="topologicpy.Shell.Shell.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(shell[, angTolerance, ...])</p></td>
 <td><p>Removes any collinear edges in the input shell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Roof" title="topologicpy.Shell.Shell.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, epsilon, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Roof" title="topologicpy.Shell.Shell.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, epsilon, mantissa, tolerance])</p></td>
 <td><p>Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.SelfMerge" title="topologicpy.Shell.Shell.SelfMerge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelfMerge</span></code></a>(shell[, angTolerance, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.SelfMerge" title="topologicpy.Shell.Shell.SelfMerge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelfMerge</span></code></a>(shell[, angTolerance, tolerance])</p></td>
 <td><p>Creates a face by merging the faces of the input shell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Simplify" title="topologicpy.Shell.Shell.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(shell[, simplifyBoundary, ...])</p></td>
-<td><p>Simplifies the input shell edges based on the Douglas Peucker algorthim. See <a class="reference external" href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm">https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm</a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Simplify" title="topologicpy.Shell.Shell.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(shell[, simplifyBoundary, ...])</p></td>
+<td><p>Simplifies the input shell edges based on the Douglas Peucker algorithm. See <a class="reference external" href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm">https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Skeleton" title="topologicpy.Shell.Shell.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>([tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Skeleton" title="topologicpy.Shell.Shell.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>([tolerance])</p></td>
 <td><p>Creates a shell through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Vertices" title="topologicpy.Shell.Shell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(shell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Vertices" title="topologicpy.Shell.Shell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(shell)</p></td>
 <td><p>Returns the vertices of the input shell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Voronoi" title="topologicpy.Shell.Shell.Voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Voronoi</span></code></a>(vertices[, face, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Voronoi" title="topologicpy.Shell.Shell.Voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Voronoi</span></code></a>(vertices[, face, mantissa, tolerance])</p></td>
 <td><p>Returns a voronoi partitioning of the input face based on the input vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Wires" title="topologicpy.Shell.Shell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(shell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Wires" title="topologicpy.Shell.Shell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(shell)</p></td>
 <td><p>Returns the wires of the input shell.</p></td>
 </tr>
 </tbody>
@@ -303,6 +306,32 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Shell</dt><dd><p>The created shell.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Shell.Shell.ByThickenedWire">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByThickenedWire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.ByThickenedWire" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a shell by thickening the input wire. This method assumes the wire is manifold and planar.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire to be thickened.</p>
+</dd>
+<dt><strong>offsetA</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset to the exterior of the wire. The default is 1.0.</p>
+</dd>
+<dt><strong>offsetB</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset to the interior of the wire. The default is 1.0.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -514,7 +543,7 @@ wires : list</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
-<dt><strong>topologic_core.Shell</strong></dt><dd><p>The created hyperboloic paraboloid.</p>
+<dt><strong>topologic_core.Shell</strong></dt><dd><p>The created hyperbolic paraboloid.</p>
 </dd>
 </dl>
 </dd>
@@ -528,23 +557,23 @@ wires : list</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the hyperbolic paraboloid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.</p>
 </dd>
-<dt><strong>llVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The lower left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5, -0.5, -0.5).</p>
+<dt><strong>llVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The lower left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, -0.5, -0.5).</p>
 </dd>
-<dt><strong>lrVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The lower right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5, -0.5, 0.5).</p>
+<dt><strong>lrVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The lower right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, -0.5, 0.5).</p>
 </dd>
-<dt><strong>ulVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The upper left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5, 0.5, 0.5).</p>
+<dt><strong>ulVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The upper left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, 0.5, 0.5).</p>
 </dd>
-<dt><strong>urVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The upper right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5, 0.5, -0.5).</p>
+<dt><strong>urVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The upper right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, 0.5, -0.5).</p>
 </dd>
 <dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments along the X axis. The default is 10.</p>
 </dd>
 <dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments along the Y axis. The default is 10.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the hyperbolic parabolid. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the hyperbolic paraboloid. The default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the hyperbolic parabolid. This can be “center”, “lowerleft”, “bottom”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the hyperbolic paraboloid. This can be “center”, “lowerleft”, “bottom”. It is case insensitive. The default is “center”.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
@@ -763,7 +792,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)</p>
 </dd>
-<dt><strong>manitssa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)</p>
 </dd>
@@ -806,7 +835,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.Simplify">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Simplify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">simplifyBoundary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.Simplify" title="Permalink to this definition"></a></dt>
 <dd><blockquote>
-<div><p>Simplifies the input shell edges based on the Douglas Peucker algorthim. See <a class="reference external" href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm">https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm</a>
+<div><p>Simplifies the input shell edges based on the Douglas Peucker algorithm. See <a class="reference external" href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm">https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm</a>
 Part of this code was contributed by gaoxipeng. See <a class="reference external" href="https://github.com/wassimj/topologicpy/issues/35">https://github.com/wassimj/topologicpy/issues/35</a></p>
 </div></blockquote>
 <dl class="field-list simple">

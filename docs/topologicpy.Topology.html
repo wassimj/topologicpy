@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.7.15 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.7.17 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.15
+                0.7.17
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -313,7 +313,7 @@
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AddApertures" title="topologicpy.Topology.Topology.AddApertures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddApertures</span></code></a>(topology, apertures[, ...])</p></td>
-<td><p>Adds the input list of apertures to the input topology or to its subtpologies based on the input subTopologyType.</p></td>
+<td><p>Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AddContent" title="topologicpy.Topology.Topology.AddContent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddContent</span></code></a>(topology, contents[, ...])</p></td>
 <td><p>Adds the input list of contents to the input topology or to its subtpologies based on the input subTopologyType.</p></td>
@@ -322,7 +322,7 @@
 <td><p>Adds the input dictionary to the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AdjacentTopologies" title="topologicpy.Topology.Topology.AdjacentTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentTopologies</span></code></a>(topology, hostTopology[, ...])</p></td>
-<td><p>Returns the topologies, as specified by the input topology type, adjacent to the input topology witin the input host topology.</p></td>
+<td><p>Returns the topologies, as specified by the input topology type, adjacent to the input topology within the input host topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Analyze" title="topologicpy.Topology.Topology.Analyze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Analyze</span></code></a>(topology)</p></td>
 <td><p>Returns an analysis string that describes the input topology.</p></td>
@@ -385,13 +385,13 @@
 <td><p>Imports the topology from a JSON string.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJFile" title="topologicpy.Topology.Topology.ByOBJFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJFile</span></code></a>(file[, transposeAxes, ...])</p></td>
-<td><p>Imports the topology from a Weverfront OBJ file.</p></td>
+<td><p>Imports the topology from a Wevefront OBJ file.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJPath" title="topologicpy.Topology.Topology.ByOBJPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJPath</span></code></a>(path[, transposeAxes, ...])</p></td>
-<td><p>Imports the topology from a Weverfront OBJ file path.</p></td>
+<td><p>Imports the topology from a Wevefront OBJ file path.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJString" title="topologicpy.Topology.Topology.ByOBJString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJString</span></code></a>(string[, transposeAxes, ...])</p></td>
-<td><p>Creates a topology from the input Waverfront OBJ string.</p></td>
+<td><p>Creates a topology from the input Wavefront OBJ string.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOCCTShape" title="topologicpy.Topology.Topology.ByOCCTShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOCCTShape</span></code></a>(occtShape)</p></td>
 <td><p>Creates a topology from the input OCCT shape.</p></td>
@@ -706,7 +706,7 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.AddApertures">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddApertures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apertures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subTopologyType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.AddApertures" title="Permalink to this definition"></a></dt>
-<dd><p>Adds the input list of apertures to the input topology or to its subtpologies based on the input subTopologyType.</p>
+<dd><p>Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -782,7 +782,7 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.AdjacentTopologies">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AdjacentTopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hostTopology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.AdjacentTopologies" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the topologies, as specified by the input topology type, adjacent to the input topology witin the input host topology.</p>
+<dd><p>Returns the topologies, as specified by the input topology type, adjacent to the input topology within the input host topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -956,7 +956,7 @@
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the output file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
 </dd>
 <dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. The default is “1.0.0”.</p>
 </dd>
@@ -1002,7 +1002,7 @@
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the output file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
 </dd>
 <dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. The default is “1.0.0”.</p>
 </dd>
@@ -1048,7 +1048,7 @@
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the output file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
 </dd>
 <dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. The default is “1.0.0”.</p>
 </dd>
@@ -1198,7 +1198,7 @@ This is an experimental method with limited capabilities.</p>
 </dd>
 <dt><strong>faces</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of faces in the form of [i, j, k, l, …] where the items in the list are vertex indices. The face is assumed to be closed to the last vertex is connected to the first vertex automatically.</p>
 </dd>
-<dt><strong>color</strong><span class="classifier">list , optional</span></dt><dd><p>The desired color of the object in the form of [r, g, b, a] where the components are between 0 and 1 and represent red, blue, green, and alpha (transparency) repsectively. The default is [1.0, 1.0, 1.0, 1.0].</p>
+<dt><strong>color</strong><span class="classifier">list , optional</span></dt><dd><p>The desired color of the object in the form of [r, g, b, a] where the components are between 0 and 1 and represent red, blue, green, and alpha (transparency) respectively. The default is [1.0, 1.0, 1.0, 1.0].</p>
 </dd>
 <dt><strong>id</strong><span class="classifier">str , optional</span></dt><dd><p>The desired ID of the object. If set to None, an automatic uuid4 will be assigned to the object. The default is None.</p>
 </dd>
@@ -1206,7 +1206,7 @@ This is an experimental method with limited capabilities.</p>
 </dd>
 <dt><strong>lengthUnit</strong><span class="classifier">str , optional</span></dt><dd><p>The length unit used for the object. The default is “METERS”</p>
 </dd>
-<dt><strong>outputMode</strong><span class="classifier">str , optional</span></dt><dd><p>The desired otuput mode of the object. This can be “wire”, “shell”, “cell”, “cellcomplex”, or “default”. It is case insensitive. The default is “default”.</p>
+<dt><strong>outputMode</strong><span class="classifier">str , optional</span></dt><dd><p>The desired output mode of the object. This can be “wire”, “shell”, “cell”, “cellcomplex”, or “default”. It is case insensitive. The default is “default”.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
@@ -1230,7 +1230,7 @@ This is an experimental method with limited capabilities.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>file</strong><span class="classifier">file object</span></dt><dd><p>The input IFC file.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won’t. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won’t. The default is False.</p>
 </dd>
 <dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].</p>
 </dd>
@@ -1256,7 +1256,7 @@ This is an experimental method with limited capabilities.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the IFC file.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won’t. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won’t. The default is False.</p>
 </dd>
 <dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].</p>
 </dd>
@@ -1342,7 +1342,7 @@ This is an experimental method with limited capabilities.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByOBJFile">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOBJFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transposeAxes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progressBar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByOBJFile" title="Permalink to this definition"></a></dt>
-<dd><p>Imports the topology from a Weverfront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.</p>
+<dd><p>Imports the topology from a Wevefront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -1368,7 +1368,7 @@ This is an experimental method with limited capabilities.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByOBJPath">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOBJPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transposeAxes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progressBar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByOBJPath" title="Permalink to this definition"></a></dt>
-<dd><p>Imports the topology from a Weverfront OBJ file path. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.</p>
+<dd><p>Imports the topology from a Wevefront OBJ file path. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -1394,7 +1394,7 @@ This is an experimental method with limited capabilities.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByOBJString">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOBJString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transposeAxes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progressBar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByOBJString" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a topology from the input Waverfront OBJ string. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.</p>
+<dd><p>Creates a topology from the input Wavefront OBJ string. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
