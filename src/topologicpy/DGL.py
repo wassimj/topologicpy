@@ -92,7 +92,7 @@ except:
         from dgl import save_graphs, load_graphs
         print("DGL - dgl library installed correctly.")
     except:
-        warnings.warn("DGL - Error: Could not import dgl. The installation of the correct version of the dgl library is not trivial and is highly dependent on your hardward and software configuration. Please consult the dgl installation instructions.")
+        warnings.warn("DGL - Error: Could not import dgl. The installation of the correct version of the dgl library is not trivial and is highly dependent on your hardware and software configuration. Please consult the dgl installation instructions.")
 
 try:
     from tqdm.auto import tqdm

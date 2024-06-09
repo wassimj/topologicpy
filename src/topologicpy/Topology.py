@@ -200,7 +200,7 @@ class Topology():
     @staticmethod
     def AddApertures(topology, apertures, exclusive=False, subTopologyType=None, tolerance=0.001):
         """
-        Adds the input list of apertures to the input topology or to its subtpologies based on the input subTopologyType.
+        Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.
 
         Parameters
         ----------
@@ -350,7 +350,7 @@ class Topology():
     @staticmethod
     def AdjacentTopologies(topology, hostTopology, topologyType=None):
         """
-        Returns the topologies, as specified by the input topology type, adjacent to the input topology witin the input host topology.
+        Returns the topologies, as specified by the input topology type, adjacent to the input topology within the input host topology.
 
         Parameters
         ----------
@@ -1402,7 +1402,7 @@ class Topology():
         faces : list , optional
             The input list of faces in the form of [i, j, k, l, ...] where the items in the list are vertex indices. The face is assumed to be closed to the last vertex is connected to the first vertex automatically.
         color : list , optional
-            The desired color of the object in the form of [r, g, b, a] where the components are between 0 and 1 and represent red, blue, green, and alpha (transparency) repsectively. The default is [1.0, 1.0, 1.0, 1.0].
+            The desired color of the object in the form of [r, g, b, a] where the components are between 0 and 1 and represent red, blue, green, and alpha (transparency) respectively. The default is [1.0, 1.0, 1.0, 1.0].
         id : str , optional
             The desired ID of the object. If set to None, an automatic uuid4 will be assigned to the object. The default is None.
         name : str , optional
@@ -1410,7 +1410,7 @@ class Topology():
         lengthUnit : str , optional
             The length unit used for the object. The default is "METERS"
         outputMode : str , optional
-            The desired otuput mode of the object. This can be "wire", "shell", "cell", "cellcomplex", or "default". It is case insensitive. The default is "default".
+            The desired output mode of the object. This can be "wire", "shell", "cell", "cellcomplex", or "default". It is case insensitive. The default is "default".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1571,7 +1571,7 @@ class Topology():
         path : str
             The input file path.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+            If set to True the output file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
         version : str , optional
             The desired version number for the BIM file. The default is "1.0.0".
         guidKey : str , optional
@@ -1635,7 +1635,7 @@ class Topology():
         path : str
             The input file path.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+            If set to True the output file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
         version : str , optional
             The desired version number for the BIM file. The default is "1.0.0".
         guidKey : str , optional
@@ -1731,7 +1731,7 @@ class Topology():
         path : str
             The input file path.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+            If set to True the output file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
         version : str , optional
             The desired version number for the BIM file. The default is "1.0.0".
         guidKey : str , optional
@@ -2041,7 +2041,7 @@ class Topology():
         file : file object
             The input IFC file.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won't. The default is False.
+            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
         includeTypes : list , optional
             The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].
         excludeTypes : list , optional
@@ -2134,7 +2134,7 @@ class Topology():
         path : str
             The path to the IFC file.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transfered to the topology. Otherwise, they won't. The default is False.
+            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
         includeTypes : list , optional
             The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].
         excludeTypes : list , optional
@@ -2708,7 +2708,7 @@ class Topology():
     @staticmethod
     def ByOBJString(string, transposeAxes = True, progressBar=False, tolerance=0.0001):
         """
-        Creates a topology from the input Waverfront OBJ string. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+        Creates a topology from the input Wavefront OBJ string. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
         Parameters
         ----------
@@ -2783,7 +2783,7 @@ class Topology():
     @staticmethod
     def ByOBJFile(file, transposeAxes=True, progressBar=False, tolerance=0.0001):
         """
-        Imports the topology from a Weverfront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+        Imports the topology from a Wevefront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
         Parameters
         ----------
@@ -2813,7 +2813,7 @@ class Topology():
     @staticmethod
     def ByOBJPath(path, transposeAxes=True, progressBar=False, tolerance=0.0001):
         """
-        Imports the topology from a Weverfront OBJ file path. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+        Imports the topology from a Wevefront OBJ file path. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
 
         Parameters
         ----------

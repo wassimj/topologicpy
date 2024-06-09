@@ -754,23 +754,23 @@ class Shell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.
+            The origin of the hyperbolic paraboloid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.
         llVertex : topologic_core.Vertex , optional
-            The lower left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5, -0.5, -0.5).
+            The lower left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, -0.5, -0.5).
         lrVertex : topologic_core.Vertex , optional
-            The lower right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5, -0.5, 0.5).
+            The lower right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, -0.5, 0.5).
         ulVertex : topologic_core.Vertex , optional
-            The upper left corner of the hyperbolic parabolid. If set to None, it will be set to (-0.5, 0.5, 0.5).
+            The upper left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, 0.5, 0.5).
         urVertex : topologic_core.Vertex , optional
-            The upper right corner of the hyperbolic parabolid. If set to None, it will be set to (0.5, 0.5, -0.5).
+            The upper right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, 0.5, -0.5).
         uSides : int , optional
             The number of segments along the X axis. The default is 10.
         vSides : int , optional
             The number of segments along the Y axis. The default is 10.
         direction : list , optional
-            The vector representing the up direction of the hyperbolic parabolid. The default is [0, 0, 1].
+            The vector representing the up direction of the hyperbolic paraboloid. The default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the hyperbolic parabolid. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the hyperbolic paraboloid. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -873,7 +873,7 @@ class Shell():
         Returns
         -------
         topologic_core.Shell
-            The created hyperboloic paraboloid.
+            The created hyperbolic paraboloid.
 
         """
         from topologicpy.Vertex import Vertex
@@ -1333,7 +1333,7 @@ class Shell():
             The desired angle in degrees of the roof. The default is 45.
         epsilon : float , optional
             The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)
-        manitssa : int , optional
+        mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
@@ -1541,7 +1541,7 @@ class Shell():
     @staticmethod
     def Simplify(shell, simplifyBoundary: bool = True, mantissa: int = 6, tolerance: float = 0.0001):
         """
-            Simplifies the input shell edges based on the Douglas Peucker algorthim. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+            Simplifies the input shell edges based on the Douglas Peucker algorithm. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
             Part of this code was contributed by gaoxipeng. See https://github.com/wassimj/topologicpy/issues/35
 
         Parameters

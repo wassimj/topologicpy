@@ -156,7 +156,7 @@ class Edge():
         ----------
         face : topologic_core.Face
             The input face
-        origin : toopologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The desired origin of the edge. If set to None, the centroid of the face is chosen as the origin of the edge. The default is None.
         length : float , optional
             The desired length of the edge. The default is 1.
@@ -204,7 +204,7 @@ class Edge():
             The input edge.
         offset : float , optional
             The desired offset. The default is 1.
-        tolerance : float , optiona
+        tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
@@ -232,7 +232,7 @@ class Edge():
         ----------
         vertexA : topologic_core.Vertex
             The first input vertex. This is considered the start vertex.
-        vertexB : toopologic.Vertex
+        vertexB : topologic_core.Vertex
             The second input vertex. This is considered the end vertex.
         tolerance : float , optional
             The desired tolerance to decide if an Edge can be created. The default is 0.0001.

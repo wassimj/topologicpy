@@ -133,7 +133,7 @@ class Vector(list):
     def AzimuthAltitude(vector, mantissa: int = 6):
         """
         Returns a dictionary of azimuth and altitude angles in degrees for the input vector. North is assumed to be the positive Y axis [0, 1, 0]. Up is assumed to be the positive Z axis [0, 0, 1].
-        Azimuth is calculated in a counter-clockwise fashion from North where 0 is North, 90 is East, 180 is South, and 270 is West. Altitude is calculated in a counter-clockwise fashing where -90 is straight down (negative Z axis), 0 is in the XY plane, and 90 is straight up (positive Z axis).
+        Azimuth is calculated in a counter-clockwise fashion from North where 0 is North, 90 is East, 180 is South, and 270 is West. Altitude is calculated in a counter-clockwise fashion where -90 is straight down (negative Z axis), 0 is in the XY plane, and 90 is straight up (positive Z axis).
         If the altitude is -90 or 90, the azimuth is assumed to be 0.
 
         Parameters

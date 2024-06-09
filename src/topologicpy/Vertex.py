@@ -1072,7 +1072,7 @@ class Vertex():
             try:
                 parameter = Edge.ParameterAtVertex(topology, vertex)
             except:
-                parameter = 400 #aribtrary large number greater than 1
+                parameter = 400 #arbitrary large number greater than 1
             if parameter == None:
                 return False
             return 0 <= parameter <= 1

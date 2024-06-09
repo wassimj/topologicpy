@@ -540,10 +540,10 @@ class Wire(Topology):
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
-            print("Wire.Circle - Error: The input origin parameter is not a valid Vertex. Retruning None.")
+            print("Wire.Circle - Error: The input origin parameter is not a valid Vertex. Returning None.")
             return None
         if not placement.lower() in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
-            print("Wire.Circle - Error: The input placement parameter is not a recognised string. Retruning None.")
+            print("Wire.Circle - Error: The input placement parameter is not a recognized string. Returning None.")
             return None
         radius = abs(radius)
         if radius < tolerance:
@@ -934,7 +934,7 @@ class Wire(Topology):
     @staticmethod
     def Einstein(origin= None, radius: float = 0.5, direction: list = [0, 0, 1], placement: str = "center", mantissa: int = 6):
         """
-        Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physist). See https://arxiv.org/abs/2303.10798
+        Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physicist). See https://arxiv.org/abs/2303.10798
 
         Parameters
         ----------
@@ -1000,7 +1000,7 @@ class Wire(Topology):
         origin : topologic_core.Vertex , optional
             The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0, 0, 0).
         inputMode : int , optional
-            The method by wich the ellipse is defined. The default is 1.
+            The method by which the ellipse is defined. The default is 1.
             Based on the inputMode value, only the following inputs will be considered. The options are:
             1. Width and Length (considered inputs: width, length)
             2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
@@ -1052,7 +1052,7 @@ class Wire(Topology):
         origin : topologic_core.Vertex , optional
             The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0, 0, 0).
         inputMode : int , optional
-            The method by wich the ellipse is defined. The default is 1.
+            The method by which the ellipse is defined. The default is 1.
             Based on the inputMode value, only the following inputs will be considered. The options are:
             1. Width and Length (considered inputs: width, length)
             2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
@@ -1475,7 +1475,7 @@ class Wire(Topology):
         outputType : str , optional
             The desired type of output. The options are case insensitive. The default is "contour". The options are:
                 - "Default" or "Contours" (wires are not connected)
-                - "Raster or "Zigzag" or "Toolpath" (the wire ends are connected to create a continous path)
+                - "Raster or "Zigzag" or "Toolpath" (the wire ends are connected to create a continuous path)
                 - "Grid" (the wire ends are connected to create a grid). 
         mapping : str , optional
             The desired type of mapping for wires with different number of vertices. It is case insensitive. The default is "default". The options are:
@@ -1729,10 +1729,10 @@ class Wire(Topology):
             for anEdge in edges:
                 lengths.append(Edge.Length(anEdge))
             minLength = min(lengths)
-            normalisedLengths = []
+            normalizedLengths = []
             for aLength in lengths:
-                normalisedLengths.append(aLength/minLength)
-            return [x for x in itertools.chain(*itertools.zip_longest(normalisedLengths, angles)) if x is not None]
+                normalizedLengths.append(aLength/minLength)
+            return [x for x in itertools.chain(*itertools.zip_longest(normalizedLengths, angles)) if x is not None]
         
         if (wireA.IsClosed() == False):
             return None
@@ -2164,18 +2164,18 @@ class Wire(Topology):
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
-            print("Wire.Rectangle - Error: specified origin is not a topologic vertex. Retruning None.")
+            print("Wire.Rectangle - Error: specified origin is not a topologic vertex. Returning None.")
             return None
         if not placement.lower() in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
-            print("Wire.Rectangle - Error: Could not find placement in the list of placements. Retruning None.")
+            print("Wire.Rectangle - Error: Could not find placement in the list of placements. Returning None.")
             return None
         width = abs(width)
         length = abs(length)
         if width < tolerance or length < tolerance:
-            print("Wire.Rectangle - Error: One or more of the specified dimensions is below the tolerance value. Retruning None.")
+            print("Wire.Rectangle - Error: One or more of the specified dimensions is below the tolerance value. Returning None.")
             return None
         if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) < tolerance:
-            print("Wire.Rectangle - Error: The direction vector magnitude is below the tolerance value. Retruning None.")
+            print("Wire.Rectangle - Error: The direction vector magnitude is below the tolerance value. Returning None.")
             return None
         xOffset = 0
         yOffset = 0
@@ -2836,10 +2836,10 @@ class Wire(Topology):
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
-            print("Wire.Squircle - Error: The input origin parameter is not a valid Vertex. Retruning None.")
+            print("Wire.Squircle - Error: The input origin parameter is not a valid Vertex. Returning None.")
             return None
         if not placement.lower() in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
-            print("Wire.Squircle - Error: The input placement parameter is not a recognised string. Retruning None.")
+            print("Wire.Squircle - Error: The input placement parameter is not a recognized string. Returning None.")
             return None
         radius = abs(radius)
         if radius < tolerance:

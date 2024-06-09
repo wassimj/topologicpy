@@ -279,13 +279,13 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertexKey : str , optional
-            If set, the returned list of vertices is sorted according to the dicitonary values stored under this key. The default is None.
+            If set, the returned list of vertices is sorted according to the dictionary values stored under this key. The default is None.
         reverse : bool , optional
             If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
         edgeKeyFwd : str , optional
-            If set, the value at this key in the connecting edge from start vertex to end verrtex (forward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
+            If set, the value at this key in the connecting edge from start vertex to end vertex (forward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
         edgeKeyBwd : str , optional
-            If set, the value at this key in the connecting edge from end vertex to start verrtex (backward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
+            If set, the value at this key in the connecting edge from end vertex to start vertex (backward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
         bidirKey : bool , optional
             If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. The default is None
         bidirectional : bool , optional
@@ -379,7 +379,7 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertexKey : str , optional
-            If set, the returned list of vertices is sorted according to the dicitonary values stored under this key. The default is None.
+            If set, the returned list of vertices is sorted according to the dictionary values stored under this key. The default is None.
         reverse : bool , optional
             If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
         tolerance : float , optional
@@ -434,7 +434,7 @@ class Graph:
         edge : topologic_core.Edge
             The input edge.
         transferDictionaries : bool, optional
-            If set to True, the dictionaries of the edge and its vertices are transfered to the graph.
+            If set to True, the dictionaries of the edge and its vertices are transferred to the graph.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1522,7 +1522,7 @@ class Graph:
         edgeFeaturesHeader : str , optional
             The column header string used to specify the features of edges. The default is "feat".
         edgeFeaturesKeys : list , optional
-            The list of dicitonary keys to use to index the edge features. The length of this list must match the length of edge features. The default is [].
+            The list of dictionary keys to use to index the edge features. The length of this list must match the length of edge features. The default is [].
         nodeIDHeader : str , optional
             The column header string used to specify the id of nodes. The default is "node_id".
         nodeLabelHeader : str , optional
@@ -7408,7 +7408,7 @@ class Graph:
                 from pyvis.network import Network
                 print("Graph.PyvisGraph - Information: pyvis library installed correctly.")
             except:
-                warnings.warn("Graph - Error: Could not import pyvis. Please try to install pyvis manually. Retruning None.")
+                warnings.warn("Graph - Error: Could not import pyvis. Please try to install pyvis manually. Returning None.")
                 return None
         
         net = Network(height=str(height)+"px", width="100%", bgcolor=backgroundColor, font_color=fontColor, select_menu=selectMenu, filter_menu=filterMenu, cdn_resources="remote", notebook=notebook)

@@ -281,7 +281,7 @@ class Face():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(face, "Face"):
-            print("Face.ByOffset - Warning: The input face parameter is not a valid toplogic face. Returning None.")
+            print("Face.ByOffset - Warning: The input face parameter is not a valid face. Returning None.")
             return None
         eb = Face.Wire(face)
         internal_boundaries = Face.InternalBoundaries(face)
@@ -889,7 +889,7 @@ class Face():
     def Einstein(origin= None, radius: float = 0.5, direction: list = [0, 0, 1],
                  placement: str = "center", tolerance: float = 0.0001):
         """
-        Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physist). See https://arxiv.org/abs/2303.10798
+        Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physicist). See https://arxiv.org/abs/2303.10798
 
         Parameters
         ----------
@@ -929,7 +929,7 @@ class Face():
         origin : topologic_core.Vertex , optional
             The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0, 0, 0).
         inputMode : int , optional
-            The method by wich the ellipse is defined. The default is 1.
+            The method by which the ellipse is defined. The default is 1.
             Based on the inputMode value, only the following inputs will be considered. The options are:
             1. Width and Length (considered inputs: width, length)
             2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
@@ -1364,10 +1364,10 @@ class Face():
                 return None
 
         if not Topology.IsInstance(faceA, "Face"):
-            print("Face.IsInide - Error: The input faceA parameter is not a valid topologic face. Returning None.")
+            print("Face.IsInside - Error: The input faceA parameter is not a valid topologic face. Returning None.")
             return None
         if not Topology.IsInstance(faceB, "Face"):
-            print("Face.IsInide - Error: The input faceB parameter is not a valid topologic face. Returning None.")
+            print("Face.IsInside - Error: The input faceB parameter is not a valid topologic face. Returning None.")
             return None
 
         def normalize_plane_coefficients(plane):
@@ -2032,7 +2032,7 @@ class Face():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(face, "Face"):
-            print("Face.Skeleton - Error: The input face is not a valid topologic face. Retruning None.")
+            print("Face.Skeleton - Error: The input face is not a valid topologic face. Returning None.")
             return None
         return Wire.Skeleton(face, tolerance=tolerance)
     

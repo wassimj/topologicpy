@@ -858,8 +858,7 @@ class Cell():
         
         baseWire = Wire.Circle(origin=circle_origin, radius=radius, sides=uSides, fromAngle=0, toAngle=360, close=True, direction=[0, 0, 1], placement="center", tolerance=tolerance)
         baseFace = Face.ByWire(baseWire, tolerance=tolerance)
-        cylinder = Cell.ByThickenedFace(face=baseFace, thickness=height, bothSides=False, reverse=True,
-                            tolerance=tolerance)
+        cylinder = Cell.ByThickenedFace(face=baseFace, thickness=height, bothSides=False, tolerance=tolerance)
         if vSides > 1:
             cutting_planes = []
             baseX = Vertex.X(origin, mantissa=mantissa) + xOffset
@@ -1399,7 +1398,7 @@ class Cell():
 
         icosahedron = Cell.ByFaces([f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,
                         f11,f12,f13,f14,f15,f16,f17,f18,f19,f20], tolerance=tolerance)
-        sf = 1.051*0.5 # To insribe it in a sphere of radius 0.5
+        sf = 1.051*0.5 # To inscribe it in a sphere of radius 0.5
         icosahedron = Topology.Scale(icosahedron, origin=Vertex.Origin(), x=sf, y=sf, z=sf)
         sf = radius/0.5
         icosahedron = Topology.Scale(icosahedron, origin=Vertex.Origin(), x=sf, y=sf, z=sf)
@@ -1829,7 +1828,7 @@ class Cell():
         ----------
         face : topologic_core.Face
             The input face.
-        angle : float , optioal
+        angle : float , optional
             The desired angle in degrees of the roof. The default is 45.
         epsilon : float , optional
             The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)
@@ -1871,7 +1870,7 @@ class Cell():
         Returns
         -------
         list
-            The classified list of input cells based on their encolsure within the input list of super cells.
+            The classified list of input cells based on their enclosure within the input list of super cells.
 
         """
 
@@ -1978,7 +1977,7 @@ class Cell():
         if not Topology.IsInstance(origin, "Vertex"):
             print("Cell.Sphere - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
-        c = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=vSides, fromAngle=-90, toAngle=90, close=False, direction=[0, 0, 1], placement="center")
+        c = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=vSides, fromAngle=0, toAngle=180, close=False, direction=[0, 0, 1], placement="center")
         c = Topology.Rotate(c, origin=Vertex.Origin(), axis=[1, 0, 0], angle=90)
         sphere = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
         if Topology.Type(sphere) == Topology.TypeID("CellComplex"):
