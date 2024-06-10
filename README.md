@@ -61,6 +61,42 @@ topologicpy depends on the following python libraries which will be installed au
 ## API Documentation
 API documentation can be found at [https://topologicpy.readthedocs.io](https://topologicpy.readthedocs.io)
 
+## How to cite topologicpy
+If you wish to cite the actual software, you can use:
+
+**Jabi, W. (2024). topologicpy. pypi.org. http://doi.org/10.5281/zenodo.11555172**
+
+To cite one of the main papers that defines topologicpy, you can use:
+
+**Jabi, W., & Chatzivasileiadi, A. (2021). Topologic: Exploring Spatial Reasoning Through Geometry, Topology, and Semantics. In S. Eloy, D. Leite Viana, F. Morais, & J. Vieira Vaz (Eds.), Formal Methods in Architecture (pp. 277–285). Springer International Publishing. https://doi.org/10.1007/978-3-030-57509-0_25**
+
+Or you can import the following .bib formatted references into your favourite reference manager
+```
+@misc{Jabi2024,
+   author = {Wassim Jabi},
+   doi = {https://doi.org/10.5281/zenodo.11555173},
+   title = {topologicpy},
+   url = {http://pypi.org/projects/topologicpy},
+   year = {2024},
+}
+```
+```
+  @inbook{Jabi2021,
+   abstract = {Topologic is a software modelling library that supports a comprehensive conceptual framework for the hierarchical spatial representation of buildings based on the data structures and concepts of non-manifold topology (NMT). Topologic supports conceptual design and spatial reasoning through the integration of geometry, topology, and semantics. This enables architects and designers to reflect on their design decisions before the complexities of building information modelling (BIM) set in. We summarize below related work on NMT starting in the late 1980s, describe Topologic’s software architecture, methods, and classes, and discuss how Topologic’s features support conceptual design and spatial reasoning. We also report on a software usability workshop that was conducted to validate a software evaluation methodology and reports on the collected qualitative data. A reflection on Topologic’s features and software architecture illustrates how it enables a fundamental shift from pursuing fidelity of design form to pursuing fidelity of design intent.},
+   author = {Wassim Jabi and Aikaterini Chatzivasileiadi},
+   city = {Cham},
+   doi = {10.1007/978-3-030-57509-0_25},
+   editor = {Sara Eloy and David Leite Viana and Franklim Morais and Jorge Vieira Vaz},
+   isbn = {978-3-030-57509-0},
+   journal = {Formal Methods in Architecture},
+   pages = {277-285},
+   publisher = {Springer International Publishing},
+   title = {Topologic: Exploring Spatial Reasoning Through Geometry, Topology, and Semantics},
+   url = {https://link.springer.com/10.1007/978-3-030-57509-0_25},
+   year = {2021},
+}
+```
+
 topologicpy: © 2024 Wassim Jabi
 
 Topologic: © 2024 Cardiff University and UCL
