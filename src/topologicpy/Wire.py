@@ -1954,6 +1954,101 @@ class Wire(Topology):
         return return_wire
     
     @staticmethod
+    def Normal(wire, outputType="xyz", mantissa=6):
+        """
+        Returns the normal vector to the input wire. A normal vector of a wire is a vector perpendicular to it.
+
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire.
+        outputType : string , optional
+            The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. The default is "xyz".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+
+        Returns
+        -------
+        list
+            The normal vector to the input face.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        import os
+        import warnings
+        try:
+            import numpy as np
+        except:
+            print("Wire.Normal - Warning: Installing required numpy library.")
+            try:
+                os.system("pip install numpy")
+            except:
+                os.system("pip install numpy --user")
+            try:
+                import numpy as np
+                print("Wire.Normal - Warning: numpy library installed correctly.")
+            except:
+                warnings.warn("Wire.Normal - Error: Could not import numpy. Please try to install numpy manually. Returning None.")
+                return None
+
+        if not Topology.IsInstance(wire, "Wire"):
+            print("Wire.Normal - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+        
+        vertices = Topology.Vertices(wire)
+        vertices = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices]
+        
+        if len(vertices) < 3:
+            print("Wire.Normal - Error: At least three vertices are required to define a plane. Returning None.")
+            return None
+        
+        # Convert vertices to numpy array for easier manipulation
+        vertices = np.array(vertices)
+        
+        # Try to find two non-collinear edge vectors
+        vec1 = None
+        vec2 = None
+        for i in range(1, len(vertices)):
+            for j in range(i + 1, len(vertices)):
+                temp_vec1 = vertices[i] - vertices[0]
+                temp_vec2 = vertices[j] - vertices[0]
+                cross_product = np.cross(temp_vec1, temp_vec2)
+                if np.linalg.norm(cross_product) > 1e-6:  # Check if the cross product is not near zero
+                    vec1 = temp_vec1
+                    vec2 = temp_vec2
+                    break
+            if vec1 is not None and vec2 is not None:
+                break
+        
+        if vec1 is None or vec2 is None:
+            print("Wire.Normal - Error: The given vertices do not form a valid plane (all vertices might be collinear). Returning None.")
+            return None
+        
+        # Calculate the cross product of the two edge vectors
+        normal = np.cross(vec1, vec2)
+
+        # Normalize the normal vector
+        normal_length = np.linalg.norm(normal)
+        if normal_length == 0:
+            print("Wire.Normal - Error: The given vertices do not form a valid plane (cross product resulted in a zero vector). Returning None.")
+            return None
+        
+        normal = normal / normal_length
+        normal = normal.tolist()
+        normal = [round(x, mantissa) for x in normal]
+        return_normal = []
+        outputType = list(outputType.lower())
+        for axis in outputType:
+            if axis == "x":
+                return_normal.append(normal[0])
+            elif axis == "y":
+                return_normal.append(normal[1])
+            elif axis == "z":
+                return_normal.append(normal[2])
+        return return_normal
+    
+    @staticmethod
     def OrientEdges(wire, vertexA, tolerance=0.0001):
         """
         Returns a correctly oriented head-to-tail version of the input wire. The input wire must be manifold.
@@ -2106,7 +2201,7 @@ class Wire(Topology):
         if not Topology.IsInstance(face, "Face"):
             return None
         if not direction:
-            direction = -1*Face.NormalAtParameters(face, 0.5, 0.5, "XYZ", mantissa)
+            direction = -1*Face.Normal(face, outputType="xyz", mantissa=mantissa)
         large_face = Topology.Scale(face, face.CenterOfMass(), 500, 500, 500)
         edges = []
         _ = wire.Edges(None, edges)

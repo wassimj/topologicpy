@@ -3236,7 +3236,7 @@ class Topology():
         _ = topology.Faces(None, faces)
         normals = []
         for aFace in faces:
-            normals.append(Face.NormalAtParameters(aFace, 0.5, 0.5, "XYZ", 3))
+            normals.append(Face.Normal(aFace, outputType="XYZ", mantissa=3))
         # build a matrix of similarity
         mat = buildSimilarityMatrix(normals, angTolerance)
         categories = categorizeIntoClusters(mat)
@@ -4799,17 +4799,6 @@ class Topology():
                 _ = topology.CellComplexes(None, topologies)
             return topologies
 
-        def triangulateFace(face):
-            faceTriangles = []
-            for i in range(0, 5, 1):
-                try:
-                    _ = topologic.FaceUtility.Triangulate(face, float(i)*0.1, faceTriangles)
-                    return faceTriangles
-                except:
-                    continue
-            faceTriangles.append(face)
-            return faceTriangles
-
         vertices = []
         edges = []
         faces = []
@@ -4858,14 +4847,10 @@ class Topology():
             ib = []
             _ = aFace.InternalBoundaries(ib)
             if(len(ib) > 0):
-                triFaces = triangulateFace(aFace)
+                triFaces = Face.Triangulate(aFace)
                 for aTriFace in triFaces:
-                    wire = aTriFace.ExternalBoundary()
+                    wire = Face.ExternalBoundary(aTriFace)
                     faceVertices = getSubTopologies(wire, topologic.Vertex)
-                    temp_face = Face.ByWire(wire)
-                    temp_dir = Face.Normal(temp_face)
-                    if Vector.IsAntiParallel(f_dir, temp_dir):
-                        faceVertices.reverse()
                     f = []
                     for aVertex in faceVertices:
                         try:
@@ -4876,13 +4861,8 @@ class Topology():
                         f.append(fVertexIndex)
                     faces.append(f)
             else:
-                wire =  aFace.ExternalBoundary()
-                #wire = topologic.WireUtility.RemoveCollinearEdges(wire, 0.1) #This is an angle Tolerance
+                wire =  Face.ExternalBoundary(aFace)
                 faceVertices = getSubTopologies(wire, topologic.Vertex)
-                temp_face = Face.ByWire(wire)
-                temp_dir = Face.Normal(temp_face)
-                if Vector.IsAntiParallel(f_dir, temp_dir):
-                    faceVertices.reverse()
                 f = []
                 for aVertex in faceVertices:
                     try:

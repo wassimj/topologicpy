@@ -131,8 +131,8 @@ class Face():
         if not Topology.IsInstance(faceB, "Face"):
             print("Face.Angle - Warning: The input faceB parameter is not a valid topologic face. Returning None.")
             return None
-        dirA = Face.NormalAtParameters(faceA, 0.5, 0.5, "xyz", 3)
-        dirB = Face.NormalAtParameters(faceB, 0.5, 0.5, "xyz", 3)
+        dirA = Face.Normal(faceA, outputType="xyz", mantissa=3)
+        dirB = Face.Normal(faceB, outputType="xyz", mantissa=3)
         return round((Vector.Angle(dirA, dirB)), mantissa)
 
     @staticmethod
@@ -439,7 +439,9 @@ class Face():
         if not Topology.IsInstance(wire, "Wire"):
             print("Face.ByThickenedWire - Error: The input wire parameter is not a valid wire. Returning None.")
             return None
-
+        if not Wire.IsManifold(wire):
+            print("Face.ByThickenedWire - Error: The input wire parameter is not a manifold wire. Returning None.")
+            return None
         three_vertices = Wire.Vertices(wire)[0:3]
         temp_w = Wire.ByVertices(three_vertices, close=True)
         flat_face = Face.ByWire(temp_w, tolerance=tolerance)
@@ -858,7 +860,7 @@ class Face():
             return None
         if not north:
             north = Vector.North()
-        dirA = Face.NormalAtParameters(face,mantissa=mantissa)
+        dirA = Face.Normal(face, outputType="xyz", mantissa=mantissa)
         return Vector.CompassAngle(vectorA=dirA, vectorB=north, mantissa=mantissa, tolerance=tolerance)
 
     @staticmethod
@@ -1041,12 +1043,9 @@ class Face():
 
         eb = face.ExternalBoundary()
         f_dir = Face.Normal(face)
-        faceVertices = Topology.Vertices(eb)
-        temp_face = Face.ByWire(eb)
-        temp_dir = Face.Normal(temp_face)
-        if Vector.IsAntiParallel(f_dir, temp_dir):
-            faceVertices.reverse()
-        eb = Wire.ByVertices(faceVertices)
+        w_dir = Wire.Normal(eb)
+        if Vector.IsAntiParallel(f_dir, w_dir):
+            eb = Wire.Reverse(eb)
         return eb
     
     @staticmethod
@@ -1648,7 +1647,7 @@ class Face():
         return medialAxis
 
     @staticmethod
-    def Normal(face, outputType: str = "xyz", mantissa: int = 6) -> list:
+    def Normal(face, outputType="xyz", mantissa=6):
         """
         Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
 
@@ -1656,32 +1655,6 @@ class Face():
         ----------
         face : topologic_core.Face
             The input face.
-        outputType : string , optional
-            The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. The default is "xyz".
-        mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
-
-        Returns
-        -------
-        list
-            The normal vector to the input face. This is computed at the approximate center of the face.
-
-        """
-        return Face.NormalAtParameters(face, u=0.5, v=0.5, outputType=outputType, mantissa=mantissa)
-
-    @staticmethod
-    def NormalAtParameters(face, u: float = 0.5, v: float = 0.5, outputType: str = "xyz", mantissa: int = 6) -> list:
-        """
-        Returns the normal vector to the input face. A normal vector of a face is a vector perpendicular to it.
-
-        Parameters
-        ----------
-        face : topologic_core.Face
-            The input face.
-        u : float , optional
-            The *u* parameter at which to compute the normal to the input face. The default is 0.5.
-        v : float , optional
-            The *v* parameter at which to compute the normal to the input face. The default is 0.5.
         outputType : string , optional
             The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. The default is "xyz".
         mantissa : int , optional
@@ -1693,23 +1666,80 @@ class Face():
             The normal vector to the input face.
 
         """
-        returnResult = []
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        import os
+        import warnings
         try:
-            coords = topologic.FaceUtility.NormalAtParameters(face, u, v) # Hook to Core
-            x = round(coords[0], mantissa)
-            y = round(coords[1], mantissa)
-            z = round(coords[2], mantissa)
-            outputType = list(outputType.lower())
-            for axis in outputType:
-                if axis == "x":
-                    returnResult.append(x)
-                elif axis == "y":
-                    returnResult.append(y)
-                elif axis == "z":
-                    returnResult.append(z)
+            import numpy as np
         except:
-            returnResult = None
-        return returnResult
+            print("Face.Normal - Warning: Installing required numpy library.")
+            try:
+                os.system("pip install numpy")
+            except:
+                os.system("pip install numpy --user")
+            try:
+                import numpy as np
+                print("Face.Normal - Warning: numpy library installed correctly.")
+            except:
+                warnings.warn("Face.Normal - Error: Could not import numpy. Please try to install numpy manually. Returning None.")
+                return None
+
+        if not Topology.IsInstance(face, "Face"):
+            print("Face.Normal - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+        
+        vertices = Topology.Vertices(face)
+        vertices = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices]
+        
+        if len(vertices) < 3:
+            print("Face.Normal - Error: At least three vertices are required to define a plane. Returning None.")
+            return None
+        
+        # Convert vertices to numpy array for easier manipulation
+        vertices = np.array(vertices)
+        
+        # Try to find two non-collinear edge vectors
+        vec1 = None
+        vec2 = None
+        for i in range(1, len(vertices)):
+            for j in range(i + 1, len(vertices)):
+                temp_vec1 = vertices[i] - vertices[0]
+                temp_vec2 = vertices[j] - vertices[0]
+                cross_product = np.cross(temp_vec1, temp_vec2)
+                if np.linalg.norm(cross_product) > 1e-6:  # Check if the cross product is not near zero
+                    vec1 = temp_vec1
+                    vec2 = temp_vec2
+                    break
+            if vec1 is not None and vec2 is not None:
+                break
+        
+        if vec1 is None or vec2 is None:
+            print("Face.Normal - Error: The given vertices do not form a valid plane (all vertices might be collinear). Returning None.")
+            return None
+        
+        # Calculate the cross product of the two edge vectors
+        normal = np.cross(vec1, vec2)
+
+        # Normalize the normal vector
+        normal_length = np.linalg.norm(normal)
+        if normal_length == 0:
+            print("Face.Normal - Error: The given vertices do not form a valid plane (cross product resulted in a zero vector). Returning None.")
+            return None
+        
+        normal = normal / normal_length
+        normal = normal.tolist()
+        normal = [round(x, mantissa) for x in normal]
+        return_normal = []
+        outputType = list(outputType.lower())
+        for axis in outputType:
+            if axis == "x":
+                return_normal.append(normal[0])
+            elif axis == "y":
+                return_normal.append(normal[1])
+            elif axis == "z":
+                return_normal.append(normal[2])
+        return return_normal
     
     @staticmethod
     def NormalEdge(face, length: float = 1.0, tolerance: float = 0.0001, silent: bool = False):
@@ -1744,42 +1774,9 @@ class Face():
             return None
         iv = Face.InternalVertex(face)
         u, v = Face.VertexParameters(face, iv)
-        vec = Face.NormalAtParameters(face, u=u, v=v)
+        vec = Face.Normal(face)
         ev = Topology.TranslateByDirectionDistance(iv, vec, length)
         return Edge.ByVertices([iv, ev], tolerance=tolerance, silent=silent)
-
-    @staticmethod
-    def NormalEdgeAtParameters(face, u: float = 0.5, v: float = 0.5, length: float = 1.0, tolerance: float = 0.0001):
-        """
-        Returns the normal vector to the input face as an edge with the desired input length. A normal vector of a face is a vector perpendicular to it.
-
-        Parameters
-        ----------
-        face : topologic_core.Face
-            The input face.
-        u : float , optional
-            The *u* parameter at which to compute the normal to the input face. The default is 0.5.
-        v : float , optional
-            The *v* parameter at which to compute the normal to the input face. The default is 0.5.
-        length : float , optional
-            The desired length of the normal edge. The default is 1.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-        
-        Returns
-        -------
-        topologic_core.Edge
-            The created normal edge to the input face. This is computed at the approximate center of the face.
-
-        """
-        from topologicpy.Edge import Edge
-        from topologicpy.Topology import Topology
-        if not Topology.IsInstance(face, "Face"):
-            return None
-        sv = Face.VertexByParameters(face=face, u=u, v=v)
-        vec = Face.NormalAtParameters(face, u=u, v=v)
-        ev = Topology.TranslateByDirectionDistance(sv, vec, length)
-        return Edge.ByVertices([sv, ev], tolerance=tolerance, silent=True)
 
     @staticmethod
     def PlaneEquation(face, mantissa: int = 6) -> dict:

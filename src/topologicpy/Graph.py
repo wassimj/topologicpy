@@ -269,6 +269,88 @@ class _DrawTree(object):
         return self.__str__()
 
 class Graph:
+    def AdjacencyDictionary(graph, vertexLabelKey: str = "label", edgeKey: str = "Length", reverse: bool = False, mantissa: int = 6):
+        """
+        Returns the adjacency dictionary of the input Graph.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertexLabelKey : str , optional
+            The returned vertices are labelled according to the dictionary values stored under this key.
+            If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically and stored in the vertex dictionary under this key. The default is "label".
+        edgeWeightKey : str , optional
+            If set, the edges' dictionaries will be searched for this key to set their weight. If the key is set to "length" (case insensitive), the length of the edge will be used as its weight. If set to None, a weight of 1 will be used. The default is "Length".
+        reverse : bool , optional
+                If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
+        mantissa : int , optional
+                The desired length of the mantissa. The default is 6.
+
+        Returns
+        -------
+        dict
+            The adjacency dictionary.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+
+        if not Topology.IsInstance(graph, "Graph"):
+            print("Graph.AdjacencyDictionary - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertexLabelKey, str):
+            print("Graph.AdjacencyDictionary - Error: The input vertexLabelKey is not a valid string. Returning None.")
+            return None
+        vertices = Graph.Vertices(graph)
+        labels = []
+        n = max(len(str(len(vertices))), 3)
+        for i, v in enumerate(vertices):
+            d = Topology.Dictionary(v)
+            value = Dictionary.ValueAtKey(d, vertexLabelKey)
+            if value == None:
+                value = str(i).zfill(n)
+            if d == None:
+                d = Dictionary.ByKeyValue(vertexLabelKey, value)
+            else:
+                d = Dictionary.SetValueAtKey(d, vertexLabelKey, value)
+            v = Topology.SetDictionary(v, d)
+            labels.append(value)
+        vertices = Helper.Sort(vertices, labels)
+        labels.sort()
+        if reverse == True:
+            vertices.reverse()
+            labels.reverse()
+        order = len(vertices)
+        adjDict = {}
+        for i in range(order):
+            v = Graph.NearestVertex(graph, vertices[i])
+            vertex_label = labels[i]
+            adjVertices = Graph.AdjacentVertices(graph, v)
+            temp_list = []
+            for adjVertex in adjVertices:
+                if edgeKey == None:
+                    weight = 1
+                elif "length" in edgeKey.lower():
+                    edge = Graph.Edge(graph, v, adjVertex)
+                    weight = Edge.Length(edge, mantissa=mantissa)
+                else:
+                    edge = Graph.Edge(graph, v, adjVertex)
+                    weight = Dictionary.ValueAtKey(Topology.Dictionary(edge), edgeKey)
+                    if weight == None:
+                        weight = Edge.Length(edge, mantissa=mantissa)
+                    else:
+                        weight = round(weight, mantissa)
+                adjIndex = Vertex.Index(adjVertex, vertices)
+                adjLabel = labels[adjIndex]
+                if not adjIndex == None:
+                    temp_list.append((adjLabel, weight))
+            temp_list.sort()
+            adjDict[vertex_label] = temp_list
+        return adjDict
+    
     @staticmethod
     def AdjacencyMatrix(graph, vertexKey=None, reverse=False, edgeKeyFwd=None, edgeKeyBwd=None, bidirKey=None, bidirectional=True, useEdgeIndex=False, useEdgeLength=False, tolerance=0.0001):
         """

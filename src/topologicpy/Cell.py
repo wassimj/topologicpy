@@ -377,6 +377,8 @@ class Cell():
             If set to True, the last wire in the list of input wires will be connected to the first wire in the list of input wires. The default is False.
         triangulate : bool , optional
             If set to True, the faces will be triangulated. The default is True.
+        planarize : bool, optional
+            If set to True, the created faces are planarized before building the cell. Otherwise, they are not. The default is False.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -908,7 +910,7 @@ class Cell():
         from topologicpy.Topology import Topology
 
         def angleCode(f, up, tiltAngle):
-            dirA = Face.NormalAtParameters(f)
+            dirA = Face.Normal(f)
             ang = round(Vector.Angle(dirA, up), 2)
             if abs(ang - 90) < tiltAngle:
                 code = 0

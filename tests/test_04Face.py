@@ -348,32 +348,14 @@ def test_main():
     #mAxis2 = Face.MedialAxis(fs1, 5, True, True, True, 0.002, 0.5)
     #assert Topology.IsInstance(mAxis2, "Wire"), "Face.MedialAxis. Should be topologic.Wire "
 
-    # Case 28 - NormalAtParameters
+    # Case 28 - Normal
     print("Case 28")
     # test 1
-    np1 = Face.NormalAtParameters(fV1, .4, .5,'XYZ' , 5)           # XYZ output, with optional inputs
+    np1 = Face.Normal(fV1)           # XYZ output, with optional inputs
     assert isinstance(np1, list), "Face.NormalAtParameters. Should be list"
     # test 1.1
-    np1_X = Face.NormalAtParameters(fV1, .4, .5,'X' , 5)           # X output, with optional inputs
-    assert isinstance(np1_X, list), "Face.NormalAtParameters. Should be list"
-    # test 1.2
-    np1_Y = Face.NormalAtParameters(fV1, .4, .5,'Y' , 5)           # Y output, with optional inputs
-    assert isinstance(np1_Y, list), "Face.NormalAtParameters. Should be list"
-    # test 1.3
-    np1_Z = Face.NormalAtParameters(fV1, .4, .5,'Z' , 5)           # Z output, with optional inputs
-    assert isinstance(np1_Y, list), "Face.NormalAtParameters. Should be list"
-    # test 2
-    np2 = Face.NormalAtParameters(fV1)                             # without optional inputs
-    assert isinstance(np2, list), "Face.NormalAtParameters. Should be list"
-    # test 2.1
-    np2_X = Face.NormalAtParameters(fV1, outputType='X')           # with one optional input
-    assert isinstance(np2_X, list), "Face.NormalAtParameters. Should be list"
-    # test 2.2
-    np2_Y = Face.NormalAtParameters(fV1, outputType='Y')           # with one optional input
-    assert isinstance(np2_Y, list), "Face.NormalAtParameters. Should be list"
-    # test 2.3
-    np2_Z = Face.NormalAtParameters(fV1, outputType='Z')           # with one optional input
-    assert isinstance(np2_Y, list), "Face.NormalAtParameters. Should be list"
+    np1_X = Face.Normal(fV1, outputType='XYZ' , mantissa=5)           # X output, with optional inputs
+    assert isinstance(np1_X, list), "Face.Normal. Should be list"
  
     # Case 29 - Project
     print("Case 29")

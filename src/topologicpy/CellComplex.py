@@ -467,7 +467,7 @@ class CellComplex():
         from topologicpy.Topology import Topology
 
         def angleCode(f, up, tiltAngle):
-            dirA = Face.NormalAtParameters(f)
+            dirA = Face.Normal(f)
             ang = round(Vector.Angle(dirA, up), 2)
             if abs(ang - 90) < tiltAngle:
                 code = 0
