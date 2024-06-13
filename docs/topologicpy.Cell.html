@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cell module &mdash; topologicpy 0.7.17 documentation</title>
+  <title>topologicpy.Cell module &mdash; topologicpy 0.7.18 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.17
+                0.7.18
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -514,6 +514,8 @@ Creates a tetrahedron. See <a class="reference external" href="https://en.wikipe
 <dt><strong>close</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the last wire in the list of input wires will be connected to the first wire in the list of input wires. The default is False.</p>
 </dd>
 <dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces will be triangulated. The default is True.</p>
+</dd>
+<dt><strong>planarize</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the created faces are planarized before building the cell. Otherwise, they are not. The default is False.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
