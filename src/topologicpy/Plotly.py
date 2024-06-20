@@ -1846,10 +1846,10 @@ class Plotly:
         """
         import os
         if not isinstance(figure, plotly.graph_objs._figure.Figure):
-            print("Plotly.FigureExportToPNG - Error: The input figure is not a plolty figure. Returning None.")
+            print("Plotly.FigureExportToPDF - Error: The input figure is not a plolty figure. Returning None.")
             return None
         if not isinstance(path, str):
-            print("Plotly.FigureExportToPNG - Error: The input path is not a string. Returning None.")
+            print("Plotly.FigureExportToPDF - Error: The input path is not a string. Returning None.")
             return None
         # Make sure the file extension is .pdf
         ext = path[len(path)-4:len(path)]

@@ -3253,8 +3253,8 @@ class Wire(Topology):
 
         Parameters
         ----------
-        edge : topologic_core.Edge
-            The input edge.
+        wire : topologic_core.Wire
+            The input wire.
         distance : float , optional
             The offset distance. The default is 0.
         origin : topologic_core.Vertex , optional

@@ -4692,13 +4692,15 @@ class Topology():
                 else:
                     if isinstance(value, list):
                         value.sort()
-                        value = str(value)
+                    value = str(value)
                     value.replace("*",".+")
                     value = value.lower()
                     d = Topology.Dictionary(aTopology)
                     v = Dictionary.ValueAtKey(d, key)
-                    if v != None:
-                        v = v.lower()
+                    if v == None:
+                        otherTopologies.append(aTopology)
+                    else:
+                        v = str(v).lower()
                         if searchType.lower() == "equal to":
                             searchResult = (value == v)
                         elif searchType.lower() == "contains":
@@ -4716,9 +4718,7 @@ class Topology():
                         if searchResult:
                             filteredTopologies.append(aTopology)
                         else:
-                            otherTopologies.append(aTopology)
-                    else:
-                        otherTopologies.append(aTopology)
+                            otherTopologies.append(aTopology) 
             else:
                 otherTopologies.append(aTopology)
         return {"filtered": filteredTopologies, "other": otherTopologies}
@@ -5454,8 +5454,6 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
-        angTolerance : float , optional
-            The desired angular tolerance for removing coplanar faces. The default is 0.1.
         epsilon : float , optional
             The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
         tolerance : float , optional
@@ -7747,7 +7745,7 @@ class Topology():
             typeID = 16
         elif name == "cell":
             typeID = 32
-        elif name == "cellComplex":
+        elif name == "cellcomplex":
             typeID = 64
         elif name == "cluster":
             typeID = 128

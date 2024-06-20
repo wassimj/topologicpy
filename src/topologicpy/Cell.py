@@ -1058,7 +1058,6 @@ class Cell():
         vertices = Vertex.Fuse(vertices)
         coords = [Vertex.Coordinates(v) for v in vertices]
         dodecahedron = Topology.RemoveCoplanarFaces(Topology.SelfMerge(Topology.ByGeometry(vertices=coords, faces=geo['faces'])))
-        print(dodecahedron)
         dodecahedron = Topology.Orient(dodecahedron, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
         dodecahedron = Topology.Place(dodecahedron, originA=Vertex.Origin(), originB=origin)
         return dodecahedron
