@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Matrix module &mdash; topologicpy 0.7.20 documentation</title>
+  <title>topologicpy.Matrix module &mdash; topologicpy 0.7.21 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.20
+                0.7.21
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -48,6 +48,7 @@
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">topologicpy</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="topologicpy.html">topologicpy package</a><ul class="current">
 <li class="toctree-l3 current"><a class="reference internal" href="topologicpy.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.ANN.html">topologicpy.ANN module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a></li>
@@ -148,84 +149,32 @@
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Add" title="topologicpy.Matrix.Matrix.Add"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Add</span></code></a>(matA, matB)</p></td>
-<td><p>Description
-
-:2: (WARNING/2) Title underline too short.
-
-Description
-----------
-
-Adds the two input matrices.</p></td>
+<td><p>Adds the two input matrices.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByRotation" title="topologicpy.Matrix.Matrix.ByRotation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByRotation</span></code></a>([angleX, angleY, angleZ, order])</p></td>
-<td><p>Description
-
-:2: (WARNING/2) Title underline too short.
-
-Description
-----------
-
-Creates a 4x4 rotation matrix.</p></td>
+<td><p>Creates a 4x4 rotation matrix.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByScaling" title="topologicpy.Matrix.Matrix.ByScaling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByScaling</span></code></a>([scaleX, scaleY, scaleZ])</p></td>
-<td><p>Description
-
-:2: (WARNING/2) Title underline too short.
-
-Description
-----------
-
-Creates a 4x4 scaling matrix.</p></td>
+<td><p>Creates a 4x4 scaling matrix.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByTranslation" title="topologicpy.Matrix.Matrix.ByTranslation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTranslation</span></code></a>([translateX, translateY, ...])</p></td>
-<td><p>Description
-
-:2: (WARNING/2) Title underline too short.
-
-Description
-----------
-
-Creates a 4x4 translation matrix.</p></td>
+<td><p>Creates a 4x4 translation matrix.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Multiply" title="topologicpy.Matrix.Matrix.Multiply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Multiply</span></code></a>(matA, matB)</p></td>
-<td><p>Description
-
-:2: (WARNING/2) Title underline too short.
-
-Description
-----------
-
-Multiplies the two input matrices. When transforming an object, the first input matrix is applied first
-then the second input matrix.</p></td>
+<td><p>Multiplies the two input matrices.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Subtract" title="topologicpy.Matrix.Matrix.Subtract"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subtract</span></code></a>(matA, matB)</p></td>
-<td><p>Description
-
-:2: (WARNING/2) Title underline too short.
-
-Description
-----------
-
-Subtracts the two input matrices.</p></td>
+<td><p>Subtracts the two input matrices.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Transpose" title="topologicpy.Matrix.Matrix.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(matrix)</p></td>
-<td><p>Description
-
-:2: (WARNING/2) Title underline too short.
-
-Description
-----------
-
-Transposes the input matrix.</p></td>
+<td><p>Transposes the input matrix.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.Add">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matB</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.Add" title="Permalink to this definition"></a></dt>
-<dd><section id="description">
-<h2>Description<a class="headerlink" href="#description" title="Permalink to this heading"></a></h2>
-<p>Adds the two input matrices.</p>
+<dd><p>Adds the two input matrices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -242,15 +191,12 @@ Transposes the input matrix.</p></td>
 </dl>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.ByRotation">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByRotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">angleX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angleY</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angleZ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xyz'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.ByRotation" title="Permalink to this definition"></a></dt>
-<dd><section id="id1">
-<h2>Description<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h2>
-<p>Creates a 4x4 rotation matrix.</p>
+<dd><p>Creates a 4x4 rotation matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -271,15 +217,12 @@ Transposes the input matrix.</p></td>
 </dl>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.ByScaling">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByScaling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scaleX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaleY</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaleZ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.ByScaling" title="Permalink to this definition"></a></dt>
-<dd><section id="id2">
-<h2>Description<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h2>
-<p>Creates a 4x4 scaling matrix.</p>
+<dd><p>Creates a 4x4 scaling matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -298,15 +241,12 @@ Transposes the input matrix.</p></td>
 </dl>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.ByTranslation">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByTranslation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">translateX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translateY</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translateZ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.ByTranslation" title="Permalink to this definition"></a></dt>
-<dd><section id="id3">
-<h2>Description<a class="headerlink" href="#id3" title="Permalink to this heading"></a></h2>
-<p>Creates a 4x4 translation matrix.</p>
+<dd><p>Creates a 4x4 translation matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -325,15 +265,12 @@ Transposes the input matrix.</p></td>
 </dl>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.Multiply">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Multiply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matB</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.Multiply" title="Permalink to this definition"></a></dt>
-<dd><section id="id4">
-<h2>Description<a class="headerlink" href="#id4" title="Permalink to this heading"></a></h2>
-<p>Multiplies the two input matrices. When transforming an object, the first input matrix is applied first
+<dd><p>Multiplies the two input matrices. When transforming an object, the first input matrix is applied first
 then the second input matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -351,15 +288,12 @@ then the second input matrix.</p>
 </dl>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.Subtract">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Subtract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matB</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.Subtract" title="Permalink to this definition"></a></dt>
-<dd><section id="id5">
-<h2>Description<a class="headerlink" href="#id5" title="Permalink to this heading"></a></h2>
-<p>Subtracts the two input matrices.</p>
+<dd><p>Subtracts the two input matrices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -376,15 +310,12 @@ then the second input matrix.</p>
 </dl>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.Transpose">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Transpose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.Transpose" title="Permalink to this definition"></a></dt>
-<dd><section id="id6">
-<h2>Description<a class="headerlink" href="#id6" title="Permalink to this heading"></a></h2>
-<p>Transposes the input matrix.</p>
+<dd><p>Transposes the input matrix.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -399,7 +330,6 @@ then the second input matrix.</p>
 </dl>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 </dd></dl>
