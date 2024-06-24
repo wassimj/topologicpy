@@ -152,7 +152,9 @@ class Wire(Topology):
         topology : topologic_core.Topology
             The input topology.
         optimize : int , optional
-            If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding rectangle. The default is 0.
+            If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area.
+            The minimum optimization number of 0 will result in an axis-aligned bounding rectangle.
+            A maximum optimization number of 10 will attempt to reduce the bounding rectangle's area by 50%. The default is 0.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -190,9 +192,11 @@ class Wire(Topology):
         if not Topology.IsInstance(topology, "Topology"):
             return None
 
-        world_origin = Vertex.Origin()
 
         vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
+        if Vertex.AreCollinear(vertices, mantissa=mantissa, tolerance=tolerance):
+            print("Wire.BoundingRectangle - Error: All vertices of the input topology parameter are collinear and thus no bounding rectangle can be created. Returning None.")
+            return None
         start = time.time()
         period = 0
         result = True
@@ -205,7 +209,13 @@ class Wire(Topology):
             print("Wire.BoundingRectangle - Error: Could not find three vertices that are not colinear within 30 seconds. Returning None.")
             return None
         w = Wire.ByVertices(vList)
+        if not Topology.IsInstance(w, "Wire"):
+            print("Wire.BoundingRectangle - Error: Could not create wire from three vertices. Returning None.")
+            return None
         f = Face.ByWire(w, tolerance=tolerance)
+        if not Topology.IsInstance(f, "Face"):
+            print("Wire.BoundingRectangle - Error: Could not create face from wire. Returning None.")
+            return None
         f_origin = Topology.Centroid(f)
         normal = Face.Normal(f, mantissa=mantissa)
         topology = Topology.Flatten(topology, origin=f_origin, direction=normal)
@@ -224,7 +234,7 @@ class Wire(Topology):
         origin = Topology.Centroid(topology)
         optimize = min(max(optimize, 0), 10)
         if optimize > 0:
-            factor = (round(((11 - optimize)/30 + 0.57), 2))
+            factor = 1.0 - float(optimize)*0.05 # This will give a range of 0 to 0.5. Equivalent to a maximum 50% reduction in area.
             flag = False
             for n in range(10, 0, -1):
                 if flag:
@@ -240,7 +250,7 @@ class Wire(Topology):
                     w = abs(maxX - minX)
                     l = abs(maxY - minY)
                     area = l*w
-                    if area < orig_area*factor:
+                    if area <= orig_area*factor: # If new area is less than or equal to a certain percentage of the original area then break. e.g. if area is less than or qual to 50% of original area then break.
                         best_area = area
                         best_z = z
                         best_br = [minX, minY, maxX, maxY]
@@ -253,7 +263,6 @@ class Wire(Topology):
                         
         else:
             best_br = boundingRectangle
-
         minX, minY, maxX, maxY = best_br
         vb1 = Vertex.ByCoordinates(minX, minY, 0)
         vb2 = Vertex.ByCoordinates(maxX, minY, 0)

@@ -89,312 +89,334 @@ except:
     except:
         warnings.warn("ANN - Error: Could not import scikit. Please install it manually.")
 
-class _ANNModel(nn.Module):
-    def __init__(self,
-                 inputSize=1,
-                 outputSize=1,
-                 taskType='classification',
-                 validationRatio=0.2,
-                 hiddenLayers=[12,12,12],
-                 learningRate=0.001,
-                 epochs=10,
-                 activation="relu",
-                 batchSize=1,
-                 patience=4,
-                 earlyStopping = True,
-                 randomState = 42,
-                 holdout=True,
-                 kFolds=3,
-                 ):
-                 
-        super(_ANNModel, self).__init__()
-        
-        # Initialize parameters
-        self.hidden_layers = hiddenLayers
-        self.output_size = outputSize
-        self.activation = activation
-        self.learning_rate = learningRate
-        self.epochs = epochs
-        self.validation_ratio = validationRatio
-        self.holdout = holdout
-        self.k_folds = kFolds
-        self.batch_size = batchSize
-        self.patience = patience
-        self.early_stopping = earlyStopping
-        self.random_state = randomState
-        self.task_type = taskType
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from sklearn.datasets import fetch_california_housing, load_breast_cancer, load_iris
+from sklearn.model_selection import train_test_split, KFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, mean_squared_error, mean_absolute_error, r2_score, precision_score, recall_score, f1_score, confusion_matrix
+import numpy as np
 
-        self.training_loss_list = []
-        self.validation_loss_list = []
-        self.training_accuracy_list = []
-        self.validation_accuracy_list = []
-        self.training_mae_list = []
-        self.validation_mae_list = []
-        self.labels = []
-        self.predictions = []
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from sklearn.datasets import fetch_california_housing, load_breast_cancer, load_iris
+from sklearn.model_selection import train_test_split, KFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, mean_squared_error, mean_absolute_error, r2_score, precision_score, recall_score, f1_score, confusion_matrix
+import numpy as np
+
+class _ANN(nn.Module):
+    def __init__(self, input_size, hyperparameters, dataset=None):
+        super(_ANN, self).__init__()
+        self.title = hyperparameters['title']
+        self.task_type = hyperparameters['task_type']
+        self.cross_val_type = hyperparameters['cross_val_type']
+        self.k_folds = hyperparameters.get('k_folds', 5)
+        self.test_size = hyperparameters.get('test_size', 0.3)
+        self.validation_ratio = hyperparameters.get('validation_ratio', 0.1)
+        self.random_state = hyperparameters.get('random_state', 42)
+        self.batch_size = hyperparameters.get('batch_size', 32)
+        self.learning_rate = hyperparameters.get('learning_rate', 0.001)
+        self.epochs = hyperparameters.get('epochs', 100)
+        self.early_stopping = hyperparameters.get('early_stopping', False)
+        self.patience = hyperparameters.get('patience', 10)
+        self.interval = hyperparameters.get('interval',1)
+        self.mantissa = hyperparameters.get('mantissa', 4)
         
+        self.train_loss_list = []
+        self.val_loss_list = []
         
-        # Define layers
+        self.train_accuracy_list = []
+        self.val_accuracy_list = []
+        
+        self.train_mse_list = []
+        self.val_mse_list = []
+        
+        self.train_mae_list = []
+        self.val_mae_list = []
+        
+        self.train_r2_list = []
+        self.val_r2_list = []
+        self.epoch_list = []
+
+        self.metrics = {}
+        
         layers = []
-        previous_size = inputSize
+        hidden_layers = hyperparameters['hidden_layers']
+        
+        # Compute output_size based on task type and dataset
+        if self.task_type == 'regression':
+            output_size = 1
+        elif self.task_type == 'binary_classification':
+            output_size = 1
+        elif self.task_type == 'classification' and dataset is not None:
+            output_size = len(np.unique(dataset.target))
+        else:
+            print("ANN - Error: Invalid task type or dataset not provided for classification. Returning None.")
+            return None
         
         # Create hidden layers
-        for h in self.hidden_layers:
-            layers.append(nn.Linear(previous_size, h))
-            if activation == 'relu':
-                layers.append(nn.ReLU())
-            elif activation == 'tanh':
-                layers.append(nn.Tanh())
-            elif activation == 'sigmoid':
-                layers.append(nn.Sigmoid())
-            else:
-                raise ValueError(f"Unsupported activation function: {self.activation}")
-            previous_size = h
+        in_features = input_size
+        for hidden_units in hidden_layers:
+            layers.append(nn.Linear(in_features, hidden_units))
+            layers.append(nn.ReLU())
+            in_features = hidden_units
         
         # Output layer
-        layers.append(nn.Linear(previous_size, self.output_size))
-        
-        if self.task_type == 'classification':
-            if self.output_size == 1:
-                layers.append(nn.Sigmoid())  # Use Sigmoid for binary classification
-            else:
-                layers.append(nn.LogSoftmax(dim=1))  # Use LogSoftmax for multi-category classification
-        elif self.task_type != 'regression':
-            raise ValueError(f"Unsupported task type: {self.task_type}")
-        
+        layers.append(nn.Linear(in_features, output_size))
         self.model = nn.Sequential(*layers)
         
-        # Define the optimizer
-        self.optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
+        # Loss function based on task type
+        if self.task_type == 'regression':
+            self.loss_fn = nn.MSELoss()
+        elif self.task_type == 'binary_classification':
+            self.loss_fn = nn.BCEWithLogitsLoss()
+        else:  # multi-category classification
+            self.loss_fn = nn.CrossEntropyLoss()
         
-        # Define the loss function
-        if self.task_type == 'classification':
-            if self.output_size == 1:
-                self.criterion = nn.BCELoss()  # Binary Cross Entropy Loss for binary classification
-            else:
-                self.criterion = nn.NLLLoss()  # Negative Log Likelihood Loss for multi-category classification
-        elif self.task_type == 'regression':
-            self.criterion = nn.MSELoss()
+       
+        
+        # Initialize best model variables
+        self.best_model_state = None
+        self.best_val_loss = np.inf
     
     def forward(self, x):
         return self.model(x)
-    
-    def train(self, X, y):
-        self.training_loss_list = []
-        self.validation_loss_list = []
-        self.training_accuracy_list = []
-        self.validation_accuracy_list = []
-        self.training_mae_list = []
-        self.validation_mae_list = []
-        if self.holdout == True or self.k_folds == 1:
-            self._train_holdout(X, y)
-        else:
-            self._train_kfold(X, y)
-    
-    def _train_holdout(self, X, y):
-        # Split data into training and validation sets
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=self.validation_ratio, random_state=self.random_state)
+
+    def train_model(self, X_train, y_train, X_val=None, y_val=None):
+        self.train_loss_list = []
+        self.val_loss_list = []
         
-        train_dataset = TensorDataset(torch.tensor(X_train, dtype=torch.float32), torch.tensor(y_train, dtype=torch.float32))
-        val_dataset = TensorDataset(torch.tensor(X_val, dtype=torch.float32), torch.tensor(y_val, dtype=torch.float32))
+        self.train_accuracy_list = []
+        self.val_accuracy_list = []
         
-        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
-        val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
+        self.train_mse_list = []
+        self.val_mse_list = []
         
-        self._train_epochs(train_loader, val_loader)
-    
-    def _train_kfold(self, X, y):
-        kf = KFold(n_splits=self.k_folds, shuffle=True)
-        fold = 0
-        total_loss = 0.0
-        for train_idx, val_idx in kf.split(X):
-            fold += 1
-            print(f"Fold {fold}/{self.k_folds}")
-            
-            X_train, X_val = X[train_idx], X[val_idx]
-            y_train, y_val = y[train_idx], y[val_idx]
-            
-            train_dataset = TensorDataset(torch.tensor(X_train, dtype=torch.float32), torch.tensor(y_train, dtype=torch.float32))
-            val_dataset = TensorDataset(torch.tensor(X_val, dtype=torch.float32), torch.tensor(y_val, dtype=torch.float32))
-            
-            train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
-            val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
-            
-            self._train_epochs(train_loader, val_loader)
-    
-    def _train_epochs(self, train_loader, val_loader):
-        best_val_loss = float('inf')
-        epochs_no_improve = 0
-        best_model_state = None
+        self.train_mae_list = []
+        self.val_mae_list = []
         
+        self.train_r2_list = []
+        self.val_r2_list = []
+        self.epoch_list = []
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
+        # Reinitialize optimizer for each fold
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
+        current_patience = self.patience if self.early_stopping else self.epochs
+
+        # Convert to DataLoader for batching
+        train_dataset = torch.utils.data.TensorDataset(X_train, y_train)
+        train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=self.batch_size, shuffle=True)
+
         for epoch in range(self.epochs):
-            self.model.train()
-            running_loss = 0.0
+            self.train()
+            epoch_loss = 0.0
             correct_train = 0
             total_train = 0
-            
-            for inputs, labels in train_loader:
-                self.optimizer.zero_grad()
-                outputs = self(inputs)
-                
-                # Ensure labels have the same shape as outputs
-                labels = labels.view(-1, 1) if outputs.shape[-1] == 1 else labels
 
-                loss = self.criterion(outputs, labels)
+            for inputs, targets in train_loader:
+                optimizer.zero_grad()
+                outputs = self(inputs)
+
+                if self.task_type == 'binary_classification':
+                    outputs = outputs.squeeze()
+                    targets = targets.float()
+                elif self.task_type == 'regression':
+                    outputs = outputs.squeeze()
+
+                loss = self.loss_fn(outputs, targets)
+                epoch_loss += loss.item()
+
                 loss.backward()
-                self.optimizer.step()
-                running_loss += loss.item()
+                optimizer.step()
 
-                # Calculate training accuracy or MAE for regression
+                # Calculate metrics for training set
                 if self.task_type == 'classification':
-                    if outputs.shape[-1] > 1:
-                        _, predicted = torch.max(outputs, 1)
+                    _, predicted = torch.max(outputs, 1)
+                    correct_train += (predicted == targets).sum().item()
+                    total_train += targets.size(0)
+                elif self.task_type == 'binary_classification':
+                    predicted = torch.round(torch.sigmoid(outputs))
+                    correct_train += (predicted == targets).sum().item()
+                    total_train += targets.size(0)
+
+            if X_val is not None and y_val is not None:
+                self.eval()
+                with torch.no_grad():
+                    val_outputs = self(X_val)
+                    if self.task_type == 'binary_classification':
+                        val_outputs = val_outputs.squeeze()
+                        y_val = y_val.float()
+                    elif self.task_type == 'regression':
+                        val_outputs = val_outputs.squeeze()
+
+                    val_loss = self.loss_fn(val_outputs, y_val)
+                    val_loss_item = val_loss.item()
+
+                    # Track the best model state
+                    if val_loss < self.best_val_loss:
+                        self.best_val_loss = val_loss
+                        self.best_model_state = self.state_dict()
+                        current_patience = self.patience if self.early_stopping else self.epochs
                     else:
-                        predicted = (outputs > 0.5).float()
-                    total_train += labels.size(0)
-                    correct_train += (predicted == labels).sum().item()
-                elif self.task_type == 'regression':
-                    correct_train += torch.abs(outputs - labels).sum().item()
-                    total_train += labels.size(0)
+                        if self.early_stopping:
+                            current_patience -= 1
 
-            train_loss = running_loss / len(train_loader)
-            if self.task_type == 'classification':
-                train_accuracy = 100 * correct_train / total_train
-            elif self.task_type == 'regression':
-                train_accuracy = correct_train / total_train
-
-            # Calculate validation loss and accuracy/MAE
-            val_loss, val_accuracy = self.evaluate_loss(val_loader)
-            self.training_loss_list.append(train_loss)
-            self.validation_loss_list.append(val_loss)
-            if self.task_type == 'classification':
-                # print(f"Epoch {epoch+1}, Training Loss: {train_loss:.4f}, Training Accuracy: {train_accuracy:.2f}%, "
-                #     f"Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_accuracy:.2f}%")
-                self.training_accuracy_list.append(train_accuracy)
-                self.validation_accuracy_list.append(val_accuracy)
-            elif self.task_type == 'regression':
-                # print(f"Epoch {epoch+1}, Training Loss: {train_loss:.4f}, Training MAE: {train_accuracy:.4f}, "
-                #     f"Validation Loss: {val_loss:.4f}, Validation MAE: {val_accuracy:.4f}")
-                self.training_mae_list.append(train_accuracy)
-                self.validation_mae_list.append(val_accuracy)
-
-            # Early stopping
-            if self.early_stopping:
-                if val_loss < best_val_loss:
-                    best_val_loss = val_loss
-                    epochs_no_improve = 0
-                    best_model_state = self.state_dict()
-                else:
-                    epochs_no_improve += 1
-                    if epochs_no_improve >= self.patience:
-                        # print(f'Early stopping! Best validation loss: {best_val_loss}')
+                    if self.early_stopping and current_patience == 0:
+                        print(f'ANN - Information: Early stopping after epoch {epoch + 1}')
                         break
-        # Update the epochs parameter to reflect the actual epochs ran.
-        self.epochs = epoch + 1
 
-        # Load the best model state
-        if best_model_state:
-            self.load_state_dict(best_model_state)
-    
-    def evaluate_loss(self, data_loader):
-        self.model.eval()
-        total_loss = 0.0
-        correct_val = 0
-        total_val = 0
-        
-        with torch.no_grad():
-            for inputs, labels in data_loader:
-                outputs = self(inputs)
-                labels = labels.view(-1, 1) if outputs.shape[-1] == 1 else labels
+            if (epoch + 1) % self.interval == 0:
+                self.epoch_list.append(epoch + 1)
+                avg_epoch_loss = epoch_loss / len(train_loader)
+                self.train_loss_list.append(round(avg_epoch_loss, self.mantissa))
 
-                loss = self.criterion(outputs, labels)
-                total_loss += loss.item()
-
-                # Calculate validation accuracy or MAE for regression
-                if self.task_type == 'classification':
-                    if outputs.shape[-1] > 1:
-                        _, predicted = torch.max(outputs, 1)
-                    else:
-                        predicted = (outputs > 0.5).float()
-                    total_val += labels.size(0)
-                    correct_val += (predicted == labels).sum().item()
+                if self.task_type == 'classification' or self.task_type == 'binary_classification':
+                    train_accuracy = round(correct_train / total_train, self.mantissa)
+                    self.train_accuracy_list.append(train_accuracy)
+                    if X_val is not None and y_val is not None:
+                        val_accuracy = (torch.round(torch.sigmoid(val_outputs)) if self.task_type == 'binary_classification' else torch.max(val_outputs, 1)[1] == y_val).float().mean().item()
+                        val_accuracy = round(val_accuracy, self.mantissa)
+                        self.val_accuracy_list.append(val_accuracy)
                 elif self.task_type == 'regression':
-                    correct_val += torch.abs(outputs - labels).sum().item()
-                    total_val += labels.size(0)
-        
-        avg_loss = total_loss / len(data_loader)
-        if self.task_type == 'classification':
-            accuracy = 100 * correct_val / total_val
-        elif self.task_type == 'regression':
-            accuracy = correct_val / total_val
-        
-        return avg_loss, accuracy
+                    train_preds = self(X_train).detach().numpy().squeeze()
+                    train_mse = round(mean_squared_error(y_train.numpy(), train_preds), self.mantissa)
+                    train_mae = round(mean_absolute_error(y_train.numpy(), train_preds), self.mantissa)
+                    train_r2 = round(r2_score(y_train.numpy(), train_preds), self.mantissa)
+                    self.train_mse_list.append(train_mse)
+                    self.train_mae_list.append(train_mae)
+                    self.train_r2_list.append(train_r2)
+                    if X_val is not None and y_val is not None:
+                        val_preds = val_outputs.numpy().squeeze()
+                        val_mse = round(mean_squared_error(y_val.numpy(), val_preds), self.mantissa)
+                        val_mae = round(mean_absolute_error(y_val.numpy(), val_preds), self.mantissa)
+                        val_r2 = round(r2_score(y_val.numpy(), val_preds), self.mantissa)
+                        self.val_mse_list.append(val_mse)
+                        self.val_mae_list.append(val_mae)
+                        self.val_r2_list.append(val_r2)
 
-
-    def evaluate(self, X_test, y_test):
-        X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
-        y_test_tensor = torch.tensor(y_test, dtype=torch.float32)
-        test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
-        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, shuffle=False)
-        self.model.eval()
-        all_preds = []
-        all_labels = []
-        with torch.no_grad():
-            for inputs, labels in test_loader:
-                outputs = self(inputs).view(-1) if self.task_type == 'classification' and self.model[-1].__class__.__name__ == 'Sigmoid' else self(inputs)
-                if self.task_type == 'classification':
-                    if self.model[-1].__class__.__name__ == 'Sigmoid':
-                        # Convert probabilities to binary predictions (0 or 1)
-                        preds = [1 if x >= 0.5 else 0 for x in outputs.cpu().numpy()]
-                    else:
-                        # Get predicted class indices
-                        _, preds = torch.max(outputs.data, 1)
-                        preds = preds.cpu().numpy()
-                elif self.task_type == 'regression':
-                    preds = outputs.cpu().numpy()
-
-                all_labels.extend(labels.cpu().numpy())
-                all_preds.extend(preds)
-        self.labels = all_labels
-        self.predictions = all_preds
-        return all_labels, all_preds
+                if X_val is not None and y_val is not None:
+                    self.val_loss_list.append(round(val_loss_item, self.mantissa))
+                    print(f'Epoch [{epoch + 1}/{self.epochs}], Loss: {avg_epoch_loss:.4f}, Val Loss: {val_loss_item:.4f}')
+                else:
+                    print(f'Epoch [{epoch + 1}/{self.epochs}], Loss: {avg_epoch_loss:.4f}')
     
-    def metrics(self, labels, predictions):
-        from sklearn import metrics
-        if self.task_type == 'regression':
-            metrics = {
-                "Mean Squared Error": mean_squared_error(labels, predictions),
-                "Mean Absolute Error": mean_absolute_error(labels, predictions),
-                "R-squared": r2_score(labels, predictions)
-            }
-        elif self.task_type == 'classification':
-            metrics = {
-                "Accuracy": accuracy_score(labels, predictions),
-                "Precision": precision_score(labels, predictions, average='weighted'),
-                "Recall": recall_score(labels, predictions, average='weighted'),
-                "F1 Score": f1_score(labels, predictions, average='weighted'),
-                "Confusion Matrix": metrics.confusion_matrix(labels, predictions)
-            }
+    def evaluate_model(self, X_test, y_test):
+        self.eval()
+        with torch.no_grad():
+            outputs = self(X_test)
+            
+            if self.task_type == 'regression':
+                outputs = outputs.squeeze()
+                predictions = outputs.numpy()
+                mse = mean_squared_error(y_test.numpy(), outputs.numpy())
+                mae = mean_absolute_error(y_test.numpy(), outputs.numpy())
+                r2 = r2_score(y_test.numpy(), outputs.numpy())
+                #print(f'MSE: {mse:.4f}, MAE: {mae:.4f}, R^2: {r2:.4f}')
+                metrics = {'mae': round(mae, self.mantissa), 'mse': round(mse, self.mantissa), 'r2': round(r2, self.mantissa)}
+            elif self.task_type == 'binary_classification':
+                outputs = torch.sigmoid(outputs).squeeze()
+                predicted = (outputs > 0.5).int()
+                predictions = predicted.numpy()
+                accuracy = accuracy_score(y_test.numpy(), predicted.numpy())
+                precision = precision_score(y_test.numpy(), predicted.numpy(), zero_division=0)
+                recall = recall_score(y_test.numpy(), predicted.numpy(), zero_division=0)
+                f1 = f1_score(y_test.numpy(), predicted.numpy(), zero_division=0)
+                #print(f'Accuracy: {accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1 Score: {f1:.4f}')
+                cm = self.confusion_matrix(y_test, predictions)
+                metrics = {'accuracy': round(accuracy, self.mantissa), 'precision': round(precision, self.mantissa), 'recall': round(recall, self.mantissa), 'f1': round(f1, self.mantissa), 'confusion_matrix': cm}
+            else:  # multi-category classification
+                _, predicted = torch.max(outputs, 1)            
+                predictions = predicted.numpy()
+                accuracy = accuracy_score(y_test.numpy(), predictions)
+                precision = precision_score(y_test.numpy(), predictions, average='macro', zero_division=0)
+                recall = recall_score(y_test.numpy(), predictions, average='macro', zero_division=0)
+                f1 = f1_score(y_test.numpy(), predictions, average='macro', zero_division=0)
+                cm = self.confusion_matrix(y_test, predicted.numpy())
+                #print(f'Accuracy: {accuracy:.4f}, Precision: {precision:.4f}, Recall: {recall:.4f}, F1 Score: {f1:.4f}')
+                metrics = {'accuracy': round(accuracy, self.mantissa), 'precision': round(precision, self.mantissa), 'recall': round(recall, self.mantissa), 'f1': round(f1, self.mantissa), 'confusion_matrix': cm}
+            self.metrics = metrics
+            
+            return metrics, predictions
+    
+    def confusion_matrix(self, y_test, predictions):
+        if self.task_type != 'regression':
+            cm = confusion_matrix(y_test.numpy(), predictions)
+            return cm.tolist()
         else:
-            metrics = None
-        return metrics
+            print("ANN - Error: Confusion matrix is not applicable for regression tasks. Returning None")
+            return None
+    
+    def reset_parameters(self):
+        for layer in self.model:
+            if hasattr(layer, 'reset_parameters'):
+                layer.reset_parameters()
+    
+    def cross_validate(self, X, y):
+        if 'hold' in self.cross_val_type:
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.test_size, random_state=self.random_state)
+            X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=self.validation_ratio, random_state=self.random_state)
+            self.train_model(X_train, y_train, X_val=X_val, y_val=y_val)
+            metrics, predictions = self.evaluate_model(X_test, y_test)
+            if self.task_type != 'regression':
+                self.confusion_matrix(y_test, predictions)
+            return metrics
+        
+        elif 'fold' in self.cross_val_type:
+            kf = KFold(n_splits=self.k_folds, shuffle=True, random_state=self.random_state)
+            best_fold_index = -1
+            best_val_loss = np.inf
+            best_model_state = None
+            
+            for fold_idx, (train_index, test_index) in enumerate(kf.split(X)):
+                # Reinitialize model parameters
+                self.reset_parameters()
+                print("Fold:", fold_idx+1)
+                X_train, X_test = X[train_index], X[test_index]
+                y_train, y_test = y[train_index], y[test_index]
+                
+                X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=self.validation_ratio, random_state=self.random_state)
+                
+                self.train_model(X_train, y_train, X_val=X_val, y_val=y_val)
+                
+                print(f'Self Best Val Loss: {self.best_val_loss.item():.4f}')
+                if self.best_val_loss < best_val_loss:
+                    best_val_loss = self.best_val_loss
+                    best_fold_index = fold_idx
+                    best_model_state = self.best_model_state
+            
+            if best_fold_index == -1:
+                raise ValueError("No best fold found. Check early stopping and validation handling.")
+            
+            print(f'Selecting best fold: {best_fold_index + 1}')
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=self.test_size, random_state=self.random_state)
+            X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=self.validation_ratio, random_state=self.random_state)
+            self.load_state_dict(best_model_state)
+            #print("Training on Best fold.")
+            #self.train_model(X_train, y_train, X_val=X_val, y_val=y_val)
+            
+            metrics, predictions = self.evaluate_model(X_val, y_val)
+            if self.task_type != 'regression':
+                self.confusion_matrix(y_val, predictions)
+            
+            return metrics
     
     def save(self, path):
         if path:
-            # Make sure the file extension is .pt
-            ext = path[len(path)-3:len(path)]
+            ext = path[-3:]
             if ext.lower() != ".pt":
-                path = path+".pt"
+                path = path + ".pt"
             torch.save(self.state_dict(), path)
     
     def load(self, path):
         if path:
             self.load_state_dict(torch.load(path))
 
-
 class ANN():
     @staticmethod
-    def DatasetByCSVPath(path, taskType='classification', trainRatio=0.6, randomState=42):
+    def DatasetByCSVPath(path, taskType='classification', description=""):
         """
         Returns a dataset according to the input CSV file path.
 
@@ -404,65 +426,44 @@ class ANN():
             The path to the folder containing the necessary CSV and YML files.
         taskType : str , optional
             The type of evaluation task. This can be 'classification' or 'regression'. The default is 'classification'.
-        trainRatio : float , optional
-            The ratio of the data to use for training and validation vs. the ratio to use for testing. The default is 0.6
-            which means that 60% of the data will be used for training and validation while 40% of the data will be reserved for testing.
-        randomState : int , optional
-            The randomState parameter is used to ensure reproducibility of the results. When you set the randomState parameter to a specific integer value,
-            it controls the shuffling of the data before splitting it into training and testing sets.
-            This means that every time you run your code with the same randomState value and the same dataset, you will get the same split of the data.
-            The default is 42 which is just a randomly picked integer number. Specify None for random sampling.
+        description : str , optional
+            The description of the dataset. In keeping with the scikit BUNCH class, this will be saved in the DESCR parameter.
+        
         Returns
         -------
-        list
-            Returns the following list:
-            X_train, X_test, y_train, y_test, taskType
-            X_train is the list of features used for training
-            X_test is the list of features used for testing
-            y_train is the list of targets used for training
-            y_test is the list of targets used for testing
-            taskType is the type of task ('classification' or 'regression'). This is included for compatibility with DatasetBySample()
+        sklearn.utils._bunch.Bunch
+            The created dataset.
 
         """
         import pandas as pd
         import numpy as np
         from sklearn.preprocessing import StandardScaler
         from sklearn.model_selection import train_test_split
+        from sklearn.utils import Bunch
+
         # Load the CSV file into a pandas DataFrame
         df = pd.read_csv(path)
 
         # Assume the last column is the target
         features = df.iloc[:, :-1].values
         target = df.iloc[:, -1].values
-        
-        scaler = StandardScaler()
-        X = scaler.fit_transform(features)
-        y = target
 
-        # Ensure target is in the correct format
-        if taskType == 'classification' and len(np.unique(y)) == 2:
-            y = y.reshape(-1, 1)  # Reshape for binary classification
-        elif taskType == 'classification':
-            y = y.astype(np.int64)  # Convert to long for multi-class classification
-        
-        y = y.astype(np.float32)  # Convert to float32 for PyTorch
+        # Set target_names based on the name of the target column
+        target_names = [df.columns[-1]]
 
-        input_size = X.shape[1]  # Number of features
-        num_classes = len(np.unique(y))
-        output_size = 1 if taskType == 'regression' or num_classes == 2 else num_classes
+        # Create a Bunch object
+        dataset = Bunch(
+            data=features,
+            target=target,
+            feature_names=df.columns[:-1].tolist(),
+            target_names=target_names,
+            frame=df,
+            DESCR=description,
+        )
+        return dataset
 
-        # Split data into train and test sets
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=(1.0 - trainRatio), random_state=randomState)
-
-        return {'XTrain': X_train,
-                'XTest': X_test,
-                'yTrain': y_train,
-                'yTest': y_test,
-                'inputSize': input_size,
-                'outputSize': output_size}
-    
     @staticmethod
-    def DatasetBySampleName(name, trainRatio=0.6, randomState=42):
+    def DatasetBySampleName(name):
         """
         Returns a dataset from the scikit-learn dataset samples.
 
@@ -481,18 +482,17 @@ class ANN():
             The default is 42 which is just a randomly picked integer number. Specify None for random sampling.
         Returns
         -------
-        list
-            Returns the following list:
-            X_train, X_test, y_train, y_test
-            X_train is the list of features used for training
-            X_test is the list of features used for testing
-            y_train is the list of targets used for training
-            y_test is the list of targets used for testing
-
+        dict
+            Returns the following dictionary:
+            XTrain, XTest, yTrain, yTest, inputSize, outputSize
+            XTrain is the list of features used for training
+            XTest is the list of features used for testing
+            yTrain is the list of targets used for training
+            yTest is the list of targets used for testing
+            inputSize is the size (length) of the input
+            outputSize is the size (length) of the output
         """
-        from sklearn.datasets import load_breast_cancer, load_iris, load_wine, load_digits, fetch_california_housing
-        from sklearn.model_selection import train_test_split
-
+        # Load dataset
         if name == 'breast_cancer':
             dataset = load_breast_cancer()
         elif name == 'california_housing':
@@ -506,35 +506,10 @@ class ANN():
         else:
             print(f"ANN.DatasetBySampleName - Error: Unsupported dataset: {name}. Returning None.")
             return None
-
-        # Standardize the features
-        scaler = StandardScaler()
-        X = scaler.fit_transform(dataset.data)
-        y = dataset.target
-
-        task_type = ANN.HyperparametersBySampleDatasetName(name)['taskType']
-        # For binary classification, ensure the target is in the correct format (1D tensor)
-        if task_type == 'classification' and len(np.unique(y)) == 2:
-            y = y.astype(np.float32)
-        elif task_type == 'classification':
-            y = y.astype(np.int64)
-
-        input_size = X.shape[1]  # Number of features
-        num_classes = len(np.unique(y))
-        output_size = 1 if task_type == 'regression' or num_classes == 2 else num_classes
-
-        # First split: train and temp (remaining)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=(1.0 - trainRatio), random_state=randomState)
+        return dataset
         
-        return {'XTrain': X_train,
-                'XTest': X_test,
-                'yTrain': y_train,
-                'yTest': y_test,
-                'inputSize': input_size,
-                'outputSize': output_size}
-
     @staticmethod
-    def DatasetSamplesNames():
+    def DatasetSampleNames():
         """
         Returns the names of the available sample datasets from sci-kit learn.
 
@@ -549,7 +524,7 @@ class ANN():
         return ['breast_cancer', 'california_housing', 'digits', 'iris', 'wine']
     
     @staticmethod
-    def DatasetSplit(X, y, trainRatio=0.6, randomState=42):
+    def DatasetSplit(X, y, testRatio=0.3, randomState=42):
         """
         Splits the input dataset according to the input ratios.
 
@@ -559,9 +534,8 @@ class ANN():
             The list of features.
         y : list
             The list of targets.
-        trainRatio : float , optional
-            The ratio of the data to use for training. The default is 0.6.
-            This means that 60% of the data will be used for training and validation while 40% of the data will be reserved for testing.
+        testRatio : float , optional
+            The ratio of the dataset to reserve as unseen data for testing. The default is 0.3
         randomState : int , optional
             The randomState parameter is used to ensure reproducibility of the results. When you set the randomState parameter to a specific integer value,
             it controls the shuffling of the data before splitting it into training and testing sets.
@@ -571,40 +545,48 @@ class ANN():
         Returns
         -------
         list
-            Returns the following list:
-            X_train, X_test, y_train,y_test
+            Returns the following list : [X_train, X_test, y_train,y_test]
             X_train is the list of features used for training
             X_test is the list of features used for testing
             y_train is the list of targets used for training
             y_test is the list of targets used for testing
 
         """
+        if testRatio < 0 or testRatio > 1:
+            print("ANN.DatasetSplit - Error: testRatio parameter cannot be outside the range [0,1]. Returning None.")
+            return None
         # First split: train and temp (remaining)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=(1.0 - trainRatio), random_state=randomState)
-
-        return X_train, X_test, y_train, y_test
+        return train_test_split(X, y, test_size=testRatio, random_state=randomState)
 
     @staticmethod
-    def HyperparametersByInput(taskType='classification',
-                               validationRatio=0.2,
-                               hiddenLayers= [12,12,12],
-                               learningRate = 0.001,
-                               epochs = 10,
-                               activation = 'relu',
-                               batchSize = 1,
-                               patience = 5,
-                               earlyStopping = True,
-                               randomState = 42,
-                               holdout = True,
-                               kFolds = 3):
+    def Hyperparameters(title='Untitled',
+                        taskType='classification',
+                        testRatio = 0.3,
+                        validationRatio = 0.2,
+                        hiddenLayers = [12,12,12],
+                        learningRate = 0.001,
+                        epochs = 10,
+                        batchSize = 1,
+                        patience = 5,
+                        earlyStopping = True,
+                        randomState = 42,
+                        crossValidationType = "holdout",
+                        kFolds = 3,
+                        interval = 1,
+                        mantissa = 6):
         """
+        title : str , optional
+            The desired title for the dataset. The default is "Untitled".
         taskType : str , optional
             The desired task type. This can be either 'classification' or 'regression' (case insensitive).
             Classification is a type of supervised learning where the model is trained to predict categorical labels (classes) from input data.
             Regression is a type of supervised learning where the model is trained to predict continuous numerical values from input data.
+        testRatio : float , optional
+            The split ratio between training and testing. The default is 0.3. This means that
+            70% of the data will be used for training/validation and 30% will be reserved for testing as unseen data.
         validationRatio : float , optional
             The split ratio between training and validation. The default is 0.2. This means that
-            80% of the data will be used for training and 20% will be used for validation.
+            80% of the validation data (left over after reserving test data) will be used for training and 20% will be used for validation.
         hiddenLayers : list , optional
             The number of hidden layers and the number of nodes in each layer.
             If you wish to have 3hidden layers with 8 nodes in the first
@@ -614,18 +596,6 @@ class ANN():
             The desired learning rate. The default is 0.001. See https://en.wikipedia.org/wiki/Learning_rate
         epochs : int , optional
             The desired number of epochs. The default is 10. See https://en.wikipedia.org/wiki/Neural_network_(machine_learning)
-        activation : str , optional
-            The type of activation layer. See https://en.wikipedia.org/wiki/Activation_function
-            Some common alternatives include:
-            'relu' : ReLU (Rectified Linear Unit) is an activation function that outputs the input directly if it is positive; otherwise, it outputs zero.
-            'sigmoid' : The sigmoid activation function, which maps inputs to a range between 0 and 1.
-            'tanh' : The hyperbolic tangent activation function, which maps inputs to a range between -1 and 1.
-            'leaky_relu': A variant of the ReLU that allows a small, non-zero gradient when the unit is not active.
-            'elu' : Exponential Linear Unit, which improves learning characteristics by having a smooth curve.
-            'swish' : An activation function defined as x . sigmoid(x)
-            'softmax' : Often used in the output layer of a classification network, it normalizes the outputs to a probability distribution.
-            'linear' : A linear activation function, which is often used in the output layer of regression networks.
-            The default is 'relu'.
         batchSize : int , optional
             The desired number of samples that will be propagated through the network at one time before the model's internal parameters are updated. Instead of updating the model parameters after every single training sample
             (stochastic gradient descent) or after the entire training dataset (batch gradient descent), mini-batch gradient descent updates the model parameters after
@@ -639,44 +609,52 @@ class ANN():
             it controls the shuffling of the data before splitting it into training and testing sets.
             This means that every time you run your code with the same randomState value and the same dataset, you will get the same split of the data.
             The default is 42 which is just a randomly picked integer number. Specify None for random sampling.
-        holdout : bool , optional
-            If set to True, the Holdout cross-validation method is used. Otherwise, the K-fold method is used. The default is True.
+        crossValidationType : str , optional
+            The desired type of cross-validation. This can be one of 'holdout' or 'k-fold'. The default is 'holdout'
         kFolds : int , optional
             The number of splits (folds) to use if K-Fold cross validation is selected. The default is 5.
+        interval : int , optional
+            The desired epoch interval at which to report and save metrics data. This must be less than the total number of epochs. The default is 1.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         
         Returns
         -------
         dict
             Returns a dictionary with the following keys:
-            'taskType'
-            'validationRatio'
-            'hiddenLayers'
-            'learningRate'
+            'task_type'
+            'test_ratio'
+            'validation_ratio'
+            'hidden_layers'
+            'learning_rate'
             'epochs'
-            'activation'
-            'batchSize'
+            'batch_size'
+            'early_stopping'
             'patience'
-            'earlyStopping'
-            'randomState'
-            'holdout'
+            'random_tate'
+            'cross_val_type'
             'kFolds'
+            'interval'
+            'mantissa'
         """
         return {
-                'taskType': taskType,
-                'validationRatio': validationRatio,
-                'hiddenLayers': hiddenLayers,
-                'learningRate': learningRate,
+                'task_type': taskType,
+                'test_ratio': testRatio,
+                'validation_ratio': validationRatio,
+                'hidden_layers': hiddenLayers,
+                'learning_rate': learningRate,
                 'epochs': epochs,
-                'activation': activation,
-                'batchSize': batchSize,
+                'batch_size': batchSize,
+                'early_stopping': earlyStopping,
                 'patience': patience,
-                'earlyStopping': earlyStopping,
-                'randomState': randomState,
-                'holdout': holdout,
-                'kFolds': kFolds }
+                'random_state': randomState,
+                'cross_val_type': crossValidationType,
+                'k_folds': kFolds,
+                'interval': interval,
+                'mantissa': mantissa}
         
     @staticmethod
-    def HyperparametersBySampleDatasetName(name):
+    def HyperparametersBySampleName(name):
         """
         Returns the suggested initial hyperparameters to use for the dataset named in the name input parameter.
         You can get a list of available sample datasets using ANN.SampleDatasets().
@@ -690,90 +668,108 @@ class ANN():
         -------
         dict
             Returns a dictionary with the following keys:
-            'taskType'
-            'validationRatio'
-            'hiddenLayers'
-            'learningRate'
+            'title'
+            'task_type'
+            'test_ratio'
+            'validation_ratio'
+            'hidden_layers'
+            'learning_rate'
             'epochs'
-            'activation'
-            'batchSize'
+            'batch_size'
+            'early_stopping'
             'patience'
-            'earlyStopping'
-            'randomState'
-            'holdout'
-            'kFolds'
+            'random_state'
+            'cross_val_type'
+            'k_folds'
+            'interval'
+            'mantissa'
 
         """
         hyperparameters = {
             'breast_cancer': {
-                'taskType': 'classification',
-                'validationRatio': 0.2,
-                'hiddenLayers': [30, 15],
-                'learningRate': 0.001,
+                'title': 'Breast Cancer',
+                'task_type': 'classification',
+                'test_ratio': 0.3,
+                'validation_ratio': 0.2,
+                'hidden_layers': [30, 15],
+                'learning_rate': 0.001,
                 'epochs': 100,
-                'activation': 'relu',
-                'batchSize': 32,
+                'batch_size': 32,
+                'early_stopping': True,
                 'patience': 10,
-                'earlyStopping': True,
-                'randomState': 42,
-                'holdout': True,
-                'kFolds': 3
+                'random_state': 42,
+                'cross_val_type': "holdout",
+                'k_folds': 3,
+                'interval': 10,
+                'mantissa': 6
             },
             'california_housing': {
-                'taskType': 'regression',
-                'validationRatio': 0.2,
-                'hiddenLayers': [50, 25],
-                'learningRate': 0.001,
-                'epochs': 150,
-                'activation': 'relu',
-                'batchSize': 32,
+                'title': 'California Housing',
+                'task_type': 'regression',
+                'test_ratio': 0.3,
+                'validation_atio': 0.2,
+                'hidden_layers': [50, 25],
+                'learning_rate': 0.001,
+                'epochs': 50,
+                'batch_size': 16,
+                'early_stopping': False,
                 'patience': 10,
-                'earlyStopping': True,
-                'randomState': 42,
-                'holdout': True,
-                'kFolds': 3
+                'random_state': 42,
+                'cross_val_type': "k-fold",
+                'k_folds': 3,
+                'interval': 5,
+                'mantissa': 6
             },
             'digits': {
-                'taskType': 'classification',
-                'validationRatio': 0.2,
-                'hiddenLayers': [64, 32],
-                'learningRate': 0.001,
+                'title': 'Digits',
+                'task_type': 'classification',
+                'test_ratio': 0.3,
+                'validation_ratio': 0.2,
+                'hidden_layers': [64, 32],
+                'learning_rate': 0.001,
                 'epochs': 50,
-                'activation': 'relu',
-                'batchSize': 32,
+                'batch_size': 32,
+                'early_stopping': True,
                 'patience': 10,
-                'earlyStopping': True,
-                'randomState': 42,
-                'holdout': True,
-                'kFolds': 3
+                'random_state': 42,
+                'cross_val_type': "holdout",
+                'kFolds': 3,
+                'interval': 5,
+                'mantissa': 6
             },
             'iris': {
-                'taskType': 'classification',
-                'validationRatio': 0.2,
-                'hiddenLayers': [10, 5],
-                'learningRate': 0.001,
+                'title': 'Iris',
+                'task_type': 'classification',
+                'test_ratio': 0.3,
+                'validation_ratio': 0.2,
+                'hidden_layers': [10, 5],
+                'learning_rate': 0.001,
                 'epochs': 100,
-                'activation': 'relu',
-                'batchSize': 16,
+                'batch_size': 16,
+                'early_stopping': False,
                 'patience': 10,
-                'earlyStopping': True,
-                'randomState': 42,
-                'holdout': True,
-                'kFolds': 3
+                'random_state': 42,
+                'cross_val_type': "holdout",
+                'k_folds': 3,
+                'interval': 2,
+                'mantissa': 6
             },
             'wine': {
-                'taskType': 'classification',
-                'validationRatio': 0.2,
-                'hiddenLayers': [50, 25],
-                'learningRate': 0.001,
+                'title': 'Wine',
+                'task_type': 'classification',
+                'test_ratio': 0.3,
+                'validation_ratio': 0.2,
+                'hidden_layers': [50, 25],
+                'learning_rate': 0.001,
                 'epochs': 100,
-                'activation': 'relu',
-                'batchSize': 16,
+                'batch_size': 16,
+                'early_stopping': False,
                 'patience': 10,
-                'earlyStopping': True,
-                'randomState': 42,
-                'holdout': True,
-                'kFolds': 3
+                'random_state': 42,
+                'cross_val_type': "holdout",
+                'k_folds': 3,
+                'interval': 2,
+                'mantissa': 6
             }
         }
         
@@ -797,95 +793,82 @@ class ANN():
         -------
         dict
             A dictionary containing the model data. The keys in the dictionary are:
-            'epochs'
-            'trainingLoss'
-            'validationLoss'
-            'trainingAccuracy' (for classification tasks only)
-            'validationAccuracy' (for classification tasks only)
-            'trainingMAE' (for regression tasks only)
-            'validationMAE' (for regression tasks only)
+            'epochs' (list of epoch numbers at which metrics data was collected)
+            'training_loss' (LOSS)
+            'validation_loss' (VALIDATION LOSS)
+            'training_accuracy' (ACCURACY for classification tasks only)
+            'validation_accuracy' (ACCURACYfor classification tasks only)
+            'training_mae' (MAE for regression tasks only)
+            'validation_mae' (MAE for regression tasks only)
+            'training_mse' (MSE for regression tasks only)
+            'validation_mse' (MSE for regression tasks only)
+            'training_r2' (R^2 for regression tasks only)
+            'validation_r2' (R^2 for regression tasks only)
+
 
         """
 
         return {
-                ' epochs': model.epochs,
-                'trainingLoss': model.training_loss_list,
-                'validationLoss': model.validation_loss_list,
-                'trainingAccuracy': model.training_accuracy_list,
-                'validationAccuracy': model.validation_accuracy_list,
-                'trainingMAE': model.training_mae_list,
-                'validationMAE': model.validation_mae_list
+                'epochs': model.epoch_list,
+                'training_loss': model.training_loss_list,
+                'validation_loss': model.validation_loss_list,
+                'training_accuracy': model.training_accuracy_list,
+                'validation_accuracy': model.validation_accuracy_list,
+                'training_mae': model.training_mae_list,
+                'validation_mae': model.validation_mae_list,
+                'training_mse': model.training_mse_list,
+                'validation_mse': model.validation_mse_list,
+                'training_r2': model.training_r2_list,
+                'validation_r2': model.validation_r2_list
             }
 
     @staticmethod
-    def ModelInitialize(inputSize, outputSize, hyperparameters = None):
+    def Initialize(hyperparameters, dataset):
         """
-        Initializes an ANN model given the input parameter.
+        Initializes an ANN model with the input dataset and hyperparameters.
 
         Parameters
         ----------
-        inputSize : int
-            The number of initial inputs. This is usually computed directly from the dataset.
-        outputSize : int
-            The number of categories for classification tasks. This is usually computed directly from the dataset.
         hyperparameters : dict
-            The hyperparameters dictionary. You can create one using ANN.HyperparametersByInput or, if you are using a sample Dataset, you can get it from ANN.HyperParametersBySampleDatasetName.
-       
+            The hyperparameters dictionary. You can create one using ANN.Hyperparameters() or, if you are using a sample Dataset, you can get it from ANN.HyperParametersBySampleName.
+        dataset : sklearn.utils._bunch.Bunch
+            The input dataset.
+               
         Returns
         -------
         _ANNModel
             Returns the trained model.
 
         """
+        def prepare_data(dataset, task_type='classification'):
+            X, y = dataset.data, dataset.target
+            
+            # Standardize features
+            scaler = StandardScaler()
+            X = scaler.fit_transform(X)
+            X = torch.tensor(X, dtype=torch.float32)
+            y = torch.tensor(y, dtype=torch.long if task_type != 'regression' else torch.float32)
+            return X, y
         
-        task_type = hyperparameters['taskType']
-        validation_ratio = hyperparameters['validationRatio']
-        hidden_layers = hyperparameters['hiddenLayers']
-        learning_rate = hyperparameters['learningRate']
-        epochs = hyperparameters['epochs']
-        activation = hyperparameters['activation']
-        batch_size = hyperparameters['batchSize']
-        patience = hyperparameters['patience']
-        early_stopping = hyperparameters['earlyStopping']
-        random_state = hyperparameters['randomState']
-        holdout = hyperparameters['holdout']
-        k_folds = hyperparameters['kFolds']
-
-        task_type = task_type.lower()
+        task_type = hyperparameters['task_type']
         if task_type not in ['classification', 'regression']:
-            print("ANN.ModelInitialize - Error: The input parameter taskType is not recognized. It must be either 'classification' or 'regression'. Returning None.")
+            print("ANN.ModelInitialize - Error: The task type in the input hyperparameters parameter is not recognized. It must be either 'classification' or 'regression'. Returning None.")
             return None
-        
-        model = _ANNModel(inputSize=inputSize,
-                    outputSize=outputSize,
-                    taskType=task_type,
-                    validationRatio=validation_ratio,
-                    hiddenLayers=hidden_layers,
-                    learningRate=learning_rate,
-                    epochs=epochs,
-                    activation=activation,
-                    batchSize=batch_size,
-                    patience=patience,
-                    earlyStopping = early_stopping,
-                    randomState = random_state,
-                    holdout=holdout,
-                    kFolds=k_folds
-                    )
+        X, y = prepare_data(dataset, task_type=task_type)
+        model = _ANN(input_size=X.shape[1], hyperparameters=hyperparameters, dataset=dataset)
         return model
 
     @staticmethod
-    def ModelTrain(model, X, y):
+    def Train(hyperparameters, dataset):
         """
         Trains the input model given the input features (X), and target (y).
 
         Parameters
         ----------
-        model : ANN Model
-            The input model.
-        X : list
-            The input list of features.
-        y : list
-            The input list of targets
+        hyperparameters : dict
+            The hyperparameters dictionary. You can create one using ANN.Hyperparameters() or, if you are using a sample Dataset, you can get it from ANN.HyperParametersBySampleName.
+        dataset : sklearn.utils._bunch.Bunch
+            The input dataset.
        
         Returns
         -------
@@ -893,11 +876,23 @@ class ANN():
             Returns the trained model.
 
         """
-        model.train(X, y)
+        def prepare_data(dataset, task_type='classification'):
+            X, y = dataset.data, dataset.target
+            
+            # Standardize features
+            scaler = StandardScaler()
+            X = scaler.fit_transform(X)
+            X = torch.tensor(X, dtype=torch.float32)
+            y = torch.tensor(y, dtype=torch.long if task_type != 'regression' else torch.float32)
+            return X, y
+        
+        X, y = prepare_data(dataset, task_type=hyperparameters['task_type'])
+        model = _ANN(input_size=X.shape[1], hyperparameters=hyperparameters, dataset=dataset)
+        model.cross_validate(X, y)
         return model
 
     @staticmethod
-    def ModelEvaluate(model, X, y):
+    def Test(model, hyperparameters, dataset):
         """
         Returns the labels (actual values) and predictions (predicted values) given the input model, features (X), and target (y).
 
@@ -913,14 +908,29 @@ class ANN():
         Returns
         -------
         list, list
-            Returns two lists: labels, and predictions.
+            Returns two lists: metrics, and predictions.
 
         """
-        labels, predictions = model.evaluate(X, y)
-        return labels, predictions
+        def prepare_data(dataset, task_type='classification'):
+            X, y = dataset.data, dataset.target
+            
+            # Standardize features
+            scaler = StandardScaler()
+            X = scaler.fit_transform(X)
+            X = torch.tensor(X, dtype=torch.float32)
+            y = torch.tensor(y, dtype=torch.long if task_type != 'regression' else torch.float32)
+            return X, y
+        
+        X, y = prepare_data(dataset, task_type=hyperparameters['task_type'])
+        X_train, X_test, y_train,y_test = ANN.DatasetSplit(X, y, testRatio=hyperparameters['test_ratio'], randomState=hyperparameters['random_state'])
+        metrics, predictions = model.evaluate_model(X_test, y_test)
+        confusion_matrix = None
+        if hyperparameters['task_type'] != 'regression':
+            confusion_matrix = model.confusion_matrix(y_test, predictions)
+        return y_test, predictions, metrics, confusion_matrix
 
     @staticmethod
-    def ModelFigures(model, width=900, height=600, template="plotly", colorScale='viridis', colorSamples=10):
+    def Figures(model, width=900, height=600, template="plotly", colorScale='viridis', colorSamples=10):
         """
         Creates Plotly Figures from the model data. For classification tasks this includes
         a confusion matrix, loss, and accuracy figures. For regression tasks this includes
@@ -952,50 +962,62 @@ class ANN():
         """
         import plotly.graph_objects as go
         from topologicpy.Plotly import Plotly
+        import numpy as np
         figures = []
         filenames = []
-        if model.task_type.lower() == 'classification':
-            data_lists = [[model.training_loss_list, model.validation_loss_list], [model.training_accuracy_list, model.validation_accuracy_list]]
+        if model.task_type == 'classification':
+            confusion_matrix = model.metrics['confusion_matrix']
+            confusion_matrix_figure = Plotly.FigureByConfusionMatrix(confusion_matrix, width=width, height=height, colorScale=colorScale, colorSamples=colorSamples)
+            confusion_matrix_figure.update_layout(title=model.title+"<BR>Confusion Matrix")
+            figures.append(confusion_matrix_figure)
+            filenames.append("ConfusionMatrix")
+            data_lists = [[model.train_loss_list, model.val_loss_list], [model.train_accuracy_list, model.val_accuracy_list]]
             label_lists = [['Training Loss', 'Validation Loss'], ['Training Accuracy', 'Validation Accuracy']]
             titles = ['Training and Validation Loss', 'Training and Validation Accuracy']
+            titles = [model.title+"<BR>"+t for t in titles]
             legend_titles = ['Loss Type', 'Accuracy Type']
             xaxis_titles = ['Epoch', 'Epoch']
             yaxis_titles = ['Loss', 'Accuracy']
             filenames = yaxis_titles
-            if len(model.labels) > 0 and len(model.labels) == len(model.predictions):
-                confusion_matrix = ANN.ModelMetrics(model, labels = model.labels, predictions = model.predictions)['Confusion Matrix']
-                confusion_matrix_figure = Plotly.FigureByConfusionMatrix(confusion_matrix, width=width, height=height, colorScale=colorScale, colorSamples=colorSamples)
-                figures.append(confusion_matrix_figure)
-                filenames.append("ConfusionMatrix")
+            
         elif model.task_type.lower() == 'regression':
-            data_lists = [[model.training_loss_list, model.validation_loss_list], [model.training_mae_list, model.validation_mae_list]]
-            label_lists = [['Training Loss', 'Validation Loss'], ['Training MAE', 'Validation MAE']]
-            titles = ['Training and Validation Loss', 'Training and Validation MAE']
-            legend_titles = ['Loss Type', 'MAE Type']
-            xaxis_titles = ['Epoch', 'Epoch']
-            yaxis_titles = ['Loss', 'MAE']
+            data_lists = [[model.train_loss_list, model.val_loss_list], [model.train_mae_list, model.val_mae_list], [model.train_mse_list, model.val_mse_list], [model.train_r2_list, model.val_r2_list]]
+            label_lists = [['Training Loss', 'Validation Loss'], ['Training MAE', 'Validation MAE'], ['Training MSE', 'Validation MSE'],['Training R^2', 'Validation R^2']]
+            titles = ['Training and Validation Loss', 'Training and Validation MAE', 'Training and Validation MSE', 'Training and Validation R^2']
+            titles = [model.title+"<BR>"+t for t in titles]
+            legend_titles = ['Loss Type', 'MAE Type', 'MSE Type', 'R^2 Type']
+            xaxis_titles = ['Epoch', 'Epoch', 'Epoch', 'Epoch']
+            yaxis_titles = ['Loss', 'MAE', 'MSE', 'R^2']
             filenames = yaxis_titles
         else:
             print("ANN.ModelFigures - Error: Could not recognize model task type. Returning None.")
             return None
-        for i in range(2):
+        for i in range(len(data_lists)):
             data = data_lists[i]
             labels = label_lists[i]
             title = titles[i]
             legend_title = legend_titles[i]
             xaxis_title = xaxis_titles[i]
             yaxis_title = yaxis_titles[i]
-            lengths = [len(d) for d in data]
-
-            max_length = max(lengths)
-            x_ticks = list(range(1, max_length + 1))
+            x = model.epoch_list
+            
 
             figure = go.Figure()
+            min_x = np.inf
+            max_x = -np.inf
+            min_y = np.inf
+            max_y = -np.inf
             for j in range(len(data)):
-                figure.add_trace(go.Scatter(x=x_ticks, y=data[j], mode='lines+markers', name=labels[j]))
-
+                y = data[j]
+                figure.add_trace(go.Scatter(x=x, y=y, mode='lines+markers', name=labels[j]))
+                min_x = min(min_x, min(x))
+                max_x = max(max_x, max(x))
+                min_y = min(min_y, min(y))
+                max_y = max(max_y, max(y))
 
             figure.update_layout(
+                xaxis=dict(range=[0, max_x+max_x*0.01]),
+                yaxis=dict(range=[min_y-min_y*0.01, max_y+max_y*0.01]),
                 title=title,
                 xaxis_title=xaxis_title,
                 yaxis_title=yaxis_title,
@@ -1008,7 +1030,7 @@ class ANN():
         return figures, filenames
     
     @staticmethod
-    def ModelMetrics(model, labels, predictions):
+    def Metrics(model):
         """
         Returns the model performance metrics given the input labels and predictions, and the model's task type.
 
@@ -1036,11 +1058,11 @@ class ANN():
                 "R-squared"
 
         """
-        metrics = model.metrics(labels, predictions)
+        metrics = model.metrics
         return metrics
 
     @staticmethod
-    def ModelSave(model, path, overwrite=False):
+    def Save(model, path, overwrite=False):
         """
         Saves the model.
 
@@ -1062,13 +1084,13 @@ class ANN():
         import os
 
         if model == None:
-            print("DGL.ModelSave - Error: The input model parameter is invalid. Returning None.")
+            print("ANN.Save - Error: The input model parameter is invalid. Returning None.")
             return None
         if path == None:
-            print("DGL.ModelSave - Error: The input path parameter is invalid. Returning None.")
+            print("ANN.Save - Error: The input path parameter is invalid. Returning None.")
             return None
         if not overwrite and os.path.exists(path):
-            print("DGL.ModelSave - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            print("ANN.Save - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
             return None
         if overwrite and os.path.exists(path):
             os.remove(path)
@@ -1081,9 +1103,9 @@ class ANN():
         return True
 
     @staticmethod
-    def ModelLoad(model, path):
+    def Load(model, path):
         """
-        Loads the model state dictionary found at the input file path. The model input parameter must be pre-initialized using the ModelInitialize method.
+        Loads the model state dictionary found at the input file path. The model input parameter must be pre-initialized using the ANN.Initialize() method.
 
         Parameters
         ----------
@@ -1101,165 +1123,11 @@ class ANN():
         from os.path import exists
         
         if not exists(path):
-            print("ANN.ModelLoad - Error: The specified path does not exist. Returning None.")
+            print("ANN.Load - Error: The specified path does not exist. Returning None.")
             return None
         model.load(path)
         return model
 
-    @staticmethod
-    def ConfusionMatrix(actual, predicted, normalize=False):
-        """
-        Returns the confusion matrix for the input actual and predicted labels. This is to be used with classification tasks only not regression.
 
-        Parameters
-        ----------
-        actual : list
-            The input list of actual labels.
-        predicted : list
-            The input list of predicts labels.
-        normalized : bool , optional
-            If set to True, the returned data will be normalized (proportion of 1). Otherwise, actual numbers are returned. The default is False.
-
-        Returns
-        -------
-        list
-            The created confusion matrix.
-
-        """
-        import os
-        import warnings
-
-        try:
-            from sklearn import metrics
-            from sklearn.metrics import accuracy_score
-        except:
-            print("ANN.ConfusionMatrix - Installing required scikit-learn (sklearn) library.")
-            try:
-                os.system("pip install scikit-learn")
-            except:
-                os.system("pip install scikit-learn --user")
-            try:
-                from sklearn import metrics
-                from sklearn.metrics import accuracy_score
-                print("ANN.ConfusionMatrix - scikit-learn (sklearn) library installed correctly.")
-            except:
-                warnings.warn("ANN.ConfusionMatrix - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
-                return None
-
-        if not isinstance(actual, list):
-            print("ANN.ConfusionMatrix - ERROR: The actual input is not a list. Returning None")
-            return None
-        if not isinstance(predicted, list):
-            print("ANN.ConfusionMatrix - ERROR: The predicted input is not a list. Returning None")
-            return None
-        if len(actual) != len(predicted):
-            print("ANN.ConfusionMatrix - ERROR: The two input lists do not have the same length. Returning None")
-            return None
-        if normalize:
-            cm = np.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true"))
-        else:
-            cm = np.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted))
-        return cm
-
-    @staticmethod
-    def Show(data,
-             labels,
-             title="Training/Validation",
-             xTitle="Epochs",
-             xSpacing=1,
-             yTitle="Accuracy and Loss",
-             ySpacing=0.1,
-             useMarkers=False,
-             chartType="Line",
-             width=950,
-             height=500,
-             backgroundColor='rgba(0,0,0,0)',
-             gridColor='lightgray',
-             marginLeft=0,
-             marginRight=0,
-             marginTop=40,
-             marginBottom=0,
-             renderer = "notebook"):
-        """
-        Shows the data in a plolty graph.
-
-        Parameters
-        ----------
-        data : list
-            The data to display.
-        labels : list
-            The labels to use for the data.
-        width : int , optional
-            The desired width of the figure. The default is 950.
-        height : int , optional
-            The desired height of the figure. The default is 500.
-        title : str , optional
-            The chart title. The default is "Training and Testing Results".
-        xTitle : str , optional
-            The X-axis title. The default is "Epochs".
-        xSpacing : float , optional
-            The X-axis spacing. The default is 1.0.
-        yTitle : str , optional
-            The Y-axis title. The default is "Accuracy and Loss".
-        ySpacing : float , optional
-            The Y-axis spacing. The default is 0.1.
-        useMarkers : bool , optional
-            If set to True, markers will be displayed. The default is False.
-        chartType : str , optional
-            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. The default is "Line".
-        backgroundColor : str , optional
-            The desired background color. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'rgba(0,0,0,0)' (transparent).
-        gridColor : str , optional
-            The desired grid color. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'lightgray'.
-        marginLeft : int , optional
-            The desired left margin in pixels. The default is 0.
-        marginRight : int , optional
-            The desired right margin in pixels. The default is 0.
-        marginTop : int , optional
-            The desired top margin in pixels. The default is 40.
-        marginBottom : int , optional
-            The desired bottom margin in pixels. The default is 0.
-        renderer : str , optional
-            The desired plotly renderer. The default is "notebook".
-
-        Returns
-        -------
-        None.
-
-        """
-        from topologicpy.Plotly import Plotly
-
-        dataFrame = Plotly.DataByDGL(data, labels)
-        fig = Plotly.FigureByDataFrame(dataFrame,
-                                       labels=labels,
-                                       title=title,
-                                       xTitle=xTitle,
-                                       xSpacing=xSpacing,
-                                       yTitle=yTitle,
-                                       ySpacing=ySpacing,
-                                       useMarkers=useMarkers,
-                                       chartType=chartType,
-                                       width=width,
-                                       height=height,
-                                       backgroundColor=backgroundColor,
-                                       gridColor=gridColor,
-                                       marginRight=marginRight,
-                                       marginLeft=marginLeft,
-                                       marginTop=marginTop,
-                                       marginBottom=marginBottom
-                                       )
-        Plotly.Show(fig, renderer=renderer)
     
     

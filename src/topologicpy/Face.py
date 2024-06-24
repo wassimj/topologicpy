@@ -189,7 +189,13 @@ class Face():
         from topologicpy.Topology import Topology
 
         br_wire = Wire.BoundingRectangle(topology=topology, optimize=optimize, tolerance=tolerance)
+        if not Topology.IsInstance(br_wire, "Wire"):
+            print("Face.BoundingRectangle - Warning: Could not create base wire. Returning None.")
+            return None
         br_face = Face.ByWire(br_wire)
+        if not Topology.IsInstance(br_face, "Face"):
+            print("Face.BoundingRectangle - Warning: Could not create face from base wire. Returning None.")
+            return None
         br_face = Topology.SetDictionary(br_face, Topology.Dictionary(br_wire))
         return br_face
     
@@ -225,7 +231,11 @@ class Face():
         if not Topology.IsInstance(wire, "Wire"):
             print("Face.ByEdges - Error: Could not create the required wire. Returning None.")
             return None
-        return Face.ByWire(wire, tolerance=tolerance)
+        face = Face.ByWire(wire, tolerance=tolerance)
+        if not Topology.IsInstance(face, "Face"):
+            print("Face.ByEdges - Warning: Could not create face from base wire. Returning None.")
+            return None
+        return face
 
     @staticmethod
     def ByEdgesCluster(cluster, tolerance: float = 0.0001):
@@ -255,7 +265,11 @@ class Face():
         if len(edges) < 1:
             print("Face.ByEdgesCluster - Warning: The input cluster parameter does not contain any valid edges. Returning None.")
             return None
-        return Face.ByEdges(edges, tolerance=tolerance)
+        face = Face.ByEdges(edges, tolerance=tolerance)
+        if not Topology.IsInstance(face, "Face"):
+            print("Face.ByEdgesCluster - Warning: Could not create face from edges. Returning None.")
+            return None
+        return face
 
     @staticmethod
     def ByOffset(face, offset: float = 1.0, tolerance: float = 0.0001):
@@ -289,7 +303,11 @@ class Face():
         offset_internal_boundaries = []
         for internal_boundary in internal_boundaries:
             offset_internal_boundaries.append(Wire.ByOffset(wire=internal_boundary, offset=offset, bisectors=False, tolerance=tolerance))
-        return Face.ByWires(offset_external_boundary, offset_internal_boundaries, tolerance=tolerance)
+        face = Face.ByWires(offset_external_boundary, offset_internal_boundaries, tolerance=tolerance)
+        if not Topology.IsInstance(face, "Face"):
+            print("Face.ByOffset - Warning: Could not create face from wires. Returning None.")
+            return None
+        return face
     
     @staticmethod
     def ByShell(shell, origin= None, angTolerance: float = 0.1, tolerance: float = 0.0001, silent=False):

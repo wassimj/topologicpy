@@ -1419,6 +1419,7 @@ class Shell():
             shell = Topology.RemoveCoplanarFaces(shell, epsilon=epsilon, tolerance=tolerance)
         except:
             pass
+        shell = Topology.Unflatten(shell, origin=origin, direction=normal)
         return shell
     
     @staticmethod
@@ -1519,11 +1520,18 @@ class Shell():
         if not Topology.IsInstance(face, "Face"):
             return None
         roof = Wire.Skeleton(face, tolerance=tolerance)
-        if not roof:
+        if not (Topology.IsInstance(roof, "Wire") or Topology.IsInstance(roof, "Cluster")):
+            print("Shell.Skeleton - Error: Could not create base skeleton wire. Returning None.")
             return None
         br = Wire.BoundingRectangle(roof) #This works even if it is a Cluster not a Wire
+        if not Topology.IsInstance(br, "Wire"):
+            print("Shell.Skeleton - Error: Could not create a bounding rectangle wire. Returning None.")
+            return None
         br = Topology.Scale(br, Topology.Centroid(br), 1.5, 1.5, 1)
         bf = Face.ByWire(br, tolerance=tolerance)
+        if not Topology.IsInstance(bf, "Face"):
+            print("Shell.Skeleton - Error: Could not create a bounding rectangle face. Returning None.")
+            return None
         large_shell = Topology.Boolean(bf, roof, operation="slice", tolerance=tolerance)
         if not large_shell:
             return None
@@ -1536,6 +1544,9 @@ class Shell():
             if len(internalBoundaries) == 0:
                 final_faces.append(f)
         shell = Shell.ByFaces(final_faces, tolerance=tolerance)
+        if not Topology.IsInstance(shell, "Shell"):
+            print("Shell.Skeleton - Error: Could not create shell. Returning None.")
+            return None
         return shell
 
     @staticmethod

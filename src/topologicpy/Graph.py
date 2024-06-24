@@ -280,7 +280,7 @@ class Graph:
         vertexLabelKey : str , optional
             The returned vertices are labelled according to the dictionary values stored under this key.
             If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically and stored in the vertex dictionary under this key. The default is "label".
-        edgeWeightKey : str , optional
+        edgeKey : str , optional
             If set, the edges' dictionaries will be searched for this key to set their weight. If the key is set to "length" (case insensitive), the length of the edge will be used as its weight. If set to None, a weight of 1 will be used. The default is "Length".
         reverse : bool , optional
                 If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
@@ -515,8 +515,10 @@ class Graph:
             The input graph.
         edge : topologic_core.Edge
             The input edge.
-        transferDictionaries : bool, optional
-            If set to True, the dictionaries of the edge and its vertices are transferred to the graph.
+        transferVertexDictionaries : bool, optional
+            If set to True, the dictionaries of the vertices are transferred to the graph.
+        transferEdgeDictionaries : bool, optional
+            If set to True, the dictionaries of the edges are transferred to the graph.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
