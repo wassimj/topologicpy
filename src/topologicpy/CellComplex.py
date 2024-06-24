@@ -790,8 +790,6 @@ class CellComplex():
     def Octahedron(origin= None, radius: float = 0.5,
                   direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
-        Description
-        ----------
         Creates an octahedron. See https://en.wikipedia.org/wiki/Octahedron.
 
         Parameters

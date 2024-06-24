@@ -1,5 +1,5 @@
 topologicpy.ANN module
-===========================
+======================
 
 .. automodule:: topologicpy.ANN
    :members:

@@ -988,8 +988,6 @@ class Cell():
     def Dodecahedron(origin= None, radius: float = 0.5,
                   direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
-        Description
-        ----------
         Creates a dodecahedron. See https://en.wikipedia.org/wiki/Dodecahedron.
 
         Parameters
@@ -1331,8 +1329,6 @@ class Cell():
     def Icosahedron(origin= None, radius: float = 0.5,
                   direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
-        Description
-        ----------
         Creates an icosahedron. See https://en.wikipedia.org/wiki/Icosahedron.
 
         Parameters
@@ -1500,8 +1496,6 @@ class Cell():
     def Octahedron(origin= None, radius: float = 0.5,
                   direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
-        Description
-        ----------
         Creates an octahedron. See https://en.wikipedia.org/wiki/Octahedron.
 
         Parameters
@@ -1562,8 +1556,6 @@ class Cell():
     @staticmethod
     def Pipe(edge, profile = None, radius: float = 0.5, sides: int = 16, startOffset: float = 0, endOffset: float = 0, endcapA = None, endcapB = None, mantissa: int = 6) -> dict:
         """
-        Description
-        ----------
         Creates a pipe along the input edge.
 
         Parameters
@@ -1696,8 +1688,6 @@ class Cell():
     def Prism(origin= None, width: float = 1, length: float = 1, height: float = 1, uSides: int = 1, vSides: int = 1, wSides: int = 1,
                   direction: list = [0, 0, 1], placement: str ="center", mantissa: int = 6, tolerance: float = 0.0001):
         """
-        Description
-        ----------
         Creates a prism.
 
         Parameters
@@ -2017,8 +2007,6 @@ class Cell():
     def Tetrahedron(origin= None, radius: float = 0.5,
                   direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
-        Description
-        ----------
         Creates a tetrahedron. See https://en.wikipedia.org/wiki/Tetrahedron.
 
         Parameters

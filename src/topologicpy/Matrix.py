@@ -20,8 +20,6 @@ class Matrix:
     @staticmethod
     def Add(matA, matB):
         """
-        Description
-        ----------
         Adds the two input matrices.
         
         Parameters
@@ -52,8 +50,6 @@ class Matrix:
     @staticmethod
     def ByRotation(angleX=0, angleY=0, angleZ=0, order="xyz"):
         """
-        Description
-        ----------
         Creates a 4x4 rotation matrix.
 
         Parameters
@@ -121,8 +117,6 @@ class Matrix:
     @staticmethod
     def ByScaling(scaleX=1.0, scaleY=1.0, scaleZ=1.0):
         """
-        Description
-        ----------
         Creates a 4x4 scaling matrix.
 
         Parameters
@@ -148,8 +142,6 @@ class Matrix:
     @staticmethod
     def ByTranslation(translateX=0, translateY=0, translateZ=0):
         """
-        Description
-        ----------
         Creates a 4x4 translation matrix.
 
         Parameters
@@ -175,8 +167,6 @@ class Matrix:
     @staticmethod
     def Multiply(matA, matB):
         """
-        Description
-        ----------
         Multiplies the two input matrices. When transforming an object, the first input matrix is applied first
         then the second input matrix.
         
@@ -222,8 +212,6 @@ class Matrix:
     @staticmethod
     def Subtract(matA, matB):
         """
-        Description
-        ----------
         Subtracts the two input matrices.
         
         Parameters
@@ -254,8 +242,6 @@ class Matrix:
     @staticmethod
     def Transpose(matrix):
         """
-        Description
-        ----------
         Transposes the input matrix.
         
         Parameters
