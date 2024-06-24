@@ -7,6 +7,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   topologicpy.ANN
    topologicpy.Aperture
    topologicpy.Cell
    topologicpy.CellComplex
