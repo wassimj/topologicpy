@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.7.22 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.7.23 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.22
+                0.7.23
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -1387,9 +1387,9 @@ This method is basic and does not support textures and vertex normals.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>objPath</strong><span class="classifier">str</span></dt><dd><p>The path to the OBJ file.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is pecified in the file. The default is [255, 255, 255] (white).</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the file. The default is [255, 255, 255] (white).</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is pecified in the file. The default is 1.0 (fully opaque).</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the file. The default is 1.0 (fully opaque).</p>
 </dd>
 <dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.</p>
 </dd>
@@ -1421,9 +1421,9 @@ This method is basic and does not support textures and vertex normals.</p>
 </dd>
 <dt><strong>mtlString</strong><span class="classifier">str , optional</span></dt><dd><p>The string of the MTL file. The default is None.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is pecified in the string. The default is [255, 255, 255] (white).</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the string. The default is [255, 255, 255] (white).</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is pecified in the string. The default is 1.0 (fully opaque).</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the string. The default is 1.0 (fully opaque).</p>
 </dd>
 <dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.</p>
 </dd>
@@ -2088,9 +2088,19 @@ This is experimental and only geometry is exported.</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
+<dt><strong>nameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the name of the topology. The default is “name”.</p>
+</dd>
+<dt><strong>colorKey</strong><span class="classifier">str, optional</span></dt><dd><p>The topology dictionary key under which to find the color of the topology. The default is “color”.</p>
+</dd>
+<dt><strong>opacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the opacity of the topology. The default is “opacity”.</p>
+</dd>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).</p>
+</dd>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).</p>
+</dd>
 <dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y coordinates are transposed so that Y points “up”</p>
 </dd>
-<dt><strong>mode</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mode of meshing algorithm. Several options are available:
+<dt><strong>mode</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mode of meshing algorithm (for triangulation). Several options are available:
 0: Classic
 1: MeshAdapt
 3: Initial Mesh Only
