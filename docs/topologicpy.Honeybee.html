@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Honeybee module &mdash; topologicpy 0.7.21 documentation</title>
+  <title>topologicpy.Honeybee module &mdash; topologicpy 0.7.22 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.21
+                0.7.22
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -233,10 +233,36 @@
 <dt class="sig sig-object py" id="topologicpy.Honeybee.Honeybee.ModelByTopology">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ModelByTopology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tpBuilding</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tpShadingFacesCluster</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buildingName</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Generic_Building'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultProgramIdentifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Generic</span> <span class="pre">Office</span> <span class="pre">Program'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultConstructionSetIdentifier</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Default</span> <span class="pre">Generic</span> <span class="pre">Construction</span> <span class="pre">Set'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coolingSetpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">25.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heatingSetpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">humidifyingSetpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dehumidifyingSetpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">55.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roomNameKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TOPOLOGIC_name'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roomTypeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TOPOLOGIC_type'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apertureTypeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TOPOLOGIC_type'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addSensorGrid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Honeybee.Honeybee.ModelByTopology" title="Permalink to this definition"></a></dt>
 <dd><p>Creates an HB Model from the input Topology.</p>
-<dl class="field-list">
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><blockquote>
-<div></div></blockquote>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>tpBuilding</strong><span class="classifier">topologic_core.CellComplex or topologic_core.Cell</span></dt><dd><p>The input building topology.</p>
+</dd>
+<dt><strong>tpShadingFaceCluster</strong><span class="classifier">topologic_core.Cluster , optional</span></dt><dd><p>The input cluster for shading faces. The default is None.</p>
+</dd>
+<dt><strong>buildingName</strong><span class="classifier">str , optional</span></dt><dd><p>The desired name of the building. The default is “Generic_Building”.</p>
+</dd>
+<dt><strong>defaultProgramIdentifier: str , optional</strong></dt><dd><p>The desired default program identifier. The default is “Generic Office Program”.</p>
+</dd>
+<dt><strong>defaultConstructionSetIdentifier: str , optional</strong></dt><dd><p>The desired default construction set identifier. The default is “Default Generic Construction Set”.</p>
+</dd>
+<dt><strong>coolingSetpoint</strong><span class="classifier">float , optional</span></dt><dd><p>The desired HVAC cooling set point in degrees Celsius. The default is 25.</p>
+</dd>
+<dt><strong>heatingSetpoint</strong><span class="classifier">float , optional</span></dt><dd><p>The desired HVAC heating set point in degrees Celsius. The default is 20.</p>
+</dd>
+<dt><strong>humidifyingSetpoint</strong><span class="classifier">float , optional</span></dt><dd><p>The desired HVAC humidifying set point in percentage. The default is 55.</p>
+</dd>
+<dt><strong>roomNameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which the room name is stored. The default is “TOPOLOGIC_name”.</p>
+</dd>
+<dt><strong>roomTypeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which the room type is stored. The default is “TOPOLOGIC_type”.</p>
+</dd>
+<dt><strong>apertureTypeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which the aperture type is stored. The default is “TOPOLOGIC_type”.</p>
+</dd>
+<dt><strong>addSensorGrid</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True a sensor grid is add to horizontal surfaces. The default is False.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+</dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">

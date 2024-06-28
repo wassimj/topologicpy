@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Dictionary module &mdash; topologicpy 0.7.21 documentation</title>
+  <title>topologicpy.Dictionary module &mdash; topologicpy 0.7.22 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.21
+                0.7.22
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -190,7 +190,7 @@ values.append(value)</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByKeysValues" title="topologicpy.Dictionary.Dictionary.ByKeysValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByKeysValues</span></code></a>(keys, values)</p></td>
 <td><p>Creates a Dictionary from the input list of keys and the input list of values.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByMergedDictionaries" title="topologicpy.Dictionary.Dictionary.ByMergedDictionaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByMergedDictionaries</span></code></a>(dictionaries)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByMergedDictionaries" title="topologicpy.Dictionary.Dictionary.ByMergedDictionaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByMergedDictionaries</span></code></a>(*dictionaries)</p></td>
 <td><p>Creates a dictionary by merging the list of input dictionaries.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByPythonDictionary" title="topologicpy.Dictionary.Dictionary.ByPythonDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByPythonDictionary</span></code></a>(pythonDictionary)</p></td>
@@ -265,12 +265,12 @@ values.append(value)</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.ByMergedDictionaries">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByMergedDictionaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionaries</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.ByMergedDictionaries" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByMergedDictionaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">dictionaries</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.ByMergedDictionaries" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a dictionary by merging the list of input dictionaries.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>dictionaries</strong><span class="classifier">list</span></dt><dd><p>The input list of dictionaries to be merges.</p>
+<dt><strong>dictionaries</strong><span class="classifier">list or comma separated dictionaries</span></dt><dd><p>The input list of dictionaries to be merged.</p>
 </dd>
 </dl>
 </dd>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.ANN module &mdash; topologicpy 0.7.21 documentation</title>
+  <title>topologicpy.ANN module &mdash; topologicpy 0.7.22 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.21
+                0.7.22
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -233,9 +233,11 @@ it controls the shuffling of the data before splitting it into training and test
 This means that every time you run your code with the same randomState value and the same dataset, you will get the same split of the data.
 The default is 42 which is just a randomly picked integer number. Specify None for random sampling.</p>
 </dd>
-<dt><strong>Returns</strong></dt><dd></dd>
-<dt><strong>——-</strong></dt><dd></dd>
-<dt><strong>dict</strong></dt><dd><p>Returns the following dictionary:
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>Returns the following dictionary:
 XTrain, XTest, yTrain, yTest, inputSize, outputSize
 XTrain is the list of features used for training
 XTest is the list of features used for testing

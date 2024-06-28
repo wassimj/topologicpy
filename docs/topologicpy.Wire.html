@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Wire module &mdash; topologicpy 0.7.21 documentation</title>
+  <title>topologicpy.Wire module &mdash; topologicpy 0.7.22 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.21
+                0.7.22
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -232,14 +232,14 @@
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONString</span></code>(string[, progressBar, tolerance])</p></td>
 <td><p>Imports the topology from a JSON string.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJFile</span></code>(file[, transposeAxes, ...])</p></td>
-<td><p>Imports the topology from a Wevefront OBJ file.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJFile</span></code>(objFile[, mtlFile, defaultColor, ...])</p></td>
+<td><p>Imports a topology from an OBJ file and an associated materials file.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJPath</span></code>(path[, transposeAxes, ...])</p></td>
-<td><p>Imports the topology from a Wevefront OBJ file path.</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJPath</span></code>(objPath[, defaultColor, ...])</p></td>
+<td><p>Imports a topology from an OBJ file path and an associated materials file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJString</span></code>(string[, transposeAxes, ...])</p></td>
-<td><p>Creates a topology from the input Wavefront OBJ string.</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJString</span></code>(objString[, mtlString, ...])</p></td>
+<td><p>Imports a topology from  OBJ and MTL strings.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOCCTShape</span></code>(occtShape)</p></td>
 <td><p>Creates a topology from the input OCCT shape.</p></td>
@@ -349,7 +349,7 @@
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToJSON</span></code>(topologies, path[, overwrite])</p></td>
 <td><p>Exports the input list of topologies to a JSON file.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToOBJ</span></code>(topology, path[, transposeAxes, ...])</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToOBJ</span></code>(*topologies, path[, nameKey, ...])</p></td>
 <td><p>Exports the input topology to a Wavefront OBJ file.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ExteriorAngles" title="topologicpy.Wire.Wire.ExteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExteriorAngles</span></code></a>(wire[, tolerance, mantissa])</p></td>
@@ -442,7 +442,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Normal" title="topologicpy.Wire.Wire.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>(wire[, outputType, mantissa])</p></td>
 <td><p>Returns the normal vector to the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OBJString</span></code>(topology[, transposeAxes, mode, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OBJString</span></code>(topology, color, vertexIndex[, ...])</p></td>
 <td><p>Returns the Wavefront string of the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">OCCTShape</span></code>(topology)</p></td>
@@ -544,14 +544,14 @@
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code>(topology)</p></td>
 <td><p>Returns the shells of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code>(*topologies[, showVertices, ...])</p></td>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code>(*topologies[, colorKey, opacityKey, ...])</p></td>
 <td><p>Shows the input topology on screen.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Simplify" title="topologicpy.Wire.Wire.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(wire[, tolerance])</p></td>
 <td><p>Simplifies the input wire edges based on the Douglas Peucker algorthim.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Skeleton" title="topologicpy.Wire.Wire.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>(face[, tolerance])</p></td>
-<td><p>Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
+<td><p>Creates a straight skeleton.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Slice</span></code>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>See Topology.Boolean().</p></td>
@@ -1257,7 +1257,7 @@ This code has been contributed by Yidan Xue.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>tTopology</dt><dd><p>The created interpolated wires as well as the input wires. The return type can be a topologic_core.Cluster or a topologic_core.Wire based on options.</p>
+<dt>topologic_core.Topology</dt><dd><p>The created interpolated wires as well as the input wires. The return type can be a topologic_core.Cluster or a topologic_core.Wire based on options.</p>
 </dd>
 </dl>
 </dd>
@@ -1665,10 +1665,8 @@ Part of this code was contributed by gaoxipeng. See <a class="reference external
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Skeleton">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Skeleton</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Skeleton" title="Permalink to this definition"></a></dt>
-<dd><blockquote>
-<div><p>Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;
+<dd><p>Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;
 This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: <a class="reference external" href="https://github.com/Botffy/polyskel">https://github.com/Botffy/polyskel</a></p>
-</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
