@@ -330,8 +330,8 @@ class Topology():
             The input topology with the input dictionary added to it.
 
         """
-        
         from topologicpy.Dictionary import Dictionary
+
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.AddDictionary - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
@@ -819,7 +819,6 @@ class Topology():
         for subTopology in subTopologies:
             apertures += Topology.Apertures(subTopology, subTopologyType=None)
         return apertures
-
 
     @staticmethod
     def ApertureTopologies(topology, subTopologyType=None):
@@ -2139,6 +2138,7 @@ class Topology():
             The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].
         excludeTypes : list , optional
             The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. The default is [].
+        
         Returns
         -------
         list
@@ -2706,141 +2706,305 @@ class Topology():
         return data
 
     @staticmethod
-    def ByOBJString(string, transposeAxes = True, progressBar=False, tolerance=0.0001):
+    def ByOBJFile(objFile, mtlFile = None,
+                defaultColor: list = [255,255,255],
+                defaultOpacity: float = 1.0,
+                transposeAxes: bool = True,
+                removeCoplanarFaces: bool = True,
+                
+                mantissa : int = 6,
+                tolerance: float = 0.0001):
         """
-        Creates a topology from the input Wavefront OBJ string. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+        Imports a topology from an OBJ file and an associated materials file.
+        This method is basic and does not support textures and vertex normals.
 
         Parameters
         ----------
-        string : str
-            The input OBJ string.
+        objFile : file object
+            The OBJ file.
+        mtlFile : file object , optional
+            The MTL file. The default is None.
+        defaultColor : list , optional
+            The default color to use if none is specified in the file. The default is [255, 255, 255] (white).
+        defaultOpacity : float , optional
+            The default opacity to use if none is specified in the file. The default is 1.0 (fully opaque).
         transposeAxes : bool , optional
-            If set to True the Z and Y coordinates are transposed so that Y points "up" 
-        progressBar : bool , optional
-            If set to True a tqdm progress bar is shown. If not, it will not be shown. The default is False.
+            If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are merged. The default is True.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. The default is 0.0001
 
         Returns
         -------
-        topology
-            The created topology.
+        list
+            The imported topologies.
+
+        """
+        from os.path import dirname, join, exists
+
+
+        def find_next_word_after_mtllib(text):
+            words = text.split()
+            for i, word in enumerate(words):
+                if word == 'mtllib' and i + 1 < len(words):
+                    return words[i + 1]
+            return None
+
+        obj_string = objFile.read()
+        mtl_filename = find_next_word_after_mtllib(obj_string)
+        mtl_string = None
+        if mtlFile:
+            mtl_string = mtlFile.read()
+        return Topology.ByOBJString(obj_string, mtl_string,
+                        defaultColor=defaultColor, defaultOpacity=defaultOpacity,
+                        transposeAxes=transposeAxes, removeCoplanarFaces=removeCoplanarFaces,
+                        mantissa=mantissa, tolerance=tolerance)
+
+    @staticmethod
+    def ByOBJPath(objPath,
+                  defaultColor: list = [255,255,255], defaultOpacity: float = 1.0,
+                  transposeAxes: bool = True, removeCoplanarFaces: bool = True,
+                  mantissa : int = 6, tolerance: float = 0.0001):
+        """
+        Imports a topology from an OBJ file path and an associated materials file.
+        This method is basic and does not support textures and vertex normals.
+
+        Parameters
+        ----------
+        objPath : str
+            The path to the OBJ file.
+        defaultColor : list , optional
+            The default color to use if none is pecified in the file. The default is [255, 255, 255] (white).
+        defaultOpacity : float , optional
+            The default opacity to use if none is pecified in the file. The default is 1.0 (fully opaque).
+        transposeAxes : bool , optional
+            If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are merged. The default is True.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001
+
+        Returns
+        -------
+        list
+            The imported topologies.
+
+        """
+        from os.path import dirname, join, exists
+
+        if not objPath:
+            print("Topology.ByOBJPath - Error: the input OBJ path parameter is not a valid path. Returning None.")
+            return None
+        if not exists(objPath):
+            print("Topology.ByOBJPath - Error: the input OBJ path does not exist. Returning None.")
+            return None
+
+        def find_next_word_after_mtllib(text):
+            words = text.split()
+            for i, word in enumerate(words):
+                if word == 'mtllib' and i + 1 < len(words):
+                    return words[i + 1]
+            return None
+
+        with open(objPath, 'r') as obj_file:
+            obj_string = obj_file.read()
+            mtl_filename = find_next_word_after_mtllib(obj_string)
+            mtl_string = None
+            if mtl_filename:
+                parent_folder = dirname(objPath)
+                mtl_path = join(parent_folder, mtl_filename)
+                if exists(mtl_path):
+                    with open(mtl_path, 'r') as mtl_file:
+                        mtl_string = mtl_file.read()
+        return Topology.ByOBJString(obj_string, mtl_string,
+                        defaultColor=defaultColor, defaultOpacity=defaultOpacity,
+                        transposeAxes=transposeAxes, removeCoplanarFaces=removeCoplanarFaces,
+                        mantissa=mantissa, tolerance=tolerance)
+
+    @staticmethod
+    def ByOBJString(objString: str, mtlString: str = None,
+                    defaultColor: list = [255,255,255], defaultOpacity: float = 1.0,
+                    transposeAxes: bool = True, removeCoplanarFaces: bool = False,
+                    mantissa = 6, tolerance = 0.0001):
+        """
+        Imports a topology from  OBJ and MTL strings.
+
+        Parameters
+        ----------
+        objString : str
+            The string of the OBJ file.
+        mtlString : str , optional
+            The string of the MTL file. The default is None.
+        defaultColor : list , optional
+            The default color to use if none is pecified in the string. The default is [255, 255, 255] (white).
+        defaultOpacity : float , optional
+            The default opacity to use if none is pecified in the string. The default is 1.0 (fully opaque).
+        transposeAxes : bool , optional
+            If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are merged. The default is True.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001
+
+        Returns
+        -------
+        list
+            The imported topologies.
 
         """
         from topologicpy.Vertex import Vertex
-        from tqdm.auto import tqdm
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
 
-        def parse(lines):
-            vertices = []
-            faces = []
-            for i in range(len(lines)):
-                l = lines[i].replace(",", " ")
-                s = l.split()
-                if isinstance(s, list):
-                    if len(s) > 3:
-                        if s[0].lower() == "v":
-                            vertices.append([float(s[1]), float(s[2]), float(s[3])])
-                        elif s[0].lower() == "f":
-                            temp_faces = []
-                            for j in range(1,len(s)):
-                                f = s[j].split("/")[0]
-                                temp_faces.append(int(f)-1)
-                            faces.append(temp_faces)
-            return [vertices, faces]
-        
-        def parsetqdm(lines):
-            vertices = []
-            faces = []
-            for i in tqdm(range(len(lines))):
-                s = lines[i].split()
-                if isinstance(s, list):
-                    if len(s) > 3:
-                        if s[0].lower() == "v":
-                                vertices.append([float(s[1]), float(s[2]), float(s[3])])
-                        elif s[0].lower() == "f":
-                            temp_faces = []
-                            for j in range(1,len(s)):
-                                f = s[j].split("/")[0]
-                                temp_faces.append(int(f)-1)
-                            faces.append(temp_faces)
-            return [vertices, faces]
-        
-        
-        lines = string.split("\n")
-        if lines:
-            if progressBar:
-                vertices, faces = parsetqdm(lines)
-            else:
-                vertices, faces = parse(lines)
-        if vertices or faces:
-            topology = Topology.ByGeometry(vertices = vertices, faces = faces, outputMode="default", tolerance=tolerance)
-            if transposeAxes == True:
-                topology = Topology.Rotate(topology, origin=Vertex.Origin(), axis=[1, 0, 0], angle=90)
-            return Topology.SelfMerge(topology)
-        print("Topology.ByOBJString - Error: Could not find vertices or faces. Returning None.")
-        return None
+        def load_materials(mtl_string):
+            materials = {}
+            if not mtl_string:
+                return materials
+            current_material = None
+            lines = mtlString.split('\n')
+            for line in lines:
+                line = line.strip()
+                if line.startswith('#') or not line:
+                    continue
+                parts = line.split()
+                if not parts:
+                    continue
+                if parts[0] == 'newmtl':
+                    current_material = parts[1]
+                    materials[current_material] = {}
+                elif current_material:
+                    if parts[0] == 'Kd':  # Diffuse color
+                        materials[current_material]['Kd'] = list(map(float, parts[1:4]))
+                    elif parts[0] == 'Ka':  # Ambient color
+                        materials[current_material]['Ka'] = list(map(float, parts[1:4]))
+                    elif parts[0] == 'Ks':  # Specular color
+                        materials[current_material]['Ks'] = list(map(float, parts[1:4]))
+                    elif parts[0] == 'Ns':  # Specular exponent
+                        materials[current_material]['Ns'] = float(parts[1])
+                    elif parts[0] == 'd':  # Transparency
+                        materials[current_material]['d'] = float(parts[1])
+                    elif parts[0] == 'map_Kd':  # Diffuse texture map
+                        materials[current_material]['map_Kd'] = parts[1]
+                    # Add more properties as needed
+            return materials
 
-    @staticmethod
-    def ByOBJFile(file, transposeAxes=True, progressBar=False, tolerance=0.0001):
-        """
-        Imports the topology from a Wevefront OBJ file. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+        materials = load_materials(mtlString)
+        vertices = []
+        textures = []
+        normals = []
+        groups = {}
+        current_group = None
+        current_material = None
+        lines = objString.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith('#'):
+                continue
 
-        Parameters
-        ----------
-        file : file object
-            The input OBJ file.
-        transposeAxes : bool , optional
-            If set to True the Z and Y coordinates are transposed so that Y points "up"
-        progressBar : bool , optional
-            If set to True a tqdm progress bar is shown. If not, it will not be shown. The default is False.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            parts = line.split()
+            if not parts:
+                continue
 
-        Returns
-        -------
-        topology
-            The imported topology.
+            if parts[0] == 'v':
+                vertex = list(map(float, parts[1:4]))
+                vertex = [round(coord, mantissa) for coord in vertex]
+                if transposeAxes == True:
+                    vertex = [vertex[0], vertex[2], vertex[1]]
+                vertices.append(vertex)
+            elif parts[0] == 'vt':
+                texture = list(map(float, parts[1:3]))
+                textures.append(texture)
+            elif parts[0] == 'vn':
+                normal = list(map(float, parts[1:4]))
+                normals.append(normal)
+            elif parts[0] == 'f':
+                face = []
+                for part in parts[1:]:
+                    indices = part.split('/')
+                    vertex_index = int(indices[0]) - 1 if indices[0] else None
+                    texture_index = int(indices[1]) - 1 if len(indices) > 1 and indices[1] else None
+                    normal_index = int(indices[2]) - 1 if len(indices) > 2 and indices[2] else None
+                    face.append((vertex_index, texture_index, normal_index))
 
-        """
-        if not file:
-            print("Topology.ByOBJFile - Error: the input file parameter is not a valid file. Returning None.")
-            return None
-        obj_string = file.read()
-        topology = Topology.ByOBJString(obj_string, transposeAxes=transposeAxes, progressBar=progressBar, tolerance=tolerance)
-        file.close()
-        return topology
-    
-    @staticmethod
-    def ByOBJPath(path, transposeAxes=True, progressBar=False, tolerance=0.0001):
-        """
-        Imports the topology from a Wevefront OBJ file path. This is a very experimental method and only works with simple planar solids. Materials and Colors are ignored.
+                if current_group not in groups:
+                    groups[current_group] = []
+                groups[current_group].append((face, current_material))
+            elif parts[0] == 'usemtl':
+                current_material = parts[1]
+            elif parts[0] == 'g' or parts[0] == 'o':
+                current_group = parts[1] if len(parts) > 1 else None
 
-        Parameters
-        ----------
-        path : str
-            The file path to the OBJ file.
-        transposeAxes : bool , optional
-            If set to True the Z and Y coordinates are transposed so that Y points "up".
-        progressBar : bool , optional
-            If set to True a tqdm progress bar is shown. If not, it will not be shown. The default is False.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+        obj_data = {
+            'vertices': vertices,
+            'textures': textures,
+            'normals': normals,
+            'materials': materials,
+            'groups': groups
+        }
+        keys = obj_data.keys()
+        groups = obj_data['groups']
+        group_keys = groups.keys()
+        vertices = obj_data['vertices']
+        groups = obj_data['groups']
+        materials = obj_data['materials']
+        names = list(groups.keys())
+        return_topologies = []
+        for i in range(len(names)):
+            object_faces = []
+            face_selectors = []
+            object_name = names[i]
+            faces = groups[object_name]
+            f = faces[0] # Get object material from first face. Assume it is the material of the group
+            object_color = defaultColor
+            object_opacity = defaultOpacity
+            object_material = None
+            if len(f) >= 2:
+                object_material = f[1]
+                if object_material in materials.keys():
+                    object_color = materials[object_material]['Kd']
+                    object_color = [int(round(c*255,0)) for c in object_color]
+                    object_opacity = materials[object_material]['d']
+            for f in faces:
+                indices = f[0]
+                face_material = f[1]
+                face_indices = []
+                for coordinate in indices:
+                    face_indices.append(coordinate[0])
+                face = Topology.ByGeometry(vertices=vertices, faces=[face_indices])
+                object_faces.append(face)
+                if not face_material == object_material:
+                    if face_material in materials.keys():
+                        face_color = materials[face_material]['Kd']
+                        face_color = [int(round(c*255,0)) for c in face_color]
+                        face_opacity = materials[face_material]['d']
+                        selector = Face.InternalVertex(face)
+                        d = Dictionary.ByKeysValues(['color', 'opacity'], [face_color, face_opacity])
+                        selector = Topology.SetDictionary(selector, d)
+                        face_selectors.append(selector)
 
-        Returns
-        -------
-        topology
-            The imported topology.
-
-        """
-        if not path:
-            print("Topology.ByOBJPath - Error: the input path parameter is not a valid path. Returning None.")
-            return None
-        try:
-            file = open(path)
-        except:
-            print("Topology.ByOBJPath - Error: the OBJ file is not a valid file. Returning None.")
-            return None
-        return Topology.ByOBJFile(file, transposeAxes=transposeAxes, progressBar=progressBar, tolerance=tolerance)
+            topology = Topology.SelfMerge(Cluster.ByTopologies(object_faces), tolerance=tolerance)
+            if removeCoplanarFaces:
+                topology = Topology.RemoveCoplanarFaces(topology, tolerance=tolerance)
+            d = Dictionary.ByKeysValues(['name', 'color', 'opacity'], [object_name, object_color, object_opacity])
+            topology = Topology.SetDictionary(topology, d)
+            if len(face_selectors) > 0:
+                topology = Topology.TransferDictionariesBySelectors(topology, selectors=face_selectors, tranFaces=True, tolerance=tolerance)
+            return_topologies.append(topology)
+        return return_topologies
 
     @staticmethod
     def ByOCCTShape(occtShape):
@@ -3854,7 +4018,6 @@ class Topology():
             return True
         return False
 
-
     def ExportToDXF(topologies, path: str,  overwrite: bool = False, mantissa: int = 6):
         """
         Exports the input topology to a DXF file. See https://en.wikipedia.org/wiki/AutoCAD_DXF.
@@ -4373,7 +4536,6 @@ class Topology():
             returnDict['dictionary'] = Dictionary.PythonDictionary(Topology.Dictionary(topology))
             return returnDict
 
-
         def getApertureData(topology, topLevel="False", uuidKey="uuid"):
             json_data = []
             if Topology.IsInstance(topology, "Vertex"):
@@ -4512,7 +4674,7 @@ class Topology():
         return json_string
     
     @staticmethod
-    def OBJString(topology, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001):
+    def OBJString(topology, color, vertexIndex, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the Wavefront string of the input topology. This is very experimental and outputs a simple solid topology.
 
@@ -4520,6 +4682,10 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        color : list
+            The desired color to assign to the topology
+        vertexIndex : int
+            The vertex index to use as the starting index.
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up"
         mode : int , optional
@@ -4548,17 +4714,16 @@ class Topology():
             The Wavefront OBJ string of the input topology
 
         """
+        
         from topologicpy.Helper import Helper
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Face import Face
 
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.ExportToOBJ - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        
+
         lines = []
-        version = Helper.Version()
-        lines.append("# topologicpy "+version)
+        #version = Helper.Version()
+        #lines.append("# topologicpy " + version)
         topology = Topology.Triangulate(topology, mode=mode, meshSize=meshSize, tolerance=tolerance)
         d = Topology.Geometry(topology, mantissa=mantissa)
         vertices = d['vertices']
@@ -4569,26 +4734,26 @@ class Topology():
                 tVertices.append([v[0], v[2], v[1]])
             vertices = tVertices
         for v in vertices:
-            lines.append("v "+str(v[0])+" "+str(v[1])+" "+str(v[2]))
+            lines.append("v " + str(v[0]) + " " + str(v[1]) + " " + str(v[2]))
         for f in faces:
-            line = "f"
+            line = "usemtl " + str(color) + "\nf"  # reference the material name
             for j in f:
-                line = line+" "+str(j+1)
+                line = line + " " + str(j + vertexIndex)
             lines.append(line)
         finalLines = lines[0]
-        for i in range(1,len(lines)):
-            finalLines = finalLines+"\n"+lines[i]
-        return finalLines
+        for i in range(1, len(lines)):
+            finalLines = finalLines + "\n" + lines[i]
+        return finalLines, len(vertices)
     
     @staticmethod
-    def ExportToOBJ(topology, path, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, overwrite: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
+    def ExportToOBJ(*topologies, path, nameKey="name", colorKey="color", opacityKey="opacity", defaultColor=[256,256,256], defaultOpacity=0.5, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, overwrite: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Exports the input topology to a Wavefront OBJ file. This is very experimental and outputs a simple solid topology.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
+        topologies : list or comma separated topologies
+            The input list of topologies.
         path : str
             The input file path.
         transposeAxes : bool , optional
@@ -4621,11 +4786,21 @@ class Topology():
             True if the export operation is successful. False otherwise.
 
         """
+        from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
         from os.path import exists
 
-        if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.ExportToOBJ - Error: the input topology parameter is not a valid topology. Returning None.")
+        if isinstance(topologies, tuple):
+            topologies = Helper.Flatten(list(topologies))
+        if isinstance(topologies, list):
+            new_topologies = [d for d in topologies if Topology.IsInstance(d, "Topology")]
+        if len(new_topologies) == 0:
+            print("Topology.ExportToOBJ - Error: the input topologies parameter does not contain any valid topologies. Returning None.")
             return None
+        if not isinstance(new_topologies, list):
+            print("Dictionary.ByMergedDictionaries - Error: The input dictionaries parameter is not a valid list. Returning None.")
+            return None
+
         if not overwrite and exists(path):
             print("Topology.ExportToOBJ - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
             return None
@@ -4635,10 +4810,40 @@ class Topology():
         if ext.lower() != ".obj":
             path = path+".obj"
         status = False
-        objString = Topology.OBJString(topology, transposeAxes=transposeAxes, mode=mode, meshSize=meshSize, mantissa=mantissa, tolerance=tolerance)
-        with open(path, "w") as f:
-            f.writelines(objString)
-            f.close()
+       
+        mtl_path = path[:-4] + ".mtl"
+       
+
+        # Write out the material file
+        n = max(len(str(len(topologies))), 3)
+        with open(mtl_path, "w") as mtl_file:
+            for i in range(len(new_topologies)):
+                d = Topology.Dictionary(new_topologies[i])
+                name = Dictionary.ValueAtKey(d, nameKey) or "Untitled_"+str(i).zfill(n)
+                color = Dictionary.ValueAtKey(d, colorKey) or defaultColor
+                color = [c/255 for c in color]
+                opacity = Dictionary.ValueAtKey(d, opacityKey) or defaultOpacity
+                mtl_file.write("newmtl color_" + str(i).zfill(n) + "\n")
+                mtl_file.write("Kd " + ' '.join(map(str, color)) + "\n")
+                mtl_file.write("d " + str(opacity) + "\n")
+                
+        # Write out the obj file
+        with open(path, "w") as obj_file:
+            vertex_index = 1  # global vertex index counter
+            obj_file.writelines("# topologicpy "+Helper.Version()+"\n")
+            obj_file.writelines("mtllib " + mtl_path.split('/')[-1])  # reference the MTL file
+            for i in range(len(topologies)):
+                d = Topology.Dictionary(topologies[i])
+                name = Dictionary.ValueAtKey(d, nameKey) or "Untitled_"+str(i).zfill(n)
+                name = name.replace(" ", "_")
+                obj_file.writelines("\ng "+name+"\n")
+                result = Topology.OBJString(topologies[i], "color_" + str(i).zfill(n), vertex_index, transposeAxes=transposeAxes, mode=mode,
+                                meshSize=meshSize,
+                                mantissa=mantissa, tolerance=tolerance)
+                
+                obj_file.writelines(result[0])
+                vertex_index += result[1]
+            obj_file.close()
             status = True
         return status
 
@@ -4779,25 +4984,6 @@ class Topology():
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
-        from topologicpy.Vector import Vector
-        
-        def getSubTopologies(topology, subTopologyClass):
-            topologies = []
-            if subTopologyClass == topologic.Vertex:
-                _ = topology.Vertices(None, topologies)
-            elif subTopologyClass == topologic.Edge:
-                _ = topology.Edges(None, topologies)
-            elif subTopologyClass == topologic.Wire:
-                _ = topology.Wires(None, topologies)
-            elif subTopologyClass == topologic.Face:
-                _ = topology.Faces(None, topologies)
-            elif subTopologyClass == topologic.Shell:
-                _ = topology.Shells(None, topologies)
-            elif subTopologyClass == topologic.Cell:
-                _ = topology.Cells(None, topologies)
-            elif subTopologyClass == topologic.CellComplex:
-                _ = topology.CellComplexes(None, topologies)
-            return topologies
 
         vertices = []
         edges = []
@@ -4850,7 +5036,7 @@ class Topology():
                 triFaces = Face.Triangulate(aFace)
                 for aTriFace in triFaces:
                     wire = Face.ExternalBoundary(aTriFace)
-                    faceVertices = getSubTopologies(wire, topologic.Vertex)
+                    faceVertices = Topology.Vertices(wire)
                     f = []
                     for aVertex in faceVertices:
                         try:
@@ -4862,7 +5048,7 @@ class Topology():
                     faces.append(f)
             else:
                 wire =  Face.ExternalBoundary(aFace)
-                faceVertices = getSubTopologies(wire, topologic.Vertex)
+                faceVertices = Topology.Vertices(wire)
                 f = []
                 for aVertex in faceVertices:
                     try:
@@ -5121,7 +5307,6 @@ class Topology():
             The resulting merged Topology
 
         """
-
         from topologicpy.Cluster import Cluster
 
         if not isinstance(topologies, list):
@@ -5207,6 +5392,7 @@ class Topology():
             The input topology.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         list
@@ -6302,7 +6488,6 @@ class Topology():
             A dictionary with the list of vertices, edges, wires, and faces. The keys are "vertices", "edges", "wires", and "faces".
 
         """
-
         if not Topology.IsInstance(topologyA, "Topology"):
             print("Topology.SharedTopologies - Error: the input topologyA parameter is not a valid topology. Returning None.")
             return None
@@ -6429,9 +6614,10 @@ class Topology():
                 l = None
         return l
     
-    
     @staticmethod
     def Show(*topologies,
+             colorKey = "color",
+             opacityKey = "opacity",
              showVertices=True, vertexSize=1.1, vertexColor="black", 
              vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], 
              vertexMinGroup=None, vertexMaxGroup=None, 
@@ -6466,7 +6652,10 @@ class Topology():
         ----------
         topologies : topologic_core.Topology or list
             The input topology. This must contain faces and or edges. If the input is a list, a cluster is first created
-
+        colorKey : str , optional
+            The key under which to find the color of the topology. The default is "color".
+        opacityKey : str , optional
+            The key under which to find the opacity of the topology. The default is "opacity".
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
         vertexSize : float , optional
@@ -6630,10 +6819,11 @@ class Topology():
 
         """
 
-        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
         from topologicpy.Plotly import Plotly
         from topologicpy.Helper import Helper
         from topologicpy.Graph import Graph
+        from topologicpy.Color import Color
         
         if isinstance(topologies, tuple):
             topologies = Helper.Flatten(list(topologies))
@@ -6644,30 +6834,38 @@ class Topology():
         if len(new_topologies) == 0:
             print("Topology.Show - Error: the input topologies parameter does not contain any valid topology. Returning None.")
             return None
-        if len(new_topologies) == 1:
-            topology = new_topologies[0]
-        else:
-            topology = Cluster.ByTopologies(new_topologies)
-        if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.Show - Error: the input topology parameter is not a valid topology. Returning None.")
-            return None
-        data = Plotly.DataByTopology(topology=topology,
-                       showVertices=showVertices, vertexSize=vertexSize, vertexColor=vertexColor, 
-                       vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, 
-                       vertexMinGroup=vertexMinGroup, vertexMaxGroup=vertexMaxGroup, 
-                       showVertexLegend=showVertexLegend, vertexLegendLabel=vertexLegendLabel, vertexLegendRank=vertexLegendRank,
-                       vertexLegendGroup=vertexLegendGroup,
-                       showEdges=showEdges, edgeWidth=edgeWidth, edgeColor=edgeColor, 
-                       edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, 
-                       edgeMinGroup=edgeMinGroup, edgeMaxGroup=edgeMaxGroup, 
-                       showEdgeLegend=showEdgeLegend, edgeLegendLabel=edgeLegendLabel, edgeLegendRank=edgeLegendRank, 
-                       edgeLegendGroup=edgeLegendGroup,
-                       showFaces=showFaces, faceOpacity=faceOpacity, faceColor=faceColor,
-                       faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, 
-                       faceMinGroup=faceMinGroup, faceMaxGroup=faceMaxGroup, 
-                       showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel, faceLegendRank=faceLegendRank,
-                       faceLegendGroup=faceLegendGroup, 
-                       intensityKey=intensityKey, intensities=intensities, colorScale=colorScale, mantissa=mantissa, tolerance=tolerance)
+        # if len(new_topologies) == 1:
+        #     topology = new_topologies[0]
+        # else:
+        #     topology = Cluster.ByTopologies(new_topologies)
+        # if not Topology.IsInstance(topology, "Topology"):
+        #     print("Topology.Show - Error: the input topology parameter is not a valid topology. Returning None.")
+        #     return None
+        data = []
+        for topology in new_topologies:
+            d = Topology.Dictionary(topology)
+            if isinstance(colorKey, str):
+                f_color = Dictionary.ValueAtKey(d, colorKey)
+                if f_color:
+                    faceColor = Color.PlotlyColor(f_color, alpha=1.0, useAlpha=False)
+                faceOpacity = Dictionary.ValueAtKey(d, opacityKey) or faceOpacity
+            data += Plotly.DataByTopology(topology=topology,
+                        showVertices=showVertices, vertexSize=vertexSize, vertexColor=vertexColor, 
+                        vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, 
+                        vertexMinGroup=vertexMinGroup, vertexMaxGroup=vertexMaxGroup, 
+                        showVertexLegend=showVertexLegend, vertexLegendLabel=vertexLegendLabel, vertexLegendRank=vertexLegendRank,
+                        vertexLegendGroup=vertexLegendGroup,
+                        showEdges=showEdges, edgeWidth=edgeWidth, edgeColor=edgeColor, 
+                        edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, 
+                        edgeMinGroup=edgeMinGroup, edgeMaxGroup=edgeMaxGroup, 
+                        showEdgeLegend=showEdgeLegend, edgeLegendLabel=edgeLegendLabel, edgeLegendRank=edgeLegendRank, 
+                        edgeLegendGroup=edgeLegendGroup,
+                        showFaces=showFaces, faceOpacity=faceOpacity, faceColor=faceColor,
+                        faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, 
+                        faceMinGroup=faceMinGroup, faceMaxGroup=faceMaxGroup, 
+                        showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel, faceLegendRank=faceLegendRank,
+                        faceLegendGroup=faceLegendGroup, 
+                        intensityKey=intensityKey, intensities=intensities, colorScale=colorScale, mantissa=mantissa, tolerance=tolerance)
         figure = Plotly.FigureByData(data=data, width=width, height=height,
                                      xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,
                                      backgroundColor=backgroundColor,
@@ -6700,8 +6898,8 @@ class Topology():
             A dictionary containing the list of sorted and unsorted topologies. The keys are "sorted" and "unsorted".
 
         """
-
         from topologicpy.Vertex import Vertex
+
         usedTopologies = []
         sortedTopologies = []
         unsortedTopologies = []
@@ -6925,6 +7123,7 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
+
         ratioRange = [min(1,ratioRange[0]), min(1,ratioRange[1])]
         if ratioRange == [0, 0]:
             return topology
@@ -7263,7 +7462,6 @@ class Topology():
             The list of supertopologies connected to the input topology.
 
         """
-        
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.SuperTopologies - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
@@ -7394,7 +7592,6 @@ class Topology():
             The input topology with the dictionaries transferred to its subtopologies.
 
         """
-
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.TransferDictionariesBySelectors - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
@@ -7664,9 +7861,6 @@ class Topology():
             The type of the input topology.
 
         """
-        #if not Topology.IsInstance(topology, "Topology"):
-            #print("Topology.Type - Error: The input topology parameter is not a valid topology. Returning None.")
-            #return None
         return topology.Type()
     
     @staticmethod
@@ -7721,7 +7915,6 @@ class Topology():
             The type id of the input topologyType string.
 
         """
-
         if not isinstance(name, str):
             print("Topology.TypeID - Error: The input topologyType parameter is not a valid string. Returning None.")
             return None

@@ -480,6 +480,7 @@ class ANN():
             it controls the shuffling of the data before splitting it into training and testing sets.
             This means that every time you run your code with the same randomState value and the same dataset, you will get the same split of the data.
             The default is 42 which is just a randomly picked integer number. Specify None for random sampling.
+        
         Returns
         -------
         dict
@@ -517,7 +518,7 @@ class ANN():
         ----------
 
         Returns
-        ----------
+        -------
         list
             The list of names of available sample datasets
         """
@@ -804,7 +805,6 @@ class ANN():
             'validation_mse' (MSE for regression tasks only)
             'training_r2' (R^2 for regression tasks only)
             'validation_r2' (R^2 for regression tasks only)
-
 
         """
 
@@ -1126,8 +1126,5 @@ class ANN():
             print("ANN.Load - Error: The specified path does not exist. Returning None.")
             return None
         model.load(path)
-        return model
-
-
-    
+        return model 
     

@@ -213,7 +213,6 @@ class Grid():
             grid = Cluster.ByTopologies(gridEdges)
         return grid
 
-
     @staticmethod
     def VerticesByDistances(face=None,
                             origin=None,

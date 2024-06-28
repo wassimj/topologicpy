@@ -65,7 +65,6 @@ except:
     except:
         warnings.warn("Graph - Error: Could not import tqdm.")
 
-
 GraphQueueItem = namedtuple('GraphQueueItem', ['edges'])
 
 class WorkerProcessPool(object):
@@ -119,7 +118,6 @@ class WorkerProcessPool(object):
         for p in self.process_list:
             p.join()
 
-
 class WorkerProcess(Process):
     """
     Creates a 2D navigation graph from a subset of sources and the list of destinations.
@@ -170,7 +168,6 @@ class WorkerProcess(Process):
             edges_str = [Topology.BREPString(s) for s in edges]
             self.message_queue.put(GraphQueueItem(edges_str))
 
-
 class MergingProcess(Process):
     """
     Receive message from other processes and merging the result
@@ -190,7 +187,6 @@ class MergingProcess(Process):
                 self.final_edges.extend(item.edges)
             except Exception as e:
                 print(str(e))
-
 
 class _Tree:
     def __init__(self, node="", *children):
@@ -220,7 +216,6 @@ class _Tree:
 
     def __len__(self):
         return len(self.children)
-
 
 class _DrawTree(object):
     def __init__(self, tree, parent=None, depth=0, number=1):
@@ -1468,7 +1463,6 @@ class Graph:
             predicates += ['hasspace', 'hasbuilding', 'hasstorey']
             bot_types += ['Site', 'Building', 'Storey']
 
-
         namespaces = botGraph.namespaces()
 
         for ns in namespaces:
@@ -1981,7 +1975,6 @@ class Graph:
             graphs.append(Graph.ByVerticesEdges(vertices, edges))
         return {'graphs':graphs, 'labels':labels}
 
-
     @staticmethod
     def ByIFCFile(file, includeTypes: list = [], excludeTypes: list = [],
                   includeRels: list = [], excludeRels: list = [],
@@ -2283,7 +2276,6 @@ class Graph:
             print("Graph.ByIFCPath - Error: Could not open the IFC file. Returning None.")
             return None
         return Graph.ByIFCFile(ifc_file, includeTypes=includeTypes, excludeTypes=excludeTypes, includeRels=includeRels, excludeRels=excludeRels, xMin=xMin, yMin=yMin, zMin=zMin, xMax=xMax, yMax=yMax, zMax=zMax)
-
 
     @staticmethod
     def ByMeshData(vertices, edges, vertexDictionaries=None, edgeDictionaries=None, tolerance=0.0001):
@@ -2619,7 +2611,6 @@ class Graph:
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
-
 
             cells = []
             _ = topology.Cells(None, cells)
@@ -4999,7 +4990,6 @@ class Graph:
         
         """
 
-
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Helper import Helper
@@ -5735,7 +5725,6 @@ class Graph:
 
                 midpoint = (v.children[0].x + v.children[-1].x) / 2
 
-
                 w = v.lbrother()
                 if w:
                     v.x = w.x + distance
@@ -5778,7 +5767,6 @@ class Graph:
                     default_ancestor = v
             return default_ancestor
 
-
         def move_subtree(wl, wr, shift):
             subtrees = wr.number - wl.number
             wr.change -= shift / subtrees
@@ -5786,7 +5774,6 @@ class Graph:
             wl.change += shift / subtrees
             wr.x += shift
             wr.mod += shift
-
 
         def execute_shifts(v):
             shift = change = 0
@@ -5796,13 +5783,11 @@ class Graph:
                 change += w.change
                 shift += w.shift + change
 
-
         def ancestor(vil, v, default_ancestor):
             if vil.ancestor in v.parent.children:
                 return vil.ancestor
             else:
                 return default_ancestor
-
 
         def second_walk(v, m=0, depth=0, min=None):
             v.x += m
@@ -5815,7 +5800,6 @@ class Graph:
                 min = second_walk(w, m + v.mod, depth + 1, min)
 
             return min
-
 
         def edge_list_to_adjacency_matrix(edge_list):
             """Converts an edge list to an adjacency matrix.
@@ -5842,7 +5826,6 @@ class Graph:
                 adjacency_matrix[edge[1], edge[0]] = 1
 
             return adjacency_matrix
-
 
         def tree_from_edge_list(edge_list, root_index=0):
             
@@ -5982,7 +5965,6 @@ class Graph:
             pos[:, 0] = pos[:, 0] * np.pi * 1.98
             pos[:, 1] = pos[:, 1] / np.max(pos[:, 1]) 
 
-
             new_pos = np.zeros((num_nodes, 2))
             new_pos[:, 0] = pos[:, 1] * np.cos(pos[:, 0])
             new_pos[:, 1] = pos[:, 1] * np.sin(pos[:, 0])
@@ -6033,7 +6015,6 @@ class Graph:
         flat_graph = Graph.ByMeshData(positions, edges, v_dicts, e_dicts, tolerance=tolerance)
         return flat_graph
 
-
     @staticmethod
     def GlobalClusteringCoefficient(graph):
         """
@@ -6043,6 +6024,7 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
+        
         Returns
         -------
         int
@@ -8159,6 +8141,7 @@ class Graph:
             If set, the returned list of vertices is sorted according to the dicitonary values stored under this key. The default is None.
         reverse : bool , optional
             If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
+        
         Returns
         -------
         list

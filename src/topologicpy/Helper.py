@@ -495,8 +495,6 @@ class Helper:
 
         Parameters
         ----------
-        None
-            
 
         Returns
         -------

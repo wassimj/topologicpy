@@ -426,7 +426,6 @@ class _TAGConv(nn.Module):
         # h will now be vector of dimension num_classes
         return h
 
-
 class _GraphConvReg(nn.Module):
     def __init__(self, in_feats, h_feats, pooling):
         super(_GraphConvReg, self).__init__()
@@ -466,7 +465,6 @@ class _GraphConvReg(nn.Module):
         h = self.pooling_layer(g, h)
         # h will now be vector of dimension num_classes
         return h
-
 
 class _GraphRegressorHoldout:
     def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
@@ -573,7 +571,6 @@ class _GraphRegressorHoldout:
             self.training_loss_list.append(torch.sqrt(loss).item())
             self.validate()
             self.validation_loss_list.append(torch.sqrt(self.validation_loss).item())
-
 
     def validate(self):
         device = torch.device("cpu")
@@ -771,7 +768,6 @@ class _GraphRegressorKFold:
 
                     # Perform optimization
                     self.optimizer.step()
-
 
                 epoch_training_loss_list.append(torch.sqrt(loss).item())
                 self.validate()
@@ -1306,7 +1302,6 @@ class _GraphClassifierKFold:
                 path = path+".pt"
             torch.save(self.model, path)
 
-
 class GCN_NC(nn.Module):
     def __init__(self, in_feats, h_feats, num_classes):
         super(GCN_NC, self).__init__()
@@ -1471,7 +1466,6 @@ class _NodeClassifier:
             if ext.lower() != ".pt":
                 path = path+".pt"
             torch.save(self.model, path)
-
 
 class DGL:
     @staticmethod
@@ -2295,6 +2289,7 @@ class DGL:
             A list of length 3 containing the fraction to use for training, validation and test. If None, we will use [0.8, 0.1, 0.1]. The default is [0.8, 0.1, 0.1]
         randomState :  int or array_like , optional
             Random seed used to initialize the pseudo-random number generator. Can be any integer between 0 and 2**32 - 1 inclusive, an array (or other sequence) of such integers, or None (the default). If seed is None, then RandomState will try to read data from /dev/urandom (or the Windows analogue) if available or seed from the clock otherwise.
+        
         Returns
         -------
         dict
@@ -2805,7 +2800,6 @@ class DGL:
             'Losses' (Regressor and K-fold only)
             'min Loss' (Regressor and K-fold only)
 
-
         """
         from topologicpy.Helper import Helper
         
@@ -3025,8 +3019,6 @@ class DGL:
             return 0
 
         return round(total_true_positives / (total_true_positives + total_false_negatives), mantissa)
-
-
 
     '''
     @staticmethod

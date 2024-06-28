@@ -85,12 +85,8 @@ class Edge():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
-        import numpy as np
-
 
         def process_edges(edge1, edge2, tolerance=0.0001):
             start1 = Edge.StartVertex(edge1)
@@ -221,7 +217,6 @@ class Edge():
         n = Vector.Multiply(n, offset, tolerance)
         edge = Topology.Translate(edge, n[0], n[1], n[2])
         return edge
-
 
     @staticmethod
     def ByStartVertexEndVertex(vertexA, vertexB, tolerance: float = 0.0001, silent=False):
@@ -987,7 +982,6 @@ class Edge():
             normal_vector /= norm(normal_vector)
 
             return normal_vector
-
 
         def calculate_normal_line(start_vertex, end_vertex):
             # Calculate the normal vector of the line

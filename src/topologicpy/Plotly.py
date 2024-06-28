@@ -2125,4 +2125,3 @@ class Plotly:
         except:
             returnStatus = False
         return returnStatus
-

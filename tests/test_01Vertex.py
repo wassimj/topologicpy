@@ -35,7 +35,6 @@ def test_main():
     f = Face.ByWire(w)
     #f = Face.Rectangle()
 
-
     # Case 1 - ByCoordinates
     print("Case 1")
     # test 1

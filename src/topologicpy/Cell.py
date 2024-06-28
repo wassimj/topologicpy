@@ -298,7 +298,7 @@ class Cell():
             bottomFace = face
             topFace = Topology.Translate(face, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
 
-        cellFaces = [bottomFace, topFace]
+        cellFaces = [Face.Invert(bottomFace), topFace]
         bottomEdges = Topology.Edges(bottomFace)
         for bottomEdge in bottomEdges:
             topEdge = Topology.Translate(bottomEdge, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
@@ -1408,7 +1408,6 @@ class Cell():
         icosahedron = Topology.Place(icosahedron, originA=Vertex.Origin(), originB=origin)
         return icosahedron
 
-
     @staticmethod
     def InternalBoundaries(cell) -> list:
         """
@@ -1837,9 +1836,12 @@ class Cell():
         from topologicpy.Topology import Topology
         
         shell = Shell.Roof(face=face, angle=angle, epsilon=epsilon, tolerance=tolerance)
+        if not Topology.IsInstance(shell, "Shell"):
+            print("Cell.Roof - Error: Could not create a roof cell. Returning None.")
+            return None
         faces = Topology.Faces(shell) + [face]
         cell = Cell.ByFaces(faces, tolerance=tolerance)
-        if not cell:
+        if not Topology.IsInstance(cell, "Cell"):
             print("Cell.Roof - Error: Could not create a roof cell. Returning None.")
             return None
         return cell

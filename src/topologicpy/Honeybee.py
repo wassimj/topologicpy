@@ -212,8 +212,33 @@ class Honeybee:
 
         Parameters
         ----------
-
-
+        tpBuilding : topologic_core.CellComplex or topologic_core.Cell
+            The input building topology.
+        tpShadingFaceCluster : topologic_core.Cluster , optional
+            The input cluster for shading faces. The default is None.
+        buildingName : str , optional
+            The desired name of the building. The default is "Generic_Building".
+        defaultProgramIdentifier: str , optional
+            The desired default program identifier. The default is "Generic Office Program".
+        defaultConstructionSetIdentifier: str , optional
+            The desired default construction set identifier. The default is "Default Generic Construction Set".
+        coolingSetpoint : float , optional
+            The desired HVAC cooling set point in degrees Celsius. The default is 25.
+        heatingSetpoint : float , optional
+            The desired HVAC heating set point in degrees Celsius. The default is 20.
+        humidifyingSetpoint : float , optional
+            The desired HVAC humidifying set point in percentage. The default is 55.
+        roomNameKey : str , optional
+            The dictionary key under which the room name is stored. The default is "TOPOLOGIC_name".
+        roomTypeKey : str , optional
+            The dictionary key under which the room type is stored. The default is "TOPOLOGIC_type".
+        apertureTypeKey : str , optional
+            The dictionary key under which the aperture type is stored. The default is "TOPOLOGIC_type".
+        addSensorGrid : bool , optional
+            If set to True a sensor grid is add to horizontal surfaces. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        
         Returns
         -------
         HBModel

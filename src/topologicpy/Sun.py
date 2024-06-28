@@ -132,6 +132,7 @@ class Sun():
         -------
         datetime
             The datetime of the summer solstice
+
         """
         import os
         import warnings
@@ -172,6 +173,7 @@ class Sun():
         -------
         datetime
             The datetime of the summer solstice
+
         """
         import os
         import warnings
@@ -214,6 +216,7 @@ class Sun():
         -------
         float
             The azimuth angle.
+
         """
         import os
         import warnings
@@ -260,6 +263,7 @@ class Sun():
         -------
         float
             The altitude angle.
+
         """
         import os
         import warnings
@@ -306,8 +310,8 @@ class Sun():
         -------
         datetime
             The Sunrise datetime.
-        """
 
+        """
         import os
         import warnings
         try:
@@ -351,8 +355,8 @@ class Sun():
         -------
         datetime
             The Sunset datetime.
-        """
 
+        """
         import os
         import warnings
         try:
@@ -398,6 +402,7 @@ class Sun():
         -------
         list
             The sun vector pointing from the location of the sun towards the origin.
+        
         """
         from topologicpy.Vector import Vector
         azimuth = Sun.Azimuth(latitude=latitude, longitude=longitude, date=date)
@@ -426,13 +431,14 @@ class Sun():
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         
-        
         Returns
         -------
         topologic_core.Vertex
             The sun represented as a vertex.
+
         """
         from topologicpy.Vertex import Vertex
+
         sun_v = Sun.Vertex(latitude=latitude, longitude=longitude, date=date, origin=origin, radius=radius, north=north)
         return Vertex.Coordinates(sun_v, mantissa=mantissa)
     
@@ -585,6 +591,7 @@ class Sun():
         -------
         topologic_core.Wire
             The sun path represented as a wire.
+
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
@@ -645,9 +652,11 @@ class Sun():
         -------
         list
             The sun locations represented as a list of vertices.
+
         """
         from datetime import datetime
         from datetime import timedelta
+
         def day_of_year_to_datetime(year, day_of_year):
             # Construct a datetime object for the first day of the year
             base_date = datetime(year, 1, 1)
@@ -699,8 +708,8 @@ class Sun():
         -------
         topologic_core.Wire
             The sun path represented as a topologic wire.
-        """
 
+        """
         from topologicpy.Wire import Wire
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
@@ -767,8 +776,8 @@ class Sun():
             - 'center' : This is a cross-shape (wire) at the center of the diagram. This is included only if the compass option is set to True.
             - 'ground' : This is a circle (face) on the ground. It is made of 36 sides. This is included only if
                the compass option is set to False.
-        """
 
+        """
         from datetime import datetime
         from datetime import timedelta
         from topologicpy.Vertex import Vertex

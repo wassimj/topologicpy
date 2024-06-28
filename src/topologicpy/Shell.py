@@ -331,7 +331,6 @@ class Shell():
         _ = cluster.Faces(None, faces)
         return Shell.ByFaces(faces, tolerance=tolerance)
 
-
     @staticmethod
     def ByThickenedWire(wire, offsetA: float = 1.0, offsetB: float = 1.0, tolerance: float = 0.0001):
         """
@@ -571,7 +570,6 @@ class Shell():
         if len(vertices) < 3:
             return None
 
-
         if Topology.IsInstance(face, "Face"):
             # Flatten the face
             origin = Topology.Centroid(face)
@@ -775,6 +773,7 @@ class Shell():
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic_core.Shell
@@ -870,6 +869,7 @@ class Shell():
             The desired length of the mantissa. The default is 6
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        
         Returns
         -------
         topologic_core.Shell
@@ -1179,7 +1179,6 @@ class Shell():
         shell = Topology.Place(shell, originA=Vertex.Origin(), originB=origin)
         shell = Topology.Orient(shell, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return shell
-
 
     @staticmethod
     def Planarize(shell, origin= None, mantissa: int = 6, tolerance: float = 0.0001):
@@ -1694,7 +1693,6 @@ class Shell():
                     final_faces.append(face)
             final_result = Shell.ByFaces(final_faces, tolerance=tolerance)
         return final_result
-
 
     @staticmethod
     def Vertices(shell) -> list:

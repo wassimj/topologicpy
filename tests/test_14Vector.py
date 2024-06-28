@@ -34,7 +34,6 @@ def test_main():
     # Object for test case
     f = Face.Rectangle()
 
-
     # Case 1 - Angle
     print("Case 1")
     # test 1

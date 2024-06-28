@@ -41,7 +41,6 @@ EPSILON = 0.00001
 
 
 
-
 import math
 
 class Point2:
@@ -92,7 +91,6 @@ class Point2:
 
     def distance(self, other):
         return abs(self - other)
-
 
 class Ray2:
     def __init__(self, p, v):
@@ -150,7 +148,6 @@ class Line2:
     def __str__(self):
         return f"Line2({self.p}, {self.v})"
 
-
 class LineSegment2(Line2):
     def __init__(self, p1, p2):
         super().__init__(p1, p2)
@@ -180,10 +177,6 @@ class LineSegment2(Line2):
 
 
 
-
-
-
-
 class Debug:
 	def __init__(self, image):
 		if image is not None:
@@ -205,14 +198,11 @@ class Debug:
 		if self.do:
 			self.im.show()
 
-
 _debug = Debug(None)
-
 
 def set_debug(image):
 	global _debug
 	_debug = Debug(image)
-
 
 def _window(lst):
 	prevs, items, nexts = tee(lst, 3)
@@ -220,24 +210,19 @@ def _window(lst):
 	nexts = islice(cycle(nexts), 1, None)
 	return zip(prevs, items, nexts)
 
-
 def _cross(a, b):
 	res = a.x * b.y - b.x * a.y
 	return res
 
-
 def _approximately_equals(a, b):
 	return a == b or (abs(a - b) <= max(abs(a), abs(b)) * 0.001)
-
 
 def _approximately_same(point_a, point_b):
 	return _approximately_equals(point_a.x, point_b.x) and _approximately_equals(point_a.y, point_b.y)
 
-
 def _normalize_contour(contour):
 	contour = [Point2(float(x), float(y)) for (x, y) in contour]
 	return [point for prev, point, next in _window(contour) if not (point == next or (point-prev).normalized() == (next - point).normalized())]
-
 
 class _SplitEvent(namedtuple("_SplitEvent", "distance, intersection_point, vertex, opposite_edge")):
 	__slots__ = ()
@@ -248,7 +233,6 @@ class _SplitEvent(namedtuple("_SplitEvent", "distance, intersection_point, verte
 	def __str__(self):
 		return "{} Split event @ {} from {} to {}".format(self.distance, self.intersection_point, self.vertex, self.opposite_edge)
 
-
 class _EdgeEvent(namedtuple("_EdgeEvent", "distance intersection_point vertex_a vertex_b")):
 	__slots__ = ()
 
@@ -258,11 +242,9 @@ class _EdgeEvent(namedtuple("_EdgeEvent", "distance intersection_point vertex_a 
 	def __str__(self):
 		return "{} Edge event @ {} between {} and {}".format(self.distance, self.intersection_point, self.vertex_a, self.vertex_b)
 
-
 _OriginalEdge = namedtuple("_OriginalEdge", "edge bisector_left, bisector_right")
 
 Subtree = namedtuple("Subtree", "source, height, sinks")
-
 
 class _LAVertex:
 	def __init__(self, point, edge_left, edge_right, direction_vectors=None):
@@ -380,7 +362,6 @@ class _LAVertex:
 		return "Vertex ({}) ({:.2f};{:.2f}), bisector {}, edges {} {}".format("reflex" if self.is_reflex else "convex",
 																			  self.point.x, self.point.y, self.bisector,
 																			  self.edge_left, self.edge_right)
-
 
 class _SLAV:
 	def __init__(self, polygon, holes):
@@ -506,7 +487,6 @@ class _SLAV:
 		event.vertex.invalidate()
 		return (Subtree(event.intersection_point, event.distance, sinks), events)
 
-
 class _LAV:
 	def __init__(self, slav):
 		self.head = None
@@ -591,7 +571,6 @@ class _LAV:
 			cur = cur.next
 			if cur == self.head:
 				break
-
 
 class _EventQueue:
 	def __init__(self):

@@ -48,7 +48,6 @@ class Wire(Topology):
             The created arc.
 
         """
-
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
@@ -174,7 +173,6 @@ class Wire(Topology):
         from random import sample
         import time
 
-
         def br(topology):
             vertices = []
             _ = topology.Vertices(None, vertices)
@@ -191,7 +189,6 @@ class Wire(Topology):
 
         if not Topology.IsInstance(topology, "Topology"):
             return None
-
 
         vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
         if Vertex.AreCollinear(vertices, mantissa=mantissa, tolerance=tolerance):
@@ -375,7 +372,6 @@ class Wire(Topology):
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
         from topologicpy.Vector import Vector
         import math
 
@@ -619,8 +615,6 @@ class Wire(Topology):
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
         
@@ -687,9 +681,7 @@ class Wire(Topology):
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
         from random import sample
-
 
         def Left_index(points):
             
@@ -987,7 +979,11 @@ class Wire(Topology):
         v11 = Vertex.ByCoordinates(0, d)
         v12 = Vertex.ByCoordinates(-radius*0.5, d)
         v13 = Vertex.ByCoordinates(-cos(30)*d, sin(30)*d, 0)
-        einstein = Wire.ByVertices([v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13], close=True)
+        vertices = [v1, v13, v12, v11, v10, v9, v8, v7, v6, v5, v4, v3, v2]
+        # [v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13]
+        einstein = Wire.ByVertices(vertices, close=True)
+
+        einstein = Topology.Rotate(einstein, origin=origin, axis=[1,0,0], angle=180)
         
         if placement.lower() == "lowerleft":
             einstein = Topology.Translate(einstein, radius, d, 0)
@@ -1236,8 +1232,8 @@ class Wire(Topology):
         -------
         list
             The list of exterior angles.
-        """        
-
+        
+        """
         if not Topology.IsInstance(wire, "Wire"):
             print("Wire.InteriorAngles - Error: The input wire parameter is not a valid wire. Returning None")
             return None
@@ -1429,6 +1425,7 @@ class Wire(Topology):
         -------
         list
             The list of interior angles.
+        
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
@@ -1495,7 +1492,7 @@ class Wire(Topology):
         
         Returns
         -------
-        tTopology
+        topologic_core.Topology
             The created interpolated wires as well as the input wires. The return type can be a topologic_core.Cluster or a topologic_core.Wire based on options.
 
         """
@@ -1647,9 +1644,10 @@ class Wire(Topology):
         -------
         bool
             True if the input wire is manifold. False otherwise.
+        
         """
-
         from topologicpy.Vertex import Vertex
+
         if not Topology.IsInstance(wire, "Wire"):
             print("Wire.IsManifold - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
@@ -1780,6 +1778,7 @@ class Wire(Topology):
 
         """
         from topologicpy.Edge import Edge
+
         if not wire:
             return None
         if not Topology.IsInstance(wire, "Wire"):
@@ -1822,8 +1821,8 @@ class Wire(Topology):
         -------
         topologic_core.Edge
             The created edge
+        
         """
-
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Vector import Vector
@@ -1984,8 +1983,11 @@ class Wire(Topology):
         """
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
+        from random import sample
+        import time
         import os
         import warnings
+
         try:
             import numpy as np
         except:
@@ -2006,7 +2008,18 @@ class Wire(Topology):
             return None
         
         vertices = Topology.Vertices(wire)
-        vertices = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices]
+        result = True
+        start = time.time()
+        period = 0
+        while result and period < 30:
+            vList = sample(vertices, 3)
+            result = Vertex.AreCollinear(vList)
+            end = time.time()
+            period = end - start
+        if result == True:
+            print("Wire.BoundingRectangle - Error: Could not find three vertices that are not colinear within 30 seconds. Returning None.")
+            return None
+        vertices = [Vertex.Coordinates(v, mantissa=mantissa) for v in vList]
         
         if len(vertices) < 3:
             print("Wire.Normal - Error: At least three vertices are required to define a plane. Returning None.")
@@ -2201,6 +2214,7 @@ class Wire(Topology):
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
+
         if not wire:
             return None
         if not Topology.IsInstance(wire, "Wire"):
@@ -2265,6 +2279,7 @@ class Wire(Topology):
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
@@ -2525,6 +2540,9 @@ class Wire(Topology):
                 ib_polygonsxy.append(ib_polygonxy)
                 zero_coordinates += ib_polygon_coordinates
             skeleton = Polyskel.skeletonize(eb_polygonxy, ib_polygonsxy)
+            if len(skeleton) == 0:
+                print("Wire.Roof - Error: The Polyskel.skeletonize 3rd party software failed to create a skeleton. Returning None.")
+                return None
             slope = math.tan(math.radians(angle))
             roofEdges = subtrees_to_edges(skeleton, zero_coordinates, slope)
             roofEdges = Helper.Flatten(roofEdges)+Topology.Edges(face)
@@ -2549,22 +2567,22 @@ class Wire(Topology):
     @staticmethod
     def Simplify(wire, tolerance=0.0001):
         """
-            Simplifies the input wire edges based on the Douglas Peucker algorthim. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
-            Part of this code was contributed by gaoxipeng. See https://github.com/wassimj/topologicpy/issues/35
-            
-            Parameters
-            ----------
-            wire : topologic_core.Wire
-                The input wire.
-            tolerance : float , optional
-                The desired tolerance. The default is 0.0001. Edges shorter than this length will be removed.
-
-            Returns
-            -------
-            topologic_core.Wire
-                The simplified wire.
-        """
+        Simplifies the input wire edges based on the Douglas Peucker algorthim. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+        Part of this code was contributed by gaoxipeng. See https://github.com/wassimj/topologicpy/issues/35
         
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001. Edges shorter than this length will be removed.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The simplified wire.
+        
+        """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Cluster import Cluster
@@ -2640,15 +2658,13 @@ class Wire(Topology):
     @staticmethod
     def Skeleton(face, tolerance=0.001):
         """
-            Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
-            This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
-
+        Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+        This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
 
         Parameters
         ----------
         face : topologic_core.Face
             The input face.
-       
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
 
@@ -2924,8 +2940,8 @@ class Wire(Topology):
         -------
         topologic_core.Wire
             The created squircle.
+        
         """
-
         def get_squircle(a=1, b=1, radius=0.5, sides=100):
             import numpy as np
             t = np.linspace(0, 2*np.pi, sides)
@@ -3066,7 +3082,8 @@ class Wire(Topology):
         for coord in baseV:
             tranBase.append(Vertex.ByCoordinates(coord[0]+xOffset, coord[1]+yOffset, origin.Z()))
         
-        baseWire = Wire.ByVertices(tranBase[::-1], True) #reversing the list so that the normal points up in Blender
+        baseWire = Wire.ByVertices(tranBase, True)
+        baseWire = Wire.Reverse(baseWire)
         if direction != [0, 0, 1]:
             baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
@@ -3278,6 +3295,7 @@ class Wire(Topology):
 
         """
         from topologicpy.Vertex import Vertex
+
         def compute_u(u):
             def count_decimal_places(number):
                 try:

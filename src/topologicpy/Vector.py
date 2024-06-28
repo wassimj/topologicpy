@@ -104,6 +104,7 @@ class Vector(list):
         -------
         list
             The average vector of the input list of vectors.
+        
         """
         if not isinstance(vectors, list):
             print("Vector.Average - Error: The input vectors parameter is not a valid list. Returning None.")
@@ -187,7 +188,6 @@ class Vector(list):
         
         """
         import numpy as np
-
 
         # Ensure vectors are numpy arrays
         vector1 = np.array(vectorA)
@@ -288,7 +288,6 @@ class Vector(list):
             The created vector.
 
         """
-
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
@@ -448,6 +447,7 @@ class Vector(list):
         -------
         list
             The vector representing the *down* direction.
+        
         """
         return [0, 0, -1]
     
@@ -460,6 +460,7 @@ class Vector(list):
         -------
         list
             The vector representing the *east* direction.
+        
         """
         return [1, 0, 0]
     
@@ -482,7 +483,6 @@ class Vector(list):
         
         """
         import numpy as np
-
 
         # Ensure vectors are numpy arrays
         vector1 = np.array(vectorA)
@@ -520,7 +520,6 @@ class Vector(list):
         """
         import numpy as np
 
-
         # Ensure vectors are numpy arrays
         vector1 = np.array(vectorA)
         vector2 = np.array(vectorB)
@@ -557,7 +556,6 @@ class Vector(list):
         """
         import numpy as np
 
-
         # Ensure vectors are numpy arrays
         vector1 = np.array(vectorA)
         vector2 = np.array(vectorB)
@@ -592,7 +590,6 @@ class Vector(list):
         
         """
         import numpy as np
-
 
         # Ensure vectors are numpy arrays
         vector1 = np.array(vectorA)
@@ -648,8 +645,8 @@ class Vector(list):
         -------
         float
             The length of the input vector.
+        
         """
-
         return Vector.Magnitude(vector, mantissa = mantissa)
     
     @staticmethod
@@ -668,8 +665,8 @@ class Vector(list):
         -------
         float
             The magnitude of the input vector.
+        
         """
-
         return round(np.linalg.norm(np.array(vector)), mantissa)
 
     @staticmethod
@@ -697,7 +694,6 @@ class Vector(list):
         scaled_vector = [component * (magnitude) for component in vector]
         return scaled_vector
 
-
     @staticmethod
     def Normalize(vector):
         """
@@ -712,8 +708,8 @@ class Vector(list):
         -------
         list
             The normalized vector.
+        
         """
-
         return list(vector / np.linalg.norm(vector))
 
     @staticmethod
@@ -725,6 +721,7 @@ class Vector(list):
         -------
         list
             The vector representing the *north* direction.
+        
         """
         return [0, 1, 0]
     
@@ -737,6 +734,7 @@ class Vector(list):
         -------
         list
             The vector representing the *northeast* direction.
+        
         """
         return [1, 1, 0]
     
@@ -749,6 +747,7 @@ class Vector(list):
         -------
         list
             The vector representing the *northwest* direction.
+        
         """
         return [-1, 1, 0]
     
@@ -766,6 +765,7 @@ class Vector(list):
         -------
         list
             The normalized vector.
+        
         """
         if not isinstance(vector, list):
             return None
@@ -787,6 +787,7 @@ class Vector(list):
         -------
         list
             The created vector.
+        
         """
         return (Vector.Multiply(vector=Vector.Normalize(vector), magnitude=magnitude))
     
@@ -799,6 +800,7 @@ class Vector(list):
         -------
         list
             The vector representing the *south* direction.
+        
         """
         return [0, -1, 0]
     
@@ -811,6 +813,7 @@ class Vector(list):
         -------
         list
             The vector representing the *southeast* direction.
+        
         """
         return [1, -1, 0]
     
@@ -823,6 +826,7 @@ class Vector(list):
         -------
         list
             The vector representing the *southwest* direction.
+        
         """
         return [-1, -1, 0]
     
@@ -860,6 +864,7 @@ class Vector(list):
         -------
         list
             The sum vector of the input list of vectors.
+        
         """
         if not isinstance(vectors, list):
             print("Vector.Average - Error: The input vectors parameter is not a valid list. Returning None.")
@@ -898,11 +903,10 @@ class Vector(list):
         -------
         list
             Transformation matrix that follows the Blender software convention (nested list)
+        
         """
         import numpy as np
         from topologicpy.Matrix import Matrix
-
-        import numpy as np
 
         def transformation_matrix(vec1, vec2, translation_vector=None):
             """
@@ -946,7 +950,6 @@ class Vector(list):
             
             return transformation_matrix
 
-
         tran_mat = transformation_matrix(vectorA, vectorB)
         
         return [list(tran_mat[0]), list(tran_mat[1]), list(tran_mat[2]), list(tran_mat[3])]
@@ -960,6 +963,7 @@ class Vector(list):
         -------
         list
             The vector representing the "up" direction.
+        
         """
         return [0, 0, 1]
     
@@ -972,6 +976,7 @@ class Vector(list):
         -------
         list
             The vector representing the *west* direction.
+        
         """
         return [-1, 0, 0]
     
@@ -984,6 +989,7 @@ class Vector(list):
         -------
         list
             The vector representing the XAxis.
+        
         """
         return [1, 0, 0]
 
@@ -996,6 +1002,7 @@ class Vector(list):
         -------
         list
             The vector representing the YAxis.
+        
         """
         return [0, 1, 0]
     
@@ -1008,5 +1015,6 @@ class Vector(list):
         -------
         list
             The vector representing the ZAxis.
+        
         """
         return [0, 0, 1]

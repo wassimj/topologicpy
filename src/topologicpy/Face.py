@@ -677,7 +677,6 @@ class Face():
             face = None
         return face
 
-
     @staticmethod
     def ByWiresCluster(externalBoundary, internalBoundariesCluster = None, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -770,7 +769,7 @@ class Face():
         elif placement.lower() == "upperright":
             arrow = Topology.Translate(arrow, -radius, -radius, 0)
         arrow = Topology.Place(arrow, originA=Vertex.Origin(), originB=origin)
-        arrow = Topology.Orient(arrow, origin=origin, direction=direction)
+        arrow = Topology.Orient(arrow, origin=origin, dirA=[0,0,1], dirB=direction)
         return arrow
 
     @staticmethod
@@ -925,7 +924,7 @@ class Face():
             The desired tolerance. The default is 0.0001.
         
         Returns
-        --------
+        -------
             topologic_core.Face
                 The created Einstein tile.
 
@@ -937,7 +936,9 @@ class Face():
         if not Topology.IsInstance(wire, "Wire"):
             print("Face.Einstein - Error: Could not create base wire for the Einstein tile. Returning None.")
             return None
-        return Face.ByWire(wire, tolerance=tolerance)
+        f = Face.ByWire(wire, tolerance=tolerance)
+        f = Topology.Orient(f, dirA=Face.Normal(f), dirB=direction)
+        return f
     
     @staticmethod
     def Ellipse(origin= None, inputMode: int = 1, width: float = 2.0, length: float = 1.0, focalLength: float = 0.866025, eccentricity: float = 0.866025, majorAxisLength: float = 1.0, minorAxisLength: float = 0.5, sides: float = 32, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
@@ -1060,10 +1061,6 @@ class Face():
         from topologicpy.Topology import Topology
 
         eb = face.ExternalBoundary()
-        f_dir = Face.Normal(face)
-        w_dir = Wire.Normal(eb)
-        if Vector.IsAntiParallel(f_dir, w_dir):
-            eb = Wire.Reverse(eb)
         return eb
     
     @staticmethod
@@ -1105,7 +1102,6 @@ class Face():
         if dot < tolerance:
             return False
         return True
-
 
     @staticmethod
     def Fillet(face, radius: float = 0, radiusKey: str = None, tolerance: float = 0.0001, silent: bool = False):
@@ -1707,7 +1703,11 @@ class Face():
             print("Face.Normal - Error: The input face parameter is not a valid face. Returning None.")
             return None
         
-        vertices = Topology.Vertices(face)
+        #vertices = Topology.Vertices(face)
+        v1 = Face.VertexByParameters(face, u=0, v=0)
+        v2 = Face.VertexByParameters(face, u=1, v=0)
+        v3 = Face.VertexByParameters(face, u=1, v=1)
+        vertices = [v1, v2, v3]
         vertices = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices]
         
         if len(vertices) < 3:
@@ -1996,20 +1996,20 @@ class Face():
     @staticmethod
     def Simplify(face, tolerance=0.0001):
         """
-            Simplifies the input face edges based on the Douglas Peucker algorthim. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
-            Part of this code was contributed by gaoxipeng. See https://github.com/wassimj/topologicpy/issues/35
-            
-            Parameters
-            ----------
-            face : topologic_core.Face
-                The input face.
-            tolerance : float , optional
-                The desired tolerance. The default is 0.0001. Edges shorter than this length will be removed.
+        Simplifies the input face edges based on the Douglas Peucker algorthim. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
+        Part of this code was contributed by gaoxipeng. See https://github.com/wassimj/topologicpy/issues/35
+        
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001. Edges shorter than this length will be removed.
 
-            Returns
-            -------
-            topologic_core.Face
-                The simplified face.
+        Returns
+        -------
+        topologic_core.Face
+            The simplified face.
         """
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
@@ -2232,6 +2232,7 @@ class Face():
             The list of triangles of the input face.
 
         """
+        from topologicpy.Vector import Vector
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
@@ -2250,7 +2251,7 @@ class Face():
                 The desired tolerance. The default is 0.0001.
             
             Returns
-            ----------
+            -------
             topologic_core.Shell
                 The shell of triangular meshes.
 
@@ -2285,7 +2286,7 @@ class Face():
                 except:
                     warnings.warn("Face.Triangulate - Error: Could not import gmsh. Please try to install gmsh manually. Returning None.")
                     return None
-
+            
             from topologicpy.Vertex import Vertex
             from topologicpy.Wire import Wire
             from topologicpy.Face import Face
@@ -2398,7 +2399,15 @@ class Face():
                 finalFaces.append(f)
             else:
                 finalFaces.append(f)
-        return finalFaces
+        face_normal = Face.Normal(face)
+        return_faces = []
+        for ff in finalFaces:
+            normal = Face.Normal(ff)
+            if abs(Vector.Angle(normal, face_normal)) > 2:
+                return_faces.append(Face.Invert(ff))
+            else:
+                return_faces.append(ff)
+        return return_faces
 
     @staticmethod
     def TrimByWire(face, wire, reverse: bool = False):

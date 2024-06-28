@@ -272,7 +272,6 @@ def test_main():
     status = Topology.IsInstance(v, "Face")
     assert status == False, "Topology.IsInstance. Should be False."
 
-
     print("Case 12 - Skipped")
     print("Case 13 - Skipped")
     # test 1

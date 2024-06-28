@@ -253,7 +253,6 @@ class Cluster():
         _ = cluster.Cells(None, cells)
         return cells
 
-
     @staticmethod
     def DBSCAN(topologies, selectors=None, keys=["x", "y", "z"], epsilon: float = 0.5, minSamples: int = 2):
         """
@@ -878,7 +877,6 @@ class Cluster():
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
 
-
         def k_means(data, vertices, k=4, maxIterations=100):
             import random
             def euclidean_distance(p, q):
@@ -913,8 +911,6 @@ class Cluster():
                 centroids = new_centroids
 
             return {'clusters': clusters, 'clusters_v': clusters_v, 'centroids': centroids}
-
-
 
         if not isinstance(topologies, list):
             print("Cluster.K_Means - Error: The input topologies parameter is not a valid list. Returning None.")

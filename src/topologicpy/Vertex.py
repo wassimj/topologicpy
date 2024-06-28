@@ -57,7 +57,7 @@ class Vertex():
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
-        import sys
+        
         def areCollinear(vertices, tolerance=0.0001):
             point1 = Vertex.Coordinates(vertices[0], mantissa=mantissa)
             point2 = Vertex.Coordinates(vertices[1], mantissa=mantissa)
@@ -164,6 +164,7 @@ class Vertex():
 
         """
         from topologicpy.Topology import Topology
+
         if not Topology.IsInstance(cluster, "Topology"):
             return None
         vertices = Topology.SubTopologies(cluster, subTopologyType="vertex")
@@ -208,6 +209,7 @@ class Vertex():
 
         """
         from topologicpy.Topology import Topology
+
         if not Topology.IsInstance(cluster, "Topology"):
             return None
         vertices = Topology.SubTopologies(cluster, subTopologyType="vertex")
@@ -238,6 +240,7 @@ class Vertex():
 
         """
         import numbers
+
         x = None
         y = None
         z = None
@@ -473,7 +476,6 @@ class Vertex():
         superTopologies = Topology.SuperTopologies(topology=vertex, hostTopology=hostTopology, topologyType=topologyType)
         return len(superTopologies)
 
-
     @staticmethod
     def Distance(vertex, topology, includeCentroid: bool =True, mantissa: int = 6) -> float:
         """
@@ -638,7 +640,6 @@ class Vertex():
             The list of enclosing cells.
 
         """
-        from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
         
         def boundingBox(cell):
@@ -709,11 +710,12 @@ class Vertex():
         tolerance : float , optional
             The desired tolerance for computing if vertices need to be fused. Any vertices that are closer to each other than this tolerance will be fused. The default is 0.0001.
 
-         Returns
+        Returns
         -------
         list
             The list of fused vertices. This list contains the same number of vertices and in the same order as the input list of vertices. However, the coordinates
             of these vertices have now been modified so that they are exactly the same with other vertices that are within the tolerance distance.
+        
         """
         from topologicpy.Topology import Topology
         import numpy as np
@@ -755,7 +757,6 @@ class Vertex():
                 elif 'e' in coord_str:
                     decimals_list.append(int(coord_str.split('e')[1].replace('-','')))
             return max(decimals_list)
-
 
         if not isinstance(vertices, list):
             print("Vertex.Fuse - Error: The input vertices parameter is not a valid list. Returning None.")
@@ -832,6 +833,7 @@ class Vertex():
 
         """
         from topologicpy.Topology import Topology
+
         if not Topology.IsInstance(vertex, "Vertex"):
             return None
         if not isinstance(vertices, list):
@@ -1698,6 +1700,7 @@ class Vertex():
 
         """
         from topologicpy.Topology import Topology
+
         if not Topology.IsInstance(vertex, "Vertex"):
             return None
         return round(vertex.Y(), mantissa)
