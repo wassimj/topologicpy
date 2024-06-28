@@ -2777,9 +2777,9 @@ class Topology():
         objPath : str
             The path to the OBJ file.
         defaultColor : list , optional
-            The default color to use if none is pecified in the file. The default is [255, 255, 255] (white).
+            The default color to use if none is specified in the file. The default is [255, 255, 255] (white).
         defaultOpacity : float , optional
-            The default opacity to use if none is pecified in the file. The default is 1.0 (fully opaque).
+            The default opacity to use if none is specified in the file. The default is 1.0 (fully opaque).
         transposeAxes : bool , optional
             If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.
         removeCoplanarFaces : bool , optional
@@ -2841,9 +2841,9 @@ class Topology():
         mtlString : str , optional
             The string of the MTL file. The default is None.
         defaultColor : list , optional
-            The default color to use if none is pecified in the string. The default is [255, 255, 255] (white).
+            The default color to use if none is specified in the string. The default is [255, 255, 255] (white).
         defaultOpacity : float , optional
-            The default opacity to use if none is pecified in the string. The default is 1.0 (fully opaque).
+            The default opacity to use if none is specified in the string. The default is 1.0 (fully opaque).
         transposeAxes : bool , optional
             If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.
         removeCoplanarFaces : bool , optional
@@ -2955,9 +2955,7 @@ class Topology():
             'materials': materials,
             'groups': groups
         }
-        keys = obj_data.keys()
         groups = obj_data['groups']
-        group_keys = groups.keys()
         vertices = obj_data['vertices']
         groups = obj_data['groups']
         materials = obj_data['materials']
@@ -4756,10 +4754,20 @@ class Topology():
             The input list of topologies.
         path : str
             The input file path.
+        nameKey : str , optional
+            The topology dictionary key under which to find the name of the topology. The default is "name".
+        colorKey : str, optional
+            The topology dictionary key under which to find the color of the topology. The default is "color".
+        opacityKey : str , optional
+            The topology dictionary key under which to find the opacity of the topology. The default is "opacity".
+        defaultColor : list , optional
+            The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).
+        defaultOpacity : float , optional
+            The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up"
         mode : int , optional
-            The desired mode of meshing algorithm. Several options are available:
+            The desired mode of meshing algorithm (for triangulation). Several options are available:
             0: Classic
             1: MeshAdapt
             3: Initial Mesh Only
@@ -4813,7 +4821,6 @@ class Topology():
        
         mtl_path = path[:-4] + ".mtl"
        
-
         # Write out the material file
         n = max(len(str(len(topologies))), 3)
         with open(mtl_path, "w") as mtl_file:
