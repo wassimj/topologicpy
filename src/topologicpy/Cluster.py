@@ -143,7 +143,7 @@ class Cluster():
         return Cluster.ByTopologies(vertices)
     
     @staticmethod
-    def ByTopologies(*args, transferDictionaries: bool = False):
+    def ByTopologies(*args, transferDictionaries: bool = False, silent=False):
         """
         Creates a topologic Cluster from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.
 
@@ -153,7 +153,8 @@ class Cluster():
             The list of topologies.
         transferDictionaries : bool , optional
             If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. The default is False.
-
+        silent : bool , optional
+            If set to True, error and warning messages are not displayed. Otherwise, they are. The default is False.
         Returns
         -------
         topologic_core.Cluster
@@ -197,7 +198,7 @@ class Cluster():
                     dictionaries.append(d)
         if len(dictionaries) > 0:
             if len(dictionaries) > 1:
-                d = Dictionary.ByMergedDictionaries(dictionaries)
+                d = Dictionary.ByMergedDictionaries(dictionaries, silent=silent)
             else:
                 d = dictionaries[0]
                 cluster = Topology.SetDictionary(cluster, d)

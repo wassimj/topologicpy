@@ -2443,7 +2443,6 @@ class Topology():
 
         def buildCell(json_item, j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey="uuid", tolerance=0.0001):
             cell_shells = json_item['shells']
-            shells = []
             external_boundary = buildShell(find_json_item(j_shells, uuidKey, cell_shells[0]), j_faces, j_wires, j_edges, j_vertices, uuidKey=uuidKey, tolerance=tolerance)
             internal_boundaries = []
             for j_s in cell_shells[1:]:
@@ -2468,7 +2467,7 @@ class Topology():
             cells = []
             for j_c in cc_cells:
                 cells.append(buildCell(find_json_item(j_cells, uuidKey, j_c), j_shells, j_faces, j_wires, j_edges, j_vertices, uuidKey=uuidKey, tolerance=tolerance))
-            cc = CellComplex.ByCells(cells, tolerance=tolerance)
+            cc = CellComplex.ByCells(cells, transferDictionaries=False, silent=True, tolerance=tolerance)
             if cc == None:
                 print("Topology.ByJSONString - Error: Could not build a cellcomplex. Returning None.")
                 return None
@@ -2645,18 +2644,10 @@ class Topology():
             d = Topology.Dictionary(ev)
             if Dictionary.ValueAtKey(d,'toplevel') == True:
                 toplevelTopologies.append(ev)
-
+        return_topologies = []
         for tp in toplevelTopologies:
             # This is a hack because sometimes the imported topologies get weird. I think it is an opencascade bug.
             tp = Topology.ByBREPString(Topology.BREPString(tp))
-            if len(vertex_selectors) > 0:
-                _ = Topology.TransferDictionariesBySelectors(tp, vertex_selectors, tranVertices=True, tolerance=tolerance)
-            if len(edge_selectors) > 0:
-                _ = Topology.TransferDictionariesBySelectors(tp, edge_selectors, tranEdges=True, tolerance=tolerance)
-            if len(face_selectors) > 0:
-                _ = Topology.TransferDictionariesBySelectors(tp, face_selectors, tranFaces=True, tolerance=tolerance)
-            if len(cell_selectors) > 0:
-                _ = Topology.TransferDictionariesBySelectors(tp, cell_selectors, tranCells=True, tolerance=tolerance)
             if len(all_vertex_apertures) > 0:
                 tp_vertices = Topology.Vertices(tp)
                 for tp_vertex in tp_vertices:
@@ -2673,11 +2664,22 @@ class Topology():
                 tp_cells = Topology.Cells(tp)
                 for tp_cell in tp_cells:
                     tp_cell = setApertures(tp_cell, all_cell_apertures, uuidKey="uuid")
-    
-        if len(toplevelTopologies) == 1:
-            return toplevelTopologies[0]
+
+            if len(vertex_selectors) > 0:
+                _ = Topology.TransferDictionariesBySelectors(tp, vertex_selectors, tranVertices=True, tolerance=tolerance)
+            if len(edge_selectors) > 0:
+                _ = Topology.TransferDictionariesBySelectors(tp, edge_selectors, tranEdges=True, tolerance=tolerance)
+            if len(face_selectors) > 0:
+                _ = Topology.TransferDictionariesBySelectors(tp, face_selectors, tranFaces=True, tolerance=tolerance)
+            if len(cell_selectors) > 0:
+                _ = Topology.TransferDictionariesBySelectors(tp, cell_selectors, tranCells=True, tolerance=tolerance)
+            
+            return_topologies.append(tp)
+            
+        if len(return_topologies) == 1:
+            return return_topologies[0]
         else:
-            return toplevelTopologies
+            return return_topologies
     
     @staticmethod
     def ByJSONPath(path, tolerance=0.0001):
@@ -2711,7 +2713,7 @@ class Topology():
                 defaultOpacity: float = 1.0,
                 transposeAxes: bool = True,
                 removeCoplanarFaces: bool = True,
-                
+                selfMerge: bool = True,
                 mantissa : int = 6,
                 tolerance: float = 0.0001):
         """
@@ -2732,6 +2734,8 @@ class Topology():
             If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.
         removeCoplanarFaces : bool , optional
             If set to True, coplanar faces are merged. The default is True.
+        selfMerge : bool , optional
+            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. The default is False.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -2761,12 +2765,14 @@ class Topology():
         return Topology.ByOBJString(obj_string, mtl_string,
                         defaultColor=defaultColor, defaultOpacity=defaultOpacity,
                         transposeAxes=transposeAxes, removeCoplanarFaces=removeCoplanarFaces,
+                        selfMerge=selfMerge,
                         mantissa=mantissa, tolerance=tolerance)
 
     @staticmethod
     def ByOBJPath(objPath,
                   defaultColor: list = [255,255,255], defaultOpacity: float = 1.0,
                   transposeAxes: bool = True, removeCoplanarFaces: bool = True,
+                  selfMerge: bool = False,
                   mantissa : int = 6, tolerance: float = 0.0001):
         """
         Imports a topology from an OBJ file path and an associated materials file.
@@ -2784,6 +2790,8 @@ class Topology():
             If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.
         removeCoplanarFaces : bool , optional
             If set to True, coplanar faces are merged. The default is True.
+        selfMerge : bool , optional
+            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. The default is False.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -2824,12 +2832,14 @@ class Topology():
         return Topology.ByOBJString(obj_string, mtl_string,
                         defaultColor=defaultColor, defaultOpacity=defaultOpacity,
                         transposeAxes=transposeAxes, removeCoplanarFaces=removeCoplanarFaces,
+                        selfMerge = selfMerge,
                         mantissa=mantissa, tolerance=tolerance)
 
     @staticmethod
     def ByOBJString(objString: str, mtlString: str = None,
                     defaultColor: list = [255,255,255], defaultOpacity: float = 1.0,
                     transposeAxes: bool = True, removeCoplanarFaces: bool = False,
+                    selfMerge: bool = False,
                     mantissa = 6, tolerance = 0.0001):
         """
         Imports a topology from  OBJ and MTL strings.
@@ -2848,6 +2858,8 @@ class Topology():
             If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.
         removeCoplanarFaces : bool , optional
             If set to True, coplanar faces are merged. The default is True.
+        selfMerge : bool , optional
+            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. The default is False.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -2994,7 +3006,9 @@ class Topology():
                         selector = Topology.SetDictionary(selector, d)
                         face_selectors.append(selector)
 
-            topology = Topology.SelfMerge(Cluster.ByTopologies(object_faces), tolerance=tolerance)
+            topology = Cluster.ByTopologies(object_faces, tolerance=tolerance)
+            if selfMerge:
+                topology = Topology.SelfMerge(topology)
             if removeCoplanarFaces:
                 topology = Topology.RemoveCoplanarFaces(topology, tolerance=tolerance)
             d = Dictionary.ByKeysValues(['name', 'color', 'opacity'], [object_name, object_color, object_opacity])
@@ -7599,6 +7613,10 @@ class Topology():
             The input topology with the dictionaries transferred to its subtopologies.
 
         """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Plotly import Plotly
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.TransferDictionariesBySelectors - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
@@ -7639,10 +7657,11 @@ class Topology():
             _ = Topology.TransferDictionaries(selectors, sinkFaces, tolerance=tolerance, numWorkers=numWorkers)
         if tranCells == True:
             sinkCells = []
-            if Topology.Type(topology) == Topology.TypeID("Cell"):
-                sinkCells.append(topology)
+            if Topology.IsInstance(topology, "Cell"):
+                sinkCells = [topology]
             elif hidimSink >= Topology.TypeID("Cell"):
-                topology.Cells(None, sinkCells)
+                print("Transfering Dictionaries to Cells")
+                sinkCells = Topology.Cells(topology)
             _ = Topology.TransferDictionaries(selectors, sinkCells, tolerance=tolerance, numWorkers=numWorkers)
         return topology
 

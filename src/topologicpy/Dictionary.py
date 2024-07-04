@@ -153,7 +153,7 @@ class Dictionary():
         return topologic.Dictionary.ByKeysValues(stl_keys, stl_values) # Hook to Core
     
     @staticmethod
-    def ByMergedDictionaries(*dictionaries):
+    def ByMergedDictionaries(*dictionaries, silent: bool = False):
         """
         Creates a dictionary by merging the list of input dictionaries.
 
@@ -161,6 +161,8 @@ class Dictionary():
         ----------
         dictionaries : list or comma separated dictionaries
             The input list of dictionaries to be merged.
+        silent : bool , optional
+            If set to True, error and warning messages are not displayed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -176,13 +178,16 @@ class Dictionary():
         if isinstance(dictionaries, list):
             new_dictionaries = [d for d in dictionaries if Topology.IsInstance(d, "Dictionary")]
         if len(new_dictionaries) == 0:
-            print("Dictionary.ByMergedDictionaries - Error: the input dictionaries parameter does not contain any valid dictionaries. Returning None.")
+            if not silent:
+                print("Dictionary.ByMergedDictionaries - Error: the input dictionaries parameter does not contain any valid dictionaries. Returning None.")
             return None
         if len(new_dictionaries) == 1:
-            print("Dictionary.ByMergedDictionaries - Error: the input dictionaries parameter contains only one dictionary. Returning input dictionary.")
+            if not silent:
+                print("Dictionary.ByMergedDictionaries - Error: the input dictionaries parameter contains only one dictionary. Returning input dictionary.")
             return new_dictionaries[0]
         if not isinstance(new_dictionaries, list):
-            print("Dictionary.ByMergedDictionaries - Error: The input dictionaries parameter is not a valid list. Returning None.")
+            if not silent:
+                print("Dictionary.ByMergedDictionaries - Error: The input dictionaries parameter is not a valid list. Returning None.")
             return None
         return_dictionaries = []
         for d in new_dictionaries:
@@ -191,10 +196,12 @@ class Dictionary():
             elif isinstance(d, dict):
                 return_dictionaries.append(Dictionary.ByPythonDictionary(d))
         if len(return_dictionaries) == 0:
-            print("Dictionary.ByMergedDictionaries - Error: The input dictionaries parameter does not contain valid dictionaries. Returning None.")
+            if not silent:
+                print("Dictionary.ByMergedDictionaries - Error: The input dictionaries parameter does not contain valid dictionaries. Returning None.")
             return None
         elif len(return_dictionaries) == 1:
-            print("Dictionary.ByMergedDictionaries - Warning: The input dictionaries parameter contains only one valid dictionary. Returning that dictionary.")
+            if not silent:
+                print("Dictionary.ByMergedDictionaries - Warning: The input dictionaries parameter contains only one valid dictionary. Returning that dictionary.")
             return new_dictionaries[0]
         else:
             dictionaries = return_dictionaries

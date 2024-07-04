@@ -91,7 +91,7 @@ class CellComplex():
                                  direction=direction, placement=placement, tolerance=tolerance)
     
     @staticmethod
-    def ByCells(cells: list, tolerance: float = 0.0001, silent: bool = False):
+    def ByCells(cells: list, transferDictionaries = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a cellcomplex by merging the input cells.
 
@@ -99,6 +99,8 @@ class CellComplex():
         ----------
         cells : list
             The list of input cells.
+        transferDictionaries : bool , optional
+            If set to True, any dictionaries in the cells are transferred to the CellComplex. Otherwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -108,8 +110,10 @@ class CellComplex():
             The created cellcomplex.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
 
         if not isinstance(cells, list):
             if not silent:
@@ -120,6 +124,7 @@ class CellComplex():
             if not silent:
                 print("CellComplex.ByCells - Error: The input cells parameter does not contain any valid cells. Returning None.")
             return None
+        cluster = Cluster.ByTopologies(cells)
         cellComplex = None
         if len(cells) == 1:
             return topologic.CellComplex.ByCells(cells) # Hook to Core
@@ -149,6 +154,14 @@ class CellComplex():
                 if not silent:
                     print("CellComplex.ByCells - Warning: Resulting object contains only one cell. Returning object of type topologic_core.Cell instead of topologic_core.CellComplex.")
                 return(temp_cells[0])
+            if transferDictionaries == True:
+                for temp_cell in temp_cells:
+                    v = Topology.InternalVertex(temp_cell)
+                    enclosing_cells = Vertex.EnclosingCell(v, cluster)
+                    dictionaries = [Topology.Dictionary(ec) for ec in enclosing_cells]
+                    d = Dictionary.ByMergedDictionaries(dictionaries, silent=silent)
+                    temp_cell = Topology.SetDictionary(temp_cell, d)
+
         return cellComplex
     
     @staticmethod
