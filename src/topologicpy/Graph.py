@@ -158,7 +158,7 @@ class WorkerProcess(Process):
                     continue
                 if Vertex.Distance(source, destination) > self.tolerance:
                     edge = Edge.ByVertices([source, destination])
-                    e = Topology.Boolean(edge, face, operation="intersect")
+                    e = Topology.Intersect(edge, face)
                     if Topology.IsInstance(e, "Edge"):
                         edges.append(edge)
                 self.used[i + self.start_index][j] = 1

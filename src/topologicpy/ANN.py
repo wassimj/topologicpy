@@ -110,7 +110,7 @@ import numpy as np
 class _ANN(nn.Module):
     def __init__(self, input_size, hyperparameters, dataset=None):
         super(_ANN, self).__init__()
-        self.title = hyperparameters['title']
+        self.title =  hyperparameters.get('title', 'Untitled')
         self.task_type = hyperparameters['task_type']
         self.cross_val_type = hyperparameters['cross_val_type']
         self.k_folds = hyperparameters.get('k_folds', 5)
@@ -576,6 +576,10 @@ class ANN():
                         interval = 1,
                         mantissa = 6):
         """
+        Returns a Hyperparameters dictionary based on the input parameters.
+
+        Parameters
+        ----------
         title : str , optional
             The desired title for the dataset. The default is "Untitled".
         taskType : str , optional
@@ -623,6 +627,7 @@ class ANN():
         -------
         dict
             Returns a dictionary with the following keys:
+            'title'
             'task_type'
             'test_ratio'
             'validation_ratio'
@@ -632,13 +637,14 @@ class ANN():
             'batch_size'
             'early_stopping'
             'patience'
-            'random_tate'
+            'random_state'
             'cross_val_type'
             'kFolds'
             'interval'
             'mantissa'
         """
         return {
+                'title': title,
                 'task_type': taskType,
                 'test_ratio': testRatio,
                 'validation_ratio': validationRatio,

@@ -475,6 +475,8 @@ class Edge():
             The first input edge. This edge will be extended to meet edgeB.
         edgeB : topologic_core.Edge
             The second input edge. This edge will be used to extend edgeA.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -764,8 +766,8 @@ class Edge():
             The second input edge.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
-        angTolerance : float , optional
-            The angular tolerance used for the test. The default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------

@@ -968,18 +968,44 @@ class Topology():
         results = []
         if Topology.IsInstance(topologyA, "CellComplex"):
            cellsA = Topology.Cells(topologyA)
+        elif Topology.IsInstance(topologyA, "Cluster"):
+            cellsA = Cluster.FreeTopologies(topologyA)
         else:
             cellsA = [topologyA]
-        for cellA in cellsA:
-            if Topology.IsInstance(topologyB, "CellComplex"):
+        if Topology.IsInstance(topologyB, "CellComplex"):
                 cellsB = Topology.Cells(topologyB)
+        elif Topology.IsInstance(topologyB, "Cluster"):
+            cellsB = Cluster.FreeTopologies(topologyB)
+        else:
+            cellsB = [topologyB]
+        cellsA_2 = []
+        cellsB_2 = []
+        for cellA in cellsA:
+            if Topology.IsInstance(cellA, "CellComplex"):
+                cellsA_2 += Topology.Cells(cellA)
+            elif Topology.IsInstance(cellA, "Shell"):
+                cellsA_2 += Topology.Faces(cellA)
             else:
-                cellsB = [topologyB]
-            for cellB in cellsB:
+                cellsA_2.append(cellA)
+            
+        for cellB in cellsB:
+            if Topology.IsInstance(cellB, "CellComplex"):
+                cellsB_2 += Topology.Cells(cellB)
+            elif Topology.IsInstance(cellB, "Shell"):
+                cellsB_2 += Topology.Faces(cellB)
+            else:
+                cellsB_2.append(cellB)
+        
+        print("cellsA_2", cellsA_2)
+        print("cellsB_2", cellsB_2)
+        for cellA in cellsA_2:
+            for cellB in cellsB_2:
                 cellC = cellA.Intersect(cellB)
                 results.append(cellC)
-        results = [x for x in results if results is not None]
-        if len(results) == 1:
+        results = [x for x in results if x is not None]
+        if len(results) == 0:
+            return None
+        elif len(results) == 1:
             return results[0]
         else:
             return Topology.SelfMerge(Topology.SelfMerge(Cluster.ByTopologies(results)))
@@ -4686,7 +4712,7 @@ class Topology():
         return json_string
     
     @staticmethod
-    def OBJString(topology, color, vertexIndex, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001):
+    def _OBJString(topology, color, vertexIndex, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the Wavefront string of the input topology. This is very experimental and outputs a simple solid topology.
 
@@ -4757,6 +4783,7 @@ class Topology():
             finalLines = finalLines + "\n" + lines[i]
         return finalLines, len(vertices)
     
+
     @staticmethod
     def ExportToOBJ(*topologies, path, nameKey="name", colorKey="color", opacityKey="opacity", defaultColor=[256,256,256], defaultOpacity=0.5, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, overwrite: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
@@ -4809,7 +4836,6 @@ class Topology():
 
         """
         from topologicpy.Helper import Helper
-        from topologicpy.Dictionary import Dictionary
         from os.path import exists
 
         if isinstance(topologies, tuple):
@@ -4820,7 +4846,7 @@ class Topology():
             print("Topology.ExportToOBJ - Error: the input topologies parameter does not contain any valid topologies. Returning None.")
             return None
         if not isinstance(new_topologies, list):
-            print("Dictionary.ByMergedDictionaries - Error: The input dictionaries parameter is not a valid list. Returning None.")
+            print("Topology.ExportToOBJ - Error: The input topologies parameter is not a valid list. Returning None.")
             return None
 
         if not overwrite and exists(path):
@@ -4834,39 +4860,126 @@ class Topology():
         status = False
        
         mtl_path = path[:-4] + ".mtl"
+
+        obj_string, mtl_string = Topology.OBJString(new_topologies,
+                                                    nameKey=nameKey,
+                                                    colorKey=colorKey,
+                                                    opacityKey=opacityKey,
+                                                    defaultColor=defaultColor,
+                                                    defaultOpacity=defaultOpacity,
+                                                    transposeAxes=transposeAxes,
+                                                    mode=mode,
+                                                    meshSize=meshSize,
+                                                    mantissa=mantissa,
+                                                    tolerance=tolerance)
+        # Write out the material file
+        with open(mtl_path, "w") as mtl_file:
+            mtl_file.write(mtl_string)
+        # Write out the obj file
+        with open(path, "w") as obj_file:
+            obj_file.write(obj_string)
+        return True
+
+    @staticmethod
+    def OBJString(*topologies, nameKey="name", colorKey="color", opacityKey="opacity", defaultColor=[256,256,256], defaultOpacity=0.5, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Exports the input topology to a Wavefront OBJ file. This is very experimental and outputs a simple solid topology.
+
+        Parameters
+        ----------
+        topologies : list or comma separated topologies
+            The input list of topologies.
+        path : str
+            The input file path.
+        nameKey : str , optional
+            The topology dictionary key under which to find the name of the topology. The default is "name".
+        colorKey : str, optional
+            The topology dictionary key under which to find the color of the topology. The default is "color".
+        opacityKey : str , optional
+            The topology dictionary key under which to find the opacity of the topology. The default is "opacity".
+        defaultColor : list , optional
+            The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).
+        defaultOpacity : float , optional
+            The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).
+        transposeAxes : bool , optional
+            If set to True the Z and Y coordinates are transposed so that Y points "up"
+        mode : int , optional
+            The desired mode of meshing algorithm (for triangulation). Several options are available:
+            0: Classic
+            1: MeshAdapt
+            3: Initial Mesh Only
+            5: Delaunay
+            6: Frontal-Delaunay
+            7: BAMG
+            8: Fontal-Delaunay for Quads
+            9: Packing of Parallelograms
+            All options other than 0 (Classic) use the gmsh library. See https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options
+            WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
+        meshSize : float , optional
+            The desired size of the mesh when using the "mesh" option. If set to None, it will be
+            calculated automatically and set to 10% of the overall size of the face.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+
+        Returns
+        -------
+        list
+            Return the OBJ and MTL strings as a list.
+
+        """
+        from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
+        import io
+
+        obj_file = io.StringIO()
+        mtl_file = io.StringIO()
+
+        if isinstance(topologies, tuple):
+            topologies = Helper.Flatten(list(topologies))
+        if isinstance(topologies, list):
+            new_topologies = [d for d in topologies if Topology.IsInstance(d, "Topology")]
+        if len(new_topologies) == 0:
+            print("Topology.OBJString - Error: the input topologies parameter does not contain any valid topologies. Returning None.")
+            return None
+        if not isinstance(new_topologies, list):
+            print("Topology.OBJString - Error: The input dictionaries parameter is not a valid list. Returning None.")
+            return None
        
         # Write out the material file
         n = max(len(str(len(topologies))), 3)
-        with open(mtl_path, "w") as mtl_file:
-            for i in range(len(new_topologies)):
-                d = Topology.Dictionary(new_topologies[i])
-                name = Dictionary.ValueAtKey(d, nameKey) or "Untitled_"+str(i).zfill(n)
-                color = Dictionary.ValueAtKey(d, colorKey) or defaultColor
-                color = [c/255 for c in color]
-                opacity = Dictionary.ValueAtKey(d, opacityKey) or defaultOpacity
-                mtl_file.write("newmtl color_" + str(i).zfill(n) + "\n")
-                mtl_file.write("Kd " + ' '.join(map(str, color)) + "\n")
-                mtl_file.write("d " + str(opacity) + "\n")
-                
-        # Write out the obj file
-        with open(path, "w") as obj_file:
-            vertex_index = 1  # global vertex index counter
-            obj_file.writelines("# topologicpy "+Helper.Version()+"\n")
-            obj_file.writelines("mtllib " + mtl_path.split('/')[-1])  # reference the MTL file
-            for i in range(len(topologies)):
-                d = Topology.Dictionary(topologies[i])
-                name = Dictionary.ValueAtKey(d, nameKey) or "Untitled_"+str(i).zfill(n)
-                name = name.replace(" ", "_")
-                obj_file.writelines("\ng "+name+"\n")
-                result = Topology.OBJString(topologies[i], "color_" + str(i).zfill(n), vertex_index, transposeAxes=transposeAxes, mode=mode,
-                                meshSize=meshSize,
-                                mantissa=mantissa, tolerance=tolerance)
-                
-                obj_file.writelines(result[0])
-                vertex_index += result[1]
-            obj_file.close()
-            status = True
-        return status
+        for i in range(len(new_topologies)):
+            d = Topology.Dictionary(new_topologies[i])
+            name = Dictionary.ValueAtKey(d, nameKey) or "Untitled_"+str(i).zfill(n)
+            color = Dictionary.ValueAtKey(d, colorKey) or defaultColor
+            color = [c/255 for c in color]
+            opacity = Dictionary.ValueAtKey(d, opacityKey) or defaultOpacity
+            mtl_file.write("newmtl color_" + str(i).zfill(n) + "\n")
+            mtl_file.write("Kd " + ' '.join(map(str, color)) + "\n")
+            mtl_file.write("d " + str(opacity) + "\n")
+        
+        vertex_index = 1  # global vertex index counter
+        obj_file.writelines("# topologicpy "+Helper.Version()+"\n")
+        obj_file.writelines("mtllib example.mtl")
+        for i in range(len(topologies)):
+            d = Topology.Dictionary(topologies[i])
+            name = Dictionary.ValueAtKey(d, nameKey) or "Untitled_"+str(i).zfill(n)
+            name = name.replace(" ", "_")
+            obj_file.writelines("\ng "+name+"\n")
+            result = Topology._OBJString(topologies[i], "color_" + str(i).zfill(n), vertex_index, transposeAxes=transposeAxes, mode=mode,
+                            meshSize=meshSize,
+                            mantissa=mantissa, tolerance=tolerance)
+            
+            obj_file.writelines(result[0])
+            vertex_index += result[1]
+        obj_string = obj_file.getvalue()
+        mtl_string = mtl_file.getvalue()
+        obj_file.close()
+        mtl_file.close()
+        return obj_string, mtl_string
 
     @staticmethod
     def Filter(topologies, topologyType="any", searchType="any", key=None, value=None):
@@ -8004,3 +8117,98 @@ class Topology():
         namespace_uuid = uuid.uuid5(predefined_namespace_dns, namespace)
         brep_string = Topology.BREPString(topology)
         return uuid.uuid5(namespace_uuid, brep_string)
+    
+    @staticmethod
+    def View3D(*topologies, nameKey="name", colorKey="color", opacityKey="opacity", defaultColor=[256,256,256], defaultOpacity=0.5, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, overwrite: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Sends the input topologies to 3dviewer.net. The topologies must be 3D meshes.
+
+        Parameters
+        ----------
+        topologies : list or comma separated topologies
+            The input list of topologies.
+        nameKey : str , optional
+            The topology dictionary key under which to find the name of the topology. The default is "name".
+        colorKey : str, optional
+            The topology dictionary key under which to find the color of the topology. The default is "color".
+        opacityKey : str , optional
+            The topology dictionary key under which to find the opacity of the topology. The default is "opacity".
+        defaultColor : list , optional
+            The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).
+        defaultOpacity : float , optional
+            The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).
+        transposeAxes : bool , optional
+            If set to True the Z and Y coordinates are transposed so that Y points "up"
+        mode : int , optional
+            The desired mode of meshing algorithm (for triangulation). Several options are available:
+            0: Classic
+            1: MeshAdapt
+            3: Initial Mesh Only
+            5: Delaunay
+            6: Frontal-Delaunay
+            7: BAMG
+            8: Fontal-Delaunay for Quads
+            9: Packing of Parallelograms
+            All options other than 0 (Classic) use the gmsh library. See https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options
+            WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
+        meshSize : float , optional
+            The desired size of the mesh when using the "mesh" option. If set to None, it will be
+            calculated automatically and set to 10% of the overall size of the face.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+
+        Returns
+        -------
+        bool
+            True if the export operation is successful. False otherwise.
+
+        """
+        from topologicpy.Helper import Helper
+        import requests
+        import webbrowser
+
+        if isinstance(topologies, tuple):
+            topologies = Helper.Flatten(list(topologies))
+        if isinstance(topologies, list):
+            new_topologies = [d for d in topologies if Topology.IsInstance(d, "Topology")]
+        if len(new_topologies) == 0:
+            print("Topology.View3D - Error: the input topologies parameter does not contain any valid topologies. Returning None.")
+            return None
+        if not isinstance(new_topologies, list):
+            print("Topology.View3D - Error: The input topologies parameter is not a valid list. Returning None.")
+            return None
+
+        obj_string, mtl_string = Topology.OBJString(new_topologies,
+                                                    nameKey=nameKey,
+                                                    colorKey=colorKey,
+                                                    opacityKey=opacityKey,
+                                                    defaultColor=defaultColor,
+                                                    defaultOpacity=defaultOpacity,
+                                                    transposeAxes=transposeAxes,
+                                                    mode=mode,
+                                                    meshSize=meshSize,
+                                                    mantissa=mantissa,
+                                                    tolerance=tolerance)
+        
+
+        unique_id = 123
+
+        file_contents = {}
+        file_contents['example.obj'] = obj_string
+        file_contents['example.mtl'] = mtl_string
+
+        try:
+            response = requests.post('https://3dviewer.deno.dev/upload/'+str(unique_id), files=file_contents)
+            # Open the web page in the default web browser
+            # URL of the web page you want to open
+            url = "https://3dviewer.deno.dev/#channel="+str(unique_id)
+            webbrowser.open(url)
+            if response.status_code != 200:
+                print(f'Failed to upload file(s): {response.status_code} {response.reason}')
+        except requests.exceptions.RequestException as e:
+            print(f'Error uploading file(s): {e}')
+        return True

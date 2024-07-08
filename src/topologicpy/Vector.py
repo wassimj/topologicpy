@@ -77,6 +77,12 @@ class Vector(list):
             The angle in degrees between the two input vectors.
 
         """
+        if vectorA == None:
+            print("Vector.Angle - Error: The input vectorA is None. Returning None.")
+            return None
+        if vectorB == None:
+            print("Vector.Angle - Error: The input vectorB is None. Returning None.")
+            return None
         n_v1=la.norm(vectorA)
         n_v2=la.norm(vectorB)
         if n_v1 == 0 or n_v2 == 0:

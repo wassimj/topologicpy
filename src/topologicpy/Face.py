@@ -133,6 +133,10 @@ class Face():
             return None
         dirA = Face.Normal(faceA, outputType="xyz", mantissa=3)
         dirB = Face.Normal(faceB, outputType="xyz", mantissa=3)
+        if dirA == None or dirB == None:
+            Topology.Show(faceA, faceB)
+            print("Face.Angle - Error: Could not compute the angle between the two input faces. Returning None.")
+            return None
         return round((Vector.Angle(dirA, dirB)), mantissa)
 
     @staticmethod
@@ -1684,6 +1688,7 @@ class Face():
         from topologicpy.Vertex import Vertex
         import os
         import warnings
+
         try:
             import numpy as np
         except:
@@ -1703,60 +1708,64 @@ class Face():
             print("Face.Normal - Error: The input face parameter is not a valid face. Returning None.")
             return None
         
-        #vertices = Topology.Vertices(face)
-        v1 = Face.VertexByParameters(face, u=0, v=0)
-        v2 = Face.VertexByParameters(face, u=1, v=0)
-        v3 = Face.VertexByParameters(face, u=1, v=1)
-        vertices = [v1, v2, v3]
-        vertices = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices]
-        
-        if len(vertices) < 3:
-            print("Face.Normal - Error: At least three vertices are required to define a plane. Returning None.")
-            return None
-        
-        # Convert vertices to numpy array for easier manipulation
-        vertices = np.array(vertices)
-        
-        # Try to find two non-collinear edge vectors
-        vec1 = None
-        vec2 = None
-        for i in range(1, len(vertices)):
-            for j in range(i + 1, len(vertices)):
-                temp_vec1 = vertices[i] - vertices[0]
-                temp_vec2 = vertices[j] - vertices[0]
-                cross_product = np.cross(temp_vec1, temp_vec2)
-                if np.linalg.norm(cross_product) > 1e-6:  # Check if the cross product is not near zero
-                    vec1 = temp_vec1
-                    vec2 = temp_vec2
+        return_normal = None
+        try:
+            return_normal = topologic.FaceUtility.NormalAtParameters(face, 0.5, 0.5)
+        except:
+            vertices = Topology.Vertices(face)+Topology.Centroid(face)
+            #v1 = Face.VertexByParameters(face, u=0, v=0)
+            #v2 = Face.VertexByParameters(face, u=1, v=0)
+            #v3 = Face.VertexByParameters(face, u=1, v=1)
+            #vertices = [v1, v2, v3]
+            vertices = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices]
+            
+            if len(vertices) < 3:
+                print("Face.Normal - Error: At least three vertices are required to define a plane. Returning None.")
+                return None
+            
+            # Convert vertices to numpy array for easier manipulation
+            vertices = np.array(vertices)
+            
+            # Try to find two non-collinear edge vectors
+            vec1 = None
+            vec2 = None
+            for i in range(1, len(vertices)):
+                for j in range(i + 1, len(vertices)):
+                    temp_vec1 = vertices[i] - vertices[0]
+                    temp_vec2 = vertices[j] - vertices[0]
+                    cross_product = np.cross(temp_vec1, temp_vec2)
+                    if np.linalg.norm(cross_product) > 1e-6:  # Check if the cross product is not near zero
+                        vec1 = temp_vec1
+                        vec2 = temp_vec2
+                        break
+                if vec1 is not None and vec2 is not None:
                     break
-            if vec1 is not None and vec2 is not None:
-                break
-        
-        if vec1 is None or vec2 is None:
-            print("Face.Normal - Error: The given vertices do not form a valid plane (all vertices might be collinear). Returning None.")
-            return None
-        
-        # Calculate the cross product of the two edge vectors
-        normal = np.cross(vec1, vec2)
+            
+            if vec1 is None or vec2 is None:
+                print("Face.Normal - Error: The given vertices do not form a valid plane (all vertices might be collinear). Returning None.")
+                return None
+            
+            # Calculate the cross product of the two edge vectors
+            normal = np.cross(vec1, vec2)
 
-        # Normalize the normal vector
-        normal_length = np.linalg.norm(normal)
-        if normal_length == 0:
-            print("Face.Normal - Error: The given vertices do not form a valid plane (cross product resulted in a zero vector). Returning None.")
-            return None
-        
-        normal = normal / normal_length
-        normal = normal.tolist()
-        normal = [round(x, mantissa) for x in normal]
-        return_normal = []
-        outputType = list(outputType.lower())
-        for axis in outputType:
-            if axis == "x":
-                return_normal.append(normal[0])
-            elif axis == "y":
-                return_normal.append(normal[1])
-            elif axis == "z":
-                return_normal.append(normal[2])
+            # Normalize the normal vector
+            normal_length = np.linalg.norm(normal)
+            if normal_length == 0:
+                print("Face.Normal - Error: The given vertices do not form a valid plane (cross product resulted in a zero vector). Returning None.")
+                return None
+            
+            normal = normal / normal_length
+            normal = normal.tolist()
+            normal = [round(x, mantissa) for x in normal]
+            return_normal = []
+            outputType = list(outputType.lower())
+            for axis in outputType:
+                if axis == "x":
+                    return_normal.append(normal[0])
+                elif axis == "y":
+                    return_normal.append(normal[1])
+                elif axis == "z":
+                    return_normal.append(normal[2])
         return return_normal
     
     @staticmethod
