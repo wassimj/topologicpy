@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.ANN module &mdash; topologicpy 0.7.24 documentation</title>
+  <title>topologicpy.ANN module &mdash; topologicpy 0.7.26 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.24
+                0.7.26
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -164,7 +164,7 @@
 <td><p>Creates Plotly Figures from the model data.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Hyperparameters" title="topologicpy.ANN.ANN.Hyperparameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hyperparameters</span></code></a>([title, taskType, ...])</p></td>
-<td><p>title : str , optional</p></td>
+<td><p>Returns a Hyperparameters dictionary based on the input parameters.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.HyperparametersBySampleName" title="topologicpy.ANN.ANN.HyperparametersBySampleName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HyperparametersBySampleName</span></code></a>(name)</p></td>
 <td><p>Returns the suggested initial hyperparameters to use for the dataset named in the name input parameter.</p></td>
@@ -340,54 +340,58 @@ This can be one of [‘ggplot2’, ‘seaborn’, ‘simple_white’, ‘plotly�
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ANN.ANN.Hyperparameters">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Hyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Untitled'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taskType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'classification'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">testRatio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validationRatio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hiddenLayers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[12,</span> <span class="pre">12,</span> <span class="pre">12]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learningRate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batchSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patience</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">earlyStopping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomState</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crossValidationType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'holdout'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kFolds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.Hyperparameters" title="Permalink to this definition"></a></dt>
-<dd><dl class="simple">
-<dt>title<span class="classifier">str , optional</span></dt><dd><p>The desired title for the dataset. The default is “Untitled”.</p>
+<dd><p>Returns a Hyperparameters dictionary based on the input parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title for the dataset. The default is “Untitled”.</p>
 </dd>
-<dt>taskType<span class="classifier">str , optional</span></dt><dd><p>The desired task type. This can be either ‘classification’ or ‘regression’ (case insensitive).
+<dt><strong>taskType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired task type. This can be either ‘classification’ or ‘regression’ (case insensitive).
 Classification is a type of supervised learning where the model is trained to predict categorical labels (classes) from input data.
 Regression is a type of supervised learning where the model is trained to predict continuous numerical values from input data.</p>
 </dd>
-<dt>testRatio<span class="classifier">float , optional</span></dt><dd><p>The split ratio between training and testing. The default is 0.3. This means that
+<dt><strong>testRatio</strong><span class="classifier">float , optional</span></dt><dd><p>The split ratio between training and testing. The default is 0.3. This means that
 70% of the data will be used for training/validation and 30% will be reserved for testing as unseen data.</p>
 </dd>
-<dt>validationRatio<span class="classifier">float , optional</span></dt><dd><p>The split ratio between training and validation. The default is 0.2. This means that
+<dt><strong>validationRatio</strong><span class="classifier">float , optional</span></dt><dd><p>The split ratio between training and validation. The default is 0.2. This means that
 80% of the validation data (left over after reserving test data) will be used for training and 20% will be used for validation.</p>
 </dd>
-<dt>hiddenLayers<span class="classifier">list , optional</span></dt><dd><p>The number of hidden layers and the number of nodes in each layer.
+<dt><strong>hiddenLayers</strong><span class="classifier">list , optional</span></dt><dd><p>The number of hidden layers and the number of nodes in each layer.
 If you wish to have 3hidden layers with 8 nodes in the first
 16 nodes in the second, and 4 nodes in the last layer, you specify [8,16,4].
 The default is [12,12,12]</p>
 </dd>
-<dt>learningRate<span class="classifier">float, optional</span></dt><dd><p>The desired learning rate. The default is 0.001. See <a class="reference external" href="https://en.wikipedia.org/wiki/Learning_rate">https://en.wikipedia.org/wiki/Learning_rate</a></p>
+<dt><strong>learningRate</strong><span class="classifier">float, optional</span></dt><dd><p>The desired learning rate. The default is 0.001. See <a class="reference external" href="https://en.wikipedia.org/wiki/Learning_rate">https://en.wikipedia.org/wiki/Learning_rate</a></p>
 </dd>
-<dt>epochs<span class="classifier">int , optional</span></dt><dd><p>The desired number of epochs. The default is 10. See <a class="reference external" href="https://en.wikipedia.org/wiki/Neural_network_(machine_learning">https://en.wikipedia.org/wiki/Neural_network_(machine_learning</a>)</p>
+<dt><strong>epochs</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of epochs. The default is 10. See <a class="reference external" href="https://en.wikipedia.org/wiki/Neural_network_(machine_learning">https://en.wikipedia.org/wiki/Neural_network_(machine_learning</a>)</p>
 </dd>
-<dt>batchSize<span class="classifier">int , optional</span></dt><dd><p>The desired number of samples that will be propagated through the network at one time before the model’s internal parameters are updated. Instead of updating the model parameters after every single training sample
+<dt><strong>batchSize</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of samples that will be propagated through the network at one time before the model’s internal parameters are updated. Instead of updating the model parameters after every single training sample
 (stochastic gradient descent) or after the entire training dataset (batch gradient descent), mini-batch gradient descent updates the model parameters after
 a specified number of samples, which is determined by batchSize. The default is 1.</p>
 </dd>
-<dt>patience<span class="classifier">int , optional</span></dt><dd><p>The desired number of epochs with no improvement in the validation loss after which training will be stopped if early stopping is enabled.</p>
+<dt><strong>patience</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of epochs with no improvement in the validation loss after which training will be stopped if early stopping is enabled.</p>
 </dd>
-<dt>earlyStopping<span class="classifier">bool , optional</span></dt><dd><p>If set to True, the training will stop if the validation loss does not improve after a certain number of epochs defined by patience. The default is True.</p>
+<dt><strong>earlyStopping</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the training will stop if the validation loss does not improve after a certain number of epochs defined by patience. The default is True.</p>
 </dd>
-<dt>randomState<span class="classifier">int , optional</span></dt><dd><p>The randomState parameter is used to ensure reproducibility of the results. When you set the randomState parameter to a specific integer value,
+<dt><strong>randomState</strong><span class="classifier">int , optional</span></dt><dd><p>The randomState parameter is used to ensure reproducibility of the results. When you set the randomState parameter to a specific integer value,
 it controls the shuffling of the data before splitting it into training and testing sets.
 This means that every time you run your code with the same randomState value and the same dataset, you will get the same split of the data.
 The default is 42 which is just a randomly picked integer number. Specify None for random sampling.</p>
 </dd>
-<dt>crossValidationType<span class="classifier">str , optional</span></dt><dd><p>The desired type of cross-validation. This can be one of ‘holdout’ or ‘k-fold’. The default is ‘holdout’</p>
+<dt><strong>crossValidationType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of cross-validation. This can be one of ‘holdout’ or ‘k-fold’. The default is ‘holdout’</p>
 </dd>
-<dt>kFolds<span class="classifier">int , optional</span></dt><dd><p>The number of splits (folds) to use if K-Fold cross validation is selected. The default is 5.</p>
+<dt><strong>kFolds</strong><span class="classifier">int , optional</span></dt><dd><p>The number of splits (folds) to use if K-Fold cross validation is selected. The default is 5.</p>
 </dd>
-<dt>interval<span class="classifier">int , optional</span></dt><dd><p>The desired epoch interval at which to report and save metrics data. This must be less than the total number of epochs. The default is 1.</p>
+<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The desired epoch interval at which to report and save metrics data. This must be less than the total number of epochs. The default is 1.</p>
 </dd>
-<dt>mantissa<span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
 </dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
 <dt>dict</dt><dd><p>Returns a dictionary with the following keys:
+‘title’
 ‘task_type’
 ‘test_ratio’
 ‘validation_ratio’
@@ -397,7 +401,7 @@ The default is 42 which is just a randomly picked integer number. Specify None f
 ‘batch_size’
 ‘early_stopping’
 ‘patience’
-‘random_tate’
+‘random_state’
 ‘cross_val_type’
 ‘kFolds’
 ‘interval’

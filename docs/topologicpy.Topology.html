@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.7.24 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.7.26 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.24
+                0.7.26
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -529,8 +529,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.NonPlanarFaces" title="topologicpy.Topology.Topology.NonPlanarFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NonPlanarFaces</span></code></a>(topology[, tolerance])</p></td>
 <td><p>Returns any nonplanar faces in the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OBJString" title="topologicpy.Topology.Topology.OBJString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OBJString</span></code></a>(topology, color, vertexIndex[, ...])</p></td>
-<td><p>Returns the Wavefront string of the input topology.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OBJString" title="topologicpy.Topology.Topology.OBJString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OBJString</span></code></a>(*topologies[, nameKey, colorKey, ...])</p></td>
+<td><p>Exports the input topology to a Wavefront OBJ file.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OCCTShape" title="topologicpy.Topology.Topology.OCCTShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OCCTShape</span></code></a>(topology)</p></td>
 <td><p>Returns the occt shape of the input topology.</p></td>
@@ -682,10 +682,13 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Vertices" title="topologicpy.Topology.Topology.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(topology)</p></td>
 <td><p>Returns the vertices of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Wires" title="topologicpy.Topology.Topology.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.View3D" title="topologicpy.Topology.Topology.View3D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">View3D</span></code></a>(*topologies[, uuid, nameKey, ...])</p></td>
+<td><p>Sends the input topologies to 3dviewer.net.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Wires" title="topologicpy.Topology.Topology.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(topology)</p></td>
 <td><p>Returns the wires of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.XOR" title="topologicpy.Topology.Topology.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(topologyA, topologyB[, tranDict, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.XOR" title="topologicpy.Topology.Topology.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(topologyA, topologyB[, tranDict, tolerance])</p></td>
 <td><p>See Topology.Boolean().</p></td>
 </tr>
 </tbody>
@@ -2495,20 +2498,28 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.OBJString">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OBJString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexIndex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transposeAxes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.OBJString" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Wavefront string of the input topology. This is very experimental and outputs a simple solid topology.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OBJString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nameKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'name'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacityKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'opacity'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[256,</span> <span class="pre">256,</span> <span class="pre">256]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultOpacity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transposeAxes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.OBJString" title="Permalink to this definition"></a></dt>
+<dd><p>Exports the input topology to a Wavefront OBJ file. This is very experimental and outputs a simple solid topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topologies</strong><span class="classifier">list or comma separated topologies</span></dt><dd><p>The input list of topologies.</p>
 </dd>
-<dt><strong>color</strong><span class="classifier">list</span></dt><dd><p>The desired color to assign to the topology</p>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
-<dt><strong>vertexIndex</strong><span class="classifier">int</span></dt><dd><p>The vertex index to use as the starting index.</p>
+<dt><strong>nameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the name of the topology. The default is “name”.</p>
+</dd>
+<dt><strong>colorKey</strong><span class="classifier">str, optional</span></dt><dd><p>The topology dictionary key under which to find the color of the topology. The default is “color”.</p>
+</dd>
+<dt><strong>opacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the opacity of the topology. The default is “opacity”.</p>
+</dd>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).</p>
+</dd>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).</p>
 </dd>
 <dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y coordinates are transposed so that Y points “up”</p>
 </dd>
-<dt><strong>mode</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mode of meshing algorithm. Several options are available:
+<dt><strong>mode</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mode of meshing algorithm (for triangulation). Several options are available:
 0: Classic
 1: MeshAdapt
 3: Initial Mesh Only
@@ -2527,11 +2538,13 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>str</dt><dd><p>The Wavefront OBJ string of the input topology</p>
+<dt>list</dt><dd><p>Return the OBJ and MTL strings as a list.</p>
 </dd>
 </dl>
 </dd>
@@ -3864,6 +3877,61 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The list of vertices.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.View3D">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">View3D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uuid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nameKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'name'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opacityKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'opacity'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[256,</span> <span class="pre">256,</span> <span class="pre">256]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultOpacity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transposeAxes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.View3D" title="Permalink to this definition"></a></dt>
+<dd><p>Sends the input topologies to 3dviewer.net. The topologies must be 3D meshes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topologies</strong><span class="classifier">list or comma separated topologies</span></dt><dd><p>The input list of topologies.</p>
+</dd>
+<dt><strong>uuid</strong><span class="classifier">UUID , optional</span></dt><dd><p>The UUID v5 to use to identify these topologies. The default is a UUID based on the topologies themselves.</p>
+</dd>
+<dt><strong>nameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the name of the topology. The default is “name”.</p>
+</dd>
+<dt><strong>colorKey</strong><span class="classifier">str, optional</span></dt><dd><p>The topology dictionary key under which to find the color of the topology. The default is “color”.</p>
+</dd>
+<dt><strong>opacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the opacity of the topology. The default is “opacity”.</p>
+</dd>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).</p>
+</dd>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).</p>
+</dd>
+<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y coordinates are transposed so that Y points “up”</p>
+</dd>
+<dt><strong>mode</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mode of meshing algorithm (for triangulation). Several options are available:
+0: Classic
+1: MeshAdapt
+3: Initial Mesh Only
+5: Delaunay
+6: Frontal-Delaunay
+7: BAMG
+8: Fontal-Delaunay for Quads
+9: Packing of Parallelograms
+All options other than 0 (Classic) use the gmsh library. See <a class="reference external" href="https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options">https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options</a>
+WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.</p>
+</dd>
+<dt><strong>meshSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the mesh when using the “mesh” option. If set to None, it will be
+calculated automatically and set to 10% of the overall size of the face.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the export operation is successful. False otherwise.</p>
 </dd>
 </dl>
 </dd>
