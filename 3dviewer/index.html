@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <link rel="icon" type="image/png" href="assets/images/3dviewer_net_favicon.ico">
+    <title>Online 3D Viewer</title>
+    <link rel="stylesheet" type="text/css" href="assets/build/website/o3dv.website.min.css">
+    <script type="text/javascript" src="assets/build/website/o3dv.website.min.js"></script>
+    <script type="text/javascript">
+        OV.SetWebsiteEventHandler ((eventName, eventLabel, eventParams) => {
+            let divElement = document.querySelector('div.ov_toolbar_button.only_on_model[alt="Set Y axis as up vector"]');
+            if (divElement) {
+                divElement.click();
+            }
+
+            console.log ({
+                eventName : eventName,
+                eventLabel : eventLabel,
+                eventParams : eventParams
+            });
+        });
+        OV.StartWebsite ('assets/libs');
+
+        const hostname = window.location.hostname;
+        const protocol = window.location.protocol;
+        const wsProtocol = protocol === 'https:' ? 'wss://' : 'ws://';
+        const port = window.location.port !== '' ? ':' + window.location.port : '';
+        let baseHttpURL = `${protocol}//${hostname}`;
+        if (port) baseHttpURL += `${port}`;
+
+        let ws, wsInterval, wsReconnectTimer, wsLastId;
+        function setStatusText(msgOrText, err) {
+            let text = null;
+            if (typeof msgOrText === 'string') {
+                text = msgOrText;
+            } else if (msgOrText) {
+                switch (msgOrText.result) {
+                  case "pong": break;
+                  case "watching": text = "Awaiting files on the channel..."; break;
+                  case "fileready": text = `Pushed ${msgOrText.count} file(s) from the channel to the 3D viewer. Awaiting files on the channel...`; break;
+                  default: text = `Unknown status: ${JSON.stringify(msgOrText)}`;
+                }
+            } else {
+                text = `Error: ${err}`;
+            }
+            if (text !== null)
+                document.getElementById('watch-status-text').textContent = text;
+        }
+        function showWsState(state) {
+            const el1 = document.getElementById('watcher-table');
+            const el2 = document.getElementById('watcher-small');
+            const btn = document.getElementById('watch-btn');
+            [ el1, el2].forEach((el) => {
+                const states = { disconnected: 1, connecting: 1, connected: 1 };
+                delete states[state];
+                el.classList.add(`state-${state}`);
+                for (const k in states)
+                    el.classList.remove(`state-${k}`);
+            });
+            const buttonDisabled = btn.disabled;
+            if (btn && state === 'connected') {
+                btn.disabled = false;
+            }
+            switch (state) {
+                case 'connecting': setStatusText('Establishing connection to the channel...'); break;
+                case 'connected': buttonDisabled && setStatusText('Connection to the channel established.'); break;
+                case 'disconnected': setStatusText('Disconnected from the channel.'); break;
+            }
+        }
+        function getParamsFromHash() {
+            const hashFragment = window.location.hash.substring(1);
+            const params = hashFragment.split(/[;&]/);
+            let paramObject = {};
+            params.forEach(param => {
+                const [key, value] = param.split('=');
+                if (key && value) {
+                    paramObject[key] = decodeURIComponent(value);
+                }
+            });
+
+            return paramObject;
+        }
+        function onChannelIdTyped() {
+            document.getElementById('watch-btn').disabled = !document.getElementById('watch-id').value.length;
+        }
+        let isHashChangeWatched = false;
+        function applyChannelFromHashURI() {
+            if (!isHashChangeWatched)
+                window.addEventListener('hashchange', applyChannelFromHashURI);
+            isHashChangeWatched = true;
+            const hashParams = getParamsFromHash();
+            const channelId = hashParams.channel;
+            if ((channelId ?? null) === null || !channelId.length) return;
+            document.getElementById('watch-id').value = channelId;
+            onChannelIdTyped();
+            if ((hashParams.model ?? null) === null) watchId(channelId);
+        }
+        function watchId(id) {
+            if ((id ?? null) === null || !id.length) {
+                alert('Please type any channel ID.');
+                return;
+            }
+            document.getElementById('watch-btn').disabled = true;
+            wsLastId = id;
+            if (!ws || ws.readyState === WebSocket.CLOSING || ws.readyState === WebSocket.CLOSED) {
+                ws = new WebSocket(wsProtocol + hostname + port + '/ws');
+                showWsState('connecting');
+                ws.onopen = function(event) {
+                    showWsState('connected');
+                    ws.send(JSON.stringify({ cmd: 'watch', id: wsLastId }));
+                };
+
+                ws.onmessage = (e) => {
+                    showWsState('connected');
+                    try {
+                        const obj = JSON.parse(e.data);
+                        if (obj.result === "watching") {
+                        }
+                        else if (obj.result === "fileready") {
+                            let hash = `#model=`;
+                            obj.paths.forEach((path) => {
+                                if (hash.length > 7) hash += ',';
+                                hash += path;
+                            });
+                            window.location = hash;
+                        }
+                        setStatusText(obj);
+                    } catch (err) {
+                        setStatusText(undefined, err);
+                    };
+                };
+                ws.onerror = function(error) {
+                  setStatusText(undefined, error);
+                };
+                ws.onclose = function(event) {
+                  ws = null;
+                  showWsState('disconnected');
+                  if ((wsReconnectTimer ?? null) === null) {
+                      wsReconnectTimer = setTimeout(() => {
+                        watchId(wsLastId);
+                        wsReconnectTimer = null;
+                      }, 1000);
+                  }
+                };
+
+                if ((wsInterval ?? null) === null) {
+                    wsInterval = setInterval(() => {
+                      if (ws && ws.readyState === WebSocket.OPEN)
+                        ws.send(JSON.stringify({ cmd: 'ping' }));
+                    }, 30000);
+                }
+            } else {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ cmd: 'watch', id: wsLastId }));
+                } else {
+                    ws.onopen = function(event) {
+                        ws.send(JSON.stringify({ cmd: 'watch', id: wsLastId }));
+                    };
+                }
+            }
+        }
+        function showPythonScript(anchor) {
+            const id = document.getElementById('watch-id').value;
+            if (!id.length) {
+                alert('Please type a channel ID to generate a Python script for uploading files to that specific channel.');
+            } else {
+                let tmpl = document.getElementById('python-script-template').value;
+                tmpl = tmpl.replace(/%%baseurl%%/g, baseHttpURL);
+                tmpl = tmpl.replace(/%%channelid%%/g, id);
+                OV.UI.ShowMessageDialog('Python script example', '<pre>'+tmpl+'</pre>', 'Modify this script and use in your project.');
+            }
+        }
+    </script>
+    <style>
+
+    #watcher-small {
+        display: block;
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: lightblue;
+        text-align: center;
+        line-height: 32px;
+        box-sizing: border-box;
+        font-size: 0.9375em;
+        border: none rgba(0, 0, 0, 0);
+        color:black;
+        font-weight: 500;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    #watcher {
+        display: none;
+        box-sizing: border-box;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+        color: black;
+
+    }
+    #watcher table {
+        max-width: 18em;
+        table-layout: fixed;
+        border: 1px solid gray;
+        border-radius: 8px;
+        border-spacing: 0.125em;
+        padding: 1em;
+        background: white;
+        -webkit-box-shadow: 4px 4px 0px 0px #bbb;
+        -moz-box-shadow: 4px 4px 0px 0px #bbb;
+        box-shadow: 4px 4px 0px 0px #bbb;
+    }
+    #watcher h1 { font-size: 1.2em; margin: 0 }
+    #watcher h2 { font-size: 1.1em; text-align: center; }
+    #watcher input { border: 0; border-bottom: 2px solid black; height: 2em; background-color: transparent; font-weight: bold; color: black; width: 100%; }
+    #watcher textarea { width: 100%; height: 10em; border: 1px solid gray; border-radius: 6px; }
+    #watcher button {
+        background-color: #fcffa3;
+        font-weight: 500;
+        color: black;
+        border-radius: 5em;
+        padding: .5em 1em;
+        box-sizing: border-box;
+        font-size: 0.9375em;
+        border: none rgba(0, 0, 0, 0);
+        text-decoration: none;
+        display: inline-block;
+        line-height: normal;
+        white-space: nowrap;
+        vertical-align: middle;
+        text-align: center;
+        cursor: pointer;
+        -webkit-user-drag: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+    #watcher button:hover {
+        background-color: #fff456;
+    }
+    #watcher button[disabled] {
+        opacity: 0.40;
+        cursor: not-allowed;
+        -webkit-box-shadow: none;
+                box-shadow: none;
+        pointer-events: none;
+    }
+    #watcher a { color: black; text-decoration: underline;  text-decoration-style: dashed; font-size: 0.875em; }
+    #watcher #close-btn { height: 2em; width: 2em; text-align: center; padding: 0; border-radius: 50%; }
+    #watcher #watch-btn { width: 100%; }
+    #watcher #watch-status { width: 16em; height: 5em; overflow-x: auto; overflow-y: auto; }
+    #watcher #watch-status #watch-status-text { font-size: 0.875em; }
+    #watcher #python-script { font-size: 0.8125em; }
+    #python-script-template { display: none; }
+    .state-hidden { display: none !important; }
+    .state-shown { display: block !important; }
+    .state-disconnected { background-color: #ffbcbc !important; }
+    .state-connecting { background-color: #ffd861 !important; }
+    .state-connected { background-color: #64ff83 !important; }
+    .hr { border-bottom: 1px solid #777; margin: 0.5em 0; }
+    .intro_formats { display: none; }
+    </style>
+</head>
+
+<body>
+ <div id="viewer">
+    <input type="file" id="open_file" style="display:none;" multiple></input>
+    <div class="header" id="header">
+        <div class="title">
+            <div class="title_left">
+                <a href="index.html">
+                    <svg class="logo_image"><use href="assets/images/3dviewer_net_logo_text.svg#logo"></use></svg>
+                </a>
+            </div>
+            <div class="title_right" id="header_buttons"></div>
+            <div class="main_file_name only_full_width" id="main_file_name"></div>
+        </div>
+        <div class="toolbar" id="toolbar"></div>
+    </div>
+    <div class="main" id="main">
+        <div class="main_left_container only_full_width" id="main_left_container">
+            <div class="main_navigator ov_panel_set_container" id="main_navigator"></div>
+            <div class="main_splitter" id="main_navigator_splitter"></div>
+        </div>
+        <div class="main_viewer" id="main_viewer"></div>
+        <div class="main_right_container only_full_width" id="main_right_container">
+            <div class="main_splitter" id="main_sidebar_splitter"></div>
+            <div class="main_sidebar ov_panel_set_right_container" id="main_sidebar"></div>
+        </div>
+    </div>
+    <div class="intro ov_thin_scrollbar" id="intro">
+        <div class="intro_content" id="intro_content">
+            <div class="intro_logo">
+                <svg class="intro_logo"><use href="assets/images/3dviewer_net_logo_text.svg#logo"></use></svg>
+                <div class="intro_dragdrop_text" id="intro_dragdrop_text"></div>
+            </div>
+            <div class="intro_formats">
+                <div class="intro_formats_title" id="intro_formats_title"></div>
+                <div class="intro_file_formats"></div>
+            </div>
+        </div>
+    </div>
+  </div>
+  <button id="watcher-small" class="state-disconnected"
+          onclick="
+                document.getElementById('watcher').classList.add('state-shown');
+                document.getElementById('watcher').classList.remove('state-hidden');
+                document.getElementById('watcher-small').classList.add('state-hidden');
+                document.getElementById('watcher-small').classList.remove('state-shown');
+        ">T</button>
+  <div id="watcher">
+        <table id="watcher-table" class="state-disconnected">
+        <tr>
+        <td valign="middle"><h1>Files On Channel</h1></td>
+        <td valign="middle" align="right">
+            <button type="button" id="close-btn" onclick="
+                document.getElementById('watcher').classList.add('state-hidden');
+                document.getElementById('watcher').classList.remove('state-shown');
+                document.getElementById('watcher-small').classList.add('state-shown');
+                document.getElementById('watcher-small').classList.remove('state-hidden');
+            ">x</button>
+        </td>
+        </tr>
+        <tr>
+            <td valign="top" colspan="2">
+                <div class="hr"></div>
+
+                <p>Enter a channel ID to access uploaded files in the 3D viewer, whether it's a new or existing ID.
+                <a href="#" onclick="showPythonScript(this); return false;"><span id="toggle-python-script">Show</span> a Python script for file uploads</a>.</p>
+
+                <div id="channel-id-area">
+                    <h2>Channel by ID</h2>
+                    <p>
+                        <input type="text" id="watch-id" style="text-align: center" oninput="onChannelIdTyped()">
+                    </p>
+                    <p>
+                        <button type="button" id="watch-btn" onclick="watchId(document.getElementById('watch-id')?.value);">Open</button>
+                    </p>
+                </div>
+                <textarea type="text" id="python-script" class="state-hidden" value="" tabindex="-1" autocomplete="off" spellcheck="false"></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <div id="watch-status"><span id="watch-status-text">Ready to open a channel.</span></div>
+            </td>
+        </tr>
+        </table>
+  </div>
+<textarea id="python-script-template">
+import requests
+
+file_contents = {}
+file_contents['example.obj'] = read_file_to_string('example.obj')
+
+try:
+    response = requests.post('%%baseurl%%/upload/%%channelid%%', files=file_contents)
+    if response.status_code != 200:
+        print(f'Failed to upload file(s): {response.status_code} {response.reason}')
+    else:
+        print(f'File(s) uploaded successfully. View at %%baseurl%%/#channel=%%channelid%%')
+except requests.exceptions.RequestException as e:
+    print(f'Error uploading file(s): {e}')
+</textarea>
+<script>
+onChannelIdTyped();
+applyChannelFromHashURI();
+</script>
+</body>
+</html>
