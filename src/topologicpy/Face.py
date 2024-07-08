@@ -1710,7 +1710,7 @@ class Face():
         
         return_normal = None
         try:
-            return_normal = topologic.FaceUtility.NormalAtParameters(face, 0.5, 0.5)
+            return_normal = list(topologic.FaceUtility.NormalAtParameters(face, 0.5, 0.5))
         except:
             vertices = Topology.Vertices(face)+Topology.Centroid(face)
             #v1 = Face.VertexByParameters(face, u=0, v=0)
