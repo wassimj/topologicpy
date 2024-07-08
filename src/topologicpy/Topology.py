@@ -24,6 +24,9 @@ import math
 from collections import namedtuple
 from multiprocessing import Process, Queue
 
+# This is for View3D as not to open new browser windows
+opened_urls = set()
+
 try:
     import numpy as np
     from numpy import arctan, pi, signbit
@@ -8119,7 +8122,7 @@ class Topology():
         return uuid.uuid5(namespace_uuid, brep_string)
     
     @staticmethod
-    def View3D(*topologies, nameKey="name", colorKey="color", opacityKey="opacity", defaultColor=[256,256,256], defaultOpacity=0.5, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, overwrite: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
+    def View3D(*topologies, uuid = None, nameKey="name", colorKey="color", opacityKey="opacity", defaultColor=[256,256,256], defaultOpacity=0.5, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, overwrite: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Sends the input topologies to 3dviewer.net. The topologies must be 3D meshes.
 
@@ -8127,6 +8130,8 @@ class Topology():
         ----------
         topologies : list or comma separated topologies
             The input list of topologies.
+        uuid : UUID , optional
+            The UUID v5 to use to identify these topologies. The default is a UUID based on the topologies themselves.
         nameKey : str , optional
             The topology dictionary key under which to find the name of the topology. The default is "name".
         colorKey : str, optional
@@ -8168,6 +8173,7 @@ class Topology():
 
         """
         from topologicpy.Helper import Helper
+        from topologicpy.Cluster import Cluster
         import requests
         import webbrowser
 
@@ -8182,6 +8188,9 @@ class Topology():
             print("Topology.View3D - Error: The input topologies parameter is not a valid list. Returning None.")
             return None
 
+        if uuid == None:
+            cluster = Cluster.ByTopologies(new_topologies)
+            uuid = Topology.UUID(cluster)
         obj_string, mtl_string = Topology.OBJString(new_topologies,
                                                     nameKey=nameKey,
                                                     colorKey=colorKey,
@@ -8195,20 +8204,20 @@ class Topology():
                                                     tolerance=tolerance)
         
 
-        unique_id = 123
-
         file_contents = {}
         file_contents['example.obj'] = obj_string
         file_contents['example.mtl'] = mtl_string
 
         try:
-            response = requests.post('https://3dviewer.deno.dev/upload/'+str(unique_id), files=file_contents)
-            # Open the web page in the default web browser
-            # URL of the web page you want to open
-            url = "https://3dviewer.deno.dev/#channel="+str(unique_id)
-            webbrowser.open(url)
+            response = requests.post('https://3dviewer.deno.dev/upload/'+str(uuid), files=file_contents)
             if response.status_code != 200:
                 print(f'Failed to upload file(s): {response.status_code} {response.reason}')
+            # Open the web page in the default web browser
+            # URL of the web page you want to open
+            url = "https://3dviewer.deno.dev/#channel="+str(uuid)
+            if not url in opened_urls:
+                opened_urls.add(url)
+                webbrowser.open(url)
         except requests.exceptions.RequestException as e:
             print(f'Error uploading file(s): {e}')
         return True
