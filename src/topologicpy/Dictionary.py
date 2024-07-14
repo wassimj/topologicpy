@@ -162,7 +162,7 @@ class Dictionary():
         dictionaries : list or comma separated dictionaries
             The input list of dictionaries to be merged.
         silent : bool , optional
-            If set to True, error and warning messages are not displayed. Otherwise, they are. The default is False.
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------

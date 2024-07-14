@@ -232,7 +232,7 @@ class Edge():
         tolerance : float , optional
             The desired tolerance to decide if an Edge can be created. The default is 0.0001.
         silent : bool , optional
-            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         
         Returns
         -------
@@ -280,7 +280,7 @@ class Edge():
         tolerance : float , optional
             The desired tolerance to decide if an edge can be created. The default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are printed. Otherwise, they are not. The default is True.
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -480,7 +480,7 @@ class Edge():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, not error or warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         
         Returns
         -------
@@ -532,7 +532,8 @@ class Edge():
         intVertex = Topology.Intersect(new_edge, edgeB, tolerance=tolerance)
         if intVertex:
             return Edge.ByVertices([v1, intVertex], tolerance=tolerance, silent=True)
-        print("Edge.ExtendToEdge - Error: The operation failed. Returning None.")
+        if not silent:
+            print("Edge.ExtendToEdge - Error: The operation failed. Returning None.")
         return None
     
     @staticmethod
@@ -936,11 +937,11 @@ class Edge():
         if not Topology.IsInstance(edge, "Edge"):
             print("Edge.Normal - Error: The input edge parameter is not a valid edge. Returning None.")
             return None
-        normal_edge = Edge.NormalAsEdge(edge, length=1.0, u=0.5, angle=angle)
+        normal_edge = Edge.NormalEdge(edge, length=1.0, u=0.5, angle=angle)
         return Edge.Direction(normal_edge)
 
     @staticmethod
-    def NormalAsEdge(edge, length: float = 1.0, u: float = 0.5, angle: float = 0.0):
+    def NormalEdge(edge, length: float = 1.0, u: float = 0.5, angle: float = 0.0):
         """
         Returns the normal (perpendicular) vector to the input edge as an edge.
 
@@ -996,10 +997,10 @@ class Edge():
             return start_vertex, list(normal_end_vertex)
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.NormalAsEdge - Error: The input edge parameter is not a valid edge. Returning None.")
+            print("Edge.NormalEdge - Error: The input edge parameter is not a valid edge. Returning None.")
             return None
         if length <= 0.0:
-            print("Edge.NormalAsEdge - Error: The input length parameter is not a positive number greater than zero. Returning None.")
+            print("Edge.NormalEdge - Error: The input length parameter is not a positive number greater than zero. Returning None.")
             return None
         edge_direction = Edge.Direction(edge)
         x, y, z = edge_direction
@@ -1062,7 +1063,7 @@ class Edge():
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         silent : bool , optional
-            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1238,7 +1239,7 @@ class Edge():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, not error or warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         
         Returns
         -------

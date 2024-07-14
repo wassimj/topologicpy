@@ -999,8 +999,6 @@ class Topology():
             else:
                 cellsB_2.append(cellB)
         
-        print("cellsA_2", cellsA_2)
-        print("cellsB_2", cellsB_2)
         for cellA in cellsA_2:
             for cellB in cellsB_2:
                 cellC = cellA.Intersect(cellB)
@@ -2036,7 +2034,7 @@ class Topology():
         try:
             import ezdxf
         except:
-            print("Topology.ExportToDXF - Information: Installing required ezdxf library.")
+            print("Topology.ByDXFPath - Information: Installing required ezdxf library.")
             try:
                 os.system("pip install ezdxf")
             except:
@@ -6525,7 +6523,7 @@ class Topology():
         return return_topology
 
     @staticmethod
-    def SetDictionary(topology, dictionary):
+    def SetDictionary(topology, dictionary, silent=False):
         """
         Sets the input topology's dictionary to the input dictionary
 
@@ -6535,6 +6533,8 @@ class Topology():
             The input topology.
         dictionary : topologic_core.Dictionary
             The input dictionary.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -6545,15 +6545,18 @@ class Topology():
         from topologicpy.Dictionary import Dictionary
 
         if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
-            print("Topology.SetDictionary - Error: the input topology parameter is not a valid topology or graph. Returning None.")
+            if not silent:
+                print("Topology.SetDictionary - Error: the input topology parameter is not a valid topology or graph. Returning None.")
             return None
         if isinstance(dictionary, dict):
             dictionary = Dictionary.ByPythonDictionary(dictionary)
         if not Topology.IsInstance(dictionary, "Dictionary"):
-            print("Topology.SetDictionary - Warning: the input dictionary parameter is not a valid dictionary. Returning original input.")
+            if not silent:
+                print("Topology.SetDictionary - Warning: the input dictionary parameter is not a valid dictionary. Returning original input.")
             return topology
         if len(dictionary.Keys()) < 1:
-            print("Topology.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
+            if not silent:
+                print("Topology.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
             return topology
         _ = topology.SetDictionary(dictionary)
         return topology

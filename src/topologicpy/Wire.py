@@ -49,96 +49,66 @@ class Wire(Topology):
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Face import Face
-        from topologicpy.Topology import Topology
-
-        def segmented_arc(x1, y1, x2, y2, x3, y3, sides):
-            import math
-            """
-            Generates a segmented arc passing through the three given points.
-
-            Arguments:
-            x1, y1: Coordinates of the first point
-            x2, y2: Coordinates of the second point
-            x3, y3: Coordinates of the third point
-            sides: Number of sides to divide the arc
-
-            Returns:
-            List of tuples [x, y] representing the segmented arc passing through the points
-            """
-
-            # Calculate the center of the circle
-            A = x2 - x1
-            B = y2 - y1
-            C = x3 - x1
-            D = y3 - y1
-            E = A * (x1 + x2) + B * (y1 + y2)
-            F = C * (x1 + x3) + D * (y1 + y3)
-            G = 2 * (A * (y3 - y2) - B * (x3 - x2))
-            if G == 0:
-                center_x = 0
-                center_y = 0
-            else:
-                center_x = (D * E - B * F) / G
-                center_y = (A * F - C * E) / G
-
-            # Calculate the radius of the circle
-            radius = math.sqrt((center_x - x1) ** 2 + (center_y - y1) ** 2)
-
-            # Calculate the angles between the center and the three points
-            angle1 = math.atan2(y1 - center_y, x1 - center_x)
-            angle3 = math.atan2(y3 - center_y, x3 - center_x)
-
-            # Calculate the angle between points 1 and 3
-            angle13 = (angle3 - angle1) % (2 * math.pi)
-            if angle13 < 0:
-                angle13 += 2 * math.pi
-
-            # Determine the direction of the arc based on the angle between points 1 and 3
-            if angle13 < math.pi:
-                start_angle = angle3
-                end_angle = angle1
-            else:
-                start_angle = angle1
-                end_angle = angle3
-
-            # Calculate the angle increment
-            angle_increment = (end_angle - start_angle) / sides
-
-            # Generate the points of the arc passing through the points
-            arc_points = []
-            for i in range(sides + 1):
-                angle = start_angle + i * angle_increment
-                x = center_x + radius * math.cos(angle)
-                y = center_y + radius * math.sin(angle)
-                arc_points.append([x, y])
-
-            return arc_points
-        if not Topology.IsInstance(startVertex, "Vertex"):
-            print("Wire.Arc - Error: The startVertex parameter is not a valid vertex. Returning None.")
-            return None
-        if not Topology.IsInstance(middleVertex, "Vertex"):
-            print("Wire.Arc - Error: The middleVertex parameter is not a valid vertex. Returning None.")
-            return None
-        if not Topology.IsInstance(endVertex, "Vertex"):
-            print("Wire.Arc - Error: The endVertex parameter is not a valid vertex. Returning None.")
-            return None
-        if Vertex.AreCollinear([startVertex, middleVertex, endVertex], tolerance = tolerance):
-            return Wire.ByVertices([startVertex, middleVertex, endVertex], close=False)
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Vector import Vector
+        import numpy as np
         
-        w = Wire.ByVertices([startVertex, middleVertex, endVertex], close=True)
-        f = Face.ByWire(w, tolerance=tolerance)
-        normal = Face.Normal(f)
-        flat_w = Topology.Flatten(w, origin=startVertex, direction=normal)
-        v1, v2, v3 = Topology.Vertices(flat_w)
-        x1, y1, z1 = Vertex.Coordinates(v1)
-        x2, y2, z2 = Vertex.Coordinates(v2)
-        x3, y3, z3 = Vertex.Coordinates(v3)
-        arc_points = segmented_arc(x1, y1, x2, y2, x3, y3, sides)
-        arc_verts = [Vertex.ByCoordinates(coord[0], coord[1], 0) for coord in arc_points]
-        arc = Wire.ByVertices(arc_verts, close=close)
-        # Unflatten the arc
-        arc = Topology.Unflatten(arc, origin=startVertex, direction=normal)
+
+        def calculate_circle_center_and_radius(sv, mv, ev):
+            """
+            Calculate the center and radius of the circle passing through three points.
+            
+            Parameters:
+            sv (tuple): The start vertex as (x, y, z).
+            mv (tuple): The middle vertex as (x, y, z).
+            ev (tuple): The end vertex as (x, y, z).
+            
+            Returns:
+            tuple: The center of the circle as (x, y, z) and the radius.
+            """
+            # Convert points to numpy arrays for easier manipulation
+            A = np.array(sv)
+            B = np.array(mv)
+            C = np.array(ev)
+            
+            # Calculate the lengths of the sides of the triangle
+            a = np.linalg.norm(B - C)
+            b = np.linalg.norm(C - A)
+            c = np.linalg.norm(A - B)
+            
+            # Calculate the circumcenter using the formula
+            D = 2 * (A[0] * (B[1] - C[1]) + B[0] * (C[1] - A[1]) + C[0] * (A[1] - B[1]))
+            Ux = ((A[0]**2 + A[1]**2) * (B[1] - C[1]) + (B[0]**2 + B[1]**2) * (C[1] - A[1]) + (C[0]**2 + C[1]**2) * (A[1] - B[1])) / D
+            Uy = ((A[0]**2 + A[1]**2) * (C[0] - B[0]) + (B[0]**2 + B[1]**2) * (A[0] - C[0]) + (C[0]**2 + C[1]**2) * (B[0] - A[0])) / D
+            center = np.array([Ux, Uy, A[2]])
+            
+            # Calculate the radius
+            radius = np.linalg.norm(center - A)
+            
+            return center, radius
+        
+        
+        e2 = Edge.ByVertices(middleVertex, endVertex)
+        
+        center, radius = calculate_circle_center_and_radius(Vertex.Coordinates(startVertex), Vertex.Coordinates(middleVertex), Vertex.Coordinates(endVertex))
+        center = Vertex.ByCoordinates(list(center))
+        
+        e1 = Edge.ByVertices(center, startVertex)
+        e2 = Edge.ByVertices(center, endVertex)
+        ang1 = Vector.CompassAngle(Vector.North(), Edge.Direction(e1))
+        ang2 = Vector.CompassAngle(Vector.North(), Edge.Direction(e2))
+        arc1 = Wire.Circle(origin=center, radius=radius, fromAngle=ang1, toAngle=ang2, sides=sides*4, close=False)
+        arc2 = Wire.Circle(origin=center, radius=radius, fromAngle=ang2, toAngle=ang1, sides=sides*4, close=False)
+        if Vertex.IsInternal(middleVertex, arc1):
+            arc = arc1
+        else:
+            arc = arc2
+        final_vertices = []
+        for i in range(sides+1):
+            v = Wire.VertexByParameter(arc, float(i)/float(sides))
+            final_vertices.append(v)
+        arc = Wire.ByVertices(final_vertices, close=close)
         return arc
     
     @staticmethod
@@ -340,9 +310,9 @@ class Wire(Topology):
         return Wire.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
-    def ByOffset(wire, offset: float = 1.0, bisectors: bool = False, tolerance: float = 0.0001):
+    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", bisectors: bool = False, tolerance: float = 0.0001,  silent: bool = False):
         """
-        Creates an offset wire from the input wire. A positive offset value results in an offset to the interior of the anti-clockwise wire.
+        Creates an offset wire from the input wire. A positive offset value results in an offset to the interior of an anti-clockwise wire.
 
         Parameters
         ----------
@@ -350,10 +320,14 @@ class Wire(Topology):
             The input wire.
         offset : float , optional
             The desired offset distance. The default is 1.0.
+        offsetKey : str , optional
+            The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. The default is "offset".
         bisectors : bool , optional
             If set to True, The bisectors (seams) edges will be included in the returned wire. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         
         Returns
         -------
@@ -361,74 +335,112 @@ class Wire(Topology):
             The created wire.
 
         """
-        def compute_h(alpha, offset):
-            import math
-            alpha = math.radians(alpha) *0.5
-            h = offset/math.cos(alpha)
-            return h
-        
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
-        import math
 
         if not Topology.IsInstance(wire, "Wire"):
-            print("Wire.ByOffset - Error: The input wire parameter is not a valid wire. Returning None")
-            return None
-        if abs(offset) < tolerance:
-            return wire
-        vertices = Topology.Vertices(wire)
-        if len(vertices) < 3:
-            print("Wire.ByOffset - Error: The input wire parameter contains less than three vertices. Cannot proceed. Returning None")
-            return None
-        if not Wire.IsClosed(wire):
-            w = Wire.ByVertices(vertices, close=True)
-        else:
-            w = wire
-        three_vertices = Wire.Vertices(w)[0:3]
-        temp_w = Wire.ByVertices(three_vertices, close=True)
-        flat_face = Face.ByWire(temp_w, tolerance=tolerance)
+            if not silent:
+                print("Wire.ByOffset - Error: The input wire parameter is not a valid wire. Returning None.")
+                return None
         origin = Vertex.Origin()
-        normal = Face.Normal(flat_face)
-        flat_wire = Topology.Flatten(w, origin=origin, direction=normal)
-        edges = Wire.Edges(flat_wire)
-        vertices = Wire.Vertices(flat_wire)
-        int_angles = Wire.InteriorAngles(flat_wire)
-        bisector_list = []
-        final_vertices = []
-        for i in range(len(vertices)):
-            v_edges = Topology.SuperTopologies(vertices[i], flat_wire, topologyType="edge")
-            if len(v_edges) < 2:
-                continue
-            bisector = Edge.Bisect(v_edges[0], v_edges[1], length=offset, placement=1)
-            if int_angles[i] > 180:
-                bisector = Topology.TranslateByDirectionDistance(bisector, Vector.Reverse(Edge.Direction(bisector)), distance=abs(offset))
-                bisector = Edge.Reverse(bisector)
-            
-            h = abs(compute_h(180-int_angles[i], abs(offset)))
-            bisector = Edge.SetLength(bisector, length=h, bothSides=False)
-            final_vertices.append(Edge.EndVertex(bisector))        
-            bisector_list.append(bisector)
-        return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
-        vertices = Topology.Vertices(return_wire)
-        if not Wire.IsClosed(wire):
-            sv = Topology.Vertices(flat_wire)[0]
-            ev = Topology.Vertices(flat_wire)[-1]
-            first_edge = Topology.SuperTopologies(sv, flat_wire, topologyType="edge")[0]
-            first_normal = Edge.NormalAsEdge(first_edge, length=abs(offset), u = 0)
-            last_edge = Topology.SuperTopologies(ev, flat_wire, topologyType="edge")[0]
-            last_normal = Edge.NormalAsEdge(last_edge, length=abs(offset), u = 1.0)
-            sv1 = Edge.EndVertex(first_normal)
-            ev1 = Edge.EndVertex(last_normal)
-            vertices = [sv1] + vertices[1:-1] + [ev1]
-            bisector_list = [first_normal] + bisector_list[1:-1] + [last_normal]
-        return_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(wire))
-        if bisectors:
-            return_wire = Topology.SelfMerge(Cluster.ByTopologies(bisector_list, Topology.Edges(return_wire)))
-        return_wire = Topology.Unflatten(return_wire, origin=origin, direction=normal)
+        temp_vertices = [Topology.Vertices(wire)[0], Topology.Vertices(wire)[1], Topology.Centroid(wire)]
+        temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True))
+        temp_normal_edge = Face.NormalEdge(temp_face, length=4)
+        temp_normal = Face.Normal(temp_face)
+        flat_wire = Topology.Flatten(wire, direction=temp_normal, origin=origin)
+        normal = Face.Normal(temp_face)
+        if normal[2] < 0:
+            wire = Wire.Reverse(wire, transferDictionaries=True)
+        flat_wire = Topology.Flatten(wire, direction=normal, origin=origin)
+        original_edges = Topology.Edges(wire)
+        edges = Topology.Edges(flat_wire)
+        offsets = []
+        offset_edges = []
+        for edge in edges:
+            d = Topology.Dictionary(edge)
+            d_offset = Dictionary.ValueAtKey(d, offsetKey)
+            if d_offset == None:
+                d_offset = offset
+            offsets.append(d_offset)
+            offset_edge = Edge.ByOffset2D(edge, d_offset)
+            offset_edge = Edge.Extend(offset_edge, distance=Edge.Length(offset_edge)*4)
+            offset_edges.append(offset_edge)
+        o_edges = []
+        for i in range(len(edges)):
+            edge_a = edges[i]
+            o_edge_a = offset_edges[i]
+            if i == 0:
+                if Wire.IsClosed(wire) == False:
+                    ex_start = offsets[i]
+                    ex_end = offsets[i+1]
+                    prev_edge = Edge.NormalEdge(edges[i], u=0, length=5+Edge.Length(edges[i])+offsets[i])
+                    direc = Edge.Direction(prev_edge)
+                    prev_edge = Topology.TranslateByDirectionDistance(prev_edge, distance=Edge.Length(prev_edge)*0.5, direction=Vector.Reverse(direc))
+                    next_edge = offset_edges[i+1]
+                else:
+                    ex_start = offsets[-1]
+                    ex_end = offsets[i+1]
+                    prev_edge = offset_edges[-1]
+                    next_edge = offset_edges[i+1]
+            elif i == len(edges)-1:
+                if Wire.IsClosed(wire) == False:
+                    ex_start = offsets[i-1]
+                    ex_end = offsets[i]
+                    prev_edge = offset_edges[i-1]
+                    next_edge = Edge.NormalEdge(edges[i], u=1, length=Edge.Length(edges[i]))
+                else:
+                    ex_start = offsets[i-1]
+                    ex_end = offsets[0]
+                    prev_edge = offset_edges[i-1]
+                    next_edge = offset_edges[0]
+            else:
+                ex_start = offsets[i-1]
+                ex_end = offsets[i+1]
+                prev_edge = offset_edges[i-1]
+                next_edge = offset_edges[i+1]
+            temp_edge = Edge.TrimByEdge(o_edge_a, prev_edge, reverse=True, tolerance=tolerance) or o_edge_a
+            temp_edge = Edge.TrimByEdge(temp_edge, next_edge, reverse=True, tolerance=tolerance) or temp_edge
+            temp_edge = Edge.ExtendToEdge(temp_edge, next_edge, tolerance=tolerance, silent=False) or temp_edge
+            temp_edge = Edge.ExtendToEdge(temp_edge, prev_edge, tolerance=tolerance, silent=False) or temp_edge
+            if temp_edge:
+                temp_edge = Edge.Reverse(temp_edge)
+                if bisectors:
+                    if abs(ex_start) > tolerance and abs(offsets[i]) > tolerance :
+                        sv1 = Edge.StartVertex(edge_a)
+                        sv2 = Edge.StartVertex(temp_edge)
+                        bisector = Edge.ByVertices(sv1, sv2)
+                        o_edges.append(bisector)
+                        if i == len(edges)-1:
+                            ev1 = Edge.EndVertex(edge_a)
+                            ev2 = Edge.EndVertex(temp_edge)
+                            bisector = Edge.ByVertices(ev1, ev2)
+                            o_edges.append(bisector)
+                o_edges.append(temp_edge)
+        cluster = Cluster.ByTopologies(o_edges)
+        vertices = Topology.Vertices(cluster)
+        verts = [Vertex.Coordinates(v) for v in vertices]
+        geo = Topology.Geometry(cluster)
+        eds = geo['edges']
+        verts = geo['vertices']
+        vertices = [Vertex.ByCoordinates(coord) for coord in verts]
+        vertices = Vertex.Fuse(vertices, tolerance=tolerance)
+        verts = [Vertex.Coordinates(v, mantissa=4) for v in vertices]
+        return_wire = Topology.SelfMerge(Topology.ByGeometry(vertices=verts, edges=eds, faces=[]), tolerance=tolerance)
+        if not Topology.IsInstance(return_wire, "Wire"):
+            if not silent:
+                print(return_wire)
+                print("Wire.ByOffset - Warning: The resulting wire is not well-formed, please check your offsets.")
+        else:
+            if not Wire.IsManifold(return_wire) and bisectors == False:
+                if not silent:
+                    print("Wire.ByOffset - Warning: The resulting wire is not well-formed, please check your offsets.")
+        return_wire = Topology.Unflatten(return_wire, direction=normal, origin=origin)
         return return_wire
 
     @staticmethod
@@ -1274,7 +1286,7 @@ class Wire(Topology):
         return Cluster.ByTopologies([v for v in Topology.Vertices(wire) if (Vertex.Degree(v, wire, topologyType="edge") == 1)])
     
     @staticmethod
-    def Fillet(wire, radius: float = 0, radiusKey: str = None, tolerance: float = 0.0001, silent: bool = False):
+    def Fillet(wire, radius: float = 0, sides: int = 16, radiusKey: str = None, tolerance: float = 0.0001, silent: bool = False):
         """
         Fillets (rounds) the interior and exterior corners of the input wire given the input radius. See https://en.wikipedia.org/wiki/Fillet_(mechanics)
 
@@ -1286,10 +1298,12 @@ class Wire(Topology):
             The desired radius of the fillet.
         radiusKey : str , optional
             If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. The default is None.
+        sides : int , optional
+            The number of sides (segments) of the fillet. The default is 16.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1316,7 +1330,6 @@ class Wire(Topology):
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
         from topologicpy.Dictionary import Dictionary
@@ -1340,7 +1353,6 @@ class Wire(Topology):
         flat_wire = Topology.Flatten(wire, origin=Vertex.Origin(), direction=normal)
         vertices = Topology.Vertices(flat_wire)
         final_vertices = []
-        fillets = []
         for v in vertices:
             radius = orig_radius
             edges = Topology.SuperTopologies(v, flat_wire, topologyType="edge")
@@ -1374,22 +1386,11 @@ class Wire(Topology):
                             v1 = Topology.TranslateByDirectionDistance(v, dir1, a)
                             center = Topology.TranslateByDirectionDistance(v, dir_bisector, h)
                             v2 = Topology.TranslateByDirectionDistance(v, dir2, a)
-                            r1 = Edge.ByVertices(center, v1)
-                            dir1 = Edge.Direction(r1)
-                            r2 = Edge.ByVertices(center, v2)
-                            dir2 = Edge.Direction(r2)
-                            compass1 = Vector.CompassAngle(Vector.East(), dir1)*-1
-                            compass2 = Vector.CompassAngle(Vector.East(), dir2)*-1
-                            if compass2 < compass1:
-                                temp = compass2
-                                compass2 = compass1
-                                compass1 = temp
-                            w1 = Wire.Circle(origin=center, radius=radius, fromAngle=compass1, toAngle=compass2, close=False)
-                            w2 = Wire.Circle(origin=center, radius=radius, fromAngle=compass2, toAngle=compass1, close=False)
-                            if Wire.Length(w1) < Wire.Length(w2):
-                                fillet = w1
-                            else:
-                                fillet = w2
+                            fillet = Wire.Circle(origin=center, radius=radius, close=True)
+                            bisector = Edge.ByVertices(v, center)
+                            mid_vertex = Topology.Slice(bisector, fillet)
+                            mid_vertex = Topology.Vertices(mid_vertex)[1]
+                            fillet = Wire.Arc(v1, mid_vertex, v2, sides=sides, close= False)
                             f_sv = Wire.StartVertex(fillet)
                             if Vertex.Distance(f_sv, edge1) < Vertex.Distance(f_sv, edge0):
                                 fillet = Wire.Reverse(fillet)
@@ -1869,7 +1870,7 @@ class Wire(Topology):
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -2071,7 +2072,7 @@ class Wire(Topology):
         return return_normal
     
     @staticmethod
-    def OrientEdges(wire, vertexA, tolerance=0.0001):
+    def OrientEdges(wire, vertexA, transferDictionaries = False, tolerance=0.0001):
         """
         Returns a correctly oriented head-to-tail version of the input wire. The input wire must be manifold.
 
@@ -2081,6 +2082,8 @@ class Wire(Topology):
             The input wire.
         vertexA : topologic_core.Vertex
             The desired start vertex of the wire.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries of the original wire are transfered to the new wire. Otherwise, they are not. The default is False.
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 
@@ -2092,6 +2095,8 @@ class Wire(Topology):
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(wire, "Wire"):
             print("Wire.OrientEdges - Error: The input wire parameter is not a valid wire. Returning None.")
@@ -2104,6 +2109,15 @@ class Wire(Topology):
             return None
         oriented_edges = []
         remaining_edges = Topology.Edges(wire)
+        original_vertices = Topology.Vertices(wire)
+        if transferDictionaries:
+            edge_selectors = []
+            for i, e_s in enumerate(remaining_edges):
+                s = Topology.Centroid(e_s)
+                d = Topology.Dictionary(e_s)
+                s = Topology.SetDictionary(s, d)
+                edge_selectors.append(s)
+
         current_vertex = vertexA
         while remaining_edges:
             next_edge = None
@@ -2126,7 +2140,12 @@ class Wire(Topology):
         for i, edge in enumerate(oriented_edges):
             vertices.append(Edge.EndVertex(edge))
             
-        return Wire.ByVertices(vertices, close=Wire.IsClosed(wire))
+        return_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(wire))
+        if transferDictionaries:
+            return_wire = Topology.TransferDictionariesBySelectors(return_wire, selectors=edge_selectors, tranEdges=True)
+            return_wire = Topology.TransferDictionariesBySelectors(return_wire, selectors=original_vertices, tranVertices=True)
+        return_wire = Topology.SetDictionary(return_wire, Topology.Dictionary(wire), silent=True)
+        return return_wire
 
     @staticmethod
     def Planarize(wire, origin= None, mantissa: int = 6, tolerance: float = 0.0001):
@@ -2420,7 +2439,7 @@ class Wire(Topology):
             return wire
     
     @staticmethod
-    def Reverse(wire, tolerance: float = 0.0001):
+    def Reverse(wire, transferDictionaries = False, tolerance: float = 0.0001):
         """
         Creates a wire that has the reverse direction of the input wire.
 
@@ -2428,6 +2447,8 @@ class Wire(Topology):
         ----------
         wire : topologic_core.Wire
             The input wire.
+        transferDictionaries : bool , optional
+            If set to True the dictionaries of the input wire are transferred to the new wire. Othwerwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -2446,10 +2467,23 @@ class Wire(Topology):
             print("Wire.Reverse - Error: The input wire parameter is not a manifold wire. Returning None.")
             return None
         
+        original_vertices = Topology.Vertices(wire)
+        edges = Topology.Edges(wire)
+        if transferDictionaries:
+            edge_selectors = []
+            for i, e_s in enumerate(edges):
+                s = Topology.Centroid(e_s)
+                d = Topology.Dictionary(e_s)
+                s = Topology.SetDictionary(s, d)
+                edge_selectors.append(s)
         vertices = Topology.Vertices(wire)
         vertices.reverse()
-        new_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
-        return new_wire
+        return_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
+        if transferDictionaries:
+            return_wire = Topology.TransferDictionariesBySelectors(return_wire, selectors=edge_selectors, tranEdges=True)
+            return_wire = Topology.TransferDictionariesBySelectors(return_wire, selectors=original_vertices, tranVertices=True)
+        return_wire = Topology.SetDictionary(return_wire, Topology.Dictionary(wire), silent=True)
+        return return_wire
 
     @staticmethod
     def Roof(face, angle: float = 45, tolerance: float = 0.001):
@@ -3365,13 +3399,13 @@ class Wire(Topology):
         from topologicpy.Edge import Edge
 
         if not Topology.IsInstance(wire, "Wire"):
-            print("Wire.VertexAtParameter - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            print("Wire.VertexByParameter - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
         if u < 0 or u > 1:
-            print("Wire.VertexAtParameter - Error: The input u parameter is not within the valid range of [0, 1]. Returning None.")
+            print("Wire.VertexByParameter - Error: The input u parameter is not within the valid range of [0, 1]. Returning None.")
             return None
         if not Wire.IsManifold(wire):
-            print("Wire.VertexAtParameter - Error: The input wire parameter is non-manifold. Returning None.")
+            print("Wire.VertexByParameter - Error: The input wire parameter is non-manifold. Returning None.")
             return None
         
         if u == 0:

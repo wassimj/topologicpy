@@ -154,7 +154,8 @@ class Cluster():
         transferDictionaries : bool , optional
             If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. The default is False.
         silent : bool , optional
-            If set to True, error and warning messages are not displayed. Otherwise, they are. The default is False.
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
         Returns
         -------
         topologic_core.Cluster
