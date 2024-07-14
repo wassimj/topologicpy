@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Wire module &mdash; topologicpy 0.7.26 documentation</title>
+  <title>topologicpy.Wire module &mdash; topologicpy 0.7.27 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.26
+                0.7.27
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -244,7 +244,7 @@
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOCCTShape</span></code>(occtShape)</p></td>
 <td><p>Creates a topology from the input OCCT shape.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByOffset" title="topologicpy.Wire.Wire.ByOffset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset</span></code></a>(wire[, offset, bisectors, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByOffset" title="topologicpy.Wire.Wire.ByOffset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset</span></code></a>(wire[, offset, offsetKey, ...])</p></td>
 <td><p>Creates an offset wire from the input wire.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByVertices" title="topologicpy.Wire.Wire.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(vertices[, close, tolerance])</p></td>
@@ -361,7 +361,7 @@
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code>(topology)</p></td>
 <td><p>Returns the faces of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Fillet" title="topologicpy.Wire.Wire.Fillet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fillet</span></code></a>(wire[, radius, radiusKey, tolerance, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Fillet" title="topologicpy.Wire.Wire.Fillet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fillet</span></code></a>(wire[, radius, sides, radiusKey, ...])</p></td>
 <td><p>Fillets (rounds) the interior and exterior corners of the input wire given the input radius.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Filter</span></code>(topologies[, topologyType, ...])</p></td>
@@ -460,7 +460,7 @@
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Orient</span></code>(topology[, origin, dirA, dirB, tolerance])</p></td>
 <td><p>Orients the input topology such that the input such that the input dirA vector is parallel to the input dirB vector.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.OrientEdges" title="topologicpy.Wire.Wire.OrientEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OrientEdges</span></code></a>(wire, vertexA[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.OrientEdges" title="topologicpy.Wire.Wire.OrientEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OrientEdges</span></code></a>(wire, vertexA[, ...])</p></td>
 <td><p>Returns a correctly oriented head-to-tail version of the input wire.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">Place</span></code>(topology[, originA, originB, mantissa])</p></td>
@@ -499,7 +499,7 @@
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReplaceVertices</span></code>(topology[, verticesA, ...])</p></td>
 <td><p>Replaces the vertices in the first input list with the vertices in the second input list and rebuilds the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Reverse" title="topologicpy.Wire.Wire.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(wire[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Reverse" title="topologicpy.Wire.Wire.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(wire[, transferDictionaries, tolerance])</p></td>
 <td><p>Creates a wire that has the reverse direction of the input wire.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Roof" title="topologicpy.Wire.Wire.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, tolerance])</p></td>
@@ -523,7 +523,7 @@
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelfMerge</span></code>(topology[, transferDictionaries, ...])</p></td>
 <td><p>Self merges the input topology to return the most logical topology type given the input data.</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code>(topology, dictionary)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code>(topology, dictionary[, silent])</p></td>
 <td><p>Sets the input topology's dictionary to the input dictionary</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedEdges</span></code>(topologyA, topologyB)</p></td>
@@ -783,8 +783,8 @@ A maximum optimization number of 10 will attempt to reduce the bounding rectangl
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.ByOffset">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOffset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bisectors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.ByOffset" title="Permalink to this definition"></a></dt>
-<dd><p>Creates an offset wire from the input wire. A positive offset value results in an offset to the interior of the anti-clockwise wire.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOffset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offsetKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'offset'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bisectors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.ByOffset" title="Permalink to this definition"></a></dt>
+<dd><p>Creates an offset wire from the input wire. A positive offset value results in an offset to the interior of an anti-clockwise wire.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -792,9 +792,13 @@ A maximum optimization number of 10 will attempt to reduce the bounding rectangl
 </dd>
 <dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset distance. The default is 1.0.</p>
 </dd>
+<dt><strong>offsetKey</strong><span class="classifier">str , optional</span></dt><dd><p>The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. The default is “offset”.</p>
+</dd>
 <dt><strong>bisectors</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, The bisectors (seams) edges will be included in the returned wire. The default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1173,7 +1177,7 @@ Based on the inputMode value, only the following inputs will be considered. The 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Fillet">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Fillet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radiusKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Fillet" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Fillet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radiusKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Fillet" title="Permalink to this definition"></a></dt>
 <dd><p>Fillets (rounds) the interior and exterior corners of the input wire given the input radius. See <a class="reference external" href="https://en.wikipedia.org/wiki/Fillet_(mechanics">https://en.wikipedia.org/wiki/Fillet_(mechanics</a>)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1184,9 +1188,11 @@ Based on the inputMode value, only the following inputs will be considered. The 
 </dd>
 <dt><strong>radiusKey</strong><span class="classifier">str , optional</span></dt><dd><p>If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. The default is None.</p>
 </dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides (segments) of the fillet. The default is 16.</p>
+</dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1422,7 +1428,7 @@ The default is “center”.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to False, error and warning messages are printed. Otherwise, they are not. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1461,7 +1467,7 @@ The default is “center”.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.OrientEdges">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OrientEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.OrientEdges" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OrientEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.OrientEdges" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a correctly oriented head-to-tail version of the input wire. The input wire must be manifold.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1469,6 +1475,8 @@ The default is “center”.</p>
 <dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
 </dd>
 <dt><strong>vertexA</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The desired start vertex of the wire.</p>
+</dd>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries of the original wire are transfered to the new wire. Otherwise, they are not. The default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
@@ -1595,12 +1603,14 @@ The default is “center”.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Reverse">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Reverse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Reverse" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Reverse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Reverse" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a wire that has the reverse direction of the input wire.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+</dd>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the dictionaries of the input wire are transferred to the new wire. Othwerwise, they are not. The default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>

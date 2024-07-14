@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.7.26 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.7.27 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.26
+                0.7.27
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -592,7 +592,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SelfMerge" title="topologicpy.Topology.Topology.SelfMerge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelfMerge</span></code></a>(topology[, transferDictionaries, ...])</p></td>
 <td><p>Self merges the input topology to return the most logical topology type given the input data.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetDictionary" title="topologicpy.Topology.Topology.SetDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code></a>(topology, dictionary)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetDictionary" title="topologicpy.Topology.Topology.SetDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code></a>(topology, dictionary[, silent])</p></td>
 <td><p>Sets the input topology's dictionary to the input dictionary</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedEdges" title="topologicpy.Topology.Topology.SharedEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedEdges</span></code></a>(topologyA, topologyB)</p></td>
@@ -3045,7 +3045,7 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.SetDictionary">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetDictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.SetDictionary" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetDictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.SetDictionary" title="Permalink to this definition"></a></dt>
 <dd><p>Sets the input topology’s dictionary to the input dictionary</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3053,6 +3053,8 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary</span></dt><dd><p>The input dictionary.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
