@@ -348,20 +348,21 @@ class Wire(Topology):
             if not silent:
                 print("Wire.ByOffset - Error: The input wire parameter is not a valid wire. Returning None.")
                 return None
+        
         origin = Vertex.Origin()
         temp_vertices = [Topology.Vertices(wire)[0], Topology.Vertices(wire)[1], Topology.Centroid(wire)]
         temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True))
-        temp_normal_edge = Face.NormalEdge(temp_face, length=4)
         temp_normal = Face.Normal(temp_face)
         flat_wire = Topology.Flatten(wire, direction=temp_normal, origin=origin)
         normal = Face.Normal(temp_face)
         if normal[2] < 0:
             wire = Wire.Reverse(wire, transferDictionaries=True)
         flat_wire = Topology.Flatten(wire, direction=normal, origin=origin)
-        original_edges = Topology.Edges(wire)
         edges = Topology.Edges(flat_wire)
         offsets = []
         offset_edges = []
+        final_vertices = []
+        bisectors_list = []
         for edge in edges:
             d = Topology.Dictionary(edge)
             d_offset = Dictionary.ValueAtKey(d, offsetKey)
@@ -369,77 +370,68 @@ class Wire(Topology):
                 d_offset = offset
             offsets.append(d_offset)
             offset_edge = Edge.ByOffset2D(edge, d_offset)
-            offset_edge = Edge.Extend(offset_edge, distance=Edge.Length(offset_edge)*4)
             offset_edges.append(offset_edge)
         o_edges = []
         for i in range(len(edges)):
             edge_a = edges[i]
             o_edge_a = offset_edges[i]
+            v_a = Edge.StartVertex(edges[i])
             if i == 0:
                 if Wire.IsClosed(wire) == False:
-                    ex_start = offsets[i]
-                    ex_end = offsets[i+1]
-                    prev_edge = Edge.NormalEdge(edges[i], u=0, length=5+Edge.Length(edges[i])+offsets[i])
-                    direc = Edge.Direction(prev_edge)
-                    prev_edge = Topology.TranslateByDirectionDistance(prev_edge, distance=Edge.Length(prev_edge)*0.5, direction=Vector.Reverse(direc))
-                    next_edge = offset_edges[i+1]
+                    v1 = Edge.StartVertex(offset_edges[0])
+                    final_vertices.append(v1)
+                    if bisectors == True:
+                        bisectors_list.append(Edge.ByVertices(v_a, v1))
                 else:
-                    ex_start = offsets[-1]
-                    ex_end = offsets[i+1]
                     prev_edge = offset_edges[-1]
-                    next_edge = offset_edges[i+1]
-            elif i == len(edges)-1:
-                if Wire.IsClosed(wire) == False:
-                    ex_start = offsets[i-1]
-                    ex_end = offsets[i]
-                    prev_edge = offset_edges[i-1]
-                    next_edge = Edge.NormalEdge(edges[i], u=1, length=Edge.Length(edges[i]))
-                else:
-                    ex_start = offsets[i-1]
-                    ex_end = offsets[0]
-                    prev_edge = offset_edges[i-1]
-                    next_edge = offset_edges[0]
             else:
-                ex_start = offsets[i-1]
-                ex_end = offsets[i+1]
                 prev_edge = offset_edges[i-1]
-                next_edge = offset_edges[i+1]
-            temp_edge = Edge.TrimByEdge(o_edge_a, prev_edge, reverse=True, tolerance=tolerance) or o_edge_a
-            temp_edge = Edge.TrimByEdge(temp_edge, next_edge, reverse=True, tolerance=tolerance) or temp_edge
-            temp_edge = Edge.ExtendToEdge(temp_edge, next_edge, tolerance=tolerance, silent=False) or temp_edge
-            temp_edge = Edge.ExtendToEdge(temp_edge, prev_edge, tolerance=tolerance, silent=False) or temp_edge
-            if temp_edge:
-                temp_edge = Edge.Reverse(temp_edge)
-                if bisectors:
-                    if abs(ex_start) > tolerance and abs(offsets[i]) > tolerance :
-                        sv1 = Edge.StartVertex(edge_a)
-                        sv2 = Edge.StartVertex(temp_edge)
-                        bisector = Edge.ByVertices(sv1, sv2)
-                        o_edges.append(bisector)
-                        if i == len(edges)-1:
-                            ev1 = Edge.EndVertex(edge_a)
-                            ev2 = Edge.EndVertex(temp_edge)
-                            bisector = Edge.ByVertices(ev1, ev2)
-                            o_edges.append(bisector)
-                o_edges.append(temp_edge)
-        cluster = Cluster.ByTopologies(o_edges)
-        vertices = Topology.Vertices(cluster)
-        verts = [Vertex.Coordinates(v) for v in vertices]
-        geo = Topology.Geometry(cluster)
-        eds = geo['edges']
-        verts = geo['vertices']
-        vertices = [Vertex.ByCoordinates(coord) for coord in verts]
-        vertices = Vertex.Fuse(vertices, tolerance=tolerance)
-        verts = [Vertex.Coordinates(v, mantissa=4) for v in vertices]
-        return_wire = Topology.SelfMerge(Topology.ByGeometry(vertices=verts, edges=eds, faces=[]), tolerance=tolerance)
+                v1 = Edge.Intersect2D(prev_edge, o_edge_a, silent=True)
+                if Topology.IsInstance(v1, "Vertex"):
+                    if bisectors == True:
+                        bisectors_list.append(Edge.ByVertices(v_a, v1))
+                    final_vertices.append(v1)
+                else:
+                    connection = Edge.Connection(prev_edge, o_edge_a)
+                    if Topology.IsInstance(connection, "Edge"):
+                        v1_1 = Edge.StartVertex(connection)
+                        v1_2 = Edge.EndVertex(connection)
+                        bisectors_list.append(Edge.ByVertices(v_a, v1_1))
+                        bisectors_list.append(Edge.ByVertices(v_a, v1_2))
+                        final_vertices.append(v1_1)
+                        final_vertices.append(v1_2)
+        if Wire.IsClosed(wire) == False:
+            v_a = Edge.EndVertex(edges[-1])
+            v1 = Edge.EndVertex(offset_edges[-1])
+            final_vertices.append(v1)
+            if bisectors == True:
+                bisectors_list.append(Edge.ByVertices(v_a, v1))
+        else:
+            v1 = Edge.Intersect2D(o_edge_a, offset_edges[0], silent=True)
+            if Topology.IsInstance(v1, "Vertex"):
+                if bisectors == True:
+                    bisectors_list.append(Edge.ByVertices(Edge.StartVertex(edges[0]), v1))
+                final_vertices.append(v1)
+            else:
+                connection = Edge.Connection(offset_edges[0], o_edge_a)
+                if Topology.IsInstance(connection, "Edge"):
+                    v1_1 = Edge.StartVertex(connection)
+                    v1_2 = Edge.EndVertex(connection)
+                    bisectors_list.append(Edge.ByVertices(v_a, v1_1))
+                    bisectors_list.append(Edge.ByVertices(v_a, v1_2))
+                    final_vertices.append(v1_1)
+                    final_vertices.append(v1_2)
+        
+        return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
+        if bisectors == True:
+            return_wire = Topology.SelfMerge(Cluster.ByTopologies(bisectors_list+Topology.Edges(return_wire)))
         if not Topology.IsInstance(return_wire, "Wire"):
             if not silent:
-                print(return_wire)
                 print("Wire.ByOffset - Warning: The resulting wire is not well-formed, please check your offsets.")
         else:
             if not Wire.IsManifold(return_wire) and bisectors == False:
                 if not silent:
-                    print("Wire.ByOffset - Warning: The resulting wire is not well-formed, please check your offsets.")
+                    print("Wire.ByOffset - Warning: The resulting wire is non-manifold, please check your offsets.")
         return_wire = Topology.Unflatten(return_wire, direction=normal, origin=origin)
         return return_wire
 

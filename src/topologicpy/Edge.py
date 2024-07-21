@@ -356,6 +356,48 @@ class Edge():
         return Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance=tolerance)
 
     @staticmethod
+    def Connection(edgeA, edgeB, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the edge representing the connection between the first input edge to the second input edge using the two closest vertices.
+
+        Parameters
+        ----------
+        edgeA : topologic_core.Edge
+            The first input edge. This edge will be extended to meet edgeB.
+        edgeB : topologic_core.Edge
+            The second input edge. This edge will be used to extend edgeA.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        topologic_core.Edge or topologic_core.Wire
+            The connected edge. Since it is made of two edges, this method returns a Wire.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Helper import Helper
+
+        sva = Edge.StartVertex(edgeA)
+        eva = Edge.EndVertex(edgeA)
+        svb = Edge.StartVertex(edgeB)
+        evb = Edge.EndVertex(edgeB)
+        v_list = [[sva, svb], [sva, evb], [eva, svb], [eva, evb]]
+        distances = []
+        for pair in v_list:
+            distances.append(Vertex.Distance(pair[0], pair[1]))
+        v_list = Helper.Sort(v_list, distances)
+        closest_pair = v_list[0]
+        return_edge = Edge.ByVertices(closest_pair, silent=silent)
+        if return_edge == None:
+            if not silent:
+                print("Edge.ConnectToEdge - Warning: Could not connect the two edges. Returning None.")
+            return None
+        return return_edge
+    
+    @staticmethod
     def Direction(edge, mantissa: int = 6) -> list:
         """
         Returns the direction of the input edge expressed as a list of three numbers.
@@ -420,6 +462,55 @@ class Edge():
         return vert
     
     @staticmethod
+    def Equation2D(edge, mantissa=6):
+        """
+        Returns the 2D equation of the input edge. This is assumed to be in the XY plane.
+
+        Parameters
+        ----------
+        edge : topologic_core.Edge
+            The input edge.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+
+        Returns
+        -------
+        dict
+            The equation of the edge stored in a dictionary. The dictionary has the following keys:
+            "slope": The slope of the line. This can be float('inf')
+            "x_intercept": The X axis intercept. This can be None.
+            "y_intercept": The Y axis intercept. This can be None.
+
+        """
+        from topologicpy.Vertex import Vertex
+
+        # Extract the start and end vertices
+        sv = Edge.StartVertex(edge)
+        ev = Edge.EndVertex(edge)
+        
+        # Extract coordinates of the vertices
+        x1, y1 = Vertex.X(sv, mantissa=mantissa), Vertex.Y(sv, mantissa=mantissa)
+        x2, y2 = Vertex.X(ev, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa)
+        
+        # Calculate the slope (m) and y-intercept (c)
+        if x2 - x1 != 0:
+            m = round((y2 - y1) / (x2 - x1), mantissa)
+            c = round(y1 - m * x1, mantissa)
+            return {
+                "slope": m,
+                "x_intercept": None,
+                "y_intercept": c
+            }
+        else:
+            # The line is vertical, slope is undefined
+            return {
+                "slope": float('inf'),
+                "x_intercept": x1,
+                "y_intercept": None
+            }
+
+
+    @staticmethod
     def Extend(edge, distance: float = 1.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001):
         """
         Extends the input edge by the input distance.
@@ -465,7 +556,7 @@ class Edge():
         return Edge.ByVertices([sve, eve], tolerance=tolerance, silent=True)
 
     @staticmethod
-    def ExtendToEdge(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def ExtendToEdge(edgeA, edgeB, mantissa: int = 6, step: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Extends the first input edge to meet the second input edge.
 
@@ -485,12 +576,14 @@ class Edge():
         Returns
         -------
         topologic_core.Edge
-            The trimmed edge.
+            The extended edge.
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Vector import Vector
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
 
         if not Topology.IsInstance(edgeA, "Edge"):
             if not silent:
@@ -504,10 +597,15 @@ class Edge():
             if not silent:
                 print("Edge.ExtendToEdge - Error: The input edges are not coplanar. Returning the original edge.")
             return edgeA
+        if Edge.IsCollinear(edgeA, edgeB, tolerance=tolerance):
+            if not silent:
+                print("Edge.ExtendToEdge - Warning: The input edges are collinear. Connecting the edges instead. Check return value.")
+            return Edge.ConnectToEdge(edgeA, edgeB, tolerance=tolerance)
         if Edge.IsParallel(edgeA, edgeB, tolerance=tolerance):
             if not silent:
-                print("Edge.ExtendToEdge - Error: The input edges are parallel. Returning the original edge.")
-            return edgeA
+                print("Edge.ExtendToEdge - Warning: The input edges are parallel. Connecting the edges instead. Returning a Wire.")
+            return Edge.ConnectToEdge(edgeA, edgeB, tolerance=tolerance)
+        
         
         sva = Edge.StartVertex(edgeA)
         eva = Edge.EndVertex(edgeA)
@@ -533,8 +631,8 @@ class Edge():
         if intVertex:
             return Edge.ByVertices([v1, intVertex], tolerance=tolerance, silent=True)
         if not silent:
-            print("Edge.ExtendToEdge - Error: The operation failed. Returning None.")
-        return None
+            print("Edge.ExtendToEdge - Warning: The operation failed. Connecting the edges instead. Returning a Wire.")
+        return Edge.ConnectToEdge(edgeA, edgeB, tolerance=tolerance)
     
     @staticmethod
     def ExternalBoundary(edge):
@@ -613,6 +711,70 @@ class Edge():
                 if dsvev < tolerance and devsv < tolerance:
                     return i
         return None
+
+    @staticmethod
+    def Intersect2D(edgeA, edgeB, silent: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Returns the intersection vertex of the two input edges. This is assumed to be in the XY plane.
+        The intersection vertex does not necessarily fall within the extents of either edge.
+
+        Parameters
+        ----------
+        edgeA : topologic_core.Edge
+            The first input edge.
+        edgeB : topologic_core.Edge
+            The second input edge.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+
+        Returns
+        -------
+        topologic_core.Vertex
+            The intersection vertex or None if the edges are parallel or collinear.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Helper import Helper
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
+        sva = Edge.StartVertex(edgeA)
+        eva = Edge.EndVertex(edgeA)
+        svb = Edge.StartVertex(edgeB)
+        evb = Edge.EndVertex(edgeB)
+        v_list = [[sva, svb], [sva, evb], [eva, svb], [eva, evb]]
+        distances = []
+        for pair in v_list:
+            distances.append(Vertex.Distance(pair[0], pair[1]))
+        v_list = Helper.Sort(v_list, distances)
+        closest_pair = v_list[0]
+        if Vertex.Distance(closest_pair[0], closest_pair[1]) < tolerance:
+            return Topology.Centroid(Cluster.ByTopologies(closest_pair))
+        
+        if Edge.IsCollinear(edgeA, edgeB, tolerance=tolerance):
+            if not silent:
+                print("Edge.Intersect2D - Error: The input edges are collinear and overlapping. An intersection vertex cannot be found. Returning None.")
+            return None
+        if Edge.IsParallel(edgeA, edgeB, tolerance=tolerance):
+            if not silent:
+                print("Edge.Intersect2D - Error: The input edges are parallel. An intersection vertex cannot be found. Returning None.")
+            return None
+        
+        eq1 = Edge.Equation2D(edgeA, mantissa=mantissa)
+        eq2 = Edge.Equation2D(edgeB, mantissa=mantissa)
+        if eq1["slope"] == float('inf'):
+            x = eq1["x_intercept"]
+            y = eq2["slope"] * x + eq2["y_intercept"]
+        elif eq2["slope"] == float('inf'):
+            x = eq2["x_intercept"]
+            y = eq1["slope"] * x + eq1["y_intercept"]
+        else:
+            x = (eq2["y_intercept"] - eq1["y_intercept"]) / (eq1["slope"] - eq2["slope"])
+            y = eq1["slope"] * x + eq1["y_intercept"]
+        
+        return Vertex.ByCoordinates(x,y,0)
 
     @staticmethod
     def IsCollinear(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001) -> bool:
