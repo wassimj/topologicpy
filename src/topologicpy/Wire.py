@@ -310,7 +310,7 @@ class Wire(Topology):
         return Wire.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
-    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", stepOffset: float = 0, bisectors: bool = False, tolerance: float = 0.0001,  silent: bool = False):
+    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", bisectors: bool = False, tolerance: float = 0.0001,  silent: bool = False):
         """
         Creates an offset wire from the input wire. A positive offset value results in an offset to the interior of an anti-clockwise wire.
 
@@ -322,8 +322,14 @@ class Wire(Topology):
             The desired offset distance. The default is 1.0.
         offsetKey : str , optional
             The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. The default is "offset".
-        stepOffset : float , optional
-            The amount to offset along each edge when transitioning between parallel edges with different offsets. The default is 0.
+        stepOffsetA : float , optional
+            The amount to offset along the previous edge when transitioning between parallel edges with different offsets. The default is 0.
+        stepOffsetB : float , optional
+            The amount to offset along the next edge when transitioning between parallel edges with different offsets. The default is 0.
+        stepOffsetKeyA : str , optional
+            The vertex dictionary key under which to find the step offset A value. If a value cannot be found, the stepOffsetA input parameter value is used instead. The default is "stepOffsetA".
+        stepOffsetKeyB : str , optional
+            The vertex dictionary key under which to find the step offset B value. If a value cannot be found, the stepOffsetB input parameter value is used instead. The default is "stepOffsetB".
         bisectors : bool , optional
             If set to True, The bisectors (seams) edges will be included in the returned wire. The default is False.
         tolerance : float , optional
@@ -394,13 +400,20 @@ class Wire(Topology):
                 else:
                     connection = Edge.Connection(prev_edge, o_edge_a)
                     if Topology.IsInstance(connection, "Edge"):
-                        v1_1 = Topology.TranslateByDirectionDistance(Edge.StartVertex(connection),
+                        d = Topology.Dictionary(v_a)
+                        d_stepOffsetA = Dictionary.ValueAtKey(d, stepOffsetKeyA)
+                        if d_stepOffsetA == None:
+                            d_stepOffsetA = stepOffsetA
+                        d_stepOffsetB = Dictionary.ValueAtKey(d, stepOffsetKeyB)
+                        if d_stepOffsetB == None:
+                            d_stepOffsetB = stepOffsetB
+                        v1_1 = Topology.TranslateByDirectionDistance(Edge.EndVertex(prev_edge),
                                                                      direction = Vector.Reverse(Edge.Direction(prev_edge)),
-                                                                     distance = stepOffset)
+                                                                     distance = d_stepOffsetA)
                                                                                                 
-                        v1_2 = Topology.TranslateByDirectionDistance(Edge.EndVertex(connection),
+                        v1_2 = Topology.TranslateByDirectionDistance(Edge.StartVertex(o_edge_a),
                                                                      direction = Edge.Direction(o_edge_a),
-                                                                     distance = stepOffset)
+                                                                     distance = d_stepOffsetB)
                         bisectors_list.append(Edge.ByVertices(v_a, v1_1))
                         bisectors_list.append(Edge.ByVertices(v_a, v1_2))
                         final_vertices.append(v1_1)
