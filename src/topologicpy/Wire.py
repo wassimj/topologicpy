@@ -310,7 +310,7 @@ class Wire(Topology):
         return Wire.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
-    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", bisectors: bool = False, tolerance: float = 0.0001,  silent: bool = False):
+    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", stepOffset: float = 0, bisectors: bool = False, tolerance: float = 0.0001,  silent: bool = False):
         """
         Creates an offset wire from the input wire. A positive offset value results in an offset to the interior of an anti-clockwise wire.
 
@@ -322,6 +322,8 @@ class Wire(Topology):
             The desired offset distance. The default is 1.0.
         offsetKey : str , optional
             The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. The default is "offset".
+        stepOffset : float , optional
+            The amount to offset along each edge when transitioning between parallel edges with different offsets. The default is 0.
         bisectors : bool , optional
             If set to True, The bisectors (seams) edges will be included in the returned wire. The default is False.
         tolerance : float , optional
@@ -355,8 +357,6 @@ class Wire(Topology):
         temp_normal = Face.Normal(temp_face)
         flat_wire = Topology.Flatten(wire, direction=temp_normal, origin=origin)
         normal = Face.Normal(temp_face)
-        if normal[2] < 0:
-            wire = Wire.Reverse(wire, transferDictionaries=True)
         flat_wire = Topology.Flatten(wire, direction=normal, origin=origin)
         edges = Topology.Edges(flat_wire)
         offsets = []
@@ -394,8 +394,13 @@ class Wire(Topology):
                 else:
                     connection = Edge.Connection(prev_edge, o_edge_a)
                     if Topology.IsInstance(connection, "Edge"):
-                        v1_1 = Edge.StartVertex(connection)
-                        v1_2 = Edge.EndVertex(connection)
+                        v1_1 = Topology.TranslateByDirectionDistance(Edge.StartVertex(connection),
+                                                                     direction = Vector.Reverse(Edge.Direction(prev_edge)),
+                                                                     distance = stepOffset)
+                                                                                                
+                        v1_2 = Topology.TranslateByDirectionDistance(Edge.EndVertex(connection),
+                                                                     direction = Edge.Direction(o_edge_a),
+                                                                     distance = stepOffset)
                         bisectors_list.append(Edge.ByVertices(v_a, v1_1))
                         bisectors_list.append(Edge.ByVertices(v_a, v1_2))
                         final_vertices.append(v1_1)
