@@ -141,10 +141,10 @@ def test_main():
     # Case 9 - Edges
     print("Case 9")
     # test 1
-    Edg1 = Wire.Edges(w3)
+    Edg1 = Topology.Edges(w3)
     assert isinstance(Edg1, list), "Wire.Edges. Should be list"
     # test 2
-    Edg2 = Wire.Edges(w5)
+    Edg2 = Topology.Edges(w5)
     assert  isinstance(Edg2, list), "Wire.Edges. Should be list"
  
     # Case 10 - Ellipse
