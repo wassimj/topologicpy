@@ -88,8 +88,8 @@ def test_main():
     print("Case 4")
     """Error : Gives more output then expected if optional inputs used"""
     # creating objects
-    rec1 = Wire.Rectangle(v1, 5.0, 5.0)                                    # create wire
-    Cir0 = Wire.Circle(v1, 5, 16)                                               # create wire
+    rec1 = Wire.Rectangle(origin=v1, width=5.0, length=5.0)                                    # create wire
+    Cir0 = Wire.Circle(origin=v1, radius=5, sides=16)                                               # create wire
     # test 1
     offR1 = Wire.ByOffset(rec1)                                              # without optional inputs
     assert Topology.IsInstance(offR1, "Wire"),"Wire.ByOffset. Should be topologic.Wire"
