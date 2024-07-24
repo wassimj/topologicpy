@@ -1955,11 +1955,13 @@ class Topology():
                 converted_entity = Wire.Circle(origin, radius)
 
             elif entity_type in ['POLYLINE', 'LWPOLYLINE']:
-                vertices = [Vertex.ByCoordinates(p[0], p[1], p[2]) for p in entity.points()]
+                with entity.points('xyz') as points:
+                    vertices = [Vertex.ByCoordinates(*_) for _ in points]
                 converted_entity = Wire.ByVertices(vertices)
 
             elif entity_type == 'ARC':
-                vertices = [Vertex.ByCoordinates(p.x, p.y, p.z) for p in entity.vertices()]
+                with entity.points('xyz') as points:
+                    vertices = [Vertex.ByCoordinates(*_) for _ in points]
                 converted_entity = Wire.ByVertices(vertices)
 
             elif entity_type == 'MESH':
@@ -7393,6 +7395,12 @@ class Topology():
             The list of vertices.
 
         """
+        from topologicpy.Graph import Graph
+        
+        if Topology.IsInstance(topology, "Vertex"):
+            return []
+        if Topology.IsInstance(topology, "Graph"):
+            return Graph.Vertices(topology)
         return Topology.SubTopologies(topology=topology, subTopologyType="vertex")
     
     @staticmethod
@@ -7411,8 +7419,11 @@ class Topology():
             The list of edges.
 
         """
+        from topologicpy.Graph import Graph
         if Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
             return []
+        if Topology.IsInstance(topology, "Graph"):
+            return Graph.Edges(topology)
         return Topology.SubTopologies(topology=topology, subTopologyType="edge")
     
     @staticmethod

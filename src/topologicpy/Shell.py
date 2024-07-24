@@ -1189,12 +1189,12 @@ class Shell():
         ----------
         shell : topologic_core.Shell
             The input shell.
-        tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
         origin : topologic_core.Vertex , optional
             The desired origin of the plane unto which the planar shell will be projected. If set to None, the centroid of the input shell will be chosen. The default is None.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------

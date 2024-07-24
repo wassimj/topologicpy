@@ -1142,8 +1142,6 @@ class Graph:
             The desired key name to use for geometry. The default is "brep".
         typeKey : str , optional
             The dictionary key to use to look up the type of the node. The default is "type".
-        geometryKey : str , optional
-            The dictionary key to use to look up the geometry of the node. The default is "brep".
         spaceType : str , optional
             The dictionary string value to use to look up vertices of type "space". The default is "space".
         wallType : str , optional
@@ -1778,7 +1776,7 @@ class Graph:
         edges_ds = [] # A list to hold the vertices data structures until we can build the actual graphs
         # Access specific columns within the grouped DataFrame
         for graph_id, group_edge_df in grouped_edges:
-            #vertices = vertices_ds[graph_id]
+            vertices = vertices_ds[graph_id]
             edges = []
             es = [] # a list to check for duplicate edges
             duplicate_edges = 0
@@ -1807,7 +1805,11 @@ class Graph:
                     values = [label, mask]+featureList
                 if not (src_id == dst_id) and not [src_id, dst_id] in es and not [dst_id, src_id] in es:
                     es.append([src_id, dst_id])
-                    edge = Edge.ByVertices([vertices[src_id], vertices[dst_id]], tolerance=tolerance)
+                    try:
+                        edge = Edge.ByVertices([vertices[src_id], vertices[dst_id]], tolerance=tolerance)
+                    except:
+                        print("Graph.ByCSVPath - Warning: Failed to create and add a edge to the list of edges.")
+                        edge = None
                     if Topology.IsInstance(edge, "Edge"):
                         d = Dictionary.ByKeysValues(edge_keys, values)
                         if Topology.IsInstance(d, "Dictionary"):
@@ -4886,14 +4888,14 @@ class Graph:
                        edgeSRCHeader="src_id", edgeDSTHeader="dst_id",
                        edgeLabelHeader="label", edgeFeaturesHeader="feat",
                        edgeTrainMaskHeader="train_mask", edgeValidateMaskHeader="val_mask", edgeTestMaskHeader="test_mask",
-                       edgeMaskKey=None,
+                       edgeMaskKey="mask",
                        edgeTrainRatio=0.8, edgeValidateRatio=0.1, edgeTestRatio=0.1,
                        bidirectional=True,
 
                        nodeLabelKey="label", defaultNodeLabel=0, nodeFeaturesKeys=[],
                        nodeIDHeader="node_id", nodeLabelHeader="label", nodeFeaturesHeader="feat",
                        nodeTrainMaskHeader="train_mask", nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask",
-                       nodeMaskKey=None,
+                       nodeMaskKey="mask",
                        nodeTrainRatio=0.8, nodeValidateRatio=0.1, nodeTestRatio=0.1,
                        mantissa=6, tolerance=0.0001, overwrite=False):
         """
@@ -4920,6 +4922,8 @@ class Graph:
             The edge label dictionary key saved in each graph edge. The default is "label".
         defaultEdgeLabel : int , optional
             The default edge label to use if no edge label is found. The default is 0.
+        edgeLabelHeader : str , optional
+            The desired edge label column header. The default is "label".
         edgeSRCHeader : str , optional
             The desired edge source column header. The default is "src_id".
         edgeDSTHeader : str , optional
@@ -4967,6 +4971,9 @@ class Graph:
             The desired node validate mask column header. The default is "val_mask".
         nodeTestMaskHeader : str , optional
             The desired node test mask column header. The default is "test_mask".
+        nodeMaskKey : str , optional
+            The dictionary key where the node train, validate, test category is to be found. The value should be 0 for train
+            1 for validate, and 2 for test. If no key is found, the ratio of train/validate/test will be used. The default is "mask".
         nodeTrainRatio : float , optional
             The desired ratio of the node data to use for training. The number must be between 0 and 1. The default is 0.8 which means 80% of the data will be used for training.
             This value is ignored if an nodeMaskKey is foud.

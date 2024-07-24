@@ -511,7 +511,7 @@ class Vertex():
             # Calculate the Euclidean distance
             distance = np.linalg.norm(point1 - point2)
             
-            return distance
+            return float(distance)
 
         def distance_point_to_line(point, line_start, line_end):
             # Convert input points to NumPy arrays for vector operations
@@ -1493,8 +1493,8 @@ class Vertex():
             
             # Calculate the distance between the closest point and the given point
             distance = np.linalg.norm(point - closest_point)
-            
-            return distance
+            return float(distance)
+        
         if not Topology.IsInstance(vertex, "Vertex"):
             print("Vertex.PerpendicularDistance - Error: The input vertex is not a valid topologic vertex. Returning None.")
             return None

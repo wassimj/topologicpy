@@ -21,7 +21,7 @@ from topologicpy.Topology import Topology
 import math
 import itertools
 
-class Wire(Topology):
+class Wire():
     @staticmethod
     def Arc(startVertex, middleVertex, endVertex, sides: int = 16, close: bool = True, tolerance: float = 0.0001):
         """
@@ -310,7 +310,7 @@ class Wire(Topology):
         return Wire.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
-    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", bisectors: bool = False, tolerance: float = 0.0001,  silent: bool = False):
+    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", bisectors: bool = False, transferDictionaries: bool = False, tolerance: float = 0.0001,  silent: bool = False):
         """
         Creates an offset wire from the input wire. A positive offset value results in an offset to the interior of an anti-clockwise wire.
 
@@ -332,6 +332,8 @@ class Wire(Topology):
             The vertex dictionary key under which to find the step offset B value. If a value cannot be found, the stepOffsetB input parameter value is used instead. The default is "stepOffsetB".
         bisectors : bool , optional
             If set to True, The bisectors (seams) edges will be included in the returned wire. The default is False.
+        tranferDictionaries : bool , optional
+            If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the new wire. Otherwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -369,6 +371,7 @@ class Wire(Topology):
         offset_edges = []
         final_vertices = []
         bisectors_list = []
+        edge_dictionaries = []
         for edge in edges:
             d = Topology.Dictionary(edge)
             d_offset = Dictionary.ValueAtKey(d, offsetKey)
@@ -377,25 +380,66 @@ class Wire(Topology):
             offsets.append(d_offset)
             offset_edge = Edge.ByOffset2D(edge, d_offset)
             offset_edges.append(offset_edge)
-        o_edges = []
         for i in range(len(edges)):
-            edge_a = edges[i]
             o_edge_a = offset_edges[i]
             v_a = Edge.StartVertex(edges[i])
             if i == 0:
                 if Wire.IsClosed(wire) == False:
                     v1 = Edge.StartVertex(offset_edges[0])
+                    if transferDictionaries == True:
+                        d_temp = Topology.Dictionary(v_a)
+                        v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a))
+                        edge_dictionaries.append(Topology.Dictionary(edges[i]))
                     final_vertices.append(v1)
                     if bisectors == True:
                         bisectors_list.append(Edge.ByVertices(v_a, v1))
                 else:
                     prev_edge = offset_edges[-1]
+                    v1 = Edge.Intersect2D(prev_edge, o_edge_a, silent=True)
+                    if Topology.IsInstance(v1, "Vertex"):
+                        if bisectors == True:
+                            bisectors_list.append(Edge.ByVertices(v_a, v1))
+                        if transferDictionaries == True:
+                            d_temp = Topology.Dictionary(v_a)
+                            v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a))
+                            edge_dictionaries.append(Topology.Dictionary(edges[i]))
+                        final_vertices.append(v1)
+                    else:
+                        connection = Edge.Connection(prev_edge, o_edge_a)
+                        if Topology.IsInstance(connection, "Edge"):
+                            d = Topology.Dictionary(v_a)
+                            d_stepOffsetA = Dictionary.ValueAtKey(d, stepOffsetKeyA)
+                            if d_stepOffsetA == None:
+                                d_stepOffsetA = stepOffsetA
+                            d_stepOffsetB = Dictionary.ValueAtKey(d, stepOffsetKeyB)
+                            if d_stepOffsetB == None:
+                                d_stepOffsetB = stepOffsetB
+                            v1_1 = Topology.TranslateByDirectionDistance(Edge.EndVertex(prev_edge),
+                                                                        direction = Vector.Reverse(Edge.Direction(prev_edge)),
+                                                                        distance = d_stepOffsetA)
+                                                                                                    
+                            v1_2 = Topology.TranslateByDirectionDistance(Edge.StartVertex(o_edge_a),
+                                                                        direction = Edge.Direction(o_edge_a),
+                                                                        distance = d_stepOffsetB)
+                            bisectors_list.append(Edge.ByVertices(v_a, v1_1))
+                            bisectors_list.append(Edge.ByVertices(v_a, v1_2))
+                            final_vertices.append(v1_1)
+                            final_vertices.append(v1_2)
+                            if transferDictionaries == True:
+                                v1_1 = Topology.SetDictionary(v1_1, Topology.Dictionary(v_a))
+                                v1_2 = Topology.SetDictionary(v1_2, Topology.Dictionary(v_a))
+                                edge_dictionaries.append(Topology.Dictionary(v_a))
+                                edge_dictionaries.append(Topology.Dictionary(edges[i]))
             else:
                 prev_edge = offset_edges[i-1]
                 v1 = Edge.Intersect2D(prev_edge, o_edge_a, silent=True)
                 if Topology.IsInstance(v1, "Vertex"):
                     if bisectors == True:
                         bisectors_list.append(Edge.ByVertices(v_a, v1))
+                    if transferDictionaries == True:
+                        d_temp = Topology.Dictionary(v_a)
+                        v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a))
+                        edge_dictionaries.append(Topology.Dictionary(edges[i]))
                     final_vertices.append(v1)
                 else:
                     connection = Edge.Connection(prev_edge, o_edge_a)
@@ -418,31 +462,25 @@ class Wire(Topology):
                         bisectors_list.append(Edge.ByVertices(v_a, v1_2))
                         final_vertices.append(v1_1)
                         final_vertices.append(v1_2)
+                        if transferDictionaries == True:
+                            v1_1 = Topology.SetDictionary(v1_1, Topology.Dictionary(v_a))
+                            v1_2 = Topology.SetDictionary(v1_2, Topology.Dictionary(v_a))
+                            edge_dictionaries.append(Topology.Dictionary(v_a))
+                            edge_dictionaries.append(Topology.Dictionary(edges[i]))
+        v_a = Edge.EndVertex(edges[-1])
         if Wire.IsClosed(wire) == False:
-            v_a = Edge.EndVertex(edges[-1])
             v1 = Edge.EndVertex(offset_edges[-1])
             final_vertices.append(v1)
+            if transferDictionaries == True:
+                v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a))
             if bisectors == True:
                 bisectors_list.append(Edge.ByVertices(v_a, v1))
-        else:
-            v1 = Edge.Intersect2D(o_edge_a, offset_edges[0], silent=True)
-            if Topology.IsInstance(v1, "Vertex"):
-                if bisectors == True:
-                    bisectors_list.append(Edge.ByVertices(Edge.StartVertex(edges[0]), v1))
-                final_vertices.append(v1)
-            else:
-                connection = Edge.Connection(offset_edges[0], o_edge_a)
-                if Topology.IsInstance(connection, "Edge"):
-                    v1_1 = Edge.StartVertex(connection)
-                    v1_2 = Edge.EndVertex(connection)
-                    bisectors_list.append(Edge.ByVertices(v_a, v1_1))
-                    bisectors_list.append(Edge.ByVertices(v_a, v1_2))
-                    final_vertices.append(v1_1)
-                    final_vertices.append(v1_2)
         
+
         return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
-        if bisectors == True:
-            return_wire = Topology.SelfMerge(Cluster.ByTopologies(bisectors_list+Topology.Edges(return_wire)))
+        wire_edges = Topology.Edges(return_wire)
+        for i, wire_edge in enumerate(wire_edges):
+            wire_edge = Topology.SetDictionary(wire_edge, edge_dictionaries[i])
         if not Topology.IsInstance(return_wire, "Wire"):
             if not silent:
                 print("Wire.ByOffset - Warning: The resulting wire is not well-formed, please check your offsets.")
@@ -450,7 +488,23 @@ class Wire(Topology):
             if not Wire.IsManifold(return_wire) and bisectors == False:
                 if not silent:
                     print("Wire.ByOffset - Warning: The resulting wire is non-manifold, please check your offsets.")
+        if bisectors == True:
+            temp_return_wire = Topology.SelfMerge(Cluster.ByTopologies(Topology.Edges(return_wire)+bisectors_list))
+            if transferDictionaries == True:
+                sel_vertices = Topology.Vertices(return_wire)
+                sel_vertices += Topology.Vertices(flat_wire)
+                edges = Topology.Edges(return_wire)
+                sel_edges = []
+                for edge in edges:
+                    d = Topology.Dictionary(edge)
+                    c = Topology.Centroid(edge)
+                    c = Topology.SetDictionary(c, d)
+                    sel_edges.append(c)
+                temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_vertices, tranVertices=True)
+                temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_edges, tranEdges=True)
+            return_wire = temp_return_wire
         return_wire = Topology.Unflatten(return_wire, direction=normal, origin=origin)
+        return_wire = Topology.SetDictionary(return_wire, Topology.Dictionary(wire))
         return return_wire
 
     @staticmethod

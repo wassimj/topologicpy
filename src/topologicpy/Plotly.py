@@ -2032,6 +2032,10 @@ class Plotly:
             return None
         if not camera == None and not center == None and not up == None:
             figure = Plotly.SetCamera(figure, camera=camera, center=center, up=up, projection=projection)
+        figure.update_layout(
+            autosize=True,
+            margin=dict(l=40, r=40, t=40, b=40)
+            )
         if renderer.lower() == "offline":
             ofl.plot(figure)
         else:

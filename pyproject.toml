@@ -24,6 +24,7 @@ dependencies = [
     "plotly",
     "lark",
     "specklepy",
+    "kaleido==0.1.0.post1",
     "topologic_core>=7.0.1",
 ]
 
