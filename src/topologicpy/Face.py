@@ -346,17 +346,34 @@ class Face():
                                                     stepOffsetB=stepOffsetB,
                                                     stepOffsetKeyA=stepOffsetKeyA,
                                                     stepOffsetKeyB=stepOffsetKeyB,
-                                                    reverse=not(reverse),
+                                                    reverse=reverse,
                                                     bisectors=bisectors,
                                                     transferDictionaries=transferDictionaries,
                                                     tolerance=tolerance,
                                                     silent=silent)
             offset_internal_boundaries.append(offset_internal_boundary)
+        
         if bisectors == True:
+            return_face = Face.ByOffset(face,
+                                    offset=offset,
+                                    offsetKey=offsetKey,
+                                    stepOffsetA=stepOffsetA,
+                                    stepOffsetB=stepOffsetB,
+                                    stepOffsetKeyA=stepOffsetKeyA,
+                                    stepOffsetKeyB=stepOffsetKeyB,
+                                    reverse=reverse,
+                                    bisectors=False,
+                                    transferDictionaries=transferDictionaries,
+                                    tolerance=tolerance,
+                                    silent=silent)
             all_edges = Topology.Edges(offset_external_boundary)+[Topology.Edges(ib) for ib in offset_internal_boundaries]
+            all_edges += Topology.Edges(face)
             all_edges = Helper.Flatten(all_edges)
             all_edges_cluster = Cluster.ByTopologies(all_edges)
-            return_face = Topology.Slice(face, all_edges_cluster)
+            if reverse == True:
+                return_face = Topology.Slice(return_face, all_edges_cluster)
+            else:
+                return_face = Topology.Slice(face, all_edges_cluster)
             if not Topology.IsInstance(return_face, "Shell"):
                 if not silent:
                     print("Face.ByOffset - Warning: Could not create shell by slicing. Returning None.")

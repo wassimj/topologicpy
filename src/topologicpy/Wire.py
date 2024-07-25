@@ -394,7 +394,6 @@ class Wire():
                 if Wire.IsClosed(wire) == False:
                     v1 = Edge.StartVertex(offset_edges[0])
                     if transferDictionaries == True:
-                        d_temp = Topology.Dictionary(v_a)
                         v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a), silent=True)
                         edge_dictionaries.append(Topology.Dictionary(edges[i]))
                     final_vertices.append(v1)
