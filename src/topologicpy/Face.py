@@ -276,9 +276,9 @@ class Face():
         return face
 
     @staticmethod
-    def ByOffset(face, offset: float = 1.0, tolerance: float = 0.0001):
+    def ByOffset(face, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", reverse: bool = False, bisectors: bool = False, transferDictionaries: bool = False, tolerance: float = 0.0001,  silent: bool = False):
         """
-        Creates an offset face from the input face. A positive offset value results in a smaller face to the inside of the input face.
+        Creates an offset face from the input face. A positive offset value results in an offset to the interior of an anti-clockwise face.
 
         Parameters
         ----------
@@ -286,32 +286,88 @@ class Face():
             The input face.
         offset : float , optional
             The desired offset distance. The default is 1.0.
+        offsetKey : str , optional
+            The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. The default is "offset".
+        stepOffsetA : float , optional
+            The amount to offset along the previous edge when transitioning between parallel edges with different offsets. The default is 0.
+        stepOffsetB : float , optional
+            The amount to offset along the next edge when transitioning between parallel edges with different offsets. The default is 0.
+        stepOffsetKeyA : str , optional
+            The vertex dictionary key under which to find the step offset A value. If a value cannot be found, the stepOffsetA input parameter value is used instead. The default is "stepOffsetA".
+        stepOffsetKeyB : str , optional
+            The vertex dictionary key under which to find the step offset B value. If a value cannot be found, the stepOffsetB input parameter value is used instead. The default is "stepOffsetB".
+        bisectors : bool , optional
+            If set to True, The bisectors (seams) edges will be included in the returned wire. This will result in the returned shape to be a shell rather than a face. The default is False.
+        reverse : bool , optional
+            If set to True, the direction of offsets is reversed. Otherwise, it is not. The default is False.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the new wire. Otherwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         
         Returns
         -------
-        topologic_core.Face
-            The created face.
+        topologic_core.Face or topologic_core.Shell
+            The created face or shell.
 
         """
         from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
 
         if not Topology.IsInstance(face, "Face"):
-            print("Face.ByOffset - Warning: The input face parameter is not a valid face. Returning None.")
+            if not silent:
+                print("Face.ByOffset - Warning: The input face parameter is not a valid face. Returning None.")
             return None
+        
         eb = Face.Wire(face)
         internal_boundaries = Face.InternalBoundaries(face)
-        offset_external_boundary = Wire.ByOffset(wire=eb, offset=offset, bisectors=False, tolerance=tolerance)
+        offset_external_boundary = Wire.ByOffset(eb,
+                                                 offset=offset,
+                                                 offsetKey=offsetKey,
+                                                 stepOffsetA=stepOffsetA,
+                                                 stepOffsetB=stepOffsetB,
+                                                 stepOffsetKeyA=stepOffsetKeyA,
+                                                 stepOffsetKeyB=stepOffsetKeyB,
+                                                 reverse=reverse,
+                                                 bisectors=bisectors,
+                                                 transferDictionaries=transferDictionaries,
+                                                 tolerance=tolerance,
+                                                 silent=silent)
         offset_internal_boundaries = []
         for internal_boundary in internal_boundaries:
-            offset_internal_boundaries.append(Wire.ByOffset(wire=internal_boundary, offset=offset, bisectors=False, tolerance=tolerance))
-        face = Face.ByWires(offset_external_boundary, offset_internal_boundaries, tolerance=tolerance)
-        if not Topology.IsInstance(face, "Face"):
-            print("Face.ByOffset - Warning: Could not create face from wires. Returning None.")
+            offset_internal_boundary = Wire.ByOffset(internal_boundary,
+                                                    offset=offset,
+                                                    offsetKey=offsetKey,
+                                                    stepOffsetA=stepOffsetA,
+                                                    stepOffsetB=stepOffsetB,
+                                                    stepOffsetKeyA=stepOffsetKeyA,
+                                                    stepOffsetKeyB=stepOffsetKeyB,
+                                                    reverse=not(reverse),
+                                                    bisectors=bisectors,
+                                                    transferDictionaries=transferDictionaries,
+                                                    tolerance=tolerance,
+                                                    silent=silent)
+            offset_internal_boundaries.append(offset_internal_boundary)
+        if bisectors == True:
+            all_edges = Topology.Edges(offset_external_boundary)+[Topology.Edges(ib) for ib in offset_internal_boundaries]
+            all_edges = Helper.Flatten(all_edges)
+            all_edges_cluster = Cluster.ByTopologies(all_edges)
+            return_face = Topology.Slice(face, all_edges_cluster)
+            if not Topology.IsInstance(return_face, "Shell"):
+                if not silent:
+                    print("Face.ByOffset - Warning: Could not create shell by slicing. Returning None.")
+                return None
+            return return_face
+        return_face = Face.ByWires(offset_external_boundary, offset_internal_boundaries, tolerance=tolerance)
+        if not Topology.IsInstance(return_face, "Face"):
+            if not silent:
+                print("Face.ByOffset - Warning: Could not create face from wires. Returning None.")
             return None
-        return face
+        return return_face
     
     @staticmethod
     def ByShell(shell, origin= None, angTolerance: float = 0.1, tolerance: float = 0.0001, silent=False):
@@ -563,7 +619,7 @@ class Face():
             The input wire.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
-         silent : bool , optional
+        silent : bool , optional
             If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns

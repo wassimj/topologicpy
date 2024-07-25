@@ -310,7 +310,7 @@ class Wire():
         return Wire.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
-    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", bisectors: bool = False, transferDictionaries: bool = False, tolerance: float = 0.0001,  silent: bool = False):
+    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", reverse: bool = False, bisectors: bool = False, transferDictionaries: bool = False, tolerance: float = 0.0001,  silent: bool = False):
         """
         Creates an offset wire from the input wire. A positive offset value results in an offset to the interior of an anti-clockwise wire.
 
@@ -330,9 +330,11 @@ class Wire():
             The vertex dictionary key under which to find the step offset A value. If a value cannot be found, the stepOffsetA input parameter value is used instead. The default is "stepOffsetA".
         stepOffsetKeyB : str , optional
             The vertex dictionary key under which to find the step offset B value. If a value cannot be found, the stepOffsetB input parameter value is used instead. The default is "stepOffsetB".
+        reverse : bool , optional
+            If set to True, the direction of offsets is reversed. Otherwise, it is not. The default is False.
         bisectors : bool , optional
             If set to True, The bisectors (seams) edges will be included in the returned wire. The default is False.
-        tranferDictionaries : bool , optional
+        transferDictionaries : bool , optional
             If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the new wire. Otherwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
@@ -359,6 +361,10 @@ class Wire():
                 print("Wire.ByOffset - Error: The input wire parameter is not a valid wire. Returning None.")
                 return None
         
+        if reverse == True:
+            fac = -1
+        else:
+            fac = 1
         origin = Vertex.Origin()
         temp_vertices = [Topology.Vertices(wire)[0], Topology.Vertices(wire)[1], Topology.Centroid(wire)]
         temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True))
@@ -377,6 +383,7 @@ class Wire():
             d_offset = Dictionary.ValueAtKey(d, offsetKey)
             if d_offset == None:
                 d_offset = offset
+            d_offset = d_offset*fac
             offsets.append(d_offset)
             offset_edge = Edge.ByOffset2D(edge, d_offset)
             offset_edges.append(offset_edge)
@@ -400,7 +407,6 @@ class Wire():
                         if bisectors == True:
                             bisectors_list.append(Edge.ByVertices(v_a, v1))
                         if transferDictionaries == True:
-                            d_temp = Topology.Dictionary(v_a)
                             v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a))
                             edge_dictionaries.append(Topology.Dictionary(edges[i]))
                         final_vertices.append(v1)
