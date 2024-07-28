@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.7.36 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.7.37 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.36
+                0.7.37
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -361,10 +361,10 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPString" title="topologicpy.Topology.Topology.ByBREPString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPString</span></code></a>(string)</p></td>
 <td><p>Creates a topology from the input brep string</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFFile" title="topologicpy.Topology.Topology.ByDXFFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFFile</span></code></a>(file)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFFile" title="topologicpy.Topology.Topology.ByDXFFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFFile</span></code></a>(file[, sides])</p></td>
 <td><p>Imports a list of topologies from a DXF file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFPath" title="topologicpy.Topology.Topology.ByDXFPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFPath</span></code></a>(path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFPath" title="topologicpy.Topology.Topology.ByDXFPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFPath</span></code></a>(path[, sides])</p></td>
 <td><p>Imports a list of topologies from a DXF file path.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByGeometry" title="topologicpy.Topology.Topology.ByGeometry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByGeometry</span></code></a>([vertices, edges, faces, color, ...])</p></td>
@@ -1149,13 +1149,15 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByDXFFile">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByDXFFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByDXFFile" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByDXFFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByDXFFile" title="Permalink to this definition"></a></dt>
 <dd><p>Imports a list of topologies from a DXF file.
 This is an experimental method with limited capabilities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>file</strong><span class="classifier">a DXF file object</span></dt><dd><p>The DXF file object.</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of splines. The default is 16.</p>
 </dd>
 </dl>
 </dd>
@@ -1170,13 +1172,15 @@ This is an experimental method with limited capabilities.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByDXFPath">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByDXFPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByDXFPath" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByDXFPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByDXFPath" title="Permalink to this definition"></a></dt>
 <dd><p>Imports a list of topologies from a DXF file path.
 This is an experimental method with limited capabilities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the DXF file.</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of splines. The default is 16.</p>
 </dd>
 </dl>
 </dd>
