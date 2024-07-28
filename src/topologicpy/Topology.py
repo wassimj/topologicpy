@@ -1893,7 +1893,7 @@ class Topology():
         return Topology.ByBREPFile(file)
 
     @staticmethod
-    def ByDXFFile(file):
+    def ByDXFFile(file, sides: int = 16):
         """
         Imports a list of topologies from a DXF file.
         This is an experimental method with limited capabilities.
@@ -1902,6 +1902,8 @@ class Topology():
         ----------
         file : a DXF file object
             The DXF file object.
+        sides : int , optional
+            The desired number of sides of splines. The default is 16.
 
         Returns
         -------
@@ -1916,6 +1918,8 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
 
         try:
             import ezdxf
@@ -1936,34 +1940,123 @@ class Topology():
             print("Topology.ByDXFFile - Error: the input file parameter is not a valid file. Returning None.")
             return None
         
-        def convert_entity(entity):
+        import ezdxf
+
+
+
+        def get_layer_color(layers, layer_name):
+            # iteration
+            for layer in layers:
+                if layer_name == layer.dxf.name:
+                    r,g,b = layer.rgb
+                    return [r,g,b]
+            return 
+
+        def convert_entity(entity, file, sides=36):
             entity_type = entity.dxftype()
-            converted_entity = None
-
+            python_dict = entity.dxf.all_existing_dxf_attribs()
+            keys = python_dict.keys()
+            for key in keys:
+                if python_dict[key].__class__ == ezdxf.acc.vector.Vec3:
+                    python_dict[key] = list(python_dict[key])
+            try:
+                r,g,b = entity.rgb
+            except:
+                rgb_list = get_layer_color(file.layers, entity.dxf.layer)
+                if rgb_list == None:
+                    rgb_list = [0,0,0]
+            python_dict['color'] = rgb_list
+            python_dict['type'] = entity_type
+            d = Dictionary.ByPythonDictionary(python_dict)
+            
             if entity_type == 'POINT':
-                x, y, z = entity.dxf.location.x, entity.dxf.location.y, entity.dxf.location.z
-                converted_entity = Vertex.ByCoordinates(x, y, z)
-
+                point = entity.dxf.location.xyz
+                e = Vertex.ByCoordinates(point[0], point[1], point[2])
+                e = Topology.SetDictionary(e, d)
+            
             elif entity_type == 'LINE':
-                start = Vertex.ByCoordinates(entity.dxf.start.x, entity.dxf.start.y, entity.dxf.start.z)
-                end = Vertex.ByCoordinates(entity.dxf.end.x, entity.dxf.end.y, entity.dxf.end.z)
-                converted_entity = Edge.ByVertices(start, end)
+                sp = entity.dxf.start.xyz
+                ep = entity.dxf.end.xyz
+                sv = Vertex.ByCoordinates(sp[0], sp[1], sp[2])
+                ev = Vertex.ByCoordinates(ep[0], ep[1], ep[2])
+                e = Edge.ByVertices(sv,ev)
+                e = Topology.SetDictionary(e, d)
+        
+            elif entity_type == 'POLYLINE':
+                if entity.dxf.flags == 1:
+                    closed = True
+                else:
+                    closed = False
+                vertices = []
+                for vertex in entity.vertices:
+                    point = vertex.dxf.location.xyz
+                    vertices.append(Vertex.ByCoordinates(point[0], point[1], point[2]))
+                if entity.dxf.hasattr("closed"):
+                    closed = entity.closed
+                e = Wire.ByVertices(vertices, close=closed)
+                e = Topology.SetDictionary(e, d)
 
+            elif entity_type == 'LWPOLYLINE':
+                vertices = []
+                for point in entity.get_points():
+                    vertices.append(Vertex.ByCoordinates(point[0], point[1], 0))
+                if entity.dxf.hasattr("closed"):
+                    close = entity.closed
+                else:
+                    close = False
+                e = Wire.ByVertices(vertices, close=close)
+                e = Topology.SetDictionary(e, d)
+        
             elif entity_type == 'CIRCLE':
-                origin = Vertex.ByCoordinates(entity.dxf.center.x, entity.dxf.center.y, entity.dxf.center.z)
+                center = entity.dxf.center.xyz
                 radius = entity.dxf.radius
-                converted_entity = Wire.Circle(origin, radius)
-
-            elif entity_type in ['POLYLINE', 'LWPOLYLINE']:
-                with entity.points('xyz') as points:
-                    vertices = [Vertex.ByCoordinates(*_) for _ in points]
-                converted_entity = Wire.ByVertices(vertices)
-
+                num_points = 36  # Approximate the circle with 36 points
+                vertices = []
+                for i in range(sides):
+                    angle = 2 * np.pi * i / num_points
+                    x = center[0] + radius * np.cos(angle)
+                    y = center[1] + radius * np.sin(angle)
+                    z = center[2]
+                    vertices.append(Vertex.ByCoordinates(x,y,z))
+                e = Wire.ByVertices(vertices, close=True)
+                e = Topology.SetDictionary(e, d)
+            
             elif entity_type == 'ARC':
-                with entity.points('xyz') as points:
-                    vertices = [Vertex.ByCoordinates(*_) for _ in points]
-                converted_entity = Wire.ByVertices(vertices)
+                center = entity.dxf.center.xyz
+                radius = entity.dxf.radius
+                start_angle = np.deg2rad(entity.dxf.start_angle)
+                end_angle = np.deg2rad(entity.dxf.end_angle)
+                vertices = []
+                for i in range(sides+1):
+                    angle = start_angle + (end_angle - start_angle) * i / (num_points - 1)
+                    x = center[0] + radius * np.cos(angle)
+                    y = center[1] + radius * np.sin(angle)
+                    z = center[2]
+                    vertices.append(Vertex.ByCoordinates(x,y,z))
+                e = Wire.ByVertices(vertices, close=False)
+                e = Topology.SetDictionary(e, d)
 
+            elif entity_type == 'SPLINE':
+                # draw the curve tangents as red lines:
+                ct = entity.construction_tool()
+                vertices = []
+                for t in np.linspace(0, ct.max_t, 64):
+                    point, derivative = ct.derivative(t, 1)
+                    vertices.append(Vertex.ByCoordinates(list(point)))
+                converted_entity = Wire.ByVertices(vertices, close=entity.closed)
+                vertices = []
+                for i in range(sides+1):
+                    if i == 0:
+                        u = 0
+                    elif i == sides:
+                        u = 1
+                    else:
+                        u = float(i)/float(sides)
+                    vertices.append(Wire.VertexByParameter(converted_entity, u))
+
+                e = Wire.ByVertices(vertices, close=entity.closed)
+                e = Topology.SetDictionary(e, d)
+            
             elif entity_type == 'MESH':
                 vertices = [list(v) for v in entity.vertices]
                 faces = [list(face) for face in entity.faces]
@@ -1976,16 +2069,17 @@ class Topology():
                         temp = Shell.ByFaces(Topology.Faces(converted_entity))
                         if not Topology.IsInstance(temp, "Shell"):
                             temp = converted_entity
-                converted_entity = temp
-            return converted_entity
+                e = temp
+                e = Topology.SetDictionary(e, d)
+            return e
 
-        def convert_insert(entity, file):
+        def convert_insert(entity, file, sides=16):
             block_name = entity.dxf.name
             block = file.blocks.get(block_name)
             converted_entities = []
 
             for block_entity in block:
-                converted_entity = convert_entity(block_entity)
+                converted_entity = convert_entity(block_entity, sides=sides)
                 if converted_entity is not None:
                     converted_entities.append(converted_entity)
 
@@ -2006,9 +2100,9 @@ class Topology():
                     continue  # Ignore TEXT and MTEXT
 
                 if entity_type == 'INSERT':
-                    converted_entities.extend(convert_insert(entity, file))
+                    converted_entities.extend(convert_insert(entity, file, sides=sides))
                 else:
-                    converted_entity = convert_entity(entity)
+                    converted_entity = convert_entity(entity, file, sides=sides)
                     if converted_entity is not None:
                         converted_entities.append(converted_entity)
 
@@ -2017,7 +2111,7 @@ class Topology():
         return converted_entities
 
     @staticmethod
-    def ByDXFPath(path):
+    def ByDXFPath(path, sides: int = 16):
         """
         Imports a list of topologies from a DXF file path.
         This is an experimental method with limited capabilities.
@@ -2026,6 +2120,8 @@ class Topology():
         ----------
         path : str
             The path to the DXF file.
+        sides : int , optional
+            The desired number of sides of splines. The default is 16.
 
         Returns
         -------
@@ -2057,7 +2153,7 @@ class Topology():
         if not file:
             print("Topology.ByDXFPath - Error: the input file parameter is not a valid file. Returning None.")
             return None
-        return Topology.ByDXFFile(file)
+        return Topology.ByDXFFile(file, sides=sides)
 
     @staticmethod
     def ByIFCFile(file, transferDictionaries=False, includeTypes=[], excludeTypes=[]):
@@ -6989,6 +7085,8 @@ class Topology():
             if isinstance(colorKey, str):
                 f_color = Dictionary.ValueAtKey(d, colorKey)
                 if f_color:
+                    vertexColor = Color.PlotlyColor(f_color, alpha=1.0, useAlpha=False)
+                    edgeColor = Color.PlotlyColor(f_color, alpha=1.0, useAlpha=False)
                     faceColor = Color.PlotlyColor(f_color, alpha=1.0, useAlpha=False)
                 faceOpacity = Dictionary.ValueAtKey(d, opacityKey) or faceOpacity
             data += Plotly.DataByTopology(topology=topology,
