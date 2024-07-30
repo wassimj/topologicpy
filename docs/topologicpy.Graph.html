@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.7.37 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.7.38 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.37
+                0.7.38
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -184,10 +184,10 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BetweenessCentrality" title="topologicpy.Graph.Graph.BetweenessCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BetweenessCentrality</span></code></a>(graph[, vertices, ...])</p></td>
 <td><p>Returns the betweeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See <a class="reference external" href="https://en.wikipedia.org/wiki/Betweenness_centrality">https://en.wikipedia.org/wiki/Betweenness_centrality</a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrix" title="topologicpy.Graph.Graph.ByAdjacencyMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrix</span></code></a>(adjacencyMatrix[, xMin, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrix" title="topologicpy.Graph.Graph.ByAdjacencyMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrix</span></code></a>(adjacencyMatrix[, ...])</p></td>
 <td><p>Returns graphs according to the input folder path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath" title="topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrixCSVPath</span></code></a>(path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath" title="topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrixCSVPath</span></code></a>(path[, ...])</p></td>
 <td><p>Returns graphs according to the input path.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByCSVPath" title="topologicpy.Graph.Graph.ByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSVPath</span></code></a>(path[, graphIDHeader, ...])</p></td>
@@ -858,24 +858,29 @@ Note: If edge labels are not unique, they will be forced to be unique.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.ByAdjacencyMatrix">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByAdjacencyMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjacencyMatrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xMin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yMin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zMin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xMax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yMax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zMax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ByAdjacencyMatrix" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByAdjacencyMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">adjacencyMatrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xMin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yMin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zMin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xMax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yMax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zMax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ByAdjacencyMatrix" title="Permalink to this definition"></a></dt>
 <dd><p>Returns graphs according to the input folder path. This method assumes the CSV files follow DGL’s schema.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>adjacencyMatrix</strong><span class="classifier">list</span></dt><dd><p>The adjacency matrix expressed as a nested list of 0s and 1s.</p>
 </dd>
-<dt><strong>xMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s X coordinate. The default is -0.5.</p>
+<dt><strong>dictionaries</strong><span class="classifier">list , optional</span></dt><dd><p>A list of dictionaries to assign to the vertices of the graph. This list should be in
+the same order and of the same length as the rows in the adjacency matrix.</p>
 </dd>
-<dt><strong>yMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Y coordinate. The default is -0.5.</p>
+<dt><strong>xMin</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s X coordinate. The default is -0.5.</p>
 </dd>
-<dt><strong>zMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Z coordinate. The default is -0.5.</p>
+<dt><strong>yMin</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Y coordinate. The default is -0.5.</p>
 </dd>
-<dt><strong>xMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s X coordinate. The default is 0.5.</p>
+<dt><strong>zMin</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Z coordinate. The default is -0.5.</p>
 </dd>
-<dt><strong>yMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Y coordinate. The default is 0.5.</p>
+<dt><strong>xMax</strong><span class="classifier">float , optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s X coordinate. The default is 0.5.</p>
 </dd>
-<dt><strong>zMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Z coordinate. The default is 0.5.</p>
+<dt><strong>yMax</strong><span class="classifier">float , optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Y coordinate. The default is 0.5.</p>
+</dd>
+<dt><strong>zMax</strong><span class="classifier">float , optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Z coordinate. The default is 0.5.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no warnings or error messages are displayed. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -890,12 +895,17 @@ Note: If edge labels are not unique, they will be forced to be unique.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByAdjacencyMatrixCSVPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByAdjacencyMatrixCSVPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath" title="Permalink to this definition"></a></dt>
 <dd><p>Returns graphs according to the input path. This method assumes the CSV files follow an adjacency matrix schema.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The file path to the adjacency matrix CSV file.</p>
+</dd>
+<dt><strong>dictionaries</strong><span class="classifier">list , optional</span></dt><dd><p>A list of dictionaries to assign to the vertices of the graph. This list should be in
+the same order and of the same length as the rows in the adjacency matrix.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no warnings or error messages are displayed. The default is False.</p>
 </dd>
 </dl>
 </dd>
