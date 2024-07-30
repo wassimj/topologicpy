@@ -132,7 +132,6 @@ class Sun():
         -------
         datetime
             The datetime of the summer solstice
-
         """
         import os
         import warnings
@@ -173,7 +172,6 @@ class Sun():
         -------
         datetime
             The datetime of the summer solstice
-
         """
         import os
         import warnings
@@ -216,7 +214,6 @@ class Sun():
         -------
         float
             The azimuth angle.
-
         """
         import os
         import warnings
@@ -263,7 +260,6 @@ class Sun():
         -------
         float
             The altitude angle.
-
         """
         import os
         import warnings
@@ -310,8 +306,8 @@ class Sun():
         -------
         datetime
             The Sunrise datetime.
-
         """
+
         import os
         import warnings
         try:
@@ -355,8 +351,8 @@ class Sun():
         -------
         datetime
             The Sunset datetime.
-
         """
+
         import os
         import warnings
         try:
@@ -383,7 +379,7 @@ class Sun():
         return sunset
 
     @staticmethod
-    def Vector(latitude: float, longitude: float, date, north: float = 0, mantissa: int = 6, tolerance: float = 0.0001):
+    def Vector(latitude, longitude, date, north=0):
         """
         Returns the Sun as a vector.
 
@@ -402,12 +398,11 @@ class Sun():
         -------
         list
             The sun vector pointing from the location of the sun towards the origin.
-        
         """
         from topologicpy.Vector import Vector
         azimuth = Sun.Azimuth(latitude=latitude, longitude=longitude, date=date)
         altitude = Sun.Altitude(latitude=latitude, longitude=longitude, date=date)
-        return Vector.ByAzimuthAltitude(azimuth=azimuth, altitude=altitude, north=north, reverse=True, mantissa=mantissa, tolerance=tolerance)
+        return Vector.ByAzimuthAltitude(azimuth=azimuth, altitude=altitude, north=north, reverse=True)
 
     @staticmethod
     def Position(latitude, longitude, date, origin=None, radius=0.5, north=0, mantissa=6):
@@ -422,7 +417,7 @@ class Sun():
             The input longitude. See https://en.wikipedia.org/wiki/Longitude.
         date : datetime
             The input datetime.
-        origin : topologic_core.Vertex , optional
+        origin : topologic.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
         radius : float , optional
             The desired radius of the sun orbit. The default is 0.5.
@@ -431,14 +426,13 @@ class Sun():
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         
+        
         Returns
         -------
-        topologic_core.Vertex
+        topologic.Vertex
             The sun represented as a vertex.
-
         """
         from topologicpy.Vertex import Vertex
-
         sun_v = Sun.Vertex(latitude=latitude, longitude=longitude, date=date, origin=origin, radius=radius, north=north)
         return Vertex.Coordinates(sun_v, mantissa=mantissa)
     
@@ -455,7 +449,7 @@ class Sun():
             The input longitude. See https://en.wikipedia.org/wiki/Longitude.
         date : datetime
             The input datetime.
-        origin : topologic_core.Vertex , optional
+        origin : topologic.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
         radius : float , optional
             The desired radius of the sun orbit. The default is 0.5.
@@ -464,14 +458,14 @@ class Sun():
 
         Returns
         -------
-        topologic_core.Vertex
+        topologic.Vertex
             The sun represented as a vertex.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
 
-        if not Topology.IsInstance(origin, "Vertex"):
+        if origin == None:
             origin = Vertex.Origin()
         vector = Vector.Reverse(Sun.Vector(latitude=latitude, longitude=longitude, date=date, north=north))
         sun_v = Topology.TranslateByDirectionDistance(origin, direction=vector, distance=radius)
@@ -490,7 +484,7 @@ class Sun():
             The input longitude. See https://en.wikipedia.org/wiki/Longitude.
         date : datetime
             The input datetime.
-        origin : topologic_core.Vertex , optional
+        origin : topologic.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
         radius : float , optional
             The desired radius of the sun orbit. The default is 0.5.
@@ -499,7 +493,7 @@ class Sun():
 
         Returns
         -------
-        topologic_core.Edge
+        topologic.Edge
             The sun represented as an edge pointing from the location of the sun towards the origin.
         """
         from topologicpy.Vertex import Vertex
@@ -507,7 +501,7 @@ class Sun():
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
 
-        if not Topology.IsInstance(origin, "Vertex"):
+        if origin == None:
             origin = Vertex.Origin()
         vector = Vector.Reverse(Sun.Vector(latitude=latitude, longitude=longitude, date=date, north=north))
         sun_v = Topology.TranslateByDirectionDistance(origin, direction=vector, distance=radius)
@@ -533,7 +527,7 @@ class Sun():
             The desired end time to compute the sun location. If set to None, Sun.Sunset is used. The default is None.
         interval : int , optional
             The interval in minutes to compute the sun location. The default is 60.
-        origin : topologic_core.Vertex , optional
+        origin : topologic.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
         radius : float , optional
             The desired radius of the sun orbit. The default is 0.5.
@@ -577,7 +571,7 @@ class Sun():
             The desired end time to compute the sun location. If set to None, Sun.Sunset is used. The default is None.
         interval : int , optional
             The interval in minutes to compute the sun location. The default is 60.
-        origin : topologic_core.Vertex , optional
+        origin : topologic.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
         radius : float , optional
             The desired radius of the sun orbit. The default is 0.5.
@@ -589,16 +583,14 @@ class Sun():
 
         Returns
         -------
-        topologic_core.Wire
+        topologic.Wire
             The sun path represented as a wire.
-
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
-        from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(origin, "Vertex"):
+        from topologicpy.Dictionary import Dictionary
+        if origin == None:
             origin = Vertex.Origin()
         if startTime == None:
             startTime = Sun.Sunrise(latitude=latitude, longitude=longitude, date=date)
@@ -641,7 +633,7 @@ class Sun():
             The desired end day to compute the sun location. The default is 365.
         interval : int , optional
             The interval in days to compute the sun location. The default is 5.
-        origin : topologic_core.Vertex , optional
+        origin : topologic.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
         radius : float , optional
             The desired radius of the sun orbit. The default is 0.5.
@@ -652,11 +644,9 @@ class Sun():
         -------
         list
             The sun locations represented as a list of vertices.
-
         """
         from datetime import datetime
         from datetime import timedelta
-
         def day_of_year_to_datetime(year, day_of_year):
             # Construct a datetime object for the first day of the year
             base_date = datetime(year, 1, 1)
@@ -694,7 +684,7 @@ class Sun():
             The desired end day of the year to compute the sun location. The default is 365.
         interval : int , optional
             The interval in days to compute the sun location. The default is 5.
-        origin : topologic_core.Vertex , optional
+        origin : topologic.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
         radius : float , optional
             The desired radius of the sun orbit. The default is 0.5.
@@ -706,13 +696,13 @@ class Sun():
 
         Returns
         -------
-        topologic_core.Wire
+        topologic.Wire
             The sun path represented as a topologic wire.
-
         """
+
         from topologicpy.Wire import Wire
-        from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
         
         vertices = Sun.VerticesByHour(latitude=latitude, longitude=longitude, hour=hour,
                                       startDay=startDay, endDay=endDay, interval=interval,
@@ -749,7 +739,7 @@ class Sun():
             The interval in minutes to compute the sun location for the date path. The default is 30.
         dayInterval : int , optional
             The interval in days for the hourly path to compute the sun location. The default is 15.
-        origin : topologic_core.Vertex , optional
+        origin : topologic.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
         radius : float , optional
             The desired radius of the sun orbit. The default is 0.5.
@@ -776,8 +766,8 @@ class Sun():
             - 'center' : This is a cross-shape (wire) at the center of the diagram. This is included only if the compass option is set to True.
             - 'ground' : This is a circle (face) on the ground. It is made of 36 sides. This is included only if
                the compass option is set to False.
-
         """
+
         from datetime import datetime
         from datetime import timedelta
         from topologicpy.Vertex import Vertex
@@ -789,7 +779,7 @@ class Sun():
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
-        if not Topology.IsInstance(origin, "Vertex"):
+        if origin == None:
             origin = Vertex.Origin()
 
         cutter = Cell.Prism(origin=origin, width=radius*4, length=radius*4, height=radius*2)

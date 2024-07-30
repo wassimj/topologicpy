@@ -1289,7 +1289,7 @@ class Graph:
         return values
     
     @staticmethod
-    def ByAdjacencyMatrixCSVPath(path):
+    def ByAdjacencyMatrixCSVPath(path: str, dictionaries: list = None, silent: bool = False):
         """
         Returns graphs according to the input path. This method assumes the CSV files follow an adjacency matrix schema.
 
@@ -1297,6 +1297,11 @@ class Graph:
         ----------
         path : str
             The file path to the adjacency matrix CSV file.
+        dictionaries : list , optional
+            A list of dictionaries to assign to the vertices of the graph. This list should be in
+            the same order and of the same length as the rows in the adjacency matrix.
+        silent : bool , optional
+            If set to True, no warnings or error messages are displayed. The default is False.
         
         Returns
         -------
@@ -1310,10 +1315,10 @@ class Graph:
         
         # Convert DataFrame to a nested list
         adjacency_matrix = adjacency_matrix_df.values.tolist()
-        return Graph.ByAdjacencyMatrix(adjacencyMatrix=adjacency_matrix)
+        return Graph.ByAdjacencyMatrix(adjacencyMatrix=adjacency_matrix, dictionaries=dictionaries, silent=silent)
 
     @staticmethod
-    def ByAdjacencyMatrix(adjacencyMatrix, xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5):
+    def ByAdjacencyMatrix(adjacencyMatrix, dictionaries = None, xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5, silent=False):
         """
         Returns graphs according to the input folder path. This method assumes the CSV files follow DGL's schema.
 
@@ -1321,18 +1326,23 @@ class Graph:
         ----------
         adjacencyMatrix : list
             The adjacency matrix expressed as a nested list of 0s and 1s.
-        xMin : float, optional
+        dictionaries : list , optional
+            A list of dictionaries to assign to the vertices of the graph. This list should be in
+            the same order and of the same length as the rows in the adjacency matrix.
+        xMin : float , optional
             The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
-        yMin : float, optional
+        yMin : float , optional
             The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
-        zMin : float, optional
+        zMin : float , optional
             The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
-        xMax : float, optional
+        xMax : float , optional
             The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
-        yMax : float, optional
+        yMax : float , optional
             The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
-        zMax : float, optional
+        zMax : float , optional
             The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+        silent : bool , optional
+            If set to True, no warnings or error messages are displayed. The default is False.
         
         Returns
         -------
@@ -1342,16 +1352,25 @@ class Graph:
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
         import  random
 
         if not isinstance(adjacencyMatrix, list):
             print("Graph.ByAdjacencyMatrix - Error: The input adjacencyMatrix parameter is not a valid list. Returning None.")
             return None
+        if isinstance(dictionaries, list):
+            if not len(dictionaries) == len(adjacencyMatrix):
+                if not silent:
+                    print("Graph.ByAdjacencyMatrix - Error: The length of the dictionaries list and the adjacency matrix are different. Returning None.")
+                return None
+
         # Add vertices with random coordinates
         vertices = []
         for i in range(len(adjacencyMatrix)):
             x, y, z = random.uniform(xMin,xMax), random.uniform(yMin,yMax), random.uniform(zMin,zMax)
-            vertices.append(Vertex.ByCoordinates(x, y, z))
+            v = Vertex.ByCoordinates(x, y, z)
+            v = Topology.SetDictionary(v, dictionaries[i])
+            vertices.append(v)
 
         # Create the graph using vertices and edges
         if len(vertices) == 0:
