@@ -2138,7 +2138,7 @@ class Topology():
         return Topology.ByDXFFile(file, sides=sides)
 
     @staticmethod
-    def ByIFCFile(file, transferDictionaries=False, includeTypes=[], excludeTypes=[]):
+    def ByIFCFile(file, includeTypes=[], excludeTypes=[], transferDictionaries=False, removeCoplanarFaces=False):
         """
         Create a topology by importing it from an IFC file.
 
@@ -2146,13 +2146,14 @@ class Topology():
         ----------
         file : file object
             The input IFC file.
-        transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
         includeTypes : list , optional
             The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].
         excludeTypes : list , optional
             The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. The default is [].
-        
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
         Returns
         -------
         list
@@ -2187,19 +2188,25 @@ class Topology():
         excludeTypes = [s.lower() for s in excludeTypes]
         topologies = []
         settings = ifcopenshell.geom.settings()
-        settings.set(settings.DISABLE_TRIANGULATION, True)
-        settings.set(settings.USE_BREP_DATA, True)
+        settings.set("dimensionality", ifcopenshell.ifcopenshell_wrapper.CURVES_SURFACES_AND_SOLIDS)
         settings.set(settings.USE_WORLD_COORDS, True)
-        settings.set(settings.SEW_SHELLS, True)
         iterator = ifcopenshell.geom.iterator(settings, file, multiprocessing.cpu_count())
         if iterator.initialize():
             while True:
                 shape = iterator.get()
                 is_a = shape.type.lower()
-                if (is_a in includeTypes or len(includeTypes) == 0) and (not is_a in excludeTypes):
+                if (is_a in includeTypes or len(includeTypes) == 0) and (not is_a in excludeTypes):                    
                     try:
-                        brep = shape.geometry.brep_data
-                        topology = Topology.SelfMerge(Topology.ByBREPString(brep))
+                        verts = shape.geometry.verts
+                        edges = shape.geometry.edges
+                        faces = shape.geometry.faces
+                        grouped_verts = [ [verts[i], verts[i + 1], verts[i + 2]] for i in range(0, len(verts), 3)]
+                        grouped_edges = [[edges[i], edges[i + 1]] for i in range(0, len(edges), 2)]
+                        grouped_faces = [ [faces[i], faces[i + 1], faces[i + 2]] for i in range(0, len(faces), 3)]
+                        topology = Topology.ByGeometry(grouped_verts, grouped_edges, grouped_faces)
+                        if removeCoplanarFaces:
+                            topology = Topology.RemoveCoplanarFaces(topology)
+                        topologies.append(topology)
                         if transferDictionaries:
                             keys = []
                             values = []
@@ -2231,7 +2238,7 @@ class Topology():
         return topologies
 
     @staticmethod
-    def ByIFCPath(path, transferDictionaries=False, includeTypes=[], excludeTypes=[]):
+    def ByIFCPath(path, includeTypes=[], excludeTypes=[], transferDictionaries=False, removeCoplanarFaces=False):
         """
         Create a topology by importing it from an IFC file path.
 
@@ -2239,12 +2246,14 @@ class Topology():
         ----------
         path : str
             The path to the IFC file.
-        transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
         includeTypes : list , optional
             The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].
         excludeTypes : list , optional
             The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. The default is [].
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
         
         Returns
         -------
@@ -2264,7 +2273,7 @@ class Topology():
         if not file:
             print("Topology.ByIFCPath - Error: the input file parameter is not a valid file. Returning None.")
             return None
-        return Topology.ByIFCFile(file, transferDictionaries=transferDictionaries, includeTypes=includeTypes, excludeTypes=excludeTypes)
+        return Topology.ByIFCFile(file, includeTypes=includeTypes, excludeTypes=excludeTypes, transferDictionaries=transferDictionaries, removeCoplanarFaces=removeCoplanarFaces)
     
     '''
     @staticmethod
