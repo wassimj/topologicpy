@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.ANN module &mdash; topologicpy 0.7.38 documentation</title>
+  <title>topologicpy.ANN module &mdash; topologicpy 0.7.39 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.38
+                0.7.39
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -225,26 +225,11 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The  name of the dataset. This can be one of [‘breast_cancer’, ‘california_housing’, ‘digits’, ‘iris’, ‘wine’]</p>
 </dd>
-<dt><strong>trainRatio</strong><span class="classifier">float , optional</span></dt><dd><p>The ratio of the data to use for training and validation vs. the ratio to use for testing. The default is 0.6
-which means that 60% of the data will be used for training and validation while 40% of the data will be reserved for testing.</p>
-</dd>
-<dt><strong>randomState</strong><span class="classifier">int , optional</span></dt><dd><p>The randomState parameter is used to ensure reproducibility of the results. When you set the randomState parameter to a specific integer value,
-it controls the shuffling of the data before splitting it into training and testing sets.
-This means that every time you run your code with the same randomState value and the same dataset, you will get the same split of the data.
-The default is 42 which is just a randomly picked integer number. Specify None for random sampling.</p>
-</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><p>Returns the following dictionary:
-XTrain, XTest, yTrain, yTest, inputSize, outputSize
-XTrain is the list of features used for training
-XTest is the list of features used for testing
-yTrain is the list of targets used for training
-yTest is the list of targets used for testing
-inputSize is the size (length) of the input
-outputSize is the size (length) of the output</p>
+<dt>sklearn.utils._bunch.Bunch</dt><dd><p>The created dataset.</p>
 </dd>
 </dl>
 </dd>

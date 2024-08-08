@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Wire module &mdash; topologicpy 0.7.38 documentation</title>
+  <title>topologicpy.Wire module &mdash; topologicpy 0.7.39 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.38
+                0.7.39
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -503,7 +503,7 @@ A maximum optimization number of 10 will attempt to reduce the bounding rectangl
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the circle. The default is 0.5.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the circle. The default is 16.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the circle. The default is 16.</p>
 </dd>
 <dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees from which to start creating the arc of the circle. The default is 0.</p>
 </dd>
@@ -1428,19 +1428,15 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dd class="field-odd"><dl class="simple">
 <dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the squircle. The default is None which results in the squircle being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the squircle. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the squircle. The default is 0.5.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the squircle. The default is 121.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the squircle. The default is 121.</p>
 </dd>
 <dt><strong>a</strong><span class="classifier">float , optional</span></dt><dd><p>The “a” factor affects the x position of the points to interpolate between a circle and a square.
 A value of 1 will create a circle. Higher values will create a more square-like shape. The default is 2.0.</p>
 </dd>
 <dt><strong>b</strong><span class="classifier">float , optional</span></dt><dd><p>The “b” factor affects the y position of the points to interpolate between a circle and a square.
 A value of 1 will create a circle. Higher values will create a more square-like shape. The default is 2.0.</p>
-</dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the squircle. The default is 0.5.</p>
-</dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides for the squircle. The default is 100.</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the circle. The default is [0, 0, 1].</p>
 </dd>

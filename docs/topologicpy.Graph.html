@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.7.38 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.7.39 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.38
+                0.7.39
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -1605,6 +1605,8 @@ vertex that replaces it. See <a class="reference external" href="https://en.wiki
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
+<dt><strong>adjacencyMatrix: list</strong></dt><dd><p>The input adjacency matrix.</p>
+</dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.</p>
 </dd>
 </dl>
@@ -2636,7 +2638,7 @@ and the the edge connecting it to the input vertex is an outgoing edge.</p>
 </dd>
 <dt><strong>vertexSizeKey</strong><span class="classifier">str , optional</span></dt><dd><p>If not set to None, the vertex size will be derived from the dictionary value set at this key. If set to “degree”, the size of the vertex will be determined by its degree (number of neighbors). The default is None.</p>
 </dd>
-<dt><strong>vertexColor</strong><span class="classifier">int , optional</span></dt><dd><p>The desired default vertex color. his can be a named color or a hexadecimal value. The default is ‘black’.</p>
+<dt><strong>vertexColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired default vertex color. his can be a named color or a hexadecimal value. The default is ‘black’.</p>
 </dd>
 <dt><strong>vertexColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>If not set to None, the vertex color will be derived from the dictionary value set at this key. The default is None.</p>
 </dd>
@@ -2851,6 +2853,8 @@ The default is “black”.</p>
 <dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. The default is None.</p>
 </dd>
 <dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. The default is None.</p>
+</dd>
+<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of edge groups against which to index the color of the edge. The default is [].</p>
 </dd>
 <dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.</p>
 </dd>

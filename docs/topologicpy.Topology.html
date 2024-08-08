@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.7.38 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.7.39 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.38
+                0.7.39
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -958,12 +958,6 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>file</strong><span class="classifier">dotbimpy.file.File</span></dt><dd><p>The input dotbim file.</p>
 </dd>
-<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
-</dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the output file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
-</dd>
-<dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. The default is “1.0.0”.</p>
-</dd>
 <dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. The default is “guid”.</p>
 </dd>
 <dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. The default is “color”. If no color is found, the defaultColor parameter is used.</p>
@@ -1004,12 +998,6 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>path :str</strong></dt><dd><p>The path to the .bim file.</p>
 </dd>
-<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
-</dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the output file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
-</dd>
-<dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. The default is “1.0.0”.</p>
-</dd>
 <dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. The default is “guid”.</p>
 </dd>
 <dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. The default is “color”. If no color is found, the defaultColor parameter is used.</p>
@@ -1049,12 +1037,6 @@
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>string :str</strong></dt><dd><p>The input dotbim str (in JSON format).</p>
-</dd>
-<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
-</dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the output file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
-</dd>
-<dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. The default is “1.0.0”.</p>
 </dd>
 <dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. The default is “guid”.</p>
 </dd>
@@ -2509,8 +2491,6 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topologies</strong><span class="classifier">list or comma separated topologies</span></dt><dd><p>The input list of topologies.</p>
 </dd>
-<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
-</dd>
 <dt><strong>nameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the name of the topology. The default is “name”.</p>
 </dd>
 <dt><strong>colorKey</strong><span class="classifier">str, optional</span></dt><dd><p>The topology dictionary key under which to find the color of the topology. The default is “color”.</p>
@@ -2541,8 +2521,6 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
-</dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
 </dd>
 </dl>
 </dd>
