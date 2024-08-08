@@ -2120,8 +2120,6 @@ class Graph:
 
         def vertexByIFCObject(ifc_object, object_types, restrict=False):
             settings = ifcopenshell.geom.settings()
-            settings.set(settings.USE_BREP_DATA,False)
-            settings.set(settings.SEW_SHELLS,True)
             settings.set(settings.USE_WORLD_COORDS,True)
             try:
                 shape = ifcopenshell.geom.create_shape(settings, ifc_object)
