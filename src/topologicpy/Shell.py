@@ -349,8 +349,8 @@ class Shell():
 
         Returns
         -------
-        topologic_core.Cell
-            The created cell.
+        topologic_core.Shell
+            The created shell.
 
         """
         from topologicpy.Edge import Edge

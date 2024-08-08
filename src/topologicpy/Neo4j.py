@@ -276,7 +276,7 @@ class Neo4j:
         return Graph.ByVerticesEdges(vertices,edges)
     
     @staticmethod
-    def AddGraph(neo4jGraph, graph, labelKey=None, relationshipKey=None, bidirectional=True, deleteAll=True, mantissa: int = 6, tolerance: float = 0.0001):
+    def AddGraph(neo4jGraph, graph, labelKey=None, relationshipKey=None, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Adds the input topologic graph to the input neo4j graph
 
@@ -286,8 +286,10 @@ class Neo4j:
             The input neo4j graph.
         graph : topologic_core.Graph
             The input topologic graph.
-        categoryKey : str
-            The category key in the dictionary under which to look for the category value.
+        labelKey : str , optional
+            The label key in the dictionary under which to look for the label value.
+        relationshipKey: str , optional
+            The relationship key in the dictionary under which to look for the relationship value.
         mantissa : int, optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional

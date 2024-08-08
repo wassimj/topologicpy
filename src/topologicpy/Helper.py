@@ -164,40 +164,6 @@ class Helper:
         return iterated_list
     
     @staticmethod
-    def K_Means(data, k=4, maxIterations=100):
-        import random
-        def euclidean_distance(p, q):
-            return sum((pi - qi) ** 2 for pi, qi in zip(p, q)) ** 0.5
-
-        # Initialize k centroids randomly
-        centroids = random.sample(data, k)
-
-        for _ in range(maxIterations):
-            # Assign each data point to the nearest centroid
-            clusters = [[] for _ in range(k)]
-            for point in data:
-                distances = [euclidean_distance(point, centroid) for centroid in centroids]
-                nearest_centroid_index = distances.index(min(distances))
-                clusters[nearest_centroid_index].append(point)
-
-            # Compute the new centroids as the mean of the points in each cluster
-            new_centroids = []
-            for cluster in clusters:
-                if not cluster:
-                    # If a cluster is empty, keep the previous centroid
-                    new_centroids.append(centroids[clusters.index(cluster)])
-                else:
-                    new_centroids.append([sum(dim) / len(cluster) for dim in zip(*cluster)])
-
-            # Check if the centroids have converged
-            if new_centroids == centroids:
-                break
-
-            centroids = new_centroids
-
-        return {'clusters': clusters, 'centroids': centroids}
-    
-    @staticmethod
     def MergeByThreshold(listA, threshold=0.0001):
         """
         Merges the numbers in the input list so that numbers within the input threshold are averaged into one number.

@@ -1594,12 +1594,6 @@ class Topology():
         ----------
         path :str
             The path to the .bim file.
-        path : str
-            The input file path.
-        overwrite : bool , optional
-            If set to True the output file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
-        version : str , optional
-            The desired version number for the BIM file. The default is "1.0.0".
         guidKey : str , optional
             The key to use to store the the guid of the topology. The default is "guid".
         colorKey : str , optional
@@ -1658,12 +1652,6 @@ class Topology():
         ----------
         string :str
             The input dotbim str (in JSON format).
-        path : str
-            The input file path.
-        overwrite : bool , optional
-            If set to True the output file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
-        version : str , optional
-            The desired version number for the BIM file. The default is "1.0.0".
         guidKey : str , optional
             The key to use to store the the guid of the topology. The default is "guid".
         colorKey : str , optional
@@ -1754,12 +1742,6 @@ class Topology():
         ----------
         file : dotbimpy.file.File
             The input dotbim file.
-        path : str
-            The input file path.
-        overwrite : bool , optional
-            If set to True the output file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
-        version : str , optional
-            The desired version number for the BIM file. The default is "1.0.0".
         guidKey : str , optional
             The key to use to store the the guid of the topology. The default is "guid".
         colorKey : str , optional
@@ -4988,8 +4970,6 @@ class Topology():
         ----------
         topologies : list or comma separated topologies
             The input list of topologies.
-        path : str
-            The input file path.
         nameKey : str , optional
             The topology dictionary key under which to find the name of the topology. The default is "name".
         colorKey : str, optional
@@ -5021,8 +5001,6 @@ class Topology():
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
-        overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
 
         Returns
         -------

@@ -471,27 +471,11 @@ class ANN():
         ----------
         name : str
             The  name of the dataset. This can be one of ['breast_cancer', 'california_housing', 'digits', 'iris', 'wine']
-
-        trainRatio : float , optional
-            The ratio of the data to use for training and validation vs. the ratio to use for testing. The default is 0.6
-            which means that 60% of the data will be used for training and validation while 40% of the data will be reserved for testing.
-        randomState : int , optional
-            The randomState parameter is used to ensure reproducibility of the results. When you set the randomState parameter to a specific integer value,
-            it controls the shuffling of the data before splitting it into training and testing sets.
-            This means that every time you run your code with the same randomState value and the same dataset, you will get the same split of the data.
-            The default is 42 which is just a randomly picked integer number. Specify None for random sampling.
         
         Returns
         -------
-        dict
-            Returns the following dictionary:
-            XTrain, XTest, yTrain, yTest, inputSize, outputSize
-            XTrain is the list of features used for training
-            XTest is the list of features used for testing
-            yTrain is the list of targets used for training
-            yTest is the list of targets used for testing
-            inputSize is the size (length) of the input
-            outputSize is the size (length) of the output
+        sklearn.utils._bunch.Bunch
+            The created dataset.
         """
         # Load dataset
         if name == 'breast_cancer':

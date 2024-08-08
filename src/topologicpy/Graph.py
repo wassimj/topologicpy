@@ -4686,6 +4686,8 @@ class Graph:
 
         Parameters
         ----------
+        adjacencyMatrix: list
+            The input adjacency matrix.
         path : str
             The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
 
@@ -4936,7 +4938,6 @@ class Graph:
             The desired graph label column header. The default is "label".
         graphFeaturesHeader : str , optional
             The desired graph features column header. The default is "feat".
-        
         edgeLabelKey : str , optional
             The edge label dictionary key saved in each graph edge. The default is "label".
         defaultEdgeLabel : int , optional
@@ -4971,7 +4972,6 @@ class Graph:
             This value is ignored if an edgeMaskKey is foud.
         bidirectional : bool , optional
             If set to True, a reversed edge will also be saved for each edge in the graph. Otherwise, it will not. The default is True.
-        
         nodeFeaturesKeys : list , optional
             The list of features keys saved in the dicitonaries of nodes. The default is [].
         nodeLabelKey : str , optional
@@ -7444,7 +7444,7 @@ class Graph:
             The desired default vertex size. The default is 6.
         vertexSizeKey : str , optional
             If not set to None, the vertex size will be derived from the dictionary value set at this key. If set to "degree", the size of the vertex will be determined by its degree (number of neighbors). The default is None.
-        vertexColor : int , optional
+        vertexColor : str , optional
             The desired default vertex color. his can be a named color or a hexadecimal value. The default is 'black'.
         vertexColorKey : str , optional
             If not set to None, the vertex color will be derived from the dictionary value set at this key. The default is None.
@@ -7884,6 +7884,8 @@ class Graph:
             The dictionary key to use to display the edge label. The default is None.
         edgeGroupKey : str , optional
             The dictionary key to use to display the edge group. The default is None.
+        edgeGroups : list , optional
+            The list of edge groups against which to index the color of the edge. The default is [].
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
         showEdgeLegend : bool , optional

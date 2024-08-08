@@ -307,8 +307,6 @@ class Grid():
         ----------
         face : topologic_core.Face , optional
             The input face. If set to None, the grid will be created on the XY plane. The default is None.
-        origin : topologic_core.Vertex , optional
-            The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the origin will be set to (0, 0, 0). The default is None.
         uRange : list , optional
             A list of *u* parameters for the *u* grid lines from the uOrigin. The default is [0.0,0.25,0.5,0.75,1.0].
         vRange : list , optional

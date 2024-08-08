@@ -115,7 +115,11 @@ class Ray2:
             return None  # Rays are parallel and do not intersect
         
         # Calculate the intersection point using vector algebra
-        t = (other.p - self.p).cross(other.v) / self.v.cross(other.v)
+        denom = self.v.cross(other.v)
+        if not denom == 0:
+            t = (other.p - self.p).cross(other.v) / self.v.cross(other.v)
+        else:
+            return None
         if t >= 0:
             return self.p + self.v * t  # Intersection point
         else:

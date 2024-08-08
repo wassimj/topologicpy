@@ -521,8 +521,8 @@ class Face():
 
         Returns
         -------
-        topologic_core.Cell
-            The created cell.
+        topologic_core.Face
+            The created face.
 
         """
         from topologicpy.Vertex import Vertex
@@ -2170,19 +2170,15 @@ class Face():
         origin : topologic_core.Vertex , optional
             The location of the origin of the squircle. The default is None which results in the squircle being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the squircle. The default is 0.5.
+            The desired radius of the squircle. The default is 0.5.
         sides : int , optional
-            The number of sides of the squircle. The default is 121.
+            The desired number of sides of the squircle. The default is 121.
         a : float , optional
             The "a" factor affects the x position of the points to interpolate between a circle and a square.
             A value of 1 will create a circle. Higher values will create a more square-like shape. The default is 2.0.
         b : float , optional
             The "b" factor affects the y position of the points to interpolate between a circle and a square.
             A value of 1 will create a circle. Higher values will create a more square-like shape. The default is 2.0.
-        radius : float , optional
-            The desired radius of the squircle. The default is 0.5.
-        sides : int , optional
-            The desired number of sides for the squircle. The default is 100.
         direction : list , optional
             The vector representing the up direction of the circle. The default is [0, 0, 1].
         placement : str , optional
