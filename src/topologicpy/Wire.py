@@ -365,7 +365,7 @@ class Wire():
             fac = -1
         else:
             fac = 1
-        origin = Vertex.Origin()
+        origin = Topology.Centroid(wire)
         temp_vertices = [Topology.Vertices(wire)[0], Topology.Vertices(wire)[1], Topology.Centroid(wire)]
         temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True))
         temp_normal = Face.Normal(temp_face)

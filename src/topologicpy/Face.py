@@ -323,7 +323,10 @@ class Face():
                 print("Face.ByOffset - Warning: The input face parameter is not a valid face. Returning None.")
             return None
         
+        if abs(Face.Normal(face)[2] + 1) < tolerance:
+            reverse = not(reverse)
         eb = Face.Wire(face)
+        
         internal_boundaries = Face.InternalBoundaries(face)
         offset_external_boundary = Wire.ByOffset(eb,
                                                  offset=offset,
