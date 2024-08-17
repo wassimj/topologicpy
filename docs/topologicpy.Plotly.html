@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Plotly module &mdash; topologicpy 0.7.42 documentation</title>
+  <title>topologicpy.Plotly module &mdash; topologicpy 0.7.43 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.42
+                0.7.43
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -169,49 +169,52 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByConfusionMatrix" title="topologicpy.Plotly.Plotly.FigureByConfusionMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByConfusionMatrix</span></code></a>(matrix[, ...])</p></td>
 <td><p>Returns a Plotly Figure of the input confusion matrix.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByData" title="topologicpy.Plotly.Plotly.FigureByData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByData</span></code></a>(data[, width, height, xAxis, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByCorrelation" title="topologicpy.Plotly.Plotly.FigureByCorrelation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByCorrelation</span></code></a>(actual, predicted[, ...])</p></td>
+<td><p>Returns a Plotly Figure showing the correlation between the input actual and predicted values.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByData" title="topologicpy.Plotly.Plotly.FigureByData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByData</span></code></a>(data[, width, height, xAxis, ...])</p></td>
 <td><p>Creates a plotly figure.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByDataFrame" title="topologicpy.Plotly.Plotly.FigureByDataFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByDataFrame</span></code></a>(dataFrame[, labels, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByDataFrame" title="topologicpy.Plotly.Plotly.FigureByDataFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByDataFrame</span></code></a>(dataFrame[, labels, ...])</p></td>
 <td><p>Returns a Plotly Figure of the input dataframe</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByJSONFile" title="topologicpy.Plotly.Plotly.FigureByJSONFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByJSONFile</span></code></a>(file)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByJSONFile" title="topologicpy.Plotly.Plotly.FigureByJSONFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByJSONFile</span></code></a>(file)</p></td>
 <td><p>Imports a plotly figure from a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByJSONPath" title="topologicpy.Plotly.Plotly.FigureByJSONPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByJSONPath</span></code></a>(path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByJSONPath" title="topologicpy.Plotly.Plotly.FigureByJSONPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByJSONPath</span></code></a>(path)</p></td>
 <td><p>Imports a plotly figure from a JSON file path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByMatrix" title="topologicpy.Plotly.Plotly.FigureByMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByMatrix</span></code></a>(matrix[, xCategories, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByMatrix" title="topologicpy.Plotly.Plotly.FigureByMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByMatrix</span></code></a>(matrix[, xCategories, ...])</p></td>
 <td><p>Returns a Plotly Figure of the input matrix.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByPieChart" title="topologicpy.Plotly.Plotly.FigureByPieChart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByPieChart</span></code></a>(data, values, names)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByPieChart" title="topologicpy.Plotly.Plotly.FigureByPieChart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByPieChart</span></code></a>(data, values, names)</p></td>
 <td><p>Creates a plotly pie chart figure.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByTopology" title="topologicpy.Plotly.Plotly.FigureByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByTopology</span></code></a>(topology[, showVertices, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByTopology" title="topologicpy.Plotly.Plotly.FigureByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByTopology</span></code></a>(topology[, showVertices, ...])</p></td>
 <td><p>Creates a figure from the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToJSON" title="topologicpy.Plotly.Plotly.FigureExportToJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToJSON</span></code></a>(figure, path[, overwrite])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToJSON" title="topologicpy.Plotly.Plotly.FigureExportToJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToJSON</span></code></a>(figure, path[, overwrite])</p></td>
 <td><p>Exports the input plotly figure to a JSON file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToPDF" title="topologicpy.Plotly.Plotly.FigureExportToPDF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToPDF</span></code></a>(figure, path[, width, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToPDF" title="topologicpy.Plotly.Plotly.FigureExportToPDF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToPDF</span></code></a>(figure, path[, width, ...])</p></td>
 <td><p>Exports the input plotly figure to a PDF file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToPNG" title="topologicpy.Plotly.Plotly.FigureExportToPNG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToPNG</span></code></a>(figure, path[, width, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToPNG" title="topologicpy.Plotly.Plotly.FigureExportToPNG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToPNG</span></code></a>(figure, path[, width, ...])</p></td>
 <td><p>Exports the input plotly figure to a PNG file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToSVG" title="topologicpy.Plotly.Plotly.FigureExportToSVG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToSVG</span></code></a>(figure, path[, width, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToSVG" title="topologicpy.Plotly.Plotly.FigureExportToSVG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToSVG</span></code></a>(figure, path[, width, ...])</p></td>
 <td><p>Exports the input plotly figure to a SVG file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Renderer" title="topologicpy.Plotly.Plotly.Renderer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Renderer</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Renderer" title="topologicpy.Plotly.Plotly.Renderer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Renderer</span></code></a>()</p></td>
 <td><p>Return the renderer most suitable for the environment in which the script is running.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Renderers" title="topologicpy.Plotly.Plotly.Renderers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Renderers</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Renderers" title="topologicpy.Plotly.Plotly.Renderers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Renderers</span></code></a>()</p></td>
 <td><p>Returns a list of the available plotly renderers.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.SetCamera" title="topologicpy.Plotly.Plotly.SetCamera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetCamera</span></code></a>(figure[, camera, center, up, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.SetCamera" title="topologicpy.Plotly.Plotly.SetCamera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetCamera</span></code></a>(figure[, camera, center, up, ...])</p></td>
 <td><p>Sets the camera for the input figure.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Show" title="topologicpy.Plotly.Plotly.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(figure[, camera, center, up, renderer, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Show" title="topologicpy.Plotly.Plotly.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(figure[, camera, center, up, renderer, ...])</p></td>
 <td><p>Shows the input figure.</p></td>
 </tr>
 </tbody>
@@ -517,7 +520,7 @@ The default is “#FAFAFA”.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByConfusionMatrix">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByConfusionMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Confusion</span> <span class="pre">Matrix'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Actual'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Predicted'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorSamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByConfusionMatrix" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByConfusionMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Confusion</span> <span class="pre">Matrix'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Actual</span> <span class="pre">Categories'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Predicted</span> <span class="pre">Categories'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorSamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByConfusionMatrix" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a Plotly Figure of the input confusion matrix. Actual categories are displayed on the X-Axis, Predicted categories are displayed on the Y-Axis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -532,9 +535,9 @@ The default is “#FAFAFA”.</p>
 </dd>
 <dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. The default is “Confusion Matrix”.</p>
 </dd>
-<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. The default is “Actual”.</p>
+<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. The default is “Actual Categories”.</p>
 </dd>
-<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. The default is “Predicted”.</p>
+<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. The default is “Predicted Categories”.</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. The default is 950.</p>
 </dd>
@@ -561,6 +564,78 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 <dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. The default is 40.</p>
 </dd>
 <dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. The default is 0.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>plotly.Figure</dt><dd><p>The created plotly figure.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByCorrelation">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByCorrelation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Correlation</span> <span class="pre">between</span> <span class="pre">Actual</span> <span class="pre">and</span> <span class="pre">Predicted</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Actual</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Predicted</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dotColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'blue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lineColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'red'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">800</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByCorrelation" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a Plotly Figure showing the correlation between the input actual and predicted values. Actual values are displayed on the X-Axis, Predicted values are displayed on the Y-Axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>actual</strong><span class="classifier">list</span></dt><dd><p>The actual values to display.</p>
+</dd>
+<dt><strong>predicted</strong><span class="classifier">list</span></dt><dd><p>The predicted values to display.</p>
+</dd>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. The default is “Correlation between Actual and Predicted Values”.</p>
+</dd>
+<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. The default is “Actual Values”.</p>
+</dd>
+<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. The default is “Predicted Values”.</p>
+</dd>
+<dt><strong>dotColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the dots. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘blue’.</p>
+</dd>
+<dt><strong>lineColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the best fit line. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘red’.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. The default is 800.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. The default is 600.</p>
+</dd>
+<dt><strong>theme</strong><span class="classifier">str , optional</span></dt><dd><p>The plotly color scheme to use. The options are “dark”, “light”, “default”. The default is “default”.</p>
+</dd>
+<dt><strong>backgroundColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired background color. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘rgba(0,0,0,0)’ (transparent).</p>
+</dd>
+<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. The default is 0.</p>
+</dd>
+<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. The default is 0.</p>
+</dd>
+<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. The default is 40.</p>
+</dd>
+<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. The default is 0.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>plotly.Figure</dt><dd><p>The created plotly figure.</p>
 </dd>
 </dl>
 </dd>
