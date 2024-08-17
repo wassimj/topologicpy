@@ -994,8 +994,8 @@ class Plotly:
              minValue=None,
              maxValue=None,
              title="Confusion Matrix",
-             xTitle = "Actual",
-             yTitle = "Predicted",
+             xTitle = "Actual Categories",
+             yTitle = "Predicted Categories",
              width=950,
              height=500,
              showScale = True,
@@ -1022,9 +1022,9 @@ class Plotly:
         title : str , optional
             The desired title to display. The default is "Confusion Matrix".
         xTitle : str , optional
-            The desired X-axis title to display. The default is "Actual".
+            The desired X-axis title to display. The default is "Actual Categories".
         yTitle : str , optional
-            The desired Y-axis title to display. The default is "Predicted".
+            The desired Y-axis title to display. The default is "Predicted Categories".
         width : int , optional
             The desired width of the figure. The default is 950.
         height : int , optional
@@ -1051,7 +1051,11 @@ class Plotly:
             The desired top margin in pixels. The default is 40.
         marginBottom : int , optional
             The desired bottom margin in pixels. The default is 0.
-
+        
+        Returns
+        -------
+        plotly.Figure
+            The created plotly figure.
         """
         try:
             import numpy as np
@@ -1265,7 +1269,158 @@ class Plotly:
         fig.update_xaxes( tickvals=xCategories)
         fig.update_yaxes( tickvals=yCategories)
         return fig
+    
+    @staticmethod
+    def FigureByCorrelation(actual,
+                        predicted,
+                        title="Correlation between Actual and Predicted Values",
+                        xTitle = "Actual Values",
+                        yTitle = "Predicted Values",
+                        dotColor = "blue",
+                        lineColor = "red",
+                        width=800,
+                        height=600,
+                        theme='default',
+                        backgroundColor='rgba(0,0,0,0)',
+                        marginLeft=0,
+                        marginRight=0,
+                        marginTop=40,
+                        marginBottom=0):
+        """
+        Returns a Plotly Figure showing the correlation between the input actual and predicted values. Actual values are displayed on the X-Axis, Predicted values are displayed on the Y-Axis.
+
+        Parameters
+        ----------
+        actual : list
+            The actual values to display.
+        predicted : list
+            The predicted values to display.
+        title : str , optional
+            The desired title to display. The default is "Correlation between Actual and Predicted Values".
+        xTitle : str , optional
+            The desired X-axis title to display. The default is "Actual Values".
+        yTitle : str , optional
+            The desired Y-axis title to display. The default is "Predicted Values".
+        dotColor : str , optional
+            The desired color of the dots. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'blue'.
+        lineColor : str , optional
+            The desired color of the best fit line. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'red'.
+        width : int , optional
+            The desired width of the figure. The default is 800.
+        height : int , optional
+            The desired height of the figure. The default is 600.
+        theme : str , optional
+            The plotly color scheme to use. The options are "dark", "light", "default". The default is "default".
+        backgroundColor : str , optional
+            The desired background color. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'rgba(0,0,0,0)' (transparent).
+        marginLeft : int , optional
+            The desired left margin in pixels. The default is 0.
+        marginRight : int , optional
+            The desired right margin in pixels. The default is 0.
+        marginTop : int , optional
+            The desired top margin in pixels. The default is 40.
+        marginBottom : int , optional
+            The desired bottom margin in pixels. The default is 0.
         
+        Returns
+        -------
+        plotly.Figure
+            The created plotly figure.
+        
+        """
+
+        import numpy as np
+        import plotly.graph_objs as go
+        from sklearn.linear_model import LinearRegression
+        import plotly.io as pio
+        actual_values = np.array(actual)
+        predicted_values = np.array(predicted)
+
+        # Validate the theme input
+        if theme == 'light':
+            pio.templates.default = "plotly_white"
+            backgroundColor='white'
+        elif theme == 'dark':
+            pio.templates.default = "plotly_dark"
+            backgroundColor='black'
+        else:
+            pio.templates.default = None  # Use default Plotly theme
+        
+        # Calculate the best-fit line using linear regression
+        regressor = LinearRegression()
+        regressor.fit(np.array(actual_values).reshape(-1, 1), np.array(predicted_values))
+        line = regressor.predict(np.array(actual_values).reshape(-1, 1))
+
+        # Determine the range and tick step
+        combined_values = np.concatenate([actual_values, predicted_values])
+        min_value = np.min(combined_values)
+        max_value = np.max(combined_values)
+        margin = 0.1 * (max_value - min_value)
+        tick_range = [min_value - margin, max_value + margin]
+        tick_step = (max_value - min_value) / 10  # Adjust as needed for a different number of ticks
+
+        # Create the scatter plot for actual vs predicted values
+        scatter_trace = go.Scatter(
+            x=actual_values,
+            y=predicted_values,
+            mode='markers',
+            name='Actual vs. Predicted',
+            marker=dict(color=dotColor)
+        )
+
+        # Create the line of best fit
+        line_trace = go.Scatter(
+            x=actual_values,
+            y=line,
+            mode='lines',
+            name='Best Fit Line',
+            line=dict(color=lineColor)
+        )
+
+        # Create the 45-degree line
+        line_45_trace = go.Scatter(
+            x=tick_range,
+            y=tick_range,
+            mode='lines',
+            name='45-Degree Line',
+        line=dict(color='green', dash='dash')
+        )
+
+        # Combine the traces into a single figure
+        layout = {
+            "title": title,
+            "width": width,
+            "height": height,
+            "xaxis": {"title": xTitle, "range":tick_range, "dtick":tick_step},
+            "yaxis": {"title": yTitle, "range":tick_range, "dtick":tick_step},
+            "showlegend": True,
+            "paper_bgcolor": backgroundColor,
+            "plot_bgcolor": backgroundColor,
+            "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
+        }
+
+        fig = go.Figure(data=[scatter_trace, line_trace, line_45_trace], layout=layout)
+
+        return fig
+
     @staticmethod
     def FigureByDataFrame(dataFrame,
              labels=[],

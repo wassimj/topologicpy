@@ -1056,6 +1056,110 @@ class Shell():
         """
         return shell.IsClosed()
 
+
+    @staticmethod
+    def ParabolicSurface(origin= None, focalLength=0.125, width: float = 1, length: float = 1, uSides: int = 16, vSides: int = 16,
+                    direction: list = [0, 0, 1], placement: str ="center", mantissa: int = 6, tolerance: float = 0.0001):
+        """
+            Creates a parabolic surface.
+
+            Parameters
+            ----------
+            origin : topologic_core.Vertex , optional
+                The origin location of the parabolic surface. The default is None which results in the parabolic surface being placed at (0, 0, 0).
+            focalLength : float , optional
+                The focal length of the parabola. The default is 1.
+            width : float , optional
+                The width of the parabolic surface. The default is 1.
+            length : float , optional
+                The length of the parabolic surface. The default is 1.
+            uSides : int , optional
+                The number of sides along the width. The default is 16.
+            vSides : int , optional
+                The number of sides along the length. The default is 16.
+            direction : list , optional
+                The vector representing the up direction of the parabolic surface. The default is [0, 0, 1].
+            placement : str , optional
+                The description of the placement of the origin of the parabolic surface. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            mantissa : int , optional
+                The desired length of the mantissa. The default is 6.
+            tolerance : float , optional
+                The desired tolerance. The default is 0.0001.
+            
+            Returns
+            -------
+            topologic_core.Shell
+                The created parabolic surface.
+
+            """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        def create_triangulated_mesh(vertices, uSides, vSides):
+            faces = []
+
+            # Iterate over the grid of vertices to form triangular faces
+            for i in range(uSides - 1):
+                for j in range(vSides - 1):
+                    # Get the indices of the vertices forming the current grid cell
+                    v1 = vertices[i * vSides + j]
+                    v2 = vertices[i * vSides + (j + 1)]
+                    v3 = vertices[(i + 1) * vSides + j]
+                    v4 = vertices[(i + 1) * vSides + (j + 1)]
+
+                    # Create two triangles for each grid cell
+                    # Triangle 1: (v1, v2, v3)
+                    wire1 = Wire.ByVertices([v1, v2, v3])
+                    face1 = Face.ByWire(wire1)
+                    faces.append(face1)
+
+                    # Triangle 2: (v3, v2, v4)
+                    wire2 = Wire.ByVertices([v3, v2, v4])
+                    face2 = Face.ByWire(wire2)
+                    faces.append(face2)
+
+            # Create the mesh (Shell) from the list of faces
+            mesh = Shell.ByFaces(faces)
+            return mesh
+        
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
+        
+        x_range = [-width*0.5, width*0.5]
+        y_range = [-length*0.5, length*0.5]
+        # Generate x and y values
+        x_values = [x_range[0] + i * (x_range[1] - x_range[0]) / (uSides - 1) for i in range(uSides)]
+        y_values = [y_range[0] + i * (y_range[1] - y_range[0]) / (vSides - 1) for i in range(vSides)]
+        
+        # Create the grid and calculate Z values
+        vertices = []
+        
+        for x in x_values:
+            for y in y_values:
+                z = ((x)**2 + (y)**2) / (4 * focalLength)
+                vertices.append(Vertex.ByCoordinates(x, y, z))
+        
+        mesh = create_triangulated_mesh(vertices=vertices, uSides=uSides, vSides=vSides)
+        if not placement.lower() == "bottom":
+            x_list = [Vertex.X(v) for v in vertices]
+            y_list = [Vertex.Y(v) for v in vertices]
+            z_list = [Vertex.Z(v) for v in vertices]
+            x_list.sort()
+            y_list.sort()
+            z_list.sort()
+            width = abs(x_list[-1] - x_list[0])
+            length = abs(y_list[-1] - y_list[0])
+            height = abs(z_list[-1] - z_list[0])
+            if placement.lower() == "center":
+                mesh = Topology.Translate(mesh, 0, 0, -height*0.5)
+            elif placement.lower() == "lowerleft":
+                mesh = Topology.Translate(mesh, width*0.5, length*0.5, 0)
+
+        mesh = Topology.Orient(mesh, origin=origin, dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
+        return mesh
+    
     @staticmethod
     def Pie(origin= None, radiusA: float = 0.5, radiusB: float = 0.0, sides: int = 32, rings: int = 1, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """

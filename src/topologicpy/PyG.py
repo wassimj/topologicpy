@@ -73,10 +73,35 @@ class CustomGraphDataset(Dataset):
             else:
                 edge_attr = None
 
+
+
             if self.graph_level:
-                y = torch.tensor([self.graph_df[self.graph_df['graph_id'] == graph_id]['label'].values[0]], dtype=torch.long)
+                label_value = self.graph_df[self.graph_df['graph_id'] == graph_id]['label'].values[0]
+                
+                # Check if the label is an integer or a float and cast accordingly
+                if isinstance(label_value, int):
+                    y = torch.tensor([label_value], dtype=torch.long)
+                elif isinstance(label_value, float):
+                    y = torch.tensor([label_value], dtype=torch.float)
+                else:
+                    raise ValueError(f"Unexpected label type: {type(label_value)}. Expected int or float.")
+                    
             elif self.node_level:
-                y = torch.tensor(graph_nodes['label'].values, dtype=torch.long)
+                label_values = graph_nodes['label'].values
+                
+                # Check if the labels are integers or floats and cast accordingly
+                if issubclass(label_values.dtype.type, int):
+                    y = torch.tensor(label_values, dtype=torch.long)
+                elif issubclass(label_values.dtype.type, float):
+                    y = torch.tensor(label_values, dtype=torch.float)
+                else:
+                    raise ValueError(f"Unexpected label types: {label_values.dtype}. Expected int or float.")
+
+
+            # if self.graph_level:
+            #     y = torch.tensor([self.graph_df[self.graph_df['graph_id'] == graph_id]['label'].values[0]], dtype=torch.long)
+            # elif self.node_level:
+            #     y = torch.tensor(graph_nodes['label'].values, dtype=torch.long)
 
             data = Data(x=x, edge_index=edge_index, y=y)
             if edge_attr is not None:
@@ -1412,6 +1437,82 @@ class PyG:
         return CustomGraphDataset(root=path, node_level=node_level, graph_level=graph_level, node_attr_key=nodeATTRKey, edge_attr_key=edgeATTRKey)
     
     @staticmethod
+    def DatasetGraphLabels(dataset, graphLabelHeader="label"):
+        """
+        Returns the labels of the graphs in the input dataset
+
+        Parameters
+        ----------
+        dataset : CustomDataset
+            The input dataset
+        graphLabelHeader: str , optional
+            The key string under which the graph labels are stored. The default is "label".
+        
+        Returns
+        -------
+        list
+            The list of graph labels.
+        """
+        import torch
+
+        graph_labels = []
+        for g in dataset:
+            # Get the label of the graph
+            label = g.y
+            graph_labels.append(label.item())
+        return graph_labels
+
+    @staticmethod
+    def DatasetSplit(dataset, split=[0.8,0.1,0.1], shuffle=True, randomState=42):
+        """
+        Splits the dataset into three subsets.
+
+        Parameters
+        ----------
+        dataset : CustomDataset
+            The input dataset
+        split: list , optional
+            The list of ratios. This list must be made out of three numbers adding to 1.
+        shuffle: boolean , optional
+            If set to True, the subsets are created from random indices. Otherwise, they are split sequentially. The default is True.
+        randomState : int , optional
+            The random seed to use for reproducibility. The default is 42.
+                
+        Returns
+        -------
+        list
+            The list of three subset datasets.
+        """
+
+        import torch
+        from torch.utils.data import random_split, Subset
+        train_ratio, val_ratio, test_ratio = split
+        assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6, "Ratios must add up to 1."
+        
+        # Calculate the number of samples for each split
+        dataset_len = len(dataset)
+        train_len = int(train_ratio * dataset_len)
+        val_len = int(val_ratio * dataset_len)
+        test_len = dataset_len - train_len - val_len  # Ensure it adds up correctly
+
+        ## Generate indices for the split
+        indices = list(range(dataset_len))
+        if shuffle:
+            torch.manual_seed(randomState)  # For reproducibility
+            indices = torch.randperm(dataset_len).tolist()  # Shuffled indices
+
+        # Create splits
+        train_indices = indices[:train_len]
+        val_indices = indices[train_len:train_len + val_len]
+        test_indices = indices[train_len + val_len:train_len + val_len + test_len]
+
+        train_dataset = Subset(dataset, train_indices)
+        val_dataset = Subset(dataset, val_indices)
+        test_dataset = Subset(dataset, test_indices)
+
+        return train_dataset, val_dataset, test_dataset
+
+    @staticmethod
     def Optimizer(name="Adam", amsgrad=True, betas=(0.9,0.999), eps=0.000001, lr=0.001, maximize=False, weightDecay=0.0, rho=0.9, lr_decay=0.0):
         """
         Returns the parameters of the optimizer
@@ -1529,11 +1630,11 @@ class PyG:
         ----------
         hparams : HParams
             The input hyperparameters 
-        trainingDataset : DGLDataset
+        trainingDataset : CustomDataset
             The input training dataset.
-        validationDataset : DGLDataset
+        validationDataset : CustomDataset
             The input validation dataset. If not specified, a portion of the trainingDataset will be used for validation according the to the split list as specified in the hyper-parameters.
-        testingDataset : DGLDataset
+        testingDataset : CustomDataset
             The input testing dataset. If not specified, a portion of the trainingDataset will be used for testing according the to the split list as specified in the hyper-parameters.
 
         Returns
@@ -1635,13 +1736,13 @@ class PyG:
         import os
 
         if model == None:
-            print("DGL.ModelSave - Error: The input model parameter is invalid. Returning None.")
+            print("PyG.ModelSave - Error: The input model parameter is invalid. Returning None.")
             return None
         if path == None:
-            print("DGL.ModelSave - Error: The input path parameter is invalid. Returning None.")
+            print("PyG.ModelSave - Error: The input path parameter is invalid. Returning None.")
             return None
         if not overwrite and os.path.exists(path):
-            print("DGL.ModelSave - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            print("PyG.ModelSave - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
             return None
         if overwrite and os.path.exists(path):
             os.remove(path)
@@ -1893,7 +1994,7 @@ class PyG:
             from sklearn import metrics
             from sklearn.metrics import accuracy_score
         except:
-            print("DGL - Installing required scikit-learn (sklearn) library.")
+            print("PyG - Installing required scikit-learn (sklearn) library.")
             try:
                 os.system("pip install scikit-learn")
             except:
@@ -1901,19 +2002,19 @@ class PyG:
             try:
                 from sklearn import metrics
                 from sklearn.metrics import accuracy_score
-                print("DGL - scikit-learn (sklearn) library installed correctly.")
+                print("PyG - scikit-learn (sklearn) library installed correctly.")
             except:
-                warnings.warn("DGL - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
+                warnings.warn("PyG - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
                 return None
             
         if not isinstance(actual, list):
-            print("DGL.ConfusionMatrix - ERROR: The actual input is not a list. Returning None")
+            print("PyG.ConfusionMatrix - ERROR: The actual input is not a list. Returning None")
             return None
         if not isinstance(predicted, list):
-            print("DGL.ConfusionMatrix - ERROR: The predicted input is not a list. Returning None")
+            print("PyG.ConfusionMatrix - ERROR: The predicted input is not a list. Returning None")
             return None
         if len(actual) != len(predicted):
-            print("DGL.ConfusionMatrix - ERROR: The two input lists do not have the same length. Returning None")
+            print("PyG.ConfusionMatrix - ERROR: The two input lists do not have the same length. Returning None")
             return None
         if normalize:
             cm = np.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true"))
@@ -2065,3 +2166,58 @@ class PyG:
         size = len(predicted)
 
         return {"mse": mse, "size": size}
+
+    @staticmethod
+    def Performance(actual, predicted, mantissa: int = 6):
+        """
+        Computes regression model performance measures. This is to be used only with regression not with classification.
+
+        Parameters
+        ----------
+        actual : list
+            The input list of actual values.
+        predicted : list
+            The input list of predicted values.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        
+        Returns
+        -------
+        dict
+            The dictionary containing the performance measures. The keys in the dictionary are: 'mae', 'mape', 'mse', 'r', 'r2', 'rmse'.
+        """
+        
+        if not isinstance(actual, list):
+            print("PyG.Performance - ERROR: The actual input is not a list. Returning None")
+            return None
+        if not isinstance(predicted, list):
+            print("PyG.Performance - ERROR: The predicted input is not a list. Returning None")
+            return None
+        if not (len(actual) == len(predicted)):
+            print("PyG.Performance - ERROR: The actual and predicted input lists have different lengths. Returning None")
+            return None
+        
+        predicted = np.array(predicted)
+        actual = np.array(actual)
+
+        mae = np.mean(np.abs(predicted - actual))
+        mape = np.mean(np.abs((actual - predicted) / actual))*100
+        mse = np.mean((predicted - actual)**2)
+        correlation_matrix = np.corrcoef(predicted, actual)
+        r = correlation_matrix[0, 1]
+        r2 = r**2
+        absolute_errors = np.abs(predicted - actual)
+        mean_actual = np.mean(actual)
+        if mean_actual == 0:
+            rae = None
+        else:
+            rae = np.mean(absolute_errors) / mean_actual
+        rmse = np.sqrt(mse)
+        return {'mae': round(mae, mantissa),
+                'mape': round(mape, mantissa),
+                'mse': round(mse, mantissa),
+                'r': round(r, mantissa),
+                'r2': round(r2, mantissa),
+                'rae': round(rae, mantissa),
+                'rmse': round(rmse, mantissa)
+                }
