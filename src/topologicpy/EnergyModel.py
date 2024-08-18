@@ -20,7 +20,7 @@ import math
 from collections import OrderedDict
 import os
 from os.path import exists
-from datetime import datetime
+from datetime import datetime, timezone
 import warnings
 
 try:
@@ -249,18 +249,24 @@ class EnergyModel:
             weatherFilePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "GBR_London.Gatwick.037760_IWEC.epw")
             designDayFilePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "GBR_London.Gatwick.037760_IWEC.ddy")
         translator = openstudio.osversion.VersionTranslator()
-        osmFile = openstudio.openstudioutilitiescore.toPath(osModelPath)
-        osModel = translator.loadModel(osmFile)
+        # DEBUGGING
+        #osmFile = openstudio.openstudioutilitiescore.toPath(osModelPath)
+        #osModel = translator.loadModel(osmFile)
+        osModel = translator.loadModel(osModelPath)
         if osModel.isNull():
             print("EnergyModel.ByTopology - Error: The openstudio model is null. Returning None.")
             return None
         else:
             osModel = osModel.get()
-        osEPWFile = openstudio.openstudioutilitiesfiletypes.EpwFile.load(openstudio.toPath(weatherFilePath))
+        # DEBUGGING
+        #osEPWFile = openstudio.openstudioutilitiesfiletypes.EpwFile.load(openstudio.toPath(weatherFilePath))
+        osEPWFile = openstudio.openstudioutilitiesfiletypes.EpwFile.load(weatherFilePath)
         if osEPWFile.is_initialized():
             osEPWFile = osEPWFile.get()
             openstudio.model.WeatherFile.setWeatherFile(osModel, osEPWFile)
-        ddyModel = openstudio.openstudioenergyplus.loadAndTranslateIdf(openstudio.toPath(designDayFilePath))
+        # DEBUGGING
+        #ddyModel = openstudio.openstudioenergyplus.loadAndTranslateIdf(openstudio.toPath(designDayFilePath))
+        ddyModel = openstudio.openstudioenergyplus.loadAndTranslateIdf(designDayFilePath)
         if ddyModel.is_initialized():
             ddyModel = ddyModel.get()
             for ddy in ddyModel.getObjectsByType(openstudio.IddObjectType("OS:SizingPeriod:DesignDay")):
@@ -578,8 +584,9 @@ class EnergyModel:
         if not overwrite and exists(path):
             print("EnergyModel.ExportToGBXML - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
             return None
-
-        return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, openstudio.openstudioutilitiescore.toPath(path))
+        # DEBUGGING
+        #return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, openstudio.openstudioutilitiescore.toPath(path))
+        return openstudio.gbxml.GbXMLForwardTranslator().modelToGbXML(model, path)
 
     
     @staticmethod
@@ -629,8 +636,10 @@ class EnergyModel:
             print("EnergyModel.ExportToOSM - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
             return None
         osCondition = False
-        osPath = openstudio.openstudioutilitiescore.toPath(path)
-        osCondition = model.save(osPath, overwrite)
+        # DEBUGGING
+        #osPath = openstudio.openstudioutilitiescore.toPath(path)
+        #osCondition = model.save(osPath, overwrite)
+        osCondition = model.save(path, overwrite)
         return osCondition
     
     @staticmethod
@@ -821,7 +830,7 @@ class EnergyModel:
         if removeFiles:
             deleteOldFiles(outputFolder)
         pbar = tqdm(desc='Running Simulation', total=100, leave=False)
-        utcnow = datetime.utcnow()
+        utcnow = datetime.now(timezone.utc)
         timestamp = utcnow.strftime("UTC-%Y-%m-%d-%H-%M-%S")
         if not outputFolder:
             home = os.path.expanduser('~')
@@ -831,28 +840,32 @@ class EnergyModel:
         os.mkdir(outputFolder)
         pbar.update(10)
         osmPath = os.path.join(outputFolder, model.getBuilding().name().get() + ".osm")
-        model.save(openstudio.openstudioutilitiescore.toPath(osmPath), True)
+        # DEBUGGING
+        #model.save(openstudio.openstudioutilitiescore.toPath(osmPath), True)
+        model.save(osmPath, True)
         oswPath = os.path.join(outputFolder, model.getBuilding().name().get() + ".osw")
         pbar.update(20)
-        #print("oswPath = "+oswPath)
         workflow = model.workflowJSON()
-        workflow.setSeedFile(openstudio.openstudioutilitiescore.toPath(osmPath))
+        # DEBUGGING
+        #workflow.setSeedFile(openstudio.openstudioutilitiescore.toPath(osmPath))
+        workflow.setSeedFile(osmPath)
         pbar.update(30)
-        #print("Seed File Set")
-        workflow.setWeatherFile(openstudio.openstudioutilitiescore.toPath(weatherFilePath))
+        # DEBUGGING
+        #workflow.setWeatherFile(openstudio.openstudioutilitiescore.toPath(weatherFilePath))
+        workflow.setWeatherFile(weatherFilePath)
         pbar.update(40)
-        #print("Weather File Set")
-        workflow.saveAs(openstudio.openstudioutilitiescore.toPath(oswPath))
+        # DEBUGGING
+        #workflow.saveAs(openstudio.openstudioutilitiescore.toPath(oswPath))
+        workflow.saveAs(oswPath)
         pbar.update(50)
-        #print("OSW File Saved")
         cmd = osBinaryPath+" run -w " + "\"" + oswPath + "\""
         pbar.update(60)
         os.system(cmd)
-        #print("Simulation DONE")
         sqlPath = os.path.join(os.path.join(outputFolder,"run"), "eplusout.sql")
         pbar.update(100)
-        #print("sqlPath = "+sqlPath)
-        osSqlFile = openstudio.SqlFile(openstudio.openstudioutilitiescore.toPath(sqlPath))
+        # DEBUGGING
+        #osSqlFile = openstudio.SqlFile(openstudio.openstudioutilitiescore.toPath(sqlPath))
+        osSqlFile = openstudio.SqlFile(sqlPath)
         model.setSqlFile(osSqlFile)
         pbar.close()
         return model

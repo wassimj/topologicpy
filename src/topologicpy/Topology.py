@@ -2627,6 +2627,7 @@ class Topology():
                 if ap != None:
                     apertures.append(ap)
             context = Context.ByTopologyParameters(topology, u=0.5, v=0.5, w=0.5)
+            
             for ap in apertures:
                 _ = Aperture.ByTopologyContext(ap, context)
             return topology
@@ -6308,7 +6309,7 @@ class Topology():
                 rot_vertices = [Vertex.ByCoordinates(rot_v) for rot_v in rot_vertices]
                 new_topology = Topology.ReplaceVertices(topology, verticesA=Topology.Vertices(topology), verticesB=rot_vertices)
                 new_topology = Topology.SelfMerge(new_topology, tolerance=tolerance)
-                if len(Dictionary.Keys(d) > 0):
+                if len(Dictionary.Keys(d)) > 0:
                     new_topology = Topology.SetDictionary(new_topology, d)
                 return new_topology
         if len(Dictionary.Keys(d)) > 0:
@@ -7875,7 +7876,6 @@ class Topology():
             if Topology.IsInstance(topology, "Cell"):
                 sinkCells = [topology]
             elif hidimSink >= Topology.TypeID("Cell"):
-                print("Transfering Dictionaries to Cells")
                 sinkCells = Topology.Cells(topology)
             _ = Topology.TransferDictionaries(selectors, sinkCells, tolerance=tolerance, numWorkers=numWorkers)
         return topology

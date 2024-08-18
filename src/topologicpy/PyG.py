@@ -30,11 +30,27 @@ from sklearn.metrics import accuracy_score
 from tqdm.auto import tqdm
 import gc
 
+import torch
+from torch.utils.data import Dataset
+
+import torch
+from torch.utils.data import Dataset
 
 class CustomGraphDataset(Dataset):
-    def __init__(self, root, node_level=False, graph_level=True, node_attr_key='feat', 
-                 edge_attr_key='feat', transform=None, pre_transform=None):
-        super(CustomGraphDataset, self).__init__(root, transform, pre_transform)
+    def __init__(self, root=None, data_list=None, indices=None, node_level=False, graph_level=True, 
+                 node_attr_key='feat', edge_attr_key='feat'):
+        """
+        Initializes the CustomGraphDataset.
+
+        Parameters:
+        - root: Root directory of the dataset (used only if data_list is None)
+        - data_list: List of preprocessed data objects (used if provided)
+        - indices: List of indices to select a subset of the data
+        - node_level: Boolean flag indicating if the dataset is node-level
+        - graph_level: Boolean flag indicating if the dataset is graph-level
+        - node_attr_key: Key for node attributes
+        - edge_attr_key: Key for edge attributes
+        """
         assert not (node_level and graph_level), "Both node_level and graph_level cannot be True at the same time"
         assert node_level or graph_level, "Both node_level and graph_level cannot be False at the same time"
 
@@ -43,15 +59,20 @@ class CustomGraphDataset(Dataset):
         self.node_attr_key = node_attr_key
         self.edge_attr_key = edge_attr_key
 
-        self.graph_df = pd.read_csv(os.path.join(root, 'graphs.csv'))
-        self.nodes_df = pd.read_csv(os.path.join(root, 'nodes.csv'))
-        self.edges_df = pd.read_csv(os.path.join(root, 'edges.csv'))
+        if data_list is not None:
+            self.data_list = data_list  # Use the provided data list
+        elif root is not None:
+            # Load and process data from root directory if data_list is not provided
+            self.graph_df = pd.read_csv(os.path.join(root, 'graphs.csv'))
+            self.nodes_df = pd.read_csv(os.path.join(root, 'nodes.csv'))
+            self.edges_df = pd.read_csv(os.path.join(root, 'edges.csv'))
+            self.data_list = self.process_all()
+        else:
+            raise ValueError("Either a root directory or a data_list must be provided.")
 
-        self.data_list = self.process_all()
-
-    @property
-    def raw_file_names(self):
-        return ['graphs.csv', 'nodes.csv', 'edges.csv']
+        # Filter data_list based on indices if provided
+        if indices is not None:
+            self.data_list = [self.data_list[i] for i in indices]
 
     def process_all(self):
         data_list = []
@@ -73,12 +94,9 @@ class CustomGraphDataset(Dataset):
             else:
                 edge_attr = None
 
-
-
             if self.graph_level:
                 label_value = self.graph_df[self.graph_df['graph_id'] == graph_id]['label'].values[0]
                 
-                # Check if the label is an integer or a float and cast accordingly
                 if isinstance(label_value, int):
                     y = torch.tensor([label_value], dtype=torch.long)
                 elif isinstance(label_value, float):
@@ -89,19 +107,12 @@ class CustomGraphDataset(Dataset):
             elif self.node_level:
                 label_values = graph_nodes['label'].values
                 
-                # Check if the labels are integers or floats and cast accordingly
                 if issubclass(label_values.dtype.type, int):
                     y = torch.tensor(label_values, dtype=torch.long)
                 elif issubclass(label_values.dtype.type, float):
                     y = torch.tensor(label_values, dtype=torch.float)
                 else:
                     raise ValueError(f"Unexpected label types: {label_values.dtype}. Expected int or float.")
-
-
-            # if self.graph_level:
-            #     y = torch.tensor([self.graph_df[self.graph_df['graph_id'] == graph_id]['label'].values[0]], dtype=torch.long)
-            # elif self.node_level:
-            #     y = torch.tensor(graph_nodes['label'].values, dtype=torch.long)
 
             data = Data(x=x, edge_index=edge_index, y=y)
             if edge_attr is not None:
@@ -111,14 +122,103 @@ class CustomGraphDataset(Dataset):
 
         return data_list
 
-    def len(self):
+    def __len__(self):
         return len(self.data_list)
 
-    def get(self, idx):
+    def __getitem__(self, idx):
         return self.data_list[idx]
 
-    def __getitem__(self, idx):
-        return self.get(idx)
+
+
+
+# class CustomGraphDataset(Dataset):
+#     def __init__(self, root, node_level=False, graph_level=True, node_attr_key='feat', 
+#                  edge_attr_key='feat', transform=None, pre_transform=None):
+#         super(CustomGraphDataset, self).__init__(root, transform, pre_transform)
+#         assert not (node_level and graph_level), "Both node_level and graph_level cannot be True at the same time"
+#         assert node_level or graph_level, "Both node_level and graph_level cannot be False at the same time"
+
+#         self.node_level = node_level
+#         self.graph_level = graph_level
+#         self.node_attr_key = node_attr_key
+#         self.edge_attr_key = edge_attr_key
+
+#         self.graph_df = pd.read_csv(os.path.join(root, 'graphs.csv'))
+#         self.nodes_df = pd.read_csv(os.path.join(root, 'nodes.csv'))
+#         self.edges_df = pd.read_csv(os.path.join(root, 'edges.csv'))
+
+#         self.data_list = self.process_all()
+
+#     @property
+#     def raw_file_names(self):
+#         return ['graphs.csv', 'nodes.csv', 'edges.csv']
+
+#     def process_all(self):
+#         data_list = []
+#         for graph_id in self.graph_df['graph_id'].unique():
+#             graph_nodes = self.nodes_df[self.nodes_df['graph_id'] == graph_id]
+#             graph_edges = self.edges_df[self.edges_df['graph_id'] == graph_id]
+
+#             if self.node_attr_key in graph_nodes.columns and not graph_nodes[self.node_attr_key].isnull().all():
+#                 x = torch.tensor(graph_nodes[self.node_attr_key].values.tolist(), dtype=torch.float)
+#                 if x.ndim == 1:
+#                     x = x.unsqueeze(1)  # Ensure x has shape [num_nodes, *]
+#             else:
+#                 x = None
+
+#             edge_index = torch.tensor(graph_edges[['src_id', 'dst_id']].values.T, dtype=torch.long)
+
+#             if self.edge_attr_key in graph_edges.columns and not graph_edges[self.edge_attr_key].isnull().all():
+#                 edge_attr = torch.tensor(graph_edges[self.edge_attr_key].values.tolist(), dtype=torch.float)
+#             else:
+#                 edge_attr = None
+
+
+
+#             if self.graph_level:
+#                 label_value = self.graph_df[self.graph_df['graph_id'] == graph_id]['label'].values[0]
+                
+#                 # Check if the label is an integer or a float and cast accordingly
+#                 if isinstance(label_value, int):
+#                     y = torch.tensor([label_value], dtype=torch.long)
+#                 elif isinstance(label_value, float):
+#                     y = torch.tensor([label_value], dtype=torch.float)
+#                 else:
+#                     raise ValueError(f"Unexpected label type: {type(label_value)}. Expected int or float.")
+                    
+#             elif self.node_level:
+#                 label_values = graph_nodes['label'].values
+                
+#                 # Check if the labels are integers or floats and cast accordingly
+#                 if issubclass(label_values.dtype.type, int):
+#                     y = torch.tensor(label_values, dtype=torch.long)
+#                 elif issubclass(label_values.dtype.type, float):
+#                     y = torch.tensor(label_values, dtype=torch.float)
+#                 else:
+#                     raise ValueError(f"Unexpected label types: {label_values.dtype}. Expected int or float.")
+
+
+#             # if self.graph_level:
+#             #     y = torch.tensor([self.graph_df[self.graph_df['graph_id'] == graph_id]['label'].values[0]], dtype=torch.long)
+#             # elif self.node_level:
+#             #     y = torch.tensor(graph_nodes['label'].values, dtype=torch.long)
+
+#             data = Data(x=x, edge_index=edge_index, y=y)
+#             if edge_attr is not None:
+#                 data.edge_attr = edge_attr
+
+#             data_list.append(data)
+
+#         return data_list
+
+#     def len(self):
+#         return len(self.data_list)
+
+#     def get(self, idx):
+#         return self.data_list[idx]
+
+#     def __getitem__(self, idx):
+#         return self.get(idx)
 
 class _Hparams:
     def __init__(self, model_type="ClassifierHoldout", optimizer_str="Adam", amsgrad=False, betas=(0.9, 0.999), eps=1e-6, lr=0.001, lr_decay= 0, maximize=False, rho=0.9, weight_decay=0, cv_type="Holdout", split=[0.8,0.1, 0.1], k_folds=5, hl_widths=[32], conv_layer_type='SAGEConv', pooling="AvgPooling", batch_size=32, epochs=1, 
@@ -375,7 +475,8 @@ class _GraphRegressorKFold:
     
     def _initialize_model(self, hparams, dataset):
         if hparams.conv_layer_type.lower() == 'sageconv':
-            return _SAGEConv(dataset.num_node_features, hparams.hl_widths, 1, hparams.pooling).to(self.device)
+            return _SAGEConv(dataset[0].num_node_features, hparams.hl_widths, 1, hparams.pooling).to(self.device)
+            #return _SAGEConv(dataset.num_node_features, hparams.hl_widths, 1, hparams.pooling).to(self.device)
         else:
             raise NotImplementedError
     
@@ -1485,7 +1586,7 @@ class PyG:
         """
 
         import torch
-        from torch.utils.data import random_split, Subset
+        from torch.utils.data import random_split
         train_ratio, val_ratio, test_ratio = split
         assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6, "Ratios must add up to 1."
         
@@ -1506,9 +1607,10 @@ class PyG:
         val_indices = indices[train_len:train_len + val_len]
         test_indices = indices[train_len + val_len:train_len + val_len + test_len]
 
-        train_dataset = Subset(dataset, train_indices)
-        val_dataset = Subset(dataset, val_indices)
-        test_dataset = Subset(dataset, test_indices)
+        # Create new instances of CustomGraphDataset using the indices
+        train_dataset = CustomGraphDataset(data_list=dataset.data_list, indices=train_indices)
+        val_dataset = CustomGraphDataset(data_list=dataset.data_list, indices=val_indices)
+        test_dataset = CustomGraphDataset(data_list=dataset.data_list, indices=test_indices)
 
         return train_dataset, val_dataset, test_dataset
 
