@@ -2829,7 +2829,7 @@ class Topology():
                 defaultColor: list = [255,255,255],
                 defaultOpacity: float = 1.0,
                 transposeAxes: bool = True,
-                removeCoplanarFaces: bool = True,
+                removeCoplanarFaces: bool = False,
                 selfMerge: bool = True,
                 mantissa : int = 6,
                 tolerance: float = 0.0001):
@@ -2888,7 +2888,7 @@ class Topology():
     @staticmethod
     def ByOBJPath(objPath,
                   defaultColor: list = [255,255,255], defaultOpacity: float = 1.0,
-                  transposeAxes: bool = True, removeCoplanarFaces: bool = True,
+                  transposeAxes: bool = True, removeCoplanarFaces: bool = False,
                   selfMerge: bool = False,
                   mantissa : int = 6, tolerance: float = 0.0001):
         """
@@ -3123,16 +3123,19 @@ class Topology():
                         selector = Topology.SetDictionary(selector, d)
                         face_selectors.append(selector)
 
-            topology = Cluster.ByTopologies(object_faces, tolerance=tolerance)
-            if selfMerge:
-                topology = Topology.SelfMerge(topology)
-            if removeCoplanarFaces:
-                topology = Topology.RemoveCoplanarFaces(topology, tolerance=tolerance)
-            d = Dictionary.ByKeysValues(['name', 'color', 'opacity'], [object_name, object_color, object_opacity])
-            topology = Topology.SetDictionary(topology, d)
-            if len(face_selectors) > 0:
-                topology = Topology.TransferDictionariesBySelectors(topology, selectors=face_selectors, tranFaces=True, tolerance=tolerance)
-            return_topologies.append(topology)
+            topology = Cluster.ByTopologies(object_faces)
+            if Topology.IsInstance(topology, "Topology"):
+                if selfMerge:
+                    topology = Topology.SelfMerge(topology)
+                if Topology.IsInstance(topology, "Topology"):
+                    if removeCoplanarFaces:
+                        topology = Topology.RemoveCoplanarFaces(topology, tolerance=tolerance)
+                    if Topology.IsInstance(topology, "Topology"):
+                        d = Dictionary.ByKeysValues(['name', 'color', 'opacity'], [object_name, object_color, object_opacity])
+                        topology = Topology.SetDictionary(topology, d)
+                        if len(face_selectors) > 0:
+                            topology = Topology.TransferDictionariesBySelectors(topology, selectors=face_selectors, tranFaces=True, tolerance=tolerance)
+                        return_topologies.append(topology)
         return return_topologies
 
     @staticmethod
@@ -7483,10 +7486,13 @@ class Topology():
         """
         from topologicpy.Graph import Graph
         
+        
         if Topology.IsInstance(topology, "Vertex"):
             return []
         if Topology.IsInstance(topology, "Graph"):
             return Graph.Vertices(topology)
+        if topology == None:
+            return None
         return Topology.SubTopologies(topology=topology, subTopologyType="vertex")
     
     @staticmethod

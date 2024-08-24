@@ -366,15 +366,12 @@ class Plotly:
                     v_label = ""
                     v_group = ""
                     d = Topology.Dictionary(v)
+                    v_group = Dictionary.ValueAtKey(d, key=vertexGroupKey)
                     if d:
-                        try:
+                        if vertexLabelKey:
                             v_label = str(Dictionary.ValueAtKey(d, key=vertexLabelKey)) or ""
-                        except:
-                            v_label = ""
-                        try:
-                            v_group = Dictionary.ValueAtKey(d, key=vertexGroupKey)
-                        except:
-                            v_group = None
+                        if vertexGroupKey:
+                            v_group = Dictionary.ValueAtKey(d, key=vertexGroupKey) or None
                     try:
                         v_groupList.append(vertexGroups.index(v_group))
                     except:

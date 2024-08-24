@@ -712,7 +712,7 @@ class Graph:
         return paths
 
     @staticmethod
-    def AverageClusteringCoefficient(graph, mantissa=6):
+    def AverageClusteringCoefficient(graph, mantissa: int = 6):
         """
         Returns the average clustering coefficient of the input graph. See https://en.wikipedia.org/wiki/Clustering_coefficient.
 
@@ -1199,7 +1199,7 @@ class Graph:
         return bot_graph.serialize(format=format)
 
     @staticmethod
-    def BetweenessCentrality(graph, vertices=None, sources=None, destinations=None, tolerance=0.001):
+    def BetweenessCentrality(graph, vertices=None, sources=None, destinations=None, key: str = "betweeness_centrality", mantissa: int = 6, tolerance: float = 0.001):
         """
             Returns the betweeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Betweenness_centrality.
 
@@ -1213,6 +1213,10 @@ class Graph:
             The input list of source vertices. The default is None which means all vertices in the input graph are considered.
         destinations : list , optional
             The input list of destination vertices. The default is None which means all vertices in the input graph are considered.
+        key : str , optional
+            The dictionary key under which to save the betweeness centrality score. The default is "betweneess_centrality".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -1224,6 +1228,7 @@ class Graph:
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
 
         def betweeness(vertices, topologies, tolerance=0.001):
             returnList = [0] * len(vertices)
@@ -1281,12 +1286,16 @@ class Graph:
                         if path:
                             paths.append(path)
 
-        values = betweeness(vertices, paths, tolerance=tolerance)
-        minValue = min(values)
-        maxValue = max(values)
+        scores = betweeness(vertices, paths, tolerance=tolerance)
+        minValue = min(scores)
+        maxValue = max(scores)
         size = maxValue - minValue
-        values = [(v-minValue)/size for v in values]
-        return values
+        scores = [round((v-minValue)/size, mantissa) for v in scores]
+        for i, v in enumerate(vertices):
+            d = Topology.Dictionary(v)
+            d = Dictionary.SetValueAtKey(d, key, scores[i])
+            v = Topology.SetDictionary(v, d)
+        return scores
     
     @staticmethod
     def ByAdjacencyMatrixCSVPath(path: str, dictionaries: list = None, silent: bool = False):
@@ -4064,7 +4073,7 @@ class Graph:
         return chromatic_number(adj_matrix)
 
     @staticmethod
-    def Color(graph, oldKey: str = "color", newKey: str = "color", maxColors: int = None, tolerance: float = 0.0001):
+    def Color(graph, oldKey: str = "color", key: str = "color", maxColors: int = None, tolerance: float = 0.0001):
         """
         Colors the input vertices within the input graph. The saved value is an integer rather than an actual color. See Color.ByValueInRange to convert to an actual color.
         Any vertices that have been pre-colored will not be affected. See https://en.wikipedia.org/wiki/Graph_coloring.
@@ -4075,7 +4084,7 @@ class Graph:
             The input graph.
         oldKey : str , optional
             The existing dictionary key to use to read any pre-existing color information. The default is "color".
-        newKey : str , optional
+        key : str , optional
             The new dictionary key to use to write out new color information. The default is "color".
         maxColors : int , optional
             The desired maximum number of colors to use. If set to None, the chromatic number of the graph is used. The default is None.
@@ -4152,7 +4161,7 @@ class Graph:
         colors = graph_coloring(adj_mat, maxColors, colors)
         for i, v in enumerate(vertices):
                 d = Topology.Dictionary(v)
-                d = Dictionary.SetValueAtKey(d, newKey, colors[i])
+                d = Dictionary.SetValueAtKey(d, key, colors[i])
                 v = Topology.SetDictionary(v, d)
         return graph
     
@@ -4259,7 +4268,7 @@ class Graph:
         return graph
     
     @staticmethod
-    def ClosenessCentrality(graph, vertices=None, tolerance = 0.0001):
+    def ClosenessCentrality(graph, vertices=None, key: str = "closeness_centrality", mantissa: int = 6, tolerance = 0.0001):
         """
         Return the closeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the closeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Closeness_centrality.
 
@@ -4269,6 +4278,10 @@ class Graph:
             The input graph.
         vertices : list , optional
             The input list of vertices. The default is None.
+        key : str , optional
+            The dictionary key under which to save the closeness centrality score. The default is "closeness_centrality".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -4279,6 +4292,7 @@ class Graph:
 
         """
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
 
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
@@ -4293,7 +4307,7 @@ class Graph:
             return None
         n = len(graphVertices)
 
-        returnList = []
+        scores = []
         try:
             for va in tqdm(vertices, desc="Computing Closeness Centrality", leave=False):
                 top_dist = 0
@@ -4304,9 +4318,9 @@ class Graph:
                         d = Graph.TopologicalDistance(graph, va, vb, tolerance)
                     top_dist += d
                 if top_dist == 0:
-                    returnList.append(0)
+                    scores.append(0)
                 else:
-                    returnList.append((n-1)/top_dist)
+                    scores.append(round((n-1)/top_dist, mantissa))
         except:
             print("Graph.ClosenessCentrality - Warning: Could not use tqdm.")
             for va in vertices:
@@ -4318,10 +4332,14 @@ class Graph:
                         d = Graph.TopologicalDistance(graph, va, vb, tolerance)
                     top_dist += d
                 if top_dist == 0:
-                    returnList.append(0)
+                    scores.append(0)
                 else:
-                    returnList.append((n-1)/top_dist)
-        return returnList
+                    scores.append(round((n-1)/top_dist, mantissa))
+        for i, v in enumerate(vertices):
+            d = Topology.Dictionary(v)
+            d = Dictionary.SetValueAtKey(d, key, scores[i])
+            v = Topology.SetDictionary(v, d)
+        return scores
 
     @staticmethod
     def Connect(graph, verticesA, verticesB, tolerance=0.0001):
@@ -4430,6 +4448,61 @@ class Graph:
             return None
         return graph.ContainsVertex(vertex, tolerance)
 
+
+    @staticmethod
+    def Degree(graph, vertices=None, key: str = "degree", edgeKey: str = None, mantissa: int = 6, tolerance = 0.0001):
+        """
+        Return the degree measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the closeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Degree_(graph_theory).
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertices : list , optional
+            The input list of vertices. The default is None.
+        key : str , optional
+            The dictionary key under which to save the closeness centrality score. The default is "degree".
+        edgeKey : str , optional
+            If specified, the value in the connected edges' dictionary specified by the edgeKey string will be aggregated to calculate
+            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The degree of the input list of vertices within the input graph.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "Graph"):
+            print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        graphVertices = Graph.Vertices(graph)
+        if not isinstance(vertices, list):
+            vertices = graphVertices
+        else:
+            vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        if len(vertices) < 1:
+            print("Graph.Degree - Error: The input list of vertices does not contain any valid vertices. Returning None.")
+            return None
+        n = len(graphVertices)
+
+        scores = []
+        for i, v in enumerate(vertices):
+            degree = Graph.VertexDegree(graph, v, edgeKey= edgeKey, tolerance = tolerance)
+            if isinstance(degree, float):
+                degree = round(degree, mantissa)
+            d = Topology.Dictionary(v)
+            d = Dictionary.SetValueAtKey(d, key, degree)
+            v = Topology.SetDictionary(v, d)
+            scores.append(degree)
+        return scores
+    
     @staticmethod
     def DegreeSequence(graph):
         """
@@ -4479,7 +4552,7 @@ class Graph:
         return graph.Density()
     
     @staticmethod
-    def DepthMap(graph, vertices=None, tolerance=0.0001):
+    def DepthMap(graph, vertices=None, key: str = "depth", type: str = "topological", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Return the depth map of the input list of vertices within the input graph. The returned list contains the total of the topological distances of each vertex to every other vertex in the input graph. The order of the depth map list is the same as the order of the input list of vertices. If no vertices are specified, the depth map of all the vertices in the input graph is computed.
 
@@ -4489,6 +4562,12 @@ class Graph:
             The input graph.
         vertices : list , optional
             The input list of vertices. The default is None.
+        key : str , optional
+            The dictionary key under which to save the depth score. The default is "depth".
+        type : str , optional
+            The type of depth distance to calculate. The options are "topological" or "metric". The default is "topological". See https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -4499,6 +4578,7 @@ class Graph:
 
         """
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
 
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.DepthMap - Error: The input graph is not a valid graph. Returning None.")
@@ -4511,17 +4591,21 @@ class Graph:
         if len(vertices) < 1:
             print("Graph.DepthMap - Error: The input list of vertices does not contain any valid vertices. Returning None.")
             return None
-        depthMap = []
+        scores = []
         for va in vertices:
             depth = 0
             for vb in graphVertices:
                 if Topology.IsSame(va, vb):
                     dist = 0
                 else:
-                    dist = Graph.TopologicalDistance(graph, va, vb, tolerance)
+                    dist = Graph.Distance(graph, va, vb, type=type, mantissa=mantissa, tolerance=tolerance)
                 depth = depth + dist
-            depthMap.append(depth)
-        return depthMap
+            depth = round(depth, mantissa)
+            d = Topology.Dictionary(va)
+            d = Dictionary.SetValueAtKey(d, key, depth)
+            va = Topology.SetDictionary(va, d)
+            scores.append(depth)
+        return scores
     
     @staticmethod
     def Diameter(graph):
@@ -4570,7 +4654,7 @@ class Graph:
         return graph.GetDictionary()
     
     @staticmethod
-    def Distance(graph, vertexA, vertexB, tolerance=0.0001):
+    def Distance(graph, vertexA, vertexB, type: str = "topological", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the shortest-path distance between the input vertices. See https://en.wikipedia.org/wiki/Distance_(graph_theory).
 
@@ -4582,16 +4666,22 @@ class Graph:
             The first input vertex.
         vertexB : topologic_core.Vertex
             The second input vertex.
+        type : str , optional
+            The type of depth distance to calculate. The options are "topological" or "metric". The default is "topological". See https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        int
-            The shortest-path distance between the input vertices.
+        float
+            The shortest-path metric distance between the input vertices.
 
         """
         from topologicpy.Topology import Topology
+        from topologicpy.Wire import Wire
+        from topologicpy.Edge import Edge
 
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Distance - Error: The input graph is not a valid graph. Returning None.")
@@ -4602,8 +4692,11 @@ class Graph:
         if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.Distance - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
-        return graph.TopologicalDistance(vertexA, vertexB, tolerance)
-
+        
+        if "topo" in type.lower():
+            return Graph.TopologicalDistance(graph, vertexA, vertexB, tolerance=tolerance)
+        return Graph.MetricDistance(graph, vertexA, vertexB, mantissa=mantissa, tolerance=tolerance)
+    
     @staticmethod
     def Edge(graph, vertexA, vertexB, tolerance=0.0001):
         """
@@ -6520,7 +6613,7 @@ class Graph:
         return json_string
     
     @staticmethod
-    def LocalClusteringCoefficient(graph, vertices: list = None, mantissa: int = 6, tolerance: float = 0.0001):
+    def LocalClusteringCoefficient(graph, vertices: list = None, key: str = "lcc", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the local clustering coefficient of the input list of vertices within the input graph. See https://en.wikipedia.org/wiki/Clustering_coefficient.
 
@@ -6530,6 +6623,8 @@ class Graph:
             The input graph.
         vertices : list , optional
             The input list of vertices. If set to None, the local clustering coefficient of all vertices will be computed. The default is None.
+        key : str , optional
+            The dictionary key under which to save the local clustering coefficient score. The default is "lcc".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -6543,6 +6638,7 @@ class Graph:
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
 
         def local_clustering_coefficient(adjacency_matrix, node):
             """
@@ -6585,14 +6681,18 @@ class Graph:
             return None
         g_vertices = Graph.Vertices(graph)
         adjacency_matrix = Graph.AdjacencyMatrix(graph)
-        lcc = []
+        scores = []
         for v in vertices:
             i = Vertex.Index(v, g_vertices, tolerance=tolerance)
             if not i == None:
-                lcc.append(round(local_clustering_coefficient(adjacency_matrix, i), mantissa))
+                lcc_score = round(local_clustering_coefficient(adjacency_matrix, i), mantissa)
+                d = Topology.Dictionary(v)
+                d = Dictionary.SetValueAtKey(d, key, lcc_score)
+                v = Topology.SetDictionary(v, d)
+                scores.append(lcc_score)
             else:
-                lcc.append(None)
-        return lcc
+                scores.append(None)
+        return scores
     
     @staticmethod
     def LongestPath(graph, vertexA, vertexB, vertexKey=None, edgeKey=None, costKey=None, timeLimit=10, tolerance=0.0001):
@@ -6888,6 +6988,52 @@ class Graph:
                 'vertexDictionaries': v_dicts,
                 'edgeDictionaries': e_dicts
                 }
+    
+    @staticmethod
+    def MetricDistance(graph, vertexA, vertexB, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Returns the shortest-path distance between the input vertices. See https://en.wikipedia.org/wiki/Distance_(graph_theory).
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertexA : topologic_core.Vertex
+            The first input vertex.
+        vertexB : topologic_core.Vertex
+            The second input vertex.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        float
+            The shortest-path metric distance between the input vertices.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Wire import Wire
+        from topologicpy.Edge import Edge
+
+        if not Topology.IsInstance(graph, "Graph"):
+            print("Graph.MetricDistance - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(vertexA, "Vertex"):
+            print("Graph.MetricDistance - Error: The input vertexA is not a valid vertex. Returning None.")
+            return None
+        if not Topology.IsInstance(vertexB, "Vertex"):
+            print("Graph.MetricDistance - Error: The input vertexB is not a valid vertex. Returning None.")
+            return None
+        sp = Graph.ShortestPath(graph, vertexA, vertexB, vertexKey="", edgeKey="Length", tolerance=tolerance)
+        if Topology.IsInstance(sp, "Wire"):
+            dist = round(Wire.Length(sp), mantissa)
+        elif Topology.IsInstance(sp, "Edge"):
+            dist = round(Edge.Length(sp), mantissa)
+        else:
+            dist = float('inf')
+        return dist
     
     @staticmethod
     def MinimumDelta(graph):
@@ -7312,7 +7458,7 @@ class Graph:
         return outgoing_vertices
     
     @staticmethod
-    def PageRank(graph, alpha=0.85, maxIterations=100, normalize=True, directed=False, mantissa=6, tolerance=0.0001):
+    def PageRank(graph, alpha: float = 0.85, maxIterations: int = 100, normalize: bool = True, directed: bool = False, key: str = "page_rank", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Calculates PageRank scores for nodes in a directed graph. see https://en.wikipedia.org/wiki/PageRank.
 
@@ -7328,6 +7474,8 @@ class Graph:
             If set to True, the results will be normalized from 0 to 1. Otherwise, they won't be. The default is True.
         directed : bool , optional
             If set to True, the graph is considered as a directed graph. Otherwise, it will be considered as an undirected graph. The default is False.
+        key : str , optional
+            The dictionary key under which to save the page_rank score. The default is "page_rank"
         mantissa : int , optional
             The desired length of the mantissa.
         tolerance : float , optional
@@ -7340,6 +7488,8 @@ class Graph:
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
 
         vertices = Graph.Vertices(graph)
         num_vertices = len(vertices)
@@ -7368,6 +7518,10 @@ class Graph:
             scores = Helper.Normalize(scores, mantissa=mantissa)
         else:
             scores = [round(x, mantissa) for x in scores]
+        for i, v in enumerate(vertices):
+            d = Topology.Dictionary(v)
+            d = Dictionary.SetValueAtKey(d, key, scores[i])
+            v = Topology.SetDictionary(v, d)
         return scores
     
     @staticmethod
@@ -7756,13 +7910,14 @@ class Graph:
             gsv = Graph.NearestVertex(graph, vertexA)
             gev = Graph.NearestVertex(graph, vertexB)
             shortest_path = graph.ShortestPath(gsv, gev, vertexKey, edgeKey)
-            if Topology.IsInstance(shortest_path, "Edge"):
-                    shortest_path = Wire.ByEdges([shortest_path])
-            sv = Topology.Vertices(shortest_path)[0]
-            if Vertex.Distance(sv, gev) < tolerance: # Path is reversed. Correct it.
-                if Topology.IsInstance(shortest_path, "Wire"):
-                    shortest_path = Wire.Reverse(shortest_path)
-            shortest_path = Wire.OrientEdges(shortest_path, Wire.StartVertex(shortest_path), tolerance=tolerance)
+            if not shortest_path == None:
+                if Topology.IsInstance(shortest_path, "Edge"):
+                        shortest_path = Wire.ByEdges([shortest_path])
+                sv = Topology.Vertices(shortest_path)[0]
+                if Vertex.Distance(sv, gev) < tolerance: # Path is reversed. Correct it.
+                    if Topology.IsInstance(shortest_path, "Wire"):
+                        shortest_path = Wire.Reverse(shortest_path)
+                shortest_path = Wire.OrientEdges(shortest_path, Wire.StartVertex(shortest_path), tolerance=tolerance)
             return shortest_path
         except:
             return None

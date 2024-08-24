@@ -451,7 +451,7 @@ class Face():
         planar_shell = Shell.Planarize(shell)
         normal = Face.Normal(Topology.Faces(planar_shell)[0])
         planar_shell = Topology.Flatten(planar_shell, origin=origin, direction=normal)
-        vertices = Shell.Vertices(planar_shell)
+        vertices = Topology.Vertices(planar_shell)
         new_vertices = []
         for v in vertices:
             x, y, z = Vertex.Coordinates(v)

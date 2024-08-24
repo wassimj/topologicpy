@@ -1519,6 +1519,7 @@ class Cell():
         
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(origin, "Vertex"):
@@ -1552,6 +1553,132 @@ class Cell():
         octahedron = Topology.Place(octahedron, originA=Vertex.Origin(), originB=origin)
         return octahedron
     
+    @staticmethod
+    def Paraboloid(origin= None, focalLength=0.125, width: float = 1, length: float = 1, height: float = 0, uSides: int = 16, vSides: int = 16,
+                        direction: list = [0, 0, 1], placement: str ="center", mantissa: int = 6, tolerance: float = 0.0001, silent=False):
+        """
+        Creates a paraboloid cell. See https://en.wikipedia.org/wiki/Paraboloid
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The origin location of the parabolic surface. The default is None which results in the parabolic surface being placed at (0, 0, 0).
+        focalLength : float , optional
+            The focal length of the parabola. The default is 0.125.
+        width : float , optional
+            The width of the parabolic surface. The default is 1.
+        length : float , optional
+            The length of the parabolic surface. The default is 1.
+        height : float , optional
+            The additional height of the parabolic surface. Please note this is not the height from the spring point to the apex. It is in addition to that to form a base. The default is 0.
+        uSides : int , optional
+            The number of sides along the width. The default is 16.
+        vSides : int , optional
+            The number of sides along the length. The default is 16.
+        direction : list , optional
+            The vector representing the up direction of the parabolic surface. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the parabolic surface. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+        If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        topologic_core.Shell
+            The created paraboloid.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Shell import Shell
+
+        if origin == None:
+            origin = Vertex.Origin()
+        
+        if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Cell.Paraboloid - Error: The origin input parameter is not a valid vertex. Returning None.")
+            return None
+        if width <= 0:
+            if not silent:
+                print("Cell.Paraboloid - Error: The width input parameter cannot be less than or equal to zero. Returning None.")
+            return None
+        if length <= 0:
+            if not silent:
+                print("Cell.Paraboloid - Error: The length input parameter cannot be less than or equal to zero. Returning None.")
+            return None
+        if height < 0:
+            if not silent:
+                print("Cell.Paraboloid - Error: The height input parameter cannot be negative. Returning None.")
+            return None
+        
+        para = Shell.Paraboloid(focalLength=focalLength, width=width, length=length, uSides=uSides, vSides=vSides,
+                        direction=[0,0,1], placement="center", mantissa=mantissa, tolerance=tolerance)
+        if not Topology.IsInstance(para, "Shell"):
+            if not silent:
+                print("Cell.Paraboloid - Error: Could not create paraboloid. Returning None.")
+            return None
+        eb = Shell.ExternalBoundary(para)
+        vertices = Topology.Vertices(eb)
+        z_list = [Vertex.Z(v) for v in vertices]
+        if focalLength > 0:
+            z = max(z_list) + height
+        else:
+            z = min(z_list) - height
+        f = Face.Rectangle(origin=Vertex.ByCoordinates(0,0,z), width=width*1.1, length=length*1.1)
+        proj_vertices = []
+        for v in vertices:
+            proj_vertices.append(Vertex.Project(v, f))
+        w = Wire.ByVertices(proj_vertices, close=True)
+        sleeve = Shell.ByWires([eb, w], triangulate=False, silent=True)
+        if sleeve == None:
+            if not silent:
+                print("Cell.Paraboloid - Error: Could not create paraboloid. Returning None.")
+            return None
+        f = Face.ByWire(w, tolerance=tolerance)
+        faces = Topology.Faces(sleeve) + [f] + Topology.Faces(para)
+        cell = Cell.ByFaces(faces, tolerance=tolerance)
+        if cell == None:
+            if not silent:
+                print("Cell.Paraboloid - Error: Could not create paraboloid. Returning None.")
+            return None
+        vertices = Topology.Vertices(cell)
+        x_list = [Vertex.X(v, mantissa=mantissa) for v in vertices]
+        y_list = [Vertex.Y(v, mantissa=mantissa) for v in vertices]
+        z_list = [Vertex.Z(v, mantissa=mantissa) for v in vertices]
+        min_x = min(x_list)
+        max_x = max(x_list)
+        mid_x = min_x + (max_x - min_x)/2
+        min_y = min(y_list)
+        max_y = max(y_list)
+        mid_y = min_y + (max_y - min_y)/2
+        min_z = min(z_list)
+        max_z = max(z_list)
+        mid_z = min_z + (max_z - min_z)/2
+        if placement.lower() == "center":
+            x_tran = -mid_x
+            y_tran = -mid_y
+            z_tran = -mid_z
+        elif placement.lower() == "bottom":
+            x_tran = -mid_x
+            y_tran = -mid_y
+            z_tran = -min_z
+        elif placement.lower() == "lowerleft":
+            x_tran = -min_x
+            y_tran = -min_y
+            z_tran = -min_z
+        cell = Topology.Translate(cell, x_tran, y_tran, z_tran)
+        cell = Topology.Place(cell, originA=Vertex.Origin(), originB=origin)
+        if not direction == [0,0,1]:
+            cell = Topology.Orient(cell, origin=origin, dirA=[0,0,1], dirB=direction)
+        return cell
+
     @staticmethod
     def Pipe(edge, profile = None, radius: float = 0.5, sides: int = 16, startOffset: float = 0, endOffset: float = 0, endcapA = None, endcapB = None, mantissa: int = 6) -> dict:
         """

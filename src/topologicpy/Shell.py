@@ -269,7 +269,7 @@ class Shell():
         return None
 
     @staticmethod
-    def ByFaces(faces: list, tolerance: float = 0.0001):
+    def ByFaces(faces: list, tolerance: float = 0.0001, silent=False):
         """
         Creates a shell from the input list of faces.
 
@@ -279,6 +279,8 @@ class Shell():
             The input list of faces.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -300,7 +302,8 @@ class Shell():
             if Topology.IsInstance(shell, "Shell"):
                 return shell
             else:
-                print("Shell.ByFaces - Error: Could not create shell. Returning None.")
+                if not silent:
+                    print("Shell.ByFaces - Error: Could not create shell. Returning None.")
                 return None
         else:
             return shell
@@ -396,9 +399,11 @@ class Shell():
         topologic_core.Shell
             The creates shell.
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
         if not isinstance(wires, list):
@@ -440,6 +445,24 @@ class Shell():
                         e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()], tolerance=tolerance, silent=silent)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
                         faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
+                    elif e3:
+                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e3), Edge.EndVertex(e3), Edge.StartVertex(e2), Edge.EndVertex(e2)]
+                        verts = Vertex.Fuse(verts, tolerance=tolerance)
+                        w = Wire.ByVertices(verts, close=True)
+                        if Topology.IsInstance(w, "Wire"):
+                            faces.append(Face.ByWire(w, tolerance=tolerance))
+                        else:
+                            if not silent:
+                                print("Shell.ByWires - Warning: Could not create face.")
+                    elif e4:
+                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e4), Edge.EndVertex(e4), Edge.StartVertex(e2), Edge.EndVertex(e2)]
+                        verts = Vertex.Fuse(verts, tolerance=tolerance)
+                        w = Wire.ByVertices(verts, close=True)
+                        if Topology.IsInstance(w, "Wire"):
+                            faces.append(Face.ByWire(w, tolerance=tolerance))
+                        else:
+                            if not silent:
+                                print("Shell.ByWires - Warning: Could not create face.")
             else:
                 for j in range (len(w1_edges)):
                     e1 = w1_edges[j]
@@ -466,10 +489,30 @@ class Shell():
                         except:
                             faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2, e4], tolerance=tolerance), tolerance=tolerance))
                     elif e3:
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2], tolerance=tolerance), tolerance=tolerance))
+                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e3), Edge.EndVertex(e3), Edge.StartVertex(e2), Edge.EndVertex(e2)]
+                        verts = Vertex.Fuse(verts, tolerance=tolerance)
+                        w = Wire.ByVertices(verts, close=True)
+                        if Topology.IsInstance(w, "Wire"):
+                            faces.append(Face.ByWire(w, tolerance=tolerance))
+                        else:
+                            if not silent:
+                                print("Shell.ByWires - Warning: Could not create face.")
                     elif e4:
-                            faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2], tolerance=tolerance), tolerance=tolerance))
-        return Shell.ByFaces(faces, tolerance=tolerance)
+                        verts = [Edge.StartVertex(e1), Edge.EndVertex(e1), Edge.StartVertex(e4), Edge.EndVertex(e4), Edge.StartVertex(e2), Edge.EndVertex(e2)]
+                        verts = Vertex.Fuse(verts, tolerance=tolerance)
+                        w = Wire.ByVertices(verts, close=True)
+                        if Topology.IsInstance(w, "Wire"):
+                            faces.append(Face.ByWire(w, tolerance=tolerance))
+                        else:
+                            if not silent:
+                                print("Shell.ByWires - Warning: Could not create face.")
+
+        shell = Shell.ByFaces(faces, tolerance=tolerance, silent=silent)
+        if shell == None:
+            if not silent:
+                print("Shell.ByWires - Warning: Could not create shell. Returning a cluster of faces instead.")
+            return Cluster.ByTopologies(faces)
+        return shell
 
     @staticmethod
     def ByWiresCluster(cluster, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
@@ -1058,10 +1101,10 @@ class Shell():
 
 
     @staticmethod
-    def ParabolicSurface(origin= None, focalLength=0.125, width: float = 1, length: float = 1, uSides: int = 16, vSides: int = 16,
-                    direction: list = [0, 0, 1], placement: str ="center", mantissa: int = 6, tolerance: float = 0.0001):
+    def Paraboloid(origin= None, focalLength=0.125, width: float = 1, length: float = 1, uSides: int = 16, vSides: int = 16,
+                    direction: list = [0, 0, 1], placement: str ="center", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-            Creates a parabolic surface.
+            Creates a paraboloid. See https://en.wikipedia.org/wiki/Paraboloid
 
             Parameters
             ----------
@@ -1085,11 +1128,13 @@ class Shell():
                 The desired length of the mantissa. The default is 6.
             tolerance : float , optional
                 The desired tolerance. The default is 0.0001.
+            silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
             
             Returns
             -------
             topologic_core.Shell
-                The created parabolic surface.
+                The created paraboloid.
 
             """
         from topologicpy.Vertex import Vertex
@@ -1197,6 +1242,7 @@ class Shell():
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
+        
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
