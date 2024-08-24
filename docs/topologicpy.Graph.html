@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.7.44 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.7.45 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.44
+                0.7.45
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -220,10 +220,10 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ChromaticNumber" title="topologicpy.Graph.Graph.ChromaticNumber"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChromaticNumber</span></code></a>(graph[, maxColors, silent])</p></td>
 <td><p>Returns the chromatic number of the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ClosenessCentrality" title="topologicpy.Graph.Graph.ClosenessCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosenessCentrality</span></code></a>(graph[, vertices, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ClosenessCentrality" title="topologicpy.Graph.Graph.ClosenessCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosenessCentrality</span></code></a>(graph[, vertices, key, ...])</p></td>
 <td><p>Return the closeness centrality measure of the input list of vertices within the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Color" title="topologicpy.Graph.Graph.Color"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Color</span></code></a>(graph[, oldKey, newKey, maxColors, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Color" title="topologicpy.Graph.Graph.Color"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Color</span></code></a>(graph[, oldKey, key, maxColors, tolerance])</p></td>
 <td><p>Colors the input vertices within the input graph.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Connect" title="topologicpy.Graph.Graph.Connect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connect</span></code></a>(graph, verticesA, verticesB[, tolerance])</p></td>
@@ -238,92 +238,98 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ContractEdge" title="topologicpy.Graph.Graph.ContractEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContractEdge</span></code></a>(graph, edge[, vertex, tolerance])</p></td>
 <td><p>Contracts the input edge in the input graph into a single vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DegreeSequence" title="topologicpy.Graph.Graph.DegreeSequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DegreeSequence</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Degree" title="topologicpy.Graph.Graph.Degree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Degree</span></code></a>(graph[, vertices, key, edgeKey, ...])</p></td>
+<td><p>Return the degree measure of the input list of vertices within the input graph.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DegreeSequence" title="topologicpy.Graph.Graph.DegreeSequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DegreeSequence</span></code></a>(graph)</p></td>
 <td><p>Returns the degree sequence of the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Density" title="topologicpy.Graph.Graph.Density"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Density</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Density" title="topologicpy.Graph.Graph.Density"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Density</span></code></a>(graph)</p></td>
 <td><p>Returns the density of the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DepthMap" title="topologicpy.Graph.Graph.DepthMap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DepthMap</span></code></a>(graph[, vertices, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DepthMap" title="topologicpy.Graph.Graph.DepthMap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DepthMap</span></code></a>(graph[, vertices, key, type, ...])</p></td>
 <td><p>Return the depth map of the input list of vertices within the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Diameter" title="topologicpy.Graph.Graph.Diameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Diameter</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Diameter" title="topologicpy.Graph.Graph.Diameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Diameter</span></code></a>(graph)</p></td>
 <td><p>Returns the diameter of the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Dictionary" title="topologicpy.Graph.Graph.Dictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dictionary</span></code></a>(graph)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Dictionary" title="topologicpy.Graph.Graph.Dictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dictionary</span></code></a>(graph)</p></td>
 <td><p>Returns the dictionary of the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Distance" title="topologicpy.Graph.Graph.Distance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Distance</span></code></a>(graph, vertexA, vertexB[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Distance" title="topologicpy.Graph.Graph.Distance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Distance</span></code></a>(graph, vertexA, vertexB[, type, ...])</p></td>
 <td><p>Returns the shortest-path distance between the input vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Edge" title="topologicpy.Graph.Graph.Edge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edge</span></code></a>(graph, vertexA, vertexB[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Edge" title="topologicpy.Graph.Graph.Edge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edge</span></code></a>(graph, vertexA, vertexB[, tolerance])</p></td>
 <td><p>Returns the edge in the input graph that connects in the input vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Edges" title="topologicpy.Graph.Graph.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(graph[, vertices, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Edges" title="topologicpy.Graph.Graph.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(graph[, vertices, tolerance])</p></td>
 <td><p>Returns the edges found in the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToAdjacencyMatrixCSV" title="topologicpy.Graph.Graph.ExportToAdjacencyMatrixCSV"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToAdjacencyMatrixCSV</span></code></a>(adjacencyMatrix, path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToAdjacencyMatrixCSV" title="topologicpy.Graph.Graph.ExportToAdjacencyMatrixCSV"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToAdjacencyMatrixCSV</span></code></a>(adjacencyMatrix, path)</p></td>
 <td><p>Exports the input graph into a set of CSV files compatible with DGL.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToBOT" title="topologicpy.Graph.Graph.ExportToBOT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToBOT</span></code></a>(graph, path[, format, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToBOT" title="topologicpy.Graph.Graph.ExportToBOT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToBOT</span></code></a>(graph, path[, format, ...])</p></td>
 <td><p>Exports the input graph to an RDF graph serialized according to the BOT ontology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToCSV" title="topologicpy.Graph.Graph.ExportToCSV"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToCSV</span></code></a>(graph, path, graphLabel[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToCSV" title="topologicpy.Graph.Graph.ExportToCSV"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToCSV</span></code></a>(graph, path, graphLabel[, ...])</p></td>
 <td><p>Exports the input graph into a set of CSV files compatible with DGL.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToGEXF" title="topologicpy.Graph.Graph.ExportToGEXF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGEXF</span></code></a>(graph[, path, graphWidth, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToGEXF" title="topologicpy.Graph.Graph.ExportToGEXF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGEXF</span></code></a>(graph[, path, graphWidth, ...])</p></td>
 <td><p>Exports the input graph to a Graph Exchange XML (GEXF) file format.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToJSON" title="topologicpy.Graph.Graph.ExportToJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToJSON</span></code></a>(graph, path[, verticesKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToJSON" title="topologicpy.Graph.Graph.ExportToJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToJSON</span></code></a>(graph, path[, verticesKey, ...])</p></td>
 <td><p>Exports the input graph to a JSON file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Flatten" title="topologicpy.Graph.Graph.Flatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flatten</span></code></a>(graph[, layout, k, seed, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Flatten" title="topologicpy.Graph.Graph.Flatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flatten</span></code></a>(graph[, layout, k, seed, ...])</p></td>
 <td><p>Flattens the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.GlobalClusteringCoefficient" title="topologicpy.Graph.Graph.GlobalClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GlobalClusteringCoefficient</span></code></a>(graph)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.GlobalClusteringCoefficient" title="topologicpy.Graph.Graph.GlobalClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GlobalClusteringCoefficient</span></code></a>(graph)</p></td>
 <td><p>Returns the global clustering coefficient of the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Guid" title="topologicpy.Graph.Graph.Guid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Guid</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Guid" title="topologicpy.Graph.Graph.Guid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Guid</span></code></a>(graph)</p></td>
 <td><p>Returns the guid of the input graph</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IncomingEdges" title="topologicpy.Graph.Graph.IncomingEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IncomingEdges</span></code></a>(graph, vertex[, directed, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IncomingEdges" title="topologicpy.Graph.Graph.IncomingEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IncomingEdges</span></code></a>(graph, vertex[, directed, ...])</p></td>
 <td><p>Returns the incoming edges connected to a vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IncomingVertices" title="topologicpy.Graph.Graph.IncomingVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IncomingVertices</span></code></a>(graph, vertex[, directed, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IncomingVertices" title="topologicpy.Graph.Graph.IncomingVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IncomingVertices</span></code></a>(graph, vertex[, directed, ...])</p></td>
 <td><p>Returns the incoming vertices connected to a vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsBipartite" title="topologicpy.Graph.Graph.IsBipartite"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsBipartite</span></code></a>(graph[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsBipartite" title="topologicpy.Graph.Graph.IsBipartite"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsBipartite</span></code></a>(graph[, tolerance])</p></td>
 <td><p>Returns True if the input graph is bipartite.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsComplete" title="topologicpy.Graph.Graph.IsComplete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsComplete</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsComplete" title="topologicpy.Graph.Graph.IsComplete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsComplete</span></code></a>(graph)</p></td>
 <td><p>Returns True if the input graph is complete.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsErdoesGallai" title="topologicpy.Graph.Graph.IsErdoesGallai"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsErdoesGallai</span></code></a>(graph, sequence)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsErdoesGallai" title="topologicpy.Graph.Graph.IsErdoesGallai"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsErdoesGallai</span></code></a>(graph, sequence)</p></td>
 <td><p>Returns True if the input sequence satisfies the Erdős–Gallai theorem.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsolatedVertices" title="topologicpy.Graph.Graph.IsolatedVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsolatedVertices</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsolatedVertices" title="topologicpy.Graph.Graph.IsolatedVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsolatedVertices</span></code></a>(graph)</p></td>
 <td><p>Returns the list of isolated vertices in the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.JSONData" title="topologicpy.Graph.Graph.JSONData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONData</span></code></a>(graph[, verticesKey, edgesKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.JSONData" title="topologicpy.Graph.Graph.JSONData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONData</span></code></a>(graph[, verticesKey, edgesKey, ...])</p></td>
 <td><p>Converts the input graph into JSON data.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.JSONString" title="topologicpy.Graph.Graph.JSONString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONString</span></code></a>(graph[, verticesKey, edgesKey, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.JSONString" title="topologicpy.Graph.Graph.JSONString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONString</span></code></a>(graph[, verticesKey, edgesKey, ...])</p></td>
 <td><p>Converts the input graph into JSON data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.LocalClusteringCoefficient" title="topologicpy.Graph.Graph.LocalClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LocalClusteringCoefficient</span></code></a>(graph[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.LocalClusteringCoefficient" title="topologicpy.Graph.Graph.LocalClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LocalClusteringCoefficient</span></code></a>(graph[, ...])</p></td>
 <td><p>Returns the local clustering coefficient of the input list of vertices within the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.LongestPath" title="topologicpy.Graph.Graph.LongestPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LongestPath</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.LongestPath" title="topologicpy.Graph.Graph.LongestPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LongestPath</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
 <td><p>Returns the longest path that connects the input vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MaximumDelta" title="topologicpy.Graph.Graph.MaximumDelta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumDelta</span></code></a>(graph)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MaximumDelta" title="topologicpy.Graph.Graph.MaximumDelta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumDelta</span></code></a>(graph)</p></td>
 <td><p>Returns the maximum delta of the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MaximumFlow" title="topologicpy.Graph.Graph.MaximumFlow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumFlow</span></code></a>(graph, source, sink[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MaximumFlow" title="topologicpy.Graph.Graph.MaximumFlow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumFlow</span></code></a>(graph, source, sink[, ...])</p></td>
 <td><p>Returns the maximum flow of the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MeshData" title="topologicpy.Graph.Graph.MeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshData</span></code></a>(g[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MeshData" title="topologicpy.Graph.Graph.MeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshData</span></code></a>(g[, tolerance])</p></td>
 <td><p>Returns the mesh data of the input graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MetricDistance" title="topologicpy.Graph.Graph.MetricDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MetricDistance</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
+<td><p>Returns the shortest-path distance between the input vertices.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MinimumDelta" title="topologicpy.Graph.Graph.MinimumDelta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumDelta</span></code></a>(graph)</p></td>
 <td><p>Returns the minimum delta of the input graph.</p></td>
@@ -632,7 +638,7 @@ If the vertexLabelKey does not exist, it will be created and the vertices are la
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.AverageClusteringCoefficient">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AverageClusteringCoefficient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AverageClusteringCoefficient" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AverageClusteringCoefficient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AverageClusteringCoefficient" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the average clustering coefficient of the input graph. See <a class="reference external" href="https://en.wikipedia.org/wiki/Clustering_coefficient">https://en.wikipedia.org/wiki/Clustering_coefficient</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -828,7 +834,7 @@ Note: If edge labels are not unique, they will be forced to be unique.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.BetweenessCentrality">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BetweenessCentrality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destinations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.BetweenessCentrality" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BetweenessCentrality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destinations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'betweeness_centrality'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.BetweenessCentrality" title="Permalink to this definition"></a></dt>
 <dd><blockquote>
 <div><p>Returns the betweeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See <a class="reference external" href="https://en.wikipedia.org/wiki/Betweenness_centrality">https://en.wikipedia.org/wiki/Betweenness_centrality</a>.</p>
 </div></blockquote>
@@ -842,6 +848,10 @@ Note: If edge labels are not unique, they will be forced to be unique.</p>
 <dt><strong>sources</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of source vertices. The default is None which means all vertices in the input graph are considered.</p>
 </dd>
 <dt><strong>destinations</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of destination vertices. The default is None which means all vertices in the input graph are considered.</p>
+</dd>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to save the betweeness centrality score. The default is “betweneess_centrality”.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
@@ -1266,7 +1276,7 @@ the same order and of the same length as the rows in the adjacency matrix.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.ClosenessCentrality">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ClosenessCentrality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ClosenessCentrality" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ClosenessCentrality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'closeness_centrality'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ClosenessCentrality" title="Permalink to this definition"></a></dt>
 <dd><p>Return the closeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the closeness centrality of all the vertices in the input graph is computed. See <a class="reference external" href="https://en.wikipedia.org/wiki/Closeness_centrality">https://en.wikipedia.org/wiki/Closeness_centrality</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1274,6 +1284,10 @@ the same order and of the same length as the rows in the adjacency matrix.</p>
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
 </dd>
 <dt><strong>vertices</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of vertices. The default is None.</p>
+</dd>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to save the closeness centrality score. The default is “closeness_centrality”.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
@@ -1290,7 +1304,7 @@ the same order and of the same length as the rows in the adjacency matrix.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.Color">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oldKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">newKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxColors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Color" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">oldKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxColors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Color" title="Permalink to this definition"></a></dt>
 <dd><p>Colors the input vertices within the input graph. The saved value is an integer rather than an actual color. See Color.ByValueInRange to convert to an actual color.
 Any vertices that have been pre-colored will not be affected. See <a class="reference external" href="https://en.wikipedia.org/wiki/Graph_coloring">https://en.wikipedia.org/wiki/Graph_coloring</a>.</p>
 <dl class="field-list simple">
@@ -1300,7 +1314,7 @@ Any vertices that have been pre-colored will not be affected. See <a class="refe
 </dd>
 <dt><strong>oldKey</strong><span class="classifier">str , optional</span></dt><dd><p>The existing dictionary key to use to read any pre-existing color information. The default is “color”.</p>
 </dd>
-<dt><strong>newKey</strong><span class="classifier">str , optional</span></dt><dd><p>The new dictionary key to use to write out new color information. The default is “color”.</p>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The new dictionary key to use to write out new color information. The default is “color”.</p>
 </dd>
 <dt><strong>maxColors</strong><span class="classifier">int , optional</span></dt><dd><p>The desired maximum number of colors to use. If set to None, the chromatic number of the graph is used. The default is None.</p>
 </dd>
@@ -1419,6 +1433,37 @@ vertex that replaces it. See <a class="reference external" href="https://en.wiki
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.Degree">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Degree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'degree'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Degree" title="Permalink to this definition"></a></dt>
+<dd><p>Return the degree measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the closeness centrality of all the vertices in the input graph is computed. See <a class="reference external" href="https://en.wikipedia.org/wiki/Degree_(graph_theory">https://en.wikipedia.org/wiki/Degree_(graph_theory</a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>vertices</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of vertices. The default is None.</p>
+</dd>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to save the closeness centrality score. The default is “degree”.</p>
+</dd>
+<dt><strong>edgeKey</strong><span class="classifier">str , optional</span></dt><dd><p>If specified, the value in the connected edges’ dictionary specified by the edgeKey string will be aggregated to calculate
+the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The degree of the input list of vertices within the input graph.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.DegreeSequence">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DegreeSequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.DegreeSequence" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the degree sequence of the input graph. See <a class="reference external" href="https://mathworld.wolfram.com/DegreeSequence.html">https://mathworld.wolfram.com/DegreeSequence.html</a>.</p>
@@ -1460,7 +1505,7 @@ vertex that replaces it. See <a class="reference external" href="https://en.wiki
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.DepthMap">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DepthMap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.DepthMap" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DepthMap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'depth'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'topological'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.DepthMap" title="Permalink to this definition"></a></dt>
 <dd><p>Return the depth map of the input list of vertices within the input graph. The returned list contains the total of the topological distances of each vertex to every other vertex in the input graph. The order of the depth map list is the same as the order of the input list of vertices. If no vertices are specified, the depth map of all the vertices in the input graph is computed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1468,6 +1513,12 @@ vertex that replaces it. See <a class="reference external" href="https://en.wiki
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
 </dd>
 <dt><strong>vertices</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of vertices. The default is None.</p>
+</dd>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to save the depth score. The default is “depth”.</p>
+</dd>
+<dt><strong>type</strong><span class="classifier">str , optional</span></dt><dd><p>The type of depth distance to calculate. The options are “topological” or “metric”. The default is “topological”. See <a class="reference external" href="https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/">https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/</a>.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
@@ -1524,7 +1575,7 @@ vertex that replaces it. See <a class="reference external" href="https://en.wiki
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.Distance">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Distance" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'topological'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Distance" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the shortest-path distance between the input vertices. See <a class="reference external" href="https://en.wikipedia.org/wiki/Distance_(graph_theory">https://en.wikipedia.org/wiki/Distance_(graph_theory</a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1535,13 +1586,17 @@ vertex that replaces it. See <a class="reference external" href="https://en.wiki
 </dd>
 <dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
 </dd>
+<dt><strong>type</strong><span class="classifier">str , optional</span></dt><dd><p>The type of depth distance to calculate. The options are “topological” or “metric”. The default is “topological”. See <a class="reference external" href="https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/">https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/</a>.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>int</dt><dd><p>The shortest-path distance between the input vertices.</p>
+<dt>float</dt><dd><p>The shortest-path metric distance between the input vertices.</p>
 </dd>
 </dl>
 </dd>
@@ -2223,7 +2278,7 @@ Note: If edge labels are not unique, they will be forced to be unique.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.LocalClusteringCoefficient">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LocalClusteringCoefficient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.LocalClusteringCoefficient" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LocalClusteringCoefficient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'lcc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.LocalClusteringCoefficient" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the local clustering coefficient of the input list of vertices within the input graph. See <a class="reference external" href="https://en.wikipedia.org/wiki/Clustering_coefficient">https://en.wikipedia.org/wiki/Clustering_coefficient</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2231,6 +2286,8 @@ Note: If edge labels are not unique, they will be forced to be unique.</p>
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
 </dd>
 <dt><strong>vertices</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of vertices. If set to None, the local clustering coefficient of all vertices will be computed. The default is None.</p>
+</dd>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to save the local clustering coefficient score. The default is “lcc”.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
@@ -2357,6 +2414,34 @@ Note: If edge labels are not unique, they will be forced to be unique.</p>
 ‘edges’ : the list of [i, j] indices into the vertices list to signify and edge that connects vertices[i] to vertices[j].
 ‘vertexDictionaries’ : The python dictionaries of the vertices (in the same order as the list of vertices).
 ‘edgeDictionaries’ : The python dictionaries of the edges (in the same order as the list of edges).</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.MetricDistance">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MetricDistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.MetricDistance" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the shortest-path distance between the input vertices. See <a class="reference external" href="https://en.wikipedia.org/wiki/Distance_(graph_theory">https://en.wikipedia.org/wiki/Distance_(graph_theory</a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>vertexA</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The first input vertex.</p>
+</dd>
+<dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>The shortest-path metric distance between the input vertices.</p>
 </dd>
 </dl>
 </dd>
@@ -2557,7 +2642,7 @@ and the the edge connecting it to the input vertex is an outgoing edge.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.PageRank">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PageRank</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.85</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxIterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.PageRank" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PageRank</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.85</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxIterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'page_rank'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.PageRank" title="Permalink to this definition"></a></dt>
 <dd><p>Calculates PageRank scores for nodes in a directed graph. see <a class="reference external" href="https://en.wikipedia.org/wiki/PageRank">https://en.wikipedia.org/wiki/PageRank</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2571,6 +2656,8 @@ and the the edge connecting it to the input vertex is an outgoing edge.</p>
 <dt><strong>normalize</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the results will be normalized from 0 to 1. Otherwise, they won’t be. The default is True.</p>
 </dd>
 <dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the graph is considered as a directed graph. Otherwise, it will be considered as an undirected graph. The default is False.</p>
+</dd>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to save the page_rank score. The default is “page_rank”</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa.</p>
 </dd>

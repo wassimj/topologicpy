@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cell module &mdash; topologicpy 0.7.44 documentation</title>
+  <title>topologicpy.Cell module &mdash; topologicpy 0.7.45 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.44
+                0.7.45
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -226,43 +226,46 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Octahedron" title="topologicpy.Cell.Cell.Octahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Octahedron</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates an octahedron.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Pipe" title="topologicpy.Cell.Cell.Pipe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pipe</span></code></a>(edge[, profile, radius, sides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Paraboloid" title="topologicpy.Cell.Cell.Paraboloid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Paraboloid</span></code></a>([origin, focalLength, width, ...])</p></td>
+<td><p>Creates a paraboloid cell.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Pipe" title="topologicpy.Cell.Cell.Pipe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pipe</span></code></a>(edge[, profile, radius, sides, ...])</p></td>
 <td><p>Creates a pipe along the input edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Prism" title="topologicpy.Cell.Cell.Prism"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prism</span></code></a>([origin, width, length, height, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Prism" title="topologicpy.Cell.Cell.Prism"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prism</span></code></a>([origin, width, length, height, ...])</p></td>
 <td><p>Creates a prism.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.RemoveCollinearEdges" title="topologicpy.Cell.Cell.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(cell[, angTolerance, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.RemoveCollinearEdges" title="topologicpy.Cell.Cell.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(cell[, angTolerance, ...])</p></td>
 <td><p>Removes any collinear edges in the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Roof" title="topologicpy.Cell.Cell.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, epsilon, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Roof" title="topologicpy.Cell.Cell.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, epsilon, tolerance])</p></td>
 <td><p>Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sets" title="topologicpy.Cell.Cell.Sets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sets</span></code></a>(cells, superCells[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sets" title="topologicpy.Cell.Cell.Sets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sets</span></code></a>(cells, superCells[, tolerance])</p></td>
 <td><p>Classifies the input cells into sets based on their enclosure within the input list of super cells. The order of the sets follows the order of the input list of super cells.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Shells" title="topologicpy.Cell.Cell.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(cell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Shells" title="topologicpy.Cell.Cell.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(cell)</p></td>
 <td><p>Returns the shells of the input cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sphere" title="topologicpy.Cell.Cell.Sphere"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sphere</span></code></a>([origin, radius, uSides, vSides, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sphere" title="topologicpy.Cell.Cell.Sphere"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sphere</span></code></a>([origin, radius, uSides, vSides, ...])</p></td>
 <td><p>Creates a sphere.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.SurfaceArea" title="topologicpy.Cell.Cell.SurfaceArea"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SurfaceArea</span></code></a>(cell[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.SurfaceArea" title="topologicpy.Cell.Cell.SurfaceArea"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SurfaceArea</span></code></a>(cell[, mantissa])</p></td>
 <td><p>Returns the surface area of the input cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Tetrahedron" title="topologicpy.Cell.Cell.Tetrahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tetrahedron</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Tetrahedron" title="topologicpy.Cell.Cell.Tetrahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tetrahedron</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates a tetrahedron.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Torus" title="topologicpy.Cell.Cell.Torus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Torus</span></code></a>([origin, majorRadius, minorRadius, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Torus" title="topologicpy.Cell.Cell.Torus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Torus</span></code></a>([origin, majorRadius, minorRadius, ...])</p></td>
 <td><p>Creates a torus.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Vertices" title="topologicpy.Cell.Cell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Vertices" title="topologicpy.Cell.Cell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cell)</p></td>
 <td><p>Returns the vertices of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Volume" title="topologicpy.Cell.Cell.Volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Volume</span></code></a>(cell[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Volume" title="topologicpy.Cell.Cell.Volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Volume</span></code></a>(cell[, mantissa])</p></td>
 <td><p>Returns the volume of the input cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wires" title="topologicpy.Cell.Cell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wires" title="topologicpy.Cell.Cell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cell)</p></td>
 <td><p>Returns the wires of the input cell.</p></td>
 </tr>
 </tbody>
@@ -995,6 +998,48 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Cell</dt><dd><p>The created octahedron.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.Paraboloid">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Paraboloid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">focalLength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.125</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.Paraboloid" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a paraboloid cell. See <a class="reference external" href="https://en.wikipedia.org/wiki/Paraboloid">https://en.wikipedia.org/wiki/Paraboloid</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the parabolic surface. The default is None which results in the parabolic surface being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>focalLength</strong><span class="classifier">float , optional</span></dt><dd><p>The focal length of the parabola. The default is 0.125.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the parabolic surface. The default is 1.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the parabolic surface. The default is 1.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The additional height of the parabolic surface. Please note this is not the height from the spring point to the apex. It is in addition to that to form a base. The default is 0.</p>
+</dd>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. The default is 16.</p>
+</dd>
+<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the length. The default is 16.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the parabolic surface. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the parabolic surface. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd></dd>
+<dt><strong>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</strong></dt><dd></dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Shell</dt><dd><p>The created paraboloid.</p>
 </dd>
 </dl>
 </dd>

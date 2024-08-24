@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy package &mdash; topologicpy 0.7.44 documentation</title>
+  <title>topologicpy package &mdash; topologicpy 0.7.45 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.44
+                0.7.45
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -196,6 +196,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.InternalVertex"><code class="docutils literal notranslate"><span class="pre">Cell.InternalVertex()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.IsOnBoundary"><code class="docutils literal notranslate"><span class="pre">Cell.IsOnBoundary()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Octahedron"><code class="docutils literal notranslate"><span class="pre">Cell.Octahedron()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Paraboloid"><code class="docutils literal notranslate"><span class="pre">Cell.Paraboloid()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Pipe"><code class="docutils literal notranslate"><span class="pre">Cell.Pipe()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Prism"><code class="docutils literal notranslate"><span class="pre">Cell.Prism()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.RemoveCollinearEdges"><code class="docutils literal notranslate"><span class="pre">Cell.RemoveCollinearEdges()</span></code></a></li>
@@ -470,6 +471,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ContainsEdge"><code class="docutils literal notranslate"><span class="pre">Graph.ContainsEdge()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ContainsVertex"><code class="docutils literal notranslate"><span class="pre">Graph.ContainsVertex()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ContractEdge"><code class="docutils literal notranslate"><span class="pre">Graph.ContractEdge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Degree"><code class="docutils literal notranslate"><span class="pre">Graph.Degree()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.DegreeSequence"><code class="docutils literal notranslate"><span class="pre">Graph.DegreeSequence()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Density"><code class="docutils literal notranslate"><span class="pre">Graph.Density()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.DepthMap"><code class="docutils literal notranslate"><span class="pre">Graph.DepthMap()</span></code></a></li>
@@ -499,6 +501,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MaximumDelta"><code class="docutils literal notranslate"><span class="pre">Graph.MaximumDelta()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MaximumFlow"><code class="docutils literal notranslate"><span class="pre">Graph.MaximumFlow()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MeshData"><code class="docutils literal notranslate"><span class="pre">Graph.MeshData()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MetricDistance"><code class="docutils literal notranslate"><span class="pre">Graph.MetricDistance()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MinimumDelta"><code class="docutils literal notranslate"><span class="pre">Graph.MinimumDelta()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MinimumSpanningTree"><code class="docutils literal notranslate"><span class="pre">Graph.MinimumSpanningTree()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.NavigationGraph"><code class="docutils literal notranslate"><span class="pre">Graph.NavigationGraph()</span></code></a></li>
@@ -702,7 +705,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.InternalBoundaries"><code class="docutils literal notranslate"><span class="pre">Shell.InternalBoundaries()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.IsClosed"><code class="docutils literal notranslate"><span class="pre">Shell.IsClosed()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.IsOnBoundary"><code class="docutils literal notranslate"><span class="pre">Shell.IsOnBoundary()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.ParabolicSurface"><code class="docutils literal notranslate"><span class="pre">Shell.ParabolicSurface()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Paraboloid"><code class="docutils literal notranslate"><span class="pre">Shell.Paraboloid()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Pie"><code class="docutils literal notranslate"><span class="pre">Shell.Pie()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Planarize"><code class="docutils literal notranslate"><span class="pre">Shell.Planarize()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Rectangle"><code class="docutils literal notranslate"><span class="pre">Shell.Rectangle()</span></code></a></li>
