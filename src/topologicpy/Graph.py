@@ -7995,9 +7995,39 @@ class Graph:
         return shortestPaths
 
     @staticmethod
-    def Show(graph, vertexColor="black", vertexSize=6, vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], showVertices=True, showVertexLegend=False, edgeColor="black", edgeWidth=1, edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], showEdges=True, showEdgeLegend=False, colorScale='viridis', renderer=None,
-             width=950, height=500, xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)', marginLeft=0, marginRight=0, marginTop=20, marginBottom=0,
-             camera=[-1.25, -1.25, 1.25], center=[0, 0, 0], up=[0, 0, 1], projection="perspective", tolerance=0.0001):
+    def Show(graph, vertexColor="black",
+             vertexSize=6,
+             vertexLabelKey=None,
+             vertexGroupKey=None,
+             vertexGroups=[],
+             showVertices=True,
+             showVertexLabels=False,
+             showVertexLegend=False,
+             edgeColor="black",
+             edgeWidth=1,
+             edgeLabelKey=None,
+             edgeGroupKey=None,
+             edgeGroups=[],
+             showEdges=True,
+             showEdgeLabels=False,
+             showEdgeLegend=False,
+             colorScale='viridis',
+             renderer=None,
+             width=950,
+             height=500,
+             xAxis=False,
+             yAxis=False,
+             zAxis=False,
+             axisSize=1,
+             backgroundColor='rgba(0,0,0,0)',
+             marginLeft=0,
+             marginRight=0,
+             marginTop=20,
+             marginBottom=0,
+             camera=[-1.25, -1.25, 1.25],
+             center=[0, 0, 0], up=[0, 0, 1],
+             projection="perspective",
+             tolerance=0.0001):
         """
         Shows the graph using Plotly.
 
@@ -8023,6 +8053,8 @@ class Graph:
             The list of vertex groups against which to index the color of the vertex. The default is [].
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+        showVertexLabels : bool , optional
+            If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. The default is False.
         showVertexLegend : bool , optional
             If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. The default is False.
         edgeColor : str , optional
@@ -8043,6 +8075,8 @@ class Graph:
             The list of edge groups against which to index the color of the edge. The default is [].
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+        showEdgeLabels : bool , optional
+            If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. The default is False.
         showEdgeLegend : bool , optional
             If set to True the edge legend will be drawn. Otherwise, it will not be drawn. The default is False.
         colorScale : str , optional
@@ -8101,7 +8135,7 @@ class Graph:
             print("Graph.Show - Error: The input graph is not a valid graph. Returning None.")
             return None
         
-        data= Plotly.DataByGraph(graph, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLegend=showEdgeLegend, colorScale=colorScale)
+        data= Plotly.DataByGraph(graph, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLabels=showVertexLabels, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLabels=showEdgeLabels, showEdgeLegend=showEdgeLegend, colorScale=colorScale)
         fig = Plotly.FigureByData(data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor,
                                   marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom, tolerance=tolerance)
         Plotly.Show(fig, renderer=renderer, camera=camera, center=center, up=up, projection=projection)

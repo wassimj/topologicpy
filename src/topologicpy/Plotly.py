@@ -279,6 +279,7 @@ class Plotly:
                     vertexGroupKey: str = None,
                     vertexGroups: list = [],
                     showVertices: bool = True,
+                    showVertexLabels: bool = False,
                     showVertexLegend: bool = False,
                     edgeColor: str = "black",
                     edgeWidth: float = 1,
@@ -286,6 +287,7 @@ class Plotly:
                     edgeGroupKey: str = None,
                     edgeGroups: list = [],
                     showEdges: bool = True,
+                    showEdgeLabels: bool = False,
                     showEdgeLegend: bool = False,
                     colorScale: str = "viridis",
                     mantissa: int = 6):
@@ -314,6 +316,8 @@ class Plotly:
             The list of vertex groups against which to index the color of the vertex. The default is [].
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+        showVertexLabels : bool , optional
+            If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. The default is False.
         showVertexLegend : bool , optional
             If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. The default is False.
         edgeColor : str , optional
@@ -334,6 +338,8 @@ class Plotly:
             The list of groups to use for indexing the color of edges. The default is None.
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+        showEdgeLabels : bool , optional
+            If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. The default is False.
         showEdgeLegend : bool , optional
             If set to True the edge legend will be drawn. Otherwise, it will not be drawn. The default is False.
         colorScale : str , optional
@@ -376,11 +382,11 @@ class Plotly:
                         v_groupList.append(vertexGroups.index(v_group))
                     except:
                         v_groupList.append(len(vertexGroups))
-                    if not v_label == "" and not v_group == "":
-                        if v_group == 0:
-                            v_label = v_label+" (0)"
-                        else:
-                            v_label = v_label+" ("+str(v_group)+")"
+                    # if not v_label == "" and not v_group == "":
+                    #     if v_group == 0:
+                    #         v_label = v_label+" (0)"
+                    #     else:
+                    #         v_label = v_label+" ("+str(v_group)+")"
                     v_labels.append(v_label)
             else:
                 for v in vertices:
@@ -391,10 +397,14 @@ class Plotly:
                 v_groupList = vertexColor
             if len(v_labels) < 1:
                 v_labels = ""
+            if showVertexLabels == True:
+                mode = "markers+text"
+            else:
+                mode = "markers"
             v_trace=go.Scatter3d(x=Xn,
                 y=Yn,
                 z=Zn,
-                mode='markers',
+                mode=mode,
                 name='Graph Vertices',
                 legendgroup=4,
                 legendrank=4,
@@ -457,10 +467,14 @@ class Plotly:
             if len(e_labels) < 1:
                 e_labels = ""
             
+            if showEdgeLabels == True:
+                mode = "lines+text"
+            else:
+                mode = "lines"
             e_trace=go.Scatter3d(x=Xe,
                                  y=Ye,
                                  z=Ze,
-                                 mode='lines',
+                                 mode=mode,
                                  name='Graph Edges',
                                  legendgroup=5,
                                  legendrank=5,

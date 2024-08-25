@@ -27,6 +27,7 @@ Submodules
    topologicpy.Neo4j
    topologicpy.Plotly
    topologicpy.Polyskel
+   topologicpy.PyG
    topologicpy.Shell
    topologicpy.Speckle
    topologicpy.Sun
