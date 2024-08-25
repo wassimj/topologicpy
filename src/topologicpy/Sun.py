@@ -261,6 +261,7 @@ class Sun():
         float
             The altitude angle.
         """
+
         import os
         import warnings
         import math
@@ -399,6 +400,7 @@ class Sun():
         list
             The sun vector pointing from the location of the sun towards the origin.
         """
+        
         from topologicpy.Vector import Vector
         azimuth = Sun.Azimuth(latitude=latitude, longitude=longitude, date=date)
         altitude = Sun.Altitude(latitude=latitude, longitude=longitude, date=date)
@@ -758,14 +760,12 @@ class Sun():
         -------
         dict
             A dictionary of the sun diagram shapes. The keys in this dictionary are:
-            - 'date_paths': These are the sun paths (wire) for the winter solstice, equinox, and summer solstice
-            - 'hourly_paths': These are the figure-8 (wire) for the sun location on the same hour on each selected day of the year.
-            - 'shell': This is the total surface (shell) of the sun paths. This is included only if the shell option is set to True.
-            - 'compass': This is the compass (shell) on the ground. It is made of 36 sides and 10 rings. This is included only
-               if the compass option is set to True.
-            - 'center' : This is a cross-shape (wire) at the center of the diagram. This is included only if the compass option is set to True.
-            - 'ground' : This is a circle (face) on the ground. It is made of 36 sides. This is included only if
-               the compass option is set to False.
+            'date_paths': These are the sun paths (wire) for the winter solstice, equinox, and summer solstice
+            'hourly_paths': These are the figure-8 (wire) for the sun location on the same hour on each selected day of the year.
+            'shell': This is the total surface (shell) of the sun paths. This is included only if the shell option is set to True.
+            'compass': This is the compass (shell) on the ground. It is made of 36 sides and 10 rings. This is included only if the compass option is set to True.
+            'center' : This is a cross-shape (wire) at the center of the diagram. This is included only if the compass option is set to True.
+            'ground' : This is a circle (face) on the ground. It is made of 36 sides. This is included only if the compass option is set to False.
         """
 
         from datetime import datetime

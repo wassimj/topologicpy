@@ -16,25 +16,104 @@
 
 import os
 import copy
-import numpy as np
-import pandas as pd
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch_geometric.data import Data, Dataset
-from torch_geometric.loader import DataLoader
-from torch_geometric.nn import SAGEConv, global_mean_pool, global_max_pool, global_add_pool
-from torch.utils.data.sampler import SubsetRandomSampler
-from sklearn.model_selection import KFold
-from sklearn.metrics import accuracy_score
-from tqdm.auto import tqdm
+import warnings
 import gc
 
-import torch
-from torch.utils.data import Dataset
+try:
+    import numpy as np
+except:
+    print("PyG - Installing required numpy library.")
+    try:
+        os.system("pip install numpy")
+    except:
+        os.system("pip install numpy --user")
+    try:
+        import numpy as np
+        print("PyG - numpy library installed successfully.")
+    except:
+        warnings.warn("PyG - Error: Could not import numpy.")
 
-import torch
-from torch.utils.data import Dataset
+try:
+    import pandas as pd
+except:
+    print("PyG - Installing required pandas library.")
+    try:
+        os.system("pip install pandas")
+    except:
+        os.system("pip install pandas --user")
+    try:
+        import numpy as np
+        print("PyG - pandas library installed successfully.")
+    except:
+        warnings.warn("PyG - Error: Could not import pandas.")
+
+try:
+    from tqdm.auto import tqdm
+except:
+    print("PyG - Installing required tqdm library.")
+    try:
+        os.system("pip install tqdm")
+    except:
+        os.system("pip install tqdm --user")
+    try:
+        from tqdm.auto import tqdm
+        print("PyG - tqdm library installed correctly.")
+    except:
+        raise Exception("PyG - Error: Could not import tqdm.")
+
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    from torch.utils.data.sampler import SubsetRandomSampler
+except:
+    print("PyG - Installing required torch library.")
+    try:
+        os.system("pip install torch")
+    except:
+        os.system("pip install torch --user")
+    try:
+        import torch
+        import torch.nn as nn
+        import torch.nn.functional as F
+        from torch.utils.data.sampler import SubsetRandomSampler
+        print("PyG - torch library installed correctly.")
+    except:
+        warnings.warn("PyG - Error: Could not import torch.")
+
+try:
+    from torch_geometric.data import Data, Dataset
+    from torch_geometric.loader import DataLoader
+    from torch_geometric.nn import SAGEConv, global_mean_pool, global_max_pool, global_add_pool
+except:
+    print("PyG - Installing required torch_geometric library.")
+    try:
+        os.system("pip install torch_geometric")
+    except:
+        os.system("pip install torch_geometric --user")
+    try:
+        from torch_geometric.data import Data, Dataset
+        from torch_geometric.loader import DataLoader
+        from torch_geometric.nn import SAGEConv, global_mean_pool, global_max_pool, global_add_pool
+        print("PyG - torch_geometric library installed correctly.")
+    except:
+        warnings.warn("PyG - Error: Could not import torch.")
+
+try:
+    from sklearn.model_selection import KFold
+    from sklearn.metrics import accuracy_score
+except:
+    print("PyG - Installing required scikit-learn library.")
+    try:
+        os.system("pip install -U scikit-learn")
+    except:
+        os.system("pip install -U scikit-learn --user")
+    try:
+        from sklearn.model_selection import KFold
+        from sklearn.metrics import accuracy_score
+        print("PyG - scikit-learn library installed correctly.")
+    except:
+        warnings.warn("PyG - Error: Could not import scikit. Please install it manually.")
 
 class CustomGraphDataset(Dataset):
     def __init__(self, root=None, data_list=None, indices=None, node_level=False, graph_level=True, 

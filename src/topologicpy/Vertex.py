@@ -316,14 +316,14 @@ class Vertex():
         Returns the centroid of the input list of vertices.
 
         Parameters
-        -----------
+        ----------
         vertices : list
             The input list of vertices
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
 
-        Return
-        ----------
+        Returns
+        -------
         topologic_core.Vertex
             The computed centroid of the input list of vertices
         
@@ -350,16 +350,17 @@ class Vertex():
         Sorts the input list of vertices in a clockwise fashion. This method assumes that the vertices are on the XY plane. The Z coordinate is ignored.
 
         Parameters
-        -----------
+        ----------
         vertices : list
             The input list of vertices
 
-        Return
-        -----------
+        Returns
+        -------
         list
             The input list of vertices sorted in a counter clockwise fashion
         
         """
+        
         return list(reversed(Vertex.CounterClockwise2D(vertices)))
     
     @staticmethod
@@ -414,14 +415,14 @@ class Vertex():
         Sorts the input list of vertices in a counterclockwise fashion. This method assumes that the vertices are on the XY plane. The Z coordinate is ignored.
 
         Parameters
-        -----------
+        ----------
         vertices : list
             The input list of vertices
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
 
-        Return
-        -----------
+        Returns
+        -------
         list
             The input list of vertices sorted in a counter clockwise fashion
         
@@ -1133,16 +1134,16 @@ class Vertex():
         """
         Returns True if the input vertex is peripheral to the input topology. Returns False otherwise.
         A vertex is said to be peripheral to the input topology if:
-            01. Vertex: If it is internal to it (i.e. coincident with it).
-            02. Edge: If it is internal to its start or end vertices.
-            03. Manifold open wire: If it is internal to its start or end vertices.
-            04. Manifold closed wire: If it is internal to any of its vertices.
-            05. Non-manifold wire: If it is internal to any of its vertices that has a vertex degree of 1.
-            06. Face: If it is internal to any of its edges or vertices.
-            07. Shell: If it is internal to external boundary
-            08. Cell: If it is internal to any of its faces, edges, or vertices.
-            09. CellComplex: If it is peripheral to its external boundary.
-            10. Cluster: If it is peripheral to any of its free topologies. (See Cluster.FreeTopologies)
+        01. Vertex: If it is internal to it (i.e. coincident with it).
+        02. Edge: If it is internal to its start or end vertices.
+        03. Manifold open wire: If it is internal to its start or end vertices.
+        04. Manifold closed wire: If it is internal to any of its vertices.
+        05. Non-manifold wire: If it is internal to any of its vertices that has a vertex degree of 1.
+        06. Face: If it is internal to any of its edges or vertices.
+        07. Shell: If it is internal to external boundary
+        08. Cell: If it is internal to any of its faces, edges, or vertices.
+        09. CellComplex: If it is peripheral to its external boundary.
+        10. Cluster: If it is peripheral to any of its free topologies. (See Cluster.FreeTopologies)
 
         Parameters
         ----------
@@ -1393,10 +1394,10 @@ class Vertex():
         Returns a vertex with coordinates (0, 0, 0)
 
         Parameters
-        -----------
+        ----------
 
-        Return
-        -----------
+        Returns
+        -------
         topologic_core.Vertex
         """
         return Vertex.ByCoordinates(0, 0, 0)
@@ -1525,14 +1526,14 @@ class Vertex():
         Returns the equation of the average plane passing through a list of vertices.
 
         Parameters
-        -----------
+        ----------
         vertices : list
             The input list of vertices
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
 
-        Return
-        -----------
+        Returns
+        -------
         dict
             The dictionary containing the values of a, b, c, d for the plane equation in the form of ax+by+cz+d=0.
             The keys in the dictionary are ["a", "b", "c". "d"]
@@ -1576,7 +1577,7 @@ class Vertex():
         Creates a point (vertex) using the input parameters
 
         Parameters
-        -----------
+        ----------
         x : float , optional.
             The desired x coordinate. The default is 0.
         y : float , optional.
@@ -1584,8 +1585,8 @@ class Vertex():
         z : float , optional.
             The desired z coordinate. The default is 0.
 
-        Return
-        -----------
+        Returns
+        -------
         topologic_core.Vertex
         """
         

@@ -383,6 +383,7 @@ class Shell():
     def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a shell by lofting through the input wires
+        
         Parameters
         ----------
         wires : list
