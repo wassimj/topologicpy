@@ -1389,9 +1389,10 @@ class Graph:
         # Add edges based on the adjacency matrix
         edges = []
         for i in range(len(adjacencyMatrix)):
-            for j in range(i+1, len(adjacencyMatrix)):
-                if not adjacencyMatrix[i][j] == 0:
-                    edges.append(Edge.ByVertices([vertices[i], vertices[j]]))
+            for j in range(len(adjacencyMatrix)):
+                if not i == j:
+                    if not adjacencyMatrix[i][j] == 0:
+                        edges.append(Edge.ByVertices([vertices[i], vertices[j]]))
         
         return Graph.ByVerticesEdges(vertices, edges)
 
@@ -4318,6 +4319,7 @@ class Graph:
                         d = Graph.TopologicalDistance(graph, va, vb, tolerance)
                     top_dist += d
                 if top_dist == 0:
+                    print("Topological Distance is Zero!!")
                     scores.append(0)
                 else:
                     scores.append(round((n-1)/top_dist, mantissa))

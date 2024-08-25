@@ -2,7 +2,7 @@
 
 <img src="https://topologic.app/wp-content/uploads/2023/02/topologicpy-logo-no-loop.gif" alt="topologicpy logo" width="250" loop="1">
 
-# An Advanced Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction
+# An AI-Powered Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction
 
 ## Introduction
 Welcome to topologicpy (rhymes with apple pie). topologicpy is an open-source python 3 implementation of [Topologic](https://topologic.app) which is a powerful spatial modelling and analysis software library that revolutionizes the way you design architectural spaces, buildings, and artefacts. Topologic's advanced features enable you to create hierarchical and topological information-rich 3D representations that offer unprecedented flexibility and control in your design process. With the integration of geometry, topology, information, and artificial intelligence, Topologic enriches Building Information Models with Building *Intelligence* Models.
