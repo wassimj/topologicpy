@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vertex module &mdash; topologicpy 0.7.47 documentation</title>
+  <title>topologicpy.Vertex module &mdash; topologicpy 0.7.48 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.47
+                0.7.48
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -213,7 +213,7 @@
 <td><p>Returns True if the input vertex is inside the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsPeripheral" title="topologicpy.Vertex.Vertex.IsPeripheral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsPeripheral</span></code></a>(vertex, topology[, tolerance, ...])</p></td>
-<td><p>Returns True if the input vertex is peripheral to the input topology. Returns False otherwise. A vertex is said to be peripheral to the input topology if:     01. Vertex: If it is internal to it (i.e. coincident with it). 02. Edge: If it is internal to its start or end vertices. 03. Manifold open wire: If it is internal to its start or end vertices. 04. Manifold closed wire: If it is internal to any of its vertices. 05. Non-manifold wire: If it is internal to any of its vertices that has a vertex degree of 1. 06. Face: If it is internal to any of its edges or vertices. 07. Shell: If it is internal to external boundary     08. Cell: If it is internal to any of its faces, edges, or vertices. 09. CellComplex: If it is peripheral to its external boundary. 10. Cluster: If it is peripheral to any of its free topologies. (See Cluster.FreeTopologies).</p></td>
+<td><p>Returns True if the input vertex is peripheral to the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.NearestVertex" title="topologicpy.Vertex.Vertex.NearestVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NearestVertex</span></code></a>(vertex, topology[, useKDTree, ...])</p></td>
 <td><p>Returns the vertex found in the input topology that is the nearest to the input vertex.</p></td>
@@ -400,6 +400,12 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 </dd>
 </dl>
 </dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Vertex</dt><dd><p>The computed centroid of the input list of vertices</p>
+</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 
@@ -411,6 +417,12 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The input list of vertices sorted in a counter clockwise fashion</p>
 </dd>
 </dl>
 </dd>
@@ -451,6 +463,12 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The input list of vertices sorted in a counter clockwise fashion</p>
 </dd>
 </dl>
 </dd>
@@ -741,9 +759,8 @@ coincident with the input vertex.</p>
 <dt class="sig sig-object py" id="topologicpy.Vertex.Vertex.IsPeripheral">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsPeripheral</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Vertex.Vertex.IsPeripheral" title="Permalink to this definition"></a></dt>
 <dd><p>Returns True if the input vertex is peripheral to the input topology. Returns False otherwise.
-A vertex is said to be peripheral to the input topology if:</p>
-<blockquote>
-<div><p>01. Vertex: If it is internal to it (i.e. coincident with it).
+A vertex is said to be peripheral to the input topology if:
+01. Vertex: If it is internal to it (i.e. coincident with it).
 02. Edge: If it is internal to its start or end vertices.
 03. Manifold open wire: If it is internal to its start or end vertices.
 04. Manifold closed wire: If it is internal to any of its vertices.
@@ -753,7 +770,6 @@ A vertex is said to be peripheral to the input topology if:</p>
 08. Cell: If it is internal to any of its faces, edges, or vertices.
 09. CellComplex: If it is peripheral to its external boundary.
 10. Cluster: If it is peripheral to any of its free topologies. (See Cluster.FreeTopologies)</p>
-</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -810,6 +826,11 @@ A vertex is said to be peripheral to the input topology if:</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><blockquote>
 <div></div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Vertex</dt><dd></dd>
+</dl>
 </dd>
 </dl>
 </dd></dl>
@@ -876,6 +897,13 @@ coincident with the input vertex.</p>
 </dd>
 </dl>
 </dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>The dictionary containing the values of a, b, c, d for the plane equation in the form of ax+by+cz+d=0.
+The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
+</dd>
+</dl>
+</dd>
 </dl>
 </dd></dl>
 
@@ -892,6 +920,11 @@ coincident with the input vertex.</p>
 </dd>
 <dt><strong>z</strong><span class="classifier">float , optional.</span></dt><dd><p>The desired z coordinate. The default is 0.</p>
 </dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Vertex</dt><dd></dd>
 </dl>
 </dd>
 </dl>

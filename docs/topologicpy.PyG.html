@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.PyG module &mdash; topologicpy 0.7.47 documentation</title>
+  <title>topologicpy.PyG module &mdash; topologicpy 0.7.48 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.47
+                0.7.48
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -136,8 +136,688 @@
     text-align: unset;
 }
 </style>
-<section id="topologicpy-pyg-module">
-<h1>topologicpy.PyG module<a class="headerlink" href="#topologicpy-pyg-module" title="Permalink to this heading"></a></h1>
+<section id="module-topologicpy.PyG">
+<span id="topologicpy-pyg-module"></span><h1>topologicpy.PyG module<a class="headerlink" href="#module-topologicpy.PyG" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.PyG.CustomGraphDataset">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.PyG.</span></span><span class="sig-name descname"><span class="pre">CustomGraphDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_attr_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_attr_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.CustomGraphDataset" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Dataset</span></code></p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_download</span></code></dt><dd><p>Checks whether the dataset defines a <code class="xref py py-meth docutils literal notranslate"><span class="pre">download()</span></code> method.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">has_process</span></code></dt><dd><p>Checks whether the dataset defines a <code class="xref py py-meth docutils literal notranslate"><span class="pre">process()</span></code> method.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_classes</span></code></dt><dd><p>Returns the number of classes in the dataset.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_edge_features</span></code></dt><dd><p>Returns the number of features per edge in the dataset.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_features</span></code></dt><dd><p>Returns the number of features per node in the dataset.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">num_node_features</span></code></dt><dd><p>Returns the number of features per node in the dataset.</p>
+</dd>
+<dt><strong>processed_dir</strong></dt><dd></dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">processed_file_names</span></code></dt><dd><p>The name of the files in the <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.processed_dir</span></code> folder that must be present in order to skip processing.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">processed_paths</span></code></dt><dd><p>The absolute filepaths that must be present in order to skip processing.</p>
+</dd>
+<dt><strong>raw_dir</strong></dt><dd></dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">raw_file_names</span></code></dt><dd><p>The name of the files in the <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.raw_dir</span></code> folder that must be present in order to skip downloading.</p>
+</dd>
+<dt><code class="xref py py-obj docutils literal notranslate"><span class="pre">raw_paths</span></code></dt><dd><p>The absolute filepaths that must be present in order to skip downloading.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">download</span></code>()</p></td>
+<td><p>Downloads the dataset to the <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.raw_dir</span></code> folder.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get</span></code>(idx)</p></td>
+<td><p>Gets the data object at index <code class="xref py py-obj docutils literal notranslate"><span class="pre">idx</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_summary</span></code>()</p></td>
+<td><p>Collects summary statistics for the dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">index_select</span></code>(idx)</p></td>
+<td><p>Creates a subset of the dataset from specified indices <code class="xref py py-obj docutils literal notranslate"><span class="pre">idx</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">len</span></code>()</p></td>
+<td><p>Returns the number of data objects stored in the dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">print_summary</span></code>()</p></td>
+<td><p>Prints summary statistics of the dataset to the console.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">process</span></code>()</p></td>
+<td><p>Processes the dataset to the <code class="xref py py-obj docutils literal notranslate"><span class="pre">self.processed_dir</span></code> folder.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">shuffle</span></code>([return_perm])</p></td>
+<td><p>Randomly shuffles the examples in the dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_datapipe</span></code>()</p></td>
+<td><p>Converts the dataset into a <code class="xref py py-class docutils literal notranslate"><span class="pre">torch.utils.data.DataPipe</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 60%" />
+<col style="width: 40%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>indices</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>process_all</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.CustomGraphDataset.process_all">
+<span class="sig-name descname"><span class="pre">process_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.CustomGraphDataset.process_all" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.PyG.</span></span><span class="sig-name descname"><span class="pre">PyG</span></span><a class="headerlink" href="#topologicpy.PyG.PyG" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Accuracy" title="topologicpy.PyG.PyG.Accuracy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Accuracy</span></code></a>(actual, predicted[, mantissa])</p></td>
+<td><p>Computes the accuracy of the input predictions based on the input labels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ConfusionMatrix" title="topologicpy.PyG.PyG.ConfusionMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConfusionMatrix</span></code></a>(actual, predicted[, normalize])</p></td>
+<td><p>Returns the confusion matrix for the input actual and predicted labels.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.DatasetByCSVPath" title="topologicpy.PyG.PyG.DatasetByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DatasetByCSVPath</span></code></a>(path[, ...])</p></td>
+<td><p>Returns PyTorch Geometric dataset according to the input CSV folder path.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.DatasetGraphLabels" title="topologicpy.PyG.PyG.DatasetGraphLabels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DatasetGraphLabels</span></code></a>(dataset[, graphLabelHeader])</p></td>
+<td><p>Returns the labels of the graphs in the input dataset</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.DatasetSplit" title="topologicpy.PyG.PyG.DatasetSplit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DatasetSplit</span></code></a>(dataset[, split, shuffle, ...])</p></td>
+<td><p>Splits the dataset into three subsets.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Hyperparameters" title="topologicpy.PyG.PyG.Hyperparameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hyperparameters</span></code></a>(optimizer[, model_type, ...])</p></td>
+<td><p>Creates a hyperparameters object based on the input settings.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.MSE" title="topologicpy.PyG.PyG.MSE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MSE</span></code></a>(actual, predicted[, mantissa])</p></td>
+<td><p>Computes the Mean Squared Error (MSE) of the input predictions based on the input labels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Model" title="topologicpy.PyG.PyG.Model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Model</span></code></a>(hparams, trainingDataset[, ...])</p></td>
+<td><p>Creates a neural network classifier.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ModelClassify" title="topologicpy.PyG.PyG.ModelClassify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelClassify</span></code></a>(model, dataset[, nodeATTRKey])</p></td>
+<td><p>Predicts the classification the labels of the input dataset.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ModelData" title="topologicpy.PyG.PyG.ModelData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelData</span></code></a>(model)</p></td>
+<td><p>Returns the data of the model</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ModelLoad" title="topologicpy.PyG.PyG.ModelLoad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelLoad</span></code></a>(path, model)</p></td>
+<td><p>Returns the model found at the input file path.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ModelPredict" title="topologicpy.PyG.PyG.ModelPredict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelPredict</span></code></a>(model, dataset[, nodeATTRKey])</p></td>
+<td><p>Predicts the value of the input dataset.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ModelSave" title="topologicpy.PyG.PyG.ModelSave"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelSave</span></code></a>(model, path[, overwrite])</p></td>
+<td><p>Saves the model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ModelTest" title="topologicpy.PyG.PyG.ModelTest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelTest</span></code></a>(model)</p></td>
+<td><p>Tests the neural network model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.ModelTrain" title="topologicpy.PyG.PyG.ModelTrain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelTrain</span></code></a>(model)</p></td>
+<td><p>Trains the neural network model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Optimizer" title="topologicpy.PyG.PyG.Optimizer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Optimizer</span></code></a>([name, amsgrad, betas, eps, lr, ...])</p></td>
+<td><p>Returns the parameters of the optimizer</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Performance" title="topologicpy.PyG.PyG.Performance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Performance</span></code></a>(actual, predicted[, mantissa])</p></td>
+<td><p>Computes regression model performance measures.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Show" title="topologicpy.PyG.PyG.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(data, labels[, title, xTitle, ...])</p></td>
+<td><p>Shows the data in a plolty graph.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.Accuracy">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Accuracy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.Accuracy" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the accuracy of the input predictions based on the input labels. This is to be used only with classification not with regression.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>actual</strong><span class="classifier">list</span></dt><dd><p>The input list of actual values.</p>
+</dd>
+<dt><strong>predicted</strong><span class="classifier">list</span></dt><dd><p>The input list of predicted values.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>A dictionary returning the accuracy information. This contains the following keys and values:
+- “accuracy” (float): The number of correct predictions divided by the length of the list.
+- “correct” (int): The number of correct predictions
+- “mask” (list): A boolean mask for correct vs. wrong predictions which can be used to filter the list of predictions
+- “size” (int): The size of the predictions list
+- “wrong” (int): The number of wrong predictions</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ConfusionMatrix">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ConfusionMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ConfusionMatrix" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the confusion matrix for the input actual and predicted labels. This is to be used with classification tasks only not regression.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>actual</strong><span class="classifier">list</span></dt><dd><p>The input list of actual labels.</p>
+</dd>
+<dt><strong>predicted</strong><span class="classifier">list</span></dt><dd><p>The input list of predicts labels.</p>
+</dd>
+<dt><strong>normalized</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the returned data will be normalized (proportion of 1). Otherwise, actual numbers are returned. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The created confusion matrix.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.DatasetByCSVPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DatasetByCSVPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">numberOfGraphClasses</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeATTRKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeATTRKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeOneHotEncode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeFeaturesCategories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeOneHotEncode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFeaturesCategories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">addSelfLoop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.DatasetByCSVPath" title="Permalink to this definition"></a></dt>
+<dd><p>Returns PyTorch Geometric dataset according to the input CSV folder path. The folder must contain “graphs.csv”, 
+“edges.csv”, “nodes.csv”, and “meta.yml” files according to conventions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the folder containing the necessary CSV and YML files.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>PyG Dataset</dt><dd><p>The PyG dataset</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.DatasetGraphLabels">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DatasetGraphLabels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabelHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.DatasetGraphLabels" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the labels of the graphs in the input dataset</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>dataset</strong><span class="classifier">CustomDataset</span></dt><dd><p>The input dataset</p>
+</dd>
+<dt><strong>graphLabelHeader: str , optional</strong></dt><dd><p>The key string under which the graph labels are stored. The default is “label”.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of graph labels.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.DatasetSplit">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DatasetSplit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.8,</span> <span class="pre">0.1,</span> <span class="pre">0.1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomState</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.DatasetSplit" title="Permalink to this definition"></a></dt>
+<dd><p>Splits the dataset into three subsets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>dataset</strong><span class="classifier">CustomDataset</span></dt><dd><p>The input dataset</p>
+</dd>
+<dt><strong>split: list , optional</strong></dt><dd><p>The list of ratios. This list must be made out of three numbers adding to 1.</p>
+</dd>
+<dt><strong>shuffle: boolean , optional</strong></dt><dd><p>If set to True, the subsets are created from random indices. Otherwise, they are split sequentially. The default is True.</p>
+</dd>
+<dt><strong>randomState</strong><span class="classifier">int , optional</span></dt><dd><p>The random seed to use for reproducibility. The default is 42.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of three subset datasets.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.Hyperparameters">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Hyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'classifier'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cv_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Holdout'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.8,</span> <span class="pre">0.1,</span> <span class="pre">0.1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_folds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hl_widths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[32]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conv_layer_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'SAGEConv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pooling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'AvgPooling'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_gpu</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_function</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Cross</span> <span class="pre">Entropy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'graph'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.Hyperparameters" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a hyperparameters object based on the input settings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model_type</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of model. The options are:
+- “Classifier”
+- “Regressor”
+The option is case insensitive. The default is “classifierholdout”</p>
+</dd>
+<dt><strong>optimizer</strong><span class="classifier">Optimizer</span></dt><dd><p>The desired optimizer.</p>
+</dd>
+<dt><strong>cv_type</strong><span class="classifier">str , optional</span></dt><dd><p>The desired cross-validation method. This can be “Holdout” or “K-Fold”. It is case-insensitive. The default is “Holdout”.</p>
+</dd>
+<dt><strong>split</strong><span class="classifier">list , optional</span></dt><dd><p>The desired split between training validation, and testing. [0.8, 0.1, 0.1] means that 80% of the data is used for training 10% of the data is used for validation, and 10% is used for testing. The default is [0.8, 0.1, 0.1].</p>
+</dd>
+<dt><strong>k_folds</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of k-folds. The default is 5.</p>
+</dd>
+<dt><strong>hl_widths</strong><span class="classifier">list , optional</span></dt><dd><p>The list of hidden layer widths. A list of [16, 32, 16] means that the model will have 3 hidden layers with number of neurons in each being 16, 32, 16 respectively from input to output. The default is [32].</p>
+</dd>
+<dt><strong>conv_layer_type</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of the convolution layer. The options are “Classic”, “GraphConv”, “GINConv”, “SAGEConv”, “TAGConv”, “DGN”. It is case insensitive. The default is “SAGEConv”.</p>
+</dd>
+<dt><strong>pooling</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of pooling. The options are “AvgPooling”, “MaxPooling”, or “SumPooling”. It is case insensitive. The default is “AvgPooling”.</p>
+</dd>
+<dt><strong>batch_size</strong><span class="classifier">int , optional</span></dt><dd><p>The desired batch size. The default is 1.</p>
+</dd>
+<dt><strong>epochs</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of epochs. The default is 1.</p>
+</dd>
+<dt><strong>use_gpu</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the model will attempt to use the GPU. The default is False.</p>
+</dd>
+<dt><strong>loss_function</strong><span class="classifier">str , optional</span></dt><dd><p>The desired loss function. The options are “Cross-Entropy” or “Negative Log Likelihood”. It is case insensitive. The default is “Cross-Entropy”.</p>
+</dd>
+<dt><strong>input_type</strong><span class="classifier">str</span></dt><dd><p>selects the input_type of model such as graph, node or edge</p>
+</dd>
+<dt><strong>Returns</strong></dt><dd></dd>
+<dt><strong>——-</strong></dt><dd></dd>
+<dt><strong>Hyperparameters</strong></dt><dd><p>The created hyperparameters object.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.MSE">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MSE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.MSE" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the Mean Squared Error (MSE) of the input predictions based on the input labels. This is to be used with regression models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>actual</strong><span class="classifier">list</span></dt><dd><p>The input list of actual values.</p>
+</dd>
+<dt><strong>predicted</strong><span class="classifier">list</span></dt><dd><p>The input list of predicted values.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>A dictionary returning the MSE information. This contains the following keys and values:
+- “mse” (float): The mean squared error rounded to the specified mantissa.
+- “size” (int): The size of the predictions list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.Model">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hparams</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainingDataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validationDataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">testingDataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.Model" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a neural network classifier.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>hparams</strong><span class="classifier">HParams</span></dt><dd><p>The input hyperparameters</p>
+</dd>
+<dt><strong>trainingDataset</strong><span class="classifier">CustomDataset</span></dt><dd><p>The input training dataset.</p>
+</dd>
+<dt><strong>validationDataset</strong><span class="classifier">CustomDataset</span></dt><dd><p>The input validation dataset. If not specified, a portion of the trainingDataset will be used for validation according the to the split list as specified in the hyper-parameters.</p>
+</dd>
+<dt><strong>testingDataset</strong><span class="classifier">CustomDataset</span></dt><dd><p>The input testing dataset. If not specified, a portion of the trainingDataset will be used for testing according the to the split list as specified in the hyper-parameters.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Classifier</dt><dd><p>The created classifier</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ModelClassify">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ModelClassify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeATTRKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ModelClassify" title="Permalink to this definition"></a></dt>
+<dd><p>Predicts the classification the labels of the input dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>dataset</strong><span class="classifier">PyGDataset</span></dt><dd><p>The input PyG dataset.</p>
+</dd>
+<dt><strong>model</strong><span class="classifier">Model</span></dt><dd><p>The input trained model.</p>
+</dd>
+<dt><strong>nodeATTRKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key used for node attributes. The default is “feat”.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>Dictionary containing labels and probabilities. The included keys and values are:
+- “predictions” (list): the list of predicted labels
+- “probabilities” (list): the list of probabilities that the label is one of the categories.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ModelData">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ModelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ModelData" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the data of the model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">Model</span></dt><dd><p>The input model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>A dictionary containing the model data. The keys in the dictionary are:
+‘Model Type’
+‘Optimizer’
+‘CV Type’
+‘Split’
+‘K-Folds’
+‘HL Widths’
+‘Conv Layer Type’
+‘Pooling’
+‘Learning Rate’
+‘Batch Size’
+‘Epochs’
+‘Training Accuracy’
+‘Validation Accuracy’
+‘Testing Accuracy’
+‘Training Loss’
+‘Validation Loss’
+‘Testing Loss’
+‘Accuracies’ (Classifier and K-Fold only)
+‘Max Accuracy’ (Classifier and K-Fold only)
+‘Losses’ (Regressor and K-fold only)
+‘min Loss’ (Regressor and K-fold only)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ModelLoad">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ModelLoad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ModelLoad" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the model found at the input file path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>File path for the saved classifier.</p>
+</dd>
+<dt><strong>model</strong><span class="classifier">torch.nn.module</span></dt><dd><p>Initialized instance of model</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>PyG Classifier</dt><dd><p>The classifier.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ModelPredict">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ModelPredict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeATTRKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ModelPredict" title="Permalink to this definition"></a></dt>
+<dd><p>Predicts the value of the input dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>dataset</strong><span class="classifier">PyGDataset</span></dt><dd><p>The input PyG dataset.</p>
+</dd>
+<dt><strong>model</strong><span class="classifier">Model</span></dt><dd><p>The input trained model.</p>
+</dd>
+<dt><strong>nodeATTRKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key used for node attributes. The default is “feat”.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of predictions</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ModelSave">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ModelSave</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ModelSave" title="Permalink to this definition"></a></dt>
+<dd><p>Saves the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">Model</span></dt><dd><p>The input model.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The file path at which to save the model.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, any existing file will be overwritten. Otherwise, it won’t. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the model is saved correctly. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ModelTest">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ModelTest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ModelTest" title="Permalink to this definition"></a></dt>
+<dd><p>Tests the neural network model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">Model</span></dt><dd><p>The input model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Model</dt><dd><p>The tested model</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.ModelTrain">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ModelTrain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.ModelTrain" title="Permalink to this definition"></a></dt>
+<dd><p>Trains the neural network model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">Model</span></dt><dd><p>The input model.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Model</dt><dd><p>The trained model</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.Optimizer">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Optimizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Adam'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amsgrad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">betas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.9,</span> <span class="pre">0.999)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maximize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightDecay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rho</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.9</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lr_decay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.Optimizer" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the parameters of the optimizer</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>amsgrad</strong><span class="classifier">bool , optional.</span></dt><dd><p>amsgrad is an extension to the Adam version of gradient descent that attempts to improve the convergence properties of the algorithm, avoiding large abrupt changes in the learning rate for each input variable. The default is True.</p>
+</dd>
+<dt><strong>betas</strong><span class="classifier">tuple , optional</span></dt><dd><p>Betas are used as for smoothing the path to the convergence also providing some momentum to cross a local minima or saddle point. The default is (0.9, 0.999).</p>
+</dd>
+<dt><strong>eps</strong><span class="classifier">float . optional.</span></dt><dd><p>eps is a term added to the denominator to improve numerical stability. The default is 0.000001.</p>
+</dd>
+<dt><strong>lr</strong><span class="classifier">float</span></dt><dd><p>The learning rate (lr) defines the adjustment in the weights of our network with respect to the loss gradient descent. The default is 0.001.</p>
+</dd>
+<dt><strong>maximize</strong><span class="classifier">float , optional</span></dt><dd><p>maximize the params based on the objective, instead of minimizing. The default is False.</p>
+</dd>
+<dt><strong>weightDecay</strong><span class="classifier">float , optional</span></dt><dd><p>weightDecay (L2 penalty) is a regularization technique applied to the weights of a neural network. The default is 0.0.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>The dictionary of the optimizer parameters. The dictionary contains the following keys and values:
+- “name” (str): The name of the optimizer
+- “amsgrad” (bool):
+- “betas” (tuple):
+- “eps” (float):
+- “lr” (float):
+- “maximize” (bool):
+- weightDecay (float):</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.Performance">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.Performance" title="Permalink to this definition"></a></dt>
+<dd><p>Computes regression model performance measures. This is to be used only with regression not with classification.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>actual</strong><span class="classifier">list</span></dt><dd><p>The input list of actual values.</p>
+</dd>
+<dt><strong>predicted</strong><span class="classifier">list</span></dt><dd><p>The input list of predicted values.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>The dictionary containing the performance measures. The keys in the dictionary are: ‘mae’, ‘mape’, ‘mse’, ‘r’, ‘r2’, ‘rmse’.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.PyG.PyG.Show">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Training/Validation'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Epochs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xSpacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Accuracy</span> <span class="pre">and</span> <span class="pre">Loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ySpacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useMarkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chartType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Line'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gridColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lightgray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renderer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'notebook'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.Show" title="Permalink to this definition"></a></dt>
+<dd><p>Shows the data in a plolty graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">list</span></dt><dd><p>The data to display.</p>
+</dd>
+<dt><strong>labels</strong><span class="classifier">list</span></dt><dd><p>The labels to use for the data.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. The default is 950.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. The default is 500.</p>
+</dd>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The chart title. The default is “Training and Testing Results”.</p>
+</dd>
+<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The X-axis title. The default is “Epochs”.</p>
+</dd>
+<dt><strong>xSpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The X-axis spacing. The default is 1.0.</p>
+</dd>
+<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The Y-axis title. The default is “Accuracy and Loss”.</p>
+</dd>
+<dt><strong>ySpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The Y-axis spacing. The default is 0.1.</p>
+</dd>
+<dt><strong>useMarkers</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, markers will be displayed. The default is False.</p>
+</dd>
+<dt><strong>chartType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of chart. The options are “Line”, “Bar”, or “Scatter”. It is case insensitive. The default is “Line”.</p>
+</dd>
+<dt><strong>backgroundColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired background color. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘rgba(0,0,0,0)’ (transparent).</p>
+</dd>
+<dt><strong>gridColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired grid color. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘lightgray’.</p>
+</dd>
+<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. The default is 0.</p>
+</dd>
+<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. The default is 0.</p>
+</dd>
+<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. The default is 40.</p>
+</dd>
+<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. The default is 0.</p>
+</dd>
+<dt><strong>renderer</strong><span class="classifier">str , optional</span></dt><dd><p>The desired plotly renderer. The default is “notebook”.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>None.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 

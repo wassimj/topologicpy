@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Sun module &mdash; topologicpy 0.7.47 documentation</title>
+  <title>topologicpy.Sun module &mdash; topologicpy 0.7.48 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.47
+                0.7.48
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -276,7 +276,7 @@
 <dt class="sig sig-object py" id="topologicpy.Sun.Sun.Diagram">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Diagram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minuteInterval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dayInterval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uSides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">180</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vSides</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">180</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">north</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compass</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shell</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Sun.Sun.Diagram" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the sun diagram based on the input parameters. See <a class="reference external" href="https://hyperfinearchitecture.com/how-to-read-sun-path-diagrams/">https://hyperfinearchitecture.com/how-to-read-sun-path-diagrams/</a>.</p>
-<dl class="field-list">
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
@@ -304,23 +304,14 @@
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><dl>
+<dd class="field-even"><dl class="simple">
 <dt>dict</dt><dd><p>A dictionary of the sun diagram shapes. The keys in this dictionary are:
-- ‘date_paths’: These are the sun paths (wire) for the winter solstice, equinox, and summer solstice
-- ‘hourly_paths’: These are the figure-8 (wire) for the sun location on the same hour on each selected day of the year.
-- ‘shell’: This is the total surface (shell) of the sun paths. This is included only if the shell option is set to True.
-- ‘compass’: This is the compass (shell) on the ground. It is made of 36 sides and 10 rings. This is included only</p>
-<blockquote>
-<div><p>if the compass option is set to True.</p>
-</div></blockquote>
-<ul class="simple">
-<li><p>‘center’ : This is a cross-shape (wire) at the center of the diagram. This is included only if the compass option is set to True.</p></li>
-<li><dl class="simple">
-<dt>‘ground’<span class="classifier">This is a circle (face) on the ground. It is made of 36 sides. This is included only if</span></dt><dd><p>the compass option is set to False.</p>
-</dd>
-</dl>
-</li>
-</ul>
+‘date_paths’: These are the sun paths (wire) for the winter solstice, equinox, and summer solstice
+‘hourly_paths’: These are the figure-8 (wire) for the sun location on the same hour on each selected day of the year.
+‘shell’: This is the total surface (shell) of the sun paths. This is included only if the shell option is set to True.
+‘compass’: This is the compass (shell) on the ground. It is made of 36 sides and 10 rings. This is included only if the compass option is set to True.
+‘center’ : This is a cross-shape (wire) at the center of the diagram. This is included only if the compass option is set to True.
+‘ground’ : This is a circle (face) on the ground. It is made of 36 sides. This is included only if the compass option is set to False.</p>
 </dd>
 </dl>
 </dd>
