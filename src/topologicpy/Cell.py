@@ -253,6 +253,52 @@ class Cell():
         faces = Topology.SubTopologies(shell, subTopologyType="face")
         return Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)
     
+    
+    @staticmethod
+    def ByShells(externalBoundary, internalBoundaries: list = [], tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a cell from the input external boundary (closed shell) and the input list of internal boundaries (closed shells).
+
+        Parameters
+        ----------
+        externalBoundary : topologic_core.Shell
+            The input external boundary.
+        internalBoundaries : list , optional
+            The input list of internal boundaries (closed shells). The default is an empty list.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created cell.
+
+        """
+        from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(externalBoundary, "Shell"):
+            if not silent:
+                print("Cell.ByShells - Error: The input externalBoundary parameter is not a valid topologic shell. Returning None.")
+            return None
+        if not Shell.IsClosed(externalBoundary):
+            if not silent:
+                print("Cell.ByShells - Error: The input externalBoundary parameter is not a closed topologic shell. Returning None.")
+            return None
+        ibList = [Cell.ByShell(s) for s in internalBoundaries if Topology.IsInstance(s, "Shell") and Shell.IsClosed(s)]
+        cell = Cell.ByShell(externalBoundary)
+        if len(ibList) > 0:
+            inner_cluster =Cluster.ByTopologies(ibList)
+            cell = Topology.Difference(cell, inner_cluster)
+            if not Topology.IsInstance(cell, "Cell"):
+                if not silent:
+                    print("Cell.ByShells - Error: Could not create cell. Returning None.")
+                return None
+        return cell
+
     @staticmethod
     def ByThickenedFace(face, thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
                             planarize: bool = False, tolerance: float = 0.0001):

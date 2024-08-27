@@ -224,6 +224,59 @@ class Topology():
             The input topology with the apertures added to it.
 
         """
+        from topologicpy.Dictionary import Dictionary
+        
+        if not Topology.IsInstance(topology, "Topology"):
+            print("Topology.AddApertures - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        if not apertures:
+            return topology
+        if not isinstance(apertures, list):
+            print("Topology.AddApertures - Error: the input apertures parameter is not a list. Returning None.")
+            return None
+        apertures = [x for x in apertures if Topology.IsInstance(x, "Topology")]
+        if len(apertures) < 1:
+            return topology
+        if not subTopologyType:
+            subTopologyType = "self"
+        if not subTopologyType.lower() in ["self", "cell", "face", "edge", "vertex"]:
+            print("Topology.AddApertures - Error: the input subtopology type parameter is not a recognized type. Returning None.")
+            return None
+        
+        for aperture in apertures:
+            d = Topology.Dictionary(aperture)
+            d = Dictionary.SetValueAtKey(d, "type", "aperture")
+            aperture = Topology.SetDictionary(aperture, d)
+        
+        topology = Topology.AddContent(topology, apertures, subTopologyType=subTopologyType, tolerance=tolerance)
+        return topology
+
+
+
+    @staticmethod
+    def AddApertures_old(topology, apertures, exclusive=False, subTopologyType=None, tolerance=0.001):
+        """
+        Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        apertures : list
+            The input list of apertures.
+        exclusive : bool , optional
+            If set to True, one (sub)topology will accept only one aperture. Otherwise, one (sub)topology can accept multiple apertures. The default is False.
+        subTopologyType : string , optional
+            The subtopology type to which to add the apertures. This can be "cell", "face", "edge", or "vertex". It is case insensitive. If set to None, the apertures will be added to the input topology. The default is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.001. This is larger than the usual 0.0001 as it seems to work better.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The input topology with the apertures added to it.
+
+        """
         from topologicpy.Vertex import Vertex
         from topologicpy.Cluster import Cluster
         from topologicpy.Aperture import Aperture
@@ -794,6 +847,9 @@ class Topology():
             The list of apertures belonging to the input topology.
 
         """
+
+        from topologicpy.Dictionary import Dictionary
+
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.Apertures - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
@@ -802,6 +858,13 @@ class Topology():
         subTopologies = []
         if not subTopologyType:
             _ = topology.Apertures(apertures)
+            contents = Topology.Contents(topology)
+            for content in contents:
+                d = Topology.Dictionary(content)
+                if len(Dictionary.Keys(d)) > 0:
+                    type = Dictionary.ValueAtKey(d,"type")
+                    if type == "aperture":
+                        apertures.append(content)
         elif subTopologyType.lower() == "vertex":
             subTopologies = Topology.Vertices(topology)
         elif subTopologyType.lower() == "edge":
@@ -2325,12 +2388,249 @@ class Topology():
         if not file:
             print("Topology.ByJSONFile - Error: the input file parameter is not a valid file. Returning None.")
             return None
-        jsonData = json.load(file)
-        jsonString = json.dumps(jsonData)
-        return Topology.ByJSONString(jsonString, tolerance=tolerance)
+        json_string = json.load(file)
+        #jsonData = json.load(file)
+        #jsonString = json.dumps(jsonData)
+        return Topology.ByJSONString(json_string, tolerance=tolerance)
     
     @staticmethod
-    def ByJSONString(string, progressBar=False, tolerance=0.0001):
+    def ByJSONPath(path, tolerance=0.0001):
+        """
+        Imports the topology from a JSON file.
+
+        Parameters
+        ----------
+        path : str
+            The file path to the json file.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of imported topologies.
+
+        """
+        import json
+        if not path:
+            print("Topology.ByJSONPath - Error: the input path parameter is not a valid path. Returning None.")
+            return None
+        with open(path) as file:
+            json_string = json.load(file)
+        entities = Topology.ByJSONString(json_string, tolerance=tolerance)
+        return entities
+    
+    @staticmethod
+    def ByJSONString(string, tolerance=0.0001):
+        """
+        Imports the topology from a JSON string.
+
+        Parameters
+        ----------
+        string : str
+            The input JSON string.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list or topologicpy.Topology
+            The list of imported topologies. If the list only contains one element, it returns that element.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Dictionary import Dictionary
+
+        # Containers for created entities
+        vertices = {}
+        edges = {}
+        wires = {}
+        faces = {}
+        shells = {}
+        cells = {}
+        cell_complexes = {}
+
+        vertex_apertures = []
+        edge_apertures = []
+        face_apertures = []
+        # Step 2: Create Entities and handle apertures
+        for entity in string:
+            entity_type = entity['type']
+            entity_dict = Dictionary.ByKeysValues(keys=list(entity['dictionary'].keys()),
+                                                values=list(entity['dictionary'].values()))
+
+            parent_entity = None
+
+            # Create basic topological entities
+            if entity_type == 'Vertex':
+                parent_entity = Vertex.ByCoordinates(*entity['coordinates'])
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                vertices[entity['uuid']] = parent_entity
+
+            elif entity_type == 'Edge':
+                vertex1 = vertices[entity['vertices'][0]]
+                vertex2 = vertices[entity['vertices'][1]]
+                parent_entity = Edge.ByVertices([vertex1, vertex2])
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                edges[entity['uuid']] = parent_entity
+
+            elif entity_type == 'Wire':
+                wire_edges = [edges[uuid] for uuid in entity['edges']]
+                parent_entity = Wire.ByEdges(wire_edges)
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                wires[entity['uuid']] = parent_entity
+
+            elif entity_type == 'Face':
+                face_wires = [wires[uuid] for uuid in entity['wires']]
+                if len(face_wires) > 1:
+                    parent_entity = Face.ByWires(face_wires[0], face_wires[1:])
+                else:
+                    parent_entity = Face.ByWire(face_wires[0])
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                faces[entity['uuid']] = parent_entity
+
+            elif entity_type == 'Shell':
+                shell_faces = [faces[uuid] for uuid in entity['faces']]
+                parent_entity = Shell.ByFaces(shell_faces)
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                shells[entity['uuid']] = parent_entity
+
+            elif entity_type == 'Cell':
+                cell_shells = [shells[uuid] for uuid in entity['shells']]
+                if len(cell_shells) > 1:
+                    parent_entity = Cell.ByShells(cell_shells[0], cell_shells[1:])
+                else:
+                    parent_entity = Cell.ByShell(cell_shells[0])
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                cells[entity['uuid']] = parent_entity
+
+            elif entity_type == 'CellComplex':
+                complex_cells = [cells[uuid] for uuid in entity['cells']]
+                parent_entity = CellComplex.ByCells(complex_cells)
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                cell_complexes[entity['uuid']] = parent_entity
+
+            # Step 3: Handle apertures within each entity
+            if 'apertures' in entity:
+                # Containers for created entities
+                ap_vertices = {}
+                ap_edges = {}
+                ap_wires = {}
+                ap_faces = {}
+                for aperture_list in entity['apertures']:
+                    types = [aperture_data['type'] for aperture_data in aperture_list]
+                    save_vertex = False
+                    save_edge = False
+                    save_wire = False
+                    save_face = False
+
+                    if 'Face' in types:
+                        save_face = True
+                    elif 'Wire' in types:
+                        save_wire = True
+                    elif 'Edge' in types:
+                        save_edge = True
+                    elif 'Vertex' in types:
+                        save_vertex = True
+
+                    apertures = []
+                    for aperture_data in aperture_list:
+                        aperture_type = aperture_data['type']
+                        aperture_dict = Dictionary.ByKeysValues(keys=list(aperture_data['dictionary'].keys()),
+                                                                values=list(aperture_data['dictionary'].values()))
+                        
+                        if aperture_type == 'Vertex':
+                            aperture_entity = Vertex.ByCoordinates(*aperture_data['coordinates'])
+                            aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
+                            ap_vertices[aperture_data['uuid']] = aperture_entity
+                            if save_vertex == True:
+                                apertures.append(aperture_entity)
+                        
+                        elif aperture_type == 'Edge':
+                            vertex1 = ap_vertices[aperture_data['vertices'][0]]
+                            vertex2 = ap_vertices[aperture_data['vertices'][1]]
+                            aperture_entity = Edge.ByVertices([vertex1, vertex2])
+                            aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
+                            ap_edges[aperture_data['uuid']] = aperture_entity
+                            if save_edge == True:
+                                apertures.append(aperture_entity)
+
+                        elif aperture_type == 'Wire':
+                            wire_edges = [ap_edges[uuid] for uuid in aperture_data['edges']]
+                            aperture_entity = Wire.ByEdges(wire_edges)
+                            aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
+                            ap_wires[aperture_data['uuid']] = aperture_entity
+                            if save_wire == True:
+                                apertures.append(aperture_entity)
+
+                        elif aperture_type == 'Face':
+                            face_wires = [ap_wires[uuid] for uuid in aperture_data['wires']]
+                            if len(face_wires) > 1:
+                                aperture_entity = Face.ByWires(face_wires[0], face_wires[1:])
+                            else:
+                                aperture_entity = Face.ByWire(face_wires[0])
+                            aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
+                            ap_faces[aperture_data['uuid']] = aperture_entity
+                            if save_face == True:
+                                apertures.append(aperture_entity)
+                            
+                    # Assign the built apertures to the parent entity
+                    if len(apertures) > 0:
+                        if entity_type == "Face":
+                            face_apertures += apertures
+                        elif entity_type == 'Edge':
+                            edge_apertures += apertures
+                        elif entity_type == 'Vertex':
+                            vertex_apertures += apertures
+
+                # Update the parent entity in its respective container
+                if entity_type == 'Vertex':
+                    vertices[entity['uuid']] = parent_entity
+                elif entity_type == 'Edge':
+                    edges[entity['uuid']] = parent_entity
+                elif entity_type == 'Wire':
+                    wires[entity['uuid']] = parent_entity
+                elif entity_type == 'Face':
+                    faces[entity['uuid']] = parent_entity
+                elif entity_type == 'Shell':
+                    shells[entity['uuid']] = parent_entity
+                elif entity_type == 'Cell':
+                    cells[entity['uuid']] = parent_entity
+                elif entity_type == 'CellComplex':
+                    cell_complexes[entity['uuid']] = parent_entity
+            
+            d = Topology.Dictionary(parent_entity)
+            top_level = Dictionary.ValueAtKey(d, "toplevel")
+        tp_vertices = list(vertices.values())
+        tp_edges = list(edges.values())
+        tp_wires = list(wires.values())
+        tp_faces = list(faces.values())
+        tp_shells = list(shells.values())
+        tp_cells = list(cells.values())
+        tp_cell_complexes = list(cell_complexes.values())
+        everything = tp_vertices + tp_edges + tp_wires + tp_faces + tp_shells + tp_cells + tp_cell_complexes
+        top_level_list = []
+        for entity in everything:
+            d = Topology.Dictionary(entity)
+            top_level = Dictionary.ValueAtKey(d, "toplevel")
+            if top_level == 1:
+                if len(face_apertures) > 0:
+                    entity = Topology.AddApertures(entity, face_apertures, subTopologyType="Face", tolerance=tolerance)
+                if len(edge_apertures) > 0:
+                    entity = Topology.AddApertures(entity, edge_apertures, subTopologyType="Edge", tolerance=0.001)
+                if len(vertex_apertures) > 0:
+                    entity = Topology.AddApertures(entity, vertex_apertures, subTopologyType="Vertex", tolerance=0.001)
+                top_level_list.append(entity)
+        return top_level_list
+    
+    @staticmethod
+    def ByJSONString_old(string, progressBar=False, tolerance=0.0001):
         """
         Imports the topology from a JSON string.
 
@@ -2797,32 +3097,6 @@ class Topology():
             return return_topologies[0]
         else:
             return return_topologies
-    
-    @staticmethod
-    def ByJSONPath(path, tolerance=0.0001):
-        """
-        Imports the topology from a JSON file.
-
-        Parameters
-        ----------
-        path : str
-            The file path to the json file.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        list
-            The list of imported topologies.
-
-        """
-        if not path:
-            print("Topology.ByJSONPath - Error: the input path parameter is not a valid path. Returning None.")
-            return None
-        data = None
-        with open(path) as file:
-            data = Topology.ByJSONFile(file=file, tolerance=tolerance)
-        return data
 
     @staticmethod
     def ByOBJFile(objFile, mtlFile = None,
