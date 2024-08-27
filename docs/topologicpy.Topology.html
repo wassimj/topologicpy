@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.7.48 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.7.49 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.48
+                0.7.49
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -317,73 +317,79 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AddApertures" title="topologicpy.Topology.Topology.AddApertures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddApertures</span></code></a>(topology, apertures[, ...])</p></td>
 <td><p>Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AddContent" title="topologicpy.Topology.Topology.AddContent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddContent</span></code></a>(topology, contents[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AddApertures_old" title="topologicpy.Topology.Topology.AddApertures_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddApertures_old</span></code></a>(topology, apertures[, ...])</p></td>
+<td><p>Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AddContent" title="topologicpy.Topology.Topology.AddContent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddContent</span></code></a>(topology, contents[, ...])</p></td>
 <td><p>Adds the input list of contents to the input topology or to its subtpologies based on the input subTopologyType.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AddDictionary" title="topologicpy.Topology.Topology.AddDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddDictionary</span></code></a>(topology, dictionary)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AddDictionary" title="topologicpy.Topology.Topology.AddDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddDictionary</span></code></a>(topology, dictionary)</p></td>
 <td><p>Adds the input dictionary to the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AdjacentTopologies" title="topologicpy.Topology.Topology.AdjacentTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentTopologies</span></code></a>(topology, hostTopology[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AdjacentTopologies" title="topologicpy.Topology.Topology.AdjacentTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentTopologies</span></code></a>(topology, hostTopology[, ...])</p></td>
 <td><p>Returns the topologies, as specified by the input topology type, adjacent to the input topology within the input host topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Analyze" title="topologicpy.Topology.Topology.Analyze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Analyze</span></code></a>(topology)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Analyze" title="topologicpy.Topology.Topology.Analyze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Analyze</span></code></a>(topology)</p></td>
 <td><p>Returns an analysis string that describes the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ApertureTopologies" title="topologicpy.Topology.Topology.ApertureTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApertureTopologies</span></code></a>(topology[, subTopologyType])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ApertureTopologies" title="topologicpy.Topology.Topology.ApertureTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApertureTopologies</span></code></a>(topology[, subTopologyType])</p></td>
 <td><p>Returns the aperture topologies of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Apertures" title="topologicpy.Topology.Topology.Apertures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Apertures</span></code></a>(topology[, subTopologyType])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Apertures" title="topologicpy.Topology.Topology.Apertures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Apertures</span></code></a>(topology[, subTopologyType])</p></td>
 <td><p>Returns the apertures of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.BREPString" title="topologicpy.Topology.Topology.BREPString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BREPString</span></code></a>(topology[, version])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.BREPString" title="topologicpy.Topology.Topology.BREPString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BREPString</span></code></a>(topology[, version])</p></td>
 <td><p>Returns the BRep string of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Boolean" title="topologicpy.Topology.Topology.Boolean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Boolean</span></code></a>(topologyA, topologyB[, operation, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Boolean" title="topologicpy.Topology.Topology.Boolean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Boolean</span></code></a>(topologyA, topologyB[, operation, ...])</p></td>
 <td><p>Execute the input boolean operation type on the input operand topologies and return the result.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.BoundingBox" title="topologicpy.Topology.Topology.BoundingBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BoundingBox</span></code></a>(topology[, optimize, axes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.BoundingBox" title="topologicpy.Topology.Topology.BoundingBox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BoundingBox</span></code></a>(topology[, optimize, axes, ...])</p></td>
 <td><p>Returns a cell representing a bounding box of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBIMFile" title="topologicpy.Topology.Topology.ByBIMFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMFile</span></code></a>(file[, guidKey, colorKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBIMFile" title="topologicpy.Topology.Topology.ByBIMFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMFile</span></code></a>(file[, guidKey, colorKey, ...])</p></td>
 <td><p>Imports topologies from the input BIM (dotbimpy.file.File) file object.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBIMPath" title="topologicpy.Topology.Topology.ByBIMPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMPath</span></code></a>(path[, guidKey, colorKey, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBIMPath" title="topologicpy.Topology.Topology.ByBIMPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMPath</span></code></a>(path[, guidKey, colorKey, ...])</p></td>
 <td><p>Imports topologies from the input BIM file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBIMString" title="topologicpy.Topology.Topology.ByBIMString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMString</span></code></a>(string[, guidKey, colorKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBIMString" title="topologicpy.Topology.Topology.ByBIMString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBIMString</span></code></a>(string[, guidKey, colorKey, ...])</p></td>
 <td><p>Imports topologies from the input BIM file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPFile" title="topologicpy.Topology.Topology.ByBREPFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPFile</span></code></a>(file)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPFile" title="topologicpy.Topology.Topology.ByBREPFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPFile</span></code></a>(file)</p></td>
 <td><p>Imports a topology from a BREP file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPPath" title="topologicpy.Topology.Topology.ByBREPPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPPath</span></code></a>(path)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPPath" title="topologicpy.Topology.Topology.ByBREPPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPPath</span></code></a>(path)</p></td>
 <td><p>Imports a topology from a BREP file path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPString" title="topologicpy.Topology.Topology.ByBREPString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPString</span></code></a>(string)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByBREPString" title="topologicpy.Topology.Topology.ByBREPString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByBREPString</span></code></a>(string)</p></td>
 <td><p>Creates a topology from the input brep string</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFFile" title="topologicpy.Topology.Topology.ByDXFFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFFile</span></code></a>(file[, sides])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFFile" title="topologicpy.Topology.Topology.ByDXFFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFFile</span></code></a>(file[, sides])</p></td>
 <td><p>Imports a list of topologies from a DXF file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFPath" title="topologicpy.Topology.Topology.ByDXFPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFPath</span></code></a>(path[, sides])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByDXFPath" title="topologicpy.Topology.Topology.ByDXFPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDXFPath</span></code></a>(path[, sides])</p></td>
 <td><p>Imports a list of topologies from a DXF file path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByGeometry" title="topologicpy.Topology.Topology.ByGeometry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByGeometry</span></code></a>([vertices, edges, faces, color, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByGeometry" title="topologicpy.Topology.Topology.ByGeometry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByGeometry</span></code></a>([vertices, edges, faces, color, ...])</p></td>
 <td><p>Create a topology by the input lists of vertices, edges, and faces.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByIFCFile" title="topologicpy.Topology.Topology.ByIFCFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile</span></code></a>(file[, includeTypes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByIFCFile" title="topologicpy.Topology.Topology.ByIFCFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile</span></code></a>(file[, includeTypes, ...])</p></td>
 <td><p>Create a topology by importing it from an IFC file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByIFCPath" title="topologicpy.Topology.Topology.ByIFCPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCPath</span></code></a>(path[, includeTypes, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByIFCPath" title="topologicpy.Topology.Topology.ByIFCPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCPath</span></code></a>(path[, includeTypes, ...])</p></td>
 <td><p>Create a topology by importing it from an IFC file path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONFile" title="topologicpy.Topology.Topology.ByJSONFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONFile</span></code></a>(file[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONFile" title="topologicpy.Topology.Topology.ByJSONFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONFile</span></code></a>(file[, tolerance])</p></td>
 <td><p>Imports the topology from a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONPath" title="topologicpy.Topology.Topology.ByJSONPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONPath</span></code></a>(path[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONPath" title="topologicpy.Topology.Topology.ByJSONPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONPath</span></code></a>(path[, tolerance])</p></td>
 <td><p>Imports the topology from a JSON file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONString" title="topologicpy.Topology.Topology.ByJSONString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONString</span></code></a>(string[, progressBar, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONString" title="topologicpy.Topology.Topology.ByJSONString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONString</span></code></a>(string[, tolerance])</p></td>
+<td><p>Imports the topology from a JSON string.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByJSONString_old" title="topologicpy.Topology.Topology.ByJSONString_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByJSONString_old</span></code></a>(string[, progressBar, ...])</p></td>
 <td><p>Imports the topology from a JSON string.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOBJFile" title="topologicpy.Topology.Topology.ByOBJFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOBJFile</span></code></a>(objFile[, mtlFile, defaultColor, ...])</p></td>
@@ -711,6 +717,34 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.AddApertures">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddApertures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apertures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subTopologyType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.AddApertures" title="Permalink to this definition"></a></dt>
+<dd><p>Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+</dd>
+<dt><strong>apertures</strong><span class="classifier">list</span></dt><dd><p>The input list of apertures.</p>
+</dd>
+<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, one (sub)topology will accept only one aperture. Otherwise, one (sub)topology can accept multiple apertures. The default is False.</p>
+</dd>
+<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type to which to add the apertures. This can be “cell”, “face”, “edge”, or “vertex”. It is case insensitive. If set to None, the apertures will be added to the input topology. The default is None.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.001. This is larger than the usual 0.0001 as it seems to work better.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Topology</dt><dd><p>The input topology with the apertures added to it.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.AddApertures_old">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddApertures_old</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apertures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subTopologyType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.AddApertures_old" title="Permalink to this definition"></a></dt>
 <dd><p>Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1312,7 +1346,29 @@ This is an experimental method with limited capabilities.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByJSONString">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByJSONString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progressBar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByJSONString" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByJSONString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByJSONString" title="Permalink to this definition"></a></dt>
+<dd><p>Imports the topology from a JSON string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>string</strong><span class="classifier">str</span></dt><dd><p>The input JSON string.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list or topologicpy.Topology</dt><dd><p>The list of imported topologies. If the list only contains one element, it returns that element.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByJSONString_old">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByJSONString_old</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progressBar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByJSONString_old" title="Permalink to this definition"></a></dt>
 <dd><p>Imports the topology from a JSON string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

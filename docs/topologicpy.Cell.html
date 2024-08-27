@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cell module &mdash; topologicpy 0.7.48 documentation</title>
+  <title>topologicpy.Cell module &mdash; topologicpy 0.7.49 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.48
+                0.7.49
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -164,109 +164,112 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ByShell" title="topologicpy.Cell.Cell.ByShell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByShell</span></code></a>(shell[, planarize, tolerance])</p></td>
 <td><p>Creates a cell from the input shell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ByThickenedFace" title="topologicpy.Cell.Cell.ByThickenedFace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByThickenedFace</span></code></a>(face[, thickness, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ByShells" title="topologicpy.Cell.Cell.ByShells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByShells</span></code></a>(externalBoundary[, ...])</p></td>
+<td><p>Creates a cell from the input external boundary (closed shell) and the input list of internal boundaries (closed shells).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ByThickenedFace" title="topologicpy.Cell.Cell.ByThickenedFace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByThickenedFace</span></code></a>(face[, thickness, ...])</p></td>
 <td><p>Creates a cell by thickening the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ByThickenedShell" title="topologicpy.Cell.Cell.ByThickenedShell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByThickenedShell</span></code></a>(shell[, direction, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ByThickenedShell" title="topologicpy.Cell.Cell.ByThickenedShell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByThickenedShell</span></code></a>(shell[, direction, ...])</p></td>
 <td><p>Creates a cell by thickening the input shell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ByWires" title="topologicpy.Cell.Cell.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(wires[, close, triangulate, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ByWires" title="topologicpy.Cell.Cell.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(wires[, close, triangulate, ...])</p></td>
 <td><p>Creates a cell by lofting through the input list of wires.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ByWiresCluster" title="topologicpy.Cell.Cell.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(cluster[, close, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ByWiresCluster" title="topologicpy.Cell.Cell.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(cluster[, close, ...])</p></td>
 <td><p>Creates a cell by lofting through the input cluster of wires.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Capsule" title="topologicpy.Cell.Cell.Capsule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Capsule</span></code></a>([origin, radius, height, uSides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Capsule" title="topologicpy.Cell.Cell.Capsule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Capsule</span></code></a>([origin, radius, height, uSides, ...])</p></td>
 <td><p>Creates a capsule shape.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Compactness" title="topologicpy.Cell.Cell.Compactness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compactness</span></code></a>(cell[, reference, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Compactness" title="topologicpy.Cell.Cell.Compactness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compactness</span></code></a>(cell[, reference, mantissa])</p></td>
 <td><p>Returns the compactness measure of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Cone" title="topologicpy.Cell.Cell.Cone"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cone</span></code></a>([origin, baseRadius, topRadius, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Cone" title="topologicpy.Cell.Cell.Cone"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cone</span></code></a>([origin, baseRadius, topRadius, ...])</p></td>
 <td><p>Creates a cone.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ContainmentStatus" title="topologicpy.Cell.Cell.ContainmentStatus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContainmentStatus</span></code></a>(cell, vertex[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ContainmentStatus" title="topologicpy.Cell.Cell.ContainmentStatus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContainmentStatus</span></code></a>(cell, vertex[, tolerance])</p></td>
 <td><p>Returns the containment status of the input vertex in relationship to the input cell</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Cylinder" title="topologicpy.Cell.Cell.Cylinder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cylinder</span></code></a>([origin, radius, height, uSides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Cylinder" title="topologicpy.Cell.Cell.Cylinder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cylinder</span></code></a>([origin, radius, height, uSides, ...])</p></td>
 <td><p>Creates a cylinder.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Decompose" title="topologicpy.Cell.Cell.Decompose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Decompose</span></code></a>(cell[, tiltAngle, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Decompose" title="topologicpy.Cell.Cell.Decompose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Decompose</span></code></a>(cell[, tiltAngle, tolerance])</p></td>
 <td><p>Decomposes the input cell into its logical components.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Dodecahedron" title="topologicpy.Cell.Cell.Dodecahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dodecahedron</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Dodecahedron" title="topologicpy.Cell.Cell.Dodecahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dodecahedron</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates a dodecahedron.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Edges" title="topologicpy.Cell.Cell.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Edges" title="topologicpy.Cell.Cell.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(cell)</p></td>
 <td><p>Returns the edges of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Egg" title="topologicpy.Cell.Cell.Egg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Egg</span></code></a>([origin, height, uSides, vSides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Egg" title="topologicpy.Cell.Cell.Egg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Egg</span></code></a>([origin, height, uSides, vSides, ...])</p></td>
 <td><p>Creates an egg-shaped cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ExternalBoundary" title="topologicpy.Cell.Cell.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ExternalBoundary" title="topologicpy.Cell.Cell.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(cell)</p></td>
 <td><p>Returns the external boundary of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Faces" title="topologicpy.Cell.Cell.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(cell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Faces" title="topologicpy.Cell.Cell.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(cell)</p></td>
 <td><p>Returns the faces of the input cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Hyperboloid" title="topologicpy.Cell.Cell.Hyperboloid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hyperboloid</span></code></a>([origin, baseRadius, topRadius, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Hyperboloid" title="topologicpy.Cell.Cell.Hyperboloid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hyperboloid</span></code></a>([origin, baseRadius, topRadius, ...])</p></td>
 <td><p>Creates a hyperboloid.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Icosahedron" title="topologicpy.Cell.Cell.Icosahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Icosahedron</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Icosahedron" title="topologicpy.Cell.Cell.Icosahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Icosahedron</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates an icosahedron.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.InternalBoundaries" title="topologicpy.Cell.Cell.InternalBoundaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalBoundaries</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.InternalBoundaries" title="topologicpy.Cell.Cell.InternalBoundaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalBoundaries</span></code></a>(cell)</p></td>
 <td><p>Returns the internal boundaries of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.InternalVertex" title="topologicpy.Cell.Cell.InternalVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalVertex</span></code></a>(cell[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.InternalVertex" title="topologicpy.Cell.Cell.InternalVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalVertex</span></code></a>(cell[, tolerance])</p></td>
 <td><p>Creates a vertex that is guaranteed to be inside the input cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.IsOnBoundary" title="topologicpy.Cell.Cell.IsOnBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsOnBoundary</span></code></a>(cell, vertex[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.IsOnBoundary" title="topologicpy.Cell.Cell.IsOnBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsOnBoundary</span></code></a>(cell, vertex[, tolerance])</p></td>
 <td><p>Returns True if the input vertex is on the boundary of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Octahedron" title="topologicpy.Cell.Cell.Octahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Octahedron</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Octahedron" title="topologicpy.Cell.Cell.Octahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Octahedron</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates an octahedron.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Paraboloid" title="topologicpy.Cell.Cell.Paraboloid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Paraboloid</span></code></a>([origin, focalLength, width, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Paraboloid" title="topologicpy.Cell.Cell.Paraboloid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Paraboloid</span></code></a>([origin, focalLength, width, ...])</p></td>
 <td><p>Creates a paraboloid cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Pipe" title="topologicpy.Cell.Cell.Pipe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pipe</span></code></a>(edge[, profile, radius, sides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Pipe" title="topologicpy.Cell.Cell.Pipe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pipe</span></code></a>(edge[, profile, radius, sides, ...])</p></td>
 <td><p>Creates a pipe along the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Prism" title="topologicpy.Cell.Cell.Prism"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prism</span></code></a>([origin, width, length, height, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Prism" title="topologicpy.Cell.Cell.Prism"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prism</span></code></a>([origin, width, length, height, ...])</p></td>
 <td><p>Creates a prism.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.RemoveCollinearEdges" title="topologicpy.Cell.Cell.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(cell[, angTolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.RemoveCollinearEdges" title="topologicpy.Cell.Cell.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(cell[, angTolerance, ...])</p></td>
 <td><p>Removes any collinear edges in the input cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Roof" title="topologicpy.Cell.Cell.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, epsilon, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Roof" title="topologicpy.Cell.Cell.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, epsilon, tolerance])</p></td>
 <td><p>Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sets" title="topologicpy.Cell.Cell.Sets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sets</span></code></a>(cells, superCells[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sets" title="topologicpy.Cell.Cell.Sets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sets</span></code></a>(cells, superCells[, tolerance])</p></td>
 <td><p>Classifies the input cells into sets based on their enclosure within the input list of super cells. The order of the sets follows the order of the input list of super cells.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Shells" title="topologicpy.Cell.Cell.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Shells" title="topologicpy.Cell.Cell.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(cell)</p></td>
 <td><p>Returns the shells of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sphere" title="topologicpy.Cell.Cell.Sphere"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sphere</span></code></a>([origin, radius, uSides, vSides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sphere" title="topologicpy.Cell.Cell.Sphere"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sphere</span></code></a>([origin, radius, uSides, vSides, ...])</p></td>
 <td><p>Creates a sphere.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.SurfaceArea" title="topologicpy.Cell.Cell.SurfaceArea"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SurfaceArea</span></code></a>(cell[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.SurfaceArea" title="topologicpy.Cell.Cell.SurfaceArea"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SurfaceArea</span></code></a>(cell[, mantissa])</p></td>
 <td><p>Returns the surface area of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Tetrahedron" title="topologicpy.Cell.Cell.Tetrahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tetrahedron</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Tetrahedron" title="topologicpy.Cell.Cell.Tetrahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tetrahedron</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates a tetrahedron.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Torus" title="topologicpy.Cell.Cell.Torus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Torus</span></code></a>([origin, majorRadius, minorRadius, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Torus" title="topologicpy.Cell.Cell.Torus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Torus</span></code></a>([origin, majorRadius, minorRadius, ...])</p></td>
 <td><p>Creates a torus.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Vertices" title="topologicpy.Cell.Cell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Vertices" title="topologicpy.Cell.Cell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cell)</p></td>
 <td><p>Returns the vertices of the input cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Volume" title="topologicpy.Cell.Cell.Volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Volume</span></code></a>(cell[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Volume" title="topologicpy.Cell.Cell.Volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Volume</span></code></a>(cell[, mantissa])</p></td>
 <td><p>Returns the volume of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wires" title="topologicpy.Cell.Cell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wires" title="topologicpy.Cell.Cell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cell)</p></td>
 <td><p>Returns the wires of the input cell.</p></td>
 </tr>
 </tbody>
@@ -393,6 +396,32 @@
 <dt><strong>planarize</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. The default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.ByShells">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByShells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">externalBoundary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">internalBoundaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.ByShells" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a cell from the input external boundary (closed shell) and the input list of internal boundaries (closed shells).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>externalBoundary</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input external boundary.</p>
+</dd>
+<dt><strong>internalBoundaries</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of internal boundaries (closed shells). The default is an empty list.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
