@@ -2227,6 +2227,8 @@ class Topology():
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
         import uuid
+        import random
+        import hashlib
         
         try:
             import ifcopenshell
@@ -2247,34 +2249,72 @@ class Topology():
         if not file:
             print("Topology.ByIFCFile - Error: the input file parameter is not a valid file. Returning None.")
             return None
+        
+        # Function to generate a unique random color based on material ID
+        def generate_color_for_material(material_id):
+            # Use a hash function to get a consistent "random" seed
+            hash_object = hashlib.sha1(material_id.encode())
+            seed = int(hash_object.hexdigest(), 16) % (10 ** 8)
+            random.seed(seed)
+            # Generate a random color
+            r = random.random()
+            g = random.random()
+            b = random.random()
+            return [r, g, b]
+        
+        # Function to get the material IDs associated with an entity
+        def get_material_ids_of_entity(entity):
+            material_name = "None"
+            material_ids = []
+            if hasattr(entity, "HasAssociations"):
+                for association in entity.HasAssociations:
+                    if association.is_a("IfcRelAssociatesMaterial"):
+                        material = association.RelatingMaterial
+                        material_name = material.Name
+                        if material.is_a("IfcMaterial"):
+                            material_ids.append(material.id())
+                        elif material.is_a("IfcMaterialList"):
+                            for mat in material.Materials:
+                                material_ids.append(mat.id())
+                        elif material.is_a("IfcMaterialLayerSetUsage") or material.is_a("IfcMaterialLayerSet"):
+                            for layer in material.ForLayerSet.MaterialLayers:
+                                material_ids.append(layer.Material.id())
+                        elif material.is_a("IfcMaterialConstituentSet"):
+                            for constituent in material.MaterialConstituents:
+                                material_ids.append(constituent.Material.id())
+            
+            return material_ids, material_name
+        
+        
+        
         includeTypes = [s.lower() for s in includeTypes]
         excludeTypes = [s.lower() for s in excludeTypes]
         topologies = []
         settings = ifcopenshell.geom.settings()
         settings.set("dimensionality", ifcopenshell.ifcopenshell_wrapper.CURVES_SURFACES_AND_SOLIDS)
         settings.set(settings.USE_WORLD_COORDS, True)
-        iterator = ifcopenshell.geom.iterator(settings, file, multiprocessing.cpu_count())
-        if iterator.initialize():
-            while True:
-                shape = iterator.get()
-                is_a = shape.type.lower()
-                if (is_a in includeTypes or len(includeTypes) == 0) and (not is_a in excludeTypes):                    
-                    try:
+        #iterator = ifcopenshell.geom.iterator(settings, file, multiprocessing.cpu_count())
+        for entity in file.by_type('IfcProduct'):  # You might want to refine the types you check
+                if hasattr(entity, "Representation") and entity.Representation:
+                    for rep in entity.Representation.Representations:
+                        if rep.is_a("IfcShapeRepresentation"):
+                            # Generate the geometry for this entity
+                            shape = ifcopenshell.geom.create_shape(settings, entity)
+                    is_a = shape.type.lower()
+                    if (is_a in includeTypes or len(includeTypes) == 0) and (not is_a in excludeTypes):
                         verts = shape.geometry.verts
                         edges = shape.geometry.edges
                         faces = shape.geometry.faces
                         grouped_verts = [ [verts[i], verts[i + 1], verts[i + 2]] for i in range(0, len(verts), 3)]
                         grouped_edges = [[edges[i], edges[i + 1]] for i in range(0, len(edges), 2)]
                         grouped_faces = [ [faces[i], faces[i + 1], faces[i + 2]] for i in range(0, len(faces), 3)]
-                        topology = Topology.ByGeometry(grouped_verts, grouped_edges, grouped_faces)
+                        topology = Topology.SelfMerge(Topology.ByGeometry(grouped_verts, grouped_edges, grouped_faces))
                         if removeCoplanarFaces:
                             topology = Topology.RemoveCoplanarFaces(topology)
                         topologies.append(topology)
                         if transferDictionaries:
                             keys = []
                             values = []
-                            keys.append("TOPOLOGIC_color")
-                            values.append([1.0, 1.0, 1.0, 1.0])
                             keys.append("TOPOLOGIC_id")
                             values.append(str(uuid.uuid4()))
                             keys.append("TOPOLOGIC_name")
@@ -2291,13 +2331,17 @@ class Topology():
                             values.append(shape.name)
                             keys.append("IFC_type")
                             values.append(shape.type)
+                            material_ids, material_name = get_material_ids_of_entity(entity)
+                            keys.append("IFC_material_ids")
+                            values.append(material_ids)
+                            keys.append("IFC_material_name")
+                            values.append(material_name)
+                            keys.append("TOPOLOGIC_color")
+                            color = generate_color_for_material(str(material_ids))
+                            values.append(color)
                             d = Dictionary.ByKeysValues(keys, values)
                             topology = Topology.SetDictionary(topology, d)
                         topologies.append(topology)
-                    except:
-                        pass
-                if not iterator.next():
-                    break
         return topologies
 
     @staticmethod
