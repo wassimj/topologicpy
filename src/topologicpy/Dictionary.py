@@ -642,9 +642,7 @@ class Dictionary():
             The value found at the input key in the input dictionary.
 
         """
-        import json
         from topologicpy.Topology import Topology
-        
         
         if not Topology.IsInstance(dictionary, "Dictionary") and not isinstance(dictionary, dict):
             print("Dictionary.ValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")

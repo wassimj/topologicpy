@@ -2373,7 +2373,7 @@ class Face():
             from topologicpy.Face import Face
 
             if not Topology.IsInstance(face, "Face"):
-                print("Shell.ByMeshFace - Error: The input face parameter is not a valid face. Returning None.")
+                print("Face.Triangulate - Error: The input face parameter is not a valid face. Returning None.")
                 return None
             if not meshSize:
                 bounding_face = Face.BoundingRectangle(face)
@@ -2477,9 +2477,11 @@ class Face():
                 wire = Face.ExternalBoundary(f)
                 wire = Wire.Invert(wire)
                 f = Face.ByWire(wire)
-                finalFaces.append(f)
+                if Topology.IsInstance(f, "Face"):
+                    finalFaces.append(f)
             else:
-                finalFaces.append(f)
+                if Topology.IsInstance(f, "face"):
+                    finalFaces.append(f)
         face_normal = Face.Normal(face)
         return_faces = []
         for ff in finalFaces:

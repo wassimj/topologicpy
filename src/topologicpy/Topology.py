@@ -1477,8 +1477,144 @@ class Topology():
                 st = None
         return st
     
+
     @staticmethod
-    def ByGeometry(vertices=[], edges=[], faces=[], color=[1.0, 1.0, 1.0, 1.0], id=None, name=None, lengthUnit="METERS", outputMode="default", tolerance=0.0001):
+    def ByGeometry(vertices=[], edges=[], faces=[], topologyType = None, tolerance=0.0001):
+        """
+        Create a topology by the input lists of vertices, edges, and faces.
+
+        Parameters
+        ----------
+        vertices : list
+            The input list of vertices in the form of [x, y, z]
+        edges : list , optional
+            The input list of edges in the form of [i, j] where i and j are vertex indices.
+        faces : list , optional
+            The input list of faces in the form of [i, j, k, l, ...] where the items in the list are vertex indices. The face is assumed to be closed to the last vertex is connected to the first vertex automatically.
+        topologyType : str , optional
+            The desired topology type. The options are: "Vertex", "Edge", "Wire", "Face", "Shell", "Cell", "CellComplex". If set to None, a "Cluster" will be returned. The default is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topology : topologic_core.Topology
+            The created topology. The topology will have a dictionary embedded in it that records the input attributes (color, id, lengthUnit, name, type)
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
+
+        def topologyByFaces(faces, topologyType, tolerance):
+            if len(faces) == 1:
+                return faces[0]
+
+            output = None
+            if topologyType == "cell":
+                c = Cell.ByFaces(faces, tolerance=tolerance)
+                if Topology.IsInstance(c, "Cell"):
+                    output = c
+                else:
+                    cc = CellComplex.ByFaces(faces, tolerance=tolerance)
+                    if Topology.IsInstance(cc, "CellComplex"):
+                        output = CellComplex.ExternalBoundary(cc)
+            elif topologyType == "cellcomplex":
+                output = CellComplex.ByFaces(faces, tolerance=tolerance)
+                if Topology.IsInstance(output, "CellComplex"):
+                    cells = Topology.Cells(output)
+                    if len(cells) == 1:
+                        output = cells[0]
+                else:
+                    output = Cluster.ByTopologies(faces)
+            elif topologyType == "shell":
+                output = Shell.ByFaces(faces, tolerance=tolerance)  # This can return a list
+                if Topology.IsInstance(output, "Shell"):
+                    return output
+            elif topologyType == None:
+                output = Cluster.ByTopologies(faces)
+
+            return output
+
+        def topologyByEdges(edges, topologyType):
+            if len(edges) == 1:
+                return edges[0]
+
+            output = Cluster.ByTopologies(edges)
+            if topologyType.lower() == "wire":
+                output = Topology.SelfMerge(output, tolerance=tolerance)
+                if Topology.IsInstance(output, "Wire"):
+                    return output
+                return None
+            return output
+
+        vertices = [v for v in vertices if v]
+        edges = [e for e in edges if e]
+        faces = [f for f in faces if f]
+
+        if not vertices:
+            return None
+
+        topVerts = [Vertex.ByCoordinates(v[0], v[1], v[2]) for v in vertices]
+        topEdges = []
+        topFaces = []
+
+        if not topologyType == None:
+            topologyType = topologyType.lower()
+
+        if topologyType == "vertex":
+            if len(topVerts) >= 1:
+                return topVerts[0]
+            else:
+                return None
+        elif topologyType == "edge":
+            if len(edges) >= 1 and len(vertices) >= 2:
+                return Edge.ByVertices(topVerts[edges[0][0]], topVerts[edges[0][1]], tolerance=tolerance)
+            else:
+                return None
+
+        if topologyType == "wire" and edges:
+            topEdges = [Edge.ByVertices([topVerts[e[0]], topVerts[e[1]]], tolerance=tolerance) for e in edges]
+            if topEdges:
+                returnTopology = topologyByEdges(topEdges, topologyType)
+        elif faces:
+            for aFace in faces:
+                faceEdges = [Edge.ByVertices([topVerts[aFace[i]], topVerts[aFace[i + 1]]], tolerance=tolerance) for i in range(len(aFace) - 1)]
+                # Connect the last vertex to the first one
+                faceEdges.append(Edge.ByVertices([topVerts[aFace[-1]], topVerts[aFace[0]]], tolerance=tolerance))
+
+                if len(faceEdges) > 2:
+                    faceWire = Wire.ByEdges(faceEdges, tolerance=tolerance)
+                    try:
+                        topFace = Face.ByWire(faceWire, tolerance=tolerance, silent=True)
+                        if Topology.IsInstance(topFace, "Face"):
+                            topFaces.append(topFace)
+                        elif isinstance(topFace, list):
+                            topFaces.extend(topFace)
+                    except:
+                        pass
+            if topFaces:
+                returnTopology = topologyByFaces(topFaces, topologyType=topologyType, tolerance=tolerance)
+        elif edges:
+            topEdges = [Edge.ByVertices([topVerts[e[0]], topVerts[e[1]]], tolerance=tolerance) for e in edges]
+            if topEdges:
+                returnTopology = topologyByEdges(topEdges, topologyType)
+        else:
+            returnTopology = Cluster.ByTopologies(topVerts)
+        return returnTopology
+
+
+
+
+
+
+    @staticmethod
+    def ByGeometry_old(vertices=[], edges=[], faces=[], color=[1.0, 1.0, 1.0, 1.0], id=None, name=None, lengthUnit="METERS", outputMode="default", tolerance=0.0001):
         """
         Create a topology by the input lists of vertices, edges, and faces.
 
@@ -2201,7 +2337,215 @@ class Topology():
         return Topology.ByDXFFile(file, sides=sides)
 
     @staticmethod
-    def ByIFCFile(file, includeTypes=[], excludeTypes=[], transferDictionaries=False, removeCoplanarFaces=False):
+    def ByIFCFile(file, includeTypes=[], excludeTypes=[], transferDictionaries=False, removeCoplanarFaces=False, epsilon=0.0001, tolerance=0.0001):
+        """
+        Create a list of topologies by importing them from an IFC file.
+
+        Parameters
+        ----------
+        file : file object
+            The input IFC file.
+        includeTypes : list , optional
+            The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].
+        excludeTypes : list , optional
+            The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. The default is [].
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+        epsilon : float , optional
+                The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.0001.
+            tolerance : float , optional
+                The desired tolerance. The default is 0.0001.
+        Returns
+        -------
+        list
+            The created list of topologies.
+        
+        """
+
+        import ifcopenshell
+        from topologicpy.Dictionary import Dictionary
+
+        def get_psets(entity):
+            # Initialize the PSET dictionary for this entity
+            psets = {}
+            
+            # Check if the entity has a GlobalId
+            if not hasattr(entity, 'GlobalId'):
+                raise ValueError("The provided entity does not have a GlobalId.")
+            
+            # Get the property sets related to this entity
+            for definition in entity.IsDefinedBy:
+                if definition.is_a('IfcRelDefinesByProperties'):
+                    property_set = definition.RelatingPropertyDefinition
+                    
+                    # Check if it is a property set
+                    if property_set.is_a('IfcPropertySet'):
+                        pset_name = "IFC_"+property_set.Name
+                        
+                        # Dictionary to hold individual properties
+                        properties = {}
+                        
+                        # Iterate over the properties in the PSET
+                        for prop in property_set.HasProperties:
+                            if prop.is_a('IfcPropertySingleValue'):
+                                # Get the property name and value
+                                prop_name = "IFC_"+prop.Name
+                                prop_value = prop.NominalValue.wrappedValue if prop.NominalValue else None
+                                properties[prop_name] = prop_value
+                        
+                        # Add this PSET to the dictionary for this entity
+                        psets[pset_name] = properties
+            return psets
+        
+        def get_color_transparency_material(entity):
+            import random
+
+            # Set default Material Name and ID
+            material_list = []
+            # Set default transparency based on entity type or material
+            default_transparency = 0.0
+            
+            # Check if the entity is an opening or made of glass
+            is_a = entity.is_a().lower()
+            if "opening" in is_a or "window" in is_a or "door" in is_a or "space" in is_a:
+                default_transparency = 0.7
+            elif "space" in is_a:
+                default_transparency = 0.8
+            
+            # Check if the entity has constituent materials (e.g., glass)
+            else:
+                # Check for associated materials (ConstituentMaterial or direct material assignment)
+                materials_checked = False
+                if hasattr(entity, 'HasAssociations'):
+                    for rel in entity.HasAssociations:
+                        if rel.is_a('IfcRelAssociatesMaterial'):
+                            material = rel.RelatingMaterial
+                            if material.is_a('IfcMaterial') and 'glass' in material.Name.lower():
+                                default_transparency = 0.5
+                                materials_checked = True
+                            elif material.is_a('IfcMaterialLayerSetUsage'):
+                                material_layers = material.ForLayerSet.MaterialLayers
+                                for layer in material_layers:
+                                    material_list.append(layer.Material.Name)
+                                    if 'glass' in layer.Material.Name.lower():
+                                        default_transparency = 0.5
+                                        materials_checked = True
+                                        
+                # Check for ConstituentMaterial if available
+                if hasattr(entity, 'HasAssociations') and not materials_checked:
+                    for rel in entity.HasAssociations:
+                        if rel.is_a('IfcRelAssociatesMaterial'):
+                            material = rel.RelatingMaterial
+                            if material.is_a('IfcMaterialConstituentSet'):
+                                for constituent in material.MaterialConstituents:
+                                    material_list.append(constituent.Material.Name)
+                                    if 'glass' in constituent.Material.Name.lower():
+                                        default_transparency = 0.5
+                                        materials_checked = True
+
+                # Check if the entity has ShapeAspects with associated materials or styles
+                if hasattr(entity, 'HasShapeAspects') and not materials_checked:
+                    for shape_aspect in entity.HasShapeAspects:
+                        if hasattr(shape_aspect, 'StyledByItem') and shape_aspect.StyledByItem:
+                            for styled_item in shape_aspect.StyledByItem:
+                                for style in styled_item.Styles:
+                                    if style.is_a('IfcSurfaceStyle'):
+                                        for surface_style in style.Styles:
+                                            if surface_style.is_a('IfcSurfaceStyleRendering'):
+                                                transparency = getattr(surface_style, 'Transparency', default_transparency)
+                                                if transparency > 0:
+                                                    default_transparency = transparency
+
+            # Try to get the actual color and transparency if defined
+            if hasattr(entity, 'Representation') and entity.Representation:
+                for rep in entity.Representation.Representations:
+                    for item in rep.Items:
+                        if hasattr(item, 'StyledByItem') and item.StyledByItem:
+                            for styled_item in item.StyledByItem:
+                                if hasattr(styled_item, 'Styles'):
+                                    for style in styled_item.Styles:
+                                        if style.is_a('IfcSurfaceStyle'):
+                                            for surface_style in style.Styles:
+                                                if surface_style.is_a('IfcSurfaceStyleRendering'):
+                                                    color = surface_style.SurfaceColour
+                                                    transparency = getattr(surface_style, 'Transparency', default_transparency)
+                                                    return (color.Red*255, color.Green*255, color.Blue*255), transparency, material_list
+            
+            # If no color is defined, return a consistent random color based on the entity type
+            if "wall" in is_a:
+                color = (0.4, 0.4, 0.4)
+            elif "slab" in is_a:
+                color = (0.6, 0.6, 0.6)
+            elif "space" in is_a:
+                color = (250, 250, 250)
+            else:
+                random.seed(hash(is_a))
+                color = (random.random(), random.random(), random.random())
+            
+            return color, default_transparency, material_list
+        
+        def convert_to_topology(entity, settings):    
+            if hasattr(entity, "Representation") and entity.Representation:
+                for rep in entity.Representation.Representations:
+                    if rep.is_a("IfcShapeRepresentation"):
+                        # Generate the geometry for this entity
+                        shape = ifcopenshell.geom.create_shape(settings, entity)
+                        shape_geometry = shape.geometry
+                        verts = shape_geometry.verts
+                        verts = [ [verts[i], verts[i + 1], verts[i + 2]] for i in range(0, len(verts), 3)]
+                        edges = shape_geometry.edges
+                        edges = [[edges[i], edges[i + 1]] for i in range(0, len(edges), 2)]
+                        faces = shape_geometry.faces
+                        faces = [ [faces[i], faces[i + 1], faces[i + 2]] for i in range(0, len(faces), 3)]
+                        # Convert geometry to Topologic format
+                        #shape_topology = ifc_to_topologic_geometry(verts, edges, faces)
+                        #shape_topology = Topology.SelfMerge(Topology.ByGeometry(verts, edges, faces))
+                        shape_topology = Topology.ByGeometry(verts, edges, faces, topologyType="CellComplex")
+                        if removeCoplanarFaces == True:
+                            shape_topology = Topology.RemoveCoplanarFaces(shape_topology, epsilon=0.0001)
+
+                        # Store relevant information
+                        color, transparency, material_list = get_color_transparency_material(entity)
+                        entity_dict = {
+                            "TOPOLOGIC_id": str(Topology.UUID(shape_topology)),
+                            "TOPOLOGIC_name": getattr(entity, 'Name', "Untitled"),
+                            "TOPOLOGIC_type": Topology.TypeAsString(shape_topology),
+                            "TOPOLOGIC_color": color,
+                            "TOPOLOGIC_opacity": 1.0 - transparency,
+                            "IFC_global_id": getattr(entity, 'GlobalId', 0),
+                            "IFC_name": getattr(entity, 'Name', "Untitled"),
+                            "IFC_type": entity.is_a(),
+                            "IFC_material_list": material_list,
+                        }
+                        topology_dict = Dictionary.ByPythonDictionary(entity_dict)
+                        # Get PSETs dictionary
+                        pset_python_dict = get_psets(entity)
+                        pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
+                        topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
+                        shape_topology = Topology.SetDictionary(shape_topology, topology_dict)
+                        return shape_topology
+            return None
+
+        # Main Code
+        topologies = []
+        settings = ifcopenshell.geom.settings()
+        settings.set("dimensionality", ifcopenshell.ifcopenshell_wrapper.SOLID)
+        settings.set(settings.USE_WORLD_COORDS, True)
+        products = file.by_type("IfcProduct")
+        entities = []
+        for product in products:
+            is_a = product.is_a()
+            if (is_a in includeTypes or len(includeTypes) == 0) and (not is_a in excludeTypes):
+                entities.append(product)
+        topologies = []
+        for entity in entities:
+            topologies.append(convert_to_topology(entity, settings))
+        return topologies
+
+    @staticmethod
+    def _ByIFCFile_old(file, includeTypes=[], excludeTypes=[], transferDictionaries=False, removeCoplanarFaces=False):
         """
         Create a topology by importing it from an IFC file.
 
@@ -2229,7 +2573,9 @@ class Topology():
         import uuid
         import random
         import hashlib
-        
+        import re
+        import numpy as np
+
         try:
             import ifcopenshell
             import ifcopenshell.geom
@@ -2250,6 +2596,148 @@ class Topology():
             print("Topology.ByIFCFile - Error: the input file parameter is not a valid file. Returning None.")
             return None
         
+        def clean_key(string):
+            # Replace any character that is not a letter, digit, or underscore with an underscore
+            cleaned_string = re.sub(r'[^a-zA-Z0-9_]', '_', string)
+            return cleaned_string
+        
+        def transform_wall_vertices(wall):
+
+            # Relatives Placement abrufen und ausgeben
+            if wall.ObjectPlacement and wall.ObjectPlacement.RelativePlacement:
+                relative_placement = wall.ObjectPlacement.RelativePlacement
+                if relative_placement.is_a('IFCAXIS2PLACEMENT3D'):
+                    location = relative_placement.Location
+                    ref_direction = relative_placement.RefDirection
+                    print("Relative Placement Location:", location.Coordinates)
+                    if ref_direction:
+                        print("Relative Placement RefDirection:", ref_direction.DirectionRatios)
+                    else:
+                        print("Relative Placement RefDirection: None")
+
+            # IFCPRODUCTDEFINITIONSHAPE der Wand abrufen
+            product_definition_shape = wall.Representation
+            if not product_definition_shape:
+                print("Keine Repräsentation gefunden.")
+                return
+
+            # Initialisieren von Variablen für Representation Type und Layer-Infos
+            representation_type = None
+            diverse_representation = False
+            layer_details = []
+
+            if hasattr(product_definition_shape, 'HasShapeAspects'):
+                for aspect in product_definition_shape.HasShapeAspects:
+                    for representation in aspect.ShapeRepresentations:
+                        if representation.is_a('IFCSHAPEREPRESENTATION'):
+                            for item in representation.Items:
+                                if item.is_a('IFCEXTRUDEDAREASOLID'):
+                                    # Profilbeschreibung abrufen
+                                    profile = item.SweptArea
+                                    if profile.is_a('IFCARBITRARYCLOSEDPROFILEDEF'):
+                                        if not representation_type:
+                                            representation_type = "ArbitraryClosedProfil"
+                                        elif representation_type != "ArbitraryClosedProfil":
+                                            diverse_representation = True
+
+                                        # Profilpunkte abrufen
+                                        if hasattr(profile, 'OuterCurve') and profile.OuterCurve.is_a('IFCINDEXEDPOLYCURVE'):
+                                            indexed_polycurve = profile.OuterCurve
+                                            if hasattr(indexed_polycurve, 'Points') and indexed_polycurve.Points.is_a('IFCCARTESIANPOINTLIST2D'):
+                                                point_list_2d = indexed_polycurve.Points
+                                                points = point_list_2d.CoordList
+                                                layer_info["Profilpunkte"] = points
+                                    else:
+                                        diverse_representation = True
+
+                                    # Location und RefDirection abrufen
+                                    if item.Position.is_a('IFCAXIS2PLACEMENT3D'):
+                                        axis_placement = item.Position
+                                        location = axis_placement.Location
+                                        ref_direction = axis_placement.RefDirection
+                                        layer_info["Location"] = location.Coordinates
+                                        if ref_direction:
+                                            layer_info["RefDirection"] = ref_direction.DirectionRatios
+                                        else:
+                                            layer_info["RefDirection"] = None
+
+                    layer_details.append(layer_info)
+
+            # Representation Type ausgeben
+            if diverse_representation:
+                representation_type = "divers"
+            print("Representation Type der Wand:", representation_type)
+
+            # Layer-Details ausgeben
+            for index, layer in enumerate(layer_details):
+                print(f"\nLayer {index + 1} Details:")
+                print("Material:", layer.get("Material", "Nicht verfügbar"))
+                print("Extrusionsstärke:", layer.get("Extrusionsstärke", "Nicht verfügbar"))
+                print("Profilpunkte:", layer.get("Profilpunkte", "Nicht verfügbar"))
+                print("Location:", layer.get("Location", "Nicht verfügbar"))
+                print("RefDirection:", layer.get("RefDirection", "Nicht verfügbar"))
+
+
+
+
+
+
+        def extract_matrix_from_placement(placement):
+            """Constructs a transformation matrix from an IFC Local Placement."""
+            # Initialize identity matrix
+            matrix = np.identity(4)
+
+            # Check if the placement is IfcLocalPlacement
+            if placement.is_a("IfcLocalPlacement"):
+                relative_placement = placement.RelativePlacement
+
+                if relative_placement.is_a("IfcAxis2Placement3D"):
+                    location = relative_placement.Location.Coordinates
+                    z_dir = relative_placement.Axis.DirectionRatios if relative_placement.Axis else [0, 0, 1]
+                    x_dir = relative_placement.RefDirection.DirectionRatios if relative_placement.RefDirection else [1, 0, 0]
+                    
+                    # Compute y direction (cross product of z and x)
+                    y_dir = np.cross(z_dir, x_dir)
+                    
+                    # Construct the rotation matrix
+                    rotation_matrix = np.array([
+                        [x_dir[0], y_dir[0], z_dir[0], 0],
+                        [x_dir[1], y_dir[1], z_dir[1], 0],
+                        [x_dir[2], y_dir[2], z_dir[2], 0],
+                        [0, 0, 0, 1]
+                    ])
+
+                    # Translation vector
+                    translation_vector = np.array([
+                        [1, 0, 0, location[0]],
+                        [0, 1, 0, location[1]],
+                        [0, 0, 1, location[2]],
+                        [0, 0, 0, 1]
+                    ])
+
+                    # Combine the rotation matrix and the translation vector
+                    matrix = np.dot(translation_vector, rotation_matrix)
+
+            return matrix
+
+        def apply_transformation(verts, matrix):
+            """Applies a 4x4 transformation matrix to a list of vertices."""
+            transformed_verts = []
+            for vert in verts:
+                print("vert:", vert)
+                v = np.array([vert[0], vert[1], vert[2], 1.0])
+                transformed_v = np.dot(matrix, v)
+                transformed_verts.append([transformed_v[0], transformed_v[1], transformed_v[2]])
+            return transformed_verts
+        
+        def get_entity_transformation_matrix(entity):
+            """Extracts the transformation matrix from an IFC entity."""
+            matrix = np.identity(4)  # Default to an identity matrix
+            if hasattr(entity, "ObjectPlacement") and entity.ObjectPlacement:
+                placement = entity.ObjectPlacement
+                matrix = extract_matrix_from_placement(placement)
+            return matrix
+    
         # Function to generate a unique random color based on material ID
         def generate_color_for_material(material_id):
             # Use a hash function to get a consistent "random" seed
@@ -2264,88 +2752,185 @@ class Topology():
         
         # Function to get the material IDs associated with an entity
         def get_material_ids_of_entity(entity):
-            material_name = "None"
+            return_dict = {}
+            material_names = []
             material_ids = []
             if hasattr(entity, "HasAssociations"):
                 for association in entity.HasAssociations:
                     if association.is_a("IfcRelAssociatesMaterial"):
                         material = association.RelatingMaterial
-                        material_name = material.Name
+                        try:
+                            material_name = material.Name
+                        except:
+                            material_name = material.to_string()
                         if material.is_a("IfcMaterial"):
                             material_ids.append(material.id())
+                            material_names.append(material_name)
+                            return_dict[clean_key(material_name)] = material.id
                         elif material.is_a("IfcMaterialList"):
                             for mat in material.Materials:
                                 material_ids.append(mat.id())
+                                try:
+                                    material_name = mat.Name
+                                except:
+                                    material_name = mat.to_string()
+                                material_names.append(material_name)
+                                return_dict[clean_key(material_name)] = mat.id
                         elif material.is_a("IfcMaterialLayerSetUsage") or material.is_a("IfcMaterialLayerSet"):
                             for layer in material.ForLayerSet.MaterialLayers:
                                 material_ids.append(layer.Material.id())
+                                try:
+                                    material_name = layer.Name
+                                except:
+                                    material_name = layer.to_string()
+                                material_names.append(material_name)
+                                return_dict[clean_key(material_name)] = layer.Material.id()
                         elif material.is_a("IfcMaterialConstituentSet"):
                             for constituent in material.MaterialConstituents:
                                 material_ids.append(constituent.Material.id())
+                                try:
+                                    material_name = constituent.Material.Name
+                                except:
+                                    material_name = constituent.Material.to_string()
+                                material_names.append(material_name)
+                                return_dict[clean_key(material_name)] = constituent.Material.id()
             
-            return material_ids, material_name
+            return return_dict
         
+        def get_wall_layers(wall, matrix=None, transferDictionaries=False):
+            settings = ifcopenshell.geom.settings()
+            settings.set("dimensionality", ifcopenshell.ifcopenshell_wrapper.CURVES_SURFACES_AND_SOLIDS)
+            settings.set(settings.USE_WORLD_COORDS, False)
+
+            # IFCPRODUCTDEFINITIONSHAPE der Wand abrufen
+            product_definition_shape = wall.Representation
+            if not product_definition_shape:
+                print("Topology.ByIFCFile - Error: The object has no representation. Returning None")
+                return None
+
+            if hasattr(product_definition_shape, 'HasShapeAspects'):
+                for aspect in product_definition_shape.HasShapeAspects:
+                    material_name = aspect.Name
+                    for representation in aspect.ShapeRepresentations:
+                        print(dir(representation))
+                        axis_placement = representation.Position
+                        location = axis_placement.Location
+                        ref_direction = axis_placement.RefDirection
+                        print("Location:", location)
+                        print("Direction", ref_direction)
+                        aspect_matrix = get_entity_transformation_matrix(representation)
+                        print("Aspect Matrix:", aspect_matrix)
+                        shape = ifcopenshell.geom.create_shape(settings, representation)
+                        verts = shape.verts
+                        edges = shape.edges
+                        faces = shape.faces
+                        grouped_verts = [ [verts[i], verts[i + 1], verts[i + 2]] for i in range(0, len(verts), 3)]
+                        grouped_verts = apply_transformation(grouped_verts, aspect_matrix)
+                        grouped_edges = [[edges[i], edges[i + 1]] for i in range(0, len(edges), 2)]
+                        grouped_faces = [ [faces[i], faces[i + 1], faces[i + 2]] for i in range(0, len(faces), 3)]
+                        topology = Topology.SelfMerge(Topology.ByGeometry(grouped_verts, grouped_edges, grouped_faces))
+                        #matrix = shape.transformation.matrix
+                        #topology = Topology.Transform(topology, matrix)
+                        d = get_material_ids_of_entity(wall)
+                        material_id = d.get(clean_key(material_name), 0)
+                        if transferDictionaries:
+                            keys = []
+                            values = []
+                            try:
+                                entity_name = entity.Name
+                            except:
+                                entity_name = entity.to_str()
+                            keys.append("TOPOLOGIC_id")
+                            values.append(str(uuid.uuid4()))
+                            keys.append("TOPOLOGIC_name")
+                            values.append(entity_name)
+                            keys.append("TOPOLOGIC_type")
+                            values.append(Topology.TypeAsString(topology))
+                            keys.append("IFC_id")
+                            values.append(str(aspect.id))
+                            #keys.append("IFC_guid")
+                            #values.append(str(aspect.guid))
+                            #keys.append("IFC_unique_id")
+                            #values.append(str(aspect.unique_id))
+                            keys.append("IFC_name")
+                            values.append(entity_name)
+                            #keys.append("IFC_type")
+                            #values.append(aspect.type)
+                            keys.append("IFC_material_id")
+                            values.append(material_id)
+                            keys.append("IFC_material_name")
+                            values.append(material_name)
+                            keys.append("TOPOLOGIC_color")
+                            color = generate_color_for_material(str(material_id))
+                            values.append(color)
+                            d = Dictionary.ByKeysValues(keys, values)
+                            topology = Topology.SetDictionary(topology, d)
+                
+            return topology
         
         
         includeTypes = [s.lower() for s in includeTypes]
         excludeTypes = [s.lower() for s in excludeTypes]
         topologies = []
         settings = ifcopenshell.geom.settings()
-        settings.set("dimensionality", ifcopenshell.ifcopenshell_wrapper.CURVES_SURFACES_AND_SOLIDS)
+        settings.set("dimensionality", ifcopenshell.ifcopenshell_wrapper.SOLID)
         settings.set(settings.USE_WORLD_COORDS, True)
-        #iterator = ifcopenshell.geom.iterator(settings, file, multiprocessing.cpu_count())
         for entity in file.by_type('IfcProduct'):  # You might want to refine the types you check
                 if hasattr(entity, "Representation") and entity.Representation:
+                    print("Number of Representations:", len(entity.Representation.Representations))
                     for rep in entity.Representation.Representations:
+                        print("Rep:", rep)
+                        print(dir(rep))
+                        matrix = get_entity_transformation_matrix(entity)
+                        print(matrix)
                         if rep.is_a("IfcShapeRepresentation"):
                             # Generate the geometry for this entity
-                            shape = ifcopenshell.geom.create_shape(settings, entity)
-                    is_a = shape.type.lower()
-                    if (is_a in includeTypes or len(includeTypes) == 0) and (not is_a in excludeTypes):
-                        verts = shape.geometry.verts
-                        edges = shape.geometry.edges
-                        faces = shape.geometry.faces
-                        grouped_verts = [ [verts[i], verts[i + 1], verts[i + 2]] for i in range(0, len(verts), 3)]
-                        grouped_edges = [[edges[i], edges[i + 1]] for i in range(0, len(edges), 2)]
-                        grouped_faces = [ [faces[i], faces[i + 1], faces[i + 2]] for i in range(0, len(faces), 3)]
-                        topology = Topology.SelfMerge(Topology.ByGeometry(grouped_verts, grouped_edges, grouped_faces))
-                        if removeCoplanarFaces:
-                            topology = Topology.RemoveCoplanarFaces(topology)
-                        topologies.append(topology)
-                        if transferDictionaries:
-                            keys = []
-                            values = []
-                            keys.append("TOPOLOGIC_id")
-                            values.append(str(uuid.uuid4()))
-                            keys.append("TOPOLOGIC_name")
-                            values.append(shape.name)
-                            keys.append("TOPOLOGIC_type")
-                            values.append(Topology.TypeAsString(topology))
-                            keys.append("IFC_id")
-                            values.append(str(shape.id))
-                            keys.append("IFC_guid")
-                            values.append(str(shape.guid))
-                            keys.append("IFC_unique_id")
-                            values.append(str(shape.unique_id))
-                            keys.append("IFC_name")
-                            values.append(shape.name)
-                            keys.append("IFC_type")
-                            values.append(shape.type)
-                            material_ids, material_name = get_material_ids_of_entity(entity)
-                            keys.append("IFC_material_ids")
-                            values.append(material_ids)
-                            keys.append("IFC_material_name")
-                            values.append(material_name)
-                            keys.append("TOPOLOGIC_color")
-                            color = generate_color_for_material(str(material_ids))
-                            values.append(color)
-                            d = Dictionary.ByKeysValues(keys, values)
-                            topology = Topology.SetDictionary(topology, d)
-                        topologies.append(topology)
+                            shape = ifcopenshell.geom.create_shape(settings, rep)
+                            verts = shape.verts
+                            edges = shape.edges
+                            faces = shape.faces
+                            grouped_verts = [ [verts[i], verts[i + 1], verts[i + 2]] for i in range(0, len(verts), 3)]
+                            #grouped_verts = apply_transformation(grouped_verts, matrix)
+                            grouped_edges = [[edges[i], edges[i + 1]] for i in range(0, len(edges), 2)]
+                            grouped_faces = [ [faces[i], faces[i + 1], faces[i + 2]] for i in range(0, len(faces), 3)]
+                            topology = Topology.SelfMerge(Topology.ByGeometry(grouped_verts, grouped_edges, grouped_faces))
+                            if removeCoplanarFaces:
+                                topology = Topology.RemoveCoplanarFaces(topology)
+                            if transferDictionaries:
+                                keys = []
+                                values = []
+                                keys.append("TOPOLOGIC_id")
+                                values.append(str(uuid.uuid4()))
+                                keys.append("TOPOLOGIC_name")
+                                values.append(shape.name)
+                                keys.append("TOPOLOGIC_type")
+                                values.append(Topology.TypeAsString(topology))
+                                keys.append("IFC_id")
+                                values.append(str(shape.id))
+                                keys.append("IFC_guid")
+                                values.append(str(shape.guid))
+                                keys.append("IFC_unique_id")
+                                values.append(str(shape.unique_id))
+                                keys.append("IFC_name")
+                                values.append(shape.name)
+                                keys.append("IFC_type")
+                                values.append(shape.type)
+                                material_dict = get_material_ids_of_entity(entity)
+                                keys.append("IFC_materials")
+                                values.append(material_dict)
+                                #keys.append("IFC_material_name")
+                                #values.append(material_name)
+                                #keys.append("TOPOLOGIC_color")
+                                #color = generate_color_for_material(str(material_ids))
+                                #values.append(color)
+                                d = Dictionary.ByKeysValues(keys, values)
+                                topology = Topology.SetDictionary(topology, d)
+                                topology = Topology.Transform(topology, matrix)
+                            topologies.append(topology)
         return topologies
 
     @staticmethod
-    def ByIFCPath(path, includeTypes=[], excludeTypes=[], transferDictionaries=False, removeCoplanarFaces=False):
+    def ByIFCPath(path, includeTypes=[], excludeTypes=[], transferDictionaries=False, removeCoplanarFaces=False, epsilon=0.0001, tolerance=0.0001):
         """
         Create a topology by importing it from an IFC file path.
 
@@ -2361,7 +2946,10 @@ class Topology():
             If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
         removeCoplanarFaces : bool , optional
             If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
-        
+        epsilon : float , optional
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.0001.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         Returns
         -------
         list
@@ -2380,7 +2968,7 @@ class Topology():
         if not file:
             print("Topology.ByIFCPath - Error: the input file parameter is not a valid file. Returning None.")
             return None
-        return Topology.ByIFCFile(file, includeTypes=includeTypes, excludeTypes=excludeTypes, transferDictionaries=transferDictionaries, removeCoplanarFaces=removeCoplanarFaces)
+        return Topology.ByIFCFile(file, includeTypes=includeTypes, excludeTypes=excludeTypes, transferDictionaries=transferDictionaries, removeCoplanarFaces=removeCoplanarFaces, epsilon=epsilon, tolerance=tolerance)
     
     '''
     @staticmethod
@@ -5504,6 +6092,20 @@ class Topology():
         flat_topology = Topology.Translate(topology, -Vertex.X(origin, mantissa=mantissa), -Vertex.Y(origin, mantissa=mantissa), -Vertex.Z(origin, mantissa=mantissa))
         tran_mat = Vector.TransformationMatrix(direction, up)
         flat_topology = Topology.Transform(flat_topology, tran_mat)
+        flat_topology = Topology.SetDictionary(flat_topology, Topology.Dictionary(topology), silent=True)
+        flat_vertices = Topology.Vertices(flat_topology)
+        vertices = Topology.Vertices(topology)
+        flat_edges = Topology.Edges(flat_topology)
+        edges = Topology.Edges(topology)
+        faces = []
+        flat_faces = []
+        if Topology.IsInstance(topology, "Face"):
+            flat_faces = Topology.Faces(flat_topology)
+            faces = Topology.Faces(topology)
+        elements = vertices+edges+faces
+        flat_elements = flat_vertices+flat_edges+flat_faces
+        for i, f, in enumerate(flat_elements):
+            f = Topology.SetDictionary(f, Topology.Dictionary(elements[i]), silent=True)
         return flat_topology
     
     @staticmethod
@@ -6950,20 +7552,30 @@ class Topology():
 
         """
         from topologicpy.Dictionary import Dictionary
+        import inspect
 
         if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
             if not silent:
                 print("Topology.SetDictionary - Error: the input topology parameter is not a valid topology or graph. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if isinstance(dictionary, dict):
             dictionary = Dictionary.ByPythonDictionary(dictionary)
         if not Topology.IsInstance(dictionary, "Dictionary"):
             if not silent:
                 print("Topology.SetDictionary - Warning: the input dictionary parameter is not a valid dictionary. Returning original input.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return topology
         if len(dictionary.Keys()) < 1:
             if not silent:
                 print("Topology.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return topology
         _ = topology.SetDictionary(dictionary)
         return topology
@@ -7166,13 +7778,15 @@ class Topology():
              colorKey = "color",
              opacityKey = "opacity",
              showVertices=True, vertexSize=1.1, vertexColor="black", 
-             vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], 
+             vertexLabelKey=None, showVertexLabel= False,
+             vertexGroupKey=None, vertexGroups=[], 
              vertexMinGroup=None, vertexMaxGroup=None, 
              showVertexLegend=False, vertexLegendLabel="Topology Vertices", vertexLegendRank=1, 
              vertexLegendGroup=1, 
 
              showEdges=True, edgeWidth=1, edgeColor="black", 
-             edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], 
+             edgeLabelKey=None, showEdgeLabel = False,
+             edgeGroupKey=None, edgeGroups=[], 
              edgeMinGroup=None, edgeMaxGroup=None, 
              showEdgeLegend=False, edgeLegendLabel="Topology Edges", edgeLegendRank=2, 
              edgeLegendGroup=2, 
@@ -7217,6 +7831,8 @@ class Topology():
             The default is "black".
         vertexLabelKey : str , optional
             The dictionary key to use to display the vertex label. The default is None.
+        showVertexLabels : bool , optional
+            If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. The default is False.
         vertexGroupKey : str , optional
             The dictionary key to use to display the vertex group. The default is None.
         vertexGroups : list , optional
@@ -7248,6 +7864,8 @@ class Topology():
             The default is "black".
         edgeLabelKey : str , optional
             The dictionary key to use to display the edge label. The default is None.
+        showEdgeLabels : bool , optional
+            If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. The default is False.
         edgeGroupKey : str , optional
             The dictionary key to use to display the edge group. The default is None.
         edgeGroups : list , optional
@@ -7400,12 +8018,12 @@ class Topology():
                 faceOpacity = Dictionary.ValueAtKey(d, opacityKey) or faceOpacity
             data += Plotly.DataByTopology(topology=topology,
                         showVertices=showVertices, vertexSize=vertexSize, vertexColor=vertexColor, 
-                        vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, 
+                        vertexLabelKey=vertexLabelKey, showVertexLabel=showVertexLabel, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, 
                         vertexMinGroup=vertexMinGroup, vertexMaxGroup=vertexMaxGroup, 
                         showVertexLegend=showVertexLegend, vertexLegendLabel=vertexLegendLabel, vertexLegendRank=vertexLegendRank,
                         vertexLegendGroup=vertexLegendGroup,
                         showEdges=showEdges, edgeWidth=edgeWidth, edgeColor=edgeColor, 
-                        edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, 
+                        edgeLabelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, 
                         edgeMinGroup=edgeMinGroup, edgeMaxGroup=edgeMaxGroup, 
                         showEdgeLegend=showEdgeLegend, edgeLegendLabel=edgeLegendLabel, edgeLegendRank=edgeLegendRank, 
                         edgeLegendGroup=edgeLegendGroup,
@@ -8538,11 +9156,30 @@ class Topology():
 
         """
         import uuid
+        from topologicpy.Dictionary import Dictionary
 
         predefined_namespace_dns = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
         namespace_uuid = uuid.uuid5(predefined_namespace_dns, namespace)
-        brep_string = Topology.BREPString(topology)
-        return uuid.uuid5(namespace_uuid, brep_string)
+        cellComplexes = Topology.CellComplexes(topology)
+        cells = Topology.Cells(topology)
+        Shells = Topology.Shells(topology)
+        Faces = Topology.Faces(topology)
+        Wires = Topology.Wires(topology)
+        Edges = Topology.Edges(topology)
+        Vertices = Topology.Vertices(topology)
+        Apertures = Topology.Apertures(topology, subTopologyType="all")
+        subTopologies = cellComplexes+cells+Shells+Faces+Wires+Edges+Vertices+Apertures
+        dictionaries = [Dictionary.PythonDictionary(Topology.Dictionary(topology))]
+        dictionaries += [Dictionary.PythonDictionary(Topology.Dictionary(s)) for s in subTopologies]
+        dict_str = str(dictionaries)
+        top_geom = Topology.Geometry(topology, mantissa=6)
+        verts_str = str(top_geom['vertices'])
+        edges_str = str(top_geom['edges'])
+        faces_str = str(top_geom['faces'])
+        geo_str = verts_str+edges_str+faces_str
+        final_str = geo_str+dict_str
+        uuid_str = uuid.uuid5(namespace_uuid, final_str)
+        return str(uuid_str)
     
     @staticmethod
     def View3D(*topologies, uuid = None, nameKey="name", colorKey="color", opacityKey="opacity", defaultColor=[256,256,256], defaultOpacity=0.5, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, overwrite: bool = False, mantissa: int = 6, tolerance: float = 0.0001):

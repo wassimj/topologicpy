@@ -372,12 +372,11 @@ class Plotly:
                     v_label = ""
                     v_group = ""
                     d = Topology.Dictionary(v)
-                    v_group = Dictionary.ValueAtKey(d, key=vertexGroupKey)
                     if d:
                         if vertexLabelKey:
                             v_label = str(Dictionary.ValueAtKey(d, key=vertexLabelKey)) or ""
                         if vertexGroupKey:
-                            v_group = Dictionary.ValueAtKey(d, key=vertexGroupKey) or None
+                            v_group = Dictionary.ValueAtKey(d, key=vertexGroupKey) or ""
                     try:
                         v_groupList.append(vertexGroups.index(v_group))
                     except:
@@ -439,14 +438,10 @@ class Plotly:
                     e_group = ""
                     d = Topology.Dictionary(e)
                     if d:
-                        try:
+                        if not edgeLabelKey == None:
                             e_label = str(Dictionary.ValueAtKey(d, key=edgeLabelKey)) or ""
-                        except:
-                            e_label = ""
-                        try:
+                        if not edgeGroupKey == None:
                             e_group = str(Dictionary.ValueAtKey(d, key=edgeGroupKey)) or ""
-                        except:
-                            e_group = ""
                     try:
                         e_groupList.append(edgeGroups.index(e_group))
                     except:
@@ -490,12 +485,12 @@ class Plotly:
     @staticmethod
     def DataByTopology(topology,
                        showVertices=True, vertexSize=1.1, vertexColor="black", 
-                       vertexLabelKey=None, vertexGroupKey=None, vertexGroups=[], 
+                       vertexLabelKey=None, showVertexLabel=False, vertexGroupKey=None, vertexGroups=[], 
                        vertexMinGroup=None, vertexMaxGroup=None, 
                        showVertexLegend=False, vertexLegendLabel="Topology Vertices", vertexLegendRank=1,
                        vertexLegendGroup=1,
                        showEdges=True, edgeWidth=1, edgeColor="black", 
-                       edgeLabelKey=None, edgeGroupKey=None, edgeGroups=[], 
+                       edgeLabelKey=None, showEdgeLabel=False, edgeGroupKey=None, edgeGroups=[], 
                        edgeMinGroup=None, edgeMaxGroup=None, 
                        showEdgeLegend=False, edgeLegendLabel="Topology Edges", edgeLegendRank=2, 
                        edgeLegendGroup=2,
@@ -633,7 +628,7 @@ class Plotly:
         def closest_index(input_value, values):
             return int(min(range(len(values)), key=lambda i: abs(values[i] - input_value)))
 
-        def vertexData(vertices, dictionaries=[], color="black", size=1.1, labelKey=None, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Vertices", legendGroup=1, legendRank=1, showLegend=True, colorScale="Viridis"):
+        def vertexData(vertices, dictionaries=[], color="black", size=1.1, labelKey=None, showVertexLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Vertices", legendGroup=1, legendRank=1, showLegend=True, colorScale="Viridis"):
             x = []
             y = []
             z = []
@@ -664,16 +659,14 @@ class Plotly:
                     if len(dictionaries) > 0:
                         d = dictionaries[m]
                         if d:
-                            try:
+                            if not labelKey == None:
                                 label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
-                            except:
-                                label = ""
-                            try:
-                                group = Dictionary.ValueAtKey(d, key=groupKey) or None
-                            except:
-                                group = ""
+                            if not groupKey == None:
+                                group = Dictionary.ValueAtKey(d, key=groupKey) or ""
                         try:
-                            if type(group) == int or type(group) == float:
+                            if group == "":
+                                color = 'white'
+                            elif type(group) == int or type(group) == float:
                                 if group < minGroup:
                                     group = minGroup
                                 if group > maxGroup:
@@ -696,13 +689,17 @@ class Plotly:
                 groupList = color
             if len(labels) < 1:
                 labels = ""
+            if showVertexLabel == True:
+                mode = "markers+text"
+            else:
+                mode = "markers"
             vData= go.Scatter3d(x=x,
                                 y=y,
                                 z=z,
                                 name=legendLabel,
                                 showlegend=showLegend,
                                 marker=dict(color=groupList,  size=vertexSize),
-                                mode='markers',
+                                mode=mode,
                                 legendgroup=legendGroup,
                                 legendrank=legendRank,
                                 text=labels,
@@ -711,7 +708,7 @@ class Plotly:
                                 )
             return vData
 
-        def edgeData(vertices, edges, dictionaries=None, color="black", width=1, labelKey=None, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
+        def edgeData(vertices, edges, dictionaries=None, color="black", width=1, labelKey=None, showEdgeLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
             x = []
             y = []
             z = []
@@ -744,15 +741,13 @@ class Plotly:
                     if len(dictionaries) > 0:
                         d = dictionaries[m]
                         if d:
-                            try:
+                            if not labelKey == None:
                                 label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
-                            except:
-                                label = ""
-                            try:
-                                group = Dictionary.ValueAtKey(d, key=groupKey) or None
-                            except:
-                                group = ""
+                            if not groupKey == None:
+                                group = Dictionary.ValueAtKey(d, key=groupKey) or ""
                         try:
+                            if group == "":
+                                color = 'white'
                             if type(group) == int or type(group) == float:
                                 if group < minGroup:
                                     group = minGroup
@@ -778,13 +773,17 @@ class Plotly:
                     groupList = color
             if len(labels) < 1:
                 labels = ""
+            if showEdgeLabel == True:
+                mode = "lines+text"
+            else:
+                mode = "lines"
             eData = go.Scatter3d(x=x,
                                 y=y,
                                 z=z,
                                 name=legendLabel,
                                 showlegend=showLegend,
                                 marker_size=0,
-                                mode="lines",
+                                mode=mode,
                                 line=dict(color=groupList, width=edgeWidth),
                                 legendgroup=legendGroup,
                                 legendrank=legendRank,
@@ -834,16 +833,14 @@ class Plotly:
                     if len(dictionaries) > 0:
                         d = dictionaries[m]
                         if d:
-                            try:
+                            if not labelKey == None:
                                 label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
-                            except:
-                                label = ""
-                            try:
+                            if not groupKey == None:
                                 group = Dictionary.ValueAtKey(d, key=groupKey) or None
-                            except:
-                                group = ""
                         try:
-                            if type(group) == int or type(group) == float:
+                            if group == "":
+                                color = 'white'
+                            elif type(group) == int or type(group) == float:
                                 if group < minGroup:
                                     group = minGroup
                                 if group > maxGroup:
@@ -955,7 +952,7 @@ class Plotly:
                             d = Topology.Dictionary(tp_v)
                             v_dictionaries.append(d)
                         vertices.append([Vertex.X(tp_v, mantissa=mantissa), Vertex.Y(tp_v, mantissa=mantissa), Vertex.Z(tp_v, mantissa=mantissa)])
-                data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
+                data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, showVertexLabel=showVertexLabel, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
             
         if showEdges and Topology.Type(topology) > Topology.TypeID("Vertex"):
             if Topology.Type(topology) == Topology.TypeID("Edge"):
@@ -971,7 +968,7 @@ class Plotly:
                 geo = Topology.Geometry(e_cluster, mantissa=mantissa)
                 vertices = geo['vertices']
                 edges = geo['edges']
-                data.append(edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, width=edgeWidth, labelKey=edgeLabelKey, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
+                data.append(edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, width=edgeWidth, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
         
         if showFaces and Topology.Type(topology) >= Topology.TypeID("Face"):
             if Topology.IsInstance(topology, "Face"):

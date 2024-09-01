@@ -371,7 +371,7 @@ class Color:
         Parameters
         ----------
         color : list
-            The input color list. This is assumed to be in the format [r, g, b] or [r, g, b, a]
+            The input color list. This is assumed to be in the format [r, g, b] or [r, g, b, a] where the range is from 0 to 255.
         alpha : float , optional
             The transparency value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. The default is 1.0.
         useAlpha : bool , optional

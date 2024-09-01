@@ -373,13 +373,14 @@ class Wire():
         normal = Face.Normal(temp_face)
         flat_wire = Topology.Flatten(wire, direction=normal, origin=origin)
         edges = Topology.Edges(flat_wire)
+        original_edges = Topology.Edges(wire)
         offsets = []
         offset_edges = []
         final_vertices = []
         bisectors_list = []
         edge_dictionaries = []
-        for edge in edges:
-            d = Topology.Dictionary(edge)
+        for i, edge in enumerate(edges):
+            d = Topology.Dictionary(original_edges[i])
             d_offset = Dictionary.ValueAtKey(d, offsetKey)
             if d_offset == None:
                 d_offset = offset
@@ -406,7 +407,7 @@ class Wire():
                         if bisectors == True:
                             bisectors_list.append(Edge.ByVertices(v_a, v1))
                         if transferDictionaries == True:
-                            v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a))
+                            v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a), silent=True)
                             edge_dictionaries.append(Topology.Dictionary(edges[i]))
                         final_vertices.append(v1)
                     else:
@@ -463,15 +464,15 @@ class Wire():
                         v1_2 = Topology.TranslateByDirectionDistance(Edge.StartVertex(o_edge_a),
                                                                      direction = Edge.Direction(o_edge_a),
                                                                      distance = d_stepOffsetB)
+                        if transferDictionaries == True:
+                            v1_1 = Topology.SetDictionary(v1_1, Topology.Dictionary(v_a), silent=True)
+                            v1_2 = Topology.SetDictionary(v1_2, Topology.Dictionary(v_a), silent=True)
+                            edge_dictionaries.append(Topology.Dictionary(v_a))
+                            edge_dictionaries.append(Topology.Dictionary(edges[i]))
                         bisectors_list.append(Edge.ByVertices(v_a, v1_1))
                         bisectors_list.append(Edge.ByVertices(v_a, v1_2))
                         final_vertices.append(v1_1)
                         final_vertices.append(v1_2)
-                        if transferDictionaries == True:
-                            v1_1 = Topology.SetDictionary(v1_1, Topology.Dictionary(v_a))
-                            v1_2 = Topology.SetDictionary(v1_2, Topology.Dictionary(v_a))
-                            edge_dictionaries.append(Topology.Dictionary(v_a))
-                            edge_dictionaries.append(Topology.Dictionary(edges[i]))
         v_a = Edge.EndVertex(edges[-1])
         if Wire.IsClosed(wire) == False:
             v1 = Edge.EndVertex(offset_edges[-1])
@@ -481,12 +482,7 @@ class Wire():
             if bisectors == True:
                 bisectors_list.append(Edge.ByVertices(v_a, v1))
         
-
         return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
-        wire_edges = Topology.Edges(return_wire)
-        if transferDictionaries == True:
-            for i, wire_edge in enumerate(wire_edges):
-                wire_edge = Topology.SetDictionary(wire_edge, edge_dictionaries[i], silent=True)
         if not Topology.IsInstance(return_wire, "Wire"):
             if not silent:
                 print("Wire.ByOffset - Warning: The resulting wire is not well-formed, please check your offsets.")
@@ -494,6 +490,18 @@ class Wire():
             if not Wire.IsManifold(return_wire) and bisectors == False:
                 if not silent:
                     print("Wire.ByOffset - Warning: The resulting wire is non-manifold, please check your offsets.")
+        wire_edges = Topology.Edges(return_wire)
+        
+        if transferDictionaries == True:
+            if not len(wire_edges) == len(edge_dictionaries):
+                if not silent:
+                        print("Length of Wire Edges:", len(wire_edges))
+                        print("Length of Edge Dictionaries:", len(edge_dictionaries))
+                        print("Wire.ByOffset - Warning: The resulting wire is not well-formed, offsets may not be applied correctly. Please check your offsets.")
+            for i, wire_edge in enumerate(wire_edges):
+                if len(edge_dictionaries) > 0:
+                    temp_dictionary = edge_dictionaries[min(i,len(edge_dictionaries)-1)]
+                    wire_edge = Topology.SetDictionary(wire_edge, temp_dictionary, silent=True)
         if bisectors == True:
             temp_return_wire = Topology.SelfMerge(Cluster.ByTopologies(Topology.Edges(return_wire)+bisectors_list))
             if transferDictionaries == True:
@@ -738,7 +746,7 @@ class Wire():
                     if not(([i1, i2] in g_edges) or ([i2, i1] in g_edges)):
                         g_edges.append([i1, i2])
                 used.append(end)
-        new_wire = Topology.ByGeometry(vertices=g_vertices, edges=g_edges, faces=[], outputMode="wire")
+        new_wire = Topology.SelfMerge(Topology.ByGeometry(vertices=g_vertices, edges=g_edges, faces=[]))
         return new_wire
 
     @staticmethod
