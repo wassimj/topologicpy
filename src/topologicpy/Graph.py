@@ -2177,6 +2177,12 @@ class Graph:
             for ifc_rel in ifc_relationships:
                 source = None
                 destinations = []
+                if ifc_rel.is_a("IfcRelConnectsPorts"):
+                    source = ifc_rel.RelatingPort
+                    destinations = ifc_rel.RelatedPorts
+                if ifc_rel.is_a("IfcRelConnectsPortToElement"):
+                    source = ifc_rel.RelatingPort
+                    destinations = [ifc_rel.RelatedElement]
                 if ifc_rel.is_a("IfcRelAggregates"):
                     source = ifc_rel.RelatingObject
                     destinations = ifc_rel.RelatedObjects

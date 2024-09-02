@@ -2475,9 +2475,9 @@ class Topology():
             
             # If no color is defined, return a consistent random color based on the entity type
             if "wall" in is_a:
-                color = (0.4, 0.4, 0.4)
+                color = (175, 175, 175)
             elif "slab" in is_a:
-                color = (0.6, 0.6, 0.6)
+                color = (200, 200, 200)
             elif "space" in is_a:
                 color = (250, 250, 250)
             else:
@@ -8402,6 +8402,21 @@ class Topology():
         tran_mat = Vector.TransformationMatrix(up, direction)
         unflat_topology = Topology.Transform(topology, tran_mat)
         unflat_topology = Topology.Translate(unflat_topology, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+
+        unflat_topology = Topology.SetDictionary(unflat_topology, Topology.Dictionary(topology), silent=True)
+        unflat_vertices = Topology.Vertices(unflat_topology)
+        vertices = Topology.Vertices(topology)
+        unflat_edges = Topology.Edges(unflat_topology)
+        edges = Topology.Edges(topology)
+        faces = []
+        unflat_faces = []
+        if Topology.IsInstance(topology, "Face"):
+            unflat_faces = Topology.Faces(unflat_topology)
+            faces = Topology.Faces(topology)
+        elements = vertices+edges+faces
+        unflat_elements = unflat_vertices+unflat_edges+unflat_faces
+        for i, f, in enumerate(unflat_elements):
+            f = Topology.SetDictionary(f, Topology.Dictionary(elements[i]), silent=True)
         return unflat_topology
     
     @staticmethod
@@ -8763,8 +8778,8 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         numWorkers : int , optional
-            Number of workers run in parallel to process. The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
-
+            Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
+            The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
         Returns
         -------
         Topology
@@ -8775,6 +8790,42 @@ class Topology():
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Cluster import Cluster
         from topologicpy.Plotly import Plotly
+
+
+        def transfer_dictionaries_by_selectors(object, selectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001):
+            if tranVertices == True:
+                vertices = Topology.Vertices(object)
+                for vertex in vertices:
+                    for selector in selectors:
+                        d = Vertex.Distance(selector, vertex)
+                        if d < tolerance:
+                            vertex = Topology.SetDictionary(vertex, Topology.Dictionary(selector))
+                            break
+            if tranEdges == True:
+                edges = Topology.Edges(object)
+                for selector in selectors:
+                    for edge in edges:
+                        d = Vertex.Distance(selector, edge)
+                        if d < tolerance:
+                            edge = Topology.SetDictionary(edge, Topology.Dictionary(selector), silent=True)
+                            break
+            if tranFaces == True:
+                faces = Topology.Faces(object)
+                for face in faces:
+                    for selector in selectors:
+                        d = Vertex.Distance(selector, face)
+                        if d < tolerance:
+                            face = Topology.SetDictionary(face, Topology.Dictionary(selector), silent=True)
+                            break
+            if tranCells == True:
+                cells = Topology.Cells(object)
+                for cell in cells:
+                    for selector in selectors:
+                        if Vertex.IsInternal(selector, cell):
+                            cell = Topology.SetDictionary(cell, Topology.Dictionary(selector), silent=True)
+                            break
+            return object
+        
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.TransferDictionariesBySelectors - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
@@ -8788,6 +8839,9 @@ class Topology():
         if len(selectors_tmp) < 1:
             print("Topology.TransferDictionariesBySelectors - Error: The input selectors do not contain any valid topologies. Returning None.")
             return None
+        
+        if numWorkers == 1:
+            return transfer_dictionaries_by_selectors(topology, selectors, tranVertices=tranVertices, tranEdges=tranEdges, tranFaces=tranFaces, tranCells=tranCells, tolerance=tolerance)
         sinkEdges = []
         sinkFaces = []
         sinkCells = []

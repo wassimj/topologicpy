@@ -635,7 +635,7 @@ class Plotly:
             labels = []
             groupList = []
             label = ""
-            group = ""
+            group = None
             if labelKey or groupKey:
                 if groups:
                     if len(groups) > 0:
@@ -655,7 +655,7 @@ class Plotly:
                     y.append(v[1])
                     z.append(v[2])
                     label = ""
-                    group = ""
+                    group = None
                     if len(dictionaries) > 0:
                         d = dictionaries[m]
                         if d:
@@ -737,7 +737,7 @@ class Plotly:
                     y+=[sv[1], ev[1], None] # y-coordinates of edge ends
                     z+=[sv[2], ev[2], None] # z-coordinates of edge ends
                     label = ""
-                    group = ""
+                    group = None
                     if len(dictionaries) > 0:
                         d = dictionaries[m]
                         if d:

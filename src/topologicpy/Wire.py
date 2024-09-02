@@ -310,7 +310,7 @@ class Wire():
         return Wire.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
-    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", reverse: bool = False, bisectors: bool = False, transferDictionaries: bool = False, tolerance: float = 0.0001,  silent: bool = False):
+    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", reverse: bool = False, bisectors: bool = False, transferDictionaries: bool = False, tolerance: float = 0.0001,  silent: bool = False, numWorkers: int = None):
         """
         Creates an offset wire from the input wire. A positive offset value results in an offset to the interior of an anti-clockwise wire.
 
@@ -340,6 +340,10 @@ class Wire():
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
             If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        numWorkers : int , optional
+            Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
+            The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
+
         
         Returns
         -------
@@ -355,12 +359,43 @@ class Wire():
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
+        from topologicpy.Helper import Helper
+
+        def transfer_dictionaries_by_selectors(object, selectors, tranVertices=False, tranEdges=False, tranFaces=True, tolerance=0.0001):
+            if tranVertices == True:
+                vertices = Topology.Vertices(object)
+                for vertex in vertices:
+                    for selector in selectors:
+                        d = Vertex.Distance(selector, vertex)
+                        if d < tolerance:
+                            vertex = Topology.SetDictionary(vertex, Topology.Dictionary(selector), silent=True)
+                            break
+            if tranEdges == True:
+                edges = Topology.Edges(object)
+                for edge in edges:
+                    for selector in selectors:
+                        d = Vertex.Distance(selector, edge)
+                        if d < tolerance:
+                            edge = Topology.SetDictionary(edge, Topology.Dictionary(selector), silent=True)
+                            break
+            
+            if tranFaces == True:
+                faces = Topology.Faces(object)
+                for face in faces:
+                    for selector in selectors:
+                        d = Vertex.Distance(selector, face)
+                        if d < tolerance:
+                            face = Topology.SetDictionary(face, Topology.Dictionary(selector), silent=True)
+                            break
+            return object
 
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Wire.ByOffset - Error: The input wire parameter is not a valid wire. Returning None.")
                 return None
         
+        temp_face = Face.ByWire(wire)
+        original_area = Face.Area(temp_face)
         if reverse == True:
             fac = -1
         else:
@@ -372,6 +407,7 @@ class Wire():
         flat_wire = Topology.Flatten(wire, direction=temp_normal, origin=origin)
         normal = Face.Normal(temp_face)
         flat_wire = Topology.Flatten(wire, direction=normal, origin=origin)
+        original_edges = Topology.Edges(wire)
         edges = Topology.Edges(flat_wire)
         original_edges = Topology.Edges(wire)
         offsets = []
@@ -482,16 +518,20 @@ class Wire():
             if bisectors == True:
                 bisectors_list.append(Edge.ByVertices(v_a, v1))
         
-        return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
-        if not Topology.IsInstance(return_wire, "Wire"):
-            if not silent:
-                print("Wire.ByOffset - Warning: The resulting wire is not well-formed, please check your offsets.")
-        else:
-            if not Wire.IsManifold(return_wire) and bisectors == False:
-                if not silent:
-                    print("Wire.ByOffset - Warning: The resulting wire is non-manifold, please check your offsets.")
-        wire_edges = Topology.Edges(return_wire)
         
+        wire_edges = []
+        for i in range(len(final_vertices)-1):
+            v1 = final_vertices[i]
+            v2 = final_vertices[i+1]
+            wire_edges.append(Edge.ByVertices(v1,v2))
+        if Wire.IsClosed(wire):
+            v1 = final_vertices[-1]
+            v2 = final_vertices[0]
+            wire_edges.append(Edge.ByVertices(v1,v2))
+        
+        return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
+        return_wire_edges = Topology.Edges(return_wire)
+        #wire_edges = Topology.Edges(return_wire)
         if transferDictionaries == True:
             if not len(wire_edges) == len(edge_dictionaries):
                 if not silent:
@@ -502,8 +542,9 @@ class Wire():
                 if len(edge_dictionaries) > 0:
                     temp_dictionary = edge_dictionaries[min(i,len(edge_dictionaries)-1)]
                     wire_edge = Topology.SetDictionary(wire_edge, temp_dictionary, silent=True)
+                    return_wire_edges[i] = Topology.SetDictionary(return_wire_edges[i], temp_dictionary, silent=True)
         if bisectors == True:
-            temp_return_wire = Topology.SelfMerge(Cluster.ByTopologies(Topology.Edges(return_wire)+bisectors_list))
+            temp_return_wire = Topology.SelfMerge(Cluster.ByTopologies(wire_edges+bisectors_list))
             if transferDictionaries == True:
                 sel_vertices = Topology.Vertices(return_wire)
                 sel_vertices += Topology.Vertices(flat_wire)
@@ -514,9 +555,39 @@ class Wire():
                     c = Topology.Centroid(edge)
                     c = Topology.SetDictionary(c, d)
                     sel_edges.append(c)
-                temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_vertices, tranVertices=True)
-                temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_edges, tranEdges=True)
+                temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_vertices, tranVertices=True, numWorkers=numWorkers)
+                temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_edges, tranEdges=True, numWorkers=numWorkers)
+                
             return_wire = temp_return_wire
+        
+        if not Topology.IsInstance(return_wire, "Wire"):
+            if not silent:
+                print("Wire.ByOffset - Warning: The resulting wire is not well-formed, please check your offsets.")
+        else:
+            if not Wire.IsManifold(return_wire) and bisectors == False:
+                if not silent:
+                    print("Wire.ByOffset - Warning: The resulting wire is non-manifold, please check your offsets.")
+                    print("Pursuing a workaround, but it will take a LONG time.")
+                cycles = Wire.Cycles(return_wire, maxVertices = len(final_vertices))
+                distances = []
+                for cycle in cycles:
+                    #cycle_face = Face.ByWire(cycle)
+                    cycle_centroid = Topology.Centroid(cycle)
+                    distance = Vertex.Distance(origin, cycle_centroid)
+                    distances.append(distance)
+                cycles = Helper.Sort(cycles, distances)
+                return_cycle = Wire.Reverse(cycles[0])
+                sel_edges = []
+                for temp_edge in wire_edges:
+                    x = Topology.Centroid(temp_edge)
+                    d = Topology.Dictionary(temp_edge)
+                    x = Topology.SetDictionary(x, d)
+                    sel_edges.append(x)
+                print("Transfering Vertex Dictionaries")
+                return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, Topology.Vertices(return_wire), tranVertices=True, tolerance=tolerance, numWorkers=numWorkers)
+                print("Transfering Edge Dictionaries")
+                return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, sel_edges, tranEdges=True, tolerance=tolerance, numWorkers=numWorkers)
+                return_wire = return_cycle
         return_wire = Topology.Unflatten(return_wire, direction=normal, origin=origin)
         if transferDictionaries == True:
             return_wire = Topology.SetDictionary(return_wire, Topology.Dictionary(wire), silent=True)
