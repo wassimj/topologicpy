@@ -310,7 +310,7 @@ class Wire():
         return Wire.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
-    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", reverse: bool = False, bisectors: bool = False, transferDictionaries: bool = False, tolerance: float = 0.0001,  silent: bool = False, numWorkers: int = None):
+    def ByOffset(wire, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", reverse: bool = False, bisectors: bool = False, transferDictionaries: bool = False, epsilon: float = 0.01, tolerance: float = 0.0001,  silent: bool = False, numWorkers: int = None):
         """
         Creates an offset wire from the input wire. A positive offset value results in an offset to the interior of an anti-clockwise wire.
 
@@ -336,6 +336,8 @@ class Wire():
             If set to True, The bisectors (seams) edges will be included in the returned wire. The default is False.
         transferDictionaries : bool , optional
             If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the new wire. Otherwise, they are not. The default is False.
+        epsilon : float , optional
+            The desired epsilon (another form of tolerance for shortest edge to remove). The default is 0.01. (This is set to a larger number as it was found to work better)
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -360,34 +362,6 @@ class Wire():
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
         from topologicpy.Helper import Helper
-
-        def transfer_dictionaries_by_selectors(object, selectors, tranVertices=False, tranEdges=False, tranFaces=True, tolerance=0.0001):
-            if tranVertices == True:
-                vertices = Topology.Vertices(object)
-                for vertex in vertices:
-                    for selector in selectors:
-                        d = Vertex.Distance(selector, vertex)
-                        if d < tolerance:
-                            vertex = Topology.SetDictionary(vertex, Topology.Dictionary(selector), silent=True)
-                            break
-            if tranEdges == True:
-                edges = Topology.Edges(object)
-                for edge in edges:
-                    for selector in selectors:
-                        d = Vertex.Distance(selector, edge)
-                        if d < tolerance:
-                            edge = Topology.SetDictionary(edge, Topology.Dictionary(selector), silent=True)
-                            break
-            
-            if tranFaces == True:
-                faces = Topology.Faces(object)
-                for face in faces:
-                    for selector in selectors:
-                        d = Vertex.Distance(selector, face)
-                        if d < tolerance:
-                            face = Topology.SetDictionary(face, Topology.Dictionary(selector), silent=True)
-                            break
-            return object
 
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
@@ -519,19 +493,23 @@ class Wire():
                 bisectors_list.append(Edge.ByVertices(v_a, v1))
         
         
-        wire_edges = []
-        for i in range(len(final_vertices)-1):
-            v1 = final_vertices[i]
-            v2 = final_vertices[i+1]
-            wire_edges.append(Edge.ByVertices(v1,v2))
-        if Wire.IsClosed(wire):
-            v1 = final_vertices[-1]
-            v2 = final_vertices[0]
-            wire_edges.append(Edge.ByVertices(v1,v2))
+        # wire_edges = []
+        # for i in range(len(final_vertices)-1):
+        #     v1 = final_vertices[i]
+        #     v2 = final_vertices[i+1]
+        #     w_e = Edge.ByVertices(v1,v2)
+        #     #w_e = Edge.SetLength(w_e, Edge.Length(w_e)+(2*epsilon), bothSides = True)
+        #     wire_edges.append(w_e)
+        # if Wire.IsClosed(wire):
+        #     v1 = final_vertices[-1]
+        #     v2 = final_vertices[0]
+        #     #w_e = Edge.SetLength(w_e, Edge.Length(w_e)+(2*epsilon), bothSides = True)
+        #     wire_edges.append(w_e)
         
         return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
+        #wire_edges = Topology.Edges(wire_edges)
+        wire_edges = [Edge.SetLength(w_e, Edge.Length(w_e)+(2*epsilon), bothSides=True) for w_e in Topology.Edges(return_wire)]
         return_wire_edges = Topology.Edges(return_wire)
-        #wire_edges = Topology.Edges(return_wire)
         if transferDictionaries == True:
             if not len(wire_edges) == len(edge_dictionaries):
                 if not silent:
@@ -553,7 +531,7 @@ class Wire():
                 for edge in edges:
                     d = Topology.Dictionary(edge)
                     c = Topology.Centroid(edge)
-                    c = Topology.SetDictionary(c, d)
+                    c = Topology.SetDictionary(c, d, silent=True)
                     sel_edges.append(c)
                 temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_vertices, tranVertices=True, numWorkers=numWorkers)
                 temp_return_wire = Topology.TransferDictionariesBySelectors(temp_return_wire, sel_edges, tranEdges=True, numWorkers=numWorkers)
@@ -567,25 +545,31 @@ class Wire():
             if not Wire.IsManifold(return_wire) and bisectors == False:
                 if not silent:
                     print("Wire.ByOffset - Warning: The resulting wire is non-manifold, please check your offsets.")
-                    print("Pursuing a workaround, but it will take a LONG time.")
-                cycles = Wire.Cycles(return_wire, maxVertices = len(final_vertices))
+                    print("Wire.ByOffset - Warning: Pursuing a workaround, but it might take a longer to complete.")
+                
+                #cycles = Wire.Cycles(return_wire, maxVertices = len(final_vertices))
+                temp_wire = Topology.SelfMerge(Cluster.ByTopologies(wire_edges))
+                cycles = Wire.Cycles(temp_wire, maxVertices = len(final_vertices))
                 distances = []
                 for cycle in cycles:
-                    #cycle_face = Face.ByWire(cycle)
                     cycle_centroid = Topology.Centroid(cycle)
                     distance = Vertex.Distance(origin, cycle_centroid)
                     distances.append(distance)
                 cycles = Helper.Sort(cycles, distances)
-                return_cycle = Wire.Reverse(cycles[0])
+                # Get the top three or less
+                cycles = cycles[:min(3, len(cycles))]
+                areas = [Face.Area(Face.ByWire(cycle)) for cycle in cycles]
+                cycles = Helper.Sort(cycles, areas)
+                return_cycle = Wire.Reverse(cycles[-1])
+                return_cycle = Wire.Simplify(return_cycle, tolerance=epsilon)
+                return_cycle = Wire.RemoveCollinearEdges(return_cycle)
                 sel_edges = []
                 for temp_edge in wire_edges:
                     x = Topology.Centroid(temp_edge)
                     d = Topology.Dictionary(temp_edge)
-                    x = Topology.SetDictionary(x, d)
+                    x = Topology.SetDictionary(x, d, silent=True)
                     sel_edges.append(x)
-                print("Transfering Vertex Dictionaries")
                 return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, Topology.Vertices(return_wire), tranVertices=True, tolerance=tolerance, numWorkers=numWorkers)
-                print("Transfering Edge Dictionaries")
                 return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, sel_edges, tranEdges=True, tolerance=tolerance, numWorkers=numWorkers)
                 return_wire = return_cycle
         return_wire = Topology.Unflatten(return_wire, direction=normal, origin=origin)

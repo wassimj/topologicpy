@@ -276,7 +276,7 @@ class Face():
         return face
 
     @staticmethod
-    def ByOffset(face, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", reverse: bool = False, bisectors: bool = False, transferDictionaries: bool = False, tolerance: float = 0.0001,  silent: bool = False):
+    def ByOffset(face, offset: float = 1.0, offsetKey: str = "offset", stepOffsetA: float = 0, stepOffsetB: float = 0, stepOffsetKeyA: str = "stepOffsetA", stepOffsetKeyB: str = "stepOffsetB", reverse: bool = False, bisectors: bool = False, transferDictionaries: bool = False, epsilon: float = 0.01, tolerance: float = 0.0001,  silent: bool = False, numWorkers: int = None):
         """
         Creates an offset face from the input face. A positive offset value results in an offset to the interior of an anti-clockwise face.
 
@@ -302,10 +302,15 @@ class Face():
             If set to True, the direction of offsets is reversed. Otherwise, it is not. The default is False.
         transferDictionaries : bool , optional
             If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the new wire. Otherwise, they are not. The default is False.
+        epsilon : float , optional
+            The desired epsilon (another form of tolerance for shortest edge to remove). The default is 0.01. (This is set to a larger number as it was found to work better)
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
             If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        numWorkers : int , optional
+            Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
+            The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
         
         Returns
         -------
@@ -338,8 +343,10 @@ class Face():
                                                  reverse=reverse,
                                                  bisectors=bisectors,
                                                  transferDictionaries=transferDictionaries,
+                                                 epsilon=epsilon,
                                                  tolerance=tolerance,
-                                                 silent=silent)
+                                                 silent=silent,
+                                                 numWorkers=numWorkers)
         offset_internal_boundaries = []
         for internal_boundary in internal_boundaries:
             offset_internal_boundary = Wire.ByOffset(internal_boundary,
@@ -352,8 +359,10 @@ class Face():
                                                     reverse=reverse,
                                                     bisectors=bisectors,
                                                     transferDictionaries=transferDictionaries,
+                                                    epsilon=epsilon,
                                                     tolerance=tolerance,
-                                                    silent=silent)
+                                                    silent=silent,
+                                                    numWorkers=numWorkers)
             offset_internal_boundaries.append(offset_internal_boundary)
         
         if bisectors == True:
@@ -367,8 +376,10 @@ class Face():
                                     reverse=reverse,
                                     bisectors=False,
                                     transferDictionaries=transferDictionaries,
+                                    epsilon=epsilon,
                                     tolerance=tolerance,
-                                    silent=silent)
+                                    silent=silent,
+                                    numWorkers=numWorkers)
             all_edges = Topology.Edges(offset_external_boundary)+[Topology.Edges(ib) for ib in offset_internal_boundaries]
             all_edges += Topology.Edges(face)
             all_edges = Helper.Flatten(all_edges)

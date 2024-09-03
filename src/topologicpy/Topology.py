@@ -8799,7 +8799,7 @@ class Topology():
                     for selector in selectors:
                         d = Vertex.Distance(selector, vertex)
                         if d < tolerance:
-                            vertex = Topology.SetDictionary(vertex, Topology.Dictionary(selector))
+                            vertex = Topology.SetDictionary(vertex, Topology.Dictionary(selector), silent=True)
                             break
             if tranEdges == True:
                 edges = Topology.Edges(object)
@@ -8807,6 +8807,7 @@ class Topology():
                     for edge in edges:
                         d = Vertex.Distance(selector, edge)
                         if d < tolerance:
+
                             edge = Topology.SetDictionary(edge, Topology.Dictionary(selector), silent=True)
                             break
             if tranFaces == True:

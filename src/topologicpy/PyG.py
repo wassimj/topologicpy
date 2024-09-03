@@ -176,7 +176,12 @@ class CustomGraphDataset(Dataset):
             if self.graph_level:
                 label_value = self.graph_df[self.graph_df['graph_id'] == graph_id]['label'].values[0]
                 
-                if isinstance(label_value, int):
+                if isinstance(label_value, np.int64):
+                    label_value = int(label_value)
+                if isinstance(label_value, np.float64):
+                    label_value = float(label_value)
+
+                if isinstance(label_value, int) or isinstance(label_value, np.int64):
                     y = torch.tensor([label_value], dtype=torch.long)
                 elif isinstance(label_value, float):
                     y = torch.tensor([label_value], dtype=torch.float)
