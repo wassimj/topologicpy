@@ -382,12 +382,11 @@ class EnergyModel:
                             osSurface.setName(osSpace.name().get() + "_ExternalVerticalFace_" + str(faceNumber))
                             # Check for exterior apertures
                             faceDictionary = buildingFace.GetDictionary()
-                            apertures = []
-                            _ = buildingFace.Apertures(apertures)
+                            #apertures = []
+                            apertures = Topology.Apertures(buildingFace)
                             if len(apertures) > 0:
-                                for aperture in apertures:
+                                for apertureFace in apertures:
                                     osSubSurfacePoints = []
-                                    apertureFace = Aperture.Topology(aperture)
                                     for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
                                         osSubSurfacePoints.append(openstudio.Point3d(Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex, mantissa=mantissa)))
                                     osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
@@ -420,12 +419,11 @@ class EnergyModel:
                             osSurface.setName(osSpace.name().get() + "_InternalVerticalFace_" + str(faceNumber))
                         # Check for interior apertures
                         faceDictionary = buildingFace.GetDictionary()
-                        apertures = []
-                        _ = buildingFace.Apertures(apertures)
+                        #apertures = []
+                        apertures = Topology.Apertures(buildingFace)
                         if len(apertures) > 0:
-                            for aperture in apertures:
+                            for apertureFace in apertures:
                                 osSubSurfacePoints = []
-                                apertureFace = Aperture.Topology(aperture)
                                 for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
                                     osSubSurfacePoints.append(openstudio.Point3d(Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex.Z, mantissa=mantissa)))
                                 osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)

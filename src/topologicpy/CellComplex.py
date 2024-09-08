@@ -493,12 +493,7 @@ class CellComplex():
             return code
 
         def getApertures(topology):
-            apertures = []
-            apTopologies = []
-            apertures = Topology.Apertures(topology)
-            for aperture in apertures:
-                apTopologies.append(Aperture.Topology(aperture))
-            return apTopologies
+            return Topology.Apertures(topology)
 
         if not Topology.IsInstance(cellComplex, "CellComplex"):
             print("CellComplex.Decompose - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")

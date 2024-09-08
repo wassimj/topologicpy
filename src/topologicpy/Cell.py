@@ -969,12 +969,7 @@ class Cell():
             return code
 
         def getApertures(topology):
-            apTopologies = []
-            apertures = Topology.Apertures(topology)
-            if isinstance(apertures, list):
-                for aperture in apertures:
-                    apTopologies.append(Aperture.Topology(aperture))
-            return apTopologies
+            return Topology.Apertures(topology)
 
         if not Topology.IsInstance(cell, "Cell"):
             print("Cell.Decompose - Error: The input cell parameter is not a valid topologic cell. Returning None.")

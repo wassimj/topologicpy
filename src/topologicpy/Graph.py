@@ -2382,6 +2382,7 @@ class Graph:
                    toOutposts: bool = False,
                    idKey: str = "TOPOLOGIC_ID",
                    outpostsKey: str = "outposts",
+                   nodeTypeKey: str = "node_type",
                    useInternalVertex: bool =True,
                    storeBREP: bool =False,
                    mantissa: int = 6,
@@ -2413,6 +2414,16 @@ class Graph:
             The key to use to find outpost by ID. It is case insensitive. The default is "TOPOLOGIC_ID".
         outpostsKey : str , optional
             The key to use to find the list of outposts. It is case insensitive. The default is "outposts".
+        nodeTypeKey : str , optional
+            The key under which to store the node type. Node types are:
+            0 : main topology
+            1 : shared topology
+            2 : shared aperture
+            3 : exterior topology
+            4 : exterior aperture
+            5 : content
+            6 : outpost
+            The default is "node_type".
         useInternalVertex : bool , optional
             If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. The default is False.
         storeBREP : bool , optional
@@ -2592,8 +2603,7 @@ class Graph:
                             if len(sharedt) > 0:
                                 apertureExists = False
                                 for x in sharedt:
-                                    apList = []
-                                    _ = x.Apertures(apList)
+                                    apList = Topology.Apertures(x)
                                     if len(apList) > 0:
                                         apTopList = []
                                         for ap in apList:
@@ -2635,13 +2645,23 @@ class Graph:
                         vop = Topology.CenterOfMass(outpost)
                         vcc = Topology.CenterOfMass(topology)
                     d1 = Topology.Dictionary(vcc)
+                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 0) # main topology
                     if storeBREP:
                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
                         d3 = mergeDictionaries2([d1, d2])
                         _ = vcc.SetDictionary(d3)
                     else:
                         _ = vcc.SetDictionary(d1)
+                    d1 = Topology.Dictionary(vop)
+                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 6) # outpost
+                    if storeBREP:
+                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(outpost), Topology.Type(outpost), Topology.TypeAsString(outpost)])
+                        d3 = mergeDictionaries2([d1, d2])
+                        _ = vop.SetDictionary(d3)
+                    else:
+                        _ = vop.SetDictionary(d1)
                     vertices.append(vcc)
+                    vertices.append(vop)
                     tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
@@ -2655,14 +2675,6 @@ class Graph:
                         vCell = Topology.InternalVertex(aCell, tolerance=tolerance)
                     else:
                         vCell = aCell.CenterOfMass()
-                    d1 = aCell.GetDictionary()
-                    if storeBREP:
-                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(aCell), Topology.Type(aCell), Topology.TypeAsString(aCell)])
-                        d3 = mergeDictionaries2([d1, d2])
-                        _ = vCell.SetDictionary(d3)
-                    else:
-                        _ = vCell.SetDictionary(d1)
-                    vertices.append(vCell)
                     faces = []
                     _ = aCell.Faces(None, faces)
                     sharedTopologies = []
@@ -2676,14 +2688,12 @@ class Graph:
                         _ = aFace.Cells(topology, cells1)
                         if len(cells1) > 1:
                             sharedTopologies.append(aFace)
-                            apertures = []
-                            _ = aFace.Apertures(apertures)
+                            apertures = Topology.Apertures(aFace)
                             for anAperture in apertures:
                                 sharedApertures.append(anAperture)
                         else:
                             exteriorTopologies.append(aFace)
-                            apertures = []
-                            _ = aFace.Apertures(apertures)
+                            apertures = Topology.Apertures(aFace)
                             for anAperture in apertures:
                                 exteriorApertures.append(anAperture)
 
@@ -2694,6 +2704,7 @@ class Graph:
                             else:
                                 vst = sharedTopology.CenterOfMass()
                             d1 = sharedTopology.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 1) # shared topology
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedTopology), Topology.Type(sharedTopology), Topology.TypeAsString(sharedTopology)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2716,6 +2727,7 @@ class Graph:
                                     else:
                                         vst2 = content.CenterOfMass()
                                     d1 = content.GetDictionary()
+                                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                                     vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa), Vertex.Y(vst2, mantissa=mantissa), Vertex.Z(vst2, mantissa=mantissa))
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2729,13 +2741,13 @@ class Graph:
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if viaSharedApertures:
-                        for sharedAperture in sharedApertures:
-                            sharedAp = sharedAperture.Topology()
+                        for sharedAp in sharedApertures:
                             if useInternalVertex == True:
                                 vsa = Topology.InternalVertex(sharedAp, tolerance)
                             else:
                                 vsa = sharedAp.CenterOfMass()
                             d1 = sharedAp.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 2) # shared aperture
                             vsa = Vertex.ByCoordinates(Vertex.X(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Y(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Z(vsa, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
@@ -2756,6 +2768,7 @@ class Graph:
                                 vet = exteriorTopology.CenterOfMass()
                             _ = vet.SetDictionary(exteriorTopology.GetDictionary())
                             d1 = exteriorTopology.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 3) # exterior topology
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2778,6 +2791,7 @@ class Graph:
                                     else:
                                         vst2 = content.CenterOfMass()
                                     d1 = content.GetDictionary()
+                                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                                     vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -2791,13 +2805,13 @@ class Graph:
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
-                        for exteriorAperture in exteriorApertures:
-                            exTop = exteriorAperture.Topology()
+                        for exTop in exteriorApertures:
                             if useInternalVertex == True:
                                 vea = Topology.InternalVertex(exTop, tolerance)
                             else:
                                 vea = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 4) # exterior aperture
                             vea = Vertex.ByCoordinates(Vertex.X(vea, mantissa=mantissa)+(tolerance*100), Vertex.Y(vea, mantissa=mantissa)+(tolerance*100), Vertex.Z(vea, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
@@ -2822,6 +2836,7 @@ class Graph:
                                 vcn = content.CenterOfMass()
                             vcn = Vertex.ByCoordinates(Vertex.X(vcn, mantissa=mantissa)+(tolerance*100), Vertex.Y(vcn, mantissa=mantissa)+(tolerance*100), Vertex.Z(vcn, mantissa=mantissa)+(tolerance*100))
                             d1 = content.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2840,6 +2855,7 @@ class Graph:
                 else:
                     vCell = aCell.CenterOfMass()
                 d1 = aCell.GetDictionary()
+                d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 0) # main topology
                 if storeBREP:
                     d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(aCell), Topology.Type(aCell), Topology.TypeAsString(aCell)])
                     d3 = mergeDictionaries2([d1, d2])
@@ -2858,6 +2874,7 @@ class Graph:
             else:
                 vCell = topology.CenterOfMass()
             d1 = topology.GetDictionary()
+            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 0) # main topology
             if storeBREP:
                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
                 d3 = mergeDictionaries2([d1, d2])
@@ -2889,6 +2906,15 @@ class Graph:
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
+                    d1 = outpost.GetDictionary()
+                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 6) # outpost
+                    if storeBREP:
+                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(outpost), Topology.Type(outpost), Topology.TypeAsString(outpost)])
+                        d3 = mergeDictionaries2([d1, d2])
+                        _ = vop.SetDictionary(d3)
+                    else:
+                        _ = vop.SetDictionary(d1)
+                    vertices.append(vop)
             if any([toExteriorTopologies, toExteriorApertures, toContents]):
                 faces = Topology.Faces(topology)
                 exteriorTopologies = []
@@ -2905,6 +2931,8 @@ class Graph:
                             else:
                                 vst = exteriorTopology.CenterOfMass()
                             d1 = exteriorTopology.GetDictionary()
+                            d1 = topology.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 3) # exterior topology
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2928,6 +2956,7 @@ class Graph:
                                         vst2 = content.CenterOfMass()
                                     vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
+                                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                         d3 = mergeDictionaries2([d1, d2])
@@ -2940,13 +2969,13 @@ class Graph:
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
-                        for exteriorAperture in exteriorApertures:
-                            exTop = exteriorAperture.Topology()
+                        for exTop in exteriorApertures:
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(exTop, tolerance)
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 4) # exterior aperture
                             vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
@@ -2971,6 +3000,7 @@ class Graph:
                                 vst = content.CenterOfMass()
                             vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             d1 = content.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -2985,9 +3015,7 @@ class Graph:
             return [vertices, edges]
 
         def processShell(item):
-            from topologicpy.Face import Face
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            graph = None
             edges = []
             vertices = []
             facemat = []
@@ -3044,15 +3072,11 @@ class Graph:
                             if len(sharedt) > 0:
                                 apertureExists = False
                                 for x in sharedt:
-                                    apList = []
-                                    _ = x.Apertures(apList)
+                                    apList = Topology.Apertures(x)
                                     if len(apList) > 0:
                                         apertureExists = True
                                         break
                                 if apertureExists:
-                                    apTopList = []
-                                    for ap in apList:
-                                        apTopList.append(ap.Topology())
                                     if useInternalVertex == True:
                                         v1 = Topology.InternalVertex(topFaces[i], tolerance=tolerance)
                                         v2 = Topology.InternalVertex(topFaces[j], tolerance=tolerance)
@@ -3060,7 +3084,7 @@ class Graph:
                                         v1 = topFaces[i].CenterOfMass()
                                         v2 = topFaces[j].CenterOfMass()
                                     e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
-                                    mDict = mergeDictionaries(apTopList)
+                                    mDict = mergeDictionaries(apList)
                                     if mDict:
                                         e.SetDictionary(mDict)
                                     edges.append(e)
@@ -3074,7 +3098,6 @@ class Graph:
                     else:
                         vFace = aFace.CenterOfMass()
                     _ = vFace.SetDictionary(aFace.GetDictionary())
-                    vertices.append(vFace)
                     fEdges = []
                     _ = aFace.Edges(None, fEdges)
                     sharedTopologies = []
@@ -3086,14 +3109,12 @@ class Graph:
                         _ = anEdge.Faces(topology, faces)
                         if len(faces) > 1:
                             sharedTopologies.append(anEdge)
-                            apertures = []
-                            _ = anEdge.Apertures(apertures)
+                            apertures = Topology.Apertures(anEdge)
                             for anAperture in apertures:
                                 sharedApertures.append(anAperture)
                         else:
                             exteriorTopologies.append(anEdge)
-                            apertures = []
-                            _ = anEdge.Apertures(apertures)
+                            apertures = Topology.Apertures(anEdge)
                             for anAperture in apertures:
                                 exteriorApertures.append(anAperture)
                     if viaSharedTopologies:
@@ -3103,6 +3124,7 @@ class Graph:
                             else:
                                 vst = sharedTopology.CenterOfMass()
                             d1 = sharedTopology.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 1) # shared topology
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedTopology), Topology.Type(sharedTopology), Topology.TypeAsString(sharedTopology)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3126,6 +3148,7 @@ class Graph:
                                         vst2 = content.CenterOfMass()
                                     vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
+                                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                         d3 = mergeDictionaries2([d1, d2])
@@ -3138,13 +3161,13 @@ class Graph:
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if viaSharedApertures:
-                        for sharedAperture in sharedApertures:
-                            sharedAp = Aperture.Topology(sharedAperture)
+                        for sharedAp in sharedApertures:
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(sharedAp, tolerance)
                             else:
                                 vst = sharedAp.CenterOfMass()
                             d1 = sharedAp.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 2) # shared aperture
                             vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
@@ -3164,6 +3187,7 @@ class Graph:
                             else:
                                 vst = exteriorTopology.CenterOfMass()
                             d1 = exteriorTopology.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 3) # exterior topology
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3187,6 +3211,7 @@ class Graph:
                                         vst2 = content.CenterOfMass()
                                     vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
+                                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) #  content
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                         d3 = mergeDictionaries2([d1, d2])
@@ -3199,13 +3224,13 @@ class Graph:
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
-                        for exteriorAperture in exteriorApertures:
-                            exTop = exteriorAperture.Topology()
+                        for exTop in exteriorApertures:
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(exTop, tolerance)
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 4) # exterior aperture
                             vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
@@ -3230,6 +3255,7 @@ class Graph:
                                 vst = content.CenterOfMass()
                             vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             d1 = content.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3248,6 +3274,7 @@ class Graph:
                 else:
                     vFace = aFace.CenterOfMass()
                 d1 = aFace.GetDictionary()
+                d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 0) # main topology
                 if storeBREP:
                     d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(aFace), Topology.Type(aFace), Topology.TypeAsString(aFace)])
                     d3 = mergeDictionaries2([d1, d2])
@@ -3278,12 +3305,22 @@ class Graph:
                         vop = Topology.CenterOfMass(outpost)
                         vcc = Topology.CenterOfMass(topology)
                     d1 = Topology.Dictionary(vcc)
+                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 0) # main topology
                     if storeBREP:
                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
                         d3 = mergeDictionaries2([d1, d2])
                         _ = vcc.SetDictionary(d3)
                     else:
                         _ = vcc.SetDictionary(d1)
+                    vertices.append(vcc)
+                    d1 = Topology.Dictionary(vop)
+                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 6) # outpost
+                    if storeBREP:
+                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
+                        d3 = mergeDictionaries2([d1, d2])
+                        _ = vop.SetDictionary(d3)
+                    else:
+                        _ = vop.SetDictionary(d1)
                     vertices.append(vcc)
                     tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
@@ -3292,9 +3329,7 @@ class Graph:
             return [vertices, edges]
 
         def processFace(item):
-            from topologicpy.Face import Face
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            graph = None
             vertices = []
             edges = []
 
@@ -3303,6 +3338,7 @@ class Graph:
             else:
                 vFace = topology.CenterOfMass()
             d1 = topology.GetDictionary()
+            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 0) # main topology
             if storeBREP:
                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
                 d3 = mergeDictionaries2([d1, d2])
@@ -3342,8 +3378,7 @@ class Graph:
 
                 for anEdge in fEdges:
                     exteriorTopologies.append(anEdge)
-                    apertures = []
-                    _ = anEdge.Apertures(apertures)
+                    apertures = Topology.Apertures(anEdge)
                     for anAperture in apertures:
                         exteriorApertures.append(anAperture)
                     if toExteriorTopologies:
@@ -3353,6 +3388,7 @@ class Graph:
                             else:
                                 vst = exteriorTopology.CenterOfMass()
                             d1 = exteriorTopology.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 3) # exterior topology
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3376,6 +3412,7 @@ class Graph:
                                         vst2 = content.CenterOfMass()
                                     vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
+                                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                         d3 = mergeDictionaries2([d1, d2])
@@ -3388,13 +3425,13 @@ class Graph:
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
-                        for exteriorAperture in exteriorApertures:
-                            exTop = exteriorAperture.Topology()
+                        for exTop in exteriorApertures:
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(exTop, tolerance)
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 4) # exterior aperture
                             vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
@@ -3419,6 +3456,7 @@ class Graph:
                                 vst = content.CenterOfMass()
                             vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             d1 = content.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3434,7 +3472,6 @@ class Graph:
 
         def processWire(item):
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            graph = None
             edges = []
             vertices = []
             edgemat = []
@@ -3493,8 +3530,7 @@ class Graph:
                             if len(sharedt) > 0:
                                 apertureExists = False
                                 for x in sharedt:
-                                    apList = []
-                                    _ = x.Apertures(apList)
+                                    apList = Topology.Apertures(x)
                                     if len(apList) > 0:
                                         apertureExists = True
                                         break
@@ -3508,10 +3544,7 @@ class Graph:
                                     except:
                                         v2 = topEdges[j].CenterOfMass()
                                     e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
-                                    apTopologies = []
-                                    for ap in apList:
-                                        apTopologies.append(ap.Topology())
-                                    mDict = mergeDictionaries(apTopologies)
+                                    mDict = mergeDictionaries(apList)
                                     if mDict:
                                         e.SetDictionary(mDict)
                                     edges.append(e)
@@ -3524,14 +3557,15 @@ class Graph:
                         vEdge = Edge.VertexByParameter(anEdge, 0.5)
                     except:
                         vEdge = anEdge.CenterOfMass()
-                    d1 = anEdge.GetDictionary()
-                    if storeBREP:
-                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(anEdge), Topology.Type(anEdge), Topology.TypeAsString(anEdge)])
-                        d3 = mergeDictionaries2([d1, d2])
-                        _ = vEdge.SetDictionary(d3)
-                    else:
-                        _ = vEdge.SetDictionary(d1)
-                    vertices.append(vEdge)
+                    # d1 = anEdge.GetDictionary()
+                    # d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 0) # main topology
+                    # if storeBREP:
+                    #     d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(anEdge), Topology.Type(anEdge), Topology.TypeAsString(anEdge)])
+                    #     d3 = mergeDictionaries2([d1, d2])
+                    #     _ = vEdge.SetDictionary(d3)
+                    # else:
+                    #     _ = vEdge.SetDictionary(d1)
+                    # vertices.append(vEdge)
                     eVertices = []
                     _ = anEdge.Vertices(None, eVertices)
                     sharedTopologies = []
@@ -3545,20 +3579,19 @@ class Graph:
                         _ = aVertex.Edges(topology, tempEdges)
                         if len(tempEdges) > 1:
                             sharedTopologies.append(aVertex)
-                            apertures = []
-                            _ = aVertex.Apertures(apertures)
+                            apertures = Topology.Apertures(aVertex)
                             for anAperture in apertures:
                                 sharedApertures.append(anAperture)
                         else:
                             exteriorTopologies.append(aVertex)
-                            apertures = []
-                            _ = aVertex.Apertures(apertures)
+                            apertures = Topology.Apertures(aVertex)
                             for anAperture in apertures:
                                 exteriorApertures.append(anAperture)
                     if viaSharedTopologies:
                         for sharedTopology in sharedTopologies:
                             vst = sharedTopology.CenterOfMass()
                             d1 = sharedTopology.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 1) # shared topology
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedTopology), Topology.Type(sharedTopology), Topology.TypeAsString(sharedTopology)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3582,6 +3615,7 @@ class Graph:
                                         vst2 = content.CenterOfMass()
                                     vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
+                                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                         d3 = mergeDictionaries2([d1, d2])
@@ -3594,13 +3628,13 @@ class Graph:
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if viaSharedApertures:
-                        for sharedAperture in sharedApertures:
-                            sharedAp = sharedAperture.Topology()
+                        for sharedAp in sharedApertures:
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(sharedAp, tolerance)
                             else:
                                 vst = sharedAp.CenterOfMass()
                             d1 = sharedAp.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 2) # shared aperture
                             vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
@@ -3633,6 +3667,7 @@ class Graph:
                                         vst2 = content.CenterOfMass()
                                     vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
+                                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                         d3 = mergeDictionaries2([d1, d2])
@@ -3645,13 +3680,13 @@ class Graph:
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
-                        for exteriorAperture in exteriorApertures:
-                            exTop = exteriorAperture.Topology()
+                        for exTop in exteriorApertures:
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(exTop, tolerance)
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 4) # exterior aperture
                             vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
@@ -3676,6 +3711,7 @@ class Graph:
                                 vst = content.CenterOfMass()
                             vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             d1 = content.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3693,6 +3729,7 @@ class Graph:
                 except:
                     vEdge = anEdge.CenterOfMass()
                 d1 = anEdge.GetDictionary()
+                d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 0) # main topologuy
                 if storeBREP:
                     d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(anEdge), Topology.Type(anEdge), Topology.TypeAsString(anEdge)])
                     d3 = mergeDictionaries2([d1, d2])
@@ -3724,6 +3761,7 @@ class Graph:
                         vop = Topology.CenterOfMass(outpost)
                         vcc = Topology.CenterOfMass(topology)
                     d1 = Topology.Dictionary(vcc)
+                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 0) # main topology
                     if storeBREP:
                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
                         d3 = mergeDictionaries2([d1, d2])
@@ -3731,6 +3769,15 @@ class Graph:
                     else:
                         _ = vcc.SetDictionary(d1)
                     vertices.append(vcc)
+                    d1 = Topology.Dictionary(vop)
+                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 6) # outpost
+                    if storeBREP:
+                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
+                        d3 = mergeDictionaries2([d1, d2])
+                        _ = vop.SetDictionary(d3)
+                    else:
+                        _ = vop.SetDictionary(d1)
+                    vertices.append(vop)
                     tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship"],["To Outposts"])
                     _ = tempe.SetDictionary(tempd)
@@ -3740,7 +3787,6 @@ class Graph:
 
         def processEdge(item):
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            graph = None
             vertices = []
             edges = []
 
@@ -3753,6 +3799,7 @@ class Graph:
                 vEdge = topology.CenterOfMass()
 
             d1 = vEdge.GetDictionary()
+            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 0) # main topology
             if storeBREP:
                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
                 d3 = mergeDictionaries2([d1, d2])
@@ -3794,8 +3841,7 @@ class Graph:
                 exteriorApertures = []
                 for aVertex in eVertices:
                     exteriorTopologies.append(aVertex)
-                    apertures = []
-                    _ = aVertex.Apertures(apertures)
+                    apertures = Topology.Apertures(aVertex)
                     for anAperture in apertures:
                         exteriorApertures.append(anAperture)
                     if toExteriorTopologies:
@@ -3805,6 +3851,7 @@ class Graph:
                             else:
                                 vst = exteriorTopology.CenterOfMass()
                             d1 = exteriorTopology.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 3) # exterior topology
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
                                 d3 = mergeDictionaries2([d1, d2])
@@ -3828,6 +3875,7 @@ class Graph:
                                         vst2 = content.CenterOfMass()
                                     vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
                                     d1 = content.GetDictionary()
+                                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                                     if storeBREP:
                                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                                         d3 = mergeDictionaries2([d1, d2])
@@ -3840,13 +3888,13 @@ class Graph:
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
-                        for exteriorAperture in exteriorApertures:
-                            exTop = exteriorAperture.Topology()
+                        for exTop in exteriorApertures:
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(exTop, tolerance)
                             else:
                                 vst = exTop.CenterOfMass()
                             d1 = exTop.GetDictionary()
+                            d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 4) # exterior aperture
                             vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                             if storeBREP:
                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
@@ -3879,6 +3927,7 @@ class Graph:
                     else:
                         vst = content.CenterOfMass()
                     d1 = content.GetDictionary()
+                    d1 = Dictionary.SetValueAtKey(d1, nodeTypeKey, 5) # content
                     vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                     if storeBREP:
                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
@@ -3923,7 +3972,6 @@ class Graph:
         if not Topology.IsInstance(topology, "Topology"):
             print("Graph.ByTopology - Error: The input topology is not a valid topology. Returning None.")
             return None
-        graph = None
         item = [topology, None, None, None, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, None, useInternalVertex, storeBREP, tolerance]
         vertices = []
         edges = []

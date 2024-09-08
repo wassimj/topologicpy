@@ -363,10 +363,9 @@ class Honeybee:
                         hbRoomFacePoints.append(Point3D(Vertex.X(tpVertex, mantissa=mantissa), Vertex.Y(tpVertex, mantissa=mantissa), Vertex.Z(tpVertex, mantissa=mantissa)))
                     hbRoomFace = HBFace(tpCellName+'_Face_'+str(tpFaceNumber+1), Face3D(hbRoomFacePoints))
                     tpFaceApertures = []
-                    _ = tpCellFace.Apertures(tpFaceApertures)
+                    tpFaceApertures = Topology.Apertures(tpCellFace)
                     if tpFaceApertures:
-                        for tpFaceApertureNumber, tpFaceAperture in enumerate(tpFaceApertures):
-                            apertureTopology = Aperture.Topology(tpFaceAperture)
+                        for tpFaceApertureNumber, apertureTopology in enumerate(tpFaceApertures):
                             tpFaceApertureDictionary = Topology.Dictionary(apertureTopology)
                             if tpFaceApertureDictionary:
                                 apertureKeyName = getKeyName(tpFaceApertureDictionary, apertureTypeKey)
