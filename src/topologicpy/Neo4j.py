@@ -20,340 +20,134 @@ import os
 import warnings
 
 try:
-    import py2neo
-    from py2neo import NodeMatcher,RelationshipMatcher
-    from py2neo.data import spatial as sp
+    import neo4j
+    from neo4j import GraphDatabase
 except:
-    print("Neo4j - Installing required py2neo library.")
+    print("Neo4j - Installing required neo4j library.")
     try:
-        os.system("pip install py2neo")
+        os.system("pip install neo4j")
     except:
-        os.system("pip install py2neo --user")
+        os.system("pip install neo4j --user")
     try:
-        import py2neo
-        from py2neo import NodeMatcher,RelationshipMatcher
-        from py2neo.data import spatial as sp
+        import neo4j
+        from neo4j import GraphDatabase
     except:
-        warnings.warn("Neo4j - Error: Could not import py2neo")
+        warnings.warn("Neo4j - Error: Could not import neo4j")
 
-class Neo4j:
-
+class Neo4j:    
     @staticmethod
-    def NodeToVertex(node):
-        """
-        Converts the input neo4j node to a topologic vertex.
-
-        Parameters
-        ----------
-        node : Neo4j.Node
-            The input neo4j node.
-
-        Returns
-        -------
-        topologic_core.Vertex
-            The output topologic vertex.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        
-        if ('x' in node.keys()) and ('y' in node.keys()) and ('z' in node.keys()) or ('X' in node.keys()) and ('Y' in node.keys()) and ('Z' in node.keys()):
-            x = node['x']
-            y = node['y']
-            z = node['z']
-            vertex = Vertex.ByCoordinates(x, y, z)
-        else:
-            x = random.uniform(0, 1000)
-            y = random.uniform(0, 1000)
-            z = random.uniform(0, 1000)
-            vertex = Vertex.ByCoordinates(x, y, z)
-        keys = list(node.keys())
-        values = list(node.values())
-        d = Dictionary.ByKeysValues(keys, values)
-        vertex = Topology.SetDictionary(vertex, d)
-        return vertex
-        
-
-    @staticmethod
-    def NodesByCypher(neo4jGraph, cypher):
-        dataList = neo4jGraph.run(cypher).data()
-        nodes = []
-        for data in dataList:
-            path = data['p']
-            nodes += list(path.nodes)
-        return nodes
-
-    @staticmethod
-    def NodesBySubGraph(subGraph):
-        data = subGraph.data()
-        nodes = []
-        for data in subGraph:
-            path = data['p']
-            nodes += list(path.nodes)
-        return nodes
-
-    @staticmethod
-    def SubGraphByCypher(neo4jGraph, cypher):
-        return neo4jGraph.run(cypher).to_subgraph()
-
-    @staticmethod
-    def SubGraphExportToGraph(subGraph, tolerance=0.0001):
+    def ExportToGraph(neo4jGraph, cypher=None, xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5, tolerance=0.0001, silent=False):
         """
         Exports the input neo4j graph to a topologic graph.
 
         Parameters
         ----------
-        subGraph : Neo4j.SubGraph
-            The input neo4j subgraph.
-        tolerance : float , optional
+        neo4jGraph : neo4j._sync.driver.BoltDriver
+            The input neo4j bolt driver.
+        cypher : str, optional
+            If set to a non-empty string, a Cypher query will be run on the neo4j graph database to return a sub-graph. Default is None.
+        xMin : float, optional
+            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
+        yMin : float, optional
+            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
+        zMin : float, optional
+            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
+        xMax : float, optional
+            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
+        yMax : float, optional
+            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
+        zMax : float, optional
+            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+        silent : bool, optional
+            If set to True, no warnings or error messages are displayed. The default is False.
+        tolerance : float, optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
         topologic_core.Graph
-            The output topologic graph.
-
+            The output Topologic graph.
         """
+        import random
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
         from topologicpy.Graph import Graph
+        from topologicpy.Dictionary import Dictionary
 
-        def randomVertex(vertices, minDistance):
-            flag = True
-            while flag:
-                x = random.uniform(0, 1000)
-                y = random.uniform(0, 1000)
-                z = random.uniform(0, 1000)
-                v = Vertex.ByCoordinates(x, y, z)
-                test = False
-                if len(vertices) < 1:
-                    return v
-                for vertex in vertices:
-                    d = Vertex.Distance(v, vertex)
-                    if d < minDistance:
-                        test = True
-                        break
-                if test == False:
-                    return v
-                else:
-                    continue
-        
-        nodes = subGraph.nodes
-        relationships = list(subGraph.relationships)
         vertices = []
         edges = []
-        for node in nodes:
-            #Check if they have X, Y, Z coordinates
-            if ('x' in node.keys()) and ('y' in node.keys()) and ('z' in node.keys()) or ('X' in node.keys()) and ('Y' in node.keys()) and ('Z' in node.keys()):
-                x = node['x']
-                y = node['y']
-                z = node['z']
-                vertex = Vertex.ByCoordinates(x, y, z)
-            else:
-                vertex = randomVertex(vertices, 1)
-            keys = list(node.keys())
-            keys.append("identity")
-            values = [node.identity]
-            for key in keys:
-                values.append(node[key])
-            d = Dictionary.ByKeysValues(keys, values)
-            vertex = Topology.SetDictionary(vertex, d)
-            vertices.append(vertex)
-        for relationship in relationships:
-            keys = list(relationship.keys())
-            keys.append("identity")
-            values = [relationship.identity]
-            for key in keys:
-                values.append(node[key])
-            sv = vertices[nodes.index(relationship.start_node)]
-            ev = vertices[nodes.index(relationship.end_node)]
-            edge = Edge.ByVertices([sv, ev], tolerance=tolerance)
-            if relationship.start_node['name']:
-                sv_name = relationship.start_node['name']
-            else:
-                sv_name = 'None'
-            if relationship.end_node['name']:
-                ev_name = relationship.end_node['name']
-            else:
-                ev_name = 'None'
-            d = Dictionary.ByKeysValues(["relationship_type", "from", "to"], [relationship.__class__.__name__, sv_name, ev_name])
-            if d:
-                _ = Topology.SetDictionary(edge, d)
-            edges.append(edge)
-        return Graph.ByVerticesEdges(vertices,edges)
-    
-    @staticmethod
-    def ExportToGraph(neo4jGraph, tolerance=0.0001):
-        """
-        Exports the input neo4j graph to a topologic graph.
-
-        Parameters
-        ----------
-        neo4jGraph : Neo4j.Graph
-            The input neo4j graph.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        topologic_core.Graph
-            The output topologic graph.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Graph import Graph
-
-        def randomVertex(vertices, minDistance):
-            flag = True
-            while flag:
-                x = random.uniform(0, 1000)
-                y = random.uniform(0, 1000)
-                z = random.uniform(0, 1000)
-                v = Vertex.ByCoordinates(x, y, z)
-                test = False
-                if len(vertices) < 1:
-                    return v
-                for vertex in vertices:
-                    d = Vertex.Distance(v, vertex)
-                    if d < minDistance:
-                        test = True
-                        break
-                if test == False:
-                    return v
-                else:
-                    continue
+        all_vertices = []
         
-        node_labels =  neo4jGraph.schema.node_labels
-        relationship_types = neo4jGraph.schema.relationship_types
-        node_matcher = NodeMatcher(neo4jGraph)
-        relationship_matcher = RelationshipMatcher(neo4jGraph)
-        vertices = []
-        edges = []
-        nodes = []
-        for node_label in node_labels:
-            nodes = nodes + (list(node_matcher.match(node_label)))
-        for node in nodes:
-            #Check if they have X, Y, Z coordinates
-            if ('x' in node.keys()) and ('y' in node.keys()) and ('z' in node.keys()) or ('X' in node.keys()) and ('Y' in node.keys()) and ('Z' in node.keys()):
-                x = node['x']
-                y = node['y']
-                z = node['z']
-                vertex = Vertex.ByCoordinates(x, y, z)
+        with neo4jGraph.session() as session:
+            nodes_result = session.run("MATCH (n) RETURN n")
+            # Process nodes
+            nodes = [record.get('n') for record in nodes_result]
+            for node in nodes:
+                if node:
+                    properties = dict(node.items())
+                    x = properties.get('x', random.uniform(xMin, xMax))
+                    y = properties.get('y', random.uniform(yMin, yMax))
+                    z = properties.get('z', random.uniform(zMin, zMax))
+                    vertex = Vertex.ByCoordinates(x, y, z)  # Create Topologic vertex
+                    d = Dictionary.ByPythonDictionary(properties)
+                    vertex = Topology.SetDictionary(vertex, d)
+                    all_vertices.append(vertex)
+            
+            if cypher:
+                # Run the provided Cypher query
+                nodes_result = session.run(cypher)
             else:
-                vertex = randomVertex(vertices, 1)
-            keys = list(node.keys())
-            values = []
-            for key in keys:
-                values.append(node[key])
-            d = Dictionary.ByKeysValues(keys, values)
-            vertex = Topology.SetDictionary(vertex, d)
-            vertices.append(vertex)
-        for node in nodes:
-            for relationship_type in relationship_types:
-                relationships = list(relationship_matcher.match([node], r_type=relationship_type))
-                for relationship in relationships:
-                    sv = vertices[nodes.index(relationship.start_node)]
-                    ev = vertices[nodes.index(relationship.end_node)]
-                    edge = Edge.ByVertices([sv, ev], tolerance=tolerance)
-                    if relationship.start_node['name']:
-                        sv_name = relationship.start_node['name']
+                # Fetch all nodes and relationships
+                nodes_result = session.run("MATCH (n) RETURN n")
+                relationships_result = session.run("MATCH (a)-[r]->(b) RETURN a, r, b")
+            
+            # Process nodes
+            nodes = [record.get('n') for record in nodes_result]
+            for node in nodes:
+                if node:
+                    properties = dict(node.items())
+                    x = properties.get('x', random.uniform(xMin, xMax))
+                    y = properties.get('y', random.uniform(yMin, yMax))
+                    z = properties.get('z', random.uniform(zMin, zMax))
+                    vertex = Vertex.ByCoordinates(x, y, z)  # Create Topologic vertex
+                    d = Dictionary.ByPythonDictionary(properties)
+                    vertex = Topology.SetDictionary(vertex, d)
+                    vertices.append(vertex)
+
+            # If a Cypher query was provided, process edges
+            if cypher:
+                relationships_result = session.run(cypher)
+            
+            # Process relationships
+            for record in relationships_result:
+                start_node = record.get('a')
+                end_node = record.get('b')
+                relationship = record.get('r')
+
+                if start_node and end_node:
+                    # Find corresponding vertices
+                    #start_vertex = next((v for v in vertices if v.id == start_node.id), None)
+                    #end_vertex = next((v for v in vertices if v.id == end_node.id), None)
+                    start_filter = Topology.Filter(all_vertices, searchType="equal to", key="id", value=start_node['id'])['filtered']
+                    if len(start_filter) > 0:
+                        start_vertex = start_filter[0]
                     else:
-                        sv_name = 'None'
-                    if relationship.end_node['name']:
-                        ev_name = relationship.end_node['name']
+                        start_vertex = NotImplemented
+                    end_filter = Topology.Filter(all_vertices, searchType="equal to", key="id", value=end_node['id'])['filtered']
+                    if len(end_filter) > 0:
+                        end_vertex = end_filter[0]
                     else:
-                        ev_name = 'None'
-                    d = Dictionary.ByKeysValues(["relationship_type", "from", "to"], [relationship_type, sv_name, ev_name])
-                    if d:
-                        _ = Topology.SetDictionary(edge, d)
-                    edges.append(edge)
-        return Graph.ByVerticesEdges(vertices,edges)
-    
-    @staticmethod
-    def AddGraph(neo4jGraph, graph, labelKey=None, relationshipKey=None, mantissa: int = 6, tolerance: float = 0.0001):
-        """
-        Adds the input topologic graph to the input neo4j graph
+                        end_vertex = None
 
-        Parameters
-        ----------
-        neo4jGraph : Neo4j.Graph
-            The input neo4j graph.
-        graph : topologic_core.Graph
-            The input topologic graph.
-        labelKey : str , optional
-            The label key in the dictionary under which to look for the label value.
-        relationshipKey: str , optional
-            The relationship key in the dictionary under which to look for the relationship value.
-        mantissa : int, optional
-            The desired length of the mantissa. The default is 6.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+                    if not start_vertex == None and not end_vertex == None:
+                        edge = Edge.ByVertices(start_vertex, end_vertex)
+                        relationship_props = dict(relationship.items())
+                        d = Dictionary.ByPythonDictionary(relationship_props)
+                        edge = Topology.SetDictionary(edge, d)
+                        edges.append(edge)
+        return Graph.ByVerticesEdges(vertices, edges)
 
-        Returns
-        -------
-        Neo4j.Graph
-            The input neo4j graph with the input topologic graph added to it.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
-        from topologicpy.Graph import Graph
-        from topologicpy.Dictionary import Dictionary
-
-        gmt = time.gmtime()
-        timestamp =  str(gmt.tm_zone)+"_"+str(gmt.tm_year)+"_"+str(gmt.tm_mon)+"_"+str(gmt.tm_wday)+"_"+str(gmt.tm_hour)+"_"+str(gmt.tm_min)+"_"+str(gmt.tm_sec)
-        vertices = Graph.Vertices(graph)
-        edges = Graph.Edges(graph)
-        tx = neo4jGraph.begin()
-        nodes = []
-        for  i in range(len(vertices)):
-            vDict = Topology.Dictionary(vertices[i])
-            keys = Dictionary.Keyus(vDict)
-            values = Dictionary.Values(vDict)
-            keys.append("x")
-            keys.append("y")
-            keys.append("z")
-            keys.append("timestamp")
-            keys.append("location")
-            values.append(Vertex.X(vertices[i], mantissa=mantissa))
-            values.append(Vertex.Y(vertices[i], mantissa=mantissa))
-            values.append(Vertex.Z(vertices[i], mantissa=mantissa))
-            values.append(timestamp)
-            values.append(sp.CartesianPoint([Vertex.X(vertices[i], mantissa=mantissa), Vertex.Y(vertices[i], mantissa=mantissa), Vertex.Z(vertices[i], mantissa=mantissa)]))
-            zip_iterator = zip(keys, values)
-            pydict = dict(zip_iterator)
-            if labelKey == 'None':
-                nodeName = "TopologicGraphVertex"
-            else:
-                nodeName = str(values[keys.index(labelKey)])
-            n = py2neo.Node(nodeName, **pydict)
-            neo4jGraph.cypher.execute("CREATE INDEX FOR (n:%s) on (n.name)" %
-                    n.nodelabel)
-            tx.create(n)
-            nodes.append(n)
-        for i in range(len(edges)):
-            e = edges[i]
-            sv = e.StartVertex()
-            ev = e.EndVertex()
-            sn = nodes[Vertex.Index(sv, vertices, tolerance=tolerance)]
-            en = nodes[Vertex.Index(ev, vertices, tolerance=tolerance)]
-            relationshipType = Dictionary.ValueAtKey(e, relationshipKey)
-            if not (relationshipType):
-                relationshipType = "Connected To"
-            snen = py2neo.Relationship(sn, relationshipType, en)
-            tx.create(snen)
-            snen = py2neo.Relationship(en, relationshipType, sn)
-            tx.create(snen)
-        neo4jGraph.commit(tx)
-        return neo4jGraph
-
-    
     @staticmethod
     def ByParameters(url, username, password):
         """
@@ -370,67 +164,217 @@ class Neo4j:
 
         Returns
         -------
-        Neo4j.Graph
-            The returned Neo4j graph.
+        neo4j._sync.driver.BoltDriver
+            The returned neo4j bolt driver.
 
         """
-        return py2neo.Graph(url, auth=(username, password))
+        return GraphDatabase.driver(url, auth=(username, password))
     
     @staticmethod
-    def DeleteAll(neo4jGraph):
+    def Reset(neo4jGraph):
         """
-        Deletes all entities in the input Neo4j graph.
+        Resets the database completely.
 
         Parameters
         ----------
-        neo4jGraph : Neo4j Graph
-            The input Neo4jGraph.
+        neo4jGraph : neo4j._sync.driver.BoltDriver
+            The input neo4j bolt driver.
 
         Returns
         -------
-        Neo4J Graph
-            The returned empty graph.
+        neo4j._sync.driver.BoltDriver
+            The returned neo4j bolt driver.
 
         """
-        neo4jGraph.delete_all()
+        with neo4jGraph.session() as session:
+            # Delete all nodes and relationships
+            session.run("MATCH (n) DETACH DELETE n")
+
+            # Drop all indexes
+            indexes = session.run("SHOW INDEXES").data()
+            for index in indexes:
+                index_name = index['name']
+                session.run(f"DROP INDEX {index_name}")
+
+            # Drop all constraints
+            constraints = session.run("SHOW CONSTRAINTS").data()
+            for constraint in constraints:
+                constraint_name = constraint['name']
+                session.run(f"DROP CONSTRAINT {constraint_name}")
+        
         return neo4jGraph
-    
-    @staticmethod
-    def NodeLabels(neo4jGraph):
+
+    def ByGraph(neo4jGraph,
+                graph,
+                vertexLabelKey: str = "label",
+                defaultVertexLabel: str = "NODE",
+                vertexCategoryKey: str = "category",
+                defaultVertexCategory: str = None,
+                edgeLabelKey: str = "label",
+                defaultEdgeLabel: str = "CONNECTED_TO",
+                edgeCategoryKey: str = "category",
+                defaultEdgeCategory: str = None,
+                bidirectional: bool = True,
+                mantissa: int = 6,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
-        Returns all the node labels used in the input neo4j graph.
-        
+        Converts a Topologic graph to a Neo4j graph.
+
         Parameters
         ----------
-        neo4jGraph : Newo4j.Graph
-            The input neo4j graph.
-
-        Returns
-        -------
-        list
-            The list of node labels used in the input neo4j graph.
-
-        """
-        return list(neo4jGraph.schema.node_labels)
-    
-    @staticmethod
-    def RelationshipTypes(neo4jGraph):
-        """
-        Returns all the relationship types used in the input neo4j graph.
+        neo4jGraph : neo4j._sync.driver.BoltDriver
+            The input neo4j bolt driver.
+        vertexLabelKey : str , optional
+            The returned vertices are labelled according to the dictionary values stored under this key.
+            If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically using the format defaultVertexLabel_XXX. The default is "label".
+        defaultVertexLabel : str , optional
+            The default vertex label to use if no value is found under the vertexLabelKey. The default is "NODE".
+        vertexCategoryKey : str , optional
+            The returned vertices are categorized according to the dictionary values stored under this key. The dfefault is "category".
+        defaultVertexCategory : str , optional
+            The default vertex category to use if no value is found under the vertexCategoryKey. The default is None.
+        edgeLabelKey : str , optional
+            The returned edges are labelled according to the dictionary values stored under this key.
+            If the edgeLabelKey does not exist, it will be created and the edges are labelled numerically using the format defaultEdgeLabel_XXX. The default is "label".
+        defaultEdgeLabel : str , optional
+            The default edge label to use if no value is found under the edgeLabelKey. The default is "CONNECTED_TO".
+        edgeCategoryKey : str , optional
+            The returned edges are categorized according to the dictionary values stored under this key. The dfefault is "category".
+        defaultEdgeCategory : str , optional
+            The default edge category to use if no value is found under the edgeCategoryKey. The default is None.
+        bidirectional : bool , optional
+            If set to True, the output Neo4j graph is forced to be bidirectional. The defaul is True.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         
-        Parameters
-        ----------
-        neo4jGraph : Newo4j.Graph
-            The input neo4j graph.
-
         Returns
         -------
-        list
-            The list of relationship types used in the input neo4j graph.
-
+        neo4j._sync.driver.BoltDriver
+            The returned neo4j bolt driver.
+        
         """
-        return list(neo4jGraph.schema.relationship_types)
-    
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Graph import Graph
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
+        def sanitize_for_neo4j(identifier):
+            """
+            Replaces illegal characters in Neo4j labels or relationship types with an underscore ('_').
+            Ensures the identifier starts with an alphabetic character and contains only valid characters.
+            """
+            import re
+            # Replace any non-alphanumeric characters with underscores
+            sanitized = re.sub(r'[^a-zA-Z0-9]', '_', identifier)
+
+            # Ensure the identifier starts with an alphabetic character
+            if not sanitized[0].isalpha():
+                sanitized = f"_{sanitized}"
+
+            return sanitized
+        
+        if not isinstance(neo4jGraph, neo4j._sync.driver.BoltDriver):
+            if not silent:
+                print("Neo4j.ByGraph - Error: The input neo4jGraph is not a valid neo4j graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Neo4j.ByGraph - Error: The input graph is not a valid topologic graph. Returning None.")
+            return None
+        # if not isinstance(vertexLabelKey, str):
+        #     if not silent:
+        #         print("Neo4j.ByGraph - Error: The input vertexLabelKey is not a valid string. Returning None.")
+        #     return None
+        # if not isinstance(defaultVertexLabel, str):
+        #     if not silent:
+        #         print("Neo4j.ByGraph - Error: The input defaultVertexLabel is not a valid string. Returning None.")
+        #     return None
+        # if not isinstance(vertexCategoryKey, str):
+        #     if not silent:
+        #         print("Neo4j.ByGraph - Error: The input vertexCategoryKey is not a valid string. Returning None.")
+        #     return None
+        # if not isinstance(edgeLabelKey, str):
+        #     if not silent:
+        #         print("Neo4j.ByGraph - Error: The input vertexLabelKey is not a valid string. Returning None.")
+        #     return None
+        # if not isinstance(defaultEdgeLabel, str):
+        #     if not silent:
+        #         print("Neo4j.ByGraph - Error: The input defaultEdgeLabel is not a valid string. Returning None.")
+        #     return None
+        vertices = Graph.Vertices(graph)
+        edges = Graph.Edges(graph)
+
+        with neo4jGraph.session() as session:
+            # Create vertices (nodes in Neo4j)
+            n = max(len(str(len(vertices))), 3)
+            for i, vertex in enumerate(vertices):
+                vertex_props = Dictionary.PythonDictionary(Topology.Dictionary(vertex))  # Get the dictionary of vertex attributes
+                
+                # Extract label and category, remove them from the properties
+                value = defaultVertexLabel+"_"+str(i+1).zfill(n)
+                vertex_label = vertex_props.pop(vertexLabelKey, value)
+                vertex_label = sanitize_for_neo4j(vertex_label)
+                vertex_category = vertex_props.pop(vertexCategoryKey, defaultVertexCategory)  # Extract category if it exists
+                # Add coordinates to the vertex properties
+                vertex_props.update({
+                    'x': Vertex.X(vertex, mantissa=mantissa),  # X coordinate
+                    'y': Vertex.Y(vertex, mantissa=mantissa),  # Y coordinate
+                    'z': Vertex.Z(vertex, mantissa=mantissa),  # Z coordinate
+                })
+                
+                if not vertex_category == None:
+                    vertex_props['category'] = vertex_category  # Add category to properties if it exists
+                if not vertex_label == None:
+                    vertex_props[vertexLabelKey] = vertex_label  # Add label to properties if it exists
+                
+                vertex_props['id'] = i
+
+                # Create a node with dynamic label and properties
+                session.run(f"""
+                    CREATE (n:{vertex_label} $properties)
+                """, properties=vertex_props)
+
+            # Create edges (relationships in Neo4j)
+            for edge in edges:
+                edge_props = Dictionary.PythonDictionary(Topology.Dictionary(edge))  # Get the dictionary of edge attributes
+                
+                # Extract label and category for the relationship
+                edge_label = edge_props.pop(edgeLabelKey, defaultEdgeLabel)  # Default label is 'CONNECTED_TO'
+                edge_label = sanitize_for_neo4j(edge_label)
+                edge_category = edge_props.pop(edgeCategoryKey, defaultEdgeCategory)  # Extract category if it exists
+
+                start_vertex = Edge.StartVertex(edge)  # Get the starting vertex of the edge
+                start_id = Vertex.Index(vertex=start_vertex, vertices=vertices, strict=False, tolerance=tolerance)
+                end_vertex = Edge.EndVertex(edge)      # Get the ending vertex of the edge
+                end_id = Vertex.Index(vertex=end_vertex, vertices=vertices, strict=False, tolerance=tolerance)
+
+                # Add category to edge properties if it exists
+                if not edge_category == None:
+                    edge_props['category'] = edge_category
+                if not edge_label == None:
+                    edge_props[edgeLabelKey] = edge_label  # Add label to properties if it exists
+                # Create the relationship with dynamic label and properties
+                session.run(f"""
+                    MATCH (a {{id: $start_id}}), (b {{id: $end_id}})
+                    CREATE (a)-[r:{edge_label} $properties]->(b)
+                """, start_id=start_id, end_id=end_id, properties=edge_props)
+
+                # If the graph is bi-directional, add the reverse edge as well
+                if bidirectional:
+                    session.run(f"""
+                        MATCH (a {{id: $end_id}}), (b {{id: $start_id}})
+                        CREATE (a)-[r:{edge_label} $properties]->(b)
+                    """, start_id=start_id, end_id=end_id, properties=edge_props)
+        
+        return neo4jGraph
+
+
     @staticmethod
     def SetGraph(neo4jGraph,
                  graph,

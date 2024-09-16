@@ -625,7 +625,7 @@ class Dictionary():
             return None
     
     @staticmethod
-    def ValueAtKey(dictionary, key):
+    def ValueAtKey(dictionary, key, silent=False):
         """
         Returns the value of the input key in the input dictionary.
 
@@ -635,6 +635,8 @@ class Dictionary():
             The input dictionary.
         key : string
             The input key.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -645,10 +647,12 @@ class Dictionary():
         from topologicpy.Topology import Topology
         
         if not Topology.IsInstance(dictionary, "Dictionary") and not isinstance(dictionary, dict):
-            print("Dictionary.ValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+            if not silent == True:
+                print("Dictionary.ValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
             return None
         if not isinstance(key, str):
-            print("Dictionary.ValueAtKey - Error: The input key parameter is not a valid str. Returning None.")
+            if not silent == True:
+                print("Dictionary.ValueAtKey - Error: The input key parameter is not a valid str. Returning None.")
             return None
         if isinstance(dictionary, dict):
             attr = dictionary[key]

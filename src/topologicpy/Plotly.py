@@ -374,32 +374,33 @@ class Plotly:
                     d = Topology.Dictionary(v)
                     if d:
                         if vertexLabelKey:
-                            v_label = str(Dictionary.ValueAtKey(d, key=vertexLabelKey)) or ""
+                            v_label = str(Dictionary.ValueAtKey(d, key=vertexLabelKey))
+                            if v_label == None:
+                                v_label = ""
                         if vertexGroupKey:
-                            v_group = Dictionary.ValueAtKey(d, key=vertexGroupKey) or ""
+                            v_group = Dictionary.ValueAtKey(d, key=vertexGroupKey)
+                            if v_group == None:
+                                v_group = ""
                     try:
                         v_groupList.append(vertexGroups.index(v_group))
                     except:
                         v_groupList.append(len(vertexGroups))
-                    # if not v_label == "" and not v_group == "":
-                    #     if v_group == 0:
-                    #         v_label = v_label+" (0)"
-                    #     else:
-                    #         v_label = v_label+" ("+str(v_group)+")"
                     v_labels.append(v_label)
             else:
                 for v in vertices:
                     Xn=[Vertex.X(v, mantissa=mantissa) for v in vertices] # x-coordinates of nodes
                     Yn=[Vertex.Y(v, mantissa=mantissa) for v in vertices] # y-coordinates of nodes
                     Zn=[Vertex.Z(v, mantissa=mantissa) for v in vertices] # x-coordinates of nodes
-            if len(list(set(v_groupList))) < 2:
-                v_groupList = vertexColor
             if len(v_labels) < 1:
                 v_labels = ""
             if showVertexLabels == True:
                 mode = "markers+text"
             else:
                 mode = "markers"
+            # Normalize categories to a range between 0 and 1 for the color scale
+            min_category = 0
+            max_category = max(len(vertexGroups), 1)
+            normalized_categories = [(cat - min_category) / (max_category - min_category) for cat in v_groupList]
             v_trace=go.Scatter3d(x=Xn,
                 y=Yn,
                 z=Zn,
@@ -410,8 +411,10 @@ class Plotly:
                 showlegend=showVertexLegend,
                 marker=dict(symbol='circle',
                                 size=vertexSize,
-                                color=v_groupList,
+                                color=normalized_categories,
                                 colorscale=Plotly.ColorScale(colorScale),
+                                cmin = 0,
+                                cmax=1,
                                 line=dict(color=edgeColor, width=0.5)
                                 ),
                 text=v_labels,
