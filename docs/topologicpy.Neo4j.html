@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Neo4j module &mdash; topologicpy 0.7.55 documentation</title>
+  <title>topologicpy.Neo4j module &mdash; topologicpy 0.7.56 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.55
+                0.7.56
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -149,76 +149,63 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.AddGraph" title="topologicpy.Neo4j.Neo4j.AddGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddGraph</span></code></a>(neo4jGraph, graph[, labelKey, ...])</p></td>
-<td><p>Adds the input topologic graph to the input neo4j graph</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.ByGraph" title="topologicpy.Neo4j.Neo4j.ByGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByGraph</span></code></a>(graph[, vertexLabelKey, ...])</p></td>
+<td><p>Converts a Topologic graph to a Neo4j graph.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.ByParameters" title="topologicpy.Neo4j.Neo4j.ByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByParameters</span></code></a>(url, username, password)</p></td>
 <td><p>Returns a Neo4j graph by the input parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.DeleteAll" title="topologicpy.Neo4j.Neo4j.DeleteAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeleteAll</span></code></a>(neo4jGraph)</p></td>
-<td><p>Deletes all entities in the input Neo4j graph.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.ExportToGraph" title="topologicpy.Neo4j.Neo4j.ExportToGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGraph</span></code></a>(neo4jGraph[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.ExportToGraph" title="topologicpy.Neo4j.Neo4j.ExportToGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGraph</span></code></a>(neo4jGraph[, cypher, xMin, ...])</p></td>
 <td><p>Exports the input neo4j graph to a topologic graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.NodeLabels" title="topologicpy.Neo4j.Neo4j.NodeLabels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NodeLabels</span></code></a>(neo4jGraph)</p></td>
-<td><p>Returns all the node labels used in the input neo4j graph.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.Reset" title="topologicpy.Neo4j.Neo4j.Reset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reset</span></code></a>(neo4jGraph)</p></td>
+<td><p>Resets the database completely.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.NodeToVertex" title="topologicpy.Neo4j.Neo4j.NodeToVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NodeToVertex</span></code></a>(node)</p></td>
-<td><p>Converts the input neo4j node to a topologic vertex.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.RelationshipTypes" title="topologicpy.Neo4j.Neo4j.RelationshipTypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipTypes</span></code></a>(neo4jGraph)</p></td>
-<td><p>Returns all the relationship types used in the input neo4j graph.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.SetGraph" title="topologicpy.Neo4j.Neo4j.SetGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetGraph</span></code></a>(neo4jGraph, graph[, labelKey, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.SetGraph" title="topologicpy.Neo4j.Neo4j.SetGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetGraph</span></code></a>(neo4jGraph, graph[, labelKey, ...])</p></td>
 <td><p>Sets the input topologic graph to the input neo4jGraph.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Neo4j.Neo4j.SubGraphExportToGraph" title="topologicpy.Neo4j.Neo4j.SubGraphExportToGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubGraphExportToGraph</span></code></a>(subGraph[, tolerance])</p></td>
-<td><p>Exports the input neo4j graph to a topologic graph.</p></td>
-</tr>
-</tbody>
-</table>
-<table class="docutils align-default">
-<colgroup>
-<col style="width: 67%" />
-<col style="width: 33%" />
-</colgroup>
-<tbody>
-<tr class="row-odd"><td><p><strong>NodesByCypher</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-even"><td><p><strong>NodesBySubGraph</strong></p></td>
-<td></td>
-</tr>
-<tr class="row-odd"><td><p><strong>SubGraphByCypher</strong></p></td>
-<td></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.AddGraph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neo4jGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relationshipKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.AddGraph" title="Permalink to this definition"></a></dt>
-<dd><p>Adds the input topologic graph to the input neo4j graph</p>
+<dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.ByGraph">
+<span class="sig-name descname"><span class="pre">ByGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultVertexLabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'NODE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexCategoryKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultVertexCategory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultEdgeLabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CONNECTED_TO'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeCategoryKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultEdgeCategory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.ByGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Converts a Topologic graph to a Neo4j graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>neo4jGraph</strong><span class="classifier">Neo4j.Graph</span></dt><dd><p>The input neo4j graph.</p>
+<dt><strong>neo4jGraph</strong><span class="classifier">neo4j._sync.driver.BoltDriver</span></dt><dd><p>The input neo4j bolt driver.</p>
 </dd>
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input topologic graph.</p>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The returned vertices are labelled according to the dictionary values stored under this key.
+If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically using the format defaultVertexLabel_XXX. The default is “label”.</p>
 </dd>
-<dt><strong>labelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The label key in the dictionary under which to look for the label value.</p>
+<dt><strong>defaultVertexLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The default vertex label to use if no value is found under the vertexLabelKey. The default is “NODE”.</p>
 </dd>
-<dt><strong>relationshipKey: str , optional</strong></dt><dd><p>The relationship key in the dictionary under which to look for the relationship value.</p>
+<dt><strong>vertexCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The returned vertices are categorized according to the dictionary values stored under this key. The dfefault is “category”.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>defaultVertexCategory</strong><span class="classifier">str , optional</span></dt><dd><p>The default vertex category to use if no value is found under the vertexCategoryKey. The default is None.</p>
+</dd>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The returned edges are labelled according to the dictionary values stored under this key.
+If the edgeLabelKey does not exist, it will be created and the edges are labelled numerically using the format defaultEdgeLabel_XXX. The default is “label”.</p>
+</dd>
+<dt><strong>defaultEdgeLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The default edge label to use if no value is found under the edgeLabelKey. The default is “CONNECTED_TO”.</p>
+</dd>
+<dt><strong>edgeCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The returned edges are categorized according to the dictionary values stored under this key. The dfefault is “category”.</p>
+</dd>
+<dt><strong>defaultEdgeCategory</strong><span class="classifier">str , optional</span></dt><dd><p>The default edge category to use if no value is found under the edgeCategoryKey. The default is None.</p>
+</dd>
+<dt><strong>bidirectional</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the output Neo4j graph is forced to be bidirectional. The defaul is True.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>Neo4j.Graph</dt><dd><p>The input neo4j graph with the input topologic graph added to it.</p>
+<dt>neo4j._sync.driver.BoltDriver</dt><dd><p>The returned neo4j bolt driver.</p>
 </dd>
 </dl>
 </dd>
@@ -242,27 +229,7 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>Neo4j.Graph</dt><dd><p>The returned Neo4j graph.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.DeleteAll">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DeleteAll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neo4jGraph</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.DeleteAll" title="Permalink to this definition"></a></dt>
-<dd><p>Deletes all entities in the input Neo4j graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>neo4jGraph</strong><span class="classifier">Neo4j Graph</span></dt><dd><p>The input Neo4jGraph.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Neo4J Graph</dt><dd><p>The returned empty graph.</p>
+<dt>neo4j._sync.driver.BoltDriver</dt><dd><p>The returned neo4j bolt driver.</p>
 </dd>
 </dl>
 </dd>
@@ -271,20 +238,36 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.ExportToGraph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neo4jGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.ExportToGraph" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neo4jGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cypher</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xMin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yMin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zMin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xMax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yMax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zMax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.ExportToGraph" title="Permalink to this definition"></a></dt>
 <dd><p>Exports the input neo4j graph to a topologic graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>neo4jGraph</strong><span class="classifier">Neo4j.Graph</span></dt><dd><p>The input neo4j graph.</p>
+<dt><strong>neo4jGraph</strong><span class="classifier">neo4j._sync.driver.BoltDriver</span></dt><dd><p>The input neo4j bolt driver.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>cypher</strong><span class="classifier">str, optional</span></dt><dd><p>If set to a non-empty string, a Cypher query will be run on the neo4j graph database to return a sub-graph. Default is None.</p>
+</dd>
+<dt><strong>xMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s X coordinate. The default is -0.5.</p>
+</dd>
+<dt><strong>yMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Y coordinate. The default is -0.5.</p>
+</dd>
+<dt><strong>zMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Z coordinate. The default is -0.5.</p>
+</dd>
+<dt><strong>xMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s X coordinate. The default is 0.5.</p>
+</dd>
+<dt><strong>yMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Y coordinate. The default is 0.5.</p>
+</dd>
+<dt><strong>zMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Z coordinate. The default is 0.5.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, no warnings or error messages are displayed. The default is False.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Graph</dt><dd><p>The output topologic graph.</p>
+<dt>topologic_core.Graph</dt><dd><p>The output Topologic graph.</p>
 </dd>
 </dl>
 </dd>
@@ -292,69 +275,19 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.NodeLabels">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NodeLabels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neo4jGraph</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.NodeLabels" title="Permalink to this definition"></a></dt>
-<dd><p>Returns all the node labels used in the input neo4j graph.</p>
+<dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.Reset">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neo4jGraph</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.Reset" title="Permalink to this definition"></a></dt>
+<dd><p>Resets the database completely.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>neo4jGraph</strong><span class="classifier">Newo4j.Graph</span></dt><dd><p>The input neo4j graph.</p>
+<dt><strong>neo4jGraph</strong><span class="classifier">neo4j._sync.driver.BoltDriver</span></dt><dd><p>The input neo4j bolt driver.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of node labels used in the input neo4j graph.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.NodeToVertex">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NodeToVertex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.NodeToVertex" title="Permalink to this definition"></a></dt>
-<dd><p>Converts the input neo4j node to a topologic vertex.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>node</strong><span class="classifier">Neo4j.Node</span></dt><dd><p>The input neo4j node.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The output topologic vertex.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.NodesByCypher">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NodesByCypher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neo4jGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cypher</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.NodesByCypher" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.NodesBySubGraph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NodesBySubGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subGraph</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.NodesBySubGraph" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.RelationshipTypes">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RelationshipTypes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neo4jGraph</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.RelationshipTypes" title="Permalink to this definition"></a></dt>
-<dd><p>Returns all the relationship types used in the input neo4j graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>neo4jGraph</strong><span class="classifier">Newo4j.Graph</span></dt><dd><p>The input neo4j graph.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of relationship types used in the input neo4j graph.</p>
+<dt>neo4j._sync.driver.BoltDriver</dt><dd><p>The returned neo4j bolt driver.</p>
 </dd>
 </dl>
 </dd>
@@ -389,33 +322,6 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt><strong>neo4jGraph</strong><span class="classifier">TYPE</span></dt><dd><p>The input neo4j graph with the input topologic graph added to it.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.SubGraphByCypher">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SubGraphByCypher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">neo4jGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cypher</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.SubGraphByCypher" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Neo4j.Neo4j.SubGraphExportToGraph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SubGraphExportToGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Neo4j.Neo4j.SubGraphExportToGraph" title="Permalink to this definition"></a></dt>
-<dd><p>Exports the input neo4j graph to a topologic graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>subGraph</strong><span class="classifier">Neo4j.SubGraph</span></dt><dd><p>The input neo4j subgraph.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Graph</dt><dd><p>The output topologic graph.</p>
 </dd>
 </dl>
 </dd>
