@@ -2607,7 +2607,7 @@ class Graph:
                                     if len(apList) > 0:
                                         apTopList = []
                                         for ap in apList:
-                                            apTopList.append(ap.Topology())
+                                            apTopList.append(ap)
                                         apertureExists = True
                                         break
                                 if apertureExists:
