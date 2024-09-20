@@ -1344,7 +1344,23 @@ class Topology():
         if not x_flag and not y_flag and not z_flag:
             print("Topology.BoundingBox - Error: the input axes parameter is not a recognized string. Returning None.")
             return None
+        if Topology.IsInstance(topology, "Vertex"):
+            minX = Vertex.X(topology)
+            minY = Vertex.Y(topology)
+            minZ = Vertex.Z(topology)
+            dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot", "minx", "miny", "minz", "maxx", "maxy", "maxz", "width", "length", "height"], [0, 0, 0, minX, minY, minZ, minX, minY, minZ, 0, 0, 0])
+            box = Vertex.ByCoordinates(minX, minY, minZ)
+            box = Topology.SetDictionary(box, dictionary)
+            return box
         vertices = Topology.SubTopologies(topology, subTopologyType="vertex")
+        if len(vertices) == 1: # A Cluster made of one vertex. Rare, but can happen!
+            minX = Vertex.X(vertices[0])
+            minY = Vertex.Y(vertices[0])
+            minZ = Vertex.Z(vertices[0])
+            dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot", "minx", "miny", "minz", "maxx", "maxy", "maxz", "width", "length", "height"], [0, 0, 0, minX, minY, minZ, minX, minY, minZ, 0, 0, 0])
+            box = Vertex.ByCoordinates(minX, minY, minZ)
+            box = Topology.SetDictionary(box, dictionary)
+            return box
         topology = Cluster.ByTopologies(vertices)
         boundingBox = bb(topology)
         minX = boundingBox[0]

@@ -9,6 +9,7 @@ Submodules
 
    topologicpy.ANN
    topologicpy.Aperture
+   topologicpy.BVH
    topologicpy.Cell
    topologicpy.CellComplex
    topologicpy.Cluster

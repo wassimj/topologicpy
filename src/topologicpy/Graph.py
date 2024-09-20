@@ -500,7 +500,7 @@ class Graph:
         return adjList
 
     @staticmethod
-    def AddEdge(graph, edge, transferVertexDictionaries=False, transferEdgeDictionaries=False, tolerance=0.0001):
+    def AddEdge(graph, edge, transferVertexDictionaries: bool = False, transferEdgeDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Adds the input edge to the input Graph.
 
@@ -516,6 +516,8 @@ class Graph:
             If set to True, the dictionaries of the edges are transferred to the graph.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -555,11 +557,13 @@ class Graph:
             return [graph_vertices, returnVertex]
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.AddEdge - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.AddEdge - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not Topology.IsInstance(edge, "Edge"):
-            print("Graph.AddEdge - Error: The input edge is not a valid edge. Returning None.")
-            return None
+            if not silent:
+                print("Graph.AddEdge - Error: The input edge is not a valid edge. Returning the input graph.")
+            return graph
         graph_vertices = Graph.Vertices(graph)
         graph_edges = Graph.Edges(graph, graph_vertices, tolerance)
         vertices = Edge.Vertices(edge)
@@ -579,7 +583,7 @@ class Graph:
         return new_graph
     
     @staticmethod
-    def AddVertex(graph, vertex, tolerance=0.0001):
+    def AddVertex(graph, vertex, tolerance: float = 0.0001, silent: bool = False):
         """
         Adds the input vertex to the input graph.
 
@@ -591,6 +595,8 @@ class Graph:
             The input vertex.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -601,16 +607,18 @@ class Graph:
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.AddVertex - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.AddVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not Topology.IsInstance(vertex, "Vertex"):
-            print("Graph.AddVertex - Error: The input vertex is not a valid vertex. Returning None.")
-            return None
+            if not silent:
+                print("Graph.AddVertex - Error: The input vertex is not a valid vertex. Returning the input graph.")
+            return graph
         _ = graph.AddVertices([vertex], tolerance)
         return graph
 
     @staticmethod
-    def AddVertices(graph, vertices, tolerance=0.0001):
+    def AddVertices(graph, vertices, tolerance: float = 0.0001, silent: bool = False):
         """
         Adds the input vertex to the input graph.
 
@@ -622,6 +630,8 @@ class Graph:
             The input list of vertices.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -632,20 +642,23 @@ class Graph:
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.AddVertices - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.AddVertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not isinstance(vertices, list):
-            print("Graph.AddVertices - Error: The input list of vertices is not a valid list. Returning None.")
+            if not silent:
+                print("Graph.AddVertices - Error: The input list of vertices is not a valid list. Returning None.")
             return None
         vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) < 1:
-            print("Graph.AddVertices - Error: Could not find any valid vertices in the input list of vertices. Returning None.")
+            if not silent:
+                print("Graph.AddVertices - Error: Could not find any valid vertices in the input list of vertices. Returning None.")
             return None
         _ = graph.AddVertices(vertices, tolerance)
         return graph
     
     @staticmethod
-    def AdjacentVertices(graph, vertex):
+    def AdjacentVertices(graph, vertex, silent: bool = False):
         """
         Returns the list of vertices connected to the input vertex.
 
@@ -655,6 +668,8 @@ class Graph:
             The input graph.
         vertex : topologic_core.Vertex
             the input vertex.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -665,17 +680,19 @@ class Graph:
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.AdjacentVertices - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.AdjacentVertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not Topology.IsInstance(vertex, "Vertex"):
-            print("Graph.AdjacentVertices - Error: The input vertex is not a valid vertex. Returning None.")
+            if not silent:
+                print("Graph.AdjacentVertices - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         vertices = []
         _ = graph.AdjacentVertices(vertex, vertices)
         return list(vertices)
     
     @staticmethod
-    def AllPaths(graph, vertexA, vertexB, timeLimit=10):
+    def AllPaths(graph, vertexA, vertexB, timeLimit=10, silent: bool = False):
         """
         Returns all the paths that connect the input vertices within the allowed time limit in seconds.
 
@@ -689,6 +706,8 @@ class Graph:
             The second input vertex.
         timeLimit : int , optional
             The time limit in second. The default is 10 seconds.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -699,20 +718,23 @@ class Graph:
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.AllPaths - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.AllPaths - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not Topology.IsInstance(vertexA, "Vertex"):
-            print("Graph.AllPaths - Error: The input vertexA is not a valid vertex. Returning None.")
+            if not silent:
+                print("Graph.AllPaths - Error: The input vertexA is not a valid vertex. Returning None.")
             return None
         if not Topology.IsInstance(vertexB, "Vertex"):
-            print("Graph.AllPaths - Error: The input vertexB is not a valid vertex. Returning None.")
+            if not silent:
+                print("Graph.AllPaths - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         paths = []
         _ = graph.AllPaths(vertexA, vertexB, True, timeLimit, paths)
         return paths
 
     @staticmethod
-    def AverageClusteringCoefficient(graph, mantissa: int = 6):
+    def AverageClusteringCoefficient(graph, mantissa: int = 6, silent: bool = False):
         """
         Returns the average clustering coefficient of the input graph. See https://en.wikipedia.org/wiki/Clustering_coefficient.
 
@@ -732,11 +754,13 @@ class Graph:
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
         vertices = Graph.Vertices(graph)
         if len(vertices) < 1:
-            print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is a NULL graph. Returning None.")
+            if not silent:
+                print("Graph.LocalClusteringCoefficient - Error: The input graph parameter is a NULL graph. Returning None.")
             return None
         if len(vertices) == 1:
             return 0.0
@@ -5988,7 +6012,6 @@ class Graph:
             flat_list = Helper.Flatten(edge_list)
             flat_list = [x for x in flat_list if not x == None]
             num_nodes = max(flat_list) + 1
-            print("Number of Nodes:", num_nodes)
 
             # Create an adjacency matrix.
             adjacency_matrix = np.zeros((num_nodes, num_nodes))

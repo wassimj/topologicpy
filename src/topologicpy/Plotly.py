@@ -397,10 +397,12 @@ class Plotly:
                 mode = "markers+text"
             else:
                 mode = "markers"
-            # Normalize categories to a range between 0 and 1 for the color scale
-            min_category = 0
-            max_category = max(len(vertexGroups), 1)
-            normalized_categories = [(cat - min_category) / (max_category - min_category) for cat in v_groupList]
+            normalized_categories = vertexColor # Start with the default vertexColor
+            if len(vertexGroups) > 0:
+                # Normalize categories to a range between 0 and 1 for the color scale
+                min_category = 0
+                max_category = max(len(vertexGroups), 1)
+                normalized_categories = [(cat - min_category) / (max_category - min_category) for cat in v_groupList]
             v_trace=go.Scatter3d(x=Xn,
                 y=Yn,
                 z=Zn,
