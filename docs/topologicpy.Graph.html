@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.7.57 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.7.58 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.57
+                0.7.58
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -50,6 +50,7 @@
 <li class="toctree-l3 current"><a class="reference internal" href="topologicpy.html#submodules">Submodules</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.ANN.html">topologicpy.ANN module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.BVH.html">topologicpy.BVH module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
@@ -152,10 +153,10 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AddEdge" title="topologicpy.Graph.Graph.AddEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddEdge</span></code></a>(graph, edge[, ...])</p></td>
 <td><p>Adds the input edge to the input Graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AddVertex" title="topologicpy.Graph.Graph.AddVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddVertex</span></code></a>(graph, vertex[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AddVertex" title="topologicpy.Graph.Graph.AddVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddVertex</span></code></a>(graph, vertex[, tolerance, silent])</p></td>
 <td><p>Adds the input vertex to the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AddVertices" title="topologicpy.Graph.Graph.AddVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddVertices</span></code></a>(graph, vertices[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AddVertices" title="topologicpy.Graph.Graph.AddVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddVertices</span></code></a>(graph, vertices[, tolerance, silent])</p></td>
 <td><p>Adds the input vertex to the input graph.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyDictionary" title="topologicpy.Graph.Graph.AdjacencyDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyDictionary</span></code></a>([vertexLabelKey, ...])</p></td>
@@ -167,13 +168,13 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyMatrix" title="topologicpy.Graph.Graph.AdjacencyMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyMatrix</span></code></a>(graph[, vertexKey, reverse, ...])</p></td>
 <td><p>Returns the adjacency matrix of the input Graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVertices" title="topologicpy.Graph.Graph.AdjacentVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVertices</span></code></a>(graph, vertex)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVertices" title="topologicpy.Graph.Graph.AdjacentVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVertices</span></code></a>(graph, vertex[, silent])</p></td>
 <td><p>Returns the list of vertices connected to the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AllPaths" title="topologicpy.Graph.Graph.AllPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AllPaths</span></code></a>(graph, vertexA, vertexB[, timeLimit])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AllPaths" title="topologicpy.Graph.Graph.AllPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AllPaths</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
 <td><p>Returns all the paths that connect the input vertices within the allowed time limit in seconds.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AverageClusteringCoefficient" title="topologicpy.Graph.Graph.AverageClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AverageClusteringCoefficient</span></code></a>(graph[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AverageClusteringCoefficient" title="topologicpy.Graph.Graph.AverageClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AverageClusteringCoefficient</span></code></a>(graph[, ...])</p></td>
 <td><p>Returns the average clustering coefficient of the input graph.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BOTGraph" title="topologicpy.Graph.Graph.BOTGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BOTGraph</span></code></a>(graph[, bidirectional, ...])</p></td>
@@ -422,7 +423,7 @@
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.AddEdge">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddEdge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferVertexDictionaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferEdgeDictionaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AddEdge" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddEdge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferVertexDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferEdgeDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AddEdge" title="Permalink to this definition"></a></dt>
 <dd><p>Adds the input edge to the input Graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -437,6 +438,8 @@
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -450,7 +453,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.AddVertex">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddVertex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AddVertex" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddVertex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AddVertex" title="Permalink to this definition"></a></dt>
 <dd><p>Adds the input vertex to the input graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -460,6 +463,8 @@
 <dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -474,7 +479,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.AddVertices">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AddVertices" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AddVertices" title="Permalink to this definition"></a></dt>
 <dd><p>Adds the input vertex to the input graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -484,6 +489,8 @@
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -591,7 +598,7 @@ If the vertexLabelKey does not exist, it will be created and the vertices are la
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.AdjacentVertices">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AdjacentVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AdjacentVertices" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AdjacentVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AdjacentVertices" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the list of vertices connected to the input vertex.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -599,6 +606,8 @@ If the vertexLabelKey does not exist, it will be created and the vertices are la
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
 </dd>
 <dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>the input vertex.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -613,7 +622,7 @@ If the vertexLabelKey does not exist, it will be created and the vertices are la
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.AllPaths">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AllPaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeLimit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AllPaths" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AllPaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeLimit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AllPaths" title="Permalink to this definition"></a></dt>
 <dd><p>Returns all the paths that connect the input vertices within the allowed time limit in seconds.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -625,6 +634,8 @@ If the vertexLabelKey does not exist, it will be created and the vertices are la
 <dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
 </dd>
 <dt><strong>timeLimit</strong><span class="classifier">int , optional</span></dt><dd><p>The time limit in second. The default is 10 seconds.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -639,7 +650,7 @@ If the vertexLabelKey does not exist, it will be created and the vertices are la
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.AverageClusteringCoefficient">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AverageClusteringCoefficient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AverageClusteringCoefficient" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AverageClusteringCoefficient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AverageClusteringCoefficient" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the average clustering coefficient of the input graph. See <a class="reference external" href="https://en.wikipedia.org/wiki/Clustering_coefficient">https://en.wikipedia.org/wiki/Clustering_coefficient</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; topologicpy 0.7.57 documentation</title>
+  <title>Index &mdash; topologicpy 0.7.58 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -30,7 +30,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.57
+                0.7.58
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -231,6 +231,14 @@
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.BREPString">BREPString() (topologicpy.Topology.Topology static method)</a>
 </li>
+      <li><a href="topologicpy.BVH.html#topologicpy.BVH.BVH">BVH (class in topologicpy.BVH)</a>
+</li>
+      <li><a href="topologicpy.BVH.html#topologicpy.BVH.BVH.AABB">BVH.AABB (class in topologicpy.BVH)</a>
+</li>
+      <li><a href="topologicpy.BVH.html#topologicpy.BVH.BVH.BVHNode">BVH.BVHNode (class in topologicpy.BVH)</a>
+</li>
+      <li><a href="topologicpy.BVH.html#topologicpy.BVH.BVH.MeshObject">BVH.MeshObject (class in topologicpy.BVH)</a>
+</li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByAdjacencyMatrix">ByAdjacencyMatrix() (topologicpy.Graph.Graph static method)</a>
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath">ByAdjacencyMatrixCSVPath() (topologicpy.Graph.Graph static method)</a>
@@ -323,14 +331,14 @@
         <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByIFCFile">(topologicpy.Topology.Topology static method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByIFCPath">ByIFCPath() (topologicpy.Graph.Graph static method)</a>
 
       <ul>
         <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByIFCPath">(topologicpy.Topology.Topology static method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByJSONFile">ByJSONFile() (topologicpy.Topology.Topology static method)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.ByJSONPath">ByJSONPath() (topologicpy.Topology.Topology static method)</a>
@@ -393,8 +401,12 @@
         <li><a href="topologicpy.Shell.html#topologicpy.Shell.Shell.ByThickenedWire">(topologicpy.Shell.Shell static method)</a>
 </li>
       </ul></li>
-      <li><a href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.ByTopologies">ByTopologies() (topologicpy.Cluster.Cluster static method)</a>
+      <li><a href="topologicpy.BVH.html#topologicpy.BVH.BVH.ByTopologies">ByTopologies() (topologicpy.BVH.BVH static method)</a>
+
+      <ul>
+        <li><a href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.ByTopologies">(topologicpy.Cluster.Cluster static method)</a>
 </li>
+      </ul></li>
       <li><a href="topologicpy.EnergyModel.html#topologicpy.EnergyModel.EnergyModel.ByTopology">ByTopology() (topologicpy.EnergyModel.EnergyModel static method)</a>
 
       <ul>
@@ -499,6 +511,8 @@
         <li><a href="topologicpy.Wire.html#topologicpy.Wire.Wire.Circle">(topologicpy.Wire.Wire static method)</a>
 </li>
       </ul></li>
+      <li><a href="topologicpy.BVH.html#topologicpy.BVH.BVH.Clashes">Clashes() (topologicpy.BVH.BVH method)</a>
+</li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.Cleanup">Cleanup() (topologicpy.Topology.Topology static method)</a>
 </li>
       <li><a href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.ClientByURL">ClientByURL() (topologicpy.Speckle.Speckle static method)</a>
@@ -560,6 +574,8 @@
       <li><a href="topologicpy.Honeybee.html#topologicpy.Honeybee.Honeybee.ConstructionSets">ConstructionSets() (topologicpy.Honeybee.Honeybee static method)</a>
 </li>
       <li><a href="topologicpy.Cell.html#topologicpy.Cell.Cell.ContainmentStatus">ContainmentStatus() (topologicpy.Cell.Cell static method)</a>
+</li>
+      <li><a href="topologicpy.BVH.html#topologicpy.BVH.BVH.AABB.contains">contains() (topologicpy.BVH.BVH.AABB method)</a>
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.ContainsEdge">ContainsEdge() (topologicpy.Graph.Graph static method)</a>
 </li>
@@ -939,9 +955,11 @@
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.GlobalClusteringCoefficient">GlobalClusteringCoefficient() (topologicpy.Graph.Graph static method)</a>
 </li>
+      <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph">Graph (class in topologicpy.Graph)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph">Graph (class in topologicpy.Graph)</a>
+      <li><a href="topologicpy.BVH.html#topologicpy.BVH.BVH.Graph">Graph() (topologicpy.BVH.BVH method)</a>
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.GraphQueueItem">GraphQueueItem (class in topologicpy.Graph)</a>
 </li>
@@ -1059,14 +1077,16 @@
 </li>
       <li><a href="topologicpy.Edge.html#topologicpy.Edge.Edge.Intersect2D">Intersect2D() (topologicpy.Edge.Edge static method)</a>
 </li>
+      <li><a href="topologicpy.BVH.html#topologicpy.BVH.BVH.AABB.intersects">intersects() (topologicpy.BVH.BVH.AABB method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Face.html#topologicpy.Face.Face.Invert">Invert() (topologicpy.Face.Face static method)</a>
 
       <ul>
         <li><a href="topologicpy.Wire.html#topologicpy.Wire.Wire.Invert">(topologicpy.Wire.Wire static method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Vector.html#topologicpy.Vector.Vector.IsAntiParallel">IsAntiParallel() (topologicpy.Vector.Vector static method)</a>
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.IsBipartite">IsBipartite() (topologicpy.Graph.Graph static method)</a>
@@ -1280,6 +1300,8 @@
         <li><a href="topologicpy.ANN.html#module-topologicpy.ANN">topologicpy.ANN</a>
 </li>
         <li><a href="topologicpy.Aperture.html#module-topologicpy.Aperture">topologicpy.Aperture</a>
+</li>
+        <li><a href="topologicpy.BVH.html#module-topologicpy.BVH">topologicpy.BVH</a>
 </li>
         <li><a href="topologicpy.Cell.html#module-topologicpy.Cell">topologicpy.Cell</a>
 </li>
@@ -1544,6 +1566,8 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="topologicpy.BVH.html#topologicpy.BVH.BVH.QueryByTopologies">QueryByTopologies() (topologicpy.BVH.BVH static method)</a>
+</li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.QueueItem">QueueItem (class in topologicpy.Topology)</a>
 </li>
   </ul></td>
@@ -1919,6 +1943,13 @@
 
       <ul>
         <li><a href="topologicpy.Aperture.html#module-topologicpy.Aperture">module</a>
+</li>
+      </ul></li>
+      <li>
+    topologicpy.BVH
+
+      <ul>
+        <li><a href="topologicpy.BVH.html#module-topologicpy.BVH">module</a>
 </li>
       </ul></li>
       <li>
