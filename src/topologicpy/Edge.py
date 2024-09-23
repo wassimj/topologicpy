@@ -1106,7 +1106,6 @@ class Edge():
         normal_edge = Edge.NormalEdge(edge, length=1.0, u=0.5, angle=angle)
         return Edge.Direction(normal_edge)
 
-
     @staticmethod
     def NormalEdge(edge, length: float = 1.0, u: float = 0.5, angle: float = 0.0):
         """
@@ -1142,20 +1141,20 @@ class Edge():
         def calculate_normal(start_vertex, end_vertex):
             start_vertex = np.array([float(x) for x in start_vertex])
             end_vertex = np.array([float(x) for x in end_vertex])
-            
+
             # Calculate the direction vector of the edge
             direction_vector = end_vertex - start_vertex
             
-            # Check if the direction vector is vertical (aligned with Z-axis)
-            if np.allclose(direction_vector[:2], 0):
-                # For a vertical edge, the normal will be in the X-Y plane
-                normal_vector = np.array([1.0, 0.0, 0.0])  # Pick any perpendicular vector in the X-Y plane
+            # Handle the horizontal edge case (no Z component)
+            if np.isclose(direction_vector[2], 0):
+                # The edge lies in the X-Y plane; compute a perpendicular in the X-Y plane
+                normal_vector = np.array([-direction_vector[1], direction_vector[0], 0.0])
             else:
-                # Calculate the normal vector by taking the cross product with the Z-axis to ensure a valid 3D normal
+                # Otherwise, calculate the normal by crossing with the Z-axis
                 z_axis = np.array([0, 0, 1])
                 normal_vector = np.cross(direction_vector, z_axis)
-                normal_vector /= norm(normal_vector)  # Normalize the normal vector
-
+            
+            normal_vector /= norm(normal_vector)  # Normalize the normal vector
             return normal_vector
 
         def calculate_normal_line(start_vertex, end_vertex):
@@ -1175,10 +1174,6 @@ class Edge():
             print("Edge.NormalEdge - Error: The input length parameter is not a positive number greater than zero. Returning None.")
             return None
 
-        # Get the direction vector of the edge
-        edge_direction = Edge.Direction(edge)
-        x, y, z = edge_direction
-
         # Get start and end vertex coordinates
         start_vertex = Vertex.Coordinates(Edge.StartVertex(edge))
         end_vertex = Vertex.Coordinates(Edge.EndVertex(edge))
@@ -1190,9 +1185,6 @@ class Edge():
         sv = Vertex.ByCoordinates(list(normal_line_start))
         ev = Vertex.ByCoordinates(list(normal_line_end))
         
-        # Translate the end vertex by the edge direction to make sure the length is 1
-        ev = Topology.TranslateByDirectionDistance(ev, direction=edge_direction, distance=1.0)
-
         # Create an edge from the start to the end of the normal vector
         normal_edge = Edge.ByVertices([sv, ev])
 
@@ -1200,6 +1192,8 @@ class Edge():
         normal_edge = Edge.SetLength(normal_edge, length, bothSides=False)
 
         # Rotate the normal edge around the input edge by the specified angle
+        edge_direction = Edge.Direction(edge)
+        x, y, z = edge_direction
         normal_edge = Topology.Rotate(normal_edge, origin=Edge.StartVertex(normal_edge), axis=[x, y, z], angle=angle)
 
         # Translate the normal edge along the edge direction according to the u parameter
