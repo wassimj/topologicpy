@@ -955,7 +955,6 @@ class Vector(list):
                 transformation_matrix = rotation_matrix
             
             return transformation_matrix
-
         tran_mat = transformation_matrix(vectorA, vectorB)
         
         return [list(tran_mat[0]), list(tran_mat[1]), list(tran_mat[2]), list(tran_mat[3])]

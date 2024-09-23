@@ -23,24 +23,26 @@ import itertools
 
 class Wire():
     @staticmethod
-    def Arc(startVertex, middleVertex, endVertex, sides: int = 16, close: bool = True, tolerance: float = 0.0001):
+    def Arc(startVertex, middleVertex, endVertex, sides: int = 16, close: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates an arc. The base chord will be parallel to the x-axis and the height will point in the positive y-axis direction. 
 
         Parameters
         ----------
         startVertex : topologic_core.Vertex
-            The location of the start vertex of the arc.
+            The start vertex of the arc.
         middleVertex : topologic_core.Vertex
-            The location of the middle vertex (apex) of the arc.
+            The middle vertex (apex) of the arc.
         endVertex : topologic_core.Vertex
-            The location of the end vertex of the arc.
+            The end vertex of the arc.
         sides : int , optional
             The number of sides of the arc. The default is 16.
         close : bool , optional
             If set to True, the arc will be closed by connecting the last vertex to the first vertex. Otherwise, it will be left open.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -49,67 +51,164 @@ class Wire():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+        import numpy as np
+
+        def circle_arc_points(p1, p2, p3, n):
+            # Convert points to numpy arrays
+            p1, p2, p3 = np.array(p1), np.array(p2), np.array(p3)
+
+            # Calculate vectors
+            v1 = p2 - p1
+            v2 = p3 - p1
+
+            # Find the normal to the plane containing the three points
+            normal = np.cross(v1, v2)
+            normal = normal / np.linalg.norm(normal)
+
+            # Calculate midpoints of p1-p2 and p1-p3
+            midpoint1 = (p1 + p2) / 2
+            midpoint2 = (p1 + p3) / 2
+
+            # Find the circumcenter using the perpendicular bisectors
+            def perpendicular_bisector(pA, pB, midpoint):
+                direction = np.cross(normal, pB - pA)
+                direction = direction / np.linalg.norm(direction)
+                return direction, midpoint
+
+            direction1, midpoint1 = perpendicular_bisector(p1, p2, midpoint1)
+            direction2, midpoint2 = perpendicular_bisector(p1, p3, midpoint2)
+
+            # Solve for circumcenter
+            A = np.array([direction1, -direction2]).T
+            b = midpoint2 - midpoint1
+            t1, t2 = np.linalg.lstsq(A, b, rcond=None)[0]
+            
+            circumcenter = midpoint1 + t1 * direction1
+
+            # Calculate radius
+            radius = np.linalg.norm(circumcenter - p1)
+
+            # Generate points along the arc
+            def interpolate_on_arc(p_start, p_end, center, radius, n_points):
+                v_start = p_start - center
+                v_end = p_end - center
+                
+                angle_between = np.arccos(np.dot(v_start, v_end) / (np.linalg.norm(v_start) * np.linalg.norm(v_end)))
+                axis = np.cross(v_start, v_end)
+                axis = axis / np.linalg.norm(axis)
+                
+                angles = np.linspace(0, angle_between, n_points)
+                arc_points = []
+                
+                for angle in angles:
+                    rotation_matrix = rotation_matrix_around_axis(axis, angle)
+                    point_on_arc = center + np.dot(rotation_matrix, v_start)
+                    arc_points.append(point_on_arc)
+                
+                return arc_points
+
+            # Helper function to rotate a point around an arbitrary axis
+            def rotation_matrix_around_axis(axis, theta):
+                cos_theta = np.cos(theta)
+                sin_theta = np.sin(theta)
+                x, y, z = axis
+                return np.array([
+                    [cos_theta + x*x*(1-cos_theta), x*y*(1-cos_theta) - z*sin_theta, x*z*(1-cos_theta) + y*sin_theta],
+                    [y*x*(1-cos_theta) + z*sin_theta, cos_theta + y*y*(1-cos_theta), y*z*(1-cos_theta) - x*sin_theta],
+                    [z*x*(1-cos_theta) - y*sin_theta, z*y*(1-cos_theta) + x*sin_theta, cos_theta + z*z*(1-cos_theta)]
+                ])
+
+            # Get points on the arc from p1 to p3 via p2
+            arc1 = interpolate_on_arc(p1, p2, circumcenter, radius, n//2)
+            arc2 = interpolate_on_arc(p2, p3, circumcenter, radius, n//2)
+
+            return np.vstack([arc1, arc2])
+        
+        if not Topology.IsInstance(startVertex, "Vertex"):
+            if not silent:
+                print("Wire.Arc - Error: The input startVertex is not a valid vertex. Returning None.")
+            return None
+        if not Topology.IsInstance(middleVertex, "Vertex"):
+            if not silent:
+                print("Wire.Arc - Error: The input middleVertex is not a valid vertex. Returning None.")
+            return None
+        if not Topology.IsInstance(endVertex, "Vertex"):
+            if not silent:
+                print("Wire.Arc - Error: The input endVertex is not a valid vertex. Returning None.")
+            return None
+        arc_points = circle_arc_points(np.array(Vertex.Coordinates(startVertex)), np.array(Vertex.Coordinates(middleVertex)), np.array(Vertex.Coordinates(endVertex)), sides)
+        vertices = []
+        for arc_point in arc_points:
+            vertices.append(Vertex.ByCoordinates(list(arc_point)))
+        arc = Wire.ByVertices(vertices, close=False)
+        if not Topology.IsInstance(arc, "Wire"):
+            if not silent:
+                print("Wire.Arc - Error: Could not create an arc. Returning None.")
+            return None
+        # Reinterpolate the arc with equal segments
+        vertices = []
+        for i in range(0,sides+1,1):
+            u = i/sides
+            v = Wire.VertexByParameter(arc, u)
+            vertices.append(v)
+        arc = Wire.ByVertices(vertices, close=close)
+        if not Topology.IsInstance(arc, "Wire"):
+            if not silent:
+                print("Wire.Arc - Error: Could not create an arc. Returning None.")
+            return None
+        return arc
+    
+    def ArcByEdge(edge, sagitta: float = 1, absolute: bool = True, sides: int = 16, close: bool = True, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates an arc. The base chord will be parallel to the x-axis and the height will point in the positive y-axis direction. 
+
+        Parameters
+        ----------
+        edge : topologic_core.Edge
+            The location of the start vertex of the arc.
+        sagitta : float , optional
+            The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. The default is 1.
+        absolute : bool , optional
+            If set to True, the sagitta length is treated as an absolute value. Otherwise, it is treated as a ratio based on the length of the edge.
+            For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. The default is True.
+        sides : int , optional
+            The number of sides of the arc. The default is 16.
+        close : bool , optional
+            If set to True, the arc will be closed by connecting the last vertex to the first vertex. Otherwise, it will be left open.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The created arc.
+
+        """
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
-        from topologicpy.Vector import Vector
-        import numpy as np
-        
+        from topologicpy.Topology import Topology
 
-        def calculate_circle_center_and_radius(sv, mv, ev):
-            """
-            Calculate the center and radius of the circle passing through three points.
-            
-            Parameters:
-            sv (tuple): The start vertex as (x, y, z).
-            mv (tuple): The middle vertex as (x, y, z).
-            ev (tuple): The end vertex as (x, y, z).
-            
-            Returns:
-            tuple: The center of the circle as (x, y, z) and the radius.
-            """
-            # Convert points to numpy arrays for easier manipulation
-            A = np.array(sv)
-            B = np.array(mv)
-            C = np.array(ev)
-            
-            # Calculate the lengths of the sides of the triangle
-            a = np.linalg.norm(B - C)
-            b = np.linalg.norm(C - A)
-            c = np.linalg.norm(A - B)
-            
-            # Calculate the circumcenter using the formula
-            D = 2 * (A[0] * (B[1] - C[1]) + B[0] * (C[1] - A[1]) + C[0] * (A[1] - B[1]))
-            Ux = ((A[0]**2 + A[1]**2) * (B[1] - C[1]) + (B[0]**2 + B[1]**2) * (C[1] - A[1]) + (C[0]**2 + C[1]**2) * (A[1] - B[1])) / D
-            Uy = ((A[0]**2 + A[1]**2) * (C[0] - B[0]) + (B[0]**2 + B[1]**2) * (A[0] - C[0]) + (C[0]**2 + C[1]**2) * (B[0] - A[0])) / D
-            center = np.array([Ux, Uy, A[2]])
-            
-            # Calculate the radius
-            radius = np.linalg.norm(center - A)
-            
-            return center, radius
-        
-        
-        e2 = Edge.ByVertices(middleVertex, endVertex)
-        
-        center, radius = calculate_circle_center_and_radius(Vertex.Coordinates(startVertex), Vertex.Coordinates(middleVertex), Vertex.Coordinates(endVertex))
-        center = Vertex.ByCoordinates(list(center))
-        
-        e1 = Edge.ByVertices(center, startVertex)
-        e2 = Edge.ByVertices(center, endVertex)
-        ang1 = Vector.CompassAngle(Vector.North(), Edge.Direction(e1))
-        ang2 = Vector.CompassAngle(Vector.North(), Edge.Direction(e2))
-        arc1 = Wire.Circle(origin=center, radius=radius, fromAngle=ang1, toAngle=ang2, sides=sides*4, close=False)
-        arc2 = Wire.Circle(origin=center, radius=radius, fromAngle=ang2, toAngle=ang1, sides=sides*4, close=False)
-        if Vertex.IsInternal(middleVertex, arc1):
-            arc = arc1
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Wire.ArcByEdge - Error: The input edge parameter is not a valid edge. Returning None.")
+            return None
+        if sagitta <= 0:
+            if not silent:
+                print("Wire.ArcByEdge - Error: The input sagitta parameter is not a valid positive number. Returning None.")
+            return None
+        sv = Edge.StartVertex(edge)
+        ev = Edge.EndVertex(edge)
+        if absolute == True:
+            length = sagitta
         else:
-            arc = arc2
-        final_vertices = []
-        for i in range(sides+1):
-            v = Wire.VertexByParameter(arc, float(i)/float(sides))
-            final_vertices.append(v)
-        arc = Wire.ByVertices(final_vertices, close=close)
-        return arc
+            length = Edge.Length(edge)*sagitta
+        norm = Edge.NormalEdge(edge, length=length)
+        cv = Edge.EndVertex(norm)
+        return Wire.Arc(sv, cv, ev, sides=sides, close=close)
     
     @staticmethod
     def BoundingRectangle(topology, optimize: int = 0, mantissa: int = 6, tolerance=0.0001):

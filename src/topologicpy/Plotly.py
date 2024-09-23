@@ -273,6 +273,9 @@ class Plotly:
 
     @staticmethod
     def DataByGraph(graph,
+                    sagitta: float = 0,
+                    absolute: bool = False,
+                    sides: int = 8,
                     vertexColor: str = "black",
                     vertexSize: float = 6,
                     vertexLabelKey: str = None,
@@ -298,6 +301,13 @@ class Plotly:
         ----------
         graph : topologic_core.Graph
             The input graph.
+        sagitta : float , optional
+            The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. The default is 0 which means a straight edge is drawn instead of an arc. The default is 0.
+        absolute : bool , optional
+            If set to True, the sagitta length is treated as an absolute value. Otherwise, it is treated as a ratio based on the length of the edge. The default is False.
+            For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. The default is True.
+        sides : int , optional
+            The number of sides of the arc. The default is 8.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -352,6 +362,7 @@ class Plotly:
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
         from topologicpy.Graph import Graph
@@ -431,9 +442,23 @@ class Plotly:
             e_labels = []
             e_groupList = []
             edges = Graph.Edges(graph)
+            new_edges = []
+            if sagitta > 0:
+                for edge in edges:
+                    d = Topology.Dictionary(edge)
+                    arc = Wire.ArcByEdge(edge, sagitta=sagitta, absolute=absolute, sides=sides, close=False)
+                    if Topology.IsInstance(arc, "Wire"):
+                        arc_edges = Topology.Edges(arc)
+                        for arc_edge in arc_edges:
+                            arc_edge = Topology.SetDictionary(arc_edge, d)
+                            new_edges.append(arc_edge)
+                    else:
+                        new_edges.append(edge)
+            else:
+                new_edges = edges
                 
             if edgeLabelKey or edgeGroupKey:
-                for e in edges:
+                for e in new_edges:
                     sv = Edge.StartVertex(e)
                     ev = Edge.EndVertex(e)
                     Xe+=[Vertex.X(sv, mantissa=mantissa), Vertex.X(ev, mantissa=mantissa), None] # x-coordinates of edge ends
@@ -455,7 +480,7 @@ class Plotly:
                         e_label = e_label+" ("+e_group+")"
                     e_labels.append(e_label)
             else:
-                for e in edges:
+                for e in new_edges:
                     sv = Edge.StartVertex(e)
                     ev = Edge.EndVertex(e)
                     Xe+=[Vertex.X(sv, mantissa=mantissa), Vertex.X(ev, mantissa=mantissa), None] # x-coordinates of edge ends

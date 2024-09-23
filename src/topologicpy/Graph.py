@@ -2407,6 +2407,7 @@ class Graph:
                    idKey: str = "TOPOLOGIC_ID",
                    outpostsKey: str = "outposts",
                    vertexCategoryKey: str = "category",
+                   edgeCategoryKey : str = "category",
                    useInternalVertex: bool =True,
                    storeBREP: bool =False,
                    mantissa: int = 6,
@@ -2439,7 +2440,7 @@ class Graph:
         outpostsKey : str , optional
             The key to use to find the list of outposts. It is case insensitive. The default is "outposts".
         vertexCategoryKey : str , optional
-            The key under which to store the node type. Node types are:
+            The key under which to store the node type. Node categories are:
             0 : main topology
             1 : shared topology
             2 : shared aperture
@@ -2447,7 +2448,17 @@ class Graph:
             4 : exterior aperture
             5 : content
             6 : outpost
-            The default is "node_type".
+            The default is "category".
+        edgeCategoryKey : str , optional
+            The key under which to store the node type. Edge categories are:
+            0 : direct
+            1 : via shared topology
+            2 : via shared aperture
+            3 : to exterior topology
+            4 : to exterior aperture
+            5 : to content
+            6 : to outpost
+            The default is "category".
         useInternalVertex : bool , optional
             If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. The default is False.
         storeBREP : bool , optional
@@ -2599,11 +2610,11 @@ class Graph:
                                 e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                 mDict = mergeDictionaries(sharedt)
                                 if not mDict == None:
-                                    keys = (Dictionary.Keys(mDict) or [])+["relationship"]
-                                    values = (Dictionary.Values(mDict) or [])+["Direct"]
+                                    keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
+                                    values = (Dictionary.Values(mDict) or [])+["Direct", 0]
                                 else:
-                                    keys = ["relationship"]
-                                    values = ["Direct"]
+                                    keys = ["relationship", edgeCategoryKey]
+                                    values = ["Direct", 0]
                                 mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
                                     e.SetDictionary(mDict)
@@ -2687,7 +2698,7 @@ class Graph:
                     vertices.append(vcc)
                     vertices.append(vop)
                     tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Outposts"])
+                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
 
@@ -2737,7 +2748,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["Via_Shared_Topologies"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Topologies", 1])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                             if toContents:
@@ -2761,7 +2772,7 @@ class Graph:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
                                     tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if viaSharedApertures:
@@ -2781,7 +2792,7 @@ class Graph:
                                 _ = vsa.SetDictionary(d1)
                             vertices.append(vsa)
                             tempe = Edge.ByStartVertexEndVertex(vCell, vsa, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["Via_Shared_Apertures"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Apertures", 2])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                     if toExteriorTopologies:
@@ -2801,7 +2812,7 @@ class Graph:
                                 _ = vet.SetDictionary(d1)
                             vertices.append(vet)
                             tempe = Edge.ByStartVertexEndVertex(vCell, vet, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Topologies"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                             if toContents:
@@ -2825,7 +2836,7 @@ class Graph:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
                                     tempe = Edge.ByStartVertexEndVertex(vet, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
@@ -2845,7 +2856,7 @@ class Graph:
                                 _ = vea.SetDictionary(d1)
                             vertices.append(vea)
                             tempe = Edge.ByStartVertexEndVertex(vCell, vea, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Apertures"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                     if toContents:
@@ -2869,7 +2880,7 @@ class Graph:
                                 _ = vcn.SetDictionary(d1)
                             vertices.append(vcn)
                             tempe = Edge.ByStartVertexEndVertex(vCell, vcn, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
 
@@ -2927,7 +2938,7 @@ class Graph:
                     else:
                         vop = Topology.CenterOfMass(outpost)
                     tempe = Edge.ByStartVertexEndVertex(vCell, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Outposts"])
+                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
                     d1 = outpost.GetDictionary()
@@ -2965,7 +2976,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Topologies"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                             if toContents:
@@ -2989,7 +3000,7 @@ class Graph:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
                                     tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
@@ -3009,7 +3020,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Apertures"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                     if toContents:
@@ -3033,7 +3044,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
             return [vertices, edges]
@@ -3068,11 +3079,11 @@ class Graph:
                                 e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                 mDict = mergeDictionaries(sharedt)
                                 if not mDict == None:
-                                    keys = (Dictionary.Keys(mDict) or [])+["relationship"]
-                                    values = (Dictionary.Values(mDict) or [])+["Direct"]
+                                    keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
+                                    values = (Dictionary.Values(mDict) or [])+["Direct", 0]
                                 else:
-                                    keys = ["relationship"]
-                                    values = ["Direct"]
+                                    keys = ["relationship", edgeCategoryKey]
+                                    values = ["Direct", 0]
                                 mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
                                     e.SetDictionary(mDict)
@@ -3157,7 +3168,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["Via_Shared_Topologies"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Topologies", 1])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                             if toContents:
@@ -3181,7 +3192,7 @@ class Graph:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
                                     tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if viaSharedApertures:
@@ -3201,7 +3212,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["Via_Shared_Apertures"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Apertures", 2])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                     if toExteriorTopologies:
@@ -3220,7 +3231,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Apertures"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                             if toContents:
@@ -3244,7 +3255,7 @@ class Graph:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
                                     tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
@@ -3264,7 +3275,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Apertures"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                     if toContents:
@@ -3288,7 +3299,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
 
@@ -3347,7 +3358,7 @@ class Graph:
                         _ = vop.SetDictionary(d1)
                     vertices.append(vcc)
                     tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Outposts"])
+                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
             return [vertices, edges]
@@ -3391,7 +3402,7 @@ class Graph:
                     else:
                         vop = Topology.CenterOfMass(outpost)
                     tempe = Edge.ByStartVertexEndVertex(vFace, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Outposts"])
+                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
             if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
@@ -3421,7 +3432,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Topologies"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                             if toContents:
@@ -3445,7 +3456,7 @@ class Graph:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
                                     tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
@@ -3465,7 +3476,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Apertures"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                     if toContents:
@@ -3489,7 +3500,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
             return [vertices, edges]
@@ -3526,11 +3537,11 @@ class Graph:
                                 e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                 mDict = mergeDictionaries(sharedt)
                                 if not mDict == None:
-                                    keys = (Dictionary.Keys(mDict) or [])+["relationship"]
-                                    values = (Dictionary.Values(mDict) or [])+["Direct"]
+                                    keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
+                                    values = (Dictionary.Values(mDict) or [])+["Direct", 0]
                                 else:
-                                    keys = ["relationship"]
-                                    values = ["Direct"]
+                                    keys = ["relationship", edgeCategoryKey]
+                                    values = ["Direct", 0]
                                 mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
                                     e.SetDictionary(mDict)
@@ -3624,7 +3635,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["Via_Shared_Topologies"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Topologies", 1])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                             if toContents:
@@ -3648,7 +3659,7 @@ class Graph:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
                                     tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if viaSharedApertures:
@@ -3668,7 +3679,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["Via_Shared_Apertures"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Apertures", 2])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                     if toExteriorTopologies:
@@ -3676,7 +3687,7 @@ class Graph:
                             vst = exteriorTopology
                             vertices.append(exteriorTopology)
                             tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Topologies"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                             if toContents:
@@ -3700,7 +3711,7 @@ class Graph:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
                                     tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
@@ -3720,7 +3731,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Apertures"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                     if toContents:
@@ -3744,7 +3755,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
             for anEdge in topEdges:
@@ -3803,7 +3814,7 @@ class Graph:
                         _ = vop.SetDictionary(d1)
                     vertices.append(vop)
                     tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Outposts"])
+                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
             
@@ -3854,7 +3865,7 @@ class Graph:
                     else:
                         vop = Topology.CenterOfMass(outpost)
                     tempe = Edge.ByStartVertexEndVertex(vEdge, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Outposts"])
+                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
             
@@ -3884,7 +3895,7 @@ class Graph:
                                 _ = vst.SetDictionary(d1)
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Topologies"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                             if toContents:
@@ -3908,7 +3919,7 @@ class Graph:
                                         _ = vst2.SetDictionary(d1)
                                     vertices.append(vst2)
                                     tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                                     _ = tempe.SetDictionary(tempd)
                                     edges.append(tempe)
                     if toExteriorApertures:
@@ -3929,7 +3940,7 @@ class Graph:
                             _ = vst.SetDictionary(exTop.GetDictionary())
                             vertices.append(vst)
                             tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship"],["To_Exterior_Apertures"])
+                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
                             _ = tempe.SetDictionary(tempd)
                             edges.append(tempe)
                     
@@ -3961,7 +3972,7 @@ class Graph:
                         _ = vst.SetDictionary(d1)
                     vertices.append(vst)
                     tempe = Edge.ByStartVertexEndVertex(topology, vst, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Contents"])
+                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
             
@@ -3986,7 +3997,7 @@ class Graph:
                     else:
                         vop = Topology.CenterOfMass(outpost)
                     tempe = Edge.ByStartVertexEndVertex(topology, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship"],["To_Outposts"])
+                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
                     _ = tempe.SetDictionary(tempd)
                     edges.append(tempe)
             
@@ -8072,7 +8083,11 @@ class Graph:
         return shortestPaths
 
     @staticmethod
-    def Show(graph, vertexColor="black",
+    def Show(graph,
+             sagitta = 0,
+             absolute = False,
+             sides = 8,
+             vertexColor="black",
              vertexSize=6,
              vertexLabelKey=None,
              vertexGroupKey=None,
@@ -8112,6 +8127,13 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
+        sagitta : float , optional
+            The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. The default is 0 which means a straight edge is drawn instead of an arc. The default is 0.
+        absolute : bool , optional
+            If set to True, the sagitta length is treated as an absolute value. Otherwise, it is treated as a ratio based on the length of the edge. The default is False.
+            For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. The default is True.
+        sides : int , optional
+            The number of sides of the arc. The default is 8.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -8212,7 +8234,7 @@ class Graph:
             print("Graph.Show - Error: The input graph is not a valid graph. Returning None.")
             return None
         
-        data= Plotly.DataByGraph(graph, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLabels=showVertexLabels, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLabels=showEdgeLabels, showEdgeLegend=showEdgeLegend, colorScale=colorScale)
+        data= Plotly.DataByGraph(graph, sagitta=sagitta, absolute=absolute, sides=sides, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLabels=showVertexLabels, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLabels=showEdgeLabels, showEdgeLegend=showEdgeLegend, colorScale=colorScale)
         fig = Plotly.FigureByData(data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor,
                                   marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom, tolerance=tolerance)
         Plotly.Show(fig, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
