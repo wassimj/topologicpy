@@ -2382,7 +2382,7 @@ class Topology():
         
         """
 
-        import ifcopenshell
+        import ifcopenshell, ifcopenshell.geom
         from topologicpy.Dictionary import Dictionary
 
         def get_psets(entity):
@@ -2399,22 +2399,23 @@ class Topology():
                     property_set = definition.RelatingPropertyDefinition
                     
                     # Check if it is a property set
-                    if property_set.is_a('IfcPropertySet'):
-                        pset_name = "IFC_"+property_set.Name
-                        
-                        # Dictionary to hold individual properties
-                        properties = {}
-                        
-                        # Iterate over the properties in the PSET
-                        for prop in property_set.HasProperties:
-                            if prop.is_a('IfcPropertySingleValue'):
-                                # Get the property name and value
-                                prop_name = "IFC_"+prop.Name
-                                prop_value = prop.NominalValue.wrappedValue if prop.NominalValue else None
-                                properties[prop_name] = prop_value
-                        
-                        # Add this PSET to the dictionary for this entity
-                        psets[pset_name] = properties
+                    if not property_set == None:
+                        if property_set.is_a('IfcPropertySet'):
+                            pset_name = "IFC_"+property_set.Name
+                            
+                            # Dictionary to hold individual properties
+                            properties = {}
+                            
+                            # Iterate over the properties in the PSET
+                            for prop in property_set.HasProperties:
+                                if prop.is_a('IfcPropertySingleValue'):
+                                    # Get the property name and value
+                                    prop_name = "IFC_"+prop.Name
+                                    prop_value = prop.NominalValue.wrappedValue if prop.NominalValue else None
+                                    properties[prop_name] = prop_value
+                            
+                            # Add this PSET to the dictionary for this entity
+                            psets[pset_name] = properties
             return psets
         
         def get_color_transparency_material(entity):
@@ -2549,7 +2550,7 @@ class Topology():
         # Main Code
         topologies = []
         settings = ifcopenshell.geom.settings()
-        settings.set("dimensionality", ifcopenshell.ifcopenshell_wrapper.SOLID)
+        #settings.set("dimensionality", ifcopenshell.ifcopenshell_wrapper.SOLID)
         settings.set(settings.USE_WORLD_COORDS, True)
         products = file.by_type("IfcProduct")
         entities = []
@@ -3110,7 +3111,8 @@ class Topology():
         edge_apertures = []
         face_apertures = []
         # Step 2: Create Entities and handle apertures
-        for entity in string:
+        json_dictionary = json.loads(string)
+        for entity in json_dictionary:
             entity_type = entity['type']
             entity_dict = Dictionary.ByKeysValues(keys=list(entity['dictionary'].keys()),
                                                 values=list(entity['dictionary'].values()))
@@ -4281,7 +4283,7 @@ class Topology():
         return topologyA
     
     @staticmethod
-    def Explode(topology, origin=None, scale: float = 1.25, typeFilter: str = None, axes: str = "xyz", mantissa: int = 6, tolerance: float = 0.0001):
+    def Explode(topology, origin=None, scale: float = 1.25, typeFilter: str = None, axes: str = "xyz", transferDictionaries: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Explodes the input topology. See https://en.wikipedia.org/wiki/Exploded-view_drawing.
 
@@ -4297,6 +4299,8 @@ class Topology():
             The type of the subtopologies to explode. This can be any of "vertex", "edge", "face", or "cell". If set to None, a subtopology one level below the type of the input topology will be used. The default is None.
         axes : str , optional
             Sets what axes are to be used for exploding the topology. This can be any permutation or substring of "xyz". It is not case sensitive. The default is "xyz".
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries of the original subTopologies are transferred to the exploded topologies. Otherwise, they are not. The default is False.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -4311,6 +4315,7 @@ class Topology():
         from topologicpy.Vertex import Vertex
         from topologicpy.Cluster import Cluster
         from topologicpy.Graph import Graph
+        from topologicpy.Dictionary import Dictionary
 
         def processClusterTypeFilter(cluster):
             if len(Cluster.CellComplexes(cluster)) > 0:
@@ -4365,7 +4370,7 @@ class Topology():
             return None
         if Topology.IsInstance(topology, "Topology"):
             # Hack to fix a weird bug that seems to be a problem with OCCT memory handling.
-            topology = Topology.ByBREPString(Topology.BREPString(topology))
+            topology = Topology.ByJSONString(Topology.JSONString([topology]))[0]
         axes = axes.lower()
         x_flag = "x" in axes
         y_flag = "y" in axes
@@ -4403,7 +4408,10 @@ class Topology():
             xT = newX - oldX
             yT = newY - oldY
             zT = newZ - oldZ
-            newTopology = Topology.Translate(aTopology, xT, yT, zT)
+            newTopology = Topology.Copy(aTopology)
+            newTopology = Topology.Translate(newTopology, xT, yT, zT)
+            if transferDictionaries == True:
+                newTopology = Topology.SetDictionary(newTopology, Topology.Dictionary(aTopology))
             newTopologies.append(newTopology)
         return Cluster.ByTopologies(newTopologies)
     
