@@ -293,7 +293,8 @@ class Edge():
         import inspect
 
         if len(args) == 0:
-            print("Edge.ByVertices - Error: The input vertices parameter is an empty list. Returning None.")
+            if not silent:
+                print("Edge.ByVertices - Error: The input vertices parameter is an empty list. Returning None.")
             return None
         if len(args) == 1:
             vertices = args[0]
@@ -1107,7 +1108,7 @@ class Edge():
         return Edge.Direction(normal_edge)
 
     @staticmethod
-    def NormalEdge(edge, length: float = 1.0, u: float = 0.5, angle: float = 0.0):
+    def NormalEdge(edge, length: float = 1.0, u: float = 0.5, angle: float = 0.0, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the normal (perpendicular) vector to the input edge as an edge.
 
@@ -1125,7 +1126,11 @@ class Edge():
         angle : float , optional
             The desired rotational offset angle in degrees for the normal edge. This rotates the normal edge
             by the angle value around the axis defined by the input edge. The default is 0.0.
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
         Returns
         -------
         topologic_core.Edge
@@ -1153,8 +1158,13 @@ class Edge():
                 # Otherwise, calculate the normal by crossing with the Z-axis
                 z_axis = np.array([0, 0, 1])
                 normal_vector = np.cross(direction_vector, z_axis)
+
+            # Check if the normal vector is effectively zero before normalization
+            if np.isclose(norm(normal_vector), 0):
+                return normal_vector
             
-            normal_vector /= norm(normal_vector)  # Normalize the normal vector
+            # Normalize the normal vector
+            normal_vector /= norm(normal_vector)  
             return normal_vector
 
         def calculate_normal_line(start_vertex, end_vertex):
@@ -1168,10 +1178,12 @@ class Edge():
             return start_vertex, normal_end_vertex
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.NormalEdge - Error: The input edge parameter is not a valid edge. Returning None.")
+            if not silent:
+                print("Edge.NormalEdge - Error: The input edge parameter is not a valid edge. Returning None.")
             return None
         if length <= 0.0:
-            print("Edge.NormalEdge - Error: The input length parameter is not a positive number greater than zero. Returning None.")
+            if not silent:
+                print("Edge.NormalEdge - Error: The input length parameter is not a positive number greater than zero. Returning None.")
             return None
 
         # Get start and end vertex coordinates
@@ -1186,10 +1198,13 @@ class Edge():
         ev = Vertex.ByCoordinates(list(normal_line_end))
         
         # Create an edge from the start to the end of the normal vector
-        normal_edge = Edge.ByVertices([sv, ev])
-
+        normal_edge = Edge.ByVertices([sv, ev], tolerance=tolerance, silent=silent)
+        if normal_edge == None:
+            if not silent:
+                print("Edge.NormalEdge - Error: Could not create edge. Returning None.")
+            return None
         # Set the length of the normal edge
-        normal_edge = Edge.SetLength(normal_edge, length, bothSides=False)
+        normal_edge = Edge.SetLength(normal_edge, length, bothSides=False, tolerance=tolerance)
 
         # Rotate the normal edge around the input edge by the specified angle
         edge_direction = Edge.Direction(edge)

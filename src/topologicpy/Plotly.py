@@ -293,7 +293,8 @@ class Plotly:
                     showEdgeLabels: bool = False,
                     showEdgeLegend: bool = False,
                     colorScale: str = "viridis",
-                    mantissa: int = 6):
+                    mantissa: int = 6,
+                    silent: bool = False):
         """
         Creates plotly vertex and edge data from the input graph.
 
@@ -354,6 +355,9 @@ class Plotly:
             If set to True the edge legend will be drawn. Otherwise, it will not be drawn. The default is False.
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
         Returns
         -------
         list
@@ -446,11 +450,11 @@ class Plotly:
             if sagitta > 0:
                 for edge in edges:
                     d = Topology.Dictionary(edge)
-                    arc = Wire.ArcByEdge(edge, sagitta=sagitta, absolute=absolute, sides=sides, close=False)
+                    arc = Wire.ArcByEdge(edge, sagitta=sagitta, absolute=absolute, sides=sides, close=False, silent=silent)
                     if Topology.IsInstance(arc, "Wire"):
                         arc_edges = Topology.Edges(arc)
                         for arc_edge in arc_edges:
-                            arc_edge = Topology.SetDictionary(arc_edge, d)
+                            arc_edge = Topology.SetDictionary(arc_edge, d, silent=silent)
                             new_edges.append(arc_edge)
                     else:
                         new_edges.append(edge)

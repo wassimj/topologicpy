@@ -206,7 +206,11 @@ class Wire():
             length = sagitta
         else:
             length = Edge.Length(edge)*sagitta
-        norm = Edge.NormalEdge(edge, length=length)
+        norm = Edge.NormalEdge(edge, length=length, silent=silent)
+        if norm == None:
+            if not silent:
+                print("Wire.ArcByEdge - Warning: Could not create an arc. Returning the original edge.")
+            return edge
         cv = Edge.EndVertex(norm)
         return Wire.Arc(sv, cv, ev, sides=sides, close=close)
     
