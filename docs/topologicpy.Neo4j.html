@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Neo4j module &mdash; topologicpy 0.7.62 documentation</title>
+  <title>topologicpy.Neo4j module &mdash; topologicpy 0.7.63 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.62
+                0.7.63
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -174,7 +174,7 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>neo4jGraph</strong><span class="classifier">neo4j._sync.driver.BoltDriver</span></dt><dd><p>The input neo4j bolt driver.</p>
+<dt><strong>neo4jGraph</strong><span class="classifier">neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver</span></dt><dd><p>The input neo4j driver.</p>
 </dd>
 <dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The returned vertices are labelled according to the dictionary values stored under this key.
 If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically using the format defaultVertexLabel_XXX. The default is “label”.</p>
@@ -206,7 +206,7 @@ If the edgeLabelKey does not exist, it will be created and the edges are labelle
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>neo4j._sync.driver.BoltDriver</dt><dd><p>The returned neo4j bolt driver.</p>
+<dt>neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver</dt><dd><p>The returned neo4j driver.</p>
 </dd>
 </dl>
 </dd>
@@ -230,7 +230,7 @@ If the edgeLabelKey does not exist, it will be created and the edges are labelle
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>neo4j._sync.driver.BoltDriver</dt><dd><p>The returned neo4j bolt driver.</p>
+<dt>neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver</dt><dd><p>The returned neo4j driver.</p>
 </dd>
 </dl>
 </dd>
@@ -244,7 +244,7 @@ If the edgeLabelKey does not exist, it will be created and the edges are labelle
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>neo4jGraph</strong><span class="classifier">neo4j._sync.driver.BoltDriver</span></dt><dd><p>The input neo4j bolt driver.</p>
+<dt><strong>neo4jGraph</strong><span class="classifier">neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver</span></dt><dd><p>The input neo4j driver.</p>
 </dd>
 <dt><strong>cypher</strong><span class="classifier">str, optional</span></dt><dd><p>If set to a non-empty string, a Cypher query will be run on the neo4j graph database to return a sub-graph. Default is None.</p>
 </dd>
@@ -282,13 +282,13 @@ If the edgeLabelKey does not exist, it will be created and the edges are labelle
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>neo4jGraph</strong><span class="classifier">neo4j._sync.driver.BoltDriver</span></dt><dd><p>The input neo4j bolt driver.</p>
+<dt><strong>neo4jGraph</strong><span class="classifier">neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver</span></dt><dd><p>The input neo4j driver.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>neo4j._sync.driver.BoltDriver</dt><dd><p>The returned neo4j bolt driver.</p>
+<dt>neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver</dt><dd><p>The returned neo4j driver.</p>
 </dd>
 </dl>
 </dd>
