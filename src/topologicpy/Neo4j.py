@@ -42,8 +42,8 @@ class Neo4j:
 
         Parameters
         ----------
-        neo4jGraph : neo4j._sync.driver.BoltDriver
-            The input neo4j bolt driver.
+        neo4jGraph : neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
+            The input neo4j driver.
         cypher : str, optional
             If set to a non-empty string, a Cypher query will be run on the neo4j graph database to return a sub-graph. Default is None.
         xMin : float, optional
@@ -164,8 +164,8 @@ class Neo4j:
 
         Returns
         -------
-        neo4j._sync.driver.BoltDriver
-            The returned neo4j bolt driver.
+        neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
+            The returned neo4j driver.
 
         """
         return GraphDatabase.driver(url, auth=(username, password))
@@ -177,13 +177,13 @@ class Neo4j:
 
         Parameters
         ----------
-        neo4jGraph : neo4j._sync.driver.BoltDriver
-            The input neo4j bolt driver.
+        neo4jGraph : neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
+            The input neo4j driver.
 
         Returns
         -------
-        neo4j._sync.driver.BoltDriver
-            The returned neo4j bolt driver.
+        neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
+            The returned neo4j driver.
 
         """
         with neo4jGraph.session() as session:
@@ -223,8 +223,8 @@ class Neo4j:
 
         Parameters
         ----------
-        neo4jGraph : neo4j._sync.driver.BoltDriver
-            The input neo4j bolt driver.
+        neo4jGraph : neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
+            The input neo4j driver.
         vertexLabelKey : str , optional
             The returned vertices are labelled according to the dictionary values stored under this key.
             If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically using the format defaultVertexLabel_XXX. The default is "label".
@@ -254,8 +254,8 @@ class Neo4j:
         
         Returns
         -------
-        neo4j._sync.driver.BoltDriver
-            The returned neo4j bolt driver.
+        neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
+            The returned neo4j driver.
         
         """
         from topologicpy.Vertex import Vertex
@@ -279,7 +279,7 @@ class Neo4j:
 
             return sanitized
         
-        if not isinstance(neo4jGraph, neo4j._sync.driver.BoltDriver):
+        if not isinstance(neo4jGraph, neo4j._sync.driver.BoltDriver) and not isinstance(neo4jGraph, neo4j._sync.driver.Neo4jDriver):
             if not silent:
                 print("Neo4j.ByGraph - Error: The input neo4jGraph is not a valid neo4j graph. Returning None.")
             return None

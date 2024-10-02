@@ -6252,7 +6252,7 @@ class Topology():
         return newTopology
 
     @staticmethod
-    def RemoveCollinearEdges(topology, angTolerance=0.1, tolerance=0.0001):
+    def RemoveCollinearEdges(topology, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
         Removes the collinear edges of the input topology
 
@@ -6264,6 +6264,8 @@ class Topology():
             The desired angular tolerance. The default is 0.1.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -6284,7 +6286,7 @@ class Topology():
         if Topology.IsInstance(topology, "Vertex") or Topology.IsInstance(topology, "Edge"): #Vertex or Edge or Cluster, return the original topology
             return return_topology
         elif Topology.IsInstance(topology, "Wire"):
-            return_topology = Wire.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance)
+            return_topology = Wire.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
             return return_topology
         elif Topology.IsInstance(topology, "Face"):
             return_topology = Face.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance)

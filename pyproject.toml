@@ -7,7 +7,7 @@ dynamic = ["version"]
 authors = [
   { name="Wassim Jabi", email="wassim.jabi@gmail.com" },
 ]
-description = "An Advanced Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction."
+description = "An AI-Powered Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction."
 readme = "README.md"
 license = {file = "LICENSE"}
 requires-python = '>=3.8, <3.14'

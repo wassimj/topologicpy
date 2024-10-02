@@ -471,15 +471,15 @@ class Wire():
                 print("Wire.ByOffset - Error: The input wire parameter is not a valid wire. Returning None.")
                 return None
         
-        temp_face = Face.ByWire(wire)
-        original_area = Face.Area(temp_face)
+        #temp_face = Face.ByWire(wire)
+        #original_area = Face.Area(temp_face)
         if reverse == True:
             fac = -1
         else:
             fac = 1
         origin = Topology.Centroid(wire)
         temp_vertices = [Topology.Vertices(wire)[0], Topology.Vertices(wire)[1], Topology.Centroid(wire)]
-        temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True))
+        temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True), silent=silent)
         temp_normal = Face.Normal(temp_face)
         flat_wire = Topology.Flatten(wire, direction=temp_normal, origin=origin)
         normal = Face.Normal(temp_face)
@@ -648,36 +648,202 @@ class Wire():
             if not Wire.IsManifold(return_wire) and bisectors == False:
                 if not silent:
                     print("Wire.ByOffset - Warning: The resulting wire is non-manifold, please check your offsets.")
-                    print("Wire.ByOffset - Warning: Pursuing a workaround, but it might take a longer to complete.")
+                    print("Wire.ByOffset - Warning: Pursuing a workaround, but it might take longer to complete.")
                 
                 #cycles = Wire.Cycles(return_wire, maxVertices = len(final_vertices))
                 temp_wire = Topology.SelfMerge(Cluster.ByTopologies(wire_edges))
                 cycles = Wire.Cycles(temp_wire, maxVertices = len(final_vertices))
-                distances = []
-                for cycle in cycles:
-                    cycle_centroid = Topology.Centroid(cycle)
-                    distance = Vertex.Distance(origin, cycle_centroid)
-                    distances.append(distance)
-                cycles = Helper.Sort(cycles, distances)
-                # Get the top three or less
-                cycles = cycles[:min(3, len(cycles))]
-                areas = [Face.Area(Face.ByWire(cycle)) for cycle in cycles]
-                cycles = Helper.Sort(cycles, areas)
-                return_cycle = Wire.Reverse(cycles[-1])
-                return_cycle = Wire.Simplify(return_cycle, tolerance=epsilon)
-                return_cycle = Wire.RemoveCollinearEdges(return_cycle)
-                sel_edges = []
-                for temp_edge in wire_edges:
-                    x = Topology.Centroid(temp_edge)
-                    d = Topology.Dictionary(temp_edge)
-                    x = Topology.SetDictionary(x, d, silent=True)
-                    sel_edges.append(x)
-                return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, Topology.Vertices(return_wire), tranVertices=True, tolerance=tolerance, numWorkers=numWorkers)
-                return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, sel_edges, tranEdges=True, tolerance=tolerance, numWorkers=numWorkers)
-                return_wire = return_cycle
+                if len(cycles) > 0:
+                    distances = []
+                    for cycle in cycles:
+                        cycle_centroid = Topology.Centroid(cycle)
+                        distance = Vertex.Distance(origin, cycle_centroid)
+                        distances.append(distance)
+                    cycles = Helper.Sort(cycles, distances)
+                    # Get the top three or less
+                    cycles = cycles[:min(3, len(cycles))]
+                    areas = [Face.Area(Face.ByWire(cycle)) for cycle in cycles]
+                    cycles = Helper.Sort(cycles, areas)
+                    return_cycle = Wire.Reverse(cycles[-1])
+                    test_cycle = Wire.Simplify(return_cycle, tolerance=epsilon)
+                    if Topology.IsInstance(test_cycle, "Wire"):
+                        return_cycle = test_cycle
+                    return_cycle = Wire.RemoveCollinearEdges(return_cycle, silent=silent)
+                    sel_edges = []
+                    for temp_edge in wire_edges:
+                        x = Topology.Centroid(temp_edge)
+                        d = Topology.Dictionary(temp_edge)
+                        x = Topology.SetDictionary(x, d, silent=True)
+                        sel_edges.append(x)
+                    return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, Topology.Vertices(return_wire), tranVertices=True, tolerance=tolerance, numWorkers=numWorkers)
+                    return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, sel_edges, tranEdges=True, tolerance=tolerance, numWorkers=numWorkers)
+                    return_wire = return_cycle
+
         return_wire = Topology.Unflatten(return_wire, direction=normal, origin=origin)
         if transferDictionaries == True:
             return_wire = Topology.SetDictionary(return_wire, Topology.Dictionary(wire), silent=True)
+        return return_wire
+
+    @staticmethod
+    def ByOffsetArea(wire,
+                    area,
+                    offsetKey="offset",
+                    minOffsetKey="minOffset",
+                    maxOffsetKey="maxOffset",
+                    defaultMinOffset=0,
+                    defaultMaxOffset=1,
+                    maxIterations = 1,
+                    tolerance=0.0001,
+                    silent = False):
+        """
+        Creates an offset wire from the input wire based on the input area.
+
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire.
+        area : float
+            The desired area of the created wire.
+        offsetKey : str , optional
+            The edge dictionary key under which to store the offset value. The default is "offset".
+        minOffsetKey : str , optional
+            The edge dictionary key under which to find the desired minimum edge offset value. If a value cannot be found, the defaultMinOffset input parameter value is used instead. The default is "minOffset".
+        maxOffsetKey : str , optional
+            The edge dictionary key under which to find the desired maximum edge offset value. If a value cannot be found, the defaultMaxOffset input parameter value is used instead. The default is "maxOffset".
+        defaultMinOffset : float , optional
+            The desired minimum edge offset distance. The default is 0.
+        defaultMaxOffset : float , optional
+            The desired maximum edge offset distance. The default is 1.
+        maxIterations: int , optional
+            The desired maximum number of iterations to attempt to converge on a solution. The default is 1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        topologic_core.Wire
+            The created wire.
+
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import numpy as np
+        from scipy.optimize import minimize
+
+        def compute_offset_amounts(wire,
+                                area,
+                                offsetKey="offset",
+                                minOffsetKey="minOffset",
+                                maxOffsetKey="maxOffset",
+                                defaultMinOffset=0,
+                                defaultMaxOffset=1,
+                                maxIterations = 10000,
+                                maxTime = 10,
+                                tolerance=0.0001):
+            
+            initial_offsets = []
+            bounds = []
+            for edge in edges:
+                d = Topology.Dictionary(edge)
+                minOffset = Dictionary.ValueAtKey(d, minOffsetKey) or defaultMinOffset
+                maxOffset = Dictionary.ValueAtKey(d, maxOffsetKey) or defaultMaxOffset
+                # Initial guess: small negative offsets to shrink the polygon, within the constraints
+                initial_offsets.append((minOffset + maxOffset) / 2)
+                # Bounds based on the constraints for each edge
+                bounds.append((minOffset, maxOffset))
+
+            # Convert initial_offsets to np.array for efficiency
+            initial_offsets = np.array(initial_offsets)
+            iteration_count = [0]  # List to act as a mutable counter
+
+            def objective_function(offsets):
+                for i, edge in enumerate(edges):
+                    d = Topology.Dictionary(edge)
+                    d = Dictionary.SetValueAtKey(d, offsetKey, offsets[i])
+                    edge = Topology.SetDictionary(edge, d)
+                
+                # Offset the wire
+                new_wire = Wire.ByOffset(wire, offsetKey=offsetKey, silent=silent)
+                # Check for an illegal wire. In that case, return a very large loss value.
+                if not Topology.IsInstance(new_wire, "Wire"):
+                    return (float("inf"))
+                if not Wire.IsManifold(new_wire):
+                    return (float("inf"))
+                if not Wire.IsClosed(new_wire):
+                    return (float("inf"))
+                new_face = Face.ByWire(new_wire)
+                # Calculate the area of the new wire/face
+                new_area = Face.Area(new_face)
+                
+                # The objective is the difference between the target hole area and the actual hole area
+                # We want this difference to be as close to 0 as possible
+                loss = (new_area - area) ** 2
+                # If the loss is less than the tolerance, accept the result and return a loss of 0.
+                if loss < tolerance:
+                    return 0
+                # Otherwise, return the actual loss value.
+                return loss 
+            
+            # Callback function to track and display iteration number
+            def iteration_callback(xk):
+                iteration_count[0] += 1  # Increment the counter
+                if not silent:
+                    print(f"Wire.ByOffsetArea - Information: Iteration {iteration_count[0]}")
+            
+            # Use scipy optimization/minimize to find the correct offsets, respecting the min/max bounds
+            result = minimize(objective_function,
+                            initial_offsets,
+                            method = "Powell",
+                            bounds=bounds,
+                            options={ 'maxiter': maxIterations},
+                            callback=iteration_callback
+                            )
+
+            # Return the offsets
+            return result.x
+        
+        if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Wire.OffsetByArea - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+        
+        if not Wire.IsManifold(wire):
+            if not silent:
+                print("Wire.OffsetByArea - Error: The input wire parameter is not a manifold wire. Returning None.")
+            return None
+        
+        if not Wire.IsClosed(wire):
+            if not silent:
+                print("Wire.OffsetByArea - Error: The input wire parameter is not a closed wire. Returning None.")
+            return None
+        
+        edges = Topology.Edges(wire)
+        # Compute the offset amounts
+        offsets = compute_offset_amounts(wire,
+                                area = area,
+                                offsetKey = offsetKey,
+                                minOffsetKey = minOffsetKey,
+                                maxOffsetKey = maxOffsetKey,
+                                defaultMinOffset = defaultMinOffset,
+                                defaultMaxOffset = defaultMaxOffset,
+                                maxIterations = maxIterations,
+                                tolerance = tolerance)
+        # Set the edge dictionaries correctly according to the specified offsetKey
+        for i, edge in enumerate(edges):
+            d = Topology.Dictionary(edge)
+            d = Dictionary.SetValueAtKey(d, offsetKey, offsets[i])
+            edge = Topology.SetDictionary(edge, d)
+                
+        # Offset the wire
+        return_wire = Wire.ByOffset(wire, offsetKey=offsetKey, silent=silent)
+        if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Wire.OffsetByArea - Error: Could not create the offset wire. Returning None.")
+            return None
         return return_wire
 
     @staticmethod
@@ -1869,7 +2035,7 @@ class Wire():
         return status
     
     @staticmethod
-    def IsManifold(wire) -> bool:
+    def IsManifold(wire, silent: bool = False) -> bool:
         """
         Returns True if the input wire is manifold. Returns False otherwise. A manifold wire is one where its vertices have a degree of 1 or 2.
 
@@ -1877,6 +2043,8 @@ class Wire():
         ----------
         wire : topologic_core.Wire
             The input wire.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1885,9 +2053,14 @@ class Wire():
         
         """
         from topologicpy.Vertex import Vertex
+        import inspect
 
         if not Topology.IsInstance(wire, "Wire"):
-            print("Wire.IsManifold - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            if not silent:
+                print("Wire.IsManifold - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         
         vertices = Wire.Vertices(wire)
@@ -2578,7 +2751,7 @@ class Wire():
         return baseWire
     
     @staticmethod
-    def RemoveCollinearEdges(wire, angTolerance: float = 0.1, tolerance: float = 0.0001):
+    def RemoveCollinearEdges(wire, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
         Removes any collinear edges in the input wire.
 
@@ -2590,6 +2763,8 @@ class Wire():
             The desired angular tolerance. The default is 0.1.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -2602,6 +2777,7 @@ class Wire():
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        import inspect
         
         def cleanup(wire, tolerance):
             vertices = Topology.Vertices(wire)
@@ -2615,8 +2791,9 @@ class Wire():
                 ev = vertices[Vertex.Index(ev, vertices, tolerance=tolerance)]
                 if Vertex.Distance(sv, ev) > tolerance:
                     new_edges.append(Edge.ByVertices([sv,ev]))
-            new_wire = Topology.SelfMerge(Cluster.ByTopologies(new_edges), tolerance=tolerance)
-            return new_wire
+            if len(new_edges) > 0:
+                return Topology.SelfMerge(Cluster.ByTopologies(new_edges, silent=silent), tolerance=tolerance)
+            return wire
         
         def rce(wire, angTolerance=0.1):
             if not Topology.IsInstance(wire, "Wire"):
@@ -2645,6 +2822,13 @@ class Wire():
                 final_wire = Edge.ByStartVertexEndVertex(wire_verts[0], wire_verts[1], tolerance=tolerance, silent=True)
             return final_wire
         
+        if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Wire.RemoveCollinearEdges - Error: The input wire parameter is not a valid wire. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
         new_wire = cleanup(wire, tolerance=tolerance)
         if not Wire.IsManifold(new_wire):
             wires = Wire.Split(new_wire)
@@ -2665,7 +2849,7 @@ class Wire():
             else:
                 return wire
         elif len(returnWires) > 1:
-            returnWire = Topology.SelfMerge(Cluster.ByTopologies(returnWires))
+            returnWire = Topology.SelfMerge(Cluster.ByTopologies(returnWires, silent=silent))
             if Topology.IsInstance(returnWire, "Edge"):
                 return Wire.ByEdges([returnWire], tolerance=tolerance)
             elif Topology.IsInstance(returnWire, "Wire"):

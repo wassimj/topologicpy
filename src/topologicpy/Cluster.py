@@ -165,29 +165,50 @@ class Cluster():
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
+        import inspect
 
         if len(args) == 0:
-            print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+            if not silent:
+                print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if len(args) == 1:
             topologies = args[0]
             if isinstance(topologies, list):
                 if len(topologies) == 0:
-                    print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+                    if not silent:
+                        print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
+                        curframe = inspect.currentframe()
+                        calframe = inspect.getouterframes(curframe, 2)
+                        print('caller name:', calframe[1][3])
                     return None
                 else:
                     topologyList = [x for x in topologies if Topology.IsInstance(x, "Topology")]
                     if len(topologies) == 0:
-                        print("Cluster.ByTopologies - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
+                        if not silent:
+                            print("Cluster.ByTopologies - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
+                            curframe = inspect.currentframe()
+                            calframe = inspect.getouterframes(curframe, 2)
+                            print('caller name:', calframe[1][3])
                         return None
             else:
-                print("Cluster.ByTopologies - Warning: The input topologies parameter contains only one topology. Returning the same topology.")
+                if not silent:
+                    print("Cluster.ByTopologies - Warning: The input topologies parameter contains only one topology. Returning the same topology.")
+                    curframe = inspect.currentframe()
+                    calframe = inspect.getouterframes(curframe, 2)
+                    print('caller name:', calframe[1][3])
                 return topologies
         else:
             topologyList = Helper.Flatten(list(args))
             topologyList = [x for x in topologyList if Topology.IsInstance(x, "Topology")]
         if len(topologyList) == 0:
-            print("Cluster.ByTopologies - Error: The input parameters do not contain any valid topologies. Returning None.")
+            if not silent:
+                print("Cluster.ByTopologies - Error: The input parameters do not contain any valid topologies. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         cluster = topologic.Cluster.ByTopologies(topologyList, False) # Hook to Core
         dictionaries = []

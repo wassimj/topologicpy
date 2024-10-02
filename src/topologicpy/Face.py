@@ -665,7 +665,7 @@ class Face():
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        import random
+        import inspect
 
         def triangulateWire(wire):
             wire = Topology.RemoveCollinearEdges(wire)
@@ -678,10 +678,16 @@ class Face():
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if not Wire.IsClosed(wire):
             if not silent:
                 print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         
         edges = Wire.Edges(wire)
