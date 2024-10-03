@@ -399,7 +399,157 @@ class Face():
                 print("Face.ByOffset - Warning: Could not create face from wires. Returning None.")
             return None
         return return_face
-    
+
+    @staticmethod  
+    def ByOffsetArea(face,
+                    area,
+                    offsetKey="offset",
+                    minOffsetKey="minOffset",
+                    maxOffsetKey="maxOffset",
+                    defaultMinOffset=0,
+                    defaultMaxOffset=1,
+                    maxIterations = 1,
+                    tolerance=0.0001,
+                    silent = False,
+                    numWorkers = None):
+        """
+        Creates an offset face from the input face based on the input area.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        area : float
+            The desired area of the created face.
+        offsetKey : str , optional
+            The edge dictionary key under which to store the offset value. The default is "offset".
+        minOffsetKey : str , optional
+            The edge dictionary key under which to find the desired minimum edge offset value. If a value cannot be found, the defaultMinOffset input parameter value is used instead. The default is "minOffset".
+        maxOffsetKey : str , optional
+            The edge dictionary key under which to find the desired maximum edge offset value. If a value cannot be found, the defaultMaxOffset input parameter value is used instead. The default is "maxOffset".
+        defaultMinOffset : float , optional
+            The desired minimum edge offset distance. The default is 0.
+        defaultMaxOffset : float , optional
+            The desired maximum edge offset distance. The default is 1.
+        maxIterations: int , optional
+            The desired maximum number of iterations to attempt to converge on a solution. The default is 1.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        numWorkers : int , optional
+            Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
+            The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
+        
+        Returns
+        -------
+        topologic_core.Face
+            The created face.
+
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import numpy as np
+        from scipy.optimize import minimize
+
+        def compute_offset_amounts(face,
+                                area,
+                                offsetKey="offset",
+                                minOffsetKey="minOffset",
+                                maxOffsetKey="maxOffset",
+                                defaultMinOffset=0,
+                                defaultMaxOffset=1,
+                                maxIterations = 1,
+                                tolerance=0.0001):
+            
+            initial_offsets = []
+            bounds = []
+            for edge in edges:
+                d = Topology.Dictionary(edge)
+                minOffset = Dictionary.ValueAtKey(d, minOffsetKey) or defaultMinOffset
+                maxOffset = Dictionary.ValueAtKey(d, maxOffsetKey) or defaultMaxOffset
+                # Initial guess: small negative offsets to shrink the polygon, within the constraints
+                initial_offsets.append((minOffset + maxOffset) / 2)
+                # Bounds based on the constraints for each edge
+                bounds.append((minOffset, maxOffset))
+
+            # Convert initial_offsets to np.array for efficiency
+            initial_offsets = np.array(initial_offsets)
+            iteration_count = [0]  # List to act as a mutable counter
+
+            def objective_function(offsets):
+                for i, edge in enumerate(edges):
+                    d = Topology.Dictionary(edge)
+                    d = Dictionary.SetValueAtKey(d, offsetKey, offsets[i])
+                    edge = Topology.SetDictionary(edge, d)
+                
+                # Offset the wire
+                new_face = Face.ByOffset(face, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers)
+                # Check for an illegal wire. In that case, return a very large loss value.
+                if not Topology.IsInstance(new_face, "Face"):
+                    return (float("inf"))
+                # Calculate the area of the new wire/face
+                new_area = Face.Area(new_face)
+                
+                # The objective is the difference between the target hole area and the actual hole area
+                # We want this difference to be as close to 0 as possible
+                loss = (new_area - area) ** 2
+                # If the loss is less than the tolerance, accept the result and return a loss of 0.
+                if loss < tolerance:
+                    return 0
+                # Otherwise, return the actual loss value.
+                return loss 
+            
+            # Callback function to track and display iteration number
+            def iteration_callback(xk):
+                iteration_count[0] += 1  # Increment the counter
+                if not silent:
+                    print(f"Face.ByOffsetArea - Information: Iteration {iteration_count[0]}")
+            
+            # Use scipy optimization/minimize to find the correct offsets, respecting the min/max bounds
+            result = minimize(objective_function,
+                            initial_offsets,
+                            method = "Powell",
+                            bounds=bounds,
+                            options={ 'maxiter': maxIterations},
+                            callback=iteration_callback
+                            )
+
+            # Return the offsets
+            return result.x
+        
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.OffsetByArea - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+        
+        edges = Topology.Edges(face)
+        # Compute the offset amounts
+        offsets = compute_offset_amounts(face,
+                                area = area,
+                                offsetKey = offsetKey,
+                                minOffsetKey = minOffsetKey,
+                                maxOffsetKey = maxOffsetKey,
+                                defaultMinOffset = defaultMinOffset,
+                                defaultMaxOffset = defaultMaxOffset,
+                                maxIterations = maxIterations,
+                                tolerance = tolerance)
+        # Set the edge dictionaries correctly according to the specified offsetKey
+        for i, edge in enumerate(edges):
+            d = Topology.Dictionary(edge)
+            d = Dictionary.SetValueAtKey(d, offsetKey, offsets[i])
+            edge = Topology.SetDictionary(edge, d)
+                
+        # Offset the face
+        return_face = Face.ByOffset(face, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers)
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.OffsetByArea - Error: Could not create the offset face. Returning None.")
+            return None
+        return return_face
+
     @staticmethod
     def ByShell(shell, origin= None, angTolerance: float = 0.1, tolerance: float = 0.0001, silent=False):
         """

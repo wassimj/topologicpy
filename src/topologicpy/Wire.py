@@ -694,7 +694,8 @@ class Wire():
                     defaultMaxOffset=1,
                     maxIterations = 1,
                     tolerance=0.0001,
-                    silent = False):
+                    silent = False,
+                    numWorkers = None):
         """
         Creates an offset wire from the input wire based on the input area.
 
@@ -720,6 +721,9 @@ class Wire():
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
             If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        numWorkers : int , optional
+            Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
+            The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
         
         Returns
         -------
@@ -742,7 +746,6 @@ class Wire():
                                 defaultMinOffset=0,
                                 defaultMaxOffset=1,
                                 maxIterations = 10000,
-                                maxTime = 10,
                                 tolerance=0.0001):
             
             initial_offsets = []
@@ -767,7 +770,7 @@ class Wire():
                     edge = Topology.SetDictionary(edge, d)
                 
                 # Offset the wire
-                new_wire = Wire.ByOffset(wire, offsetKey=offsetKey, silent=silent)
+                new_wire = Wire.ByOffset(wire, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers)
                 # Check for an illegal wire. In that case, return a very large loss value.
                 if not Topology.IsInstance(new_wire, "Wire"):
                     return (float("inf"))
@@ -839,7 +842,7 @@ class Wire():
             edge = Topology.SetDictionary(edge, d)
                 
         # Offset the wire
-        return_wire = Wire.ByOffset(wire, offsetKey=offsetKey, silent=silent)
+        return_wire = Wire.ByOffset(wire, offsetKey=offsetKey, silent=silent, numWorkers=numWorkers)
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Wire.OffsetByArea - Error: Could not create the offset wire. Returning None.")
