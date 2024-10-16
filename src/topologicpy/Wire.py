@@ -2910,7 +2910,7 @@ class Wire():
         return return_wire
 
     @staticmethod
-    def Roof(face, angle: float = 45, tolerance: float = 0.001):
+    def Roof(face, angle: float = 45, boundary: bool = True, tolerance: float = 0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
             This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
@@ -2921,6 +2921,8 @@ class Wire():
             The input face.
         angle : float , optioal
             The desired angle in degrees of the roof. The default is 45.
+        boundary : bool , optional
+            If set to True the original boundary is returned as part of the roof. Otherwise it is not. The default is True.
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
 
@@ -2977,7 +2979,7 @@ class Wire():
                         edges.append(e)
             return edges
         
-        def face_to_skeleton(face, angle=0):
+        def face_to_skeleton(face, angle=0, boundary=True):
             normal = Face.Normal(face)
             eb_wire = Face.ExternalBoundary(face)
             ib_wires = Face.InternalBoundaries(face)
@@ -3003,7 +3005,10 @@ class Wire():
                 return None
             slope = math.tan(math.radians(angle))
             roofEdges = subtrees_to_edges(skeleton, zero_coordinates, slope)
-            roofEdges = Helper.Flatten(roofEdges)+Topology.Edges(face)
+            if boundary == True:
+                roofEdges = Helper.Flatten(roofEdges)+Topology.Edges(face)
+            else:
+                roofEdges = Helper.Flatten(roofEdges)
             roofTopology = Topology.SelfMerge(Cluster.ByTopologies(roofEdges), tolerance=tolerance)
             return roofTopology
         
@@ -3016,7 +3021,7 @@ class Wire():
         normal = Face.Normal(face)
         flat_face = Topology.Flatten(face, origin=origin, direction=normal)
         d = Topology.Dictionary(flat_face)
-        roof = face_to_skeleton(flat_face, angle)
+        roof = face_to_skeleton(flat_face, angle=angle, boundary=boundary)
         if not roof:
             return None
         roof = Topology.Unflatten(roof, origin=origin, direction=normal)
@@ -3114,7 +3119,7 @@ class Wire():
         return new_wire
 
     @staticmethod
-    def Skeleton(face, tolerance=0.001):
+    def Skeleton(face, boundary: bool = True, tolerance: float = 0.001):
         """
         Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
         This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
@@ -3123,6 +3128,8 @@ class Wire():
         ----------
         face : topologic_core.Face
             The input face.
+        boundary : bool , optional
+            If set to True the original boundary is returned as part of the roof. Otherwise it is not. The default is True.
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
 
@@ -3134,7 +3141,7 @@ class Wire():
         """
         if not Topology.IsInstance(face, "Face"):
             return None
-        return Wire.Roof(face, angle=0, tolerance=tolerance)
+        return Wire.Roof(face, angle=0, boundary=boundary, tolerance=tolerance)
     
     @staticmethod
     def Spiral(origin = None, radiusA : float = 0.05, radiusB : float = 0.5, height : float = 1, turns : int = 10, sides : int = 36, clockwise : bool = False, reverse : bool = False, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):

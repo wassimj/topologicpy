@@ -2277,7 +2277,7 @@ class Face():
         return Face.ByWires(eb, ibList)
     
     @staticmethod
-    def Skeleton(face, tolerance=0.001):
+    def Skeleton(face, boundary: bool = True, tolerance: float = 0.001):
         """
             Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
             This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
@@ -2286,6 +2286,8 @@ class Face():
         ----------
         face : topologic_core.Face
             The input face.
+        boundary : bool , optional
+            If set to True the original boundary is returned as part of the roof. Otherwise it is not. The default is True.
         tolerance : float , optional
             The desired tolerance. The default is 0.001. (This is set to a larger number than the usual 0.0001 as it was found to work better)
 
@@ -2301,7 +2303,7 @@ class Face():
         if not Topology.IsInstance(face, "Face"):
             print("Face.Skeleton - Error: The input face is not a valid topologic face. Returning None.")
             return None
-        return Wire.Skeleton(face, tolerance=tolerance)
+        return Wire.Skeleton(face, boundary=boundary, tolerance=tolerance)
     
     @staticmethod
     def Square(origin= None, size: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):

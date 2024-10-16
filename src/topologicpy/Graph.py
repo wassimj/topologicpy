@@ -264,7 +264,7 @@ class _DrawTree(object):
         return self.__str__()
 
 class Graph:
-    def AdjacencyDictionary(graph, vertexLabelKey: str = "label", edgeKey: str = "Length", reverse: bool = False, mantissa: int = 6):
+    def AdjacencyDictionary(graph, vertexLabelKey: str = "label", edgeKey: str = "Length", includeWeights: bool = False, reverse: bool = False, mantissa: int = 6):
         """
         Returns the adjacency dictionary of the input Graph.
 
@@ -277,6 +277,8 @@ class Graph:
             If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically and stored in the vertex dictionary under this key. The default is "label".
         edgeKey : str , optional
             If set, the edges' dictionaries will be searched for this key to set their weight. If the key is set to "length" (case insensitive), the length of the edge will be used as its weight. If set to None, a weight of 1 will be used. The default is "Length".
+        includeWeights : bool , optional
+            If set to True, edge weights are included. Otherwise, they are not. The default is False.
         reverse : bool , optional
                 If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
         mantissa : int , optional
@@ -326,22 +328,29 @@ class Graph:
             adjVertices = Graph.AdjacentVertices(graph, v)
             temp_list = []
             for adjVertex in adjVertices:
-                if edgeKey == None:
-                    weight = 1
-                elif "length" in edgeKey.lower():
-                    edge = Graph.Edge(graph, v, adjVertex)
-                    weight = Edge.Length(edge, mantissa=mantissa)
+                adjIndex = Vertex.Index(adjVertex, vertices)
+                if not adjIndex == None:
+                    adjLabel = labels[adjIndex]
                 else:
-                    edge = Graph.Edge(graph, v, adjVertex)
-                    weight = Dictionary.ValueAtKey(Topology.Dictionary(edge), edgeKey)
-                    if weight == None:
+                    adjLabel = None
+                if includeWeights == True:
+                    if edgeKey == None:
+                        weight = 1
+                    elif "length" in edgeKey.lower():
+                        edge = Graph.Edge(graph, v, adjVertex)
                         weight = Edge.Length(edge, mantissa=mantissa)
                     else:
-                        weight = round(weight, mantissa)
-                adjIndex = Vertex.Index(adjVertex, vertices)
-                adjLabel = labels[adjIndex]
-                if not adjIndex == None:
-                    temp_list.append((adjLabel, weight))
+                        edge = Graph.Edge(graph, v, adjVertex)
+                        weight = Dictionary.ValueAtKey(Topology.Dictionary(edge), edgeKey)
+                        if weight == None:
+                            weight = Edge.Length(edge, mantissa=mantissa)
+                        else:
+                            weight = round(weight, mantissa)
+                    if not adjIndex == None:
+                        temp_list.append((adjLabel, weight))
+                else:
+                    if not adjIndex == None:
+                        temp_list.append(adjLabel)
             temp_list.sort()
             adjDict[vertex_label] = temp_list
         return adjDict
@@ -548,7 +557,7 @@ class Graph:
                         elif (len(gk) < 1) and (len(vk) > 0):
                             d = vd
                         if d:
-                            _ = Topology.SetDictionary(gv, d)
+                            _ = Topology.SetDictionary(gv, d, silent=True)
                     unique = False
                     returnVertex = gv
                     break
@@ -577,7 +586,7 @@ class Graph:
             keys = Dictionary.Keys(d)
             if isinstance(keys, list):
                 if len(keys) > 0:
-                    _ = Topology.SetDictionary(new_edge, d)
+                    _ = Topology.SetDictionary(new_edge, d, silent=True)
         graph_edges.append(new_edge)
         new_graph = Graph.ByVerticesEdges(graph_vertices, graph_edges)
         return new_graph
@@ -614,7 +623,7 @@ class Graph:
             if not silent:
                 print("Graph.AddVertex - Error: The input vertex is not a valid vertex. Returning the input graph.")
             return graph
-        _ = graph.AddVertices([vertex], tolerance)
+        _ = graph.AddVertices([vertex], tolerance) # Hook to core library
         return graph
 
     @staticmethod
@@ -654,7 +663,7 @@ class Graph:
             if not silent:
                 print("Graph.AddVertices - Error: Could not find any valid vertices in the input list of vertices. Returning None.")
             return None
-        _ = graph.AddVertices(vertices, tolerance)
+        _ = graph.AddVertices(vertices, tolerance) # Hook to core library
         return graph
     
     @staticmethod
@@ -688,7 +697,7 @@ class Graph:
                 print("Graph.AdjacentVertices - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         vertices = []
-        _ = graph.AdjacentVertices(vertex, vertices)
+        _ = graph.AdjacentVertices(vertex, vertices) # Hook to core library
         return list(vertices)
     
     @staticmethod
@@ -730,7 +739,7 @@ class Graph:
                 print("Graph.AllPaths - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         paths = []
-        _ = graph.AllPaths(vertexA, vertexB, True, timeLimit, paths)
+        _ = graph.AllPaths(vertexA, vertexB, True, timeLimit, paths) # Hook to core library
         return paths
 
     @staticmethod
@@ -2478,20 +2487,179 @@ class Graph:
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Aperture import Aperture
+        
+        def _viaSharedTopologies(vt, sharedTops):
+            verts = []
+            eds = []
+            for sharedTopology in sharedTops:
+                if useInternalVertex == True:
+                    vst = Topology.InternalVertex(sharedTopology, tolerance)
+                else:
+                    vst = Topology.CenterOfMass(sharedTopology)
+                d1 = Topology.Dictionary(sharedTopology)
+                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 1) # shared topology
+                if storeBREP:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedTopology), Topology.Type(sharedTopology), Topology.TypeAsString(sharedTopology)])
+                    d3 = mergeDictionaries2([d1, d2])
+                    vst = Topology.SetDictionary(vst, d3, silent=True)
+                else:
+                    vst = Topology.SetDictionary(vst, d1, silent=True)
+                verts.append(vst)
+                tempe = Edge.ByStartVertexEndVertex(vt, vst, tolerance=tolerance)
+                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Topologies", 1])
+                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
+                eds.append(tempe)
+            return verts, eds
+        
+        def _viaSharedApertures(vt, sharedAps):
+            verts = []
+            eds = []
+            for sharedAp in sharedAps:
+                if useInternalVertex == True:
+                    vsa = Topology.InternalVertex(sharedAp, tolerance)
+                else:
+                    vsa = Topology.CenterOfMass(sharedAp)
+                d1 = Topology.Dictionary(sharedAp)
+                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 2) # shared aperture
+                vsa = Vertex.ByCoordinates(Vertex.X(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Y(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Z(vsa, mantissa=mantissa)+(tolerance*100))
+                if storeBREP:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
+                    d3 = mergeDictionaries2([d1, d2])
+                    vsa = Topology.SetDictionary(vsa, d3, silent=True)
+                else:
+                    vsa = Topology.SetDictionary(vsa, d1, silent=True)
+                verts.append(vsa)
+                tempe = Edge.ByStartVertexEndVertex(vt, vsa, tolerance=tolerance)
+                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Apertures", 2])
+                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
+                eds.append(tempe)
+            return verts, eds
+        
+        def _toExteriorTopologies(vt, exteriorTops):
+            verts = []
+            eds = []
+            for exteriorTop in exteriorTops:
+                if useInternalVertex == True:
+                    vet = Topology.InternalVertex(exteriorTop, tolerance)
+                else:
+                    vet = Topology.CenterOfMass(exteriorTop)
+                    vet = Topology.SetDictionary(vet, Topology.Dictionary(exteriorTop), silent=True)
+                d1 = Topology.Dictionary(exteriorTop)
+                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 3) # exterior topology
+                if storeBREP:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTop), Topology.Type(exteriorTop), Topology.TypeAsString(exteriorTop)])
+                    d3 = mergeDictionaries2([d1, d2])
+                    vet = Topology.SetDictionary(vet, d3, silent=True)
+                else:
+                    vet = Topology.SetDictionary(vet, d1, silent=True)
+                verts.append(vet)
+                tempe = Edge.ByStartVertexEndVertex(vt, vet, tolerance=tolerance)
+                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
+                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
+                eds.append(tempe)
+            return verts, eds
+        
+        def _toExteriorApertures(vt, exteriorAps):
+            verts = []
+            eds = []
+            for exAp in exteriorAps:
+                if useInternalVertex == True:
+                    vea = Topology.InternalVertex(exAp, tolerance)
+                else:
+                    vea = Topology.CenterOfMass(exAp)
+                d1 = Topology.Dictionary(exAp)
+                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 4) # exterior aperture
+                vea = Vertex.ByCoordinates(Vertex.X(vea, mantissa=mantissa)+(tolerance*100), Vertex.Y(vea, mantissa=mantissa)+(tolerance*100), Vertex.Z(vea, mantissa=mantissa)+(tolerance*100))
+                if storeBREP:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exAp), Topology.Type(exAp), Topology.TypeAsString(exAp)])
+                    d3 = mergeDictionaries2([d1, d2])
+                    vea = Topology.SetDictionary(vea, d3, silent=True)
+                else:
+                    vea = Topology.SetDictionary(vea, d1, silent=True)
+                verts.append(vea)
+                tempe = Edge.ByStartVertexEndVertex(vt, vea, tolerance=tolerance)
+                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
+                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
+                eds.append(tempe)
+            return verts, eds
+        
+        def _toContents(vt, contents):
+            verts = []
+            eds = []
+            for content in contents:
+                if Topology.IsInstance(content, "Aperture"):
+                    content = Aperture.Topology(content)
+                if useInternalVertex == True:
+                    vct = Topology.InternalVertex(content, tolerance)
+                else:
+                    vct = Topology.CenterOfMass(content)
+                vct = Vertex.ByCoordinates(Vertex.X(vct, mantissa=mantissa)+(tolerance*100), Vertex.Y(vct, mantissa=mantissa)+(tolerance*100), Vertex.Z(vct, mantissa=mantissa)+(tolerance*100))
+                d1 = Topology.Dictionary(content)
+                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
+                if storeBREP:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
+                    d3 = mergeDictionaries2([d1, d2])
+                    vct = Topology.SetDictionary(vct, d3, silent=True)
+                else:
+                    vct = Topology.SetDictionary(vct, d1, silent=True)
+                verts.append(vct)
+                tempe = Edge.ByStartVertexEndVertex(vt, vct, tolerance=tolerance)
+                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
+                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
+                eds.append(tempe)
+            return verts, eds
 
+        def _toOutposts(vt, otherTops):
+            verts = []
+            eds = []
+            d = Topology.Dictionary(vt)
+            if not d == None:
+                keys = Dictionary.Keys(d)
+            else:
+                keys = []
+            k = None
+            for key in keys:
+                if key.lower() == outpostsKey.lower():
+                    k = key
+            if k:
+                ids = Dictionary.ValueAtKey(d,k)
+                outposts = outpostsByID(otherTops, ids, idKey)
+            else:
+                outposts = []
+            for outpost in outposts:
+                if useInternalVertex == True:
+                    vop = Topology.InternalVertex(outpost, tolerance=tolerance)   
+                else:
+                    vop = Topology.CenterOfMass(outpost)
+
+                d1 = Topology.Dictionary(vop)
+                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 6) # outpost
+                if storeBREP:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(outpost), Topology.Type(outpost), Topology.TypeAsString(outpost)])
+                    d3 = mergeDictionaries2([d1, d2])
+                    vop = Topology.SetDictionary(vop, d3, silent=True)
+                else:
+                    vop = Topology.SetDictionary(vop, d1, silent=True)
+                verts.append(vop)
+                tempe = Edge.ByStartVertexEndVertex(vt, vop, tolerance=tolerance)
+                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
+                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
+                eds.append(tempe)
+            return verts, eds
+        
         def mergeDictionaries(sources):
             if isinstance(sources, list) == False:
                 sources = [sources]
             sinkKeys = []
             sinkValues = []
-            d = sources[0].GetDictionary()
+            d = Topology.Dictionary(sources[0])
             if d != None:
                 stlKeys = d.Keys()
                 if len(stlKeys) > 0:
                     sinkKeys = d.Keys()
                     sinkValues = Dictionary.Values(d)
             for i in range(1,len(sources)):
-                d = sources[i].GetDictionary()
+                d = Topology.Dictionary(sources[i])
                 if d == None:
                     continue
                 stlKeys = d.Keys()
@@ -2582,12 +2750,27 @@ class Graph:
                 
         def processCellComplex(item):
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            edges = []
-            vertices = []
+            graph_vertices = []
+            graph_edges = []
             cellmat = []
+            # Store all the vertices of the cells of the cellComplex
+            cells = Topology.Cells(topology)
+            for cell in cells:
+                if useInternalVertex == True:
+                    vCell = Topology.InternalVertex(cell, tolerance=tolerance)
+                else:
+                    vCell = Topology.CenterOfMass(cell)
+                d1 = Topology.Dictionary(cell)
+                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
+                if storeBREP:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(cell), Topology.Type(cell), Topology.TypeAsString(cell)])
+                    d3 = mergeDictionaries2([d1, d2])
+                    vCell = Topology.SetDictionary(vCell, d3, silent=True)
+                else:
+                    vCell = Topology.SetDictionary(vCell, d1, silent=True)
+                graph_vertices.append(vCell)
             if direct == True:
-                cells = []
-                _ = topology.Cells(None, cells)
+                cells = Topology.Cells(topology)
                 # Create a matrix of zeroes
                 for i in range(len(cells)):
                     cellRow = []
@@ -2605,8 +2788,8 @@ class Graph:
                                     v1 = Topology.InternalVertex(cells[i], tolerance=tolerance)
                                     v2 = Topology.InternalVertex(cells[j], tolerance=tolerance)
                                 else:
-                                    v1 = cells[i].CenterOfMass()
-                                    v2 = cells[j].CenterOfMass()
+                                    v1 = Topology.CenterOfMass(cells[i])
+                                    v2 = Topology.CenterOfMass(cells[j])
                                 e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                 mDict = mergeDictionaries(sharedt)
                                 if not mDict == None:
@@ -2617,12 +2800,11 @@ class Graph:
                                     values = ["Direct", 0]
                                 mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
-                                    e.SetDictionary(mDict)
-                                edges.append(e)
+                                    e = Topology.SetDictionary(e, mDict, silent=True)
+                                graph_edges.append(e)
             if directApertures == True:
                 cellmat = []
-                cells = []
-                _ = topology.Cells(None, cells)
+                cells = Topology.Cells(topology)
                 # Create a matrix of zeroes
                 for i in range(len(cells)):
                     cellRow = []
@@ -2650,77 +2832,37 @@ class Graph:
                                         v1 = Topology.InternalVertex(cells[i], tolerance=tolerance)
                                         v2 = Topology.InternalVertex(cells[j], tolerance=tolerance)
                                     else:
-                                        v1 = cells[i].CenterOfMass()
-                                        v2 = cells[j].CenterOfMass()
+                                        v1 = Topology.CenterOfMass(cells[i])
+                                        v2 = Topology.CenterOfMass(cells[j])
                                     e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                     mDict = mergeDictionaries(apTopList)
+                                    if not mDict == None:
+                                        keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
+                                        values = (Dictionary.Values(mDict) or [])+["Direct", 0]
+                                    else:
+                                        keys = ["relationship", edgeCategoryKey]
+                                        values = ["Direct", 0]
+                                    mDict = Dictionary.ByKeysValues(keys, values)
                                     if mDict:
-                                        e.SetDictionary(mDict)
-                                    edges.append(e)
-            if toOutposts and others:
-                d = Topology.Dictionary(topology)
-                if not d == None:
-                    keys = Dictionary.Keys(d)
-                else:
-                    keys = []
-                k = None
-                for key in keys:
-                    if key.lower() == outpostsKey.lower():
-                        k = key
-                if k:
-                    ids = Dictionary.ValueAtKey(k)
-                    outposts = outpostsByID(others, ids, idKey)
-                else:
-                    outposts = []
-                for outpost in outposts:
-                    if useInternalVertex == True:
-                        vop = Topology.InternalVertex(outpost, tolerance=tolerance)
-                        vcc = Topology.InternalVertex(topology, tolerance=tolerance)
-                    else:
-                        vop = Topology.CenterOfMass(outpost)
-                        vcc = Topology.CenterOfMass(topology)
-                    d1 = Topology.Dictionary(vcc)
-                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-                    if storeBREP:
-                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
-                        d3 = mergeDictionaries2([d1, d2])
-                        _ = vcc.SetDictionary(d3)
-                    else:
-                        _ = vcc.SetDictionary(d1)
-                    d1 = Topology.Dictionary(vop)
-                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 6) # outpost
-                    if storeBREP:
-                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(outpost), Topology.Type(outpost), Topology.TypeAsString(outpost)])
-                        d3 = mergeDictionaries2([d1, d2])
-                        _ = vop.SetDictionary(d3)
-                    else:
-                        _ = vop.SetDictionary(d1)
-                    vertices.append(vcc)
-                    vertices.append(vop)
-                    tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
-                    _ = tempe.SetDictionary(tempd)
-                    edges.append(tempe)
-
-            cells = []
-            _ = topology.Cells(None, cells)
+                                        e = Topology.SetDictionary(e, mDict, silent=True)
+                                    graph_edges.append(e)
+            cells = Topology.Cells(topology)
             if any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents]):
                 for aCell in cells:
                     if useInternalVertex == True:
                         vCell = Topology.InternalVertex(aCell, tolerance=tolerance)
                     else:
-                        vCell = aCell.CenterOfMass()
-                    faces = []
-                    _ = aCell.Faces(None, faces)
+                        vCell = Topology.CenterOfMass(aCell)
+                    d = Topology.Dictionary(aCell)
+                    vCell = Topology.SetDictionary(vCell, d, silent=True)
+                    faces = Topology.Faces(aCell)
                     sharedTopologies = []
                     exteriorTopologies = []
                     sharedApertures = []
                     exteriorApertures = []
-                    contents = []
-                    _ = aCell.Contents(contents)
+                    cell_contents = Topology.Contents(aCell)
                     for aFace in faces:
-                        cells1 = []
-                        _ = aFace.Cells(topology, cells1)
+                        cells1 = Topology.SuperTopologies(aFace, topology, topologyType="Cell")
                         if len(cells1) > 1:
                             sharedTopologies.append(aFace)
                             apertures = Topology.Apertures(aFace)
@@ -2731,226 +2873,83 @@ class Graph:
                             apertures = Topology.Apertures(aFace)
                             for anAperture in apertures:
                                 exteriorApertures.append(anAperture)
-
                     if viaSharedTopologies:
+                        verts, eds = _viaSharedTopologies(vCell, sharedTopologies)
+                        graph_vertices += verts
+                        graph_edges += eds
                         for sharedTopology in sharedTopologies:
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(sharedTopology, tolerance)
                             else:
-                                vst = sharedTopology.CenterOfMass()
-                            d1 = sharedTopology.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 1) # shared topology
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedTopology), Topology.Type(sharedTopology), Topology.TypeAsString(sharedTopology)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Topologies", 1])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                                vst = Topology.CenterOfMass(sharedTopology)
+                            d = Topology.Dictionary(sharedTopology)
+                            vst = Topology.SetDictionary(vst, d, silent=True)
                             if toContents:
-                                contents = []
-                                _ = sharedTopology.Contents(contents)
-                                for content in contents:
-                                    if Topology.IsInstance(content, "Aperture"):
-                                        content = Aperture.Topology(content)
-                                    if useInternalVertex == True:
-                                        vst2 = Topology.InternalVertex(content, tolerance)
-                                    else:
-                                        vst2 = content.CenterOfMass()
-                                    d1 = content.GetDictionary()
-                                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa), Vertex.Y(vst2, mantissa=mantissa), Vertex.Z(vst2, mantissa=mantissa))
-                                    if storeBREP:
-                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                        d3 = mergeDictionaries2([d1, d2])
-                                        _ = vst2.SetDictionary(d3)
-                                    else:
-                                        _ = vst2.SetDictionary(d1)
-                                    vertices.append(vst2)
-                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                                    _ = tempe.SetDictionary(tempd)
-                                    edges.append(tempe)
+                                shd_top_contents = Topology.Contents(sharedTopology)
+                                verts, eds = _toContents(vst, shd_top_contents)
+                                graph_vertices += verts
+                                graph_edges += eds
+                            if toOutposts and others:
+                                verts, eds = _toOutposts(vst, others)
+                                graph_vertices += verts
+                                graph_edges += eds
                     if viaSharedApertures:
-                        for sharedAp in sharedApertures:
-                            if useInternalVertex == True:
-                                vsa = Topology.InternalVertex(sharedAp, tolerance)
-                            else:
-                                vsa = sharedAp.CenterOfMass()
-                            d1 = sharedAp.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 2) # shared aperture
-                            vsa = Vertex.ByCoordinates(Vertex.X(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Y(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Z(vsa, mantissa=mantissa)+(tolerance*100))
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vsa.SetDictionary(d3)
-                            else:
-                                _ = vsa.SetDictionary(d1)
-                            vertices.append(vsa)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vsa, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Apertures", 2])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                        verts, eds = _viaSharedTopologies(vCell, sharedApertures)
+                        graph_vertices += verts
+                        graph_edges += eds
                     if toExteriorTopologies:
+                        verts, eds = _toExteriorTopologies(vCell, exteriorTopologies)
+                        graph_vertices += verts
+                        graph_edges += eds
                         for exteriorTopology in exteriorTopologies:
                             if useInternalVertex == True:
                                 vet = Topology.InternalVertex(exteriorTopology, tolerance)
                             else:
-                                vet = exteriorTopology.CenterOfMass()
-                            _ = vet.SetDictionary(exteriorTopology.GetDictionary())
-                            d1 = exteriorTopology.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 3) # exterior topology
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vet.SetDictionary(d3)
-                            else:
-                                _ = vet.SetDictionary(d1)
-                            vertices.append(vet)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vet, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                                vet = Topology.CenterOfMass(exteriorTopology)
+                            d = Topology.Dictionary(exteriorTopology)
+                            vet = Topology.SetDictionary(vet, d, silent=True)
                             if toContents:
-                                contents = []
-                                _ = exteriorTopology.Contents(contents)
-                                for content in contents:
-                                    if Topology.IsInstance(content, "Aperture"):
-                                        content = Aperture.Topology(content)
-                                    if useInternalVertex == True:
-                                        vst2 = Topology.InternalVertex(content, tolerance)
-                                    else:
-                                        vst2 = content.CenterOfMass()
-                                    d1 = content.GetDictionary()
-                                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
-                                    if storeBREP:
-                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                        d3 = mergeDictionaries2([d1, d2])
-                                        _ = vst2.SetDictionary(d3)
-                                    else:
-                                        _ = vst2.SetDictionary(d1)
-                                    vertices.append(vst2)
-                                    tempe = Edge.ByStartVertexEndVertex(vet, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                                    _ = tempe.SetDictionary(tempd)
-                                    edges.append(tempe)
+                                ext_top_contents = Topology.Contents(exteriorTopology)
+                                verts, eds = _toContents(vet, ext_top_contents)
+                                graph_vertices += verts
+                                graph_edges += eds
+                            if toOutposts and others:
+                                verts, eds = _toOutposts(vet, others)
+                                graph_vertices += verts
+                                graph_edges += eds
                     if toExteriorApertures:
-                        for exTop in exteriorApertures:
-                            if useInternalVertex == True:
-                                vea = Topology.InternalVertex(exTop, tolerance)
-                            else:
-                                vea = exTop.CenterOfMass()
-                            d1 = exTop.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 4) # exterior aperture
-                            vea = Vertex.ByCoordinates(Vertex.X(vea, mantissa=mantissa)+(tolerance*100), Vertex.Y(vea, mantissa=mantissa)+(tolerance*100), Vertex.Z(vea, mantissa=mantissa)+(tolerance*100))
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vea.SetDictionary(d3)
-                            else:
-                                _ = vea.SetDictionary(d1)
-                            vertices.append(vea)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vea, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                        verts, eds = _toExteriorApertures(vCell, exteriorApertures)
+                        graph_vertices += verts
+                        graph_edges += eds
                     if toContents:
-                        contents = []
-                        _ = aCell.Contents(contents)
-                        for content in contents:
-                            if Topology.IsInstance(content, "Aperture"):
-                                content = Aperture.Topology(content)
-                            if useInternalVertex == True:
-                                vcn = Topology.InternalVertex(content, tolerance)
-                            else:
-                                vcn = content.CenterOfMass()
-                            vcn = Vertex.ByCoordinates(Vertex.X(vcn, mantissa=mantissa)+(tolerance*100), Vertex.Y(vcn, mantissa=mantissa)+(tolerance*100), Vertex.Z(vcn, mantissa=mantissa)+(tolerance*100))
-                            d1 = content.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vcn.SetDictionary(d3)
-                            else:
-                                _ = vcn.SetDictionary(d1)
-                            vertices.append(vcn)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vcn, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
-
-            for aCell in cells:
-                if useInternalVertex == True:
-                    vCell = Topology.InternalVertex(aCell, tolerance=tolerance)
-                else:
-                    vCell = aCell.CenterOfMass()
-                d1 = aCell.GetDictionary()
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-                if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(aCell), Topology.Type(aCell), Topology.TypeAsString(aCell)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    _ = vCell.SetDictionary(d3)
-                else:
-                    _ = vCell.SetDictionary(d1)
-                vertices.append(vCell)
-            return [vertices,edges]
+                        verts, eds = _toContents(vCell, cell_contents)
+                        graph_vertices += verts
+                        graph_edges += eds
+                    if toOutposts and others:
+                        verts, eds = toOutposts(vCell, others)
+                        graph_vertices += verts
+                        graph_edges += eds
+            return [graph_vertices, graph_edges]
 
         def processCell(item):
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            vertices = []
-            edges = []
+            graph_vertices = []
+            graph_edges = []
             if useInternalVertex == True:
                 vCell = Topology.InternalVertex(topology, tolerance=tolerance)
             else:
-                vCell = topology.CenterOfMass()
-            d1 = topology.GetDictionary()
+                vCell = Topology.CenterOfMass(topology)
+            d1 = Topology.Dictionary(topology)
             d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
             if storeBREP:
                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
                 d3 = mergeDictionaries2([d1, d2])
-                _ = vCell.SetDictionary(d3)
+                vCell = Topology.SetDictionary(vCell, d3, silent=True)
             else:
-                _ = vCell.SetDictionary(d1)
-            vertices.append(vCell)
-            if toOutposts and others:
-                d = Topology.Dictionary(topology)
-                if not d == None:
-                    keys = Dictionary.Keys(d)
-                else:
-                    keys = []
-                k = None
-                for key in keys:
-                    if key.lower() == outpostsKey.lower():
-                        k = key
-                if k:
-                    ids = Dictionary.ValueAtKey(d, k)
-                    outposts = outpostsByID(others, ids, idKey)
-                else:
-                    outposts = []
-                for outpost in outposts:
-                    if useInternalVertex == True:
-                        vop = Topology.InternalVertex(outpost, tolerance)
-                    else:
-                        vop = Topology.CenterOfMass(outpost)
-                    tempe = Edge.ByStartVertexEndVertex(vCell, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
-                    _ = tempe.SetDictionary(tempd)
-                    edges.append(tempe)
-                    d1 = outpost.GetDictionary()
-                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 6) # outpost
-                    if storeBREP:
-                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(outpost), Topology.Type(outpost), Topology.TypeAsString(outpost)])
-                        d3 = mergeDictionaries2([d1, d2])
-                        _ = vop.SetDictionary(d3)
-                    else:
-                        _ = vop.SetDictionary(d1)
-                    vertices.append(vop)
-            if any([toExteriorTopologies, toExteriorApertures, toContents]):
+                vCell = Topology.SetDictionary(vCell, d1, silent=True)
+            graph_vertices.append(vCell)
+            if any([toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
+                cell_contents = Topology.Contents(topology)
                 faces = Topology.Faces(topology)
                 exteriorTopologies = []
                 exteriorApertures = []
@@ -2959,123 +2958,82 @@ class Graph:
                     apertures = Topology.Apertures(aFace)
                     for anAperture in apertures:
                         exteriorApertures.append(anAperture)
-                    if toExteriorTopologies:
-                        for exteriorTopology in exteriorTopologies:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(exteriorTopology, tolerance)
-                            else:
-                                vst = exteriorTopology.CenterOfMass()
-                            d1 = exteriorTopology.GetDictionary()
-                            d1 = topology.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 3) # exterior topology
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
-                            if toContents:
-                                contents = []
-                                _ = exteriorTopology.Contents(contents)
-                                for content in contents:
-                                    if Topology.IsInstance(content, "Aperture"):
-                                        content = Aperture.Topology(content)
-                                    if useInternalVertex == True:
-                                        vst2 = Topology.InternalVertex(content, tolerance)
-                                    else:
-                                        vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
-                                    d1 = content.GetDictionary()
-                                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                                    if storeBREP:
-                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                        d3 = mergeDictionaries2([d1, d2])
-                                        _ = vst2.SetDictionary(d3)
-                                    else:
-                                        _ = vst2.SetDictionary(d1)
-                                    vertices.append(vst2)
-                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                                    _ = tempe.SetDictionary(tempd)
-                                    edges.append(tempe)
-                    if toExteriorApertures:
-                        for exTop in exteriorApertures:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(exTop, tolerance)
-                            else:
-                                vst = exTop.CenterOfMass()
-                            d1 = exTop.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 4) # exterior aperture
-                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
-                    if toContents:
-                        contents = []
-                        _ = topology.Contents(contents)
-                        for content in contents:
-                            if Topology.IsInstance(content, "Aperture"):
-                                content = Aperture.Topology(content)
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(content, tolerance)
-                            else:
-                                vst = content.CenterOfMass()
-                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                            d1 = content.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vCell, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
-            return [vertices, edges]
+                if toExteriorTopologies:
+                    verts, eds = _toExteriorTopologies(vCell, exteriorTopologies)
+                    graph_vertices += verts
+                    graph_edges += eds
+                    for exteriorTopology in exteriorTopologies:
+                        if useInternalVertex == True:
+                            vet = Topology.InternalVertex(exteriorTopology, tolerance)
+                        else:
+                            vet = Topology.CenterOfMass(exteriorTopology)
+                        d = Topology.Dictionary(exteriorTopology)
+                        vet = Topology.SetDictionary(vet, d, silent=True)
+                        if toContents:
+                            ext_top_contents = Topology.Contents(exteriorTopology)
+                            verts, eds = _toContents(vet, ext_top_contents)
+                            graph_vertices += verts
+                            graph_edges += eds
+                        if toOutposts and others:
+                            verts, eds = _toOutposts(vet, others)
+                            graph_vertices += verts
+                            graph_edges += eds
+                if toExteriorApertures:
+                    verts, eds = _toExteriorApertures(vCell, exteriorApertures)
+                    graph_vertices += verts
+                    graph_edges += eds
+                if toContents:
+                    verts, eds = _toContents(vCell, cell_contents)
+                    graph_vertices += verts
+                    graph_edges += eds
+                if toOutposts and others:
+                    verts, eds = toOutposts(vCell, others)
+                    graph_vertices += verts
+                    graph_edges += eds
+            return [graph_vertices, graph_edges]
 
         def processShell(item):
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            edges = []
-            vertices = []
+            graph_edges = []
+            graph_vertices = []
             facemat = []
+            # Store all the vertices of the cells of the cellComplex
+            faces = Topology.Faces(topology)
+            for face in faces:
+                if useInternalVertex == True:
+                    vFace = Topology.InternalVertex(face, tolerance=tolerance)
+                else:
+                    vFace = Topology.CenterOfMass(face)
+                d1 = Topology.Dictionary(face)
+                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
+                if storeBREP:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(face), Topology.Type(face), Topology.TypeAsString(face)])
+                    d3 = mergeDictionaries2([d1, d2])
+                    vFace = Topology.SetDictionary(vFace, d3, silent=True)
+                else:
+                    vFace = Topology.SetDictionary(vFace, d1, silent=True)
+                graph_vertices.append(vFace)
             if direct == True:
-                topFaces = []
-                _ = topology.Faces(None, topFaces)
+                faces = Topology.Faces(topology)
                 # Create a matrix of zeroes
-                for i in range(len(topFaces)):
+                for i in range(len(faces)):
                     faceRow = []
-                    for j in range(len(topFaces)):
+                    for j in range(len(faces)):
                         faceRow.append(0)
                     facemat.append(faceRow)
-                for i in range(len(topFaces)):
-                    for j in range(len(topFaces)):
+                for i in range(len(faces)):
+                    for j in range(len(faces)):
                         if (i != j) and facemat[i][j] == 0:
                             facemat[i][j] = 1
                             facemat[j][i] = 1
-                            sharedt = Topology.SharedEdges(topFaces[i], topFaces[j])
+                            sharedt = Topology.SharedEdges(faces[i], faces[j])
                             if len(sharedt) > 0:
                                 if useInternalVertex == True:
-                                    v1 = Topology.InternalVertex(topFaces[i], tolerance=tolerance)
-                                    v2 = Topology.InternalVertex(topFaces[j], tolerance=tolerance)
+                                    v1 = Topology.InternalVertex(faces[i], tolerance=tolerance)
+                                    v2 = Topology.InternalVertex(faces[j], tolerance=tolerance)
                                 else:
-                                    v1 = topFaces[i].CenterOfMass()
-                                    v2 = topFaces[j].CenterOfMass()
+                                    v1 = Topology.CenterOfMass(faces[i])
+                                    v2 = Topology.CenterOfMass(faces[j])
                                 e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                 mDict = mergeDictionaries(sharedt)
                                 if not mDict == None:
@@ -3086,63 +3044,70 @@ class Graph:
                                     values = ["Direct", 0]
                                 mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
-                                    e.SetDictionary(mDict)
-                                edges.append(e)
+                                    e = Topology.SetDictionary(e, mDict, silent=True)
+                                graph_edges.append(e)
             if directApertures == True:
                 facemat = []
-                topFaces = []
-                _ = topology.Faces(None, topFaces)
+                faces = Topology.Faces(topology)
                 # Create a matrix of zeroes
-                for i in range(len(topFaces)):
+                for i in range(len(faces)):
                     faceRow = []
-                    for j in range(len(topFaces)):
+                    for j in range(len(faces)):
                         faceRow.append(0)
                     facemat.append(faceRow)
-                for i in range(len(topFaces)):
-                    for j in range(len(topFaces)):
+                for i in range(len(faces)):
+                    for j in range(len(faces)):
                         if (i != j) and facemat[i][j] == 0:
                             facemat[i][j] = 1
                             facemat[j][i] = 1
-                            sharedt = Topology.SharedEdges(topFaces[i], topFaces[j])
+                            sharedt = Topology.SharedEdges(faces[i], faces[j])
                             if len(sharedt) > 0:
                                 apertureExists = False
                                 for x in sharedt:
                                     apList = Topology.Apertures(x)
                                     if len(apList) > 0:
+                                        apTopList = []
+                                        for ap in apList:
+                                            apTopList.append(ap)
                                         apertureExists = True
                                         break
                                 if apertureExists:
                                     if useInternalVertex == True:
-                                        v1 = Topology.InternalVertex(topFaces[i], tolerance=tolerance)
-                                        v2 = Topology.InternalVertex(topFaces[j], tolerance=tolerance)
+                                        v1 = Topology.InternalVertex(faces[i], tolerance=tolerance)
+                                        v2 = Topology.InternalVertex(faces[j], tolerance=tolerance)
                                     else:
-                                        v1 = topFaces[i].CenterOfMass()
-                                        v2 = topFaces[j].CenterOfMass()
+                                        v1 = Topology.CenterOfMass(faces[i])
+                                        v2 = Topology.CenterOfMass(faces[j])
                                     e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
-                                    mDict = mergeDictionaries(apList)
+                                    mDict = mergeDictionaries(apTopList)
+                                    if not mDict == None:
+                                        keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
+                                        values = (Dictionary.Values(mDict) or [])+["Direct", 0]
+                                    else:
+                                        keys = ["relationship", edgeCategoryKey]
+                                        values = ["Direct", 0]
+                                    mDict = Dictionary.ByKeysValues(keys, values)
                                     if mDict:
-                                        e.SetDictionary(mDict)
-                                    edges.append(e)
-
-            topFaces = []
-            _ = topology.Faces(None, topFaces)
-            if any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents == True]):
-                for aFace in topFaces:
+                                        e = Topology.SetDictionary(e, mDict, silent=True)
+                                    graph_edges.append(e)
+            faces = Topology.Faces(topology)
+            if any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents]):
+                for aFace in faces:
                     if useInternalVertex == True:
                         vFace = Topology.InternalVertex(aFace, tolerance=tolerance)
                     else:
-                        vFace = aFace.CenterOfMass()
-                    _ = vFace.SetDictionary(aFace.GetDictionary())
-                    fEdges = []
-                    _ = aFace.Edges(None, fEdges)
+                        vFace = Topology.CenterOfMass(aFace)
+                    d = Topology.Dictionary(aFace)
+                    vFace = Topology.SetDictionary(vFace, d, silent=True)
+                    edges = Topology.Edges(aFace)
                     sharedTopologies = []
                     exteriorTopologies = []
                     sharedApertures = []
                     exteriorApertures = []
-                    for anEdge in fEdges:
-                        faces = []
-                        _ = anEdge.Faces(topology, faces)
-                        if len(faces) > 1:
+                    face_contents = Topology.Contents(aFace)
+                    for anEdge in edges:
+                        faces1 = Topology.SuperTopologies(anEdge, hostTopology=topology, topologyType="Face")
+                        if len(faces1) > 1:
                             sharedTopologies.append(anEdge)
                             apertures = Topology.Apertures(anEdge)
                             for anAperture in apertures:
@@ -3153,387 +3118,168 @@ class Graph:
                             for anAperture in apertures:
                                 exteriorApertures.append(anAperture)
                     if viaSharedTopologies:
+                        verts, eds = _viaSharedTopologies(vFace, sharedTopologies)
+                        graph_vertices += verts
+                        graph_edges += eds
                         for sharedTopology in sharedTopologies:
                             if useInternalVertex == True:
                                 vst = Topology.InternalVertex(sharedTopology, tolerance)
                             else:
-                                vst = sharedTopology.CenterOfMass()
-                            d1 = sharedTopology.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 1) # shared topology
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedTopology), Topology.Type(sharedTopology), Topology.TypeAsString(sharedTopology)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Topologies", 1])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                                vst = Topology.CenterOfMass(sharedTopology)
+                            d = Topology.Dictionary(sharedTopology)
+                            vst = Topology.SetDictionary(vst, d, silent=True)
                             if toContents:
-                                contents = []
-                                _ = sharedTopology.Contents(contents)
-                                for content in contents:
-                                    if Topology.IsInstance(content, "Aperture"):
-                                        content = Aperture.Topology(content)
-                                    if useInternalVertex == True:
-                                        vst2 = Topology.InternalVertex(content, tolerance)
-                                    else:
-                                        vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
-                                    d1 = content.GetDictionary()
-                                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                                    if storeBREP:
-                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                        d3 = mergeDictionaries2([d1, d2])
-                                        _ = vst2.SetDictionary(d3)
-                                    else:
-                                        _ = vst2.SetDictionary(d1)
-                                    vertices.append(vst2)
-                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                                    _ = tempe.SetDictionary(tempd)
-                                    edges.append(tempe)
+                                shd_top_contents = Topology.Contents(sharedTopology)
+                                verts, eds = _toContents(vst, shd_top_contents)
+                                graph_vertices += verts
+                                graph_edges += eds
+                            if toOutposts and others:
+                                verts, eds = _toOutposts(vst, others)
+                                graph_vertices += verts
+                                graph_edges += eds
                     if viaSharedApertures:
-                        for sharedAp in sharedApertures:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(sharedAp, tolerance)
-                            else:
-                                vst = sharedAp.CenterOfMass()
-                            d1 = sharedAp.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 2) # shared aperture
-                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Apertures", 2])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                        verts, eds = _viaSharedTopologies(vFace, sharedApertures)
+                        graph_vertices += verts
+                        graph_edges += eds
                     if toExteriorTopologies:
+                        verts, eds = _toExteriorTopologies(vFace, exteriorTopologies)
+                        graph_vertices += verts
+                        graph_edges += eds
                         for exteriorTopology in exteriorTopologies:
                             if useInternalVertex == True:
-                                vst = Topology.InternalVertex(exteriorTopology, tolerance)
+                                vet = Topology.InternalVertex(exteriorTopology, tolerance)
                             else:
-                                vst = exteriorTopology.CenterOfMass()
-                            d1 = exteriorTopology.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 3) # exterior topology
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                                vet = Topology.CenterOfMass(exteriorTopology)
+                            d = Topology.Dictionary(exteriorTopology)
+                            vet = Topology.SetDictionary(vet, d, silent=True)
                             if toContents:
-                                contents = []
-                                _ = exteriorTopology.Contents(contents)
-                                for content in contents:
-                                    if Topology.IsInstance(content, "Aperture"):
-                                        content = Aperture.Topology(content)
-                                    if useInternalVertex == True:
-                                        vst2 = Topology.InternalVertex(content, tolerance)
-                                    else:
-                                        vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
-                                    d1 = content.GetDictionary()
-                                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) #  content
-                                    if storeBREP:
-                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                        d3 = mergeDictionaries2([d1, d2])
-                                        _ = vst2.SetDictionary(d3)
-                                    else:
-                                        _ = vst2.SetDictionary(d1)
-                                    vertices.append(vst2)
-                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                                    _ = tempe.SetDictionary(tempd)
-                                    edges.append(tempe)
+                                ext_top_contents = Topology.Contents(exteriorTopology)
+                                verts, eds = _toContents(vet, ext_top_contents)
+                                graph_vertices += verts
+                                graph_edges += eds
+                            if toOutposts and others:
+                                verts, eds = _toOutposts(vet, others)
+                                graph_vertices += verts
+                                graph_edges += eds
                     if toExteriorApertures:
-                        for exTop in exteriorApertures:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(exTop, tolerance)
-                            else:
-                                vst = exTop.CenterOfMass()
-                            d1 = exTop.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 4) # exterior aperture
-                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                        verts, eds = _toExteriorApertures(vFace, exteriorApertures)
+                        graph_vertices += verts
+                        graph_edges += eds
                     if toContents:
-                        contents = []
-                        _ = aFace.Contents(contents)
-                        for content in contents:
-                            if Topology.IsInstance(content, "Aperture"):
-                                content = Aperture.Topology(content)
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(content, tolerance)
-                            else:
-                                vst = content.CenterOfMass()
-                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                            d1 = content.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
-
-            for aFace in topFaces:
-                if useInternalVertex == True:
-                    vFace = Topology.InternalVertex(aFace, tolerance)
-                else:
-                    vFace = aFace.CenterOfMass()
-                d1 = aFace.GetDictionary()
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-                if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(aFace), Topology.Type(aFace), Topology.TypeAsString(aFace)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    _ = vFace.SetDictionary(d3)
-                else:
-                    _ = vFace.SetDictionary(d1)
-                vertices.append(vFace)
-            if toOutposts and others:
-                d = Topology.Dictionary(topology)
-                if not d == None:
-                    keys = Dictionary.Keys(d)
-                else:
-                    keys = []
-                k = None
-                for key in keys:
-                    if key.lower() == outpostsKey.lower():
-                        k = key
-                if k:
-                    ids = Dictionary.ValueAtKey(k)
-                    outposts = outpostsByID(others, ids, idKey)
-                else:
-                    outposts = []
-                for outpost in outposts:
-                    if useInternalVertex == True:
-                        vop = Topology.InternalVertex(outpost, tolerance)
-                        vcc = Topology.InternalVertex(topology, tolerance)
-                    else:
-                        vop = Topology.CenterOfMass(outpost)
-                        vcc = Topology.CenterOfMass(topology)
-                    d1 = Topology.Dictionary(vcc)
-                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-                    if storeBREP:
-                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
-                        d3 = mergeDictionaries2([d1, d2])
-                        _ = vcc.SetDictionary(d3)
-                    else:
-                        _ = vcc.SetDictionary(d1)
-                    vertices.append(vcc)
-                    d1 = Topology.Dictionary(vop)
-                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 6) # outpost
-                    if storeBREP:
-                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
-                        d3 = mergeDictionaries2([d1, d2])
-                        _ = vop.SetDictionary(d3)
-                    else:
-                        _ = vop.SetDictionary(d1)
-                    vertices.append(vcc)
-                    tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
-                    _ = tempe.SetDictionary(tempd)
-                    edges.append(tempe)
-            return [vertices, edges]
+                        verts, eds = _toContents(vFace, face_contents)
+                        graph_vertices += verts
+                        graph_edges += eds
+                    if toOutposts and others:
+                        verts, eds = toOutposts(vFace, others)
+                        graph_vertices += verts
+                        graph_edges += eds
+            return [graph_vertices, graph_edges]
 
         def processFace(item):
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            vertices = []
-            edges = []
-
+            graph_vertices = []
+            graph_edges = []
             if useInternalVertex == True:
                 vFace = Topology.InternalVertex(topology, tolerance=tolerance)
             else:
-                vFace = topology.CenterOfMass()
-            d1 = topology.GetDictionary()
+                vFace = Topology.CenterOfMass(topology)
+            d1 = Topology.Dictionary(topology)
             d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
             if storeBREP:
                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
                 d3 = mergeDictionaries2([d1, d2])
-                _ = vFace.SetDictionary(d3)
+                vFace = Topology.SetDictionary(vFace, d3, silent=True)
             else:
-                _ = vFace.SetDictionary(d1)
-            vertices.append(vFace)
-            if toOutposts and others:
-                d = Topology.Dictionary(topology)
-                if not d == None:
-                    keys = Dictionary.Keys(d)
-                else:
-                    keys = []
-                k = None
-                for key in keys:
-                    if key.lower() == outpostsKey.lower():
-                        k = key
-                if k:
-                    ids = Dictionary.ValueAtKey(d, k)
-                    outposts = outpostsByID(others, ids, idKey)
-                else:
-                    outposts = []
-                for outpost in outposts:
-                    if useInternalVertex == True:
-                        vop = Topology.InternalVertex(outpost, tolerance)
-                    else:
-                        vop = Topology.CenterOfMass(outpost)
-                    tempe = Edge.ByStartVertexEndVertex(vFace, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
-                    _ = tempe.SetDictionary(tempd)
-                    edges.append(tempe)
-            if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
-                fEdges = []
-                _ = topology.Edges(None, fEdges)
+                vFace = Topology.SetDictionary(vFace, d1, silent=True)
+            graph_vertices.append(vFace)
+            if any([toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
+                face_contents = Topology.Contents(topology)
+                edges = Topology.Edges(topology)
                 exteriorTopologies = []
                 exteriorApertures = []
-
-                for anEdge in fEdges:
+                for anEdge in edges:
                     exteriorTopologies.append(anEdge)
                     apertures = Topology.Apertures(anEdge)
                     for anAperture in apertures:
                         exteriorApertures.append(anAperture)
-                    if toExteriorTopologies:
-                        for exteriorTopology in exteriorTopologies:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(exteriorTopology, tolerance)
-                            else:
-                                vst = exteriorTopology.CenterOfMass()
-                            d1 = exteriorTopology.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 3) # exterior topology
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
-                            if toContents:
-                                contents = []
-                                _ = exteriorTopology.Contents(contents)
-                                for content in contents:
-                                    if Topology.IsInstance(content, "Aperture"):
-                                        content = Aperture.Topology(content)
-                                    if useInternalVertex == True:
-                                        vst2 = Topology.InternalVertex(content, tolerance)
-                                    else:
-                                        vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
-                                    d1 = content.GetDictionary()
-                                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                                    if storeBREP:
-                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                        d3 = mergeDictionaries2([d1, d2])
-                                        _ = vst2.SetDictionary(d3)
-                                    else:
-                                        _ = vst2.SetDictionary(d1)
-                                    vertices.append(vst2)
-                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                                    _ = tempe.SetDictionary(tempd)
-                                    edges.append(tempe)
-                    if toExteriorApertures:
-                        for exTop in exteriorApertures:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(exTop, tolerance)
-                            else:
-                                vst = exTop.CenterOfMass()
-                            d1 = exTop.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 4) # exterior aperture
-                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
-                    if toContents:
-                        contents = []
-                        _ = topology.Contents(contents)
-                        for content in contents:
-                            if Topology.IsInstance(content, "Aperture"):
-                                content = Aperture.Topology(content)
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(content, tolerance)
-                            else:
-                                vst = content.CenterOfMass()
-                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                            d1 = content.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vFace, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
-            return [vertices, edges]
+                if toExteriorTopologies:
+                    verts, eds = _toExteriorTopologies(vFace, exteriorTopologies)
+                    graph_vertices += verts
+                    graph_edges += eds
+                    for exteriorTopology in exteriorTopologies:
+                        if useInternalVertex == True:
+                            vet = Topology.InternalVertex(exteriorTopology, tolerance)
+                        else:
+                            vet = Topology.CenterOfMass(exteriorTopology)
+                        d = Topology.Dictionary(exteriorTopology)
+                        vet = Topology.SetDictionary(vet, d, silent=True)
+                        if toContents:
+                            ext_top_contents = Topology.Contents(exteriorTopology)
+                            verts, eds = _toContents(vet, ext_top_contents)
+                            graph_vertices += verts
+                            graph_edges += eds
+                        if toOutposts and others:
+                            verts, eds = _toOutposts(vet, others)
+                            graph_vertices += verts
+                            graph_edges += eds
+                if toExteriorApertures:
+                    verts, eds = _toExteriorApertures(vFace, exteriorApertures)
+                    graph_vertices += verts
+                    graph_edges += eds
+                if toContents:
+                    verts, eds = _toContents(vFace, face_contents)
+                    graph_vertices += verts
+                    graph_edges += eds
+                if toOutposts and others:
+                    verts, eds = toOutposts(vFace, others)
+                    graph_vertices += verts
+                    graph_edges += eds
+            return [graph_vertices, graph_edges]
+
+
 
         def processWire(item):
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            edges = []
-            vertices = []
+            graph_vertices = []
+            graph_edges = []
             edgemat = []
+            # Store all the vertices of the cells of the cellComplex
+            edges = Topology.Edges(topology)
+            for edge in edges:
+                if useInternalVertex == True:
+                    vEdge = Topology.InternalVertex(edge, tolerance=tolerance)
+                else:
+                    vEdge = Topology.CenterOfMass(edge)
+                d1 = Topology.Dictionary(edge)
+                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
+                if storeBREP:
+                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(edge), Topology.Type(edge), Topology.TypeAsString(edge)])
+                    d3 = mergeDictionaries2([d1, d2])
+                    vEdge = Topology.SetDictionary(vEdge, d3, silent=True)
+                else:
+                    vEdge = Topology.SetDictionary(vEdge, d1, silent=True)
+                graph_vertices.append(vEdge)
             if direct == True:
-                topEdges = []
-                _ = topology.Edges(None, topEdges)
+                edges = Topology.Edges(topology)
                 # Create a matrix of zeroes
-                for i in range(len(topEdges)):
+                for i in range(len(edges)):
                     edgeRow = []
-                    for j in range(len(topEdges)):
+                    for j in range(len(edges)):
                         edgeRow.append(0)
                     edgemat.append(edgeRow)
-                for i in range(len(topEdges)):
-                    for j in range(len(topEdges)):
+                for i in range(len(edges)):
+                    for j in range(len(edges)):
                         if (i != j) and edgemat[i][j] == 0:
                             edgemat[i][j] = 1
                             edgemat[j][i] = 1
-                            sharedt = Topology.SharedVertices(topEdges[i], topEdges[j])
+                            sharedt = Topology.SharedVertices(edges[i], edges[j])
                             if len(sharedt) > 0:
-                                try:
-                                    v1 = Edge.VertexByParameter(topEdges[i], 0.5)
-                                except:
-                                    v1 = topEdges[j].CenterOfMass()
-                                try:
-                                    v2 = Edge.VertexByParameter(topEdges[j], 0.5)
-                                except:
-                                    v2 = topEdges[j].CenterOfMass()
+                                if useInternalVertex == True:
+                                    v1 = Topology.InternalVertex(edges[i], tolerance=tolerance)
+                                    v2 = Topology.InternalVertex(edges[j], tolerance=tolerance)
+                                else:
+                                    v1 = Topology.CenterOfMass(edges[i])
+                                    v2 = Topology.CenterOfMass(edges[j])
                                 e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
                                 mDict = mergeDictionaries(sharedt)
                                 if not mDict == None:
@@ -3544,75 +3290,70 @@ class Graph:
                                     values = ["Direct", 0]
                                 mDict = Dictionary.ByKeysValues(keys, values)
                                 if mDict:
-                                    e.SetDictionary(mDict)
-                                edges.append(e)
+                                    e = Topology.SetDictionary(e, mDict, silent=True)
+                                graph_edges.append(e)
             if directApertures == True:
                 edgemat = []
-                topEdges = []
-                _ = topology.Edges(None, topEdges)
+                edges = Topology.Edges(topology)
                 # Create a matrix of zeroes
-                for i in range(len(topEdges)):
-                    edgeRow = []
-                    for j in range(len(topEdges)):
+                for i in range(len(edges)):
+                    cellRow = []
+                    for j in range(len(edges)):
                         edgeRow.append(0)
                     edgemat.append(edgeRow)
-                for i in range(len(topEdges)):
-                    for j in range(len(topEdges)):
+                for i in range(len(edges)):
+                    for j in range(len(edges)):
                         if (i != j) and edgemat[i][j] == 0:
                             edgemat[i][j] = 1
                             edgemat[j][i] = 1
-                            sharedt = Topology.SharedVertices(topEdges[i], topEdges[j])
+                            sharedt = Topology.SharedVertices(edges[i], edges[j])
                             if len(sharedt) > 0:
                                 apertureExists = False
                                 for x in sharedt:
                                     apList = Topology.Apertures(x)
                                     if len(apList) > 0:
+                                        apTopList = []
+                                        for ap in apList:
+                                            apTopList.append(ap)
                                         apertureExists = True
                                         break
                                 if apertureExists:
-                                    try:
-                                        v1 = Edge.VertexByParameter(topEdges[i], 0.5)
-                                    except:
-                                        v1 = topEdges[j].CenterOfMass()
-                                    try:
-                                        v2 = Edge.VertexByParameter(topEdges[j], 0.5)
-                                    except:
-                                        v2 = topEdges[j].CenterOfMass()
+                                    if useInternalVertex == True:
+                                        v1 = Topology.InternalVertex(edges[i], tolerance=tolerance)
+                                        v2 = Topology.InternalVertex(edges[j], tolerance=tolerance)
+                                    else:
+                                        v1 = Topology.CenterOfMass(edges[i])
+                                        v2 = Topology.CenterOfMass(edges[j])
                                     e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
-                                    mDict = mergeDictionaries(apList)
+                                    mDict = mergeDictionaries(apTopList)
+                                    if not mDict == None:
+                                        keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
+                                        values = (Dictionary.Values(mDict) or [])+["Direct", 0]
+                                    else:
+                                        keys = ["relationship", edgeCategoryKey]
+                                        values = ["Direct", 0]
+                                    mDict = Dictionary.ByKeysValues(keys, values)
                                     if mDict:
-                                        e.SetDictionary(mDict)
-                                    edges.append(e)
-
-            topEdges = []
-            _ = topology.Edges(None, topEdges)
-            if (viaSharedTopologies == True) or (viaSharedApertures == True) or (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
-                for anEdge in topEdges:
-                    try:
-                        vEdge = Edge.VertexByParameter(anEdge, 0.5)
-                    except:
-                        vEdge = anEdge.CenterOfMass()
-                    # d1 = anEdge.GetDictionary()
-                    # d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-                    # if storeBREP:
-                    #     d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(anEdge), Topology.Type(anEdge), Topology.TypeAsString(anEdge)])
-                    #     d3 = mergeDictionaries2([d1, d2])
-                    #     _ = vEdge.SetDictionary(d3)
-                    # else:
-                    #     _ = vEdge.SetDictionary(d1)
-                    # vertices.append(vEdge)
-                    eVertices = []
-                    _ = anEdge.Vertices(None, eVertices)
+                                        e = Topology.SetDictionary(e, mDict, silent=True)
+                                    graph_edges.append(e)
+            edges = Topology.Edges(topology)
+            if any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents]):
+                for anEdge in edges:
+                    if useInternalVertex == True:
+                        vEdge = Topology.InternalVertex(anEdge, tolerance=tolerance)
+                    else:
+                        vEdge = Topology.CenterOfMass(anEdge)
+                    d = Topology.Dictionary(anEdge)
+                    vCell = Topology.SetDictionary(vEdge, d, silent=True)
+                    vertices = Topology.Vertices(anEdge)
                     sharedTopologies = []
                     exteriorTopologies = []
                     sharedApertures = []
                     exteriorApertures = []
-                    contents = []
-                    _ = anEdge.Contents(contents)
-                    for aVertex in eVertices:
-                        tempEdges = []
-                        _ = aVertex.Edges(topology, tempEdges)
-                        if len(tempEdges) > 1:
+                    edge_contents = Topology.Contents(anEdge)
+                    for aVertex in vertices:
+                        edges1 = Topology.SuperTopologies(aVertex, topology, topologyType="Edge")
+                        if len(edges1) > 1:
                             sharedTopologies.append(aVertex)
                             apertures = Topology.Apertures(aVertex)
                             for anAperture in apertures:
@@ -3623,328 +3364,262 @@ class Graph:
                             for anAperture in apertures:
                                 exteriorApertures.append(anAperture)
                     if viaSharedTopologies:
+                        verts, eds = _viaSharedTopologies(vEdge, sharedTopologies)
+                        graph_vertices += verts
+                        graph_edges += eds
                         for sharedTopology in sharedTopologies:
-                            vst = sharedTopology.CenterOfMass()
-                            d1 = sharedTopology.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 1) # shared topology
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedTopology), Topology.Type(sharedTopology), Topology.TypeAsString(sharedTopology)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
+                            if useInternalVertex == True:
+                                vst = Topology.InternalVertex(sharedTopology, tolerance)
                             else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Topologies", 1])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                                vst = Topology.CenterOfMass(sharedTopology)
+                            d = Topology.Dictionary(sharedTopology)
+                            vst = Topology.SetDictionary(vst, d, silent=True)
                             if toContents:
-                                contents = []
-                                _ = sharedTopology.Contents(contents)
-                                for content in contents:
-                                    if Topology.IsInstance(content, "Aperture"):
-                                        content = Aperture.Topology(content)
-                                    if useInternalVertex == True:
-                                        vst2 = Topology.InternalVertex(content, tolerance)
-                                    else:
-                                        vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
-                                    d1 = content.GetDictionary()
-                                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                                    if storeBREP:
-                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                        d3 = mergeDictionaries2([d1, d2])
-                                        _ = vst2.SetDictionary(d3)
-                                    else:
-                                        _ = vst2.SetDictionary(d1)
-                                    vertices.append(vst2)
-                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                                    _ = tempe.SetDictionary(tempd)
-                                    edges.append(tempe)
+                                shd_top_contents = Topology.Contents(sharedTopology)
+                                verts, eds = _toContents(vst, shd_top_contents)
+                                graph_vertices += verts
+                                graph_edges += eds
+                            if toOutposts and others:
+                                verts, eds = _toOutposts(vst, others)
+                                graph_vertices += verts
+                                graph_edges += eds
                     if viaSharedApertures:
-                        for sharedAp in sharedApertures:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(sharedAp, tolerance)
-                            else:
-                                vst = sharedAp.CenterOfMass()
-                            d1 = sharedAp.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 2) # shared aperture
-                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Apertures", 2])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                        verts, eds = _viaSharedTopologies(vCell, sharedApertures)
+                        graph_vertices += verts
+                        graph_edges += eds
                     if toExteriorTopologies:
+                        verts, eds = _toExteriorTopologies(vCell, exteriorTopologies)
+                        graph_vertices += verts
+                        graph_edges += eds
                         for exteriorTopology in exteriorTopologies:
-                            vst = exteriorTopology
-                            vertices.append(exteriorTopology)
-                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                            if useInternalVertex == True:
+                                vet = Topology.InternalVertex(exteriorTopology, tolerance)
+                            else:
+                                vet = Topology.CenterOfMass(exteriorTopology)
+                            d = Topology.Dictionary(exteriorTopology)
+                            vet = Topology.SetDictionary(vet, d, silent=True)
                             if toContents:
-                                contents = []
-                                _ = vst.Contents(contents)
-                                for content in contents:
-                                    if Topology.IsInstance(content, "Aperture"):
-                                        content = Aperture.Topology(content)
-                                    if useInternalVertex == True:
-                                        vst2 = Topology.InternalVertex(content, tolerance)
-                                    else:
-                                        vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
-                                    d1 = content.GetDictionary()
-                                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                                    if storeBREP:
-                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                        d3 = mergeDictionaries2([d1, d2])
-                                        _ = vst2.SetDictionary(d3)
-                                    else:
-                                        _ = vst2.SetDictionary(d1)
-                                    vertices.append(vst2)
-                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                                    _ = tempe.SetDictionary(tempd)
-                                    edges.append(tempe)
+                                ext_top_contents = Topology.Contents(exteriorTopology)
+                                verts, eds = _toContents(vet, ext_top_contents)
+                                graph_vertices += verts
+                                graph_edges += eds
+                            if toOutposts and others:
+                                verts, eds = _toOutposts(vet, others)
+                                graph_vertices += verts
+                                graph_edges += eds
                     if toExteriorApertures:
-                        for exTop in exteriorApertures:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(exTop, tolerance)
-                            else:
-                                vst = exTop.CenterOfMass()
-                            d1 = exTop.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 4) # exterior aperture
-                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                        verts, eds = _toExteriorApertures(vEdge, exteriorApertures)
+                        graph_vertices += verts
+                        graph_edges += eds
                     if toContents:
-                        contents = []
-                        _ = anEdge.Contents(contents)
-                        for content in contents:
-                            if Topology.IsInstance(content, "Aperture"):
-                                content = Aperture.Topology(content)
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(content, tolerance)
-                            else:
-                                vst = content.CenterOfMass()
-                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                            d1 = content.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
-            for anEdge in topEdges:
-                try:
-                    vEdge = Edge.VertexByParameter(anEdge, 0.5)
-                except:
-                    vEdge = anEdge.CenterOfMass()
-                d1 = anEdge.GetDictionary()
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topologuy
-                if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(anEdge), Topology.Type(anEdge), Topology.TypeAsString(anEdge)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    _ = vEdge.SetDictionary(d3)
-                else:
-                    _ = vEdge.SetDictionary(d1)
-                vertices.append(vEdge)
-            
-            if toOutposts and others:
-                d = Topology.Dictionary(topology)
-                if not d == None:
-                    keys = Dictionary.Keys(d)
-                else:
-                    keys = []
-                k = None
-                for key in keys:
-                    if key.lower() == outpostsKey.lower():
-                        k = key
-                if k:
-                    ids = Dictionary.ValueAtKey(k)
-                    outposts = outpostsByID(others, ids, idKey)
-                else:
-                    outposts = []
-                for outpost in outposts:
-                    if useInternalVertex == True:
-                        vop = Topology.InternalVertex(outpost, tolerance)
-                        vcc = Topology.InternalVertex(topology, tolerance)
-                    else:
-                        vop = Topology.CenterOfMass(outpost)
-                        vcc = Topology.CenterOfMass(topology)
-                    d1 = Topology.Dictionary(vcc)
-                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-                    if storeBREP:
-                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
-                        d3 = mergeDictionaries2([d1, d2])
-                        _ = vcc.SetDictionary(d3)
-                    else:
-                        _ = vcc.SetDictionary(d1)
-                    vertices.append(vcc)
-                    d1 = Topology.Dictionary(vop)
-                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 6) # outpost
-                    if storeBREP:
-                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
-                        d3 = mergeDictionaries2([d1, d2])
-                        _ = vop.SetDictionary(d3)
-                    else:
-                        _ = vop.SetDictionary(d1)
-                    vertices.append(vop)
-                    tempe = Edge.ByStartVertexEndVertex(vcc, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
-                    _ = tempe.SetDictionary(tempd)
-                    edges.append(tempe)
-            
-            return [vertices, edges]
+                        verts, eds = _toContents(vEdge, edge_contents)
+                        graph_vertices += verts
+                        graph_edges += eds
+                    if toOutposts and others:
+                        verts, eds = toOutposts(vEdge, others)
+                        graph_vertices += verts
+                        graph_edges += eds
+            return [graph_vertices, graph_edges]
+
+
 
         def processEdge(item):
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            vertices = []
-            edges = []
-
+            graph_vertices = []
+            graph_edges = []
             if useInternalVertex == True:
-                try:
-                    vEdge = Edge.VertexByParameter(topology, 0.5)
-                except:
-                    vEdge = topology.CenterOfMass()
+                vEdge = Topology.InternalVertex(topology, tolerance=tolerance)
             else:
-                vEdge = topology.CenterOfMass()
-
-            d1 = vEdge.GetDictionary()
+                vEdge = Topology.CenterOfMass(topology)
+            d1 = Topology.Dictionary(topology)
             d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
             if storeBREP:
                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
                 d3 = mergeDictionaries2([d1, d2])
-                _ = vEdge.SetDictionary(d3)
+                vEdge = Topology.SetDictionary(vEdge, d3, silent=True)
             else:
-                _ = vEdge.SetDictionary(topology.GetDictionary())
-
-            vertices.append(vEdge)
-
-            if toOutposts and others:
-                d = Topology.Dictionary(topology)
-                if not d == None:
-                    keys = Dictionary.Keys(d)
-                else:
-                    keys = []
-                k = None
-                for key in keys:
-                    if key.lower() == outpostsKey.lower():
-                        k = key
-                if k:
-                    ids = Dictionary.ValueAtKey(d, k)
-                    outposts = outpostsByID(others, ids, idKey)
-                else:
-                    outposts = []
-                for outpost in outposts:
-                    if useInternalVertex == True:
-                        vop = Topology.InternalVertex(outpost, tolerance)
-                    else:
-                        vop = Topology.CenterOfMass(outpost)
-                    tempe = Edge.ByStartVertexEndVertex(vEdge, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
-                    _ = tempe.SetDictionary(tempd)
-                    edges.append(tempe)
-            
-            if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
-                eVertices = []
-                _ = topology.Vertices(None, eVertices)
+                vEdge = Topology.SetDictionary(vEdge, d1, silent=True)
+            graph_vertices.append(vEdge)
+            if any([toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
+                edge_contents = Topology.Contents(topology)
+                vertices = Topology.Vertices(topology)
                 exteriorTopologies = []
                 exteriorApertures = []
-                for aVertex in eVertices:
+                for aVertex in vertices:
                     exteriorTopologies.append(aVertex)
                     apertures = Topology.Apertures(aVertex)
                     for anAperture in apertures:
                         exteriorApertures.append(anAperture)
-                    if toExteriorTopologies:
-                        for exteriorTopology in exteriorTopologies:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(exteriorTopology, tolerance)
-                            else:
-                                vst = exteriorTopology.CenterOfMass()
-                            d1 = exteriorTopology.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 3) # exterior topology
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
-                            if toContents:
-                                contents = []
-                                _ = vst.Contents(contents)
-                                for content in contents:
-                                    if Topology.IsInstance(content, "Aperture"):
-                                        content = Aperture.Topology(content)
-                                    if useInternalVertex == True:
-                                        vst2 = Topology.InternalVertex(content, tolerance)
-                                    else:
-                                        vst2 = content.CenterOfMass()
-                                    vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
-                                    d1 = content.GetDictionary()
-                                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                                    if storeBREP:
-                                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                                        d3 = mergeDictionaries2([d1, d2])
-                                        _ = vst2.SetDictionary(d3)
-                                    else:
-                                        _ = vst2.SetDictionary(d1)
-                                    vertices.append(vst2)
-                                    tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-                                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                                    _ = tempe.SetDictionary(tempd)
-                                    edges.append(tempe)
-                    if toExteriorApertures:
-                        for exTop in exteriorApertures:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(exTop, tolerance)
-                            else:
-                                vst = exTop.CenterOfMass()
-                            d1 = exTop.GetDictionary()
-                            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 4) # exterior aperture
-                            vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                            if storeBREP:
-                                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
-                                d3 = mergeDictionaries2([d1, d2])
-                                _ = vst.SetDictionary(d3)
-                            else:
-                                _ = vst.SetDictionary(d1)
-                            _ = vst.SetDictionary(exTop.GetDictionary())
-                            vertices.append(vst)
-                            tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-                            tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
-                            _ = tempe.SetDictionary(tempd)
-                            edges.append(tempe)
+                if toExteriorTopologies:
+                    verts, eds = _toExteriorTopologies(vEdge, exteriorTopologies)
+                    graph_vertices += verts
+                    graph_edges += eds
+                    for exteriorTopology in exteriorTopologies:
+                        if useInternalVertex == True:
+                            vet = Topology.InternalVertex(exteriorTopology, tolerance)
+                        else:
+                            vet = Topology.CenterOfMass(exteriorTopology)
+                        d = Topology.Dictionary(exteriorTopology)
+                        vet = Topology.SetDictionary(vet, d, silent=True)
+                        if toContents:
+                            ext_top_contents = Topology.Contents(exteriorTopology)
+                            verts, eds = _toContents(vet, ext_top_contents)
+                            graph_vertices += verts
+                            graph_edges += eds
+                        if toOutposts and others:
+                            verts, eds = _toOutposts(vet, others)
+                            graph_vertices += verts
+                            graph_edges += eds
+                if toExteriorApertures:
+                    verts, eds = _toExteriorApertures(vEdge, exteriorApertures)
+                    graph_vertices += verts
+                    graph_edges += eds
+                if toContents:
+                    verts, eds = _toContents(vEdge, edge_contents)
+                    graph_vertices += verts
+                    graph_edges += eds
+                if toOutposts and others:
+                    verts, eds = toOutposts(vEdge, others)
+                    graph_vertices += verts
+                    graph_edges += eds
+            return [graph_vertices, graph_edges]
+
+
+
+
+
+
+        # def processEdge(item):
+        #     topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
+        #     vertices = []
+        #     edges = []
+
+        #     if useInternalVertex == True:
+        #         try:
+        #             vEdge = Edge.VertexByParameter(topology, 0.5)
+        #         except:
+        #             vEdge = topology.CenterOfMass()
+        #     else:
+        #         vEdge = topology.CenterOfMass()
+
+        #     d1 = vEdge.GetDictionary()
+        #     d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
+        #     if storeBREP:
+        #         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
+        #         d3 = mergeDictionaries2([d1, d2])
+        #         _ = vEdge.SetDictionary(d3)
+        #     else:
+        #         _ = vEdge.SetDictionary(topology.GetDictionary())
+
+        #     vertices.append(vEdge)
+
+        #     if toOutposts and others:
+        #         d = Topology.Dictionary(topology)
+        #         if not d == None:
+        #             keys = Dictionary.Keys(d)
+        #         else:
+        #             keys = []
+        #         k = None
+        #         for key in keys:
+        #             if key.lower() == outpostsKey.lower():
+        #                 k = key
+        #         if k:
+        #             ids = Dictionary.ValueAtKey(d, k)
+        #             outposts = outpostsByID(others, ids, idKey)
+        #         else:
+        #             outposts = []
+        #         for outpost in outposts:
+        #             if useInternalVertex == True:
+        #                 vop = Topology.InternalVertex(outpost, tolerance)
+        #             else:
+        #                 vop = Topology.CenterOfMass(outpost)
+        #             tempe = Edge.ByStartVertexEndVertex(vEdge, vop, tolerance=tolerance)
+        #             tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
+        #             _ = tempe.SetDictionary(tempd)
+        #             edges.append(tempe)
+            
+        #     if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
+        #         eVertices = []
+        #         _ = topology.Vertices(None, eVertices)
+        #         exteriorTopologies = []
+        #         exteriorApertures = []
+        #         for aVertex in eVertices:
+        #             exteriorTopologies.append(aVertex)
+        #             apertures = Topology.Apertures(aVertex)
+        #             for anAperture in apertures:
+        #                 exteriorApertures.append(anAperture)
+        #             if toExteriorTopologies:
+        #                 for exteriorTopology in exteriorTopologies:
+        #                     if useInternalVertex == True:
+        #                         vst = Topology.InternalVertex(exteriorTopology, tolerance)
+        #                     else:
+        #                         vst = exteriorTopology.CenterOfMass()
+        #                     d1 = exteriorTopology.GetDictionary()
+        #                     d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 3) # exterior topology
+        #                     if storeBREP:
+        #                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
+        #                         d3 = mergeDictionaries2([d1, d2])
+        #                         _ = vst.SetDictionary(d3)
+        #                     else:
+        #                         _ = vst.SetDictionary(d1)
+        #                     vertices.append(vst)
+        #                     tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
+        #                     tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
+        #                     _ = tempe.SetDictionary(tempd)
+        #                     edges.append(tempe)
+        #                     if toContents:
+        #                         contents = []
+        #                         _ = vst.Contents(contents)
+        #                         for content in contents:
+        #                             if Topology.IsInstance(content, "Aperture"):
+        #                                 content = Aperture.Topology(content)
+        #                             if useInternalVertex == True:
+        #                                 vst2 = Topology.InternalVertex(content, tolerance)
+        #                             else:
+        #                                 vst2 = content.CenterOfMass()
+        #                             vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
+        #                             d1 = content.GetDictionary()
+        #                             d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
+        #                             if storeBREP:
+        #                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
+        #                                 d3 = mergeDictionaries2([d1, d2])
+        #                                 _ = vst2.SetDictionary(d3)
+        #                             else:
+        #                                 _ = vst2.SetDictionary(d1)
+        #                             vertices.append(vst2)
+        #                             tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
+        #                             tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
+        #                             _ = tempe.SetDictionary(tempd)
+        #                             edges.append(tempe)
+        #             if toExteriorApertures:
+        #                 for exTop in exteriorApertures:
+        #                     if useInternalVertex == True:
+        #                         vst = Topology.InternalVertex(exTop, tolerance)
+        #                     else:
+        #                         vst = exTop.CenterOfMass()
+        #                     d1 = exTop.GetDictionary()
+        #                     d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 4) # exterior aperture
+        #                     vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
+        #                     if storeBREP:
+        #                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
+        #                         d3 = mergeDictionaries2([d1, d2])
+        #                         _ = vst.SetDictionary(d3)
+        #                     else:
+        #                         _ = vst.SetDictionary(d1)
+        #                     _ = vst.SetDictionary(exTop.GetDictionary())
+        #                     vertices.append(vst)
+        #                     tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
+        #                     tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
+        #                     _ = tempe.SetDictionary(tempd)
+        #                     edges.append(tempe)
                     
-            return [vertices, edges]
+        #     return [vertices, edges]
+
+
+
+
+
+
 
         def processVertex(item):
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
@@ -3952,28 +3627,27 @@ class Graph:
             edges = []
 
             if toContents:
-                contents = []
-                _ = topology.Contents(contents)
+                contents = Topology.Contents(topology)
                 for content in contents:
                     if Topology.IsInstance(content, "Aperture"):
                         content = Aperture.Topology(content)
                     if useInternalVertex == True:
                         vst = Topology.InternalVertex(content, tolerance)
                     else:
-                        vst = content.CenterOfMass()
-                    d1 = content.GetDictionary()
+                        vst = Topology.CenterOfMass(content)
+                    d1 = Topology.Dictionary(content)
                     d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
                     vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
                     if storeBREP:
                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
                         d3 = mergeDictionaries2([d1, d2])
-                        _ = vst.SetDictionary(d3)
+                        vst = Topology.SetDictionary(vst, d3, silent=True)
                     else:
-                        _ = vst.SetDictionary(d1)
+                        vst = Topology.SetDictionary(vst, d1, silent=True)
                     vertices.append(vst)
                     tempe = Edge.ByStartVertexEndVertex(topology, vst, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                    _ = tempe.SetDictionary(tempd)
+                    tempe = Topology.SetDictionary(tempe, tempd, silent=True)
                     edges.append(tempe)
             
             if toOutposts and others:
@@ -3998,7 +3672,7 @@ class Graph:
                         vop = Topology.CenterOfMass(outpost)
                     tempe = Edge.ByStartVertexEndVertex(topology, vop, tolerance=tolerance)
                     tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
-                    _ = tempe.SetDictionary(tempd)
+                    tempd = Topology.SetDictionary(tempe, tempd, silent=True)
                     edges.append(tempe)
             
             return [vertices, edges]
@@ -4007,7 +3681,15 @@ class Graph:
         if not Topology.IsInstance(topology, "Topology"):
             print("Graph.ByTopology - Error: The input topology is not a valid topology. Returning None.")
             return None
-        item = [topology, None, None, None, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, None, useInternalVertex, storeBREP, tolerance]
+        c_cellComplexes = Topology.CellComplexes(topology)
+        c_cells = Topology.Cells(topology)
+        c_shells = Topology.Shells(topology)
+        c_faces = Topology.Faces(topology)
+        c_wires = Topology.Wires(topology)
+        c_edges = Topology.Edges(topology)
+        c_vertices = Topology.Vertices(topology)
+        others = c_cellComplexes+c_cells+c_shells+c_faces+c_wires+c_edges+c_vertices
+        item = [topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance]
         vertices = []
         edges = []
         if Topology.IsInstance(topology, "CellComplex"):
@@ -4032,7 +3714,7 @@ class Graph:
             c_wires = Cluster.FreeWires(topology, tolerance=tolerance)
             c_edges = Cluster.FreeEdges(topology, tolerance=tolerance)
             c_vertices = Cluster.FreeVertices(topology, tolerance=tolerance)
-            others = c_cellComplexes+c_cells+c_shells+c_faces+c_wires+c_edges+c_vertices
+            others = others+c_cellComplexes+c_cells+c_shells+c_faces+c_wires+c_edges+c_vertices
             parameters = [others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance]
 
             for t in c_cellComplexes:
@@ -4476,7 +4158,7 @@ class Graph:
         if not len(verticesA) == len(verticesB):
             print("Graph.Connect - Error: The input lists verticesA and verticesB have different lengths. Returning None.")
             return None
-        _ = graph.Connect(verticesA, verticesB, tolerance)
+        _ = graph.Connect(verticesA, verticesB, tolerance) # Hook to core library
         return graph
     
     @staticmethod
@@ -4616,7 +4298,7 @@ class Graph:
             print("Graph.DegreeSequence - Error: The input graph is not a valid graph. Returning None.")
             return None
         sequence = []
-        _ = graph.DegreeSequence(sequence)
+        _ = graph.DegreeSequence(sequence) # Hook to core library
         return sequence
     
     @staticmethod
@@ -4642,6 +4324,60 @@ class Graph:
             return None
         return graph.Density()
     
+    @staticmethod
+    def Depth(graph, vertex = None, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Computes the maximum depth of the input graph rooted at the input vertex.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertex : topologic_core.Vertex , optional
+            The input root vertex. If not set, the first vertex in the graph is set as the root vertex. The default is None.
+        tolerance : float , optional
+                The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        int
+            The calculated maximum depth of the input graph rooted at the input vertex.
+
+        """
+        def dfs(node, depth, visited):
+            visited.add(Vertex.Index(node, vertices, tolerance=tolerance))
+            max_depth = depth
+            for neighbor in Graph.AdjacentVertices(graph, node):
+                if Vertex.Index(neighbor, vertices, tolerance=tolerance) not in visited:
+                    max_depth = max(max_depth, dfs(neighbor, depth + 1, visited))
+            return max_depth
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.Depth - Error: The input graph parameter is not a valid graph. Returning None.")
+            return 
+        
+        vertices = Graph.Vertices(graph)
+        if vertex == None:
+            v_index = 0
+        else:
+            if not Topology.IsInstance(vertex, "Vertex"):
+                if not silent:
+                    print("Graph.Depth - Error: The input rootVertex parameter is not a valid vertex. Returning None.")
+                return None  
+            v_index = Vertex.Index(vertex, vertices, tolerance=tolerance)
+            if v_index == None:
+                if not silent:
+                    print("Graph.Depth - Error: Could not find the input root vertex in the graph's list of vertices. Returning None.")
+                return None
+        visited = set()
+        return dfs(vertex, 1, visited) - 1
+
     @staticmethod
     def DepthMap(graph, vertices=None, key: str = "depth", type: str = "topological", mantissa: int = 6, tolerance: float = 0.0001):
         """
@@ -4719,7 +4455,33 @@ class Graph:
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Diameter - Error: The input graph is not a valid graph. Returning None.")
             return None
-        return graph.Diameter()
+        
+        def dfs(node, visited):
+            visited.add(node)
+            max_depth = 0
+            farthest_node = node
+            for neighbor in adj_dict[node]:
+                if neighbor not in visited:
+                    depth, end_node = dfs(neighbor, visited)
+                    if depth + 1 > max_depth:
+                        max_depth = depth + 1
+                        farthest_node = end_node
+            return max_depth, farthest_node
+
+        adj_dict = Graph.AdjacencyDictionary(graph, includeWeights=False)
+
+        # Step 1: Pick an arbitrary starting node (first node in the graph)
+        start_node = next(iter(adj_dict))
+        
+        # Step 2: Run DFS to find the farthest node from the start_node
+        visited = set()
+        _, farthest_node = dfs(start_node, visited)
+
+        # Step 3: Run DFS from the farthest node found to get the maximum depth
+        visited.clear()
+        diameter, _ = dfs(farthest_node, visited)
+
+        return diameter
     
     @staticmethod
     def Dictionary(graph):
@@ -4742,7 +4504,7 @@ class Graph:
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Dictionary - Error: the input graph parameter is not a valid graph. Returning None.")
             return None
-        return graph.GetDictionary()
+        return graph.GetDictionary() # Hook to core library
     
     @staticmethod
     def Distance(graph, vertexA, vertexB, type: str = "topological", mantissa: int = 6, tolerance: float = 0.0001):
@@ -4850,7 +4612,7 @@ class Graph:
             return None
         if not vertices:
             edges = []
-            _ = graph.Edges(edges, tolerance)
+            _ = graph.Edges(edges, tolerance) # Hook to core library
             return edges
         else:
             vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
@@ -4858,7 +4620,7 @@ class Graph:
             print("Graph.Edges - Error: The input list of vertices does not contain any valid vertices. Returning None.")
             return None
         edges = []
-        _ = graph.Edges(vertices, tolerance, edges)
+        _ = graph.Edges(vertices, tolerance, edges) # Hook to core library
         return list(dict.fromkeys(edges)) # remove duplicates
     
     @staticmethod
@@ -5693,13 +5455,23 @@ class Graph:
                 dict_color = Dictionary.ValueAtKey(d, vertexColorKey)
             if not dict_color == None:
                 vertex_color = dict_color
-            if not vertex_color in Color.CSSNamedColors():
-                vertex_color = defaultVertexColor
-            node_dict['color'] = vertex_color
-            r, g, b = Color.ByCSSNamedColor(vertex_color)
-            node_dict['r'] = r
-            node_dict['g'] = g
-            node_dict['b'] = b
+            if isinstance(vertex_color, list):
+                if len(vertex_color) >= 3:
+                    node_dict['color'] = Color.CSSNamedColor(vertex_color)
+                    r, g, b = vertex_color
+                    node_dict['r'] = r
+                    node_dict['g'] = g
+                    node_dict['b'] = b
+                else:
+                    vertex_color = defaultVertexColor
+            else:
+                if not vertex_color in Color.CSSNamedColors():
+                    vertex_color = defaultVertexColor
+                node_dict['color'] = vertex_color
+                r, g, b = Color.ByCSSNamedColor(vertex_color)
+                node_dict['r'] = r
+                node_dict['g'] = g
+                node_dict['b'] = b
         
             dict_size = None
             if isinstance(vertexSizeKey, str):
@@ -6527,9 +6299,53 @@ class Graph:
             print("Graph.IsolatedVertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         vertices = []
-        _ = graph.IsolatedVertices(vertices)
+        _ = graph.IsolatedVertices(vertices) # Hook to core library
         return vertices
-    
+
+    @staticmethod
+    def IsTree(graph):
+        """
+        Returns True if the input graph has a hierarchical tree-like structure. Returns False otherwise.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+
+        Returns
+        -------
+        bool
+            True if the input graph has a hierarchical tree-like structure. False otherwise.
+
+        """
+
+        adj_dict = Graph.AdjacencyDictionary(graph, includeWeights=False)
+        # Helper function for Depth-First Search (DFS)
+        def dfs(node, parent, visited):
+            visited.add(node)
+            for neighbor in adj_dict[node]:
+                if neighbor not in visited:
+                    if not dfs(neighbor, node, visited):
+                        return False
+                elif neighbor != parent:
+                    # A cycle is detected
+                    return False
+            return True
+
+        # Initialize visited set
+        visited = set()
+
+        # Start DFS from the first node in the graph
+        start_node = next(iter(adj_dict))  # Get an arbitrary starting node
+        if not dfs(start_node, None, visited):
+            return False
+
+        # Check if all nodes were visited (the graph is connected)
+        if len(visited) != len(adj_dict):
+            return False
+
+        return True
+
     @staticmethod
     def JSONData(graph,
                  verticesKey: str = "vertices",
@@ -7884,7 +7700,7 @@ class Graph:
         if not Topology.IsInstance(edge, "Edge"):
             print("Graph.RemoveEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
-        _ = graph.RemoveEdges([edge], tolerance)
+        _ = graph.RemoveEdges([edge], tolerance) # Hook to core library
         return graph
     
     @staticmethod
@@ -7916,7 +7732,7 @@ class Graph:
             print("Graph.RemoveVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         graphVertex = Graph.NearestVertex(graph, vertex)
-        _ = graph.RemoveVertices([graphVertex])
+        _ = graph.RemoveVertices([graphVertex]) # Hook to core library
         return graph
 
     @staticmethod
@@ -7951,7 +7767,7 @@ class Graph:
         if len(dictionary.Keys()) < 1:
             print("Graph.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
             return graph
-        _ = graph.SetDictionary(dictionary)
+        _ = graph.SetDictionary(dictionary) # Hook to core library
         return graph
 
     @staticmethod
@@ -8476,7 +8292,7 @@ class Graph:
         vertices = []
         if graph:
             try:
-                _ = graph.Vertices(vertices)
+                _ = graph.Vertices(vertices) # Hook to core libraries
             except:
                 vertices = []
         if not vertexKey == None:

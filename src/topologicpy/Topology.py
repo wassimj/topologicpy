@@ -245,7 +245,7 @@ class Topology():
         
         for aperture in apertures:
             d = Topology.Dictionary(aperture)
-            d = Dictionary.SetValueAtKey(d, "type", "aperture")
+            d = Dictionary.SetValueAtKey(d, "type", "Aperture")
             aperture = Topology.SetDictionary(aperture, d)
         
         topology = Topology.AddContent(topology, apertures, subTopologyType=subTopologyType, tolerance=tolerance)
@@ -864,7 +864,7 @@ class Topology():
                 d = Topology.Dictionary(content)
                 if len(Dictionary.Keys(d)) > 0:
                     type = Dictionary.ValueAtKey(d,"type")
-                    if type == "aperture":
+                    if "aperture" in type.lower():
                         apertures.append(content)
         elif subTopologyType.lower() == "vertex":
             subTopologies = Topology.Vertices(topology)

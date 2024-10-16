@@ -1520,7 +1520,7 @@ class Shell():
         origin = Topology.Centroid(face)
         normal = Face.Normal(face, mantissa=mantissa)
         flat_face = Topology.Flatten(face, origin=origin, direction=normal)
-        roof = Wire.Roof(flat_face, angle=angle, tolerance=tolerance)
+        roof = Wire.Roof(flat_face, angle=angle, boundary=True, tolerance=tolerance)
         if not roof:
             return None
         shell = Shell.Skeleton(flat_face, tolerance=tolerance)
