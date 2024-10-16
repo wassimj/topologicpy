@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Face module &mdash; topologicpy 0.7.65 documentation</title>
+  <title>topologicpy.Face module &mdash; topologicpy 0.7.66 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.65
+                0.7.66
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -279,7 +279,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Simplify" title="topologicpy.Face.Face.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(face[, tolerance])</p></td>
 <td><p>Simplifies the input face edges based on the Douglas Peucker algorthim.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Skeleton" title="topologicpy.Face.Face.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>(face[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Skeleton" title="topologicpy.Face.Face.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>(face[, boundary, tolerance])</p></td>
 <td><p>Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Square" title="topologicpy.Face.Face.Square"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Square</span></code></a>([origin, size, direction, placement, ...])</p></td>
@@ -1473,7 +1473,7 @@ Part of this code was contributed by gaoxipeng. See <a class="reference external
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Skeleton">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Skeleton</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Skeleton" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Skeleton</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Skeleton" title="Permalink to this definition"></a></dt>
 <dd><blockquote>
 <div><p>Creates a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;
 This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: <a class="reference external" href="https://github.com/Botffy/polyskel">https://github.com/Botffy/polyskel</a></p>
@@ -1482,6 +1482,8 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+</dd>
+<dt><strong>boundary</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the original boundary is returned as part of the roof. Otherwise it is not. The default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.001. (This is set to a larger number than the usual 0.0001 as it was found to work better)</p>
 </dd>
