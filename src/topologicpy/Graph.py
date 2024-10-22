@@ -1631,7 +1631,7 @@ class Graph:
                   edgeValidateMaskHeader="val_mask", edgeTestMaskHeader="test_mask", edgeFeaturesHeader="feat", edgeFeaturesKeys=[],
                   nodeIDHeader="node_id", nodeLabelHeader="label", nodeTrainMaskHeader="train_mask", 
                   nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask", nodeFeaturesHeader="feat", nodeXHeader="X", nodeYHeader="Y", nodeZHeader="Z",
-                  nodeFeaturesKeys=[], tolerance=0.0001):
+                  nodeFeaturesKeys=[], tolerance=0.0001, silent=False):
         """
         Returns graphs according to the input folder path. This method assumes the CSV files follow DGL's schema.
 
@@ -1681,6 +1681,8 @@ class Graph:
             The column header string used to specify the Z coordinate of nodes. The default is "Z".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         
         Returns
         -------
@@ -1717,15 +1719,18 @@ class Graph:
             return graphs_path, edges_path, nodes_path
 
         if not exists(path):
-            print("Graph.ByCSVPath - Error: the input path parameter does not exists. Returning None.")
+            if not silent:
+                print("Graph.ByCSVPath - Error: the input path parameter does not exists. Returning None.")
             return None
         if not isdir(path):
-            print("Graph.ByCSVPath - Error: the input path parameter is not a folder. Returning None.")
+            if not silent:
+                print("Graph.ByCSVPath - Error: the input path parameter is not a folder. Returning None.")
             return None
         
         yaml_files = find_yaml_files(path)
         if len(yaml_files) < 1:
-            print("Graph.ByCSVPath - Error: the input path parameter does not contain any valid YAML files. Returning None.")
+            if not silent:
+                print("Graph.ByCSVPath - Error: the input path parameter does not contain any valid YAML files. Returning None.")
             return None
         yaml_file = yaml_files[0]
         yaml_file_path = os.path.join(path, yaml_file)
@@ -1734,7 +1739,8 @@ class Graph:
         if not graphs_path == None:
             graphs_path = os.path.join(path, graphs_path)
         if graphs_path == None:
-            print("Graph.ByCSVPath - Warning: a graphs.csv file does not exist inside the folder specified by the input path parameter. Will assume the dataset includes only one graph.")
+            if not silent:
+                print("Graph.ByCSVPath - Warning: a graphs.csv file does not exist inside the folder specified by the input path parameter. Will assume the dataset includes only one graph.")
             graphs_df = pd.DataFrame()
             graph_ids=[0]
             graph_labels=[0]
@@ -1748,7 +1754,8 @@ class Graph:
         if not edges_path == None:
             edges_path = os.path.join(path, edges_path)
         if not exists(edges_path):
-            print("Graph.ByCSVPath - Error: an edges.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
+            if not silent:
+                print("Graph.ByCSVPath - Error: an edges.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
             return None
         edges_path = os.path.join(path, edges_path)
         edges_df = pd.read_csv(edges_path)
@@ -1756,7 +1763,8 @@ class Graph:
         if not nodes_path == None:
             nodes_path = os.path.join(path, nodes_path)
         if not exists(nodes_path):
-            print("Graph.ByCSVPath - Error: a nodes.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
+            if not silent:
+                print("Graph.ByCSVPath - Error: a nodes.csv file does not exist inside the folder specified by the input path parameter. Returning None.")
             return None
         nodes_df = pd.read_csv(nodes_path)
         # Group nodes and nodes by their 'graph_id'
@@ -1830,10 +1838,12 @@ class Graph:
                     if Topology.IsInstance(d, "Dictionary"):
                         v = Topology.SetDictionary(v, d)
                     else:
-                        print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created vertex.")
+                        if not silent:
+                            print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created vertex.")
                     vertices.append(v)
                 else:
-                    print("Graph.ByCSVPath - Warning: Failed to create and add a vertex to the list of vertices.")
+                    if not silent:
+                        print("Graph.ByCSVPath - Warning: Failed to create and add a vertex to the list of vertices.")
             vertices_ds.append(vertices)
         edges_ds = [] # A list to hold the vertices data structures until we can build the actual graphs
         # Access specific columns within the grouped DataFrame
@@ -1870,21 +1880,25 @@ class Graph:
                     try:
                         edge = Edge.ByVertices([vertices[src_id], vertices[dst_id]], tolerance=tolerance)
                     except:
-                        print("Graph.ByCSVPath - Warning: Failed to create and add a edge to the list of edges.")
+                        if not silent:
+                            print("Graph.ByCSVPath - Warning: Failed to create and add a edge to the list of edges.")
                         edge = None
                     if Topology.IsInstance(edge, "Edge"):
                         d = Dictionary.ByKeysValues(edge_keys, values)
                         if Topology.IsInstance(d, "Dictionary"):
                             edge = Topology.SetDictionary(edge, d)
                         else:
-                            print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created edge.")
+                            if not silent:
+                                print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created edge.")
                         edges.append(edge)
                     else:
-                        print("Graph.ByCSVPath - Warning: Failed to create and add an edge to the list of edges.")
+                        if not silent:
+                            print("Graph.ByCSVPath - Warning: Failed to create and add an edge to the list of edges.")
                 else:
                     duplicate_edges += 1
             if duplicate_edges > 0:
-                print("Graph.ByCSVPath - Warning: Found", duplicate_edges, "duplicate edges in graph id:", graph_id)
+                if not silent:
+                    print("Graph.ByCSVPath - Warning: Found", duplicate_edges, "duplicate edges in graph id:", graph_id)
             edges_ds.append(edges)
         
         # Build the graphs
@@ -1905,16 +1919,19 @@ class Graph:
                 l1 = len(graph_keys)
                 l2 = len(values)
                 if not l1 == l2:
-                    print("Graph.ByCSVPath - Error: The length of the keys and values lists do not match. Returning None.")
+                    if not silent:
+                        print("Graph.ByCSVPath - Error: The length of the keys and values lists do not match. Returning None.")
                     return None
                 d = Dictionary.ByKeysValues(graph_keys, values)
                 if Topology.IsInstance(d, "Dictionary"):
                     g = Graph.SetDictionary(g, d)
                 else:
-                    print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created graph.")
+                    if not silent:
+                        print("Graph.ByCSVPath - Warning: Failed to create and add a dictionary to the created graph.")
                 graphs.append(g)
             else:
-                print("Graph.ByCSVPath - Error: Failed to create and add a graph to the list of graphs.")
+                if not silent:
+                    print("Graph.ByCSVPath - Error: Failed to create and add a graph to the list of graphs.")
         return {"graphs": graphs, "labels": graph_labels, "features": graph_features}
     
     @staticmethod
@@ -3483,142 +3500,6 @@ class Graph:
                     graph_vertices += verts
                     graph_edges += eds
             return [graph_vertices, graph_edges]
-
-
-
-
-
-
-        # def processEdge(item):
-        #     topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-        #     vertices = []
-        #     edges = []
-
-        #     if useInternalVertex == True:
-        #         try:
-        #             vEdge = Edge.VertexByParameter(topology, 0.5)
-        #         except:
-        #             vEdge = topology.CenterOfMass()
-        #     else:
-        #         vEdge = topology.CenterOfMass()
-
-        #     d1 = vEdge.GetDictionary()
-        #     d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-        #     if storeBREP:
-        #         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
-        #         d3 = mergeDictionaries2([d1, d2])
-        #         _ = vEdge.SetDictionary(d3)
-        #     else:
-        #         _ = vEdge.SetDictionary(topology.GetDictionary())
-
-        #     vertices.append(vEdge)
-
-        #     if toOutposts and others:
-        #         d = Topology.Dictionary(topology)
-        #         if not d == None:
-        #             keys = Dictionary.Keys(d)
-        #         else:
-        #             keys = []
-        #         k = None
-        #         for key in keys:
-        #             if key.lower() == outpostsKey.lower():
-        #                 k = key
-        #         if k:
-        #             ids = Dictionary.ValueAtKey(d, k)
-        #             outposts = outpostsByID(others, ids, idKey)
-        #         else:
-        #             outposts = []
-        #         for outpost in outposts:
-        #             if useInternalVertex == True:
-        #                 vop = Topology.InternalVertex(outpost, tolerance)
-        #             else:
-        #                 vop = Topology.CenterOfMass(outpost)
-        #             tempe = Edge.ByStartVertexEndVertex(vEdge, vop, tolerance=tolerance)
-        #             tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
-        #             _ = tempe.SetDictionary(tempd)
-        #             edges.append(tempe)
-            
-        #     if (toExteriorTopologies == True) or (toExteriorApertures == True) or (toContents == True):
-        #         eVertices = []
-        #         _ = topology.Vertices(None, eVertices)
-        #         exteriorTopologies = []
-        #         exteriorApertures = []
-        #         for aVertex in eVertices:
-        #             exteriorTopologies.append(aVertex)
-        #             apertures = Topology.Apertures(aVertex)
-        #             for anAperture in apertures:
-        #                 exteriorApertures.append(anAperture)
-        #             if toExteriorTopologies:
-        #                 for exteriorTopology in exteriorTopologies:
-        #                     if useInternalVertex == True:
-        #                         vst = Topology.InternalVertex(exteriorTopology, tolerance)
-        #                     else:
-        #                         vst = exteriorTopology.CenterOfMass()
-        #                     d1 = exteriorTopology.GetDictionary()
-        #                     d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 3) # exterior topology
-        #                     if storeBREP:
-        #                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTopology), Topology.Type(exteriorTopology), Topology.TypeAsString(exteriorTopology)])
-        #                         d3 = mergeDictionaries2([d1, d2])
-        #                         _ = vst.SetDictionary(d3)
-        #                     else:
-        #                         _ = vst.SetDictionary(d1)
-        #                     vertices.append(vst)
-        #                     tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-        #                     tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
-        #                     _ = tempe.SetDictionary(tempd)
-        #                     edges.append(tempe)
-        #                     if toContents:
-        #                         contents = []
-        #                         _ = vst.Contents(contents)
-        #                         for content in contents:
-        #                             if Topology.IsInstance(content, "Aperture"):
-        #                                 content = Aperture.Topology(content)
-        #                             if useInternalVertex == True:
-        #                                 vst2 = Topology.InternalVertex(content, tolerance)
-        #                             else:
-        #                                 vst2 = content.CenterOfMass()
-        #                             vst2 = Vertex.ByCoordinates(Vertex.X(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst2, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst2, mantissa=mantissa)+(tolerance*100))
-        #                             d1 = content.GetDictionary()
-        #                             d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-        #                             if storeBREP:
-        #                                 d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-        #                                 d3 = mergeDictionaries2([d1, d2])
-        #                                 _ = vst2.SetDictionary(d3)
-        #                             else:
-        #                                 _ = vst2.SetDictionary(d1)
-        #                             vertices.append(vst2)
-        #                             tempe = Edge.ByStartVertexEndVertex(vst, vst2, tolerance=tolerance)
-        #                             tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-        #                             _ = tempe.SetDictionary(tempd)
-        #                             edges.append(tempe)
-        #             if toExteriorApertures:
-        #                 for exTop in exteriorApertures:
-        #                     if useInternalVertex == True:
-        #                         vst = Topology.InternalVertex(exTop, tolerance)
-        #                     else:
-        #                         vst = exTop.CenterOfMass()
-        #                     d1 = exTop.GetDictionary()
-        #                     d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 4) # exterior aperture
-        #                     vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-        #                     if storeBREP:
-        #                         d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exTop), Topology.Type(exTop), Topology.TypeAsString(exTop)])
-        #                         d3 = mergeDictionaries2([d1, d2])
-        #                         _ = vst.SetDictionary(d3)
-        #                     else:
-        #                         _ = vst.SetDictionary(d1)
-        #                     _ = vst.SetDictionary(exTop.GetDictionary())
-        #                     vertices.append(vst)
-        #                     tempe = Edge.ByStartVertexEndVertex(vEdge, vst, tolerance=tolerance)
-        #                     tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
-        #                     _ = tempe.SetDictionary(tempd)
-        #                     edges.append(tempe)
-                    
-        #     return [vertices, edges]
-
-
-
-
-
 
 
         def processVertex(item):

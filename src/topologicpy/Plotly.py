@@ -932,6 +932,8 @@ class Plotly:
         data = []
         v_list = []
         
+        if not isinstance(colorScale, str):
+            colorScale = "viridis"
         if Topology.Type(topology) == Topology.TypeID("Vertex"):
             tp_vertices = [topology]
         else:

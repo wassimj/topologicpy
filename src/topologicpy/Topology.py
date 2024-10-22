@@ -3033,16 +3033,14 @@ class Topology():
         Returns
         -------
         list
-            The list of imported topologies.
+            The list of imported topologies (Warning: the list could contain 0, 1, or many topologies, but this method will always return a list)
 
         """
         if not file:
             print("Topology.ByJSONFile - Error: the input file parameter is not a valid file. Returning None.")
             return None
-        json_string = json.load(file)
-        #jsonData = json.load(file)
-        #jsonString = json.dumps(jsonData)
-        return Topology.ByJSONString(json_string, tolerance=tolerance)
+        json_dict = json.load(file)
+        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance)
     
     @staticmethod
     def ByJSONPath(path, tolerance=0.0001):
@@ -3067,26 +3065,26 @@ class Topology():
             print("Topology.ByJSONPath - Error: the input path parameter is not a valid path. Returning None.")
             return None
         with open(path) as file:
-            json_string = json.load(file)
-        entities = Topology.ByJSONString(json_string, tolerance=tolerance)
+            json_dict = json.load(file)
+        entities = Topology.ByJSONDictionary(json_dict, tolerance=tolerance)
         return entities
     
     @staticmethod
-    def ByJSONString(string, tolerance=0.0001):
+    def ByJSONDictionary(jsonDictionary, tolerance=0.0001):
         """
-        Imports the topology from a JSON string.
+        Imports the topology from a JSON dictionary.
 
         Parameters
         ----------
-        string : str
-            The input JSON string.
+        jsonDictionary : dict
+            The input JSON dictionary.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
         Returns
         -------
-        list or topologicpy.Topology
-            The list of imported topologies. If the list only contains one element, it returns that element.
+        list
+            The list of imported topologies (Warning: the list could contain 0, 1, or many topologies, but this method will always return a list)
 
         """
         from topologicpy.Vertex import Vertex
@@ -3110,9 +3108,7 @@ class Topology():
         vertex_apertures = []
         edge_apertures = []
         face_apertures = []
-        # Step 2: Create Entities and handle apertures
-        json_dictionary = json.loads(string)
-        for entity in json_dictionary:
+        for entity in jsonDictionary:
             entity_type = entity['type']
             entity_dict = Dictionary.ByKeysValues(keys=list(entity['dictionary'].keys()),
                                                 values=list(entity['dictionary'].values()))
@@ -3280,6 +3276,28 @@ class Topology():
                     entity = Topology.AddApertures(entity, vertex_apertures, subTopologyType="Vertex", tolerance=0.001)
                 top_level_list.append(entity)
         return top_level_list
+    
+    @staticmethod
+    def ByJSONString(string, tolerance=0.0001):
+        """
+        Imports the topology from a JSON string.
+
+        Parameters
+        ----------
+        string : str
+            The input JSON string.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of imported topologies (Warning: the list could contain 0, 1, or many topologies, but this method will always return a list)
+
+        """
+
+        json_dict = json.loads(string)
+        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance)
 
     @staticmethod
     def ByOBJFile(objFile, mtlFile = None,
