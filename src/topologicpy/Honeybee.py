@@ -254,8 +254,7 @@ class Honeybee:
         from topologicpy.Dictionary import Dictionary
 
         def cellFloor(cell):
-            faces = []
-            _ = cell.Faces(None, faces)
+            faces = Topology.Faces(cell)
             c = [x.CenterOfMass().Z() for x in faces]
             return round(min(c),2)
 
@@ -293,8 +292,7 @@ class Honeybee:
         if not Topology.IsInstance(tpBuilding, "Topology"):
             return None
         rooms = []
-        tpCells = []
-        _ = tpBuilding.Cells(None, tpCells)
+        tpCells = Topology.Cells(tpBuilding)
         # Sort cells by Z Levels
         tpCells.sort(key=lambda c: cellFloor(c), reverse=False)
         fl = floorLevels(tpCells, 2)
@@ -351,14 +349,13 @@ class Honeybee:
                 constr_set = constr_set_lib.construction_set_by_identifier("Default Generic Construction Set")
             spaceNames.append(tpCellName)
 
-            tpCellFaces = []
-            _ = tpCell.Faces(None, tpCellFaces)
+            tpCellFaces = Topology.Faces(tpCell)
             if tpCellFaces:
                 hbRoomFaces = []
                 for tpFaceNumber, tpCellFace in enumerate(tpCellFaces):
                     tpCellFaceNormal = Face.Normal(tpCellFace, mantissa=mantissa)
                     hbRoomFacePoints = []
-                    tpFaceVertices = Wire.Vertices(Face.ExternalBoundary(tpCellFace))
+                    tpFaceVertices = Topology.Vertices(Face.ExternalBoundary(tpCellFace))
                     for tpVertex in tpFaceVertices:
                         hbRoomFacePoints.append(Point3D(Vertex.X(tpVertex, mantissa=mantissa), Vertex.Y(tpVertex, mantissa=mantissa), Vertex.Z(tpVertex, mantissa=mantissa)))
                     hbRoomFace = HBFace(tpCellName+'_Face_'+str(tpFaceNumber+1), Face3D(hbRoomFacePoints))
@@ -372,7 +369,7 @@ class Honeybee:
                                 tpFaceApertureType = Dictionary.ValueAtKey(tpFaceApertureDictionary,apertureKeyName)
                             hbFaceAperturePoints = []
                             tpFaceApertureVertices = []
-                            tpFaceApertureVertices = Wire.Vertices(Face.ExternalBoundary(apertureTopology))
+                            tpFaceApertureVertices = Topology.Vertices(Face.ExternalBoundary(apertureTopology))
                             for tpFaceApertureVertex in tpFaceApertureVertices:
                                 hbFaceAperturePoints.append(Point3D(Vertex.X(tpFaceApertureVertex, mantissa=mantissa), Vertex.Y(tpFaceApertureVertex, mantissa=mantissa), Vertex.Z(tpFaceApertureVertex, mantissa=mantissa)))
                             if(tpFaceApertureType):
@@ -420,7 +417,7 @@ class Honeybee:
             tpShadingFaces = Topology.SubTopologies(tpShadingFacesCluster, subTopologyType="face")
             for faceIndex, tpShadingFace in enumerate(tpShadingFaces):
                 faceVertices = []
-                faceVertices = Wire.Vertices(Face.ExternalBoundary(tpShadingFace))
+                faceVertices = Topology.Vertices(Face.ExternalBoundary(tpShadingFace))
                 facePoints = []
                 for aVertex in faceVertices:
                     facePoints.append(Point3D(Vertex.X(aVertex, mantissa=mantissa), Vertex.Y(aVertex, mantissa=mantissa), Vertex.Z(aVertex, mantissa=mantissa)))

@@ -356,7 +356,7 @@ class EnergyModel:
             if cellFaces:
                 for faceNumber, buildingFace in enumerate(cellFaces):
                     osFacePoints = []
-                    for vertex in Topology.SubTopologies(buildingFace.ExternalBoundary(), "Vertex"):
+                    for vertex in Topology.SubTopologies(Face.ExternalBoundary(buildingFace), "Vertex"):
                         osFacePoints.append(openstudio.Point3d(Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex, mantissa=mantissa)))
                     osSurface = openstudio.model.Surface(osFacePoints, osModel)
                     faceNormal = Face.Normal(buildingFace, mantissa=mantissa)
@@ -387,7 +387,7 @@ class EnergyModel:
                             if len(apertures) > 0:
                                 for apertureFace in apertures:
                                     osSubSurfacePoints = []
-                                    for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
+                                    for vertex in Topology.SubTopologies(Face.ExternalBoundary(apertureFace), "Vertex"):
                                         osSubSurfacePoints.append(openstudio.Point3d(Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex, mantissa=mantissa)))
                                     osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
                                     apertureFaceNormal = Face.Normal(apertureFace, mantissa=mantissa)
@@ -424,7 +424,7 @@ class EnergyModel:
                         if len(apertures) > 0:
                             for apertureFace in apertures:
                                 osSubSurfacePoints = []
-                                for vertex in Topology.SubTopologies(apertureFace.ExternalBoundary(), "Vertex"):
+                                for vertex in Topology.SubTopologies(Face.ExternalBoundary(apertureFace), "Vertex"):
                                     osSubSurfacePoints.append(openstudio.Point3d(Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex.Z, mantissa=mantissa)))
                                 osSubSurface = openstudio.model.SubSurface(osSubSurfacePoints, osModel)
                                 apertureFaceNormal = Face.Normal(apertureFace, mantissa=mantissa)
@@ -453,7 +453,7 @@ class EnergyModel:
             osShadingGroup = openstudio.model.ShadingSurfaceGroup(osModel)
             for faceIndex, shadingFace in enumerate(Topology.SubTopologies(shadingSurfaces, "Face")):
                 facePoints = []
-                for aVertex in Topology.SubTopologies(shadingFace.ExternalBoundary(), "Vertex"):
+                for aVertex in Topology.SubTopologies(Face.ExternalBoundary(shadingFace), "Vertex"):
                     facePoints.append(openstudio.Point3d(Vertex.X(aVertex, mantissa=mantissa), Vertex.Y(aVertex, mantissa=mantissa), Vertex.Z(aVertex, mantissa=mantissa)))
                 aShadingSurface = openstudio.model.ShadingSurface(facePoints, osModel)
                 faceNormal = Face.Normal(shadingFace, mantissa=mantissa)

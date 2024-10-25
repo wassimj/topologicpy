@@ -644,8 +644,7 @@ class Vertex():
         from topologicpy.Topology import Topology
         
         def boundingBox(cell):
-            vertices = []
-            _ = cell.Vertices(None, vertices)
+            vertices = Topology.Vertices(cell)
             x = []
             y = []
             z = []
@@ -1302,8 +1301,7 @@ class Vertex():
         
         def kdtree(topology):
             assert Topology.IsInstance(topology, "Topology"), "Vertex.NearestVertex: The input is not a Topology."
-            vertices = []
-            _ = topology.Vertices(None, vertices)
+            vertices = Topology.Vertices(topology)
             assert (len(vertices) > 0), "Vertex.NearestVertex: Could not find any vertices in the input Topology"
 
             """Construct a k-d tree from an iterable of vertices.
@@ -1378,8 +1376,7 @@ class Vertex():
             tree = kdtree(topology)
             return find_nearest_neighbor(tree=tree, vertex=vertex)
         else:
-            vertices = []
-            _ = topology.Vertices(None, vertices)
+            vertices = Topology.Vertices(topology)
             distances = []
             indices = []
             for i in range(len(vertices)):

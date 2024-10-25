@@ -575,7 +575,7 @@ class Graph:
             return graph
         graph_vertices = Graph.Vertices(graph)
         graph_edges = Graph.Edges(graph, graph_vertices, tolerance)
-        vertices = Edge.Vertices(edge)
+        vertices = Topology.Vertices(edge)
         new_vertices = []
         for vertex in vertices:
             graph_vertices, nv = addIfUnique(graph_vertices, vertex, tolerance)
@@ -623,7 +623,7 @@ class Graph:
             if not silent:
                 print("Graph.AddVertex - Error: The input vertex is not a valid vertex. Returning the input graph.")
             return graph
-        _ = graph.AddVertices([vertex], tolerance) # Hook to core library
+        _ = graph.AddVertices([vertex], tolerance) # Hook to Core
         return graph
 
     @staticmethod
@@ -663,7 +663,7 @@ class Graph:
             if not silent:
                 print("Graph.AddVertices - Error: Could not find any valid vertices in the input list of vertices. Returning None.")
             return None
-        _ = graph.AddVertices(vertices, tolerance) # Hook to core library
+        _ = graph.AddVertices(vertices, tolerance) # Hook to Core
         return graph
     
     @staticmethod
@@ -697,7 +697,7 @@ class Graph:
                 print("Graph.AdjacentVertices - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         vertices = []
-        _ = graph.AdjacentVertices(vertex, vertices) # Hook to core library
+        _ = graph.AdjacentVertices(vertex, vertices) # Hook to Core
         return list(vertices)
     
     @staticmethod
@@ -739,7 +739,7 @@ class Graph:
                 print("Graph.AllPaths - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         paths = []
-        _ = graph.AllPaths(vertexA, vertexB, True, timeLimit, paths) # Hook to core library
+        _ = graph.AllPaths(vertexA, vertexB, True, timeLimit, paths) # Hook to Core
         return paths
 
     @staticmethod
@@ -4039,7 +4039,7 @@ class Graph:
         if not len(verticesA) == len(verticesB):
             print("Graph.Connect - Error: The input lists verticesA and verticesB have different lengths. Returning None.")
             return None
-        _ = graph.Connect(verticesA, verticesB, tolerance) # Hook to core library
+        _ = graph.Connect(verticesA, verticesB, tolerance) # Hook to Core
         return graph
     
     @staticmethod
@@ -4179,7 +4179,7 @@ class Graph:
             print("Graph.DegreeSequence - Error: The input graph is not a valid graph. Returning None.")
             return None
         sequence = []
-        _ = graph.DegreeSequence(sequence) # Hook to core library
+        _ = graph.DegreeSequence(sequence) # Hook to Core
         return sequence
     
     @staticmethod
@@ -4493,7 +4493,7 @@ class Graph:
             return None
         if not vertices:
             edges = []
-            _ = graph.Edges(edges, tolerance) # Hook to core library
+            _ = graph.Edges(edges, tolerance) # Hook to Core
             return edges
         else:
             vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
@@ -4501,7 +4501,7 @@ class Graph:
             print("Graph.Edges - Error: The input list of vertices does not contain any valid vertices. Returning None.")
             return None
         edges = []
-        _ = graph.Edges(vertices, tolerance, edges) # Hook to core library
+        _ = graph.Edges(vertices, tolerance, edges) # Hook to Core
         return list(dict.fromkeys(edges)) # remove duplicates
     
     @staticmethod
@@ -5526,7 +5526,7 @@ class Graph:
         return False
     
     @staticmethod
-    def Flatten(graph, layout="spring", k=0.8, seed=None, iterations=50, rootVertex=None, tolerance=0.0001):
+    def Flatten(graph, layout="spring", k=0.8, seed=None, iterations=50, rootVertex=None, radius=0.5, tolerance=0.0001):
         """
         Flattens the input graph.
 
@@ -5536,8 +5536,9 @@ class Graph:
             The input graph.
         layout : str , optional
             The desired mode for flattening. If set to 'spring', the algorithm uses a simplified version of the Fruchterman-Reingold force-directed algorithm to flatten and distribute the vertices.
-            If set to 'radial', the nodes will be distributed along a circle.
-            If set to 'tree', the nodes will be distributed using the Reingold-Tillford layout. The default is 'spring'.
+            If set to 'radial', the nodes will be distributed along concentric circles.
+            If set to 'tree', the nodes will be distributed using the Reingold-Tillford layout.
+            If set to 'circle', the nodes will be distributed on the cirumference of a circle. The default is 'spring'.
         k : float, optional
             The desired spring constant to use for the attractive and repulsive forces. The default is 0.8.
         seed : int , optional
@@ -5546,6 +5547,8 @@ class Graph:
             The desired maximum number of iterations to solve the forces in the 'spring' mode. The default is 50.
         rootVertex : topologic_core.Vertex , optional
             The desired vertex to use as the root of the tree and radial layouts.
+        radius : float, optional
+            The desired radius for the circle layout option. The default is 0.5.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -5712,6 +5715,60 @@ class Graph:
                 old_roots = new_roots
             return root, num_nodes
 
+
+        def circle_layout(graph, radius=0.5):
+            from topologicpy.Vertex import Vertex
+            from topologicpy.Vector import Vector
+            from topologicpy.Wire import Wire
+            from topologicpy.Graph import Graph
+            from topologicpy.Edge import Edge
+
+            vertices = Graph.Vertices(graph)
+            edges = Graph.Edges(graph)
+            edge_dict = {}
+
+            for i, edge in enumerate(edges):
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+                si = Vertex.Index(sv, vertices)
+                ei = Vertex.Index(ev, vertices)
+                edge_dict[str(si)+"_"+str(ei)] = i
+                edge_dict[str(ei)+"_"+str(si)] = i
+            
+            n = len(vertices)
+            c = Wire.Circle(radius=radius, sides=n)
+            c_vertices = Topology.Vertices(c)
+
+            for i, c_v in enumerate(c_vertices):
+                d = Topology.Dictionary(vertices[i])
+                c_v = Topology.SetDictionary(c_v, d)
+            adj_dict = Graph.AdjacencyDictionary(graph)
+            keys = adj_dict.keys()
+            c_edges = []
+            used = [[0] * n for _ in range(n)]
+            for key in keys:
+                x = int(key)
+                adj_vertices = [int(v) for v in adj_dict[key]]
+                for y in adj_vertices:
+                    if used[x][y] == 0:
+                        v1 = Vector.ByCoordinates(Vertex.X(c_vertices[x]), Vertex.Y(c_vertices[x]), Vertex.Z(c_vertices[x]))
+                        v2 = Vector.ByCoordinates(Vertex.X(c_vertices[y]), Vertex.Y(c_vertices[y]), Vertex.Z(c_vertices[y]))
+                        ang1 = Vector.CompassAngle(v1, [0,1,0])
+                        ang2 = Vector.CompassAngle(v2, [0,1,0])
+                        if ang2-ang1 < 180:
+                            e = Edge.ByVertices(c_vertices[x], c_vertices[y])
+                        else:
+                            e = Edge.ByVertices(c_vertices[y], c_vertices[x])
+                        
+                        orig_edge_index = edge_dict[str(x)+"_"+str(y)]
+                        d = Topology.Dictionary(edges[orig_edge_index])
+                        e = Topology.SetDictionary(e, d)
+                        c_edges.append(e)
+                        used[x][y] = 1
+                        used[y][x] = 1
+            new_g = Graph.ByVerticesEdges(c_vertices, c_edges)
+            return new_g
+        
         def spring_layout(edge_list, iterations=500, k=None, seed=None):
             # Compute the layout of a graph using the Fruchterman-Reingold algorithm
             # with a force-directed layout approach.
@@ -5850,6 +5907,10 @@ class Graph:
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Flatten - Error: The input graph is not a valid topologic graph. Returning None.")
             return None
+        
+        if 'circ' in layout.lower():
+            new_graph = circle_layout(graph, radius=radius)
+            return new_graph
         d = Graph.MeshData(graph)
         vertices = d['vertices']
         edges = d['edges']
@@ -6180,7 +6241,7 @@ class Graph:
             print("Graph.IsolatedVertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         vertices = []
-        _ = graph.IsolatedVertices(vertices) # Hook to core library
+        _ = graph.IsolatedVertices(vertices) # Hook to Core
         return vertices
 
     @staticmethod
@@ -7581,7 +7642,7 @@ class Graph:
         if not Topology.IsInstance(edge, "Edge"):
             print("Graph.RemoveEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
-        _ = graph.RemoveEdges([edge], tolerance) # Hook to core library
+        _ = graph.RemoveEdges([edge], tolerance) # Hook to Core
         return graph
     
     @staticmethod
@@ -7613,7 +7674,7 @@ class Graph:
             print("Graph.RemoveVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         graphVertex = Graph.NearestVertex(graph, vertex)
-        _ = graph.RemoveVertices([graphVertex]) # Hook to core library
+        _ = graph.RemoveVertices([graphVertex]) # Hook to Core
         return graph
 
     @staticmethod
@@ -7648,7 +7709,7 @@ class Graph:
         if len(dictionary.Keys()) < 1:
             print("Graph.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
             return graph
-        _ = graph.SetDictionary(dictionary) # Hook to core library
+        _ = graph.SetDictionary(dictionary) # Hook to Core
         return graph
 
     @staticmethod
@@ -8173,7 +8234,7 @@ class Graph:
         vertices = []
         if graph:
             try:
-                _ = graph.Vertices(vertices) # Hook to core libraries
+                _ = graph.Vertices(vertices) # Hook to Core
             except:
                 vertices = []
         if not vertexKey == None:

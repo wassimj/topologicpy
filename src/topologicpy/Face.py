@@ -64,9 +64,8 @@ class Face():
         if len(wireList) < 1:
             print("Face.AddInternalBoundaries - Warning: The input wires parameter does not contain any valid wires. Returning the input face.")
             return face
-        faceeb = face.ExternalBoundary()
-        faceibList = []
-        _ = face.InternalBoundaries(faceibList)
+        faceeb = Face.ExternalBoundary(face)
+        faceibList = Face.InternalBoundaries(face)
         for wire in wires:
             faceibList.append(wire)
         return Face.ByWires(faceeb, faceibList)
@@ -98,8 +97,7 @@ class Face():
             return face
         if not Topology.IsInstance(cluster, "Cluster"):
             return face
-        wires = []
-        _ = cluster.Wires(None, wires)
+        wires = Topology.Wires(cluster)
         return Face.AddInternalBoundaries(face, wires)
     
     @staticmethod
@@ -637,8 +635,7 @@ class Face():
                 print("Face.ByShell - Error: The operation failed. Returning None.")
                 return None
         elif Topology.IsInstance(ext_boundary, "Cluster"): # The shell has holes.
-            wires = []
-            _ = ext_boundary.Wires(None, wires)
+            wires = Topology.Wires(ext_boundary)
             faces = []
             areas = []
             for wire in wires:
@@ -654,14 +651,11 @@ class Face():
             int_boundaries = list(set(faces) - set([ext_boundary]))
             int_wires = []
             for int_boundary in int_boundaries:
-                temp_wires = []
-                _ = int_boundary.Wires(None, temp_wires)
+                temp_wires = Topology.Wires(int_boundary)
                 int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance))
-            temp_wires = []
-            _ = ext_boundary.Wires(None, temp_wires)
+            temp_wires = Topology.Wires(ext_boundary)
             ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
             face = Face.ByWires(ext_wire, int_wires)
-           
             face = Topology.Unflatten(face, origin=origin, direction=normal)
             return face
         else:
@@ -701,7 +695,7 @@ class Face():
         if not Wire.IsManifold(wire):
             print("Face.ByThickenedWire - Error: The input wire parameter is not a manifold wire. Returning None.")
             return None
-        three_vertices = Wire.Vertices(wire)[0:3]
+        three_vertices = Topology.Vertices(wire)[0:3]
         temp_w = Wire.ByVertices(three_vertices, close=True)
         flat_face = Face.ByWire(temp_w, tolerance=tolerance)
         origin = Vertex.Origin()
@@ -786,7 +780,7 @@ class Face():
 
         if not Topology.IsInstance(cluster, "Cluster"):
             return None
-        vertices = Cluster.Vertices(cluster)
+        vertices = Topology.Vertices(cluster)
         return Face.ByVertices(vertices, tolerance=tolerance)
 
     @staticmethod
@@ -1076,11 +1070,11 @@ class Face():
             The compactness measure of the input face.
 
         """
+        from topologicpy.Topology import Topology
         from topologicpy.Edge import Edge
 
-        exb = face.ExternalBoundary()
-        edges = []
-        _ = exb.Edges(None, edges)
+        exb = Face.ExternalBoundary(face)
+        edges = Topology.Edges(exb)
         perimeter = 0.0
         for anEdge in edges:
             perimeter = perimeter + abs(Edge.Length(anEdge))
@@ -1148,7 +1142,7 @@ class Face():
         if not Topology.IsInstance(face, "Face"):
             return None
         edges = []
-        _ = face.Edges(None, edges)
+        _ = face.Edges(None, edges) # Hook to Core
         return edges
 
     @staticmethod
@@ -1307,7 +1301,7 @@ class Face():
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
-        eb = face.ExternalBoundary()
+        eb = face.ExternalBoundary() # Hook to Core
         return eb
     
     @staticmethod
@@ -1385,7 +1379,7 @@ class Face():
         eb = Topology.Copy(Face.ExternalBoundary(face))
         ib_list = Face.InternalBoundaries(face)
         ib_list = [Topology.Copy(ib) for ib in ib_list]
-        f_vertices = Face.Vertices(face)
+        f_vertices = Topology.Vertices(face)
         if isinstance(radiusKey, str):
             eb = Topology.TransferDictionariesBySelectors(eb, selectors=f_vertices, tranVertices=True)
         eb = Wire.Fillet(eb, radius=radius, radiusKey=radiusKey, tolerance=tolerance)
@@ -1438,12 +1432,12 @@ class Face():
         origin = Topology.Centroid(face)
         flatFace = Topology.Flatten(face, origin=origin, direction=normal)
         world_origin = Vertex.Origin()
-        vertices = Wire.Vertices(Face.ExternalBoundary(flatFace))
+        vertices = Topology.Vertices(Face.ExternalBoundary(flatFace))
         harmonizedEB = Wire.ByVertices(vertices)
         internalBoundaries = Face.InternalBoundaries(flatFace)
         harmonizedIB = []
         for ib in internalBoundaries:
-            ibVertices = Wire.Vertices(ib)
+            ibVertices = Topology.Vertices(ib)
             harmonizedIB.append(Wire.ByVertices(ibVertices))
         harmonizedFace = Face.ByWires(harmonizedEB, harmonizedIB, tolerance=tolerance)
         harmonizedFace = Topology.Unflatten(harmonizedFace, origin=origin, direction=normal)
@@ -1511,7 +1505,7 @@ class Face():
         if not Topology.IsInstance(face, "Face"):
             return None
         wires = []
-        _ = face.InternalBoundaries(wires)
+        _ = face.InternalBoundaries(wires) # Hook to Core
         return list(wires)
 
     @staticmethod
@@ -1573,7 +1567,7 @@ class Face():
         if not Topology.IsInstance(face, "Face"):
             return None
         eb = Face.ExternalBoundary(face)
-        vertices = Wire.Vertices(eb)
+        vertices = Topology.Vertices(eb)
         vertices.reverse()
         inverted_wire = Wire.ByVertices(vertices)
         internal_boundaries = Face.InternalBoundaries(face)
@@ -1693,8 +1687,7 @@ class Face():
         from topologicpy.Vector import Vector
 
         def vertexPartofFace(vertex, face, tolerance):
-            vertices = []
-            _ = face.Vertices(None, vertices)
+            vertices = Topology.Vertices(face)
             for v in vertices:
                 if Vertex.Distance(vertex, v) < tolerance:
                     return True
@@ -1874,12 +1867,12 @@ class Face():
                 medialAxisEdges.append(e)
 
         extBoundary = Face.ExternalBoundary(flatFace)
-        extVertices = Wire.Vertices(extBoundary)
+        extVertices = Topology.Vertices(extBoundary)
 
         intBoundaries = Face.InternalBoundaries(flatFace)
         intVertices = []
         for ib in intBoundaries:
-            intVertices = intVertices+Wire.Vertices(ib)
+            intVertices = intVertices+Topology.Vertices(ib)
         
         theVertices = []
         if internalVertices:
@@ -2153,9 +2146,8 @@ class Face():
         if not Topology.IsInstance(faceB, "Face"):
             return None
 
-        eb = faceA.ExternalBoundary()
-        ib_list = []
-        _ = faceA.InternalBoundaries(ib_list)
+        eb = Face.ExternalBoundary(faceA)
+        ib_list = Face.InternalBoundaries(faceA)
         p_eb = Wire.Project(wire=eb, face = faceB, direction=direction, mantissa=mantissa, tolerance=tolerance)
         p_ib_list = []
         for ib in ib_list:
@@ -2539,14 +2531,14 @@ class Face():
             
             from topologicpy.Vertex import Vertex
             from topologicpy.Wire import Wire
-            from topologicpy.Face import Face
+            from topologicpy.Topology import Topology
 
             if not Topology.IsInstance(face, "Face"):
                 print("Face.Triangulate - Error: The input face parameter is not a valid face. Returning None.")
                 return None
             if not meshSize:
                 bounding_face = Face.BoundingRectangle(face)
-                bounding_face_vertices = Face.Vertices(bounding_face)
+                bounding_face_vertices = Topology.Vertices(bounding_face)
                 bounding_face_vertices_x = [Vertex.X(i, mantissa=mantissa) for i in bounding_face_vertices]
                 bounding_face_vertices_y = [Vertex.Y(i, mantissa=mantissa) for i in bounding_face_vertices]
                 width = max(bounding_face_vertices_x)-min(bounding_face_vertices_x)
@@ -2555,7 +2547,7 @@ class Face():
             
             gmsh.initialize()
             face_external_boundary = Face.ExternalBoundary(face)
-            external_vertices = Wire.Vertices(face_external_boundary)
+            external_vertices = Topology.Vertices(face_external_boundary)
             external_vertex_number = len(external_vertices)
             for i in range(external_vertex_number):
                 gmsh.model.geo.addPoint(Vertex.X(external_vertices[i], mantissa=mantissa), Vertex.Y(external_vertices[i], mantissa=mantissa), Vertex.Z(external_vertices[i], mantissa=mantissa), meshSize, i+1)
@@ -2779,7 +2771,7 @@ class Face():
         if not Topology.IsInstance(face, "Face"):
             return None
         vertices = []
-        _ = face.Vertices(None, vertices)
+        _ = face.Vertices(None, vertices) # Hook to Core
         return vertices
     
     @staticmethod
@@ -2821,5 +2813,5 @@ class Face():
         if not Topology.IsInstance(face, "Face"):
             return None
         wires = []
-        _ = face.Wires(None, wires)
+        _ = face.Wires(None, wires) # Hook to Core
         return wires

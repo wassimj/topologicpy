@@ -247,8 +247,7 @@ class Wire():
         import time
 
         def br(topology):
-            vertices = []
-            _ = topology.Vertices(None, vertices)
+            vertices = Topology.Vertices(topology)
             x = []
             y = []
             for aVertex in vertices:
@@ -919,10 +918,11 @@ class Wire():
             The created wire.
 
         """
+        from topologicpy.Topology import Topology
+
         if not Topology.IsInstance(cluster, "Cluster"):
             return None
-        vertices = []
-        _ = cluster.Vertices(None, vertices)
+        vertices = Topology.Vertices(cluster)
         return Wire.ByVertices(vertices, close)
 
     @staticmethod
@@ -1232,6 +1232,7 @@ class Wire():
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
 
         def vIndex(v, vList, tolerance):
             for i in range(len(vList)):
@@ -1295,8 +1296,7 @@ class Wire():
 
         tEdges = []
         _ = wire.Edges(None, tEdges)
-        tVertices = []
-        _ = wire.Vertices(None, tVertices)
+        tVertices = Topology.Vertices(wire)
         tVertices = tVertices
 
         graph = []
@@ -2009,9 +2009,11 @@ class Wire():
             The inverted wire.
 
         """
+        from topologicpy.Topology import Topology
+
         if not Topology.IsInstance(wire, "Wire"):
             return None
-        vertices = Wire.Vertices(wire)
+        vertices = Topology.Vertices(wire)
         reversed_vertices = vertices[::-1]
         return Wire.ByVertices(reversed_vertices)
 
@@ -2056,6 +2058,7 @@ class Wire():
         
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
         import inspect
 
         if not Topology.IsInstance(wire, "Wire"):
@@ -2066,7 +2069,7 @@ class Wire():
                 print('caller name:', calframe[1][3])
             return None
         
-        vertices = Wire.Vertices(wire)
+        vertices = Topology.Vertices(wire)
         for v in vertices:
             if Vertex.Degree(v, hostTopology=wire) > 2:
                 return False
@@ -2805,7 +2808,7 @@ class Wire():
             vertices = []
             wire_verts = []
             try:
-                _ = wire.Vertices(None, vertices)
+                vertices = Topology.Vertices(wire)
             except:
                 return wire
             for aVertex in vertices:
@@ -3069,7 +3072,7 @@ class Wire():
             if isinstance(wire, list):
                 points = wire
             else:
-                points = Wire.Vertices(wire)
+                points = Topology.Vertices(wire)
                 # points.insert(0, points.pop())
             if len(points) <= 2:
                 return points
@@ -3296,8 +3299,7 @@ class Wire():
                 return edges[0]
         
         def edgeOtherVertex(edge, vertex):
-            vertices = []
-            _ = edge.Vertices(None, vertices)
+            vertices = Topology.Vertices(edge)
             if Topology.IsSame(vertex, vertices[0]):
                 return vertices[-1]
             else:
@@ -3309,8 +3311,7 @@ class Wire():
                     return True
             return False
         
-        vertices = []
-        _ = wire.Vertices(None, vertices)
+        vertices = Topology.Vertices(wire)
         hubs = []
         for aVertex in vertices:
             if vertexDegree(aVertex, wire) > 2:
@@ -3892,6 +3893,6 @@ class Wire():
         if not Topology.IsInstance(wire, "Wire"):
             return None
         vertices = []
-        _ = wire.Vertices(None, vertices)
+        _ = wire.Vertices(None, vertices) # Hook to Core
         return vertices
 

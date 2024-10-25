@@ -202,11 +202,10 @@ class Grid():
                     e.SetDictionary(d)
                     gridEdges.append(e)
                 elif Topology.Type(e) > Topology.TypeID("Edge"):
-                    tempEdges = []
-                    _ = e.Edges(None, tempEdges)
+                    tempEdges = Topology.Edges(e)
                     for tempEdge in tempEdges:
                         d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
-                        tempEdge.SetDictionary(d)
+                        tempEdge = Topology.SetDictionary(tempEdge, d)
                         gridEdges.append(tempEdge)
         grid = None
         if len(gridEdges) > 0:

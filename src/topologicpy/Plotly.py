@@ -370,6 +370,7 @@ class Plotly:
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
         from topologicpy.Graph import Graph
+        from topologicpy.Color import Color
         import plotly.graph_objs as go
 
         if not Topology.IsInstance(graph, "Graph"):
@@ -377,6 +378,7 @@ class Plotly:
         v_labels = []
         v_groupList = []
         data = []
+        
         if showVertices:
             vertices = Graph.Vertices(graph)
             if vertexLabelKey or vertexGroupKey:
@@ -454,7 +456,7 @@ class Plotly:
                     if Topology.IsInstance(arc, "Wire"):
                         arc_edges = Topology.Edges(arc)
                         for arc_edge in arc_edges:
-                            arc_edge = Topology.SetDictionary(arc_edge, d, silent=silent)
+                            arc_edge = Topology.SetDictionary(arc_edge, d, silent=True)
                             new_edges.append(arc_edge)
                     else:
                         new_edges.append(edge)
@@ -473,9 +475,14 @@ class Plotly:
                     d = Topology.Dictionary(e)
                     if d:
                         if not edgeLabelKey == None:
-                            e_label = str(Dictionary.ValueAtKey(d, key=edgeLabelKey)) or ""
+                            e_label = str(Dictionary.ValueAtKey(d, key=edgeLabelKey))
+                            if e_label == None:
+                                e_label = ""
                         if not edgeGroupKey == None:
-                            e_group = str(Dictionary.ValueAtKey(d, key=edgeGroupKey)) or ""
+                            if edgeGroupKey:
+                                e_group = Dictionary.ValueAtKey(d, key=edgeGroupKey)
+                                if e_group == None:
+                                    e_group = ""
                     try:
                         e_groupList.append(edgeGroups.index(e_group))
                     except:
@@ -491,6 +498,7 @@ class Plotly:
                     Ye+=[Vertex.Y(sv, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa), None] # y-coordinates of edge ends
                     Ze+=[Vertex.Z(sv, mantissa=mantissa), Vertex.Z(ev, mantissa=mantissa), None] # z-coordinates of edge ends
 
+
             if len(list(set(e_groupList))) < 2:
                 e_groupList = edgeColor
             if len(e_labels) < 1:
@@ -500,6 +508,19 @@ class Plotly:
                 mode = "lines+text"
             else:
                 mode = "lines"
+            
+            final_categories = edgeColor # Start with the default edgeColor
+            if len(edgeGroups) > 0:
+                # Normalize categories to a range between 0 and 1 for the color scale
+                min_category = 0
+                max_category = max(len(edgeGroups), 1)
+                normalized_categories = [(cat - min_category) / (max_category - min_category) for cat in e_groupList]
+
+                final_categories = []
+                for c in normalized_categories:
+                    color = Color.ByValueInRange(c, minValue=0, maxValue=1, colorScale=colorScale)
+                    color = "rgb("+str(color[0])+","+str(color[1])+","+str(color[2])+")"
+                    final_categories.append(color)
             e_trace=go.Scatter3d(x=Xe,
                                  y=Ye,
                                  z=Ze,
@@ -508,12 +529,12 @@ class Plotly:
                                  legendgroup=5,
                                  legendrank=5,
                                  showlegend=showEdgeLegend,
-                                 line=dict(color=e_groupList, width=edgeWidth),
+                                 line=dict(color=final_categories, colorscale=Plotly.ColorScale(colorScale), cmin=0, cmax=1, width=edgeWidth),
                                  text=e_labels,
                                  hoverinfo='text'
                                 )
             data.append(e_trace)
-
+        
         return data
 
     @staticmethod
@@ -1022,7 +1043,7 @@ class Plotly:
                                 d = Topology.Dictionary(tp_face)
                                 f_dictionaries.append(d)
                                 if d:
-                                    _ = Topology.SetDictionary(tri, d)
+                                    tri = Topology.SetDictionary(tri, d)
                             all_triangles.append(tri)
                 if len(all_triangles) > 0:
                     f_cluster = Cluster.ByTopologies(all_triangles)

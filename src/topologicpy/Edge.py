@@ -353,7 +353,7 @@ class Edge():
         if not Topology.IsInstance(cluster, "Cluster"):
             print("Edge.ByVerticesCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        vertices = Cluster.Vertices(cluster)
+        vertices = Topology.Vertices(cluster)
         vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
         if len(vertexList) < 2:
             print("Edge.ByVerticesCluster - Error: The input cluster parameter contains less than two vertices. Returning None.")

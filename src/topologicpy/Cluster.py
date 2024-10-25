@@ -248,7 +248,7 @@ class Cluster():
             print("Cluster.CellComplexes - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cellComplexes = []
-        _ = cluster.CellComplexes(None, cellComplexes)
+        _ = cluster.CellComplexes(None, cellComplexes) # Hook to Core
         return cellComplexes
 
     @staticmethod
@@ -273,7 +273,7 @@ class Cluster():
             print("Cluster.Cells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cells = []
-        _ = cluster.Cells(None, cells)
+        _ = cluster.Cells(None, cells) # Hook to Core
         return cells
 
     @staticmethod
@@ -479,7 +479,7 @@ class Cluster():
             print("Cluster.Edges - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         edges = []
-        _ = cluster.Edges(None, edges)
+        _ = cluster.Edges(None, edges) # Hook to Core
         return edges
 
     @staticmethod
@@ -504,7 +504,7 @@ class Cluster():
             print("Cluster.Faces - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         faces = []
-        _ = cluster.Faces(None, faces)
+        _ = cluster.Faces(None, faces) # Hook to Core
         return faces
 
     @staticmethod
@@ -531,14 +531,12 @@ class Cluster():
         if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeCells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        allCells = []
-        _ = cluster.Cells(None, allCells)
+        allCells = Cluster.Cells(cluster)
         if len(allCells) < 1:
             return []
         allCellsCluster = Cluster.ByTopologies(allCells)
         freeCells = []
-        cellComplexes = []
-        _ = cluster.CellComplexes(None, cellComplexes)
+        cellComplexes = Cluster.CellComplexes(cluster)
         cellComplexesCells = []
         for cellComplex in cellComplexes:
             tempCells = CellComplex.Cells(cellComplex)
@@ -580,13 +578,11 @@ class Cluster():
         if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeShells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        allShells = []
-        _ = cluster.Shells(None, allShells)
+        allShells = Cluster.Shells(cluster)
         if len(allShells) < 1:
             return []
         allShellsCluster = Cluster.ByTopologies(allShells)
-        cells = []
-        _ = cluster.Cells(None, cells)
+        cells = Cluster.Cells(cluster)
         cellsShells = []
         for cell in cells:
             tempShells = Cell.Shells(cell)
@@ -628,13 +624,11 @@ class Cluster():
         if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeFaces - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        allFaces = []
-        _ = cluster.Faces(None, allFaces)
+        allFaces = Cluster.Faces(cluster)
         if len(allFaces) < 1:
             return []
         allFacesCluster = Cluster.ByTopologies(allFaces)
-        shells = []
-        _ = cluster.Shells(None, shells)
+        shells = Cluster.Shells(cluster)
         shellFaces = []
         for shell in shells:
             tempFaces = Shell.Faces(shell)
@@ -676,13 +670,11 @@ class Cluster():
         if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeWires - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        allWires = []
-        _ = cluster.Wires(None, allWires)
+        allWires = Cluster.Wires(cluster)
         if len(allWires) < 1:
             return []
         allWiresCluster = Cluster.ByTopologies(allWires)
-        faces = []
-        _ = cluster.Faces(None, faces)
+        faces = Cluster.Faces(cluster)
         facesWires = []
         for face in faces:
             tempWires = Face.Wires(face)
@@ -724,13 +716,11 @@ class Cluster():
         if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeEdges - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        allEdges = []
-        _ = cluster.Edges(None, allEdges)
+        allEdges = Cluster.Edges(cluster)
         if len(allEdges) < 1:
             return []
         allEdgesCluster = Cluster.ByTopologies(allEdges)
-        wires = []
-        _ = cluster.Wires(None, wires)
+        wires = Cluster.Wires(cluster)
         wireEdges = []
         for wire in wires:
             tempEdges = Wire.Edges(wire)
@@ -772,16 +762,14 @@ class Cluster():
         if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.FreeVertices - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        allVertices = []
-        _ = cluster.Vertices(None, allVertices)
+        allVertices = Topology.Vertices(cluster)
         if len(allVertices) < 1:
             return []
         allVerticesCluster = Cluster.ByTopologies(allVertices)
-        edges = []
-        _ = cluster.Edges(None, edges)
+        edges = Topology.Edges(cluster)
         edgesVertices = []
         for edge in edges:
-            tempVertices = Edge.Vertices(edge)
+            tempVertices = Topology.Vertices(edge)
             edgesVertices += tempVertices
         if len(edgesVertices) == 0:
             return allVertices
@@ -845,25 +833,25 @@ class Cluster():
         if not Topology.IsInstance(cluster, "Cluster"):
             print("Cluster.HighestType - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        cellComplexes = Cluster.CellComplexes(cluster)
+        cellComplexes = Topology.CellComplexes(cluster)
         if len(cellComplexes) > 0:
             return Topology.TypeID("CellComplex")
-        cells = Cluster.Cells(cluster)
+        cells = Topology.Cells(cluster)
         if len(cells) > 0:
             return Topology.TypeID("Cell")
-        shells = Cluster.Shells(cluster)
+        shells = Topology.Shells(cluster)
         if len(shells) > 0:
             return Topology.TypeID("Shell")
-        faces = Cluster.Faces(cluster)
+        faces = Topology.Faces(cluster)
         if len(faces) > 0:
             return Topology.TypeID("Face")
         wires = Cluster.Wires(cluster)
         if len(wires) > 0:
             return Topology.TypeID("Wire")
-        edges = Cluster.Edges(cluster)
+        edges = Topology.Edges(cluster)
         if len(edges) > 0:
             return Topology.TypeID("Edge")
-        vertices = Cluster.Vertices(cluster)
+        vertices = Topology.Vertices(cluster)
         if len(vertices) > 0:
             return Topology.TypeID("Vertex")
     
@@ -1147,10 +1135,10 @@ class Cluster():
 
         """
         import topologicpy
-        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
         from itertools import combinations
 
         if wire == None:
@@ -1158,7 +1146,7 @@ class Cluster():
         if not Wire.IsClosed(wire):
             print("Cluster.MysticRose - Error: The input wire parameter is not a closed topologic wire. Returning None.")
             return None
-        vertices = Wire.Vertices(wire)
+        vertices = Topology.Vertices(wire)
         indices = list(range(len(vertices)))
         combs = [[comb[0],comb[1]] for comb in combinations(indices, 2) if not (abs(comb[0]-comb[1]) == 1) and not (abs(comb[0]-comb[1]) == len(indices)-1)]
         edges = []
@@ -1190,7 +1178,7 @@ class Cluster():
             print("Cluster.Shells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         shells = []
-        _ = cluster.Shells(None, shells)
+        _ = cluster.Shells(None, shells) # Hook to Core
         return shells
 
     @staticmethod
@@ -1215,54 +1203,41 @@ class Cluster():
             print("Cluster.Simplify - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         resultingTopologies = []
-        topCC = []
-        _ = cluster.CellComplexes(None, topCC)
-        topCells = []
-        _ = cluster.Cells(None, topCells)
-        topShells = []
-        _ = cluster.Shells(None, topShells)
-        topFaces = []
-        _ = cluster.Faces(None, topFaces)
-        topWires = []
-        _ = cluster.Wires(None, topWires)
-        topEdges = []
-        _ = cluster.Edges(None, topEdges)
-        topVertices = []
-        _ = cluster.Vertices(None, topVertices)
+        topCC = Topology.CellComplexes(cluster)
+        topCells = Topology.Cells(cluster)
+        topShells = Topology.Shells(cluster)
+        topFaces = Topology.Faces(cluster)
+        topWires = Topology.Wires(cluster)
+        topEdges = Topology.Edges(cluster)
+        topVertices = Topology.Vertices(cluster)
         if len(topCC) == 1:
             cc = topCC[0]
-            ccVertices = []
-            _ = cc.Vertices(None, ccVertices)
+            ccVertices = Topology.Vertices(cc)
             if len(topVertices) == len(ccVertices):
                 resultingTopologies.append(cc)
         if len(topCC) == 0 and len(topCells) == 1:
             cell = topCells[0]
-            ccVertices = []
-            _ = cell.Vertices(None, ccVertices)
+            ccVertices = Topology.Vertices(cell)
             if len(topVertices) == len(ccVertices):
                 resultingTopologies.append(cell)
         if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 1:
             shell = topShells[0]
-            ccVertices = []
-            _ = shell.Vertices(None, ccVertices)
+            ccVertices = Topology.Vertices(shell)
             if len(topVertices) == len(ccVertices):
                 resultingTopologies.append(shell)
         if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 1:
             face = topFaces[0]
-            ccVertices = []
-            _ = face.Vertices(None, ccVertices)
+            ccVertices = Topology.Vertices(face)
             if len(topVertices) == len(ccVertices):
                 resultingTopologies.append(face)
         if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 1:
             wire = topWires[0]
-            ccVertices = []
-            _ = wire.Vertices(None, ccVertices)
+            ccVertices = Topology.Vertices(wire)
             if len(topVertices) == len(ccVertices):
                 resultingTopologies.append(wire)
         if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 1:
             edge = topEdges[0]
-            ccVertices = []
-            _ = wire.Vertices(None, ccVertices)
+            ccVertices = Topology.Vertices(edge)
             if len(topVertices) == len(ccVertices):
                 resultingTopologies.append(edge)
         if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 0 and len(topVertices) == 1:
@@ -1294,7 +1269,7 @@ class Cluster():
             print("Cluster.Vertices - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         vertices = []
-        _ = cluster.Vertices(None, vertices)
+        _ = cluster.Vertices(None, vertices) # Hook to Core
         return vertices
 
     @staticmethod
@@ -1319,7 +1294,7 @@ class Cluster():
             print("Cluster.Wires - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         wires = []
-        _ = cluster.Wires(None, wires)
+        _ = cluster.Wires(None, wires) # Hook to Core
         return wires
 
     

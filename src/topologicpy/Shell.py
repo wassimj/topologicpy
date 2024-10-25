@@ -182,7 +182,7 @@ class Shell():
 
             shell = Topology.Slice(internalBoundary, skeleton_cluster, tolerance=tolerance)
             if mergeJunctions == True:
-                vertices = Shell.Vertices(shell)
+                vertices = Topology.Vertices(shell)
                 centers = []
                 used = []
                 for v in vertices:
@@ -264,7 +264,7 @@ class Shell():
                     s = Topology.InternalVertex(f, tolerance=tolerance)
                     s = Topology.SetDictionary(s, d)
                     selectors.append(s)
-                _ = Topology.TransferDictionariesBySelectors(topology=shell, selectors=selectors, tranFaces=True, tolerance=tolerance)
+                shell = Topology.TransferDictionariesBySelectors(topology=shell, selectors=selectors, tranFaces=True, tolerance=tolerance)
             return shell
         return None
 
@@ -330,8 +330,7 @@ class Shell():
 
         if not Topology.IsInstance(cluster, "Cluster"):
             return None
-        faces = []
-        _ = cluster.Faces(None, faces)
+        faces = Topology.Faces(cluster)
         return Shell.ByFaces(faces, tolerance=tolerance)
 
     @staticmethod
@@ -619,7 +618,7 @@ class Shell():
             origin = Topology.Centroid(face)
             normal = Face.Normal(face, mantissa=mantissa)
             flatFace = Topology.Flatten(face, origin=origin, direction=normal)
-            faceVertices = Face.Vertices(face)
+            faceVertices = Topology.Vertices(face)
             vertices += faceVertices
 
             # Create a cluster of the input vertices
@@ -628,7 +627,7 @@ class Shell():
             # Flatten the cluster using the same transformations
             verticesCluster = Topology.Flatten(verticesCluster, origin=origin, direction=normal)
 
-            vertices = Cluster.Vertices(verticesCluster)
+            vertices = Topology.Vertices(verticesCluster)
         points = []
         for v in vertices:
             points.append([Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa)])
@@ -682,7 +681,7 @@ class Shell():
         if not Topology.IsInstance(shell, "Shell"):
             return None
         edges = []
-        _ = shell.Edges(None, edges)
+        _ = shell.Edges(None, edges) # Hook to Core
         return edges
 
     @staticmethod
@@ -708,12 +707,10 @@ class Shell():
 
         if not Topology.IsInstance(shell, "Shell"):
             return None
-        edges = []
-        _ = shell.Edges(None, edges)
+        edges = Topology.Edges(shell)
         obEdges = []
         for anEdge in edges:
-            faces = []
-            _ = anEdge.Faces(shell, faces)
+            faces = Topology.SuperTopologies(anEdge, shell, topologyType="face")
             if len(faces) == 1:
                 obEdges.append(anEdge)
         return Topology.SelfMerge(Cluster.ByTopologies(obEdges), tolerance=tolerance)
@@ -1748,7 +1745,7 @@ class Shell():
             if isinstance(wire, list):
                 points = wire
             else:
-                points = Wire.Vertices(wire)
+                points = Topology.Vertices(wire)
                 # points.insert(0, points.pop())
             if len(points) <= 2:
                 return points
@@ -1937,7 +1934,7 @@ class Shell():
             points.append([Vertex.X(flatVertex, mantissa=mantissa), Vertex.Y(flatVertex, mantissa=mantissa)])
 
         br = Wire.BoundingRectangle(flatFace)
-        br_vertices = Wire.Vertices(br)
+        br_vertices = Topology.Vertices(br)
         br_x = []
         br_y = []
         for br_v in br_vertices:

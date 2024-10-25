@@ -165,7 +165,7 @@ class Cell():
                     finalFaces.append(f)
             finalFinalFaces = []
             for f in finalFaces:
-                vertices = Face.Vertices(f)
+                vertices = Topology.Vertices(f)
                 w = Wire.Cycles(Face.ExternalBoundary(f), maxVertices=len(vertices))[0]
                 f1 = Face.ByWire(w, tolerance=tolerance, silent=True)
                 if Topology.IsInstance(f1, "Face"):
@@ -1157,6 +1157,7 @@ class Cell():
 
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
+        from topologicpy.CellComplex import CellComplex
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
@@ -1194,7 +1195,7 @@ class Cell():
         c = Wire.ByVertices(new_verts, close=False)
         egg = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
         if Topology.IsInstance(egg, "CellComplex"):
-            egg = egg.ExternalBoundary()
+            egg = CellComplex.ExternalBoundary(egg)
         if Topology.IsInstance(egg, "Shell"):
             egg = Cell.ByShell(egg)
         egg = Topology.Scale(egg, origin=Vertex.Origin(), x=height, y=height, z=height)
@@ -1232,7 +1233,7 @@ class Cell():
             print("Cell.ExternalBoundary - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         try:
-            return cell.ExternalBoundary()
+            return cell.ExternalBoundary() # Hook to Core
         except:
             print("Cell.ExternalBoundary - Error: Could not compute the external boundary. Returning None.")
             return None
@@ -2131,6 +2132,7 @@ class Cell():
 
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
+        from topologicpy.CellComplex import CellComplex
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(origin, "Vertex"):
@@ -2142,7 +2144,7 @@ class Cell():
         c = Topology.Rotate(c, origin=Vertex.Origin(), axis=[1, 0, 0], angle=90)
         sphere = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
         if Topology.Type(sphere) == Topology.TypeID("CellComplex"):
-            sphere = sphere.ExternalBoundary()
+            sphere = CellComplex.ExternalBoundary(sphere)
         if Topology.Type(sphere) == Topology.TypeID("Shell"):
             sphere = Cell.ByShell(sphere)
         if placement.lower() == "bottom":
