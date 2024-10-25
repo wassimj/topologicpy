@@ -276,6 +276,7 @@ class Plotly:
                     sagitta: float = 0,
                     absolute: bool = False,
                     sides: int = 8,
+                    angle: float = 0,
                     vertexColor: str = "black",
                     vertexSize: float = 6,
                     vertexLabelKey: str = None,
@@ -454,6 +455,9 @@ class Plotly:
                     d = Topology.Dictionary(edge)
                     arc = Wire.ArcByEdge(edge, sagitta=sagitta, absolute=absolute, sides=sides, close=False, silent=silent)
                     if Topology.IsInstance(arc, "Wire"):
+                        if not angle == 0:
+                            direc = Edge.Direction(edge)
+                            arc = Topology.Rotate(arc, origin=Topology.Centroid(edge), axis=direc, angle=angle)
                         arc_edges = Topology.Edges(arc)
                         for arc_edge in arc_edges:
                             arc_edge = Topology.SetDictionary(arc_edge, d, silent=True)

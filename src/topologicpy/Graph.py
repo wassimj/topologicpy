@@ -7845,6 +7845,7 @@ class Graph:
              sagitta = 0,
              absolute = False,
              sides = 8,
+             angle = 0,
              vertexColor="black",
              vertexSize=6,
              vertexLabelKey=None,
@@ -7893,6 +7894,8 @@ class Graph:
             For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. The default is True.
         sides : int , optional
             The number of sides of the arc. The default is 8.
+        angle : float, optional
+            An additional angle in degrees to rotate arcs (where sagitta is more than 0). The default is 0.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -7994,7 +7997,7 @@ class Graph:
             print("Graph.Show - Error: The input graph is not a valid graph. Returning None.")
             return None
         
-        data= Plotly.DataByGraph(graph, sagitta=sagitta, absolute=absolute, sides=sides, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLabels=showVertexLabels, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLabels=showEdgeLabels, showEdgeLegend=showEdgeLegend, colorScale=colorScale, silent=silent)
+        data= Plotly.DataByGraph(graph, sagitta=sagitta, absolute=absolute, sides=sides,  angle=angle, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLabels=showVertexLabels, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLabels=showEdgeLabels, showEdgeLegend=showEdgeLegend, colorScale=colorScale, silent=silent)
         fig = Plotly.FigureByData(data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor,
                                   marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom, tolerance=tolerance)
         Plotly.Show(fig, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
