@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Wire module &mdash; topologicpy 0.7.70 documentation</title>
+  <title>topologicpy.Wire module &mdash; topologicpy 0.7.71 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.70
+                0.7.71
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -184,7 +184,7 @@
 <td><p>Closes the input wire</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ConcaveHull" title="topologicpy.Wire.Wire.ConcaveHull"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConcaveHull</span></code></a>(topology[, k, mantissa, tolerance])</p></td>
-<td><p>Returns a wire representing the 2D convex hull of the input topology.</p></td>
+<td><p>Returns a wire representing the 2D concave hull of the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ConvexHull" title="topologicpy.Wire.Wire.ConvexHull"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvexHull</span></code></a>(topology[, mantissa, tolerance])</p></td>
 <td><p>Returns a wire representing the 2D convex hull of the input topology.</p></td>
@@ -647,7 +647,7 @@ The default is None which causes the algorithm to use twice the number of cpu co
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.ConcaveHull">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ConcaveHull</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.ConcaveHull" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a wire representing the 2D convex hull of the input topology. The vertices of the topology are assumed to be coplanar.
+<dd><p>Returns a wire representing the 2D concave hull of the input topology. The vertices of the topology are assumed to be coplanar.
 Code based on Moreira, A and Santos, M Y, “CONCAVE HULL: A K-NEAREST NEIGHBOURS APPROACH FOR THE COMPUTATION OF THE REGION OCCUPIED BY A SET OF POINTS”
 GRAPP 2007 - International Conference on Computer Graphics Theory and Applications.</p>
 <dl class="field-list simple">
@@ -667,7 +667,7 @@ less concave hull, while decreasing <cite>k</cite> may yield a more detailed, co
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The convex hull of the input topology.</p>
+<dt>topologic_core.Wire</dt><dd><p>The concave hull of the input topology.</p>
 </dd>
 </dl>
 </dd>
