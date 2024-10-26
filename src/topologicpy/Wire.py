@@ -1076,6 +1076,223 @@ class Wire():
         new_wire = Topology.SelfMerge(Topology.ByGeometry(vertices=g_vertices, edges=g_edges, faces=[]))
         return new_wire
 
+
+
+    @staticmethod
+    def ConcaveHull(topology, k: int = 3, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Returns a wire representing the 2D convex hull of the input topology. The vertices of the topology are assumed to be coplanar.
+        Code based on Moreira, A and Santos, M Y, "CONCAVE HULL: A K-NEAREST NEIGHBOURS APPROACH FOR THE COMPUTATION OF THE REGION OCCUPIED BY A SET OF POINTS"
+        GRAPP 2007 - International Conference on Computer Graphics Theory and Applications.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        k : int, optional
+            The number of nearest neighbors to consider for each point when building the hull. 
+            Must be at least 3 for the algorithm to function correctly. Increasing `k` will produce a smoother, 
+            less concave hull, while decreasing `k` may yield a more detailed, concave shape. The default is 3.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+                
+        Returns
+        -------
+        topologic_core.Wire
+            The convex hull of the input topology.
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from math import atan2, sqrt, pi
+        from random import sample
+
+        # Helper function to clean the list by removing duplicate points
+        def clean_list(points_list):
+            return list(set(points_list))
+
+        # Helper function to find the point with the minimum Y-coordinate
+        def find_min_y_point(points):
+            return min(points, key=lambda p: [p[1], p[0]])
+
+        # Helper function to find the k-nearest neighbors to a given point
+        def nearest_points(points, reference_point, k):
+            # Sort points by distance from the reference point and select the first k points
+            sorted_points = sorted(points, key=lambda p: sqrt((p[0] - reference_point[0]) ** 2 + (p[1] - reference_point[1]) ** 2))
+            return sorted_points[:k]
+
+        # Helper function to sort points by the angle relative to the previous direction
+        def sort_by_angle(points, current_point, prev_angle):
+            def angle_to(p):
+                angle = atan2(p[1] - current_point[1], p[0] - current_point[0])
+                angle_diff = (angle - prev_angle + 2 * pi) % (2 * pi)
+                return angle_diff
+            return sorted(points, key=angle_to)
+
+        # Helper function to check if two line segments intersect
+        def intersects_q(line1, line2):
+            def orientation(p, q, r):
+                val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
+                if val == 0: return 0
+                return 1 if val > 0 else 2
+
+            p1, q1 = line1
+            p2, q2 = line2
+            o1 = orientation(p1, q1, p2)
+            o2 = orientation(p1, q1, q2)
+            o3 = orientation(p2, q2, p1)
+            o4 = orientation(p2, q2, q1)
+
+            if o1 != o2 and o3 != o4:
+                return True
+            if o1 == 0 and on_segment(p1, p2, q1): return True
+            if o2 == 0 and on_segment(p1, q2, q1): return True
+            if o3 == 0 and on_segment(p2, p1, q2): return True
+            if o4 == 0 and on_segment(p2, q1, q2): return True
+            return False
+
+        # Helper function to check if point q lies on segment pr
+        def on_segment(p, q, r):
+            return (q[0] <= max(p[0], r[0]) and q[0] >= min(p[0], r[0]) and
+                    q[1] <= max(p[1], r[1]) and q[1] >= min(p[1], r[1]))
+
+        # Helper function to calculate the angle between two points
+        def angle(p1, p2):
+            return atan2(p2[1] - p1[1], p2[0] - p1[0])
+
+        # Helper function to determine if a point is inside a polygon (Ray Casting method)
+        def point_in_polygon_q(point, polygon):
+            x, y = point
+            inside = False
+            n = len(polygon)
+            p1x, p1y = polygon[0]
+            for i in range(1, n + 1):
+                p2x, p2y = polygon[i % n]
+                if min(p1y, p2y) < y <= max(p1y, p2y) and x <= max(p1x, p2x):
+                    if p1y != p2y:
+                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                    if p1x == p2x or x <= xinters:
+                        inside = not inside
+                p1x, p1y = p2x, p2y
+            return inside
+
+        def concave_hull(points_list, k: int = 3):
+            # Ensure k >= 3
+            kk = max(k, 3)
+            
+            # Remove duplicate points
+            dataset = clean_list(points_list)
+            
+            # If there are fewer than 3 unique points, no polygon can be formed
+            if len(dataset) < 3:
+                return None
+            elif len(dataset) == 3:
+                return dataset  # If exactly 3 points, they form the polygon
+
+            # Ensure we have enough neighbors
+            kk = min(kk, len(dataset) - 1)
+            
+            # Find starting point (minimum Y value) and initialize hull
+            first_point = find_min_y_point(dataset)
+            hull = [first_point]
+            current_point = first_point
+            dataset.remove(first_point)
+            prev_angle = 0
+            step = 2
+            
+            # Original code logic, with an update to calculate prev_angle
+            while (current_point != first_point or step == 2) and len(dataset) > 0:
+                # After 4 steps, re-add the starting point to check for closure
+                if step == 5:
+                    dataset.append(first_point)
+                
+                # Find the k-nearest points
+                k_nearest_points = nearest_points(dataset, current_point, kk)
+                
+                # Sort candidates based on angle
+                c_points = sort_by_angle(k_nearest_points, current_point, prev_angle)
+                
+                intersection_found = True
+                i = 0
+                
+                # Select the first candidate that does not intersect any polygon edges
+                while intersection_found and i < len(c_points):
+                    candidate_point = c_points[i]
+                    i += 1
+                    
+                    if candidate_point == first_point:
+                        last_point_check = 1
+                    else:
+                        last_point_check = 0
+
+                    # Check for intersections with the existing edges
+                    j = 2
+                    intersection_found = False
+                    while not intersection_found and j < len(hull) - last_point_check:
+                        # Using hull[-1] and hull[-2] for last and second-to-last points
+                        intersection_found = intersects_q(
+                            (hull[-1], candidate_point),
+                            (hull[-1 - j], hull[-j])
+                        )
+                        j += 1
+
+                # If all candidates intersect, retry with a higher number of neighbors
+                if intersection_found:
+                    return concave_hull(points_list, kk + 1)
+                
+                # Update the hull with the selected candidate point
+                current_point = candidate_point
+                hull.append(current_point)
+
+                # Calculate the angle between the last two points in the hull to set `prev_angle`
+                if len(hull) > 1:
+                    prev_angle = angle(hull[-1], hull[-2])
+                    
+                dataset.remove(current_point)
+                step += 1
+
+
+            # Check if all points are inside the constructed hull
+            all_inside = True
+            i = len(dataset) - 1
+            while all_inside and i >= 0:
+                all_inside = point_in_polygon_q(dataset[i], hull)
+                i -= 1
+
+            # If any points are outside the hull, retry with a higher number of neighbors
+            if not all_inside:
+                return concave_hull(points_list, kk + 1)
+            
+            # Return the completed hull if all points are inside
+            return hull
+
+        f = None
+        # Create a sample face and flatten
+        while not Topology.IsInstance(f, "Face"):
+            vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
+            v = sample(vertices, 3)
+            w = Wire.ByVertices(v)
+            f = Face.ByWire(w, tolerance=tolerance, silent=True)
+            if not f == None:
+                origin = Topology.Centroid(f)
+                normal = Face.Normal(f, mantissa=mantissa)
+                f = Topology.Flatten(f, origin=origin, direction=normal)
+        flat_topology = Topology.Flatten(topology, origin=origin, direction=normal)
+        vertices = Topology.Vertices(flat_topology)
+        points = []
+        for v in vertices:
+            points.append((Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa)))
+        hull = concave_hull(points, k=k)
+        hull_vertices = []
+        for p in hull:
+            hull_vertices.append(Vertex.ByCoordinates(p[0], p[1], 0))
+        ch = Wire.ByVertices(hull_vertices, close=True)
+        ch = Topology.Unflatten(ch, origin=origin, direction=normal)
+        return ch
+
     @staticmethod
     def ConvexHull(topology, mantissa: int = 6, tolerance: float = 0.0001):
         """
@@ -1197,8 +1414,8 @@ class Wire():
             origin = Topology.Centroid(f)
             normal = Face.Normal(f, mantissa=mantissa)
             f = Topology.Flatten(f, origin=origin, direction=normal)
-        topology = Topology.Flatten(topology, origin=origin, direction=normal)
-        vertices = Topology.Vertices(topology)
+        flat_topology = Topology.Flatten(topology, origin=origin, direction=normal)
+        vertices = Topology.Vertices(flat_topology)
         points = []
         for v in vertices:
             points.append((Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa)))
