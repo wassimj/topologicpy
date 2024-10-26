@@ -1081,7 +1081,7 @@ class Wire():
     @staticmethod
     def ConcaveHull(topology, k: int = 3, mantissa: int = 6, tolerance: float = 0.0001):
         """
-        Returns a wire representing the 2D convex hull of the input topology. The vertices of the topology are assumed to be coplanar.
+        Returns a wire representing the 2D concave hull of the input topology. The vertices of the topology are assumed to be coplanar.
         Code based on Moreira, A and Santos, M Y, "CONCAVE HULL: A K-NEAREST NEIGHBOURS APPROACH FOR THE COMPUTATION OF THE REGION OCCUPIED BY A SET OF POINTS"
         GRAPP 2007 - International Conference on Computer Graphics Theory and Applications.
 
@@ -1101,7 +1101,7 @@ class Wire():
         Returns
         -------
         topologic_core.Wire
-            The convex hull of the input topology.
+            The concave hull of the input topology.
         """
 
         from topologicpy.Vertex import Vertex
