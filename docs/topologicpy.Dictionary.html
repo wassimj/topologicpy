@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Dictionary module &mdash; topologicpy 0.7.71 documentation</title>
+  <title>topologicpy.Dictionary module &mdash; topologicpy 0.7.72 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.71
+                0.7.72
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -198,25 +198,28 @@ values.append(value)</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByPythonDictionary" title="topologicpy.Dictionary.Dictionary.ByPythonDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByPythonDictionary</span></code></a>(pythonDictionary)</p></td>
 <td><p>Creates a dictionary equivalent to the input python dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Keys" title="topologicpy.Dictionary.Dictionary.Keys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keys</span></code></a>(dictionary)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Filter" title="topologicpy.Dictionary.Dictionary.Filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Filter</span></code></a>(elements, dictionaries[, searchType, ...])</p></td>
+<td><p>Filters the input list of dictionaries based on the input parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Keys" title="topologicpy.Dictionary.Dictionary.Keys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keys</span></code></a>(dictionary)</p></td>
 <td><p>Returns the keys of the input dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ListAttributeValues" title="topologicpy.Dictionary.Dictionary.ListAttributeValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ListAttributeValues</span></code></a>(listAttribute)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ListAttributeValues" title="topologicpy.Dictionary.Dictionary.ListAttributeValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ListAttributeValues</span></code></a>(listAttribute)</p></td>
 <td><p>Returns the list of values embedded in the input listAttribute.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.PythonDictionary" title="topologicpy.Dictionary.Dictionary.PythonDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PythonDictionary</span></code></a>(dictionary)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.PythonDictionary" title="topologicpy.Dictionary.Dictionary.PythonDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PythonDictionary</span></code></a>(dictionary)</p></td>
 <td><p>Returns the input dictionary as a python dictionary</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.RemoveKey" title="topologicpy.Dictionary.Dictionary.RemoveKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveKey</span></code></a>(dictionary, key)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.RemoveKey" title="topologicpy.Dictionary.Dictionary.RemoveKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveKey</span></code></a>(dictionary, key)</p></td>
 <td><p>Removes the key (and its associated value) from the input dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SetValueAtKey" title="topologicpy.Dictionary.Dictionary.SetValueAtKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValueAtKey</span></code></a>(dictionary, key, value)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SetValueAtKey" title="topologicpy.Dictionary.Dictionary.SetValueAtKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValueAtKey</span></code></a>(dictionary, key, value)</p></td>
 <td><p>Creates a key/value pair in the input dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ValueAtKey" title="topologicpy.Dictionary.Dictionary.ValueAtKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValueAtKey</span></code></a>(dictionary, key[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ValueAtKey" title="topologicpy.Dictionary.Dictionary.ValueAtKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValueAtKey</span></code></a>(dictionary, key[, silent])</p></td>
 <td><p>Returns the value of the input key in the input dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Values" title="topologicpy.Dictionary.Dictionary.Values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Values</span></code></a>(dictionary)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Values" title="topologicpy.Dictionary.Dictionary.Values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Values</span></code></a>(dictionary)</p></td>
 <td><p>Returns the list of values in the input dictionary.</p></td>
 </tr>
 </tbody>
@@ -301,6 +304,38 @@ values.append(value)</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Dictionary</dt><dd><p>The dictionary equivalent to the input python dictionary.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.Filter">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">searchType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'any'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.Filter" title="Permalink to this definition"></a></dt>
+<dd><p>Filters the input list of dictionaries based on the input parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>elements</strong><span class="classifier">list</span></dt><dd><p>The input list of elements to be filtered according to the input dictionaries.</p>
+</dd>
+<dt><strong>dictionaries</strong><span class="classifier">list</span></dt><dd><p>The input list of dictionaries to be filtered.</p>
+</dd>
+<dt><strong>searchType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of search query to conduct in the topology’s dictionary. This can be one of “any”, “equal to”, “contains”, “starts with”, “ends with”, “not equal to”, “does not contain”. The default is “any”.</p>
+</dd>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to search within. The default is None which means it will filter by topology type only.</p>
+</dd>
+<dt><strong>value</strong><span class="classifier">str , optional</span></dt><dd><p>The value to search for at the specified key. The default is None which means it will filter by topology type only.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>A dictionary of filtered and other elements. The dictionary has two keys:
+- “filtered” The filtered dictionaries.
+- “other” The other dictionaries that did not meet the filter criteria.
+- “filteredIndices” The filtered indices of dictionaries.
+- “otherIndices” The other indices of dictionaries that did not meet the filter criteria.</p>
 </dd>
 </dl>
 </dd>

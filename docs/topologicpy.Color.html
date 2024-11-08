@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Color module &mdash; topologicpy 0.7.71 documentation</title>
+  <title>topologicpy.Color module &mdash; topologicpy 0.7.72 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.71
+                0.7.72
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -150,14 +150,20 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Color.Color.ByCSSNamedColor" title="topologicpy.Color.Color.ByCSSNamedColor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSSNamedColor</span></code></a>(color[, alpha])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Color.Color.AnyToHex" title="topologicpy.Color.Color.AnyToHex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnyToHex</span></code></a>(color)</p></td>
+<td><p>Converts a color to a hexadecimal color string.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Color.Color.ByCSSNamedColor" title="topologicpy.Color.Color.ByCSSNamedColor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSSNamedColor</span></code></a>(color[, alpha])</p></td>
 <td><p>Creates a Color from a CSS named color string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Color.Color.ByHEX" title="topologicpy.Color.Color.ByHEX"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByHEX</span></code></a>(hex[, alpha])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Color.Color.ByHEX" title="topologicpy.Color.Color.ByHEX"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByHEX</span></code></a>(hex[, alpha])</p></td>
 <td><p>Converts a hexadecimal color string to RGB color values.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Color.Color.ByValueInRange" title="topologicpy.Color.Color.ByValueInRange"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByValueInRange</span></code></a>([value, minValue, maxValue, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Color.Color.ByValueInRange" title="topologicpy.Color.Color.ByValueInRange"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByValueInRange</span></code></a>([value, minValue, maxValue, ...])</p></td>
 <td><p>Returns the r, g, b, (and optionally) a list of numbers representing the red, green, blue and alpha color elements.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Color.Color.CMYKToHex" title="topologicpy.Color.Color.CMYKToHex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CMYKToHex</span></code></a>(cmyk)</p></td>
+<td><p>Convert a CMYK color (list of 4 values) to its hexadecimal representation.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Color.Color.CSSNamedColor" title="topologicpy.Color.Color.CSSNamedColor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CSSNamedColor</span></code></a>(color)</p></td>
 <td><p>Returns the CSS Named color that most closely matches the input color.</p></td>
@@ -173,6 +179,26 @@
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Color.Color.AnyToHex">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnyToHex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Color.Color.AnyToHex" title="Permalink to this definition"></a></dt>
+<dd><p>Converts a color to a hexadecimal color string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>color</strong><span class="classifier">list or str</span></dt><dd><p>The input color parameter which can be any of RGB, CMYK, CSS Named Color, or Hex</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>A hexadecimal color string in the format ‘#RRGGBB’.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Color.Color.ByCSSNamedColor">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByCSSNamedColor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Color.Color.ByCSSNamedColor" title="Permalink to this definition"></a></dt>
@@ -241,6 +267,25 @@ which means no transparency value will be included in the returned color.</p>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The color expressed as an [r, g, b] or an [r, g, b, a] list.</p>
 </dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Color.Color.CMYKToHex">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CMYKToHex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmyk</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Color.Color.CMYKToHex" title="Permalink to this definition"></a></dt>
+<dd><p>Convert a CMYK color (list of 4 values) to its hexadecimal representation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>color</strong><span class="classifier">list</span></dt><dd><p>cmyk (list or tuple): CMYK color values as [C, M, Y, K], each in the range 0 to 1.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str: The hexadecimal color string for Plotly (e.g., ‘#FFFFFF’).</dt><dd></dd>
 </dl>
 </dd>
 </dl>
