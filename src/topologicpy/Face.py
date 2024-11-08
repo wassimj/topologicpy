@@ -2566,7 +2566,7 @@ class Face():
                 internal_face_number = len(face_internal_boundaries)
                 for i in range(internal_face_number):
                     face_internal_boundary = face_internal_boundaries[i]
-                    internal_vertices = Wire.Vertices(face_internal_boundary)
+                    internal_vertices = Topology.Vertices(face_internal_boundary)
                     internal_vertex_number = len(internal_vertices)
                     for j in range(internal_vertex_number):
                         gmsh.model.geo.addPoint(Vertex.X(internal_vertices[j]), Vertex.Y(internal_vertices[j], mantissa=mantissa), Vertex.Z(internal_vertices[j], mantissa=mantissa), meshSize, current_vertex_number+j+1)

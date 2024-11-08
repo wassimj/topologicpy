@@ -18,6 +18,44 @@ import plotly.colors
 import math
 
 class Color:
+
+    @staticmethod
+    def AnyToHex(color):
+        """
+        Converts a color to a hexadecimal color string.
+
+        Parameters
+        ----------
+        color : list or str
+            The input color parameter which can be any of RGB, CMYK, CSS Named Color, or Hex
+
+        Returns
+        -------
+        str
+            A hexadecimal color string in the format '#RRGGBB'.
+        """
+        return_hex = None
+        if isinstance(color, list):
+            if len(color) == 4: # Probably CMYK
+                if all(0 <= x <= 1 for x in color[:4]):
+                    return_hex = Color.CMYKToHex(color[:4])
+            elif len(color) == 3:
+                if all(0 <= x <= 255 for x in color[:3]):
+                    return_hex = Color.RGBToHex(color[:3])
+        elif isinstance(color, str): # Probably a CSSColor
+            if color.lower() in [x.lower() for x in Color.CSSNamedColors()]:
+                rgb = Color.ByCSSNamedColor(color.lower())
+                return_hex = Color.RGBToHex(rgb)
+            else: # Probably alread a HEX or other Plotly-compatible string
+                return_hex = color
+
+        if not isinstance(return_hex, str):
+            print("Color.AnyToHex - Error: Could not recognize the input parameter. Returning None.")
+            return None
+
+        return return_hex.upper()
+    
+    
     @staticmethod
     def ByCSSNamedColor(color, alpha: float = None):
         """
@@ -263,6 +301,34 @@ class Color:
         return rgbList
     
     @staticmethod
+    def CMYKToHex(cmyk):
+        """
+        Convert a CMYK color (list of 4 values) to its hexadecimal representation.
+        
+        Parameters
+        ----------
+        color : list
+            cmyk (list or tuple): CMYK color values as [C, M, Y, K], each in the range 0 to 1.
+
+        Returns
+        -------
+        str: The hexadecimal color string for Plotly (e.g., '#FFFFFF').
+        """
+        c, m, y, k = cmyk
+        
+        # Convert CMYK to RGB
+        r = 255 * (1 - c) * (1 - k)
+        g = 255 * (1 - m) * (1 - k)
+        b = 255 * (1 - y) * (1 - k)
+        
+        # Clamp RGB values to 0-255 range and convert to integers
+        r, g, b = int(round(r)), int(round(g)), int(round(b))
+        
+        # Convert RGB to hex format
+        hex_color = "#{:02x}{:02x}{:02x}".format(r, g, b)
+        return hex_color
+    
+    @staticmethod
     def CSSNamedColor(color):
         """
         Returns the CSS Named color that most closely matches the input color. The input color is assumed to be
@@ -355,7 +421,7 @@ class Color:
             "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise",
             "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace",
             "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise",
-            "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple",
+            "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple",
             "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna",
             "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan",
             "teal", "thistle", "tomato", "turquoise", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen"

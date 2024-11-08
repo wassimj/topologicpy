@@ -278,21 +278,35 @@ class Plotly:
                     sides: int = 8,
                     angle: float = 0,
                     vertexColor: str = "black",
+                    vertexColorKey: str = None,
                     vertexSize: float = 6,
+                    vertexSizeKey: str = None,
                     vertexLabelKey: str = None,
                     vertexGroupKey: str = None,
                     vertexGroups: list = [],
+                    vertexMinGroup = None,
+                    vertexMaxGroup = None,
                     showVertices: bool = True,
-                    showVertexLabels: bool = False,
+                    showVertexLabel: bool = False,
                     showVertexLegend: bool = False,
+                    vertexLegendLabel="Graph Vertices",
+                    vertexLegendRank=4, 
+                    vertexLegendGroup=4,
                     edgeColor: str = "black",
+                    edgeColorKey: str = None,
                     edgeWidth: float = 1,
+                    edgeWidthKey: str = None,
                     edgeLabelKey: str = None,
                     edgeGroupKey: str = None,
                     edgeGroups: list = [],
+                    edgeMinGroup = None,
+                    edgeMaxGroup = None,
                     showEdges: bool = True,
-                    showEdgeLabels: bool = False,
+                    showEdgeLabel: bool = False,
                     showEdgeLegend: bool = False,
+                    edgeLegendLabel="Graph Edges",
+                    edgeLegendRank=2, 
+                    edgeLegendGroup=2,
                     colorScale: str = "viridis",
                     mantissa: int = 6,
                     silent: bool = False):
@@ -318,6 +332,8 @@ class Plotly:
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
+        vertexColorKey : str , optional
+            The dictionary key under which to find the vertex color. The default is None.
         vertexSize : float , optional
             The desired size of the vertices. The default is 6.
         vertexLabelKey : str , optional
@@ -326,12 +342,22 @@ class Plotly:
             The dictionary key to use to display the vertex group. The default is None.
         vertexGroups : list , optional
             The list of vertex groups against which to index the color of the vertex. The default is [].
+        vertexMinGroup : int or float , optional
+            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.
+        vertexMaxGroup : int or float , optional
+            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
         showVertexLabels : bool , optional
             If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. The default is False.
         showVertexLegend : bool , optional
             If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. The default is False.
+        vertexLegendLabel : str , optional
+            The legend label string used to identify vertices. The default is "Topology Vertices".
+        vertexLegendRank : int , optional
+            The legend rank order of the vertices of this topology. The default is 1.
+        vertexLegendGroup : int , optional
+            The number of the vertex legend group to which the vertices of this topology belong. The default is 1.
         edgeColor : str , optional
             The desired color of the output edges. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -340,8 +366,12 @@ class Plotly:
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
+        edgeColorKey : str , optional
+            The dictionary key under which to find the edge color. The default is None.
         edgeWidth : float , optional
             The desired thickness of the output edges. The default is 1.
+        edgeWidthKey : str , optional
+            The dictionary key under which to find the edge width. The default is None.
         edgeLabelKey : str , optional
             The dictionary key to use to display the edge label. The default is None.
         edgeGroupKey : str , optional
@@ -368,6 +398,7 @@ class Plotly:
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
         from topologicpy.Graph import Graph
@@ -376,83 +407,40 @@ class Plotly:
 
         if not Topology.IsInstance(graph, "Graph"):
             return None
-        v_labels = []
-        v_groupList = []
         data = []
         
         if showVertices:
             vertices = Graph.Vertices(graph)
-            if vertexLabelKey or vertexGroupKey:
-                for v in vertices:
-                    Xn=[Vertex.X(v, mantissa=mantissa) for v in vertices] # x-coordinates of nodes
-                    Yn=[Vertex.Y(v, mantissa=mantissa) for v in vertices] # y-coordinates of nodes
-                    Zn=[Vertex.Z(v, mantissa=mantissa) for v in vertices] # x-coordinates of nodes
-                    v_label = ""
-                    v_group = ""
-                    d = Topology.Dictionary(v)
-                    if d:
-                        if vertexLabelKey:
-                            v_label = str(Dictionary.ValueAtKey(d, key=vertexLabelKey))
-                            if v_label == None:
-                                v_label = ""
-                        if vertexGroupKey:
-                            v_group = Dictionary.ValueAtKey(d, key=vertexGroupKey)
-                            if v_group == None:
-                                v_group = ""
-                    try:
-                        v_groupList.append(vertexGroups.index(v_group))
-                    except:
-                        v_groupList.append(len(vertexGroups))
-                    v_labels.append(v_label)
-            else:
-                for v in vertices:
-                    Xn=[Vertex.X(v, mantissa=mantissa) for v in vertices] # x-coordinates of nodes
-                    Yn=[Vertex.Y(v, mantissa=mantissa) for v in vertices] # y-coordinates of nodes
-                    Zn=[Vertex.Z(v, mantissa=mantissa) for v in vertices] # x-coordinates of nodes
-            if len(v_labels) < 1:
-                v_labels = ""
-            if showVertexLabels == True:
-                mode = "markers+text"
-            else:
-                mode = "markers"
-            normalized_categories = vertexColor # Start with the default vertexColor
-            if len(vertexGroups) > 0:
-                # Normalize categories to a range between 0 and 1 for the color scale
-                min_category = 0
-                max_category = max(len(vertexGroups), 1)
-                normalized_categories = [(cat - min_category) / (max_category - min_category) for cat in v_groupList]
-            v_trace=go.Scatter3d(x=Xn,
-                y=Yn,
-                z=Zn,
-                mode=mode,
-                name='Graph Vertices',
-                legendgroup=4,
-                legendrank=4,
-                showlegend=showVertexLegend,
-                marker=dict(symbol='circle',
-                                size=vertexSize,
-                                color=normalized_categories,
-                                colorscale=Plotly.ColorScale(colorScale),
-                                cmin = 0,
-                                cmax=1,
-                                line=dict(color=edgeColor, width=0.5)
-                                ),
-                text=v_labels,
-                hoverinfo='text'
-                )
-            data.append(v_trace)
+            v_dictionaries = [Topology.Dictionary(v) for v in vertices]
+            e_cluster = Cluster.ByTopologies(vertices)
+            geo = Topology.Geometry(e_cluster, mantissa=mantissa)
+            vertices = geo['vertices']
+            v_data = Plotly.DataByTopology(e_cluster,
+                                    vertexColor=vertexColor,
+                                    vertexColorKey=vertexColorKey,
+                                    vertexSize=vertexSize,
+                                    vertexSizeKey=vertexSizeKey,
+                                    vertexLabelKey=vertexLabelKey,
+                                    showVertexLabel=showVertexLabel,
+                                    vertexGroupKey=vertexGroupKey,
+                                    vertexMinGroup=vertexMinGroup,
+                                    vertexMaxGroup=vertexMaxGroup,
+                                    vertexGroups=vertexGroups,
+                                    vertexLegendLabel=vertexLegendLabel,
+                                    vertexLegendGroup=vertexLegendGroup,
+                                    vertexLegendRank=vertexLegendRank,
+                                    colorScale=colorScale)
+
+            data += v_data
         
         if showEdges:
-            Xe=[]
-            Ye=[]
-            Ze=[]
-            e_labels = []
-            e_groupList = []
+            e_dictionaries = []
             edges = Graph.Edges(graph)
             new_edges = []
-            if sagitta > 0:
-                for edge in edges:
-                    d = Topology.Dictionary(edge)
+            # if sagitta > 0:
+            for edge in edges:
+                d = Topology.Dictionary(edge)
+                if sagitta > 0:
                     arc = Wire.ArcByEdge(edge, sagitta=sagitta, absolute=absolute, sides=sides, close=False, silent=silent)
                     if Topology.IsInstance(arc, "Wire"):
                         if not angle == 0:
@@ -462,98 +450,265 @@ class Plotly:
                         for arc_edge in arc_edges:
                             arc_edge = Topology.SetDictionary(arc_edge, d, silent=True)
                             new_edges.append(arc_edge)
+                            e_dictionaries.append(d)
                     else:
                         new_edges.append(edge)
+                        e_dictionaries.append(d)
+
+                else:
+                    new_edges = edges
+                    e_dictionaries.append(d)
+
+            e_cluster = Cluster.ByTopologies(new_edges)
+            geo = Topology.Geometry(e_cluster, mantissa=mantissa)
+            vertices = geo['vertices']
+            edges = geo['edges']
+            data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))        
+        return data
+    
+    @staticmethod
+    def vertexData(vertices, dictionaries=[], color="black", colorKey=None, size=1.1, sizeKey=None, labelKey=None, showVertexLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Vertices", legendGroup=1, legendRank=1, showLegend=True, colorScale="Viridis"):
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+        x = []
+        y = []
+        z = []
+        sizeList = []
+        labels = []
+        groupList = []
+        label = ""
+        group = None
+        if colorKey or sizeKey or labelKey or groupKey:
+            if groups:
+                if len(groups) > 0:
+                    if type(groups[0]) == int or type(groups[0]) == float:
+                        if not minGroup:
+                            minGroup = min(groups)
+                        if not maxGroup:
+                            maxGroup = max(groups)
+                    else:
+                        minGroup = 0
+                        maxGroup = len(groups) - 1
             else:
-                new_edges = edges
-                
-            if edgeLabelKey or edgeGroupKey:
-                for e in new_edges:
-                    sv = Edge.StartVertex(e)
-                    ev = Edge.EndVertex(e)
-                    Xe+=[Vertex.X(sv, mantissa=mantissa), Vertex.X(ev, mantissa=mantissa), None] # x-coordinates of edge ends
-                    Ye+=[Vertex.Y(sv, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa), None] # y-coordinates of edge ends
-                    Ze+=[Vertex.Z(sv, mantissa=mantissa), Vertex.Z(ev, mantissa=mantissa), None] # z-coordinates of edge ends
-                    e_label = ""
-                    e_group = ""
-                    d = Topology.Dictionary(e)
+                minGroup = 0
+                maxGroup = 1
+            for m, v in enumerate(vertices):
+                x.append(v[0])
+                y.append(v[1])
+                z.append(v[2])
+                label = ""
+                group = None
+                if len(dictionaries) > 0:
+                    d = dictionaries[m]
                     if d:
-                        if not edgeLabelKey == None:
-                            e_label = str(Dictionary.ValueAtKey(d, key=edgeLabelKey))
-                            if e_label == None:
-                                e_label = ""
-                        if not edgeGroupKey == None:
-                            if edgeGroupKey:
-                                e_group = Dictionary.ValueAtKey(d, key=edgeGroupKey)
-                                if e_group == None:
-                                    e_group = ""
+                        if not colorKey == None:
+                            d_color = Dictionary.ValueAtKey(d, key=colorKey) or color
+                            color = Color.AnyToHex(d_color)
+                            groupList.append(color)
+                        if not labelKey == None:
+                            label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
+                        if not sizeKey == None:
+                            size = Dictionary.ValueAtKey(d, key=sizeKey) or size
+                        if not groupKey == None:
+                            group = Dictionary.ValueAtKey(d, key=groupKey) or ""
                     try:
-                        e_groupList.append(edgeGroups.index(e_group))
+                        if group == "":
+                            #color = 'white'
+                            #groupList.append(Color.AnyToHex(color))
+                            pass
+                        elif type(group) == int or type(group) == float:
+                            if group < minGroup:
+                                group = minGroup
+                            if group > maxGroup:
+                                group = maxGroup
+                            color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                            color = Color.AnyToHEX(color)
+                            groupList.append(Color.AnyToHex(color))
+
+                        else:
+                            color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                            color = Color.AnyToHex(color)
+                            groupList.append(Color.AnyToHex(color))
                     except:
-                        e_groupList.append(len(edgeGroups))
-                    if not e_label == "" and not e_group == "":
-                        e_label = e_label+" ("+e_group+")"
-                    e_labels.append(e_label)
-            else:
-                for e in new_edges:
-                    sv = Edge.StartVertex(e)
-                    ev = Edge.EndVertex(e)
-                    Xe+=[Vertex.X(sv, mantissa=mantissa), Vertex.X(ev, mantissa=mantissa), None] # x-coordinates of edge ends
-                    Ye+=[Vertex.Y(sv, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa), None] # y-coordinates of edge ends
-                    Ze+=[Vertex.Z(sv, mantissa=mantissa), Vertex.Z(ev, mantissa=mantissa), None] # z-coordinates of edge ends
+                        #groupList.append(Color.AnyToHex([0,0,0]))
+                        pass
+                    labels.append(label)
+                    sizeList.append(size)
+        else:
+            for v in vertices:
+                x.append(v[0])
+                y.append(v[1])
+                z.append(v[2])
+        
+        if len(list(set(groupList))) < 2:
+            groupList = Color.AnyToHex(color)
+        if len(labels) < 1:
+            labels = ""
+        if len(sizeList) < 1:
+            sizeList = size
+        if showVertexLabel == True:
+            mode = "markers+text"
+        else:
+            mode = "markers"
+        vData= go.Scatter3d(x=x,
+                            y=y,
+                            z=z,
+                            name=legendLabel,
+                            showlegend=showLegend,
+                            marker=dict(color=groupList,  size=sizeList, opacity=1),
+                            mode=mode,
+                            legendgroup=legendGroup,
+                            legendrank=legendRank,
+                            text=labels,
+                            hoverinfo='text',
+                            hovertext=labels
+                            )
+        return vData
 
+    @staticmethod
+    def edgeData(vertices, edges, dictionaries=None, color="black", colorKey=None, width=1, widthKey=None, labelKey=None, showEdgeLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
+    
+        from topologicpy.Color import Color
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+        for d in dictionaries[:30]:
+            print(Dictionary.Keys(d), Dictionary.Values(d))
+        traces = []
+        x = []
+        y = []
+        z = []
+        labels = []
+        groupList = []
+        label = ""
+        group = ""
 
-            if len(list(set(e_groupList))) < 2:
-                e_groupList = edgeColor
-            if len(e_labels) < 1:
-                e_labels = ""
-            
-            if showEdgeLabels == True:
+        if showEdgeLabel == True:
+            mode = "lines+text"
+        else:
+            mode = "lines"
+        
+        if showEdgeLabel == True:
+            mode = "lines+text"
+        else:
+            mode = "lines"
+        if groups:
+            if len(groups) > 0:
+                if type(groups[0]) == int or type(groups[0]) == float:
+                    if not minGroup:
+                        minGroup = min(groups)
+                    if not maxGroup:
+                        maxGroup = max(groups)
+                else:
+                    minGroup = 0
+                    maxGroup = len(groups) - 1
+        else:
+            minGroup = 0
+            maxGroup = 1
+
+        if colorKey or widthKey or labelKey or groupKey:
+            keys = [x for x in [colorKey, widthKey, labelKey, groupKey] if not x == None]
+            temp_dict = Helper.ClusterByKeys(edges, dictionaries, keys, silent=False)
+            dict_clusters = temp_dict["dictionaries"]
+            elements_clusters = temp_dict['elements']
+            for j, elements_cluster in enumerate(elements_clusters):
+                d = dict_clusters[j][0] # All dicitonaries have same values in dictionaries, so take first one.
+                if d:
+                    if not colorKey == None:
+                        d_color = Dictionary.ValueAtKey(d, key=colorKey) or color
+                        color = Color.AnyToHex(d_color)
+                    if not labelKey == None:
+                        label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
+                    if not widthKey == None:
+                        width = Dictionary.ValueAtKey(d, key=widthKey) or width
+                    if not groupKey == None:
+                        group = Dictionary.ValueAtKey(d, key=groupKey)
+                        if not group == None:
+                            if type(group) == int or type(group) == float:
+                                if group < minGroup:
+                                    group = minGroup
+                                if group > maxGroup:
+                                    group = maxGroup
+                                d_color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                            else:
+                                d_color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                            color = d_color
+                x = []
+                y = []
+                z = []
+                for e in elements_cluster:
+                    sv = vertices[e[0]]
+                    ev = vertices[e[1]]
+                    x+=[sv[0], ev[0], None] # x-coordinates of edge ends
+                    y+=[sv[1], ev[1], None] # y-coordinates of edge ends
+                    z+=[sv[2], ev[2], None] # z-coordinates of edge ends
+                if showEdgeLabel == True:
+                    mode = "lines+text"
+                else:
+                    mode = "lines"
+                trace = go.Scatter3d(x=x,
+                                    y=y,
+                                    z=z,
+                                    name=label,
+                                    showlegend=showLegend,
+                                    marker_size=0,
+                                    mode=mode,
+                                    line=dict(color=color, width=width),
+                                    legendgroup=legendGroup,
+                                    legendrank=legendRank,
+                                    text=label,
+                                    hoverinfo='text')
+                traces.append(trace)
+        else:
+            x = []
+            y = []
+            z = []
+            for e in edges:
+                sv = vertices[e[0]]
+                ev = vertices[e[1]]
+                x+=[sv[0], ev[0], None] # x-coordinates of edge ends
+                y+=[sv[1], ev[1], None] # y-coordinates of edge ends
+                z+=[sv[2], ev[2], None] # z-coordinates of edge ends
+            if showEdgeLabel == True:
                 mode = "lines+text"
             else:
                 mode = "lines"
-            
-            final_categories = edgeColor # Start with the default edgeColor
-            if len(edgeGroups) > 0:
-                # Normalize categories to a range between 0 and 1 for the color scale
-                min_category = 0
-                max_category = max(len(edgeGroups), 1)
-                normalized_categories = [(cat - min_category) / (max_category - min_category) for cat in e_groupList]
+            trace = go.Scatter3d(x=x,
+                                y=y,
+                                z=z,
+                                name=label,
+                                showlegend=showLegend,
+                                marker_size=0,
+                                mode=mode,
+                                line=dict(color=color, width=width),
+                                legendgroup=legendGroup,
+                                legendrank=legendRank,
+                                text=label,
+                                hoverinfo='text')
+            traces.append(trace)
+        return traces
 
-                final_categories = []
-                for c in normalized_categories:
-                    color = Color.ByValueInRange(c, minValue=0, maxValue=1, colorScale=colorScale)
-                    color = "rgb("+str(color[0])+","+str(color[1])+","+str(color[2])+")"
-                    final_categories.append(color)
-            e_trace=go.Scatter3d(x=Xe,
-                                 y=Ye,
-                                 z=Ze,
-                                 mode=mode,
-                                 name='Graph Edges',
-                                 legendgroup=5,
-                                 legendrank=5,
-                                 showlegend=showEdgeLegend,
-                                 line=dict(color=final_categories, colorscale=Plotly.ColorScale(colorScale), cmin=0, cmax=1, width=edgeWidth),
-                                 text=e_labels,
-                                 hoverinfo='text'
-                                )
-            data.append(e_trace)
-        
-        return data
+
+
+
+
+
+
+
+
 
     @staticmethod
     def DataByTopology(topology,
-                       showVertices=True, vertexSize=1.1, vertexColor="black", 
+                       showVertices=True, vertexSize=1.1, vertexSizeKey=None, vertexColor="black", vertexColorKey=None,
                        vertexLabelKey=None, showVertexLabel=False, vertexGroupKey=None, vertexGroups=[], 
                        vertexMinGroup=None, vertexMaxGroup=None, 
                        showVertexLegend=False, vertexLegendLabel="Topology Vertices", vertexLegendRank=1,
                        vertexLegendGroup=1,
-                       showEdges=True, edgeWidth=1, edgeColor="black", 
+                       showEdges=True, edgeWidth=1, edgeWidthKey=None, edgeColor="black", edgeColorKey=None,
                        edgeLabelKey=None, showEdgeLabel=False, edgeGroupKey=None, edgeGroups=[], 
                        edgeMinGroup=None, edgeMaxGroup=None, 
                        showEdgeLegend=False, edgeLegendLabel="Topology Edges", edgeLegendRank=2, 
                        edgeLegendGroup=2,
-                       showFaces=True, faceOpacity=0.5, faceColor="#FAFAFA",
+                       showFaces=True, faceOpacity=0.5, faceOpacityKey=None, faceColor="#FAFAFA", faceColorKey=None,
                        faceLabelKey=None, faceGroupKey=None, faceGroups=[], 
                        faceMinGroup=None, faceMaxGroup=None, 
                        showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
@@ -571,6 +726,8 @@ class Plotly:
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
         vertexSize : float , optional
             The desired size of the vertices. The default is 1.1.
+        vertexSizeKey : str , optional
+            The dictionary key under which to find the vertex size.The default is None.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -579,6 +736,8 @@ class Plotly:
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
+        vertexColorKey : str , optional
+            The dictionary key under which to find the vertex color.The default is None.
         vertexLabelKey : str , optional
             The dictionary key to use to display the vertex label. The default is None.
         vertexGroupKey : str , optional
@@ -602,6 +761,8 @@ class Plotly:
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
         edgeWidth : float , optional
             The desired thickness of the output edges. The default is 1.
+        edgeWidthKey : str , optional
+            The dictionary key under which to find the edge width.The default is None.
         edgeColor : str , optional
             The desired color of the output edges. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -610,6 +771,8 @@ class Plotly:
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
+        edgeColorKey : str , optional
+            The dictionary key under which to find the edge color.The default is None.
         edgeLabelKey : str , optional
             The dictionary key to use to display the edge label. The default is None.
         edgeGroupKey : str , optional
@@ -633,6 +796,8 @@ class Plotly:
             If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
         faceOpacity : float , optional
             The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
+        faceOpacityKey : str , optional
+            The dictionary key under which to find the face opacity.The default is None.
         faceColor : str , optional
             The desired color of the output faces. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -641,6 +806,8 @@ class Plotly:
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "#FAFAFA".
+        faceColorKey : str , optional
+            The dictionary key under which to find the face color.The default is None.
         faceLabelKey : str , optional
             The dictionary key to use to display the face label. The default is None.
         faceGroupKey : str , optional
@@ -682,92 +849,14 @@ class Plotly:
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Color import Color
+        from topologicpy.Helper import Helper
         from time import time
         
         def closest_index(input_value, values):
             return int(min(range(len(values)), key=lambda i: abs(values[i] - input_value)))
 
-        def vertexData(vertices, dictionaries=[], color="black", size=1.1, labelKey=None, showVertexLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Vertices", legendGroup=1, legendRank=1, showLegend=True, colorScale="Viridis"):
-            x = []
-            y = []
-            z = []
-            labels = []
-            groupList = []
-            label = ""
-            group = None
-            if labelKey or groupKey:
-                if groups:
-                    if len(groups) > 0:
-                        if type(groups[0]) == int or type(groups[0]) == float:
-                            if not minGroup:
-                                minGroup = min(groups)
-                            if not maxGroup:
-                                maxGroup = max(groups)
-                        else:
-                            minGroup = 0
-                            maxGroup = len(groups) - 1
-                else:
-                    minGroup = 0
-                    maxGroup = 1
-                for m, v in enumerate(vertices):
-                    x.append(v[0])
-                    y.append(v[1])
-                    z.append(v[2])
-                    label = ""
-                    group = None
-                    if len(dictionaries) > 0:
-                        d = dictionaries[m]
-                        if d:
-                            if not labelKey == None:
-                                label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
-                            if not groupKey == None:
-                                group = Dictionary.ValueAtKey(d, key=groupKey) or ""
-                        try:
-                            if group == "":
-                                color = 'white'
-                            elif type(group) == int or type(group) == float:
-                                if group < minGroup:
-                                    group = minGroup
-                                if group > maxGroup:
-                                    group = maxGroup
-                                color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            else:
-                                color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            color = "rgb("+str(color[0])+","+str(color[1])+","+str(color[2])+")"
-                            groupList.append(color)
-                        except:
-                            groupList.append(len(groups))
-                        labels.append(label)
-            else:
-                for v in vertices:
-                    x.append(v[0])
-                    y.append(v[1])
-                    z.append(v[2])
-            
-            if len(list(set(groupList))) < 2:
-                groupList = color
-            if len(labels) < 1:
-                labels = ""
-            if showVertexLabel == True:
-                mode = "markers+text"
-            else:
-                mode = "markers"
-            vData= go.Scatter3d(x=x,
-                                y=y,
-                                z=z,
-                                name=legendLabel,
-                                showlegend=showLegend,
-                                marker=dict(color=groupList,  size=vertexSize),
-                                mode=mode,
-                                legendgroup=legendGroup,
-                                legendrank=legendRank,
-                                text=labels,
-                                hoverinfo='text',
-                                hovertext=labels
-                                )
-            return vData
-
-        def edgeData(vertices, edges, dictionaries=None, color="black", width=1, labelKey=None, showEdgeLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
+        def edgeData_old(vertices, edges, dictionaries=None, color="black", colorKey=None, width=1, widthKey=None, labelKey=None, showEdgeLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
+            traces = []
             x = []
             y = []
             z = []
@@ -775,83 +864,114 @@ class Plotly:
             groupList = []
             label = ""
             group = ""
-            if labelKey or groupKey:
-                if groups:
-                    if len(groups) > 0:
-                        if type(groups[0]) == int or type(groups[0]) == float:
-                            if not minGroup:
-                                minGroup = min(groups)
-                            if not maxGroup:
-                                maxGroup = max(groups)
-                        else:
-                            minGroup = 0
-                            maxGroup = len(groups) - 1
-                else:
-                    minGroup = 0
-                    maxGroup = 1
-                for m, e in enumerate(edges):
-                    sv = vertices[e[0]]
-                    ev = vertices[e[1]]
-                    x+=[sv[0], ev[0], None] # x-coordinates of edge ends
-                    y+=[sv[1], ev[1], None] # y-coordinates of edge ends
-                    z+=[sv[2], ev[2], None] # z-coordinates of edge ends
-                    label = ""
-                    group = None
-                    if len(dictionaries) > 0:
-                        d = dictionaries[m]
-                        if d:
-                            if not labelKey == None:
-                                label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
-                            if not groupKey == None:
-                                group = Dictionary.ValueAtKey(d, key=groupKey) or ""
-                        try:
-                            if group == "":
-                                color = 'white'
-                            if type(group) == int or type(group) == float:
-                                if group < minGroup:
-                                    group = minGroup
-                                if group > maxGroup:
-                                    group = maxGroup
-                                color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            else:
-                                color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            color = "rgb("+str(color[0])+","+str(color[1])+","+str(color[2])+")"
-                            groupList.append(color)
-                        except:
-                            groupList.append(len(groups))
-                        labels.append(label)
+
+            if showEdgeLabel == True:
+                mode = "lines+text"
             else:
+                mode = "lines"
+            
+            if showEdgeLabel == True:
+                mode = "lines+text"
+            else:
+                mode = "lines"
+            if groups:
+                if len(groups) > 0:
+                    if type(groups[0]) == int or type(groups[0]) == float:
+                        if not minGroup:
+                            minGroup = min(groups)
+                        if not maxGroup:
+                            maxGroup = max(groups)
+                    else:
+                        minGroup = 0
+                        maxGroup = len(groups) - 1
+            else:
+                minGroup = 0
+                maxGroup = 1
+
+            if colorKey or widthKey or labelKey or groupKey:
+                keys = [x for x in [colorKey, widthKey, labelKey, groupKey] if not x == None]
+                temp_dict = Helper.ClusterByKeys(edges, dictionaries, keys, silent=False)
+                dict_clusters = temp_dict["dictionaries"]
+                elements_clusters = temp_dict['elements']
+                for j, elements_cluster in enumerate(elements_clusters):
+                    d = dict_clusters[j][0] # All dicitonaries have same values in dictionaries, so take first one.
+                    if d:
+                        if not colorKey == None:
+                            d_color = Dictionary.ValueAtKey(d, key=colorKey) or color
+                            color = Color.AnyToHex(d_color)
+                        if not labelKey == None:
+                            label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
+                        if not widthKey == None:
+                            width = Dictionary.ValueAtKey(d, key=edgeWidthKey) or width
+                        if not groupKey == None:
+                            group = Dictionary.ValueAtKey(d, key=groupKey)
+                            if not group == None:
+                                if type(group) == int or type(group) == float:
+                                    if group < minGroup:
+                                        group = minGroup
+                                    if group > maxGroup:
+                                        group = maxGroup
+                                    d_color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                                else:
+                                    d_color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                                color = d_color
+                    x = []
+                    y = []
+                    z = []
+                    for e in elements_cluster:
+                        sv = vertices[e[0]]
+                        ev = vertices[e[1]]
+                        x+=[sv[0], ev[0], None] # x-coordinates of edge ends
+                        y+=[sv[1], ev[1], None] # y-coordinates of edge ends
+                        z+=[sv[2], ev[2], None] # z-coordinates of edge ends
+                    if showEdgeLabel == True:
+                        mode = "lines+text"
+                    else:
+                        mode = "lines"
+                    trace = go.Scatter3d(x=x,
+                                        y=y,
+                                        z=z,
+                                        name=label,
+                                        showlegend=showLegend,
+                                        marker_size=0,
+                                        mode=mode,
+                                        line=dict(color=color, width=width),
+                                        legendgroup=legendGroup,
+                                        legendrank=legendRank,
+                                        text=label,
+                                        hoverinfo='text')
+                    traces.append(trace)
+            else:
+                x = []
+                y = []
+                z = []
                 for e in edges:
                     sv = vertices[e[0]]
                     ev = vertices[e[1]]
                     x+=[sv[0], ev[0], None] # x-coordinates of edge ends
                     y+=[sv[1], ev[1], None] # y-coordinates of edge ends
                     z+=[sv[2], ev[2], None] # z-coordinates of edge ends
-                
-            if len(list(set(groupList))) < 2:
-                    groupList = color
-            if len(labels) < 1:
-                labels = ""
-            if showEdgeLabel == True:
-                mode = "lines+text"
-            else:
-                mode = "lines"
-            eData = go.Scatter3d(x=x,
-                                y=y,
-                                z=z,
-                                name=legendLabel,
-                                showlegend=showLegend,
-                                marker_size=0,
-                                mode=mode,
-                                line=dict(color=groupList, width=edgeWidth),
-                                legendgroup=legendGroup,
-                                legendrank=legendRank,
-                                text=labels,
-                                hoverinfo='text')
-            return eData
+                if showEdgeLabel == True:
+                    mode = "lines+text"
+                else:
+                    mode = "lines"
+                trace = go.Scatter3d(x=x,
+                                    y=y,
+                                    z=z,
+                                    name=label,
+                                    showlegend=showLegend,
+                                    marker_size=0,
+                                    mode=mode,
+                                    line=dict(color=color, width=width),
+                                    legendgroup=legendGroup,
+                                    legendrank=legendRank,
+                                    text=label,
+                                    hoverinfo='text')
+                traces.append(trace)
 
+            return traces
 
-        def faceData(vertices, faces, dictionaries=None, color="#FAFAFA",
+        def faceData(vertices, faces, dictionaries=None, color="#FAFAFA", colorKey=None,
                      opacity=0.5, labelKey=None, groupKey=None,
                      minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Faces",
                      legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="viridis"):
@@ -867,9 +987,10 @@ class Plotly:
             k = []
             labels = []
             groupList = []
+            faceColorList = []
             label = ""
             group = ""
-            if labelKey or groupKey:
+            if colorKey or labelKey or groupKey:
                 if groups:
                     if len(groups) > 0:
                         if type(groups[0]) == int or type(groups[0]) == float:
@@ -888,7 +1009,7 @@ class Plotly:
                     j.append(f[1])
                     k.append(f[2])
                     label = ""
-                    group = ""
+                    group = None
                     if len(dictionaries) > 0:
                         d = dictionaries[m]
                         if d:
@@ -896,32 +1017,34 @@ class Plotly:
                                 label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
                             if not groupKey == None:
                                 group = Dictionary.ValueAtKey(d, key=groupKey) or None
-                        try:
-                            if group == "":
-                                color = 'white'
-                            elif type(group) == int or type(group) == float:
-                                if group < minGroup:
-                                    group = minGroup
-                                if group > maxGroup:
-                                    group = maxGroup
-                                color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            else:
-                                color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            color = "rgb("+str(color[0])+","+str(color[1])+","+str(color[2])+")"
-                            groupList.append(color)
-                        except:
-                            groupList.append(len(groups))
+                        
+                        if group == None:
+                            f_color = Color.AnyToHex(color)
+                            groupList.append(f_color)
+                        elif type(group) == int or type(group) == float:
+                            if group < minGroup:
+                                group = minGroup
+                            if group > maxGroup:
+                                group = maxGroup
+                            f_color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                            f_color = Color.AnyToHex(f_color)
+                            groupList.append(f_color)
+                        else:
+                            f_color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                            f_color = Color.AnyToHex(f_color)
+                            groupList.append(f_color)
                         labels.append(label)
             else:
                 for f in faces:
                     i.append(f[0])
                     j.append(f[1])
                     k.append(f[2])
-                
+            
             if len(list(set(groupList))) < 2:
                 groupList = None
             if len(labels) < 1:
                 labels = ""
+            color = Color.AnyToHex(color)
             fData = go.Mesh3d(
                     x = x,
                     y = y,
@@ -1009,11 +1132,11 @@ class Plotly:
             if showVertices:
                 if len(vertices) == 0:
                     for i, tp_v in enumerate(tp_vertices):
-                        if vertexLabelKey or vertexGroupKey:
+                        if vertexColorKey or vertexSizeKey or vertexLabelKey or vertexGroupKey:
                             d = Topology.Dictionary(tp_v)
                             v_dictionaries.append(d)
                         vertices.append([Vertex.X(tp_v, mantissa=mantissa), Vertex.Y(tp_v, mantissa=mantissa), Vertex.Z(tp_v, mantissa=mantissa)])
-                data.append(vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, size=vertexSize, labelKey=vertexLabelKey, showVertexLabel=showVertexLabel, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
+                data.append(Plotly.vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, colorKey=vertexColorKey, size=vertexSize, sizeKey=vertexSizeKey, labelKey=vertexLabelKey, showVertexLabel=showVertexLabel, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
             
         if showEdges and Topology.Type(topology) > Topology.TypeID("Vertex"):
             if Topology.Type(topology) == Topology.TypeID("Edge"):
@@ -1022,16 +1145,24 @@ class Plotly:
                 tp_edges = Topology.Edges(topology)
             if not (tp_edges == None or tp_edges == []):
                 e_dictionaries = []
-                if edgeLabelKey or edgeGroupKey:
+                if edgeColorKey or edgeWidthKey or edgeLabelKey or edgeGroupKey:
                     for tp_edge in tp_edges:
                         e_dictionaries.append(Topology.Dictionary(tp_edge))
                 e_cluster = Cluster.ByTopologies(tp_edges)
                 geo = Topology.Geometry(e_cluster, mantissa=mantissa)
                 vertices = geo['vertices']
                 edges = geo['edges']
-                data.append(edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, width=edgeWidth, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
+                data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
         
         if showFaces and Topology.Type(topology) >= Topology.TypeID("Face"):
+            if not faceColorKey == None:
+                d = Topology.Dictionary(topology)
+                faceColor = Dictionary.ValueAtKey(d, key=faceColorKey) or faceColor
+            if not faceOpacityKey == None:
+                d = Topology.Dictionary(topology)
+                d_opacity = Dictionary.ValueAtKey(d, key=faceOpacityKey) or faceOpacity
+                if 0 < d_opacity < 1:
+                    faceOpacity = d_opacity
             if Topology.IsInstance(topology, "Face"):
                 tp_faces = [topology]
             else:
@@ -1043,18 +1174,18 @@ class Plotly:
                     triangles = Face.Triangulate(tp_face, tolerance=tolerance)
                     if isinstance(triangles, list):
                         for tri in triangles:
-                            if faceLabelKey or faceGroupKey:
+                            if faceColorKey or faceOpacityKey or faceLabelKey or faceGroupKey:
                                 d = Topology.Dictionary(tp_face)
                                 f_dictionaries.append(d)
                                 if d:
-                                    tri = Topology.SetDictionary(tri, d)
+                                    tri = Topology.SetDictionary(tri, d, silent=True)
                             all_triangles.append(tri)
                 if len(all_triangles) > 0:
                     f_cluster = Cluster.ByTopologies(all_triangles)
                     geo = Topology.Geometry(f_cluster, mantissa=mantissa)
                     vertices = geo['vertices']
                     faces = geo['faces']
-                    data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensityList, colorScale=colorScale))
+                    data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, colorKey=faceColorKey, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensityList, colorScale=colorScale))
         return data
 
     @staticmethod
@@ -1104,8 +1235,10 @@ class Plotly:
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         colorSamples : int , optional
             The number of discrete color samples to use for displaying the data. The default is 10.
-        backgroundColor : str , optional
-            The desired background color. This can be any plotly color string and may be specified as:
+        backgroundColor : list or str , optional
+            The desired background color. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
             - A hex string (e.g. '#ff0000')
             - An rgb/rgba string (e.g. 'rgb(255,0,0)')
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
@@ -1126,6 +1259,8 @@ class Plotly:
         plotly.Figure
             The created plotly figure.
         """
+        from topologicpy.Color import Color
+
         try:
             import numpy as np
         except:
@@ -1155,7 +1290,7 @@ class Plotly:
              showScale=showScale,
              colorScale=Plotly.ColorScale(colorScale),
              colorSamples=colorSamples,
-             backgroundColor=backgroundColor,
+             backgroundColor= Color.AnyToHex(backgroundColor),
              marginLeft=marginLeft,
              marginRight=marginRight,
              marginTop=marginTop,
@@ -1215,8 +1350,10 @@ class Plotly:
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         colorSamples : int , optional
             The number of discrete color samples to use for displaying the data. The default is 10.
-        backgroundColor : str , optional
-            The desired background color. This can be any plotly color string and may be specified as:
+        backgroundColor : list or str , optional
+            The desired background color. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
             - A hex string (e.g. '#ff0000')
             - An rgb/rgba string (e.g. 'rgb(255,0,0)')
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
@@ -1238,6 +1375,7 @@ class Plotly:
         #import plotly.figure_factory as ff
         import plotly.graph_objects as go
         import plotly.express as px
+        from topologicpy.Color import Color
 
         try:
             import numpy as np
@@ -1330,8 +1468,8 @@ class Plotly:
             "xaxis": {"title": xTitle},
             "yaxis": {"title": yTitle, "autorange": "reversed"},
             "annotations": annotations,
-            "paper_bgcolor": backgroundColor,
-            "plot_bgcolor": backgroundColor,
+            "paper_bgcolor": Color.AnyToHex(backgroundColor),
+            "plot_bgcolor": Color.AnyToHex(backgroundColor),
             "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
         }
         fig = go.Figure(data=data, layout=layout)
@@ -1392,8 +1530,10 @@ class Plotly:
             The desired height of the figure. The default is 600.
         theme : str , optional
             The plotly color scheme to use. The options are "dark", "light", "default". The default is "default".
-        backgroundColor : str , optional
-            The desired background color. This can be any plotly color string and may be specified as:
+        backgroundColor : list or str , optional
+            The desired background color. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
             - A hex string (e.g. '#ff0000')
             - An rgb/rgba string (e.g. 'rgb(255,0,0)')
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
@@ -1420,6 +1560,8 @@ class Plotly:
         import plotly.graph_objs as go
         from sklearn.linear_model import LinearRegression
         import plotly.io as pio
+        from topologicpy.Color import Color
+
         actual_values = np.array(actual)
         predicted_values = np.array(predicted)
 
@@ -1481,8 +1623,8 @@ class Plotly:
             "xaxis": {"title": xTitle, "range":tick_range, "dtick":tick_step},
             "yaxis": {"title": yTitle, "range":tick_range, "dtick":tick_step},
             "showlegend": True,
-            "paper_bgcolor": backgroundColor,
-            "plot_bgcolor": backgroundColor,
+            "paper_bgcolor": Color.AnyToHex(backgroundColor),
+            "plot_bgcolor": Color.AnyToHex(backgroundColor),
             "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
         }
 
@@ -1536,8 +1678,10 @@ class Plotly:
             If set to True, markers will be displayed. The default is False.
         chartType : str , optional
             The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. The default is "Line".
-        backgroundColor : str , optional
-            The desired background color. This can be any plotly color string and may be specified as:
+        backgroundColor : list or str , optional
+            The desired background color. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
             - A hex string (e.g. '#ff0000')
             - An rgb/rgba string (e.g. 'rgb(255,0,0)')
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
@@ -1567,6 +1711,7 @@ class Plotly:
 
         """
         import plotly.express as px
+        from topologicpy.Color import Color
         
         if chartType.lower() == "line":
             figure = px.line(dataFrame, x=labels[0], y=labels[1:], title=title, markers=useMarkers)
@@ -1583,8 +1728,8 @@ class Plotly:
             "title": title,
             "xaxis": {"title": xTitle, "dtick": xSpacing, 'gridcolor': gridColor},
             "yaxis": {"title": yTitle, "dtick": ySpacing, 'gridcolor': gridColor},
-            "paper_bgcolor": backgroundColor,
-            "plot_bgcolor": backgroundColor,
+            "paper_bgcolor": Color.AnyToHex(backgroundColor),
+            "plot_bgcolor": Color.AnyToHex(backgroundColor),
             "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
         }
         figure.update_layout(layout)
@@ -1617,14 +1762,16 @@ class Plotly:
             If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
         axisSize : float , optional
             The size of the X, Y, Z, axes. The default is 1.
-        backgroundColor : str , optional
-            The desired color of the background. This can be any plotly color string and may be specified as:
+        backgroundColor : list or str , optional
+            The desired background color. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
             - A hex string (e.g. '#ff0000')
             - An rgb/rgba string (e.g. 'rgb(255,0,0)')
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
-            The default is "rgba(0,0,0,0)".
+            The default is 'rgba(0,0,0,0)' (transparent).
         marginLeft : int , optional
             The size in pixels of the left margin. The default value is 0.
         marginRight : int , optional
@@ -1644,7 +1791,7 @@ class Plotly:
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
+        from topologicpy.Color import Color
         if not isinstance(data, list):
             return None
 
@@ -1677,8 +1824,8 @@ class Plotly:
                 zaxis =dict(visible=False),
                 ),
             scene_aspectmode='data',
-            paper_bgcolor=backgroundColor,
-            plot_bgcolor=backgroundColor,
+            paper_bgcolor= Color.AnyToHex(backgroundColor),
+            plot_bgcolor= Color.AnyToHex(backgroundColor),
             margin=dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
             )
         figure.update_xaxes(showgrid=False, zeroline=False, visible=False)
@@ -1906,14 +2053,16 @@ class Plotly:
             If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.
         zAxis : bool , optional
             If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
-        backgroundColor : str , optional
-            The desired color of the background. This can be any plotly color string and may be specified as:
+        backgroundColor : list or str , optional
+            The desired background color. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
             - A hex string (e.g. '#ff0000')
             - An rgb/rgba string (e.g. 'rgb(255,0,0)')
             - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
-            The default is "rgba(0,0,0,0)".
+            The default is 'rgba(0,0,0,0)' (transparent).
         marginLeft : int , optional
             The size in pixels of the left margin. The default value is 0.
         marginRight : int , optional
@@ -1963,6 +2112,7 @@ class Plotly:
 
         """
         from topologicpy.Topology import Topology
+        from topologicpy.Color import Color
 
         if not Topology.IsInstance(topology, "Topology"):
             print("Plotly.FigureByTopology - Error: the input topology is not a valid topology. Returning None.")
@@ -1986,7 +2136,7 @@ class Plotly:
                        intensityKey=intensityKey, colorScale=colorScale, tolerance=tolerance)
         figure = Plotly.FigureByData(data=data, width=width, height=height,
                                      xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,
-                                     backgroundColor=backgroundColor,
+                                     backgroundColor=Color.AnyToHex(backgroundColor),
                                      marginLeft=marginLeft, marginRight=marginRight,
                                      marginTop=marginTop, marginBottom=marginBottom,
                                      tolerance=tolerance)
@@ -2243,6 +2393,7 @@ class Plotly:
         None
             
         """
+
         if figure == None:
             print("Plotly.Show - Error: The input is NULL. Returning None.")
             return None
@@ -2254,9 +2405,21 @@ class Plotly:
         if not renderer.lower() in Plotly.Renderers():
             print("Plotly.Show - Error: The input renderer is not in the approved list of renderers. Returning None.")
             return None
-        if not camera == None and not center == None and not up == None:
-            figure = Plotly.SetCamera(figure, camera=camera, center=center, up=up, projection=projection)
+        # Set up camera projection
+        if "ortho" in projection.lower():
+            camera_settings = dict(eye=dict(x=camera[0], y=camera[1], z=camera[2]),
+                                center=dict(x=center[0], y=center[1], z=center[2]),
+                                up=dict(x=up[0], y=up[1], z=up[2]),
+                                projection=dict(type="orthographic"))
+        else:
+            camera_settings = dict(eye=dict(x=camera[0], y=camera[1], z=camera[2]),
+                                center=dict(x=center[0], y=center[1], z=center[2]),
+                                up=dict(x=up[0], y=up[1], z=up[2]),
+                                projection=dict(type="perspective"))
+
         figure.update_layout(
+            scene_camera = camera_settings,
+            scene=dict(aspectmode="data"),
             autosize=True,
             margin=dict(l=40, r=40, t=40, b=40)
             )

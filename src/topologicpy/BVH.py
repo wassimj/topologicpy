@@ -41,6 +41,8 @@ class BVH:
 
         def intersects(self, other):
             # Check if this AABB intersects with another AABB
+            if other == None:
+                return False
             return np.all(self.min_point <= other.max_point) and np.all(self.max_point >= other.min_point)
 
         def contains(self, point):
@@ -200,13 +202,13 @@ class BVH:
         cluster = Cluster.ByTopologies(vertices)
         bb = Topology.BoundingBox(cluster)
         d = Topology.Dictionary(bb)
-        min_x = Dictionary.ValueAtKey(d, "minx")
-        min_y = Dictionary.ValueAtKey(d, "miny")
-        min_z = Dictionary.ValueAtKey(d, "minz")
-        max_x = Dictionary.ValueAtKey(d, "maxx")
-        max_y = Dictionary.ValueAtKey(d, "maxy")
-        max_z = Dictionary.ValueAtKey(d, "maxz")
-        query_aabb = BVH.AABB(min_point=(min_x, min_y, min_z), max_point=(max_x,max_y,max_z))
+        x_min = Dictionary.ValueAtKey(d, "xmin")
+        y_min = Dictionary.ValueAtKey(d, "ymin")
+        z_min = Dictionary.ValueAtKey(d, "zmin")
+        x_max = Dictionary.ValueAtKey(d, "zmax")
+        y_max = Dictionary.ValueAtKey(d, "ymax")
+        z_max = Dictionary.ValueAtKey(d, "zmax")
+        query_aabb = BVH.AABB(min_point=(x_min, y_min, z_min), max_point=(x_max, y_max, z_max))
         return query_aabb
     
     def Clashes(bvh, query):

@@ -1322,13 +1322,13 @@ class Topology():
                 x.append(Vertex.X(aVertex, mantissa=mantissa))
                 y.append(Vertex.Y(aVertex, mantissa=mantissa))
                 z.append(Vertex.Z(aVertex, mantissa=mantissa))
-            minX = min(x)
-            minY = min(y)
-            minZ = min(z)
+            x_min = min(x)
+            y_min = min(y)
+            z_min = min(z)
             maxX = max(x)
             maxY = max(y)
             maxZ = max(z)
-            return [minX, minY, minZ, maxX, maxY, maxZ]
+            return [x_min, y_min, z_min, maxX, maxY, maxZ]
 
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.BoundingBox - Error: the input topology parameter is not a valid topology. Returning None.")
@@ -1344,33 +1344,33 @@ class Topology():
             print("Topology.BoundingBox - Error: the input axes parameter is not a recognized string. Returning None.")
             return None
         if Topology.IsInstance(topology, "Vertex"):
-            minX = Vertex.X(topology)
-            minY = Vertex.Y(topology)
-            minZ = Vertex.Z(topology)
-            dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot", "minx", "miny", "minz", "maxx", "maxy", "maxz", "width", "length", "height"], [0, 0, 0, minX, minY, minZ, minX, minY, minZ, 0, 0, 0])
-            box = Vertex.ByCoordinates(minX, minY, minZ)
+            x_min = Vertex.X(topology)
+            y_min = Vertex.Y(topology)
+            z_min = Vertex.Z(topology)
+            dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot", "xmin", "ymin", "zmin", "xmax", "ymax", "zmax", "width", "length", "height"], [0, 0, 0, x_min, y_min, z_min, x_min, y_min, z_min, 0, 0, 0])
+            box = Vertex.ByCoordinates(x_min, y_min, z_min)
             box = Topology.SetDictionary(box, dictionary)
             return box
         vertices = Topology.SubTopologies(topology, subTopologyType="vertex")
         if len(vertices) == 1: # A Cluster made of one vertex. Rare, but can happen!
-            minX = Vertex.X(vertices[0])
-            minY = Vertex.Y(vertices[0])
-            minZ = Vertex.Z(vertices[0])
-            dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot", "minx", "miny", "minz", "maxx", "maxy", "maxz", "width", "length", "height"], [0, 0, 0, minX, minY, minZ, minX, minY, minZ, 0, 0, 0])
-            box = Vertex.ByCoordinates(minX, minY, minZ)
+            x_min = Vertex.X(vertices[0])
+            y_min = Vertex.Y(vertices[0])
+            z_min = Vertex.Z(vertices[0])
+            dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot", "xmin", "ymin", "zmin", "xmax", "ymax", "zmax", "width", "length", "height"], [0, 0, 0, x_min, y_min, z_min, x_min, y_min, z_min, 0, 0, 0])
+            box = Vertex.ByCoordinates(x_min, y_min, z_min)
             box = Topology.SetDictionary(box, dictionary)
             return box
         topology = Cluster.ByTopologies(vertices)
         boundingBox = bb(topology)
-        minX = boundingBox[0]
-        minY = boundingBox[1]
-        minZ = boundingBox[2]
-        maxX = boundingBox[3]
-        maxY = boundingBox[4]
-        maxZ = boundingBox[5]
-        w = abs(maxX - minX)
-        l = abs(maxY - minY)
-        h = abs(maxZ - minZ)
+        x_min = boundingBox[0]
+        y_min = boundingBox[1]
+        z_min = boundingBox[2]
+        x_max = boundingBox[3]
+        y_max = boundingBox[4]
+        z_max = boundingBox[5]
+        w = abs(x_max - x_min)
+        l = abs(y_max - y_min)
+        h = abs(z_max - z_min)
         best_area = 2*l*w + 2*l*h + 2*w*h
         orig_area = best_area
         best_x = 0
@@ -1421,17 +1421,17 @@ class Topology():
                             t = Topology.Rotate(topology, origin=origin, axis=[0, 0, 1], angle=z)
                             t = Topology.Rotate(t, origin=origin, axis=[0, 1, 0], angle=y)
                             t = Topology.Rotate(t, origin=origin, axis=[1, 0, 0], angle=x)
-                            minX, minY, minZ, maxX, maxY, maxZ = bb(t)
-                            w = abs(maxX - minX)
-                            l = abs(maxY - minY)
-                            h = abs(maxZ - minZ)
+                            x_min, y_min, z_min, x_max, y_max, z_max = bb(t)
+                            w = abs(x_max - x_min)
+                            l = abs(y_max - y_min)
+                            h = abs(z_max - z_min)
                             area = 2*l*w + 2*l*h + 2*w*h
                             if area < orig_area*factor:
                                 best_area = area
                                 best_x = x
                                 best_y = y
                                 best_z = z
-                                best_bb = [minX, minY, minZ, maxX, maxY, maxZ]
+                                best_bb = [x_min, y_min, z_min, x_max, y_max, z_max]
                                 flag = True
                                 break
                             if area < best_area:
@@ -1439,27 +1439,27 @@ class Topology():
                                 best_x = x
                                 best_y = y
                                 best_z = z
-                                best_bb = [minX, minY, minZ, maxX, maxY, maxZ]
+                                best_bb = [x_min, y_min, z_min, x_max, y_max, z_max]
                         
         else:
             best_bb = boundingBox
 
-        minX, minY, minZ, maxX, maxY, maxZ = best_bb
-        vb1 = Vertex.ByCoordinates(minX, minY, minZ)
-        vb2 = Vertex.ByCoordinates(maxX, minY, minZ)
-        vb3 = Vertex.ByCoordinates(maxX, maxY, minZ)
-        vb4 = Vertex.ByCoordinates(minX, maxY, minZ)
+        x_min, y_min, z_min, x_max, y_max, z_max = best_bb
+        vb1 = Vertex.ByCoordinates(x_min, y_min, z_min)
+        vb2 = Vertex.ByCoordinates(x_max, y_min, z_min)
+        vb3 = Vertex.ByCoordinates(x_max, y_max, z_min)
+        vb4 = Vertex.ByCoordinates(x_min, y_max, z_min)
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
         baseFace = Face.ByWire(baseWire, tolerance=tolerance)
-        if abs(maxZ-minZ) < tolerance:
+        if abs(z_max - z_min) < tolerance:
             box = baseFace
         else:
-            box = Cell.ByThickenedFace(baseFace, planarize=False, thickness=abs(maxZ-minZ), bothSides=False)
+            box = Cell.ByThickenedFace(baseFace, planarize=False, thickness=abs(z_max - z_min), bothSides=False)
         box = Topology.Rotate(box, origin=origin, axis=[1, 0, 0], angle=-best_x)
         box = Topology.Rotate(box, origin=origin, axis=[0, 1, 0], angle=-best_y)
         box = Topology.Rotate(box, origin=origin, axis=[0, 0, 1], angle=-best_z)
-        dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot", "minx", "miny", "minz", "maxx", "maxy", "maxz", "width", "length", "height"], [best_x, best_y, best_z, minX, minY, minZ, maxX, maxY, maxZ, (maxX-minX), (maxY-minY), (maxZ-minZ)])
+        dictionary = Dictionary.ByKeysValues(["xrot","yrot","zrot", "xmin", "ymin", "zmin", "xmax", "ymax", "zmax", "width", "length", "height"], [best_x, best_y, best_z, x_min, y_min, z_min, x_max, y_max, z_max, (x_max - x_min), (y_max - y_min), (z_max - z_min)])
         box = Topology.SetDictionary(box, dictionary)
         return box
 
@@ -1496,7 +1496,7 @@ class Topology():
     
 
     @staticmethod
-    def ByGeometry(vertices=[], edges=[], faces=[], topologyType = None, tolerance=0.0001):
+    def ByGeometry(vertices=[], edges=[], faces=[], topologyType: str = None, tolerance: float = 0.0001, silent: bool = False):
         """
         Create a topology by the input lists of vertices, edges, and faces.
 
@@ -1512,6 +1512,8 @@ class Topology():
             The desired topology type. The options are: "Vertex", "Edge", "Wire", "Face", "Shell", "Cell", "CellComplex". If set to None, a "Cluster" will be returned. The default is None.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1542,7 +1544,7 @@ class Topology():
                     if Topology.IsInstance(cc, "CellComplex"):
                         output = CellComplex.ExternalBoundary(cc)
             elif topologyType == "cellcomplex":
-                output = CellComplex.ByFaces(faces, tolerance=tolerance)
+                output = CellComplex.ByFaces(faces, tolerance=tolerance, silent=silent)
                 if Topology.IsInstance(output, "CellComplex"):
                     cells = Topology.Cells(output)
                     if len(cells) == 1:
@@ -2146,8 +2148,9 @@ class Topology():
             # iteration
             for layer in layers:
                 if layer_name == layer.dxf.name:
-                    r,g,b = layer.rgb
-                    return [r,g,b]
+                    if not layer.rgb == None:
+                        r,g,b = layer.rgb
+                        return [r,g,b]
             return 
 
         def convert_entity(entity, file, sides=36):
@@ -2504,7 +2507,7 @@ class Topology():
             
             return color, default_transparency, material_list
         
-        def convert_to_topology(entity, settings):    
+        def convert_to_topology(entity, settings, transferDictionaries=False):    
             if hasattr(entity, "Representation") and entity.Representation:
                 for rep in entity.Representation.Representations:
                     if rep.is_a("IfcShapeRepresentation"):
@@ -2520,29 +2523,30 @@ class Topology():
                         # Convert geometry to Topologic format
                         #shape_topology = ifc_to_topologic_geometry(verts, edges, faces)
                         #shape_topology = Topology.SelfMerge(Topology.ByGeometry(verts, edges, faces))
-                        shape_topology = Topology.ByGeometry(verts, edges, faces, topologyType="CellComplex")
+                        shape_topology = Topology.ByGeometry(verts, edges, faces, silent=True)
                         if removeCoplanarFaces == True:
                             shape_topology = Topology.RemoveCoplanarFaces(shape_topology, epsilon=0.0001)
 
                         # Store relevant information
-                        color, transparency, material_list = get_color_transparency_material(entity)
-                        entity_dict = {
-                            "TOPOLOGIC_id": str(Topology.UUID(shape_topology)),
-                            "TOPOLOGIC_name": getattr(entity, 'Name', "Untitled"),
-                            "TOPOLOGIC_type": Topology.TypeAsString(shape_topology),
-                            "TOPOLOGIC_color": color,
-                            "TOPOLOGIC_opacity": 1.0 - transparency,
-                            "IFC_global_id": getattr(entity, 'GlobalId', 0),
-                            "IFC_name": getattr(entity, 'Name', "Untitled"),
-                            "IFC_type": entity.is_a(),
-                            "IFC_material_list": material_list,
-                        }
-                        topology_dict = Dictionary.ByPythonDictionary(entity_dict)
-                        # Get PSETs dictionary
-                        pset_python_dict = get_psets(entity)
-                        pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
-                        topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
-                        shape_topology = Topology.SetDictionary(shape_topology, topology_dict)
+                        if transferDictionaries == True:
+                            color, transparency, material_list = get_color_transparency_material(entity)
+                            entity_dict = {
+                                "TOPOLOGIC_id": str(Topology.UUID(shape_topology)),
+                                "TOPOLOGIC_name": getattr(entity, 'Name', "Untitled"),
+                                "TOPOLOGIC_type": Topology.TypeAsString(shape_topology),
+                                "TOPOLOGIC_color": color,
+                                "TOPOLOGIC_opacity": 1.0 - transparency,
+                                "IFC_global_id": getattr(entity, 'GlobalId', 0),
+                                "IFC_name": getattr(entity, 'Name', "Untitled"),
+                                "IFC_type": entity.is_a(),
+                                "IFC_material_list": material_list,
+                            }
+                            topology_dict = Dictionary.ByPythonDictionary(entity_dict)
+                            # Get PSETs dictionary
+                            pset_python_dict = get_psets(entity)
+                            pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
+                            topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
+                            shape_topology = Topology.SetDictionary(shape_topology, topology_dict)
                         return shape_topology
             return None
 
@@ -2559,7 +2563,7 @@ class Topology():
                 entities.append(product)
         topologies = []
         for entity in entities:
-            topologies.append(convert_to_topology(entity, settings))
+            topologies.append(convert_to_topology(entity, settings, transferDictionaries=transferDictionaries))
         return topologies
 
     @staticmethod
@@ -3836,7 +3840,117 @@ class Topology():
         if Topology.IsInstance(topology, "Aperture"):
             return Aperture.Topology(topology).Centroid()
         return topology.Centroid()
-    
+
+    @staticmethod
+    def ClusterByKeys(topologies, *keys, silent=False):
+        """
+            Clusters the input list of topologies based on the input key or keys.
+
+            Parameters
+            ----------
+            topologies : list
+                The input list of topologies.
+            keys : str or list or comma-separated str input parameters
+                The key or keys in the topology's dictionary to use for clustering.
+            silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+
+            Returns
+            -------
+            list
+                A nested list of topologies where each element is a list of topologies with the same key values.
+            """
+        
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+        import inspect
+        print("input topologies:", topologies)
+
+        topologies_list = []
+        if Topology.IsInstance(topologies, "Topology"):
+            if not silent:
+                print("Topology.ClusterByKeys - Warning: The input topologies parameter is a single topology. Returning one cluster.")
+            return [[topologies]]
+        if isinstance(topologies, list):
+            print("topologies_list 1:", topologies_list)
+            topologies_list = Helper.Flatten(topologies)
+            print("topologies_list 2:", topologies_list)
+            topologies_list = [x for x in topologies_list if Topology.IsInstance(x, "Topology")]
+            print("topologies_list 3:", topologies_list)
+            if len(topologies_list) == 0:
+                if not silent:
+                    print("Topology.ClusterByKeys - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
+                    curframe = inspect.currentframe()
+                    calframe = inspect.getouterframes(curframe, 2)
+                    print('caller name:', calframe[1][3])
+                return None
+        else:
+            if not silent:
+                print("Topology.ClusterByKeys - Error: The input topologies parameter is not a valid list. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        
+        keys_list = list(keys)
+        keys_list = Helper.Flatten(keys_list)
+
+        if len(keys_list) == 0:
+            if not silent:
+                print("Topology.ClusterByKeys - Error: The input keys parameter is an empty list. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        keys_list = [x for x in keys_list if isinstance(x, str)]
+        
+        if len(keys_list) == 0:
+            if not silent:
+                print("Topology.ClusterByKeys - Error: The input keys parameter does not contain any valid strings. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+
+        clusters = []
+        values = []
+        for topology in topologies_list:
+            d = Topology.Dictionary(topology)
+
+            d_keys = Dictionary.Keys(d)
+            if len(d_keys) > 0:
+                values_list = []
+                for key in keys_list:
+                    v = Dictionary.ValueAtKey(d, key)
+                    if not v == None:
+                        values_list.append(v)
+                values_list = str(values_list)
+                d = Dictionary.SetValueAtKey(d, "_clustering_key_", values_list)
+                topology = Topology.SetDictionary(topology, d)
+                values.append(values_list)
+
+        remaining_topologies = topologies_list
+        for value in values:
+            if len(remaining_topologies) == 0:
+                break
+            dic = Topology.Filter(remaining_topologies, topologyType="any", searchType="equal to", key="_clustering_key_", value=value)
+            filtered_topologies = dic['filtered']
+            final_topologies = []
+            if len(filtered_topologies) > 0:
+                for filtered_topology in filtered_topologies:
+                    d = Topology.Dictionary(filtered_topology)
+                    d = Dictionary.RemoveKey(d, "_clustering_key_")
+                    keys = Dictionary.Keys(d)
+                    if len(keys) > 0:
+                        filtered_topology = Topology.SetDictionary(filtered_topology, d)
+                    final_topologies.append(filtered_topology)
+                clusters.append(final_topologies)
+            remaining_topologies = dic['other']
+        if len(remaining_topologies) > 0:
+            clusters.append(remaining_topologies)
+        return clusters
+
     @staticmethod
     def ClusterFaces(topology, angTolerance=2, tolerance=0.0001):
         """
@@ -4159,7 +4273,7 @@ class Topology():
             print("Topology.Copy - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if deep:
-            return Topology.ByJSONString(Topology.JSONString([topology]), progressBar=False)
+            return Topology.ByJSONString(Topology.JSONString([topology]))[0]
         d = Topology.Dictionary(topology)
         return_topology = Topology.ByBREPString(Topology.BREPString(topology))
         keys = Dictionary.Keys(d)
@@ -4183,7 +4297,7 @@ class Topology():
             The dictionary of the input topology.
 
         """
-        if not Topology.IsInstance(topology, "Topology"):
+        if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
             print("Topology.Dictionary - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         return topology.GetDictionary()
@@ -5717,7 +5831,7 @@ class Topology():
         if (Topology.Type(topology) == Topology.TypeID("Edge")): #Input is an Edge, just add it and process it
             topEdges.append(topology)
         elif (Topology.Type(topology) > Topology.TypeID("Vertex")):
-            _ = topology.Edges(None, topEdges)
+            topEdges = Topology.Edges(topology)
         for anEdge in topEdges:
             e = []
             sv = anEdge.StartVertex()
@@ -5734,8 +5848,7 @@ class Topology():
                 evIndex = len(vertices)-1
             e.append(svIndex)
             e.append(evIndex)
-            if ([e[0], e[1]] not in edges) and ([e[1], e[0]] not in edges):
-                edges.append(e)
+            edges.append(e)
         topFaces = []
         if (Topology.Type(topology) == Topology.TypeID("Face")): # Input is a Face, just add it and process it
             topFaces.append(topology)
@@ -7346,23 +7459,22 @@ class Topology():
     
     @staticmethod
     def Show(*topologies,
-             colorKey = "color",
              opacityKey = "opacity",
-             showVertices=True, vertexSize=1.1, vertexColor="black", 
+             showVertices=True, vertexSize=1.1, vertexSizeKey = None, vertexColor="black", vertexColorKey = None,
              vertexLabelKey=None, showVertexLabel= False,
              vertexGroupKey=None, vertexGroups=[], 
              vertexMinGroup=None, vertexMaxGroup=None, 
              showVertexLegend=False, vertexLegendLabel="Topology Vertices", vertexLegendRank=1, 
              vertexLegendGroup=1, 
 
-             showEdges=True, edgeWidth=1, edgeColor="black", 
+             showEdges=True, edgeWidth=1, edgeWidthKey = None, edgeColor="black", edgeColorKey = None,
              edgeLabelKey=None, showEdgeLabel = False,
              edgeGroupKey=None, edgeGroups=[], 
              edgeMinGroup=None, edgeMaxGroup=None, 
              showEdgeLegend=False, edgeLegendLabel="Topology Edges", edgeLegendRank=2, 
              edgeLegendGroup=2, 
 
-             showFaces=True, faceOpacity=0.5, faceColor="#FAFAFA",
+             showFaces=True, faceOpacity=0.5, faceOpacityKey=None, faceColor="#FAFAFA", faceColorKey = None,
              faceLabelKey=None, faceGroupKey=None, faceGroups=[], 
              faceMinGroup=None, faceMaxGroup=None, 
              showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
@@ -7376,7 +7488,10 @@ class Topology():
              center=[0, 0, 0], up=[0, 0, 1], projection="perspective", renderer="notebook", showScale=False,
              
              cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
-             cbSubTitle="", cbUnits="", colorScale="Viridis", mantissa=6, tolerance=0.0001):
+             cbSubTitle="", cbUnits="", colorScale="Viridis",
+             
+             sagitta = 0, absolute = False, sides = 8, angle = 0,
+             mantissa=6, tolerance=0.0001, silent=False):
         """
             Shows the input topology on screen.
 
@@ -7384,14 +7499,14 @@ class Topology():
         ----------
         topologies : topologic_core.Topology or list
             The input topology. This must contain faces and or edges. If the input is a list, a cluster is first created
-        colorKey : str , optional
-            The key under which to find the color of the topology. The default is "color".
         opacityKey : str , optional
             The key under which to find the opacity of the topology. The default is "opacity".
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
         vertexSize : float , optional
             The desired size of the vertices. The default is 1.1.
+        vertexSizeKey : str , optional
+            The key under which to find the size of the vertex. The default is None.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -7400,6 +7515,8 @@ class Topology():
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
+        vertexColorKey : str , optional
+            The key under which to find the color of the vertex. The default is None.
         vertexLabelKey : str , optional
             The dictionary key to use to display the vertex label. The default is None.
         showVertexLabels : bool , optional
@@ -7433,6 +7550,10 @@ class Topology():
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
+        edgeColorKey : str , optional
+            The key under which to find the color of the edge. The default is None.
+        edgeWidthKey : str , optional
+            The key under which to find the width of the edge. The default is None.
         edgeLabelKey : str , optional
             The dictionary key to use to display the edge label. The default is None.
         showEdgeLabels : bool , optional
@@ -7458,6 +7579,8 @@ class Topology():
             If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
         faceOpacity : float , optional
             The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
+        faceOpacityKey : str , optional
+            The key under which to find the opacity of the face. The default is None.
         faceColor : str , optional
             The desired color of the output faces. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -7466,6 +7589,8 @@ class Topology():
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "#FAFAFA".
+        faceColorKey : str , optional
+            The key under which to find the color of the face. The default is None.
         faceLabelKey : str , optional
             The dictionary key to use to display the face label. The default is None.
         faceGroupKey : str , optional
@@ -7548,6 +7673,8 @@ class Topology():
             The desired length of the mantissa for the values listed on the colorbar. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -7564,46 +7691,36 @@ class Topology():
         if isinstance(topologies, tuple):
             topologies = Helper.Flatten(list(topologies))
         if isinstance(topologies, list):
-            new_topologies = [t for t in topologies if Topology.IsInstance(t, "Topology")]
-            graphs = [Graph.Topology(g) for g in topologies if Topology.IsInstance(g, "Graph")]
-            new_topologies += graphs
+            new_topologies = [t for t in topologies if Topology.IsInstance(t, "Topology") or Topology.IsInstance(t, "Graph")]
         if len(new_topologies) == 0:
-            print("Topology.Show - Error: the input topologies parameter does not contain any valid topology. Returning None.")
+            if not silent:
+                print("Topology.Show - Error: the input topologies parameter does not contain any valid topology. Returning None.")
             return None
-        # if len(new_topologies) == 1:
-        #     topology = new_topologies[0]
-        # else:
-        #     topology = Cluster.ByTopologies(new_topologies)
-        # if not Topology.IsInstance(topology, "Topology"):
-        #     print("Topology.Show - Error: the input topology parameter is not a valid topology. Returning None.")
-        #     return None
         data = []
         for topology in new_topologies:
-            d = Topology.Dictionary(topology)
-            if isinstance(colorKey, str):
-                f_color = Dictionary.ValueAtKey(d, colorKey)
-                if f_color:
-                    vertexColor = Color.PlotlyColor(f_color, alpha=1.0, useAlpha=False)
-                    edgeColor = Color.PlotlyColor(f_color, alpha=1.0, useAlpha=False)
-                    faceColor = Color.PlotlyColor(f_color, alpha=1.0, useAlpha=False)
-                faceOpacity = Dictionary.ValueAtKey(d, opacityKey) or faceOpacity
-            data += Plotly.DataByTopology(topology=topology,
-                        showVertices=showVertices, vertexSize=vertexSize, vertexColor=vertexColor, 
-                        vertexLabelKey=vertexLabelKey, showVertexLabel=showVertexLabel, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, 
-                        vertexMinGroup=vertexMinGroup, vertexMaxGroup=vertexMaxGroup, 
-                        showVertexLegend=showVertexLegend, vertexLegendLabel=vertexLegendLabel, vertexLegendRank=vertexLegendRank,
-                        vertexLegendGroup=vertexLegendGroup,
-                        showEdges=showEdges, edgeWidth=edgeWidth, edgeColor=edgeColor, 
-                        edgeLabelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, 
-                        edgeMinGroup=edgeMinGroup, edgeMaxGroup=edgeMaxGroup, 
-                        showEdgeLegend=showEdgeLegend, edgeLegendLabel=edgeLegendLabel, edgeLegendRank=edgeLegendRank, 
-                        edgeLegendGroup=edgeLegendGroup,
-                        showFaces=showFaces, faceOpacity=faceOpacity, faceColor=faceColor,
-                        faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, 
-                        faceMinGroup=faceMinGroup, faceMaxGroup=faceMaxGroup, 
-                        showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel, faceLegendRank=faceLegendRank,
-                        faceLegendGroup=faceLegendGroup, 
-                        intensityKey=intensityKey, intensities=intensities, colorScale=colorScale, mantissa=mantissa, tolerance=tolerance)
+            if Topology.IsInstance(topology, "Graph"):
+                data += Plotly.DataByGraph(topology, sagitta=sagitta, absolute=absolute, sides=sides,  angle=angle, vertexColor=vertexColor, vertexColorKey=vertexColorKey, vertexSize=vertexSize, vertexSizeKey=vertexSizeKey, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLabel=showVertexLabel, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeColorKey=edgeColorKey, edgeWidth=edgeWidth, edgeWidthKey=edgeWidthKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLabel=showEdgeLabel, showEdgeLegend=showEdgeLegend, colorScale=colorScale, silent=silent)
+            else:
+                d = Topology.Dictionary(topology)
+                if not d == None:
+                    faceOpacity = Dictionary.ValueAtKey(d, opacityKey) or faceOpacity
+                data += Plotly.DataByTopology(topology=topology,
+                            showVertices=showVertices, vertexSize=vertexSize, vertexSizeKey=vertexSizeKey, vertexColor=vertexColor, vertexColorKey=vertexColorKey,
+                            vertexLabelKey=vertexLabelKey, showVertexLabel=showVertexLabel, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, 
+                            vertexMinGroup=vertexMinGroup, vertexMaxGroup=vertexMaxGroup, 
+                            showVertexLegend=showVertexLegend, vertexLegendLabel=vertexLegendLabel, vertexLegendRank=vertexLegendRank,
+                            vertexLegendGroup=vertexLegendGroup,
+                            showEdges=showEdges, edgeWidth=edgeWidth, edgeWidthKey=edgeWidthKey, edgeColor=edgeColor, edgeColorKey=edgeColorKey,
+                            edgeLabelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, 
+                            edgeMinGroup=edgeMinGroup, edgeMaxGroup=edgeMaxGroup, 
+                            showEdgeLegend=showEdgeLegend, edgeLegendLabel=edgeLegendLabel, edgeLegendRank=edgeLegendRank, 
+                            edgeLegendGroup=edgeLegendGroup,
+                            showFaces=showFaces, faceOpacity=faceOpacity, faceColor=faceColor, faceColorKey=faceColorKey,
+                            faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, 
+                            faceMinGroup=faceMinGroup, faceMaxGroup=faceMaxGroup, 
+                            showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel, faceLegendRank=faceLegendRank,
+                            faceLegendGroup=faceLegendGroup, 
+                            intensityKey=intensityKey, intensities=intensities, colorScale=colorScale, mantissa=mantissa, tolerance=tolerance)
         figure = Plotly.FigureByData(data=data, width=width, height=height,
                                      xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,
                                      backgroundColor=backgroundColor,
@@ -7874,11 +7991,11 @@ class Topology():
             origin = Topology.Centroid(topology)
         vertices = Topology.Vertices(topology)
         zList = [Vertex.Z(v, mantissa=mantissa) for v in vertices]
-        minZ = min(zList)
+        z_min = min(zList)
         maxZ = max(zList)
         new_vertices = []
         for v in vertices:
-            ht = (Vertex.Z(v)-minZ)/(maxZ - minZ)
+            ht = (Vertex.Z(v)-z_min)/(maxZ - z_min)
             rt = ratioRange[0] + ht*(ratioRange[1] - ratioRange[0])
             new_origin = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa), Vertex.Y(origin, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa))
             new_dist = Vertex.Distance(new_origin, v, mantissa=mantissa)*rt
@@ -7928,12 +8045,12 @@ class Topology():
             
         vertices = Topology.Vertices(topology)
         zList = [Vertex.Z(v, mantissa=mantissa) for v in vertices]
-        minZ = min(zList)
+        z_min = min(zList)
         maxZ = max(zList)
-        h = maxZ - minZ
+        h = maxZ - z_min
         new_vertices = []
         for v in vertices:
-            ht = (Vertex.Z(v)-minZ)/(maxZ - minZ)
+            ht = (Vertex.Z(v)-z_min)/(maxZ - z_min)
             new_rot = angleRange[0] + ht*(angleRange[1] - angleRange[0])
             orig = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa), Vertex.Y(origin, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa))
             new_vertices.append(Topology.Rotate(v, origin=orig, axis=[0, 0, 1], angle=new_rot))

@@ -857,25 +857,25 @@ class Shell():
         xOffset = 0
         yOffset = 0
         zOffset = 0
-        minX = min([Vertex.X(llVertex, mantissa=mantissa), Vertex.X(lrVertex, mantissa=mantissa), Vertex.X(ulVertex, mantissa=mantissa), Vertex.X(urVertex, mantissa=mantissa)])
+        x_min = min([Vertex.X(llVertex, mantissa=mantissa), Vertex.X(lrVertex, mantissa=mantissa), Vertex.X(ulVertex, mantissa=mantissa), Vertex.X(urVertex, mantissa=mantissa)])
         maxX = max([Vertex.X(llVertex, mantissa=mantissa), Vertex.X(lrVertex, mantissa=mantissa), Vertex.X(ulVertex, mantissa=mantissa), Vertex.X(urVertex, mantissa=mantissa)])
-        minY = min([Vertex.Y(llVertex, mantissa=mantissa), Vertex.Y(lrVertex, mantissa=mantissa), Vertex.Y(ulVertex, mantissa=mantissa), Vertex.Y(urVertex, mantissa=mantissa)])
+        y_min = min([Vertex.Y(llVertex, mantissa=mantissa), Vertex.Y(lrVertex, mantissa=mantissa), Vertex.Y(ulVertex, mantissa=mantissa), Vertex.Y(urVertex, mantissa=mantissa)])
         maxY = max([Vertex.Y(llVertex, mantissa=mantissa), Vertex.Y(lrVertex, mantissa=mantissa), Vertex.Y(ulVertex, mantissa=mantissa), Vertex.Y(urVertex, mantissa=mantissa)])
-        minZ = min([Vertex.Z(llVertex, mantissa=mantissa), Vertex.Z(lrVertex, mantissa=mantissa), Vertex.Z(ulVertex, mantissa=mantissa), Vertex.Z(urVertex, mantissa=mantissa)])
+        z_min = min([Vertex.Z(llVertex, mantissa=mantissa), Vertex.Z(lrVertex, mantissa=mantissa), Vertex.Z(ulVertex, mantissa=mantissa), Vertex.Z(urVertex, mantissa=mantissa)])
         maxZ = max([Vertex.Z(llVertex, mantissa=mantissa), Vertex.Z(lrVertex, mantissa=mantissa), Vertex.Z(ulVertex, mantissa=mantissa), Vertex.Z(urVertex, mantissa=mantissa)])
 
         if placement.lower() == "lowerleft":
-            xOffset = -minX
-            yOffset = -minY
-            zOffset = -minZ
+            xOffset = -x_min
+            yOffset = -y_min
+            zOffset = -z_min
         elif placement.lower() == "bottom":
-            xOffset = -(minX + (maxX - minX)*0.5)
-            yOffset = -(minY + (maxY - minY)*0.5)
-            zOffset = -minZ
+            xOffset = -(x_min + (maxX - x_min)*0.5)
+            yOffset = -(y_min + (maxY - y_min)*0.5)
+            zOffset = -z_min
         elif placement.lower() == "center":
-            xOffset = -(minX + (maxX - minX)*0.5)
-            yOffset = -(minY + (maxY - minY)*0.5)
-            zOffset = -(minZ + (maxZ - minZ)*0.5)
+            xOffset = -(x_min + (maxX - x_min)*0.5)
+            yOffset = -(y_min + (maxY - y_min)*0.5)
+            zOffset = -(z_min + (maxZ - z_min)*0.5)
         returnTopology = Topology.Translate(returnTopology, xOffset, yOffset, zOffset)
         returnTopology = Topology.Place(returnTopology, originA=Vertex.Origin(), originB=origin)
         returnTopology = Topology.Orient(returnTopology, origin=origin, dirA=[0, 0, 1], dirB=direction)
@@ -1020,27 +1020,27 @@ class Shell():
             xList.append(Vertex.X(aVertex, mantissa=mantissa))
             yList.append(Vertex.Y(aVertex, mantissa=mantissa))
             zList.append(Vertex.Z(aVertex, mantissa=mantissa))
-        minX = min(xList)
+        x_min = min(xList)
         maxX = max(xList)
-        minY = min(yList)
+        y_min = min(yList)
         maxY = max(yList)
-        minZ = min(zList)
+        z_min = min(zList)
         maxZ = max(zList)
         xOffset = 0
         yOffset = 0
         zOffset = 0
         if placement.lower() == "lowerleft":
-            xOffset = -minX
-            yOffset = -minY
-            zOffset = -minZ
+            xOffset = -x_min
+            yOffset = -y_min
+            zOffset = -z_min
         elif placement.lower() == "bottom":
-            xOffset = -(minX + (maxX - minX)*0.5)
-            yOffset = -(minY + (maxY - minY)*0.5)
-            zOffset = -minZ
+            xOffset = -(x_min + (maxX - x_min)*0.5)
+            yOffset = -(y_min + (maxY - y_min)*0.5)
+            zOffset = -z_min
         elif placement.lower() == "center":
-            xOffset = -(minX + (maxX - minX)*0.5)
-            yOffset = -(minY + (maxY - minY)*0.5)
-            zOffset = -(minZ + (maxZ - minZ)*0.5)
+            xOffset = -(x_min + (maxX - x_min)*0.5)
+            yOffset = -(y_min + (maxY - y_min)*0.5)
+            zOffset = -(z_min + (maxZ - z_min)*0.5)
         returnTopology = Topology.Translate(returnTopology, xOffset, yOffset, zOffset)
         returnTopology = Topology.Place(returnTopology, originA=Vertex.Origin(), originB=origin)
         returnTopology = Topology.Orient(returnTopology, origin=origin, dirA=[0, 0, 1], dirB=direction)

@@ -3971,7 +3971,7 @@ class Graph:
                         d = Graph.TopologicalDistance(graph, va, vb, tolerance)
                     top_dist += d
                 if top_dist == 0:
-                    print("Topological Distance is Zero!!")
+                    print("Graph.ClosenessCentrality - Warning: Topological Distance is Zero.")
                     scores.append(0)
                 else:
                     scores.append(round((n-1)/top_dist, mantissa))
@@ -7847,20 +7847,24 @@ class Graph:
              sides = 8,
              angle = 0,
              vertexColor="black",
+             vertexColorKey=None,
              vertexSize=6,
+             vertexSizeKey=None,
              vertexLabelKey=None,
              vertexGroupKey=None,
              vertexGroups=[],
              showVertices=True,
-             showVertexLabels=False,
+             showVertexLabel=False,
              showVertexLegend=False,
              edgeColor="black",
+             edgeColorKey=None,
              edgeWidth=1,
+             edgeWidthKey=None,
              edgeLabelKey=None,
              edgeGroupKey=None,
              edgeGroups=[],
              showEdges=True,
-             showEdgeLabels=False,
+             showEdgeLabel=False,
              showEdgeLegend=False,
              colorScale='viridis',
              renderer=None,
@@ -7904,8 +7908,12 @@ class Graph:
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
+        vertexColorKey : str , optional
+            The dictionary key under which to find the vertex color. The default is None.
         vertexSize : float , optional
             The desired size of the vertices. The default is 1.1.
+        vertexSizeKey : str , optional
+            The dictionary key under which to find the vertex size. The default is None.
         vertexLabelKey : str , optional
             The dictionary key to use to display the vertex label. The default is None.
         vertexGroupKey : str , optional
@@ -7914,7 +7922,7 @@ class Graph:
             The list of vertex groups against which to index the color of the vertex. The default is [].
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
-        showVertexLabels : bool , optional
+        showVertexLabel : bool , optional
             If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. The default is False.
         showVertexLegend : bool , optional
             If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. The default is False.
@@ -7926,8 +7934,12 @@ class Graph:
             - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
             - A named CSS color.
             The default is "black".
+        edgeColorKey : str , optional
+            The dictionary key under which to find the edge color. The default is None.
         edgeWidth : float , optional
             The desired thickness of the output edges. The default is 1.
+        edgeWidthKey : str , optional
+            The dictionary key under which to find the edge width. The default is None.
         edgeLabelKey : str , optional
             The dictionary key to use to display the edge label. The default is None.
         edgeGroupKey : str , optional
@@ -7936,7 +7948,7 @@ class Graph:
             The list of edge groups against which to index the color of the edge. The default is [].
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
-        showEdgeLabels : bool , optional
+        showEdgeLabel : bool , optional
             If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. The default is False.
         showEdgeLegend : bool , optional
             If set to True the edge legend will be drawn. Otherwise, it will not be drawn. The default is False.
@@ -7997,7 +8009,7 @@ class Graph:
             print("Graph.Show - Error: The input graph is not a valid graph. Returning None.")
             return None
         
-        data= Plotly.DataByGraph(graph, sagitta=sagitta, absolute=absolute, sides=sides,  angle=angle, vertexColor=vertexColor, vertexSize=vertexSize, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLabels=showVertexLabels, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeWidth=edgeWidth, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLabels=showEdgeLabels, showEdgeLegend=showEdgeLegend, colorScale=colorScale, silent=silent)
+        data= Plotly.DataByGraph(graph, sagitta=sagitta, absolute=absolute, sides=sides,  angle=angle, vertexColor=vertexColor, vertexColorKey=vertexColorKey, vertexSize=vertexSize, vertexSizeKey=vertexSizeKey, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLabel=showVertexLabel, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeColorKey=edgeColorKey, edgeWidth=edgeWidth, edgeWidthKey=edgeWidthKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLabel=showEdgeLabel, showEdgeLegend=showEdgeLegend, colorScale=colorScale, silent=silent)
         fig = Plotly.FigureByData(data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor,
                                   marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom, tolerance=tolerance)
         Plotly.Show(fig, renderer=renderer, camera=camera, center=center, up=up, projection=projection)

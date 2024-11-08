@@ -1143,6 +1143,8 @@ class Edge():
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
+
+
         def calculate_normal(start_vertex, end_vertex):
             start_vertex = np.array([float(x) for x in start_vertex])
             end_vertex = np.array([float(x) for x in end_vertex])
@@ -1150,8 +1152,11 @@ class Edge():
             # Calculate the direction vector of the edge
             direction_vector = end_vertex - start_vertex
             
-            # Handle the horizontal edge case (no Z component)
-            if np.isclose(direction_vector[2], 0):
+            # Check if the edge is vertical (only Z component)
+            if np.isclose(direction_vector[0], 0) and np.isclose(direction_vector[1], 0):
+                # Choose an arbitrary perpendicular vector in the X-Y plane, e.g., [1, 0, 0]
+                normal_vector = np.array([1.0, 0.0, 0.0])
+            elif np.isclose(direction_vector[2], 0):
                 # The edge lies in the X-Y plane; compute a perpendicular in the X-Y plane
                 normal_vector = np.array([-direction_vector[1], direction_vector[0], 0.0])
             else:
@@ -1162,7 +1167,7 @@ class Edge():
             # Check if the normal vector is effectively zero before normalization
             if np.isclose(norm(normal_vector), 0):
                 return normal_vector
-            
+    
             # Normalize the normal vector
             normal_vector /= norm(normal_vector)  
             return normal_vector
@@ -1192,7 +1197,6 @@ class Edge():
 
         # Calculate the normal line
         normal_line_start, normal_line_end = calculate_normal_line(start_vertex, end_vertex)
-
         # Create the normal edge in Topologic
         sv = Vertex.ByCoordinates(list(normal_line_start))
         ev = Vertex.ByCoordinates(list(normal_line_end))

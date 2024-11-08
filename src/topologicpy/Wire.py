@@ -90,8 +90,19 @@ class Wire():
             # Calculate radius
             radius = np.linalg.norm(circumcenter - p1)
 
+            # Helper function to rotate a point around an arbitrary axis
+            def rotation_matrix_around_axis(axis, theta):
+                cos_theta = np.cos(theta)
+                sin_theta = np.sin(theta)
+                x, y, z = axis
+                return np.array([
+                    [cos_theta + x*x*(1 - cos_theta), x*y*(1 - cos_theta) - z*sin_theta, x*z*(1 - cos_theta) + y*sin_theta],
+                    [y*x*(1 - cos_theta) + z*sin_theta, cos_theta + y*y*(1 - cos_theta), y*z*(1 - cos_theta) - x*sin_theta],
+                    [z*x*(1 - cos_theta) - y*sin_theta, z*y*(1 - cos_theta) + x*sin_theta, cos_theta + z*z*(1 - cos_theta)]
+                ])
+
             # Generate points along the arc
-            def interpolate_on_arc(p_start, p_end, center, radius, n_points):
+            def interpolate_on_arc(p_start, p_end, center, n_points):
                 v_start = p_start - center
                 v_end = p_end - center
                 
@@ -99,31 +110,25 @@ class Wire():
                 axis = np.cross(v_start, v_end)
                 axis = axis / np.linalg.norm(axis)
                 
-                angles = np.linspace(0, angle_between, n_points)
-                arc_points = []
-                
-                for angle in angles:
-                    rotation_matrix = rotation_matrix_around_axis(axis, angle)
-                    point_on_arc = center + np.dot(rotation_matrix, v_start)
-                    arc_points.append(point_on_arc)
-                
-                return arc_points
-
-            # Helper function to rotate a point around an arbitrary axis
-            def rotation_matrix_around_axis(axis, theta):
-                cos_theta = np.cos(theta)
-                sin_theta = np.sin(theta)
-                x, y, z = axis
-                return np.array([
-                    [cos_theta + x*x*(1-cos_theta), x*y*(1-cos_theta) - z*sin_theta, x*z*(1-cos_theta) + y*sin_theta],
-                    [y*x*(1-cos_theta) + z*sin_theta, cos_theta + y*y*(1-cos_theta), y*z*(1-cos_theta) - x*sin_theta],
-                    [z*x*(1-cos_theta) - y*sin_theta, z*y*(1-cos_theta) + x*sin_theta, cos_theta + z*z*(1-cos_theta)]
-                ])
+                # Adjust for symmetry if n_points is even or odd
+                if n_points % 2 == 0:
+                    # For even n_points, generate n_points + 1 and skip the first point for symmetry
+                    angles = np.linspace(0, angle_between, n_points + 1)
+                    arc_points = [center + np.dot(rotation_matrix_around_axis(axis, angle), v_start) for angle in angles]
+                    return [p_start]+arc_points[1:]  # Skip the first point
+                else:
+                    # For odd n_points, include both start, apex, and end points symmetrically
+                    angles = np.linspace(0, angle_between, n_points)
+                    arc_points = [center + np.dot(rotation_matrix_around_axis(axis, angle), v_start) for angle in angles]
+                    return arc_points
 
             # Get points on the arc from p1 to p3 via p2
-            arc1 = interpolate_on_arc(p1, p2, circumcenter, radius, n//2)
-            arc2 = interpolate_on_arc(p2, p3, circumcenter, radius, n//2)
-
+            if n <= 1: # Special case for number of edges == 1 or less.
+                return [p1, p3]
+            if n == 2: # Special case for number of edges == 2.
+                return [p1, p2, p3]
+            arc1 = interpolate_on_arc(p1, p2, circumcenter, (n+1) // 2)
+            arc2 = interpolate_on_arc(p2, p3, circumcenter, (n+1) // 2)
             return np.vstack([arc1, arc2])
         
         if not Topology.IsInstance(startVertex, "Vertex"):
@@ -143,17 +148,6 @@ class Wire():
         for arc_point in arc_points:
             vertices.append(Vertex.ByCoordinates(list(arc_point)))
         arc = Wire.ByVertices(vertices, close=False)
-        if not Topology.IsInstance(arc, "Wire"):
-            if not silent:
-                print("Wire.Arc - Error: Could not create an arc. Returning None.")
-            return None
-        # Reinterpolate the arc with equal segments
-        vertices = []
-        for i in range(0,sides+1,1):
-            u = i/sides
-            v = Wire.VertexByParameter(arc, u)
-            vertices.append(v)
-        arc = Wire.ByVertices(vertices, close=close)
         if not Topology.IsInstance(arc, "Wire"):
             if not silent:
                 print("Wire.Arc - Error: Could not create an arc. Returning None.")
@@ -253,11 +247,11 @@ class Wire():
             for aVertex in vertices:
                 x.append(Vertex.X(aVertex, mantissa=mantissa))
                 y.append(Vertex.Y(aVertex, mantissa=mantissa))
-            minX = min(x)
-            minY = min(y)
+            x_min = min(x)
+            y_min = min(y)
             maxX = max(x)
             maxY = max(y)
-            return [minX, minY, maxX, maxY]
+            return [x_min, y_min, maxX, maxY]
 
         if not Topology.IsInstance(topology, "Topology"):
             return None
@@ -290,12 +284,12 @@ class Wire():
         topology = Topology.Flatten(topology, origin=f_origin, direction=normal)
         
         boundingRectangle = br(topology)
-        minX = boundingRectangle[0]
-        minY = boundingRectangle[1]
+        x_min = boundingRectangle[0]
+        y_min = boundingRectangle[1]
         maxX = boundingRectangle[2]
         maxY = boundingRectangle[3]
-        w = abs(maxX - minX)
-        l = abs(maxY - minY)
+        w = abs(maxX - x_min)
+        l = abs(maxY - y_min)
         best_area = l*w
         orig_area = best_area
         best_z = 0
@@ -315,28 +309,28 @@ class Wire():
                     if flag:
                         break
                     t = Topology.Rotate(topology, origin=origin, axis=[0, 0, 1], angle=z)
-                    minX, minY, maxX, maxY = br(t)
-                    w = abs(maxX - minX)
-                    l = abs(maxY - minY)
+                    x_min, y_min, maxX, maxY = br(t)
+                    w = abs(maxX - x_min)
+                    l = abs(maxY - y_min)
                     area = l*w
                     if area <= orig_area*factor: # If new area is less than or equal to a certain percentage of the original area then break. e.g. if area is less than or qual to 50% of original area then break.
                         best_area = area
                         best_z = z
-                        best_br = [minX, minY, maxX, maxY]
+                        best_br = [x_min, y_min, maxX, maxY]
                         flag = True
                         break
                     if area < best_area:
                         best_area = area
                         best_z = z
-                        best_br = [minX, minY, maxX, maxY]
+                        best_br = [x_min, y_min, maxX, maxY]
                         
         else:
             best_br = boundingRectangle
-        minX, minY, maxX, maxY = best_br
-        vb1 = Vertex.ByCoordinates(minX, minY, 0)
-        vb2 = Vertex.ByCoordinates(maxX, minY, 0)
+        x_min, y_min, maxX, maxY = best_br
+        vb1 = Vertex.ByCoordinates(x_min, y_min, 0)
+        vb2 = Vertex.ByCoordinates(maxX, y_min, 0)
         vb3 = Vertex.ByCoordinates(maxX, maxY, 0)
-        vb4 = Vertex.ByCoordinates(minX, maxY, 0)
+        vb4 = Vertex.ByCoordinates(x_min, maxY, 0)
 
         boundingRectangle = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
         boundingRectangle = Topology.Rotate(boundingRectangle, origin=origin, axis=[0, 0, 1], angle=-best_z)
@@ -3463,20 +3457,20 @@ class Wire():
             vertices.append(Vertex.ByCoordinates(x, y, z))
             ang = ang + angOffset
         
-        minX = min(xList)
+        x_min = min(xList)
         maxX = max(xList)
-        minY = min(yList)
+        y_min = min(yList)
         maxY = max(yList)
         radius = radiusA + radiusB*turns*0.5
         baseWire = Wire.ByVertices(vertices, close=False)
         if placement.lower() == "center":
             baseWire = Topology.Translate(baseWire, 0, 0, -height*0.5)
         if placement.lower() == "lowerleft":
-            baseWire = Topology.Translate(baseWire, -minX, -minY, 0)
+            baseWire = Topology.Translate(baseWire, -x_min, -y_min, 0)
         elif placement.lower() == "upperleft":
-            baseWire = Topology.Translate(baseWire, -minX, -maxY, 0)
+            baseWire = Topology.Translate(baseWire, -x_min, -maxY, 0)
         elif placement.lower() == "lowerright":
-            baseWire = Topology.Translate(baseWire, -maxX, -minY, 0)
+            baseWire = Topology.Translate(baseWire, -maxX, -y_min, 0)
         elif placement.lower() == "upperright":
             baseWire = Topology.Translate(baseWire, -maxX, -maxY, 0)
         if direction != [0, 0, 1]:

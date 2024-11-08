@@ -96,6 +96,117 @@ class Helper:
         return closest_index
 
     @staticmethod
+    def ClusterByKeys(elements, dictionaries, *keys, silent=False):
+        """
+            Clusters the input list of elements and dictionaries based on the input key or keys.
+
+            Parameters
+            ----------
+            elements : list
+                The input list of elements to be clustered.
+            dictionaries : list[Topology.Dictionary]
+                The input list of dictionaries to be consulted for clustering. This is assumed to be in the same order as the list of elements.
+            keys : str or list or comma-separated str input parameters
+                The key or keys in the topology's dictionary to use for clustering.
+            silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+
+            Returns
+            -------
+            dict
+                A dictionary containing the elements and the dictionaries, but clustered. The dictionary has two keys:
+                "elements": list
+                    A nested list of elements where each item is a list of elements with the same key values.
+                "dictionaries": list
+                    A nested list of dictionaries where each item is a list of dictionaries with the same key values.
+            """
+        
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+        import inspect
+
+        keys_list = list(keys)
+        keys_list = Helper.Flatten(keys_list)
+        keys_list = [x for x in keys_list if isinstance(x, str)]
+
+        if len(keys_list) == 0:
+            if not silent:
+                print("Helper.ClusterByKeys - Error: The input keys parameter is an empty list. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        
+        if len(keys_list) == 0:
+            if not silent:
+                print("Helper.ClusterByKeys - Error: The input keys parameter does not contain any valid strings. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        if not (len(elements) == len(dictionaries)):
+            if not silent:
+                print("Helper.ClusterByKeys - Error: The input elements parameter does not have the same length as the input dictionaries parameter. Returning None.")
+            return None
+        
+        elements_clusters = []
+        dict_clusters = []
+        values = []
+        new_dictionaries = []
+        for i, d in enumerate(dictionaries):
+            element = elements[i]
+
+            d_keys = Dictionary.Keys(d)
+            if len(d_keys) > 0:
+                values_list = []
+                for key in keys_list:
+                    v = Dictionary.ValueAtKey(d, key)
+                    if not v == None:
+                        values_list.append(v)
+                values_list = str(values_list)
+                d = Dictionary.SetValueAtKey(d, "_clustering_key_", values_list)
+                new_dictionaries.append(d)
+                values.append(values_list)
+        
+        values = list(set(values))
+        remaining_dictionaries = [x for x in new_dictionaries]
+        remaining_elements = [x for x in elements]
+        remaining_indices = [i for i, x in enumerate(elements)]
+
+        if len(values) == 0:
+            return {"elements": [elements], "dictionaries": [dictionaries]}
+        for value in values:
+            if len(remaining_dictionaries) == 0:
+                break
+            dict = Dictionary.Filter(remaining_elements, remaining_dictionaries, searchType="equal to", key="_clustering_key_", value=value)
+            filtered_indices = dict['filteredIndices']
+            final_dictionaries = []
+            final_elements = []
+            if len(filtered_indices) > 0:
+                for filtered_index in filtered_indices:
+                    filtered_dictionary = remaining_dictionaries[filtered_index]
+                    filtered_dictionary = Dictionary.RemoveKey(filtered_dictionary, "_clustering_key_")
+                    final_dictionaries.append(filtered_dictionary)
+                    filtered_element = remaining_elements[filtered_index]
+                    final_elements.append(filtered_element)
+                dict_clusters.append(final_dictionaries)
+                elements_clusters.append(final_elements)
+            remaining_dictionaries = dict['otherDictionaries']
+            remaining_elements = dict['otherElements']
+            remaining_indices = dict['otherIndices']
+        if len(remaining_elements) > 0:
+            temp_dict_cluster = []
+            temp_element_cluster = []
+            for remaining_index in remaining_indices:
+                temp_element_cluster.append(remaining_elements[remaining_index])
+                temp_dict_cluster.append(remaining_dictionaries[remaining_index])
+            if len(temp_element_cluster) > 0:
+                dict_clusters.append(temp_dict_cluster)
+                elements_clusters.append(temp_element_cluster)
+        return {"elements": elements_clusters, "dictionaries": dict_clusters}
+
+    @staticmethod
     def Flatten(listA):
         """
         Flattens the input nested list.

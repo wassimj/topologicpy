@@ -103,6 +103,8 @@ class CellComplex():
             If set to True, any dictionaries in the cells are transferred to the CellComplex. Otherwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -192,7 +194,7 @@ class CellComplex():
         return CellComplex.ByCells(cells, tolerance)
 
     @staticmethod
-    def ByFaces(faces: list, tolerance: float = 0.0001):
+    def ByFaces(faces: list, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a cellcomplex by merging the input faces.
 
@@ -202,6 +204,8 @@ class CellComplex():
             The input faces.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -213,38 +217,45 @@ class CellComplex():
         from topologicpy.Topology import Topology
 
         if not isinstance(faces, list):
-            print("CellComplex.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
+            if not silent:
+                print("CellComplex.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
             return None
         faces = [x for x in faces if Topology.IsInstance(x, "Face")]
         if len(faces) < 1:
-            print("CellComplex.ByFaces - Error: The input faces parameter does not contain any valid faces. Returning None.")
+            if not silent:
+                print("CellComplex.ByFaces - Error: The input faces parameter does not contain any valid faces. Returning None.")
             return None
         try:
             cellComplex = topologic.CellComplex.ByFaces(faces, tolerance, False) # Hook to Core
         except:
             cellComplex = None
         if not cellComplex:
-            print("CellComplex.ByFaces - Warning: The default method failed. Attempting a workaround.")
+            if not silent:
+                print("CellComplex.ByFaces - Warning: The default method failed. Attempting a workaround.")
             cellComplex = faces[0]
             for i in range(1,len(faces)):
                 newCellComplex = None
                 try:
                     newCellComplex = cellComplex.Merge(faces[i], False, tolerance)
                 except:
-                    print("CellComplex.ByFaces - Warning: Failed to merge face #"+str(i)+". Skipping.")
+                    if not silent:
+                        print("CellComplex.ByFaces - Warning: Failed to merge face #"+str(i)+". Skipping.")
                 if newCellComplex:
                     cellComplex = newCellComplex
             if not Topology.Type(cellComplex) == Topology.TypeID("CellComplex"):
-                print("CellComplex.ByFaces - Warning: The input faces do not form a cellcomplex")
+                if not silent:
+                    print("CellComplex.ByFaces - Warning: The input faces do not form a cellcomplex")
                 if Topology.Type(cellComplex) == Topology.TypeID("Cluster"):
                     returnCellComplexes = Cluster.CellComplexes(cellComplex)
                     if len(returnCellComplexes) > 0:
                         return returnCellComplexes[0]
                     else:
-                        print("CellComplex.ByFaces - Error: Could not create a cellcomplex. Returning None.")
+                        if not silent:
+                            print("CellComplex.ByFaces - Error: Could not create a cellcomplex. Returning None.")
                         return None
                 else:
-                    print("CellComplex.ByFaces - Error: Could not create a cellcomplex. Returning None.")
+                    if not silent:
+                        print("CellComplex.ByFaces - Error: Could not create a cellcomplex. Returning None.")
                     return None
         else:
             return cellComplex
@@ -892,33 +903,33 @@ class CellComplex():
                 x.append(Vertex.X(aVertex, mantissa=mantissa))
                 y.append(Vertex.Y(aVertex, mantissa=mantissa))
                 z.append(Vertex.Z(aVertex, mantissa=mantissa))
-            minX = min(x)
-            minY = min(y)
-            minZ = min(z)
+            x_min = min(x)
+            y_min = min(y)
+            z_min = min(z)
             maxX = max(x)
             maxY = max(y)
             maxZ = max(z)
-            return [minX, minY, minZ, maxX, maxY, maxZ]
+            return [x_min, y_min, z_min, maxX, maxY, maxZ]
         
         def slice(topology, uSides, vSides, wSides):
-            minX, minY, minZ, maxX, maxY, maxZ = bb(topology)
-            centroid = Vertex.ByCoordinates(minX+(maxX-minX)*0.5, minY+(maxY-minY)*0.5, minZ+(maxZ-minZ)*0.5)
-            wOrigin = Vertex.ByCoordinates(Vertex.X(centroid, mantissa=mantissa), Vertex.Y(centroid, mantissa=mantissa), minZ)
-            wFace = Face.Rectangle(origin=wOrigin, width=(maxX-minX)*1.1, length=(maxY-minY)*1.1)
+            x_min, y_min, z_min, maxX, maxY, maxZ = bb(topology)
+            centroid = Vertex.ByCoordinates(x_min+(maxX-x_min)*0.5, y_min+(maxY-y_min)*0.5, z_min+(maxZ-z_min)*0.5)
+            wOrigin = Vertex.ByCoordinates(Vertex.X(centroid, mantissa=mantissa), Vertex.Y(centroid, mantissa=mantissa), z_min)
+            wFace = Face.Rectangle(origin=wOrigin, width=(maxX-x_min)*1.1, length=(maxY-y_min)*1.1)
             wFaces = []
-            wOffset = (maxZ-minZ)/wSides
+            wOffset = (maxZ-z_min)/wSides
             for i in range(wSides-1):
                 wFaces.append(Topology.Translate(wFace, 0,0,wOffset*(i+1)))
-            uOrigin = Vertex.ByCoordinates(minX, Vertex.Y(centroid, mantissa=mantissa), Vertex.Z(centroid, mantissa=mantissa))
-            uFace = Face.Rectangle(origin=uOrigin, width=(maxZ-minZ)*1.1, length=(maxY-minY)*1.1, direction=[1,0,0])
+            uOrigin = Vertex.ByCoordinates(x_min, Vertex.Y(centroid, mantissa=mantissa), Vertex.Z(centroid, mantissa=mantissa))
+            uFace = Face.Rectangle(origin=uOrigin, width=(maxZ-z_min)*1.1, length=(maxY-y_min)*1.1, direction=[1,0,0])
             uFaces = []
-            uOffset = (maxX-minX)/uSides
+            uOffset = (maxX-x_min)/uSides
             for i in range(uSides-1):
                 uFaces.append(Topology.Translate(uFace, uOffset*(i+1),0,0))
-            vOrigin = Vertex.ByCoordinates(Vertex.X(centroid, mantissa=mantissa), minY, Vertex.Z(centroid, mantissa=mantissa))
-            vFace = Face.Rectangle(origin=vOrigin, width=(maxX-minX)*1.1, length=(maxZ-minZ)*1.1, direction=[0,1,0])
+            vOrigin = Vertex.ByCoordinates(Vertex.X(centroid, mantissa=mantissa), y_min, Vertex.Z(centroid, mantissa=mantissa))
+            vFace = Face.Rectangle(origin=vOrigin, width=(maxX-x_min)*1.1, length=(maxZ-z_min)*1.1, direction=[0,1,0])
             vFaces = []
-            vOffset = (maxY-minY)/vSides
+            vOffset = (maxY-y_min)/vSides
             for i in range(vSides-1):
                 vFaces.append(Topology.Translate(vFace, 0,vOffset*(i+1),0))
             all_faces = uFaces+vFaces+wFaces

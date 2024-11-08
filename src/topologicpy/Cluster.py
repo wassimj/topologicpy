@@ -166,7 +166,7 @@ class Cluster():
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
         import inspect
-
+        
         if len(args) == 0:
             if not silent:
                 print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")

@@ -345,6 +345,97 @@ class Dictionary():
         return Dictionary.ByKeysValues(keys, values)
 
     @staticmethod
+    def Filter(elements, dictionaries, searchType="any", key=None, value=None):
+        """
+        Filters the input list of dictionaries based on the input parameters.
+
+        Parameters
+        ----------
+        elements : list
+            The input list of elements to be filtered according to the input dictionaries.
+        dictionaries : list
+            The input list of dictionaries to be filtered.
+        searchType : str , optional
+            The type of search query to conduct in the topology's dictionary. This can be one of "any", "equal to", "contains", "starts with", "ends with", "not equal to", "does not contain". The default is "any".
+        key : str , optional
+            The dictionary key to search within. The default is None which means it will filter by topology type only.
+        value : str , optional
+            The value to search for at the specified key. The default is None which means it will filter by topology type only.
+
+        Returns
+        -------
+        dict
+            A dictionary of filtered and other elements. The dictionary has two keys:
+            - "filtered" The filtered dictionaries.
+            - "other" The other dictionaries that did not meet the filter criteria.
+            - "filteredIndices" The filtered indices of dictionaries.
+            - "otherIndices" The other indices of dictionaries that did not meet the filter criteria.
+
+        """
+
+        from topologicpy.Topology import Topology
+
+        def listToString(item):
+            returnString = ""
+            if isinstance(item, list):
+                if len(item) < 2:
+                    return str(item[0])
+                else:
+                    returnString = item[0]
+                    for i in range(1, len(item)):
+                        returnString = returnString+str(item[i])
+            return returnString
+        
+        filteredDictionaries = []
+        otherDictionaries = []
+        filteredElements = []
+        otherElements = []
+        filteredIndices = []
+        otherIndices = []
+        for i, aDictionary in enumerate(dictionaries):
+            if not Topology.IsInstance(aDictionary, "Dictionary"):
+                continue
+            if value == "" or key == "" or value == None or key == None:
+                filteredDictionaries.append(aDictionary)
+                filteredIndices.append(i)
+            else:
+                if isinstance(value, list):
+                    value.sort()
+                value = str(value)
+                value.replace("*",".+")
+                value = value.lower()
+                v = Dictionary.ValueAtKey(aDictionary, key)
+                if v == None:
+                    otherDictionaries.append(aDictionary)
+                    otherIndices.append(i)
+                    otherElements.append(elements[i])
+                else:
+                    v = str(v).lower()
+                    if searchType.lower() == "equal to":
+                        searchResult = (value == v)
+                    elif searchType.lower() == "contains":
+                        searchResult = (value in v)
+                    elif searchType.lower() == "starts with":
+                        searchResult = (value == v[0: len(value)])
+                    elif searchType.lower() == "ends with":
+                        searchResult = (value == v[len(v)-len(value):len(v)])
+                    elif searchType.lower() == "not equal to":
+                        searchResult = not (value == v)
+                    elif searchType.lower() == "does not contain":
+                        searchResult = not (value in v)
+                    else:
+                        searchResult = False
+                    if searchResult == True:
+                        filteredDictionaries.append(aDictionary)
+                        filteredIndices.append(i)
+                        filteredElements.append(elements[i])
+                    else:
+                        otherDictionaries.append(aDictionary)
+                        otherIndices.append(i)
+                        otherElements.append(elements[i])
+        return {"filteredDictionaries": filteredDictionaries, "otherDictionaries": otherDictionaries, "filteredIndices": filteredIndices, "otherIndices": otherIndices, "filteredElements": filteredElements, "otherElements": otherElements}
+
+    @staticmethod
     def Keys(dictionary):
         """
         Returns the keys of the input dictionary.
@@ -579,7 +670,7 @@ class Dictionary():
             temp_value = attr.StringValue()
             topologies = None
             try:
-                topologies = Topology.ByJSONString(temp_value, progressBar=False)
+                topologies = Topology.ByJSONString(temp_value)
             except:
                 topologies = None
             if isinstance(topologies, list):
@@ -654,14 +745,21 @@ class Dictionary():
             if not silent == True:
                 print("Dictionary.ValueAtKey - Error: The input key parameter is not a valid str. Returning None.")
             return None
-        if isinstance(dictionary, dict):
-            attr = dictionary[key]
-        elif Topology.IsInstance(dictionary, "Dictionary"):
-            attr = dictionary.ValueAtKey(key)
-        else:
-            return None
-        return_value = Dictionary._ConvertAttribute(attr)
-        return return_value
+        if Topology.IsInstance(dictionary, "Dictionary"):
+            dic = Dictionary.PythonDictionary(dictionary)
+            return dic.get(key, None)
+        elif isinstance(dictionary, dict):
+            return dictionary.get(key, None)
+        return None
+        
+        # if isinstance(dictionary, dict):
+        #     attr = dictionary[key]
+        # elif Topology.IsInstance(dictionary, "Dictionary"):
+        #     attr = dictionary.ValueAtKey(key)
+        # else:
+        #     return None
+        # return_value = Dictionary._ConvertAttribute(attr)
+        # return return_value
         
     @staticmethod
     def Values(dictionary):
@@ -693,7 +791,7 @@ class Dictionary():
         for key in keys:
             try:
                 if isinstance(dictionary, dict):
-                    attr = dictionary[key]
+                    attr = dictionary.get(key, None)
                 elif Topology.IsInstance(dictionary, "Dictionary"):
                     attr = Dictionary.ValueAtKey(dictionary,key)
                 else:
