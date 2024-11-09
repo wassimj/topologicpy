@@ -571,8 +571,6 @@ class Plotly:
         from topologicpy.Color import Color
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
-        for d in dictionaries[:30]:
-            print(Dictionary.Keys(d), Dictionary.Values(d))
         traces = []
         x = []
         y = []

@@ -1007,6 +1007,64 @@ class CellComplex():
         return shells
 
     @staticmethod
+    def Torus(origin= None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+        """
+        Creates a torus.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The origin location of the torus. The default is None which results in the torus being placed at (0, 0, 0).
+        majorRadius : float , optional
+            The major radius of the torus. The default is 0.5.
+        minorRadius : float , optional
+            The minor radius of the torus. The default is 0.1.
+        uSides : int , optional
+            The number of sides along the longitude of the torus. The default is 16.
+        vSides : int , optional
+            The number of sides along the latitude of the torus. The default is 8.
+        direction : list , optional
+            The vector representing the up direction of the torus. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the torus. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created torus.
+
+        """
+        
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.ByCoordinates(0, 0, 0)
+        if not Topology.IsInstance(origin, "Vertex"):
+            print("Cell.Torus - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            return None
+        c = Wire.Circle(origin=Vertex.Origin(), radius=minorRadius, sides=vSides, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
+        c = Face.ByWire(c)
+        c = Topology.Translate(c, abs(majorRadius-minorRadius), 0, 0)
+        torus = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
+        if Topology.Type(torus) == Topology.TypeID("Shell"):
+            faces = Topology.Faces(torus)
+            torus = CellComplex.ByFaces(faces)
+        if placement.lower() == "bottom":
+            torus = Topology.Translate(torus, 0, 0, minorRadius)
+        elif placement.lower() == "lowerleft":
+            torus = Topology.Translate(torus, majorRadius, majorRadius, minorRadius)
+
+        torus = Topology.Orient(torus, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
+        torus = Topology.Place(torus, originA=Vertex.Origin(), originB=origin)
+        return torus
+
+    @staticmethod
     def Vertices(cellComplex) -> list:
         """
         Returns the vertices of the input cellComplex.

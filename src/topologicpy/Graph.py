@@ -743,6 +743,102 @@ class Graph:
         return paths
 
     @staticmethod
+    def AreIsomorphic(graphA, graphB, maxIterations=10, silent=False):
+        """
+        Tests if the two input graphs are isomorphic according to the Weisfeiler Lehman graph isomorphism test. See https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test
+        
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        maxIterations : int , optional
+            This number limits the number of iterations to prevent the function from running indefinitely, particularly for very large or complex graphs.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        bool
+            True if the two input graphs are isomorphic. False otherwise
+
+        """
+
+        from topologicpy.Topology import Topology
+
+        def weisfeiler_lehman_test(graph1, graph2, max_iterations=10):
+            """
+            Test if two graphs are isomorphic using the Weisfeiler-Leman (WL) algorithm with early stopping.
+
+            Parameters:
+            graph1 (dict): Adjacency list representation of the first graph.
+            graph2 (dict): Adjacency list representation of the second graph.
+            max_iterations (int): Maximum WL iterations allowed (default is 10).
+
+            Returns:
+            bool: True if the graphs are WL-isomorphic, False otherwise.
+            """
+
+            def wl_iteration(labels, graph):
+                """Perform one WL iteration and return updated labels."""
+                new_labels = {}
+                for node in graph:
+                    neighborhood_labels = sorted([labels[neighbor] for neighbor in graph[node]])
+                    new_labels[node] = (labels[node], tuple(neighborhood_labels))
+                unique_labels = {}
+                count = 0
+                for node in sorted(new_labels):
+                    if new_labels[node] not in unique_labels:
+                        unique_labels[new_labels[node]] = count
+                        count += 1
+                    new_labels[node] = unique_labels[new_labels[node]]
+                return new_labels
+
+            # Initialize labels
+            labels1 = {node: 1 for node in graph1}
+            labels2 = {node: 1 for node in graph2}
+
+            for i in range(max_iterations):
+                # Perform WL iteration for both graphs
+                new_labels1 = wl_iteration(labels1, graph1)
+                new_labels2 = wl_iteration(labels2, graph2)
+
+                # Check if the label distributions match
+                if sorted(new_labels1.values()) != sorted(new_labels2.values()):
+                    return False
+
+                # Check for stability (early stopping)
+                if new_labels1 == labels1 and new_labels2 == labels2:
+                    break
+
+                # Update labels for next iteration
+                labels1, labels2 = new_labels1, new_labels2
+
+            return True
+        
+        if not Topology.IsInstance(graphA, "Graph") and not Topology.IsInstance(graphB, "Graph"):
+            if not silent:
+                print("Graph.AreIsomorphic - Error: The input graph parameters are not valid graphs. Returning None.")
+            return None
+        if not Topology.IsInstance(graphA, "Graph"):
+            if not silent:
+                print("Graph.AreIsomorphic - Error: The input graphA parameter is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "Graph"):
+            if not silent:
+                print("Graph.AreIsomorphic - Error: The input graphB parameter is not a valid graph. Returning None.")
+            return None
+        if maxIterations <= 0:
+            if not silent:
+                print("Graph.AreIsomorphic - Error: The input maxIterations parameter is not within a valid range. Returning None.")
+            return None
+        
+        g1 = Graph.AdjacencyDictionary(graphA)
+        g2 = Graph.AdjacencyDictionary(graphB)
+        return weisfeiler_lehman_test(g1, g2, max_iterations=maxIterations)
+
+    @staticmethod
     def AverageClusteringCoefficient(graph, mantissa: int = 6, silent: bool = False):
         """
         Returns the average clustering coefficient of the input graph. See https://en.wikipedia.org/wiki/Clustering_coefficient.
