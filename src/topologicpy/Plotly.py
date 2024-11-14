@@ -415,23 +415,24 @@ class Plotly:
             e_cluster = Cluster.ByTopologies(vertices)
             geo = Topology.Geometry(e_cluster, mantissa=mantissa)
             vertices = geo['vertices']
-            v_data = Plotly.DataByTopology(e_cluster,
-                                    vertexColor=vertexColor,
-                                    vertexColorKey=vertexColorKey,
-                                    vertexSize=vertexSize,
-                                    vertexSizeKey=vertexSizeKey,
-                                    vertexLabelKey=vertexLabelKey,
-                                    showVertexLabel=showVertexLabel,
-                                    vertexGroupKey=vertexGroupKey,
-                                    vertexMinGroup=vertexMinGroup,
-                                    vertexMaxGroup=vertexMaxGroup,
-                                    vertexGroups=vertexGroups,
-                                    vertexLegendLabel=vertexLegendLabel,
-                                    vertexLegendGroup=vertexLegendGroup,
-                                    vertexLegendRank=vertexLegendRank,
-                                    colorScale=colorScale)
+            if len(vertices) > 0:
+                v_data = Plotly.DataByTopology(e_cluster,
+                                        vertexColor=vertexColor,
+                                        vertexColorKey=vertexColorKey,
+                                        vertexSize=vertexSize,
+                                        vertexSizeKey=vertexSizeKey,
+                                        vertexLabelKey=vertexLabelKey,
+                                        showVertexLabel=showVertexLabel,
+                                        vertexGroupKey=vertexGroupKey,
+                                        vertexMinGroup=vertexMinGroup,
+                                        vertexMaxGroup=vertexMaxGroup,
+                                        vertexGroups=vertexGroups,
+                                        vertexLegendLabel=vertexLegendLabel,
+                                        vertexLegendGroup=vertexLegendGroup,
+                                        vertexLegendRank=vertexLegendRank,
+                                        colorScale=colorScale)
 
-            data += v_data
+                data += v_data
         
         if showEdges:
             e_dictionaries = []
@@ -458,12 +459,12 @@ class Plotly:
                 else:
                     new_edges = edges
                     e_dictionaries.append(d)
-
-            e_cluster = Cluster.ByTopologies(new_edges)
-            geo = Topology.Geometry(e_cluster, mantissa=mantissa)
-            vertices = geo['vertices']
-            edges = geo['edges']
-            data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))        
+            if len(new_edges) > 0:
+                e_cluster = Cluster.ByTopologies(new_edges)
+                geo = Topology.Geometry(e_cluster, mantissa=mantissa)
+                vertices = geo['vertices']
+                edges = geo['edges']
+                data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))        
         return data
     
     @staticmethod
@@ -496,7 +497,7 @@ class Plotly:
                 x.append(v[0])
                 y.append(v[1])
                 z.append(v[2])
-                label = ""
+                label = " "
                 group = None
                 if len(dictionaries) > 0:
                     d = dictionaries[m]
@@ -506,15 +507,13 @@ class Plotly:
                             color = Color.AnyToHex(d_color)
                             groupList.append(color)
                         if not labelKey == None:
-                            label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
+                            label = str(Dictionary.ValueAtKey(d, key=labelKey)) or " "
                         if not sizeKey == None:
                             size = Dictionary.ValueAtKey(d, key=sizeKey) or size
                         if not groupKey == None:
-                            group = Dictionary.ValueAtKey(d, key=groupKey) or ""
+                            group = Dictionary.ValueAtKey(d, key=groupKey) or " "
                     try:
-                        if group == "":
-                            #color = 'white'
-                            #groupList.append(Color.AnyToHex(color))
+                        if group == " ":
                             pass
                         elif type(group) == int or type(group) == float:
                             if group < minGroup:
@@ -853,121 +852,6 @@ class Plotly:
         def closest_index(input_value, values):
             return int(min(range(len(values)), key=lambda i: abs(values[i] - input_value)))
 
-        def edgeData_old(vertices, edges, dictionaries=None, color="black", colorKey=None, width=1, widthKey=None, labelKey=None, showEdgeLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
-            traces = []
-            x = []
-            y = []
-            z = []
-            labels = []
-            groupList = []
-            label = ""
-            group = ""
-
-            if showEdgeLabel == True:
-                mode = "lines+text"
-            else:
-                mode = "lines"
-            
-            if showEdgeLabel == True:
-                mode = "lines+text"
-            else:
-                mode = "lines"
-            if groups:
-                if len(groups) > 0:
-                    if type(groups[0]) == int or type(groups[0]) == float:
-                        if not minGroup:
-                            minGroup = min(groups)
-                        if not maxGroup:
-                            maxGroup = max(groups)
-                    else:
-                        minGroup = 0
-                        maxGroup = len(groups) - 1
-            else:
-                minGroup = 0
-                maxGroup = 1
-
-            if colorKey or widthKey or labelKey or groupKey:
-                keys = [x for x in [colorKey, widthKey, labelKey, groupKey] if not x == None]
-                temp_dict = Helper.ClusterByKeys(edges, dictionaries, keys, silent=False)
-                dict_clusters = temp_dict["dictionaries"]
-                elements_clusters = temp_dict['elements']
-                for j, elements_cluster in enumerate(elements_clusters):
-                    d = dict_clusters[j][0] # All dicitonaries have same values in dictionaries, so take first one.
-                    if d:
-                        if not colorKey == None:
-                            d_color = Dictionary.ValueAtKey(d, key=colorKey) or color
-                            color = Color.AnyToHex(d_color)
-                        if not labelKey == None:
-                            label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
-                        if not widthKey == None:
-                            width = Dictionary.ValueAtKey(d, key=edgeWidthKey) or width
-                        if not groupKey == None:
-                            group = Dictionary.ValueAtKey(d, key=groupKey)
-                            if not group == None:
-                                if type(group) == int or type(group) == float:
-                                    if group < minGroup:
-                                        group = minGroup
-                                    if group > maxGroup:
-                                        group = maxGroup
-                                    d_color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                                else:
-                                    d_color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                                color = d_color
-                    x = []
-                    y = []
-                    z = []
-                    for e in elements_cluster:
-                        sv = vertices[e[0]]
-                        ev = vertices[e[1]]
-                        x+=[sv[0], ev[0], None] # x-coordinates of edge ends
-                        y+=[sv[1], ev[1], None] # y-coordinates of edge ends
-                        z+=[sv[2], ev[2], None] # z-coordinates of edge ends
-                    if showEdgeLabel == True:
-                        mode = "lines+text"
-                    else:
-                        mode = "lines"
-                    trace = go.Scatter3d(x=x,
-                                        y=y,
-                                        z=z,
-                                        name=label,
-                                        showlegend=showLegend,
-                                        marker_size=0,
-                                        mode=mode,
-                                        line=dict(color=color, width=width),
-                                        legendgroup=legendGroup,
-                                        legendrank=legendRank,
-                                        text=label,
-                                        hoverinfo='text')
-                    traces.append(trace)
-            else:
-                x = []
-                y = []
-                z = []
-                for e in edges:
-                    sv = vertices[e[0]]
-                    ev = vertices[e[1]]
-                    x+=[sv[0], ev[0], None] # x-coordinates of edge ends
-                    y+=[sv[1], ev[1], None] # y-coordinates of edge ends
-                    z+=[sv[2], ev[2], None] # z-coordinates of edge ends
-                if showEdgeLabel == True:
-                    mode = "lines+text"
-                else:
-                    mode = "lines"
-                trace = go.Scatter3d(x=x,
-                                    y=y,
-                                    z=z,
-                                    name=label,
-                                    showlegend=showLegend,
-                                    marker_size=0,
-                                    mode=mode,
-                                    line=dict(color=color, width=width),
-                                    legendgroup=legendGroup,
-                                    legendrank=legendRank,
-                                    text=label,
-                                    hoverinfo='text')
-                traces.append(trace)
-
-            return traces
 
         def faceData(vertices, faces, dictionaries=None, color="#FAFAFA", colorKey=None,
                      opacity=0.5, labelKey=None, groupKey=None,
@@ -1150,7 +1034,8 @@ class Plotly:
                 geo = Topology.Geometry(e_cluster, mantissa=mantissa)
                 vertices = geo['vertices']
                 edges = geo['edges']
-                data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
+                if len(edges) > 0:
+                    data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
         
         if showFaces and Topology.Type(topology) >= Topology.TypeID("Face"):
             if not faceColorKey == None:
@@ -1183,7 +1068,8 @@ class Plotly:
                     geo = Topology.Geometry(f_cluster, mantissa=mantissa)
                     vertices = geo['vertices']
                     faces = geo['faces']
-                    data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, colorKey=faceColorKey, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensityList, colorScale=colorScale))
+                    if len(faces) > 0:
+                        data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, colorKey=faceColorKey, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensityList, colorScale=colorScale))
         return data
 
     @staticmethod

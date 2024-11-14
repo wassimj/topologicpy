@@ -1373,6 +1373,7 @@ class Graph:
             print("Graph.BetweenessCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
         graphVertices = Graph.Vertices(graph)
+        
         if not isinstance(vertices, list):
             vertices = graphVertices
         else:
@@ -1394,7 +1395,15 @@ class Graph:
         if len(destinations) < 1:
             print("Graph.BetweenessCentrality - Error: The input list of destinations does not contain valid vertices. Returning None.")
             return None
-        
+        graphEdges = Graph.Edges(graph)
+        if len(graphEdges) == 0:
+            print("Graph.BetweenessCentrality - Warning: The input graph is a null graph.")
+            scores = [0 for t in vertices]
+            for i, v in enumerate(vertices):
+                d = Topology.Dictionary(v)
+                d = Dictionary.SetValueAtKey(d, key, scores[i])
+                v = Topology.SetDictionary(v, d)
+            return scores
         paths = []
         try:
             for so in tqdm(sources, desc="Computing Shortest Paths", leave=False):
@@ -2002,8 +2011,6 @@ class Graph:
         for i, vertices, in enumerate(vertices_ds):
             edges = edges_ds[i]
             g = Graph.ByVerticesEdges(vertices, edges)
-            temp_v = Graph.Vertices(g)
-            temp_e = Graph.Edges(g)
             if Topology.IsInstance(g, "Graph"):
                 if len(graphFeaturesKeys) == 0:
                     values = [graph_ids[i], graph_labels[i], graph_features[i]]
@@ -5622,19 +5629,35 @@ class Graph:
         return False
     
     @staticmethod
-    def Flatten(graph, layout="spring", k=0.8, seed=None, iterations=50, rootVertex=None, radius=0.5, tolerance=0.0001):
+    def Reshape(graph,
+                shape="spring_2d",
+                k=0.8, seed=None,
+                iterations=50,
+                rootVertex=None,
+                size=1,
+                sides=16,
+                key="",
+                tolerance=0.0001,
+                silent=False):
         """
-        Flattens the input graph.
+        Reshapes the input graph according to the desired input shape parameter.
 
         Parameters
         ----------
         graph : topologic_core.Graph
             The input graph.
-        layout : str , optional
-            The desired mode for flattening. If set to 'spring', the algorithm uses a simplified version of the Fruchterman-Reingold force-directed algorithm to flatten and distribute the vertices.
-            If set to 'radial', the nodes will be distributed along concentric circles.
-            If set to 'tree', the nodes will be distributed using the Reingold-Tillford layout.
-            If set to 'circle', the nodes will be distributed on the cirumference of a circle. The default is 'spring'.
+        shape : str , optional
+            The desired shape of the graph.
+            If set to 'spring_2d' or 'spring_3d', the algorithm uses a simplified version of the Fruchterman-Reingold force-directed algorithm to distribute the vertices.
+            If set to 'radial_2d', the nodes will be distributed along concentric circles in the XY plane.
+            If set to 'tree_2d' or 'tree_3d', the nodes will be distributed using the Reingold-Tillford layout.
+            If set to 'circle_2d', the nodes will be distributed on the cirumference of a segemented circles  in the XY plane, based on the size and sides input parameter (radius=size/2).
+            If set to 'line_2d', the nodes will be distributed on a line in the XY plane based on the size input parameter (length=size).
+            If set to 'spehere_3d', the nodes will be distributed on the surface of a sphere based on the size input parameter raidus=size/2).
+            If set to 'grid_2d', the nodes will be distributed on a grid in the XY plane with size based on the size input parameter (length=width=size).
+            If set to 'grid_3d', the nodes will be distributed on a 3D cubic grid/matrix based on the size input parameter(width=length=height=size).
+            If set to 'cluster_2d', or 'cluster_3d, the nodes will be clustered according to the 'key' input parameter. The overall radius of the cluster is determined by the size input parameter (radius = size/2)
+            The default is 'spring_2d'.
         k : float, optional
             The desired spring constant to use for the attractive and repulsive forces. The default is 0.8.
         seed : int , optional
@@ -5643,20 +5666,38 @@ class Graph:
             The desired maximum number of iterations to solve the forces in the 'spring' mode. The default is 50.
         rootVertex : topologic_core.Vertex , optional
             The desired vertex to use as the root of the tree and radial layouts.
-        radius : float, optional
-            The desired radius for the circle layout option. The default is 0.5.
+        sides : int , optional
+            The desired number of sides of the circle layout option. The default is 16
+        length : float, optional
+            The desired horizontal length for the line layout option. The default is 1.0.
+        key : string, optional
+            The key under which to find the clustering value for the 'cluster_2d' and 'cluster_3d' options. The default is "".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
         topologic_core.Graph
-            The flattened graph.
+            The reshaped graph.
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Graph import Graph
+        from topologicpy.Grid import Grid
+        from topologicpy.Helper import Helper
+        from topologicpy.Vector import Vector
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
         import numpy as np
+        import math
+        from collections import defaultdict
+        import random
+
 
         def buchheim(tree):
             dt = firstwalk(_DrawTree(tree))
@@ -5770,7 +5811,7 @@ class Graph:
             Returns:
                 A numpy array representing the adjacency matrix.
             """
-            from topologicpy.Helper import Helper
+            
             # Get the number of nodes from the edge list.
             flat_list = Helper.Flatten(edge_list)
             flat_list = [x for x in flat_list if not x == None]
@@ -5810,15 +5851,30 @@ class Graph:
                     new_roots.extend(children)
                 old_roots = new_roots
             return root, num_nodes
-
-
-        def circle_layout(graph, radius=0.5):
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Vector import Vector
-            from topologicpy.Wire import Wire
-            from topologicpy.Graph import Graph
-            from topologicpy.Edge import Edge
-
+        
+        def generate_cubic_matrix(size, min_points):
+            # Calculate the minimum points per axis to reach or exceed min_points in total
+            points_per_axis = int(np.ceil(min_points ** (1/3)))
+            
+            # Calculate the spacing based on the size and points per axis
+            spacing = size / (points_per_axis - 1) if points_per_axis > 1 else 0
+            
+            # Generate linearly spaced points from -size/2 to size/2 along each axis
+            x = np.linspace(-size / 2, size / 2, points_per_axis)
+            y = np.linspace(-size / 2, size / 2, points_per_axis)
+            z = np.linspace(-size / 2, size / 2, points_per_axis)
+            
+            # Create a meshgrid and stack them to get XYZ coordinates for each point
+            X, Y, Z = np.meshgrid(x, y, z)
+            points = np.vstack([X.ravel(), Y.ravel(), Z.ravel()]).T
+            return points
+        
+        def vertex_max_degree(graph, vertices):
+            degrees = [Graph.VertexDegree(graph, vertex) for vertex in vertices]
+            i = degrees.index(max(degrees))
+            return vertices[i], i
+        
+        def circle_layout_2d(graph, radius=0.5, sides=16):
             vertices = Graph.Vertices(graph)
             edges = Graph.Edges(graph)
             edge_dict = {}
@@ -5830,16 +5886,19 @@ class Graph:
                 ei = Vertex.Index(ev, vertices)
                 edge_dict[str(si)+"_"+str(ei)] = i
                 edge_dict[str(ei)+"_"+str(si)] = i
-            
             n = len(vertices)
-            c = Wire.Circle(radius=radius, sides=n)
-            c_vertices = Topology.Vertices(c)
+            c = Wire.Circle(radius=radius, sides=sides)
+            c_vertices = []
+            for i in range(n):
+                u = i*(1/n)
+                c_vertices.append(Wire.VertexByParameter(c, u))
 
             for i, c_v in enumerate(c_vertices):
                 d = Topology.Dictionary(vertices[i])
                 c_v = Topology.SetDictionary(c_v, d)
             adj_dict = Graph.AdjacencyDictionary(graph)
             keys = adj_dict.keys()
+            
             c_edges = []
             used = [[0] * n for _ in range(n)]
             for key in keys:
@@ -5855,6 +5914,286 @@ class Graph:
                             e = Edge.ByVertices(c_vertices[x], c_vertices[y])
                         else:
                             e = Edge.ByVertices(c_vertices[y], c_vertices[x])
+                        orig_edge_index = edge_dict.get(str(x)+"_"+str(y), edge_dict.get(str(y)+"_"+str(x), None))
+                        if orig_edge_index:
+                            d = Topology.Dictionary(edges[orig_edge_index])
+                            e = Topology.SetDictionary(e, d)
+                            c_edges.append(e)
+                            used[x][y] = 1
+                            used[y][x] = 1
+            new_g = Graph.ByVerticesEdges(c_vertices, c_edges)
+            return new_g
+        
+        def cluster_layout_2d(graph, key, radius=0.5):
+            
+            d = Graph.MeshData(graph)
+            edges = d['edges']
+            v_dicts = d['vertexDictionaries']
+            e_dicts = d['edgeDictionaries']
+            vertices = Graph.Vertices(graph)
+            # Step 1: Group objects by key value while remembering their original indices
+            grouped_objects = defaultdict(list)
+            object_indices = []  # Stores original indices of objects in the order they were grouped
+
+            for idx, obj in enumerate(vertices):
+                d = Topology.Dictionary(obj)
+                value = Dictionary.ValueAtKey(d, key)
+                grouped_objects[value].append((obj, idx))
+                object_indices.append((value, idx))
+
+            # Step 2: Compute cluster centers on the circumference of a circle
+            cluster_centers = {}
+            num_clusters = len(grouped_objects)
+            
+            # Function to generate cluster center on the circle's circumference
+            def generate_cluster_center(index, total_clusters, circle_radius):
+                # Distribute cluster centers evenly along the circumference of a circle
+                angle = (2 * math.pi * index) / total_clusters  # Equal angle separation
+                x = circle_radius * math.cos(angle)
+                y = circle_radius * math.sin(angle)
+                return (x, y)
+
+            # Step 3: Compute vertices for each cluster
+            object_positions = [None] * len(vertices)  # Placeholder list for ordered vertices
+            cluster_index = 0
+
+            for value, objs in grouped_objects.items():
+                intra_cluster_radius = radius*(len(objs)/len(vertices) + 0.1)
+                # Determine the center of the current cluster
+                if value not in cluster_centers:
+                    cluster_center = generate_cluster_center(cluster_index, num_clusters, radius)
+                    cluster_centers[value] = cluster_center
+                    cluster_index += 1
+                else:
+                    cluster_center = cluster_centers[value]
+                
+                # Step 4: Place objects randomly around the cluster center
+                for obj, original_index in objs:
+                    # Randomly place the object within the intra-cluster circle
+                    r = intra_cluster_radius * math.sqrt(random.random())  # Random distance with sqrt for uniform distribution
+                    angle = random.uniform(0, 2 * math.pi)  # Random angle
+
+                    # Polar coordinates to Cartesian for local positioning
+                    x = cluster_center[0] + r * math.cos(angle)
+                    y = cluster_center[1] + r * math.sin(angle)
+
+                    # Save the coordinates in the correct order
+                    object_positions[original_index] = [x, y]
+            
+            positions = [[p[0], p[1], 0] for p in object_positions]
+            new_g = Graph.ByMeshData(positions, edges, v_dicts, e_dicts, tolerance=0.001)
+            return new_g
+
+        def cluster_layout_3d(graph, key, radius=0.5):
+            d = Graph.MeshData(graph)
+            edges = d['edges']
+            v_dicts = d['vertexDictionaries']
+            e_dicts = d['edgeDictionaries']
+            vertices = Graph.Vertices(graph)
+
+            # Step 1: Group objects by key value while remembering their original indices
+            grouped_objects = defaultdict(list)
+            object_indices = []  # Stores original indices of objects in the order they were grouped
+
+            for idx, obj in enumerate(vertices):
+                d = Topology.Dictionary(obj)
+                value = Dictionary.ValueAtKey(d, key)
+                grouped_objects[value].append((obj, idx))
+                object_indices.append((value, idx))
+
+            # Step 2: Compute cluster centers on the surface of a sphere
+            cluster_centers = {}
+            num_clusters = len(grouped_objects)
+            
+            # Function to generate cluster center on the surface of a sphere
+            def generate_cluster_center(index, total_clusters, sphere_radius):
+                # Use a spiral algorithm to distribute cluster centers evenly on a sphere's surface
+                phi = math.acos(1 - 2 * (index + 0.5) / total_clusters)  # Inclination angle
+                theta = math.pi * (1 + 5**0.5) * index  # Azimuthal angle (Golden angle)
+                
+                x = sphere_radius * math.sin(phi) * math.cos(theta)
+                y = sphere_radius * math.sin(phi) * math.sin(theta)
+                z = sphere_radius * math.cos(phi)
+                return (x, y, z)
+
+            # Step 3: Compute vertices for each cluster
+            object_positions = [None] * len(vertices)  # Placeholder list for ordered vertices
+            cluster_index = 0
+
+            for value, objs in grouped_objects.items():
+                # Determine the center of the current cluster
+                if value not in cluster_centers:
+                    cluster_center = generate_cluster_center(cluster_index, num_clusters, radius)
+                    cluster_centers[value] = cluster_center
+                    cluster_index += 1
+                else:
+                    cluster_center = cluster_centers[value]
+
+                intra_cluster_radius = radius*(len(objs)/len(vertices) + 0.1)
+
+                # Step 4: Place objects randomly within the cluster's spherical volume
+                for obj, original_index in objs:
+                    # Randomly place the object within the intra-cluster sphere
+                    u = random.random()
+                    v = random.random()
+                    r = intra_cluster_radius * (u ** (1/3))  # Random distance with cube root for uniform distribution
+
+                    theta = 2 * math.pi * v  # Random azimuthal angle
+                    phi = math.acos(2 * u - 1)  # Random polar angle
+
+                    # Spherical to Cartesian for local positioning
+                    x = cluster_center[0] + r * math.sin(phi) * math.cos(theta)
+                    y = cluster_center[1] + r * math.sin(phi) * math.sin(theta)
+                    z = cluster_center[2] + r * math.cos(phi)
+
+                    # Save the coordinates in the correct order
+                    object_positions[original_index] = [x, y, z]
+
+            positions = [[p[0], p[1], p[2]] for p in object_positions]
+            new_g = Graph.ByMeshData(positions, edges, v_dicts, e_dicts, tolerance=0.001)
+            return new_g
+
+        def sphere_layout_3d(graph, radius=0.5):
+            def points_on_sphere(n, r):
+                points = []
+                phi = math.pi * (3. - math.sqrt(5.))  # Golden angle in radians
+
+                for i in range(n):
+                    y = 1 - (i / float(n - 1)) * 2  # y goes from 1 to -1
+                    radius = math.sqrt(1 - y * y)    # radius at y
+
+                    theta = phi * i  # Golden angle increment
+
+                    x = math.cos(theta) * radius * r
+                    z = math.sin(theta) * radius * r
+                    y *= r
+
+                    points.append([x, y, z])
+                return points
+            
+            vertices = Graph.Vertices(graph)
+            edges = Graph.Edges(graph)
+            edge_dict = {}
+
+            for i, edge in enumerate(edges):
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+                si = Vertex.Index(sv, vertices)
+                ei = Vertex.Index(ev, vertices)
+                edge_dict[str(si)+"_"+str(ei)] = i
+                edge_dict[str(ei)+"_"+str(si)] = i
+            n = len(vertices)
+            c_points = points_on_sphere(n, r=radius)
+            c_vertices = [Vertex.ByCoordinates(coord) for coord in c_points]
+            for i, c_v in enumerate(c_vertices):
+                d = Topology.Dictionary(vertices[i])
+                c_v = Topology.SetDictionary(c_v, d)
+            adj_dict = Graph.AdjacencyDictionary(graph)
+            keys = adj_dict.keys()
+            
+            c_edges = []
+            used = [[0] * n for _ in range(n)]
+            for key in keys:
+                x = int(key)
+                adj_vertices = [int(v) for v in adj_dict[key]]
+                for y in adj_vertices:
+                    if used[x][y] == 0:
+                        v1 = Vector.ByCoordinates(Vertex.X(c_vertices[x]), Vertex.Y(c_vertices[x]), Vertex.Z(c_vertices[x]))
+                        v2 = Vector.ByCoordinates(Vertex.X(c_vertices[y]), Vertex.Y(c_vertices[y]), Vertex.Z(c_vertices[y]))
+                        ang1 = Vector.CompassAngle(v1, [0,1,0])
+                        ang2 = Vector.CompassAngle(v2, [0,1,0])
+                        if ang2-ang1 < 180:
+                            e = Edge.ByVertices(c_vertices[x], c_vertices[y])
+                        else:
+                            e = Edge.ByVertices(c_vertices[y], c_vertices[x])
+                        orig_edge_index = edge_dict.get(str(x)+"_"+str(y), edge_dict.get(str(y)+"_"+str(x), None))
+                        if orig_edge_index:
+                            d = Topology.Dictionary(edges[orig_edge_index])
+                            e = Topology.SetDictionary(e, d)
+                            c_edges.append(e)
+                            used[x][y] = 1
+                            used[y][x] = 1
+            new_g = Graph.ByVerticesEdges(c_vertices, c_edges)
+            return new_g
+        
+        def grid_layout_2d(graph, size=1):
+            vertices = Graph.Vertices(graph)
+            n = len(vertices)
+            u = int(math.sqrt(n))
+            if u*u < n:
+                u += 1
+            u_range = [t/(u-1) for t in range(u)]            
+            edges = Graph.Edges(graph)
+            edge_dict = {}
+
+            for i, edge in enumerate(edges):
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+                si = Vertex.Index(sv, vertices)
+                ei = Vertex.Index(ev, vertices)
+                edge_dict[str(si)+"_"+str(ei)] = i
+                edge_dict[str(ei)+"_"+str(si)] = i
+            f = Face.Rectangle(width=size, length=size)
+            c = Grid.VerticesByParameters(face=f, uRange=u_range, vRange=u_range)
+            c_vertices = Topology.Vertices(c)[:len(vertices)]
+
+            for i, c_v in enumerate(c_vertices):
+                d = Topology.Dictionary(vertices[i])
+                c_v = Topology.SetDictionary(c_v, d)
+            adj_dict = Graph.AdjacencyDictionary(graph)
+            keys = adj_dict.keys()
+            
+            c_edges = []
+            used = [[0] * n for _ in range(n)]
+            for key in keys:
+                x = int(key)
+                adj_vertices = [int(v) for v in adj_dict[key]]
+                for y in adj_vertices:
+                    if used[x][y] == 0:
+                        e = Edge.ByVertices(c_vertices[x], c_vertices[y])
+                        orig_edge_index = edge_dict.get(str(x)+"_"+str(y), edge_dict.get(str(y)+"_"+str(x), None))
+                        if orig_edge_index:
+                            d = Topology.Dictionary(edges[orig_edge_index])
+                            e = Topology.SetDictionary(e, d)
+                            c_edges.append(e)
+                            used[x][y] = 1
+                            used[y][x] = 1
+            new_g = Graph.ByVerticesEdges(c_vertices, c_edges)
+            return new_g
+
+        def line_layout_2d(graph, length=1):
+            vertices = Graph.Vertices(graph)
+            edges = Graph.Edges(graph)
+            edge_dict = {}
+
+            for i, edge in enumerate(edges):
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+                si = Vertex.Index(sv, vertices)
+                ei = Vertex.Index(ev, vertices)
+                edge_dict[str(si)+"_"+str(ei)] = i
+                edge_dict[str(ei)+"_"+str(si)] = i
+            
+            n = len(vertices)
+            c = Wire.Line(length=length, sides=n-1)
+            c_vertices = Topology.Vertices(c)
+
+            for i, c_v in enumerate(c_vertices):
+                d = Topology.Dictionary(vertices[i])
+                c_v = Topology.SetDictionary(c_v, d)
+            adj_dict = Graph.AdjacencyDictionary(graph)
+            keys = adj_dict.keys()
+            c_edges = []
+            used = [[0] * n for _ in range(n)]
+            for key in keys:
+                x = int(key)
+                adj_vertices = [int(v) for v in adj_dict[key]]
+                for y in adj_vertices:
+                    if used[x][y] == 0:
+                        if Vertex.X(c_vertices[x]) < Vertex.X(c_vertices[y]):
+                            e = Edge.ByVertices(c_vertices[x], c_vertices[y])
+                        else:
+                            e = Edge.ByVertices(c_vertices[y], c_vertices[x])
                         
                         orig_edge_index = edge_dict[str(x)+"_"+str(y)]
                         d = Topology.Dictionary(edges[orig_edge_index])
@@ -5865,10 +6204,51 @@ class Graph:
             new_g = Graph.ByVerticesEdges(c_vertices, c_edges)
             return new_g
         
-        def spring_layout(edge_list, iterations=500, k=None, seed=None):
-            # Compute the layout of a graph using the Fruchterman-Reingold algorithm
-            # with a force-directed layout approach.
+        def grid_layout_3d(graph, size=1):
+            vertices = Graph.Vertices(graph)
+            n = len(vertices)        
+            edges = Graph.Edges(graph)
+            edge_dict = {}
 
+            for i, edge in enumerate(edges):
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+                si = Vertex.Index(sv, vertices)
+                ei = Vertex.Index(ev, vertices)
+                edge_dict[str(si)+"_"+str(ei)] = i
+                edge_dict[str(ei)+"_"+str(si)] = i
+            c_coords = generate_cubic_matrix(size, n)
+            c_vertices = [Vertex.ByCoordinates(list(coord)) for coord in c_coords[:n]]
+
+            for i, c_v in enumerate(c_vertices):
+                d = Topology.Dictionary(vertices[i])
+                c_v = Topology.SetDictionary(c_v, d)
+            adj_dict = Graph.AdjacencyDictionary(graph)
+            keys = adj_dict.keys()
+            
+            c_edges = []
+            used = [[0] * n for _ in range(n)]
+            for key in keys:
+                x = int(key)
+                adj_vertices = [int(v) for v in adj_dict[key]]
+                for y in adj_vertices:
+                    if used[x][y] == 0:
+                        e = Edge.ByVertices(c_vertices[x], c_vertices[y])
+                        orig_edge_index = edge_dict.get(str(x)+"_"+str(y), edge_dict.get(str(y)+"_"+str(x), None))
+                        if orig_edge_index:
+                            d = Topology.Dictionary(edges[orig_edge_index])
+                            e = Topology.SetDictionary(e, d)
+                            c_edges.append(e)
+                            used[x][y] = 1
+                            used[y][x] = 1
+            new_g = Graph.ByVerticesEdges(c_vertices, c_edges)
+            return new_g
+    
+        def spring_layout_2d(edge_list, iterations=500, k=None, seed=None):
+            # Compute the layout of a graph using the Fruchterman-Reingold algorithm
+            # with a force-directed 
+            
+            iterations = max(1, iterations)
             adj_matrix = edge_list_to_adjacency_matrix(edge_list)
             # Set the random seed
             if seed is not None:
@@ -5916,7 +6296,60 @@ class Graph:
 
             return pos
 
-        def tree_layout(edge_list,  root_index=0):
+        def spring_layout_3d(edge_list, iterations=500, k=None, seed=None):
+            # Compute the layout of a graph using the Fruchterman-Reingold algorithm
+            # with a force-directed layout approach.
+
+            iterations = max(1,iterations)
+
+            adj_matrix = edge_list_to_adjacency_matrix(edge_list)
+            # Set the random seed
+            if seed is not None:
+                np.random.seed(seed)
+
+            # Set the optimal distance between nodes
+            if k is None or k <= 0:
+                k = np.cbrt(1.0 / adj_matrix.shape[0])  # Adjusted for 3D
+
+            # Initialize the positions of the nodes randomly in 3D
+            pos = np.random.rand(adj_matrix.shape[0], 3)
+
+            # Compute the initial temperature
+            t = 0.1 * np.max(pos)
+
+            # Compute the cooling factor
+            cooling_factor = t / iterations
+
+            # Iterate over the specified number of iterations
+            for i in range(iterations):
+                # Compute the distance between each pair of nodes
+                delta = pos[:, np.newaxis, :] - pos[np.newaxis, :, :]
+                distance = np.linalg.norm(delta, axis=-1)
+
+                # Avoid division by zero
+                distance = np.where(distance == 0, 0.1, distance)
+
+                # Compute the repulsive force between each pair of nodes
+                repulsive_force = k ** 2 / distance ** 2
+
+                # Compute the attractive force between each pair of adjacent nodes
+                attractive_force = adj_matrix * distance / k
+
+                # Compute the total force acting on each node
+                force = np.sum((repulsive_force - attractive_force)[:, :, np.newaxis] * delta, axis=1)
+
+                # Compute the displacement of each node
+                displacement = t * force / np.linalg.norm(force, axis=1)[:, np.newaxis]
+
+                # Update the positions of the nodes
+                pos += displacement
+
+                # Cool the temperature
+                t -= cooling_factor
+
+            return pos
+
+        def tree_layout_2d(edge_list,  root_index=0):
 
             root, num_nodes = tree_from_edge_list(edge_list, root_index)
             dt = buchheim(root)
@@ -5942,8 +6375,46 @@ class Graph:
             pos[:, 1] = np.max(pos[:, 1]) - pos[:, 1]
             
             return pos
+        
+        def tree_layout_3d(edge_list, root_index=0, base_radius=1.0, radius_factor=1.5):
+            root, num_nodes = tree_from_edge_list(edge_list, root_index)
+            dt = buchheim(root)
+            pos = np.zeros((num_nodes, 3))  # Initialize 3D positions
+            
+            pos[int(dt.tree.node), 0] = dt.x
+            pos[int(dt.tree.node), 1] = dt.y
+            pos[int(dt.tree.node), 2] = 0  # Root at z = 0
+            
+            old_roots = [dt]
+            new_roots = []
+            depth = 1  # Start at depth level 1 for children
 
-        def radial_layout(edge_list, root_index=0):
+            while len(old_roots) > 0:
+                new_roots = []
+                for temp_root in old_roots:
+                    children = temp_root.children
+                    num_children = len(children)
+                    if num_children > 0:
+                        # Increase the radius dynamically based on the number of children
+                        dynamic_radius = base_radius + (num_children - 1) * radius_factor * depth
+                        
+                        angle_step = 2 * np.pi / num_children  # Angle between each child
+                        for i, child in enumerate(children):
+                            angle = i * angle_step
+                            pos[int(child.tree.node), 0] = pos[int(temp_root.tree.node), 0] + dynamic_radius * np.cos(angle)  # X position
+                            pos[int(child.tree.node), 1] = pos[int(temp_root.tree.node), 1] + dynamic_radius * np.sin(angle)  # Y position
+                            pos[int(child.tree.node), 2] = -dynamic_radius*depth  # Z-coordinate based on depth
+                            
+                    new_roots.extend(children)
+                
+                old_roots = new_roots
+                depth += 1  # Increment depth for the next level
+
+            pos[:, 1] = np.max(pos[:, 1]) - pos[:, 1]  # Flip y-coordinates if necessary
+
+            return pos
+
+        def radial_layout_2d(edge_list, root_index=0):
             root, num_nodes = tree_from_edge_list(edge_list, root_index)
             dt = buchheim(root)
             pos = np.zeros((num_nodes, 2))
@@ -5984,53 +6455,119 @@ class Graph:
             
             return new_pos
 
-        def graph_layout(edge_list, layout='tree', root_index=0, k=None, seed=None, iterations=500):
+        def spherical_layout_3d(edge_list, root_index=0):
+            root, num_nodes = tree_from_edge_list(edge_list, root_index)
+            dt = buchheim(root)
 
-            if layout == 'tree':
-                return tree_layout(edge_list, root_index=root_index)
-            elif layout == 'spring':
-                return spring_layout(edge_list, k=k, seed=seed, iterations=iterations)
-            elif layout == 'radial':
-                return radial_layout(edge_list, root_index=root_index)
-            else:
-                raise NotImplementedError(f"{layout} is not implemented yet. Please choose from ['radial', 'spring', 'tree']")
+            # Initialize positions with 3 columns for x, y, z coordinates
+            pos = np.zeros((num_nodes, 3))
 
-        def vertex_max_degree(graph, vertices):
-            degrees = [Graph.VertexDegree(graph, vertex) for vertex in vertices]
-            i = degrees.index(max(degrees))
-            return vertices[i], i
+            # Set initial coordinates and depth for the root node
+            pos[int(dt.tree.node), 0] = dt.x
+            pos[int(dt.tree.node), 1] = dt.y
+            depth = np.zeros(num_nodes)  # To track the depth of each node
+
+            old_roots = [(dt, 0)]  # Store nodes with their depth levels
+            new_roots = []
+
+            while len(old_roots) > 0:
+                new_roots = []
+                for temp_root, current_depth in old_roots:
+                    children = temp_root.children
+                    for child in children:
+                        node_index = int(child.tree.node)
+                        pos[node_index, 0] = child.x
+                        pos[node_index, 1] = child.y
+                        depth[node_index] = current_depth + 1  # Increase depth for children
+                    new_roots.extend([(child, current_depth + 1) for child in children])
+
+                old_roots = new_roots
+
+            # Normalize x and y coordinates to a [0, 1] range
+            pos[:, 0] = pos[:, 0] - np.min(pos[:, 0])
+            pos[:, 1] = pos[:, 1] - np.min(pos[:, 1])
+
+            pos[:, 0] = pos[:, 0] / np.max(pos[:, 0])
+            pos[:, 0] = pos[:, 0] - pos[:, 0][root_index]
+            
+            range_ = np.max(pos[:, 0]) - np.min(pos[:, 0])
+            pos[:, 0] = pos[:, 0] / range_
+
+            pos[:, 0] = pos[:, 0] * np.pi * 1.98  # Longitude (azimuthal angle)
+            pos[:, 1] = pos[:, 1] / np.max(pos[:, 1])  # Latitude (polar angle)
+
+            # Convert the 2D coordinates to 3D spherical coordinates
+            new_pos = np.zeros((num_nodes, 3))  # 3D position array
+            base_radius = 1  # Base radius for the first sphere
+            radius_increment = 1.3  # Increase in radius per depth level
+
+            # pos[:, 0] is the azimuth angle (longitude) in radians
+            # pos[:, 1] is the polar angle (latitude) in radians (adjusted to go from 0 to pi)
+            polar_angle = pos[:, 1] * np.pi  # Scaling to go from 0 to pi
+            azimuth_angle = pos[:, 0]
+
+            # Calculate the 3D Cartesian coordinates based on depth
+            for i in range(num_nodes):
+                r = base_radius + depth[i] * radius_increment  # Radius grows with depth
+                new_pos[i, 0] = r * np.sin(polar_angle[i]) * np.cos(azimuth_angle[i])  # X = r * sin(θ) * cos(φ)
+                new_pos[i, 1] = r * np.sin(polar_angle[i]) * np.sin(azimuth_angle[i])  # Y = r * sin(θ) * sin(φ)
+                new_pos[i, 2] = r * np.cos(polar_angle[i])  # Z = r * cos(θ)
+
+            return new_pos
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.Flatten - Error: The input graph is not a valid topologic graph. Returning None.")
+            if not silent:
+                print("Graph.Flatten - Error: The input graph is not a valid topologic graph. Returning None.")
             return None
         
-        if 'circ' in layout.lower():
-            new_graph = circle_layout(graph, radius=radius)
-            return new_graph
-        d = Graph.MeshData(graph)
-        vertices = d['vertices']
-        edges = d['edges']
-        v_dicts = d['vertexDictionaries']
-        e_dicts = d['edgeDictionaries']
-        vertices = Graph.Vertices(graph)
-        if rootVertex == None:
-            rootVertex, root_index = vertex_max_degree(graph, vertices)
+        if 'circ' in shape.lower():
+            return circle_layout_2d(graph, radius=size/2, sides=sides)
+        elif 'lin' in shape.lower():
+            return line_layout_2d(graph, length=size)
+        elif 'grid' in shape.lower() and '2d' in shape.lower():
+            return grid_layout_2d(graph, size=size)
+        elif 'sphere' == shape.lower() and '3d' in shape.lower():
+            return sphere_layout_3d(graph, radius=size/2)
+        elif 'grid' in shape.lower() and '3d' in shape.lower():
+            return grid_layout_3d(graph, size=size)
+        elif 'cluster' in shape.lower() and '2d' in shape.lower():
+            return cluster_layout_2d(graph, radius=size/2, key=key)
+        elif 'cluster' in shape.lower() and '3d' in shape.lower():
+            return cluster_layout_3d(graph, radius=size/2, key=key)
         else:
-            root_index = Vertex.Index(rootVertex, vertices, tolerance=tolerance)
-        if root_index == None:
-            root_index = 0
-        if 'rad' in layout.lower():
-            positions = radial_layout(edges, root_index=root_index)
-        elif 'spring' in layout.lower():
-            positions = spring_layout(edges, k=k, seed=seed, iterations=iterations)
-        elif 'tree' in layout.lower():
-            positions = tree_layout(edges, root_index=root_index)
-        else:
-            raise NotImplementedError(f"{layout} is not implemented yet. Please choose from ['radial', 'spring', 'tree']")
-        positions = positions.tolist()
-        positions = [[p[0], p[1], 0] for p in positions]
-        flat_graph = Graph.ByMeshData(positions, edges, v_dicts, e_dicts, tolerance=tolerance)
-        return flat_graph
+            d = Graph.MeshData(graph)
+            edges = d['edges']
+            v_dicts = d['vertexDictionaries']
+            e_dicts = d['edgeDictionaries']
+            vertices = Graph.Vertices(graph)
+            if rootVertex == None:
+                rootVertex, root_index = vertex_max_degree(graph, vertices)
+            else:
+                root_index = Vertex.Index(rootVertex, vertices, tolerance=tolerance)
+            if root_index == None:
+                root_index = 0
+            if 'rad' in shape.lower() and '2d' in shape.lower():
+                positions = radial_layout_2d(edges, root_index=root_index)
+            elif 'spherical' in shape.lower() and '3d' in shape.lower():
+                positions = spherical_layout_3d(edges, root_index=root_index)
+            elif 'spring' in shape.lower() and "3d" in shape.lower():
+                positions = spring_layout_3d(edges, k=k, seed=seed, iterations=iterations)
+            elif 'spring' in shape.lower() and '2d' in shape.lower():
+                positions = spring_layout_2d(edges, k=k, seed=seed, iterations=iterations)
+            elif 'tree' in shape.lower() and '2d' in shape.lower():
+                positions = tree_layout_2d(edges, root_index=root_index)
+            elif 'tree' in shape.lower() and '3d' in shape.lower():
+                positions = tree_layout_3d(edges, root_index=root_index, base_radius=1.0, radius_factor=1.5)
+            else:
+                if not silent:
+                    print(f"{shape} is not implemented yet. Please choose from ['circle 2D', 'grid 2D', 'line 2D', 'radial 2D', 'spring 2D', 'tree 2D', 'grid 3D', 'sphere 3D', 'tree 3D']. Returning None.")
+                return None
+            positions = positions.tolist()
+            if len(positions[0]) == 3:
+                positions = [[p[0], p[1], p[2]] for p in positions]
+            else:
+                positions = [[p[0], p[1], 0] for p in positions]
+            return Graph.ByMeshData(positions, edges, v_dicts, e_dicts, tolerance=tolerance)
 
     @staticmethod
     def GlobalClusteringCoefficient(graph):
