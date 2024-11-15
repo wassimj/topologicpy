@@ -132,7 +132,6 @@ class Face():
         dirA = Face.Normal(faceA, outputType="xyz", mantissa=3)
         dirB = Face.Normal(faceB, outputType="xyz", mantissa=3)
         if dirA == None or dirB == None:
-            Topology.Show(faceA, faceB)
             print("Face.Angle - Error: Could not compute the angle between the two input faces. Returning None.")
             return None
         return round((Vector.Angle(dirA, dirB)), mantissa)
@@ -1707,10 +1706,11 @@ class Face():
         else:
             obstacles = []
         
-        origin = Vertex.Origin()
+        origin = Topology.Centroid(face)
         normal = Face.Normal(face)
         flat_face = Topology.Flatten(face, origin=origin, direction=normal)
         flat_vertex = Topology.Flatten(vertex, origin=origin, direction=normal)
+
         eb = Face.ExternalBoundary(flat_face)
         vertices = Topology.Vertices(eb)
         coords = [Vertex.Coordinates(v, outputType="xy") for v in vertices]
@@ -1728,6 +1728,7 @@ class Face():
         flat_face = Face.ByWires(eb, new_ib_list)
         for obs in obstacles:
             flat_face = Topology.Difference(flat_face, Face.ByWire(obs))
+        
         targets = Topology.Vertices(flat_face)
         distances = []
         for target in targets:
@@ -1748,6 +1749,7 @@ class Face():
                 final_faces.append(f)
         shell = Shell.ByFaces(final_faces)
         return_face = Topology.RemoveCoplanarFaces(shell, epsilon=0.1)
+
         if not Topology.IsInstance(return_face, "face"):
             temp = Shell.ExternalBoundary(shell)
             if Topology.IsInstance(temp, "Wire"):
@@ -1767,17 +1769,16 @@ class Face():
             if not Topology.IsInstance(return_face, "Face"):
                 print("Face.Isovist - Error: Could not create isovist. Returning None.")
                 return None 
-
         compAngle = 0
         if fov == 360:
-            pie = Face.Circle(origin= vertex, radius=max_d, sides=180)
+            pie = Face.Circle(origin= flat_vertex, radius=max_d*1.2, sides=16)
         else:
-            compAngle = Vector.CompassAngle(Vector.North(), direction, mantissa=mantissa, tolerance=tolerance) - 90
-            fromAngle = -fov*0.5 - compAngle
-            toAngle = fov*0.5 - compAngle
-            c = Wire.Circle(origin= vertex, radius=max_d, sides=180, fromAngle=fromAngle, toAngle=toAngle, close = False)
-            e1 = Edge.ByVertices(Wire.StartVertex(c), vertex, silent=True)
-            e2 = Edge.ByVertices(Wire.EndVertex(c), vertex, silent=True)
+            compAngle = Vector.CompassAngle(Vector.North(), direction, mantissa=mantissa, tolerance=tolerance)
+            fromAngle =  compAngle - fov*0.5 
+            toAngle = compAngle + fov*0.5
+            c = Wire.Circle(origin= flat_vertex, radius=max_d*1.2, sides=int(16*(fov/360)), fromAngle=fromAngle, toAngle=toAngle, close = False)
+            e1 = Edge.ByVertices(Wire.StartVertex(c), flat_vertex, silent=True)
+            e2 = Edge.ByVertices(Wire.EndVertex(c), flat_vertex, silent=True)
             edges = Topology.Edges(c) + [e1,e2]
             pie = Face.ByWire(Topology.SelfMerge(Cluster.ByTopologies(edges)))
         return_face = Topology.Intersect(pie, return_face)
