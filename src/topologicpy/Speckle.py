@@ -20,8 +20,16 @@ from specklepy.api import operations
 from specklepy.objects import Base
 from specklepy.objects.other import RenderMaterial
 from specklepy.transports.server import ServerTransport
-from topologicpy.Topology import Topology
 from specklepy.objects.geometry import (Mesh, Point, Polyline)
+
+from topologicpy.Topology import Topology
+from topologicpy.Vertex import Vertex
+from topologicpy.Face import Face
+from topologicpy.Cell import Cell
+from topologicpy.CellComplex import CellComplex
+from topologicpy.Graph import Graph
+from topologicpy.Dictionary import Dictionary
+
 class Speckle:
 
     @staticmethod
@@ -507,3 +515,11 @@ class Speckle:
 
         """
         return item.stream.list()
+
+    #######################################################
+    # NEW METHODS TO PROCESS IFC
+
+    @staticmethod
+    def IFCObject(client, stream, branch, commit):
+        print("The new method was called")
+        pass
