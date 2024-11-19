@@ -18,6 +18,7 @@ from specklepy.api.client import SpeckleClient
 from specklepy.api.wrapper import StreamWrapper
 from specklepy.api import operations
 from specklepy.objects import Base
+from specklepy.objects.other import Collection
 from specklepy.objects.other import RenderMaterial
 from specklepy.transports.server import ServerTransport
 from specklepy.objects.geometry import (Mesh, Point, Polyline)
@@ -29,6 +30,9 @@ from topologicpy.Cell import Cell
 from topologicpy.CellComplex import CellComplex
 from topologicpy.Graph import Graph
 from topologicpy.Dictionary import Dictionary
+
+from collections import deque
+from typing import List
 
 class Speckle:
 
@@ -116,7 +120,7 @@ class Speckle:
         return branches
     
     @staticmethod
-    def ClientByURL(url="speckle.xyz", token=None):
+    def ClientByURL(url="https://app.speckle.systems/", token=None):
         """
         Parameters
         ----------
@@ -387,7 +391,7 @@ class Speckle:
         transport = ServerTransport(stream.id, client)
         last_obj_id = commit.referencedObject
         speckle_mesh = operations.receive(obj_id=last_obj_id, remote_transport=transport)
-        print(speckle_mesh)
+        # print(speckle_mesh)
         return mesh_to_native(speckle_mesh["@display_value"])
     
     @staticmethod
@@ -520,6 +524,104 @@ class Speckle:
     # NEW METHODS TO PROCESS IFC
 
     @staticmethod
-    def IFCObject(client, stream, branch, commit):
-        print("The new method was called")
-        pass
+    def SpeckleObject(client, stream, branch, commit):
+        transport = ServerTransport(stream.id, client)
+        last_obj_id = commit.referencedObject
+        speckle_mesh = operations.receive(obj_id=last_obj_id, remote_transport=transport)
+        
+        return speckle_mesh
+    
+    @staticmethod
+    def get_name_from_IFC_name(name) ->  str:
+        "Function is used to get clean speckle element name" 
+
+        import re
+        mapping = {
+            "IFC_WALL_REG": r"(Wall)",
+            "IFC_SLAB_REG": r"(Slab)",
+            "IFC_WINDOW_REG": r"(Window)",
+            "IFC_COLUMN_REG": r"(Column)",
+            "IFC_DOOR_REG": r"(Door)",
+            "IFC_SPACE_REG": r"(Space)"
+        }
+
+        for expression in mapping.values():
+            res = re.findall(expression, name)
+            if res:
+                return res[0]
+        
+
+    @staticmethod
+    def TopologyBySpeckleObject(obj):
+
+        def from_points_to_vertices_3D(points) -> List[Vertex]:
+            points_array_length = len(points)
+            i = 0
+            topologic_vertices = []
+            while i < points_array_length:
+                x = points[i]
+                y = points[i+1]
+                z = points[i+2]
+                v = Vertex.ByCoordinates(x, y, z)
+                topologic_vertices.append(v)
+
+                i+=3
+            return topologic_vertices
+
+        def make_faces_from_indices(vertices, face_indices) -> List[Face]:
+            "Helping function used to make a triangular faces"
+            l = len(face_indices)
+            i = 0
+            triangles = []
+
+            while i < l:
+                curr = face_indices[i]
+                i+=1
+                lis = face_indices[i:curr+i]
+                triangles.append(lis)
+                i+=curr
+            
+            topologic_vertices = from_points_to_vertices_3D(vertices)
+            faces_list = []
+
+            for triangle in triangles:
+                v1 = topologic_vertices[triangle[0]]
+                v2 = topologic_vertices[triangle[1]]
+                v3 = topologic_vertices[triangle[2]]
+                f = Face.ByVertices([v1, v2, v3])
+                faces_list.append(f)
+
+            return faces_list
+
+        #Stack used for the tree traversal
+        stack = deque()
+        stack.append(obj)
+
+        #list of coordinates
+        coords = []
+
+        while len(stack) > 0:
+            head = stack.pop()
+                
+            if isinstance(head, Collection):
+                for el in head.elements:
+                    stack.append(el)
+
+            elif isinstance(head, Base):
+
+                if hasattr(head, '@displayValue'):
+                    meshes = head['@displayValue']
+                    # print(head.name)
+                    if isinstance(meshes, List):
+                        full_name = head.name
+                        short_name = Speckle.get_name_from_IFC_name(full_name)
+                        speckle_id = head.id
+
+                        for mesh in meshes:
+                            # print(mesh.get_serializable_attributes())
+                            faces = make_faces_from_indices(vertices=mesh.vertices,
+                                                            face_indices=mesh.faces)
+
+                        yield [short_name, full_name, speckle_id, faces]
+
+                stack.pop()
