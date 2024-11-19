@@ -617,11 +617,13 @@ class Speckle:
                         short_name = Speckle.get_name_from_IFC_name(full_name)
                         speckle_id = head.id
 
+                        mesh_faces = []
                         for mesh in meshes:
                             # print(mesh.get_serializable_attributes())
                             faces = make_faces_from_indices(vertices=mesh.vertices,
                                                             face_indices=mesh.faces)
+                            mesh_faces.append(faces)
 
-                        yield [short_name, full_name, speckle_id, faces]
+                        yield [short_name, full_name, speckle_id, mesh_faces]
 
                 stack.pop()
