@@ -626,4 +626,4 @@ class Speckle:
 
                         yield [short_name, full_name, speckle_id, mesh_faces]
 
-                stack.pop()
+                # stack.pop()
