@@ -2160,12 +2160,13 @@ class Topology():
             for key in keys:
                 if python_dict[key].__class__ == ezdxf.acc.vector.Vec3:
                     python_dict[key] = list(python_dict[key])
+            rgb_list = None
             try:
-                r,g,b = entity.rgb
+                rgb_list = entity.rgb   
             except:
                 rgb_list = get_layer_color(file.layers, entity.dxf.layer)
-                if rgb_list == None:
-                    rgb_list = [0,0,0]
+            if rgb_list == None:
+                rgb_list = [0,0,0]
             python_dict['color'] = rgb_list
             python_dict['type'] = entity_type
             d = Dictionary.ByPythonDictionary(python_dict)
@@ -8295,32 +8296,42 @@ class Topology():
             The list of subtopologies.
 
         """
+        from topologicpy.Face import Face
+
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.SubTopologies - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if Topology.TypeAsString(topology).lower() == subTopologyType.lower():
             return [topology]
+        
         subTopologies = []
-        if subTopologyType.lower() == "vertex":
-            _ = topology.Vertices(None, subTopologies) # Hook to Core
-        elif subTopologyType.lower() == "edge":
-            _ = topology.Edges(None, subTopologies) # Hook to Core
-        elif subTopologyType.lower() == "wire":
-            _ = topology.Wires(None, subTopologies) # Hook to Core
-        elif subTopologyType.lower() == "face":
-            _ = topology.Faces(None, subTopologies) # Hook to Core
-        elif subTopologyType.lower() == "shell":
-            _ = topology.Shells(None, subTopologies) # Hook to Core
-        elif subTopologyType.lower() == "cell":
-            _ = topology.Cells(None, subTopologies) # Hook to Core
-        elif subTopologyType.lower() == "cellcomplex":
-            _ = topology.CellComplexes(None, subTopologies) # Hook to Core
-        elif subTopologyType.lower() == "cluster":
-            _ = topology.Clusters(None, subTopologies) # Hook to Core
-        elif subTopologyType.lower() == "aperture":
-            _ = topology.Apertures(None, subTopologies) # Hook to Core
-        if not subTopologies:
-            return [] # Make sure to return an empty list instead of None
+
+        # Spcecial case for faces to return vertices in CW/CCW order.
+        if Topology.IsInstance(topology, "face") and (subTopologyType.lower() == "vertex" or subTopologyType.lower() == "edge"):
+            wires = Face.Wires(topology)
+            for wire in wires:
+                subTopologies += Topology.SubTopologies(wire, subTopologyType=subTopologyType)
+        else:
+            if subTopologyType.lower() == "vertex":
+                _ = topology.Vertices(None, subTopologies) # Hook to Core
+            elif subTopologyType.lower() == "edge":
+                _ = topology.Edges(None, subTopologies) # Hook to Core
+            elif subTopologyType.lower() == "wire":
+                _ = topology.Wires(None, subTopologies) # Hook to Core
+            elif subTopologyType.lower() == "face":
+                _ = topology.Faces(None, subTopologies) # Hook to Core
+            elif subTopologyType.lower() == "shell":
+                _ = topology.Shells(None, subTopologies) # Hook to Core
+            elif subTopologyType.lower() == "cell":
+                _ = topology.Cells(None, subTopologies) # Hook to Core
+            elif subTopologyType.lower() == "cellcomplex":
+                _ = topology.CellComplexes(None, subTopologies) # Hook to Core
+            elif subTopologyType.lower() == "cluster":
+                _ = topology.Clusters(None, subTopologies) # Hook to Core
+            elif subTopologyType.lower() == "aperture":
+                _ = topology.Apertures(None, subTopologies) # Hook to Core
+            if not subTopologies:
+                return [] # Make sure to return an empty list instead of None
         return subTopologies
 
     

@@ -1880,9 +1880,9 @@ class Graph:
         else:
             node_keys = [nodeIDHeader, nodeLabelHeader, "mask"]+nodeFeaturesKeys
         if len(edgeFeaturesKeys) == 0:
-            edge_keys = [edgeLabelHeader, "mask", edgeFeaturesHeader]
+            edge_keys = [edgeSRCHeader, edgeDSTHeader, edgeLabelHeader, "mask", edgeFeaturesHeader]
         else:
-            edge_keys = [edgeLabelHeader, "mask"]+edgeFeaturesKeys
+            edge_keys = [edgeSRCHeader, edgeDSTHeader, edgeLabelHeader, "mask"]+edgeFeaturesKeys
         if len(graphFeaturesKeys) == 0:
             graph_keys = [graphIDHeader, graphLabelHeader, graphFeaturesHeader]
         else:
@@ -1975,11 +1975,11 @@ class Graph:
                     mask = 0
                 features = row[edgeFeaturesHeader]
                 if len(edgeFeaturesKeys) == 0:
-                    values = [label, mask, features]
+                    values = [src_id, dst_id, label, mask, features]
                 else:
                     featureList = features.split(",")
                     featureList = [float(s) for s in featureList]
-                    values = [label, mask]+featureList
+                    values = [src_id, dst_id, label, mask]+featureList
                 if not (src_id == dst_id) and not [src_id, dst_id] in es and not [dst_id, src_id] in es:
                     es.append([src_id, dst_id])
                     try:

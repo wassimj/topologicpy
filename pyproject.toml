@@ -24,6 +24,7 @@ dependencies = [
     "plotly",
     "lark",
     "specklepy",
+    "webcolors",
     "topologic_core>=7.0.1",
 ]
 

@@ -1281,7 +1281,7 @@ class Face():
         return return_list
 
     @staticmethod
-    def ExternalBoundary(face):
+    def ExternalBoundary(face, silent=False):
         """
         Returns the external boundary (closed wire) of the input face.
 
@@ -1289,6 +1289,8 @@ class Face():
         ----------
         face : topologic_core.Face
             The input face.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1300,6 +1302,10 @@ class Face():
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
+        if not Topology.IsInstance(face, "face"):
+            if not silent:
+                print("Face.ExternalBoundary - Error: The input face parameter is not a topologic face. Returning None.")
+            return None
         eb = face.ExternalBoundary() # Hook to Core
         return eb
     
