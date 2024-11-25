@@ -3242,18 +3242,27 @@ class Wire():
         return roof
     
     @staticmethod
-    def Simplify(wire, tolerance=0.0001):
+    def Simplify(wire, method='douglas-peucker', tolerance=0.0001, silent=False):
         """
-        Simplifies the input wire edges based on the Douglas Peucker algorthim. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
-        Part of this code was contributed by gaoxipeng. See https://github.com/wassimj/topologicpy/issues/35
+        Simplifies the input wire edges based on the selected algorithm: Douglas-Peucker or Visvalingam–Whyatt.
         
         Parameters
         ----------
         wire : topologic_core.Wire
             The input wire.
+        method : str, optional
+            The simplification method to use: 'douglas-peucker' or 'visvalingam-whyatt' or 'reumann-witkam'.
+            The default is 'douglas-peucker'.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001. Edges shorter than this length will be removed.
-
+            The desired tolerance.
+            If using the douglas-peucker method, edge lengths shorter than this amount will be removed.
+            If using the visvalingam-whyatt method, triangulare areas less than is amount will be removed.
+            If using the Reumann-Witkam method, the tolerance specifies the maximum perpendicular distance allowed
+            between any point and the current line segment; points falling within this distance are discarded.
+            The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            
         Returns
         -------
         topologic_core.Wire
@@ -3264,7 +3273,7 @@ class Wire():
         from topologicpy.Edge import Edge
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        
+
         def perpendicular_distance(point, line_start, line_end):
             # Calculate the perpendicular distance from a point to a line segment
             x0 = point.X()
@@ -3284,15 +3293,12 @@ class Wire():
                 points = wire
             else:
                 points = Topology.Vertices(wire)
-                # points.insert(0, points.pop())
             if len(points) <= 2:
                 return points
 
-            # Use the first and last points in the list as the starting and ending points
             start_point = points[0]
             end_point = points[-1]
 
-            # Find the point with the maximum distance
             max_distance = 0
             max_index = 0
 
@@ -3302,19 +3308,79 @@ class Wire():
                     max_distance = d
                     max_index = i
 
-            # If the maximum distance is less than the tolerance, no further simplification is needed
             if max_distance <= tolerance:
                 return [start_point, end_point]
 
-            # Recursively simplify
             first_segment = douglas_peucker(points[:max_index + 1], tolerance)
             second_segment = douglas_peucker(points[max_index:], tolerance)
 
-            # Merge the two simplified segments
             return first_segment[:-1] + second_segment
-        
+
+        def visvalingam_whyatt(wire, tolerance):
+            if isinstance(wire, list):
+                points = wire
+            else:
+                points = Topology.Vertices(wire)
+
+            if len(points) <= 2:
+                return points
+
+            # Calculate the effective area for each point except the first and last
+            def effective_area(p1, p2, p3):
+                # Triangle area formed by p1, p2, and p3
+                return 0.5 * abs(p1.X() * (p2.Y() - p3.Y()) + p2.X() * (p3.Y() - p1.Y()) + p3.X() * (p1.Y() - p2.Y()))
+
+            # Keep track of effective areas
+            areas = [None]  # First point has no area
+            for i in range(1, len(points) - 1):
+                area = effective_area(points[i - 1], points[i], points[i + 1])
+                areas.append((area, i))
+            areas.append(None)  # Last point has no area
+
+            # Sort points by area in ascending order
+            sorted_areas = sorted([(area, idx) for area, idx in areas[1:-1] if area is not None])
+
+            # Remove points with area below the tolerance threshold
+            remove_indices = {idx for area, idx in sorted_areas if area < tolerance}
+
+            # Construct the simplified list of points
+            simplified_points = [point for i, point in enumerate(points) if i not in remove_indices]
+
+            return simplified_points
+
+        def reumann_witkam(wire, tolerance):
+            if isinstance(wire, list):
+                points = wire
+            else:
+                points = Topology.Vertices(wire)
+            
+            if len(points) <= 2:
+                return points
+
+            simplified_points = [points[0]]
+            start_point = points[0]
+            i = 1
+
+            while i < len(points) - 1:
+                end_point = points[i]
+                next_point = points[i + 1]
+                dist = perpendicular_distance(next_point, start_point, end_point)
+
+                # If the next point is outside the tolerance corridor, add the current end_point
+                if dist > tolerance:
+                    simplified_points.append(end_point)
+                    start_point = end_point
+
+                i += 1
+
+            # Always add the last point
+            simplified_points.append(points[-1])
+
+            return simplified_points
+
         if not Topology.IsInstance(wire, "Wire"):
-            print("Wire.Simplify = Error: The input wire parameter is not a Wire. Returning None.")
+            if not silent:
+                print("Wire.Simplify = Error: The input wire parameter is not a Wire. Returning None.")
             return None
         if not Wire.IsManifold(wire):
             wires = Wire.Split(wire)
@@ -3324,12 +3390,31 @@ class Wire():
                     if Edge.Length(w) > tolerance:
                         new_wires.append(w)
                 elif Topology.IsInstance(w, "Wire"):
-                    new_wires.append(Wire.Simplify(w, tolerance=tolerance))
+                    new_wires.append(Wire.Simplify(w, method=method, tolerance=tolerance, silent=silent))
             return_wire = Topology.SelfMerge(Cluster.ByTopologies(new_wires))
             return return_wire
+
+        new_vertices = []
+        if 'douglas' in method.lower(): #douglas-peucker
+            new_vertices = douglas_peucker(wire, tolerance=tolerance)
+        elif 'vis' in method.lower(): # 'visvalingam-whyatt'
+            new_vertices = visvalingam_whyatt(wire, tolerance=tolerance)
+        elif 'reu' in method.lower(): # 'reumann-witkam'
+            new_vertices = reumann_witkam(wire, tolerance=tolerance)
+        else:
+            if not silent:
+                print(f"Wire.Simplify - Warning: Unknown method ({method}). Please use 'douglas-peucker' or 'visvalingam-whyatt' or 'reumann-witkam'. Defaulting to 'douglas-peucker'.")
+            new_vertices = douglas_peucker(wire, tolerance=tolerance)
         
-        new_vertices = douglas_peucker(wire, tolerance=tolerance)
+        if len(new_vertices) < 2:
+            if not silent:
+                print("Wire.Simplify - Warning: Could not generate enough vertices for a simplified wire. Returning the original wire.")
+            wire
         new_wire = Wire.ByVertices(new_vertices, close=Wire.IsClosed(wire))
+        if not Topology.IsInstance(new_wire, "wire"):
+            if not silent:
+                print("Wire.Simplify - Warning: Could not generate a simplified wire. Returning the original wire.")
+            return wire
         return new_wire
 
     @staticmethod
