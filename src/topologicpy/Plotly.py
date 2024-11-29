@@ -474,9 +474,9 @@ class Plotly:
         x = []
         y = []
         z = []
-        sizeList = []
+        sizes = []
         labels = []
-        groupList = []
+        colors = []
         label = ""
         group = None
         if colorKey or sizeKey or labelKey or groupKey:
@@ -493,58 +493,54 @@ class Plotly:
             else:
                 minGroup = 0
                 maxGroup = 1
+            n = len(str(len(vertices)))
             for m, v in enumerate(vertices):
                 x.append(v[0])
                 y.append(v[1])
                 z.append(v[2])
                 label = " "
                 group = None
+                colors.append(Color.AnyToHex(color))
+                labels.append("Vertex_"+str(m+1).zfill(n))
+                sizes.append(size)
                 if len(dictionaries) > 0:
                     d = dictionaries[m]
                     if d:
                         if not colorKey == None:
-                            d_color = Dictionary.ValueAtKey(d, key=colorKey) or color
-                            color = Color.AnyToHex(d_color)
-                            groupList.append(color)
+                            colors[m] = Dictionary.ValueAtKey(d, key=colorKey) or colors[m]
                         if not labelKey == None:
-                            label = str(Dictionary.ValueAtKey(d, key=labelKey)) or " "
+                            labels[m] = str(Dictionary.ValueAtKey(d, key=labelKey)) or labels[m]
                         if not sizeKey == None:
-                            size = Dictionary.ValueAtKey(d, key=sizeKey) or size
+                            sizes[m] = Dictionary.ValueAtKey(d, key=sizeKey) or sizes[m]
                         if not groupKey == None:
-                            group = Dictionary.ValueAtKey(d, key=groupKey) or " "
+                            colors[m] = Dictionary.ValueAtKey(d, key=groupKey) or colors[m]
                     try:
-                        if group == " ":
-                            pass
-                        elif type(group) == int or type(group) == float:
-                            if group < minGroup:
-                                group = minGroup
-                            if group > maxGroup:
-                                group = maxGroup
-                            color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            color = Color.AnyToHEX(color)
-                            groupList.append(Color.AnyToHex(color))
+                        if type(colors[m]) == int or type(colors[m]) == float:
+                            if colors[m] < minGroup:
+                                colors[m] = minGroup
+                            if colors[m] > maxGroup:
+                                colors[m] = maxGroup
+                            temp_color = Color.ByValueInRange(colors[m], minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                            colors[m] = Color.AnyToHEX(temp_color)
 
                         else:
-                            color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            color = Color.AnyToHex(color)
-                            groupList.append(Color.AnyToHex(color))
+                            temp_color = Color.ByValueInRange(groups.index(colors[m]), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                            colors[m] = Color.AnyToHex(temp_color)
                     except:
                         #groupList.append(Color.AnyToHex([0,0,0]))
                         pass
-                    labels.append(label)
-                    sizeList.append(size)
         else:
             for v in vertices:
                 x.append(v[0])
                 y.append(v[1])
                 z.append(v[2])
         
-        if len(list(set(groupList))) < 2:
-            groupList = Color.AnyToHex(color)
+        if len(list(set(colors))) < 2:
+            colors = Color.AnyToHex(color)
         if len(labels) < 1:
-            labels = ""
-        if len(sizeList) < 1:
-            sizeList = size
+            labels = "Vertex_1"
+        if len(sizes) < 1:
+            sizes = size
         if showVertexLabel == True:
             mode = "markers+text"
         else:
@@ -554,7 +550,9 @@ class Plotly:
                             z=z,
                             name=legendLabel,
                             showlegend=showLegend,
-                            marker=dict(color=groupList,  size=sizeList, opacity=1),
+                            marker=dict(color=colors,
+                                        size=sizes, 
+                                        opacity=1),
                             mode=mode,
                             legendgroup=legendGroup,
                             legendrank=legendRank,
@@ -616,7 +614,9 @@ class Plotly:
                     if not labelKey == None:
                         label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
                     if not widthKey == None:
-                        width = Dictionary.ValueAtKey(d, key=widthKey) or width
+                        e_width = Dictionary.ValueAtKey(d, key=widthKey)
+                        if not e_width == None:
+                            width = e_width
                     if not groupKey == None:
                         group = Dictionary.ValueAtKey(d, key=groupKey)
                         if not group == None:
@@ -869,9 +869,9 @@ class Plotly:
             k = []
             labels = []
             groupList = []
-            faceColorList = []
             label = ""
             group = ""
+            color = Color.AnyToHex(color)
             if colorKey or labelKey or groupKey:
                 if groups:
                     if len(groups) > 0:
@@ -886,36 +886,40 @@ class Plotly:
                 else:
                     minGroup = 0
                     maxGroup = 1
+                n = len(str(len(faces)))
                 for m, f in enumerate(faces):
                     i.append(f[0])
                     j.append(f[1])
                     k.append(f[2])
                     label = ""
                     group = None
+                    groupList.append(Color.AnyToHex(color)) # Store a default color for that face
+                    labels.append("Face_"+str(m+1).zfill(n))
                     if len(dictionaries) > 0:
                         d = dictionaries[m]
                         if d:
+                            if not colorKey == None:
+                                d_color = Dictionary.ValueAtKey(d, key=colorKey) or color
+                                groupList[m] = Color.AnyToHex(d_color) #Replace the default color by the dictionary color.
                             if not labelKey == None:
-                                label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
+                                label = Dictionary.ValueAtKey(d, key=labelKey)
+                                if not label == None:
+                                    labels[m] = str(label) # Replace the default label with the dictionary label
                             if not groupKey == None:
                                 group = Dictionary.ValueAtKey(d, key=groupKey) or None
                         
                         if group == None:
-                            f_color = Color.AnyToHex(color)
-                            groupList.append(f_color)
+                            pass # do nothing because the default color will be used.
                         elif type(group) == int or type(group) == float:
                             if group < minGroup:
                                 group = minGroup
                             if group > maxGroup:
                                 group = maxGroup
                             f_color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            f_color = Color.AnyToHex(f_color)
-                            groupList.append(f_color)
+                            groupList[m] = Color.AnyToHex(f_color) # Replace the default color by the group value.
                         else:
                             f_color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            f_color = Color.AnyToHex(f_color)
-                            groupList.append(f_color)
-                        labels.append(label)
+                            groupList[m] = Color.AnyToHex(f_color)
             else:
                 for f in faces:
                     i.append(f[0])
@@ -926,7 +930,6 @@ class Plotly:
                 groupList = None
             if len(labels) < 1:
                 labels = ""
-            color = Color.AnyToHex(color)
             fData = go.Mesh3d(
                     x = x,
                     y = y,
