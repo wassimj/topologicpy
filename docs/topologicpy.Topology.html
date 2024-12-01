@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.7.77 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.7.78 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.77
+                0.7.78
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -407,6 +407,12 @@
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByOCCTShape" title="topologicpy.Topology.Topology.ByOCCTShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOCCTShape</span></code></a>(occtShape)</p></td>
 <td><p>Creates a topology from the input OCCT shape.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByPDFFile" title="topologicpy.Topology.Topology.ByPDFFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByPDFFile</span></code></a>(file[, wires, faces, ...])</p></td>
+<td><p>Import PDF file and convert its entities to topologies.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByPDFPath" title="topologicpy.Topology.Topology.ByPDFPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByPDFPath</span></code></a>(path[, wires, faces, ...])</p></td>
+<td><p>Import PDF file and convert its entities to topologies.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByXYZFile" title="topologicpy.Topology.Topology.ByXYZFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByXYZFile</span></code></a>(file[, frameIdKey, vertexIdKey])</p></td>
 <td><p>Imports the topology from an XYZ file path.</p></td>
@@ -1230,7 +1236,9 @@ This is an experimental method with limited capabilities.</p>
 </dd>
 <dt><strong>faces</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of faces in the form of [i, j, k, l, …] where the items in the list are vertex indices. The face is assumed to be closed to the last vertex is connected to the first vertex automatically.</p>
 </dd>
-<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired topology type. The options are: “Vertex”, “Edge”, “Wire”, “Face”, “Shell”, “Cell”, “CellComplex”. If set to None, a “Cluster” will be returned. The default is None.</p>
+<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired highest topology type. The options are: “Vertex”, “Edge”, “Wire”, “Face”, “Shell”, “Cell”, “CellComplex”.
+It is case insensitive. If any of these options are selected, the returned topology will only contain this type either a single topology
+or as a Cluster of these types of topologies. If set to None, a “Cluster” will be returned of vertices, edges, and/or faces. The default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
@@ -1558,6 +1566,90 @@ This method is basic and does not support textures and vertex normals.</p>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Topology</dt><dd><p>The created topology.</p>
 </dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByPDFFile">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByPDFFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeTypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'edge_color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWidthKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'edge_width'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'face_color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceOpacityKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'face_opacity'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByPDFFile" title="Permalink to this definition"></a></dt>
+<dd><p>Import PDF file and convert its entities to topologies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>file</strong><span class="classifier">file</span></dt><dd><p>The input PDF file</p>
+</dd>
+<dt><strong>wires</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, wires will be constructed when possible. The default is True.</p>
+</dd>
+<dt><strong>faces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, faces will be constructed when possible. The default is True.</p>
+</dd>
+<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to include in the returned result. The default is [] which means all PDF objects will be included.
+The possible strings to include in this list are: [“line”, “curve”, “rectangle”, “quadrilateral”]</p>
+</dd>
+<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to exclude from the returned result. The default is [] which mean no PDF object type will be excluded.
+The possible strings to include in this list are: [“line”, “curve”, “rectangle”, “quadrilateral”]</p>
+</dd>
+<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge color. The default is None.</p>
+</dd>
+<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge width. The default is None.</p>
+</dd>
+<dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face color. The default is None.</p>
+</dd>
+<dt><strong>faceOpacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face opacity. The default is None.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd></dd>
+<dt>A list of Topologic entities (edges, wires, faces, clusters) with attached dictionaries.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByPDFPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByPDFPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeTypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'edge_color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWidthKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'edge_width'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'face_color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceOpacityKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'face_opacity'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByPDFPath" title="Permalink to this definition"></a></dt>
+<dd><p>Import PDF file and convert its entities to topologies.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">path</span></dt><dd><p>The input path to the PDF file</p>
+</dd>
+<dt><strong>wires</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, wires will be constructed when possible. The default is True.</p>
+</dd>
+<dt><strong>faces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, faces will be constructed when possible. The default is True.</p>
+</dd>
+<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to include in the returned result. The default is [] which means all PDF objects will be included.
+The possible strings to include in this list are: [“line”, “curve”, “rectangle”, “quadrilateral”]</p>
+</dd>
+<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to exclude from the returned result. The default is [] which mean no PDF object type will be excluded.
+The possible strings to include in this list are: [“line”, “curve”, “rectangle”, “quadrilateral”]</p>
+</dd>
+<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge color. The default is None.</p>
+</dd>
+<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge width. The default is None.</p>
+</dd>
+<dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face color. The default is None.</p>
+</dd>
+<dt><strong>faceOpacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face opacity. The default is None.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd></dd>
+<dt>A list of Topologic entities (edges, wires, faces, clusters) with attached dictionaries.</dt><dd></dd>
 </dl>
 </dd>
 </dl>
