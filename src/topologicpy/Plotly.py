@@ -599,13 +599,17 @@ class Plotly:
         else:
             minGroup = 0
             maxGroup = 1
+        
 
         if colorKey or widthKey or labelKey or groupKey:
             keys = [x for x in [colorKey, widthKey, labelKey, groupKey] if not x == None]
             temp_dict = Helper.ClusterByKeys(edges, dictionaries, keys, silent=False)
             dict_clusters = temp_dict["dictionaries"]
             elements_clusters = temp_dict['elements']
+            n = len(str(len(elements_clusters)))
+            labels = []
             for j, elements_cluster in enumerate(elements_clusters):
+                labels.append("Edge_"+str(j+1).zfill(n))
                 d = dict_clusters[j][0] # All dicitonaries have same values in dictionaries, so take first one.
                 if d:
                     if not colorKey == None:
@@ -629,6 +633,7 @@ class Plotly:
                             else:
                                 d_color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
                             color = d_color
+
                 x = []
                 y = []
                 z = []
@@ -639,15 +644,19 @@ class Plotly:
                     y+=[sv[1], ev[1], None] # y-coordinates of edge ends
                     z+=[sv[2], ev[2], None] # z-coordinates of edge ends
                 if showEdgeLabel == True:
-                    mode = "lines+text"
+                    mode = "markers+lines+text"
                 else:
-                    mode = "lines"
+                    mode = "markers+lines"
+                if isinstance(width, list):
+                    marker_width = width[0]*0.25
+                else:
+                    marker_width = width*0.25
                 trace = go.Scatter3d(x=x,
                                     y=y,
                                     z=z,
                                     name=label,
                                     showlegend=showLegend,
-                                    marker_size=0,
+                                    marker=dict(symbol="circle", size=marker_width),
                                     mode=mode,
                                     line=dict(color=color, width=width),
                                     legendgroup=legendGroup,
@@ -894,7 +903,7 @@ class Plotly:
                     label = ""
                     group = None
                     groupList.append(Color.AnyToHex(color)) # Store a default color for that face
-                    labels.append("Face_"+str(m+1).zfill(n))
+                    labels.append("Mace_"+str(m+1).zfill(n))
                     if len(dictionaries) > 0:
                         d = dictionaries[m]
                         if d:
@@ -1033,6 +1042,7 @@ class Plotly:
                 if edgeColorKey or edgeWidthKey or edgeLabelKey or edgeGroupKey:
                     for tp_edge in tp_edges:
                         e_dictionaries.append(Topology.Dictionary(tp_edge))
+                        
                 e_cluster = Cluster.ByTopologies(tp_edges)
                 geo = Topology.Geometry(e_cluster, mantissa=mantissa)
                 vertices = geo['vertices']

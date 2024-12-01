@@ -1509,7 +1509,9 @@ class Topology():
         faces : list , optional
             The input list of faces in the form of [i, j, k, l, ...] where the items in the list are vertex indices. The face is assumed to be closed to the last vertex is connected to the first vertex automatically.
         topologyType : str , optional
-            The desired topology type. The options are: "Vertex", "Edge", "Wire", "Face", "Shell", "Cell", "CellComplex". If set to None, a "Cluster" will be returned. The default is None.
+            The desired highest topology type. The options are: "Vertex", "Edge", "Wire", "Face", "Shell", "Cell", "CellComplex".
+            It is case insensitive. If any of these options are selected, the returned topology will only contain this type either a single topology
+            or as a Cluster of these types of topologies. If set to None, a "Cluster" will be returned of vertices, edges, and/or faces. The default is None.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -1555,7 +1557,7 @@ class Topology():
                 output = Shell.ByFaces(faces, tolerance=tolerance)  # This can return a list
                 if Topology.IsInstance(output, "Shell"):
                     return output
-            elif topologyType == None:
+            elif topologyType == None or topologyType== "face":
                 output = Cluster.ByTopologies(faces)
 
             return output
@@ -1587,15 +1589,20 @@ class Topology():
             topologyType = topologyType.lower()
 
         if topologyType == "vertex":
-            if len(topVerts) >= 1:
+            if len(topVerts) == 0:
+                return None
+            if len(topVerts) == 1:
                 return topVerts[0]
             else:
-                return None
+                return Cluster.ByTopologies(topVerts)
         elif topologyType == "edge":
-            if len(edges) >= 1 and len(vertices) >= 2:
+            if len(edges) == 0:
+                return None
+            if len(edges) == 1 and len(vertices) >= 2:
                 return Edge.ByVertices(topVerts[edges[0][0]], topVerts[edges[0][1]], tolerance=tolerance)
             else:
-                return None
+                topEdges = [Edge.ByVertices([topVerts[e[0]], topVerts[e[1]]], tolerance=tolerance) for e in edges]
+                return Cluster.ByTopologies(topEdges)
 
         if topologyType == "wire" and edges:
             topEdges = [Edge.ByVertices([topVerts[e[0]], topVerts[e[1]]], tolerance=tolerance) for e in edges]
@@ -3635,6 +3642,325 @@ class Topology():
         """
         return topologic.Topology.ByOcctShape(occtShape, "")
     
+    @staticmethod
+    def ByPDFFile(file, wires=False, faces=False, includeTypes=[], excludeTypes=[], edgeColorKey="edge_color", edgeWidthKey="edge_width", faceColorKey="face_color", faceOpacityKey="face_opacity", tolerance=0.0001, silent=False):
+        """
+        Import PDF file and convert its entities to topologies.
+
+        Parameters
+        ----------
+        file : file
+            The input PDF file
+        wires : bool , optional
+            If set to True, wires will be constructed when possible. The default is True.
+        faces : bool , optional
+            If set to True, faces will be constructed when possible. The default is True.
+        includeTypes : list , optional
+            A list of PDF object types to include in the returned result. The default is [] which means all PDF objects will be included.
+            The possible strings to include in this list are: ["line", "curve", "rectangle", "quadrilateral"]
+        excludeTypes : list , optional
+            A list of PDF object types to exclude from the returned result. The default is [] which mean no PDF object type will be excluded.
+            The possible strings to include in this list are: ["line", "curve", "rectangle", "quadrilateral"]
+        edgeColorKey : str , optional
+            The dictionary key under which to store the edge color. The default is None.
+        edgeWidthKey : str , optional
+            The dictionary key under which to store the edge width. The default is None.
+        faceColorKey : str , optional
+            The dictionary key under which to store the face color. The default is None.
+        faceOpacityKey : str , optional
+            The dictionary key under which to store the face opacity. The default is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+        A list of Topologic entities (edges, wires, faces, clusters) with attached dictionaries.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+        import os
+        import warnings
+
+        def interpolate_bezier(control_points, num_points=50):
+            """
+            Interpolate a cubic Bezier curve given control points.
+
+            Args:
+                control_points (list): List of control points (pymupdf.Point objects).
+                num_points (int): Number of points to interpolate along the curve.
+
+            Returns:
+                list: A list of interpolated points (pymupdf.Point objects).
+            """
+            p0, p1, p2, p3 = control_points
+            points = [
+                pymupdf.Point(
+                    (1 - t)**3 * p0.x + 3 * (1 - t)**2 * t * p1.x + 3 * (1 - t) * t**2 * p2.x + t**3 * p3.x,
+                    (1 - t)**3 * p0.y + 3 * (1 - t)**2 * t * p1.y + 3 * (1 - t) * t**2 * p2.y + t**3 * p3.y
+                )
+                for t in (i / num_points for i in range(num_points + 1))
+            ]
+            return points
+
+        def map_types(type_list):
+            type_mapping = {
+                "line": "l",
+                "curve": "c",
+                "rect": "re",
+                "quad": "qu"
+            }
+            return [type_mapping[key] for key in type_mapping if any(key in item for item in type_list)]
+
+        def remove_overlap(list1, list2):
+            set1, set2 = set(list1), set(list2)
+            # Remove common elements from both sets
+            set1 -= set2
+            set2 -= set(list1)
+            return list(set1), list(set2)
+        
+        try:
+            import pymupdf  # PyMuPDF
+        except:
+            if not silent:
+                print("Topology.ByPDFFile - Warning: Installing required PyMuPDF library.")
+            try:
+                os.system("pip install PyMuPDF")
+            except:
+                os.system("pip install PyMuPDF --user")
+            try:
+                import pymupdf
+                if not silent:
+                    print("Topology.ByPDFFile - Information: PyMUDF library installed correctly.")
+            except:
+                if not silent:
+                    warnings.warn("Topology.ByPDFFile - Error: Could not import PyMuPDF. Please try to install PyMuPDF manually. Returning None.")
+                return None
+        if not file:
+            if not silent:
+                print("Topology.ByPDFFile - Error: Could not open the PDF file. Returning None.")
+            return None
+        
+        if includeTypes == None:
+            includeTypes = []
+        if excludeTypes == None:
+            excludeTypes = []
+        includeTypes = [item for item in includeTypes if isinstance(item, str)]
+        excludeTypes = [item for item in excludeTypes if isinstance(item, str)]
+        in_types = map_types([c.lower() for c in includeTypes])
+        ex_types = map_types([c.lower() for c in excludeTypes])
+        in_types_1, ex_types_1 = remove_overlap(in_types, ex_types)
+        if not len(in_types_1) == len(in_types) or not len(ex_types_1) == len(ex_types):
+            if not silent:
+                print("Topology.ByPDFFile - Warning: Ther includeTypes and excludeTypes input parameters contain overlapping elements. These have been excluded.")
+        in_types = in_types_1
+
+        topologic_entities = []
+        for page_num, page in enumerate(file, 1):
+            matrix = pymupdf.Matrix(1, 1)  # Identity matrix for default transformation
+            paths = page.get_drawings()
+            for path in paths:
+                if not path.get("stroke_opacity") == 0:
+                    close = path.get("closePath")
+                    components = []
+                    edge_color = path.get("color", [0, 0, 0]) or [0, 0, 0]
+                    edge_color = [int(255 * c) for c in edge_color] # Convert stroke color to 0-255 range
+                    edge_width = path.get("width", 1) or 1
+                    face_color = path.get("fill", [1, 1, 1]) or [1,1,1]
+                    face_color = [int(255 * c) for c in face_color]
+                    face_opacity = path.get("fill_opacity", 1) or 1
+
+                    # Create the dictionary for line width, color, fill color, and fill opacity
+                    keys = [edgeWidthKey, edgeColorKey, faceColorKey, faceOpacityKey]
+                    values = [
+                        edge_width,
+                        edge_color,  # Convert stroke color to 0-255 range
+                        face_color,     # Convert fill color to 0-255 range
+                        face_opacity
+                    ]
+                    dictionary = Dictionary.ByKeysValues(keys, values)
+                    items = path.get("items") or []
+                    for it, item in enumerate(items):
+                        if (item[0] in in_types or len(in_types) == 0) and (not item[0] in ex_types):
+                            if item[0] == "l":  # Line
+                                start_point = pymupdf.Point(item[1][0], item[1][1]).transform(matrix)
+                                end_point = pymupdf.Point(item[2][0], item[2][1]).transform(matrix)
+                                start_vertex = Vertex.ByCoordinates(start_point.x, -start_point.y, 0)
+                                end_vertex = Vertex.ByCoordinates(end_point.x, -end_point.y, 0)
+                                d = Vertex.Distance(start_vertex, end_vertex)
+                                if d > tolerance:
+                                    edge = Edge.ByStartVertexEndVertex(start_vertex, end_vertex, tolerance=tolerance, silent=silent)
+                                    if not edge == None:
+                                        edge = Topology.SetDictionary(edge, dictionary)  # Set dictionary
+                                        components.append(edge)
+                                if it == 0:
+                                    v_f_p = pymupdf.Point(item[1][0], item[1][1]).transform(matrix)
+                                    very_first_vertex = Vertex.ByCoordinates(v_f_p.x, -v_f_p.y, 0)
+                                if it == len(items)-1 and path.get("closePath", False) == True:
+                                    v_l_p = pymupdf.Point(item[2][0], item[2][1]).transform(matrix)
+                                    very_last_vertex = Vertex.ByCoordinates(v_l_p.x, -v_l_p.y, 0)
+                                    edge = Edge.ByStartVertexEndVertex(very_last_vertex, very_first_vertex, tolerance=tolerance, silent=True)
+                                    if not edge == None:
+                                        edge = Topology.SetDictionary(edge, dictionary)  # Set dictionary
+                                        components.append(edge)
+                                
+                            elif item[0] == "c":  # Bezier curve (approximated by segments)
+                                control_points = [pymupdf.Point(p[0], p[1]).transform(matrix) for p in item[1:]]
+                                bezier_points = interpolate_bezier(control_points)
+                                vertices = [Vertex.ByCoordinates(pt.x, -pt.y, 0) for pt in bezier_points]
+                                for i in range(len(vertices)-1):
+                                    start_vertex = vertices[i]
+                                    end_vertex = vertices[i+1]
+                                    edge = Edge.ByStartVertexEndVertex(start_vertex, end_vertex, tolerance=tolerance, silent=False)
+                                    if not edge == None:
+                                        edge = Topology.SetDictionary(edge, dictionary)  # Set dictionary
+                                        components.append(edge)
+                            elif item[0] == "re":  # Rectangle
+                                x0, y0, x1, y1 = item[1]
+                                vertices = [
+                                    Vertex.ByCoordinates(x0, -y0, 0),
+                                    Vertex.ByCoordinates(x1, -y0, 0),
+                                    Vertex.ByCoordinates(x1, -y1, 0),
+                                    Vertex.ByCoordinates(x0, -y1, 0)
+                                ]
+                                for i in range(len(vertices)-1):
+                                    start_vertex = vertices[i]
+                                    end_vertex = vertices[i+1]
+                                    edge = Edge.ByStartVertexEndVertex(start_vertex, end_vertex, tolerance=tolerance, silent=False)
+                                    if not edge == None:
+                                        edge = Topology.SetDictionary(edge, dictionary)  # Set dictionary
+                                        components.append(edge)
+                                    edge = Edge.ByStartVertexEndVertex(vertices[-1], vertices[0], tolerance=tolerance, silent=False)
+                                    if not edge == None:
+                                        edge = Topology.SetDictionary(edge, dictionary)  # Set dictionary
+                                        components.append(edge)
+
+                            elif item[0] == "qu":  # Quadrilateral
+                                quad_points = [pymupdf.Point(pt[0], pt[1]).transform(matrix) for pt in item[1]]
+                                vertices = [Vertex.ByCoordinates(pt.x, -pt.y, 0) for pt in quad_points]
+                                for i in range(len(vertices)-1):
+                                    start_vertex = vertices[i]
+                                    end_vertex = vertices[i+1]
+                                    edge = Edge.ByStartVertexEndVertex(start_vertex, end_vertex, tolerance=tolerance, silent=False)
+                                    if not edge == None:
+                                        edge = Topology.SetDictionary(edge, dictionary)  # Set dictionary
+                                        components.append(edge)
+                                    edge = Edge.ByStartVertexEndVertex(vertices[-1], vertices[0], tolerance=tolerance, silent=False)
+                                    if not edge == None:
+                                        edge = Topology.SetDictionary(edge, dictionary)  # Set dictionary
+                                        components.append(edge)
+
+                    if len(components) > 0:
+                        if len(components) == 1:
+                            tp_object = components[0]
+                        elif len(components) > 1:
+                            tp_object = Cluster.ByTopologies(components)
+                            if wires == True or faces == True:
+                                tp_object = Topology.SelfMerge(tp_object)
+                        if faces == True:
+                            if Topology.IsInstance(tp_object, "wire"):
+                                if Wire.IsClosed(tp_object):
+                                    tp_object = Face.ByWire(tp_object, silent=True) or tp_object
+                        tp_object = Topology.SetDictionary(tp_object, dictionary)
+                        edges = Topology.Edges(tp_object)
+                        for edge in edges:
+                            edge = Topology.SetDictionary(edge, dictionary)
+                        topologic_entities.append(tp_object)
+
+        return topologic_entities
+
+    @staticmethod
+    def ByPDFPath(path, wires=False, faces=False, includeTypes=[], excludeTypes=[], edgeColorKey="edge_color", edgeWidthKey="edge_width", faceColorKey="face_color", faceOpacityKey="face_opacity", tolerance=0.0001, silent=False):
+        """
+        Import PDF file and convert its entities to topologies.
+
+        Parameters
+        ----------
+        path : path
+            The input path to the PDF file
+        wires : bool , optional
+            If set to True, wires will be constructed when possible. The default is True.
+        faces : bool , optional
+            If set to True, faces will be constructed when possible. The default is True.
+        includeTypes : list , optional
+            A list of PDF object types to include in the returned result. The default is [] which means all PDF objects will be included.
+            The possible strings to include in this list are: ["line", "curve", "rectangle", "quadrilateral"]
+        excludeTypes : list , optional
+            A list of PDF object types to exclude from the returned result. The default is [] which mean no PDF object type will be excluded.
+            The possible strings to include in this list are: ["line", "curve", "rectangle", "quadrilateral"]
+        edgeColorKey : str , optional
+            The dictionary key under which to store the edge color. The default is None.
+        edgeWidthKey : str , optional
+            The dictionary key under which to store the edge width. The default is None.
+        faceColorKey : str , optional
+            The dictionary key under which to store the face color. The default is None.
+        faceOpacityKey : str , optional
+            The dictionary key under which to store the face opacity. The default is None.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+        A list of Topologic entities (edges, wires, faces, clusters) with attached dictionaries.
+
+        """
+        import os
+        import warnings
+        try:
+            import pymupdf  # PyMuPDF
+        except:
+            if not silent:
+                print("Topology.ByPDFPath - Warning: Installing required PyMuPDF library.")
+            try:
+                os.system("pip install PyMuPDF")
+            except:
+                os.system("pip install PyMuPDF --user")
+            try:
+                import pymupdf
+                if not silent:
+                    print("Topology.ByPDFPath - Information: PyMUDF library installed correctly.")
+            except:
+                if not silent:
+                    warnings.warn("Topology.ByPDFPath - Error: Could not import PyMuPDF. Please try to install PyMuPDF manually. Returning None.")
+                return None
+        if not isinstance(path, str):
+            if not silent:
+                print("Topology.ByPDFPath - Error: the input path is not a valid path. Returning None.")
+            return None
+        if not os.path.exists(path):
+            if not silent:
+                print("Topology.ByPDFPath - Error: The specified path does not exist. Returning None.")
+            return None
+        pdf_file = pymupdf.open(path)
+        if not pdf_file:
+            if not silent:
+                print("Topology.ByPDFPath - Error: Could not open the PDF file. Returning None.")
+            return None
+
+        topologies = Topology.ByPDFFile(file=pdf_file,
+                            wires=wires,
+                            faces=faces,
+                            includeTypes = includeTypes,
+                            excludeTypes = excludeTypes,
+                            edgeColorKey=edgeColorKey,
+                            edgeWidthKey=edgeWidthKey,
+                            faceColorKey=faceColorKey,
+                            faceOpacityKey=faceOpacityKey,
+                            tolerance=tolerance,
+                            silent=silent)
+        pdf_file.close()
+        return topologies
+
     @staticmethod
     def ByBREPString(string):
         """
@@ -7697,6 +8023,8 @@ class Topology():
             if not silent:
                 print("Topology.Show - Error: the input topologies parameter does not contain any valid topology. Returning None.")
             return None
+        if camera[0] == 0 and camera[1] == 0 and up == [0,0,1]:
+            up = [0,1,0] #default to positive Y axis being up if looking down or up at the XY plane
         data = []
         for topology in new_topologies:
             if Topology.IsInstance(topology, "Graph"):
