@@ -6864,7 +6864,7 @@ class Topology():
                         final_faces.append(f)
                     else:
                         print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
-                        final_faces += Shell.Faces(shell)
+                        final_faces += Shell.Faces(t)
             else: # It is a cluster
                 shells = Topology.Shells(t)
                 for shell in shells:

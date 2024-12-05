@@ -3039,8 +3039,20 @@ class Wire():
                 final_wire = Edge.ByStartVertexEndVertex(wire_verts[0], wire_verts[1], tolerance=tolerance, silent=True)
             return final_wire
         
+        if Topology.IsInstance(wire, "cluster"):
+            wires = Topology.Wires(wire)
+            temp_wires = []
+            for w in wires:
+                temp_w = Wire.RemoveCollinearEdges(w)
+                if not temp_w == None:
+                    temp_wires.append(temp_w)
+            if len(temp_wires) > 0:
+                result = Topology.SelfMerge(Cluster.ByTopologies(temp_w))
+                return result
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
+                print("The wire is:", wire)
+                Topology.Show(wire)
                 print("Wire.RemoveCollinearEdges - Error: The input wire parameter is not a valid wire. Returning None.")
                 curframe = inspect.currentframe()
                 calframe = inspect.getouterframes(curframe, 2)
