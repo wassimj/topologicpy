@@ -35,6 +35,57 @@ except:
 
 class Vertex():
     @staticmethod
+    def AlignCoordinates(vertex, xList=None, yList=None, zList=None, transferDictionary=False, mantissa=6, silent=False):
+        """
+            Aligns the coordinates of the input vertex with the list of x,y, and z coordinates.
+
+            Parameters
+            ----------
+            vertex : topologic_core.Vertex
+                The input vertex.
+            xList : list , optional
+                The input numerical list of x-coordinates. The default is None.
+            yList : list , optional
+                The input numerical list of y-coordinates. The default is None.
+            zList : list , optional
+                The input numerical list of z-coordinates. The default is None.
+            transferDictionary : bool , optional
+                if set to True, the dictionary of the input vertex is transferred to the new vertex.
+            mantissa : int , optional
+                The desired length of the mantissa. The default is 6.
+            silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            
+            Returns
+            -------
+            topologic_core.Vertex
+                The created vertex aligned to the input list of x,y, and z coordinates.
+        
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+
+        if not Topology.IsInstance(vertex, "vertex"):
+            if not silent:
+                print("Vertex.AlignCoordinates - Error: The input vertex parameter is not a topologic vertex. Returning None.")
+            return None
+        
+        closest_x, closest_y, closest_z = Vertex.Coordinates(vertex, mantissa=mantissa)
+        if isinstance(xList, list):
+            if len(xList) > 0:
+                closest_x = xList[Helper.ClosestMatch(closest_x, xList)]
+        if isinstance(yList, list):
+            if len(yList) > 0:
+                closest_y = yList[Helper.ClosestMatch(closest_y, yList)]
+        if isinstance(zList, list):
+            if len(zList) > 0:
+                closest_z = zList[Helper.ClosestMatch(closest_z, zList)]
+        return_vertex = Vertex.ByCoordinates(closest_x, closest_y, closest_z)
+        if transferDictionary == True:
+            return_vertex = Topology.SetDictionary(return_vertex, Topology.Dictionary(vertex), silent=silent)
+        return return_vertex
+
+    @staticmethod
     def AreCollinear(vertices: list, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns True if the input list of vertices form a straight line. Returns False otherwise.
