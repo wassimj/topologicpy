@@ -553,7 +553,7 @@ class Speckle:
 
         
     @staticmethod
-    def TopologyBySpeckleObject(obj: Base, threshold = 200: int) -> Cell:
+    def TopologyBySpeckleObject(obj: Base, threshold: int = 200) -> Cell:
         # Threshold defines the number of vertices in the array after which 
         # the convex hull will be applied to better simplify all non-essential elements
         # such as windows and doors.
