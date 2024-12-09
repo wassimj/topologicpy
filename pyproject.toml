@@ -26,6 +26,7 @@ dependencies = [
     "specklepy",
     "webcolors",
     "topologic_core>=7.0.1",
+    "trimesh",
 ]
 
 [project.optional-dependencies]
