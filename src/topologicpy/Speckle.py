@@ -34,7 +34,7 @@ from topologicpy.Dictionary import Dictionary
 import os 
 import warnings
 from collections import deque
-from typing import List, Type
+from typing import List, Type, Generator 
 
 # Trimesh is required for preliminary mesh processing after it was recieved from Speckle
 # In order to reduce the load on topologic_core
@@ -47,7 +47,7 @@ except:
     except:
         os.system("pip install trimesh --user")
     try:
-        import trimeseh
+        import trimesh
     except:
         warnings.warn("trimesh - Error: Could not import trimesh")
 
@@ -553,7 +553,7 @@ class Speckle:
 
         
     @staticmethod
-    def TopologyBySpeckleObject(obj: Base, threshold: int = 200) -> Cell:
+    def TopologyBySpeckleObject(obj: Base, threshold: int = 200) -> Generator[Cell, None, None]:
         # Threshold defines the number of vertices in the array after which 
         # the convex hull will be applied to better simplify all non-essential elements
         # such as windows and doors.
@@ -673,7 +673,7 @@ class Speckle:
                             topologic_faces = build_topologic_triangle_faces(trimesh_convex_hull.vertices[trimesh_convex_hull.faces])
                             topologic_cell = Cell.ByFaces(topologic_faces)
                             Topology.AddDictionary(topologic_cell, topologic_metadata_dictionary)
-                            yield cell
+                            yield topologic_cell
 
                         else:
                             topologic_cells = []
