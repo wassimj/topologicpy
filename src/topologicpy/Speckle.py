@@ -553,8 +553,10 @@ class Speckle:
 
         
     @staticmethod
-    def TopologyBySpeckleObject(obj: Base) -> Cell:
-
+    def TopologyBySpeckleObject(obj: Base, threshold = 200: int) -> Cell:
+        # Threshold defines the number of vertices in the array after which 
+        # the convex hull will be applied to better simplify all non-essential elements
+        # such as windows and doors.
         def transform_faces_from_speckle_to_trimesh(speckle_faces: List[int]) -> List[int]:
             l = len(speckle_faces)
             i = 0
@@ -665,8 +667,8 @@ class Speckle:
                         # Check if mesh is too heavy
                         # This condition usually filters detailed non essesntial elements like door and windows
                         # The amount of vertices could be modified
-                        if len(concatenated_trimesh.vertices) > 200:
-                            trimesh_convex_hull = overall_mesh.convex_hull
+                        if len(concatenated_trimesh.vertices) > threshold:
+                            trimesh_convex_hull = concatenated_trimesh.convex_hull
 
                             topologic_faces = build_topologic_triangle_faces(trimesh_convex_hull.vertices[trimesh_convex_hull.faces])
                             topologic_cell = Cell.ByFaces(faces)
