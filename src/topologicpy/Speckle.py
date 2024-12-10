@@ -671,7 +671,7 @@ class Speckle:
                             trimesh_convex_hull = concatenated_trimesh.convex_hull
 
                             topologic_faces = build_topologic_triangle_faces(trimesh_convex_hull.vertices[trimesh_convex_hull.faces])
-                            topologic_cell = Cell.ByFaces(topologic_faces)
+                            topologic_cell = Cell.ByFaces(topologic_faces, silent=True)
                             Topology.AddDictionary(topologic_cell, topologic_metadata_dictionary)
                             yield topologic_cell
 
@@ -681,7 +681,7 @@ class Speckle:
                             # mesh should be splitted to ensure that topologic will build a Cell of a single mesh body
                             for submesh in concatenated_trimesh.split():
                                 topologic_faces = build_topologic_triangle_faces(submesh.vertices[submesh.faces])
-                                topologic_cell = Cell.ByFaces(topologic_faces)
+                                topologic_cell = Cell.ByFaces(topologic_faces, silent=True)
                                 topologic_cells.append(topologic_cell)
 
                             simplified_topologic_cell = simplify_topology(topologic_cells)
