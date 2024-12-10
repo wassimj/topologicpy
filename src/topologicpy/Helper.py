@@ -125,7 +125,6 @@ class Helper:
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
         import inspect
-
         keys_list = list(keys)
         keys_list = Helper.Flatten(keys_list)
         keys_list = [x for x in keys_list if isinstance(x, str)]
@@ -155,9 +154,7 @@ class Helper:
         values = []
         new_dictionaries = []
         for i, d in enumerate(dictionaries):
-            element = elements[i]
-
-            d_keys = Dictionary.Keys(d)
+            d_keys = Dictionary.Keys(dictionaries[i])
             if len(d_keys) > 0:
                 values_list = []
                 for key in keys_list:
@@ -165,9 +162,13 @@ class Helper:
                     if not v == None:
                         values_list.append(v)
                 values_list = str(values_list)
-                d = Dictionary.SetValueAtKey(d, "_clustering_key_", values_list)
-                new_dictionaries.append(d)
+                dictionaries[i] = Dictionary.SetValueAtKey(dictionaries[i], "_clustering_key_", values_list)
                 values.append(values_list)
+            else:
+                dictionaries[i] = Dictionary.SetValueAtKey(dictionaries[i], "_clustering_key_", "_NONE_")
+                values.append("_NONE_")
+            new_dictionaries.append(dictionaries[i])
+
         
         values = list(set(values))
         remaining_dictionaries = [x for x in new_dictionaries]

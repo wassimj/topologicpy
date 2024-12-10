@@ -609,12 +609,13 @@ class Plotly:
             n = len(str(len(elements_clusters)))
             labels = []
             for j, elements_cluster in enumerate(elements_clusters):
+                d_color = color
                 labels.append("Edge_"+str(j+1).zfill(n))
                 d = dict_clusters[j][0] # All dicitonaries have same values in dictionaries, so take first one.
                 if d:
                     if not colorKey == None:
                         d_color = Dictionary.ValueAtKey(d, key=colorKey) or color
-                        color = Color.AnyToHex(d_color)
+                        d_color = Color.AnyToHex(d_color)
                     if not labelKey == None:
                         label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
                     if not widthKey == None:
@@ -632,7 +633,6 @@ class Plotly:
                                 d_color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
                             else:
                                 d_color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            color = d_color
 
                 x = []
                 y = []
@@ -658,7 +658,7 @@ class Plotly:
                                     showlegend=showLegend,
                                     marker=dict(symbol="circle", size=marker_width),
                                     mode=mode,
-                                    line=dict(color=color, width=width),
+                                    line=dict(color=d_color, width=width),
                                     legendgroup=legendGroup,
                                     legendrank=legendRank,
                                     text=label,
