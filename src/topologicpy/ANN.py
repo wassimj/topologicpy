@@ -827,7 +827,7 @@ class ANN():
         Returns
         -------
         _ANNModel
-            Returns the trained model.
+            Returns the initialized model.
 
         """
         def prepare_data(dataset, task_type='classification'):
@@ -898,7 +898,7 @@ class ANN():
         Returns
         -------
         list, list
-            Returns two lists: metrics, and predictions.
+            Returns four lists: y_test, predictions, metrics, and confusion_matrix.
 
         """
         def prepare_data(dataset, task_type='classification'):
