@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Face module &mdash; topologicpy 0.7.81 documentation</title>
+  <title>topologicpy.Face module &mdash; topologicpy 0.7.82 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.81
+                0.7.82
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -1171,12 +1171,12 @@ internal boundaries are considered to be those interior to the original face. Th
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Isovist">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Isovist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">1,</span> <span class="pre">0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Isovist" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Isovist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">1,</span> <span class="pre">0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Isovist" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the face representing the isovist projection from the input viewpoint.
 This method assumes all input is in 2D. Z coordinates are ignored.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
+<dd class="field-odd"><dl>
 <dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The face representing the boundary of the isovist.</p>
 </dd>
 <dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The vertex representing the location of the viewpoint of the isovist.</p>
@@ -1193,6 +1193,27 @@ Angles are measured in a clockwise fashion. The default is [0,1,0] (North).</p>
 The acceptable range is 1 to 360. The default is 360.</p>
 </dd>
 <dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries of the encountered edges will be transfered to the isovist edges. The default is False.</p>
+</dd>
+<dt><strong>metrics</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the following metrics are calculated and stored in the dictionary of the returned isovist. The keys of the values are:
+- viewpoint : list , the x , y , z coordinates of the location of the viewpoint.
+- direction : list , the direction of the view.
+- fov : int, Field of view angle.
+- area : float , the area of the isovist.
+- perimeter : float , the perimeter length of the isovist
+- compactness : float , how closely the shape of the isovist approximates a circle (the most compact geometric shape).
+- d_max : float, Maximum Visibility Distance. the length of the longest straight line that can be seen from the viewpoint.
+- v_max : list, Furthest Point measures the x , y , z coordinates of the furthest visible point from the viewpoint.
+- v_d :  list, Visibility Distribution quantifies the angular distribution (in degrees) of visible points across the isovist.</p>
+<blockquote>
+<div><p>This metric can tell you whether the visibility from a point is more spread out or concentrated in a certain direction. A uniform visibility distribution indicates a more balanced visual field, while a skewed distribution suggests that the observer’s line of sight is constrained in certain directions.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>v_density : float, Viewpoint Density which refers to the number of visible points per unit area within the isovist.</p></li>
+<li><p>symmetry : float, Symmetry measures how balanced or symmetrical the isovist is around the point of observation.</p></li>
+<li><p>d_f : float, Fractal Dimension measures the complexity of the isovist’s boundary.</p></li>
+<li><p>e_c : float , Edge Complexity measures how complex the edges of the isovist boundary are.</p></li>
+<li><p>theta : float, Mean Visual Field Angle measures the average angular extent of the visible area from the observation point.</p></li>
+</ul>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
