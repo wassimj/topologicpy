@@ -1649,7 +1649,7 @@ class Face():
         return are_planes_coplanar(plane_a, plane_b, tolerance=tolerance)
 
     @staticmethod
-    def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, transferDictionaries: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
+    def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, transferDictionaries: bool = False, metrics: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the face representing the isovist projection from the input viewpoint.
         This method assumes all input is in 2D. Z coordinates are ignored.
@@ -1673,6 +1673,23 @@ class Face():
             The acceptable range is 1 to 360. The default is 360.
         transferDictionaries : bool , optional
             If set to True, the dictionaries of the encountered edges will be transfered to the isovist edges. The default is False.
+        metrics : bool , optional
+            If set to True, the following metrics are calculated and stored in the dictionary of the returned isovist. The keys of the values are:
+            - viewpoint : list , the x , y , z coordinates of the location of the viewpoint.
+            - direction : list , the direction of the view.
+            - fov : int, Field of view angle.
+            - area : float , the area of the isovist.
+            - perimeter : float , the perimeter length of the isovist
+            - compactness : float , how closely the shape of the isovist approximates a circle (the most compact geometric shape).
+            - d_max : float, Maximum Visibility Distance. the length of the longest straight line that can be seen from the viewpoint.
+            - v_max : list, Furthest Point measures the x , y , z coordinates of the furthest visible point from the viewpoint.
+            - v_d :  list, Visibility Distribution quantifies the angular distribution (in degrees) of visible points across the isovist.
+                    This metric can tell you whether the visibility from a point is more spread out or concentrated in a certain direction. A uniform visibility distribution indicates a more balanced visual field, while a skewed distribution suggests that the observer's line of sight is constrained in certain directions.
+            - v_density : float, Viewpoint Density which refers to the number of visible points per unit area within the isovist.
+            - symmetry : float, Symmetry measures how balanced or symmetrical the isovist is around the point of observation.
+            - d_f : float, Fractal Dimension measures the complexity of the isovist's boundary.
+            - e_c : float , Edge Complexity measures how complex the edges of the isovist boundary are.
+            - theta : float, Mean Visual Field Angle measures the average angular extent of the visible area from the observation point.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional:
@@ -1695,7 +1712,129 @@ class Face():
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
 
-        def vertexPartofFace(vertex, face, tolerance):
+        import math
+        import numpy as np
+
+        def calculate_angle(viewpoint, vertex):
+            # Calculate the angle between the viewpoint and the vertex in the 2D plane
+            # Viewpoint is (x, y, z), and vertex is (x, y)
+            dx = vertex[0] - viewpoint[0]
+            dy = vertex[1] - viewpoint[1]
+            
+            # Return the angle in radians using the arctangent of the y/x difference
+            return math.degrees(math.atan2(dy, dx))
+        
+        def visibility_distribution(viewpoint, isovist_vertices):
+            angles = []
+            # Calculate the angle of each vertex with respect to the viewpoint
+            for vertex in isovist_vertices:
+                angle = calculate_angle(viewpoint, vertex)
+                angles.append(angle)
+            # Sort the angles to analyze the distribution
+            angles = np.sort(angles)
+            return list(angles)
+
+        def isovist_symmetry(viewpoint, isovist_vertices):
+            """
+            Calculates the symmetry of the isovist polygon.
+            
+            Parameters:
+            - viewpoint: a tuple (x, y) of the viewpoint.
+            - isovist_vertices: a list of tuples, each representing a vertex (x, y) of the isovist polygon.
+            
+            Returns:
+            - symmetry value: A measure of the symmetry of the isovist.
+            """
+            angles = [calculate_angle(viewpoint, vertex) for vertex in isovist_vertices]
+            angles.sort()
+
+            # Calculate angular deviations from the mean direction
+            mean_angle = np.mean(angles)
+            angular_deviation = np.std(angles)
+            symmetry = angular_deviation / mean_angle if mean_angle != 0 else 0
+            return float(symmetry)
+        
+        # Fractal Dimension (D_f) using Box-counting
+        def fractal_dimension(isovist_vertices):
+            """
+            Calculates the fractal dimension of the isovist boundary using box-counting.
+            
+            Parameters:
+            - isovist_vertices: a list of tuples, each representing a vertex (x, y) of the isovist polygon.
+            
+            Returns:
+            - fractal dimension: A measure of the boundary's complexity.
+            """
+            # Convert isovist vertices into a boundary path (x, y coordinates)
+            boundary_points = np.array(isovist_vertices)
+
+            # Box-counting approach
+            sizes = np.logspace(0, 2, 10)  # Varying box sizes (log scale)
+            sizes[sizes == 0] = 1e-10  # Replace zero counts with a small value
+            counts = []
+            
+            for size in sizes:
+                count = 0
+                for i in range(len(boundary_points)):
+                    if np.abs(boundary_points[i][0] - boundary_points[(i+1)%len(boundary_points)][0]) > size or \
+                    np.abs(boundary_points[i][1] - boundary_points[(i+1)%len(boundary_points)][1]) > size:
+                        count += 1
+                counts.append(count)
+
+            # To avoid log(0), add a small constant to counts
+            counts = np.array(counts)
+            counts = np.where(counts == 0, 1e-10, counts)
+            # Linear regression of log(count) vs log(size) to estimate fractal dimension
+            log_sizes = np.log(sizes)
+            log_counts = np.log(counts)
+            
+            # Perform linear regression (log-log scale)
+            slope, _ = np.polyfit(log_sizes, log_counts, 1)
+            
+            return slope
+
+        # Edge Complexity (E_C)
+        def edge_complexity(isovist_vertices):
+            """
+            Calculates the edge complexity of the isovist boundary.
+            
+            Parameters:
+            - isovist_vertices: a list of tuples, each representing a vertex (x, y) of the isovist polygon.
+            
+            Returns:
+            - edge complexity: A measure of the complexity of the boundary.
+            """
+            angles = []
+            for i in range(len(isovist_vertices)):
+                p1 = isovist_vertices[i]
+                p2 = isovist_vertices[(i + 1) % len(isovist_vertices)]
+                p3 = isovist_vertices[(i + 2) % len(isovist_vertices)]
+
+                # Calculate the angle between each consecutive edge
+                angle = np.arctan2(p3[1] - p2[1], p3[0] - p2[0]) - np.arctan2(p1[1] - p2[1], p1[0] - p2[0])
+                angles.append(np.abs(angle))
+
+            # Complexity is the number of abrupt angle changes
+            complexity = np.sum(np.array(angles) > np.pi / 4)  # e.g., large changes in angles
+            return float(complexity)
+
+        # Mean Visual Field Angle (θ)
+        def mean_visual_field_angle(viewpoint, isovist_vertices):
+            """
+            Calculates the mean visual field angle from the viewpoint to the isovist vertices.
+            
+            Parameters:
+            - viewpoint: a tuple (x, y) of the viewpoint.
+            - isovist_vertices: a list of tuples, each representing a vertex (x, y) of the isovist polygon.
+            
+            Returns:
+            - mean visual field angle in degrees.
+            """
+            angles = [calculate_angle(viewpoint, vertex) for vertex in isovist_vertices]
+            # Return the average angle
+            return np.mean(angles)
+
+        def vertex_part_of_face(vertex, face, tolerance):
             vertices = Topology.Vertices(face)
             for v in vertices:
                 if Vertex.Distance(vertex, v) < tolerance:
@@ -1756,7 +1895,7 @@ class Face():
         faces = Topology.Faces(shell)
         final_faces = []
         for f in faces:
-            if vertexPartofFace(flat_vertex, f, tolerance=0.001):
+            if vertex_part_of_face(flat_vertex, f, tolerance=0.001):
                 final_faces.append(f)
         shell = Shell.ByFaces(final_faces)
         return_face = Topology.RemoveCoplanarFaces(shell, epsilon=0.1)
@@ -1815,8 +1954,79 @@ class Face():
                                 d_result = Dictionary.ByMergedDictionaries([d_i, d_j])
                                 i_edge = Topology.SetDictionary(i_edge, d_result)
                                 used[j] == 1
-            return Topology.Unflatten(simpler_face, origin=origin, direction=normal)
-        return Topology.Unflatten(return_face, origin=origin, direction=normal)
+            
+            return_face = Topology.Unflatten(simpler_face, origin=origin, direction=normal)
+        return_face = Topology.Unflatten(return_face, origin=origin, direction=normal)
+        if metrics == True:
+            # 1 Viewpoint
+            viewpoint = Vertex.Coordinates(vertex, mantissa=mantissa)
+            # 2 Direction
+            # direction is given
+            # 3 Field of View (FOV)
+            # fov is given
+            # 4 Area
+            area = round(abs(Face.Area(return_face)), mantissa)
+            # 5 Perimeter
+            perimeter = round(Wire.Length(Face.Wires(return_face)[0]), mantissa)
+            # 6 Compactness
+            compactness = round(Face.Compactness(return_face), mantissa)
+            # 7 Maximum Distance (d_max)
+            vertices = Topology.Vertices(return_face)
+            furthest_vertex = vertices[0]
+            d_max = round(Vertex.Distance(vertex, vertices[0]), mantissa)
+            # 8 Furthest Visible Vertex
+            coords = []
+            for v in vertices:
+                coords.append(Vertex.Coordinates(v, mantissa=mantissa))
+                dis = Vertex.Distance(vertex, v, mantissa=mantissa)
+                if dis > d_max:
+                    d_max  = dis
+                    furthest_vertex = v
+            v_max = Vertex.Coordinates(furthest_vertex, mantissa=mantissa)
+            # 9 Visibility Distribution (v_d)
+            v_d = visibility_distribution(viewpoint, coords)
+            v_d = [round(x) for x in v_d]
+            # 10 Viewpoint density
+            v_density = round(float(len(vertices)) / abs(Face.Area(return_face)), mantissa)
+            # 11 Isovist Symmetry
+            symmetry = round(isovist_symmetry(viewpoint, coords), mantissa)
+            # 12 Fractal Dimension
+            d_f = round(fractal_dimension(coords), mantissa)
+            # 13 Edge Complexity
+            e_c = round(edge_complexity(coords), mantissa)
+            # 14 Mean Visual Field Angle
+            theta = round(mean_visual_field_angle(viewpoint, coords), mantissa)
+            keys = ["viewpoint",
+                    "direction",
+                    "fov",
+                    "area",
+                    "perimeter",
+                    "compactness",
+                    "d_max",
+                    "v_max",
+                    "v_d",
+                    "v_density",
+                    "symmetry",
+                    "d_f",
+                    "e_c",
+                    "theta"]
+            values = [viewpoint,
+                        direction,
+                        fov,
+                        area,
+                        perimeter,
+                        compactness,
+                        d_max,
+                        v_max,
+                        v_d,
+                        v_density,
+                        symmetry,
+                        d_f,
+                        e_c,
+                        theta]
+            d = Dictionary.ByKeysValues(keys, values)
+            return_face = Topology.SetDictionary(return_face, d)
+        return return_face
 
     @staticmethod
     def MedialAxis(face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001):
