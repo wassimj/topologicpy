@@ -1649,7 +1649,7 @@ class Face():
         return are_planes_coplanar(plane_a, plane_b, tolerance=tolerance)
 
     @staticmethod
-    def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, mantissa: int = 6, tolerance: float = 0.0001):
+    def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, transferDictionaries: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the face representing the isovist projection from the input viewpoint.
         This method assumes all input is in 2D. Z coordinates are ignored.
@@ -1671,6 +1671,8 @@ class Face():
         fov : float , optional
             The horizontal field of view (fov) angle in degrees. See https://en.wikipedia.org/wiki/Field_of_view.
             The acceptable range is 1 to 360. The default is 360.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries of the encountered edges will be transfered to the isovist edges. The default is False.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional:
@@ -1690,6 +1692,8 @@ class Face():
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
 
         def vertexPartofFace(vertex, face, tolerance):
             vertices = Topology.Vertices(face)
@@ -1716,6 +1720,7 @@ class Face():
         normal = Face.Normal(face)
         flat_face = Topology.Flatten(face, origin=origin, direction=normal)
         flat_vertex = Topology.Flatten(vertex, origin=origin, direction=normal)
+        flat_obstacles = [Topology.Flatten(obstacle, origin=origin, direction=normal) for obstacle in obstacles]
 
         eb = Face.ExternalBoundary(flat_face)
         vertices = Topology.Vertices(eb)
@@ -1732,7 +1737,7 @@ class Face():
             new_ib_list.append(Wire.ByVertices(new_vertices, close=True))
 
         flat_face = Face.ByWires(eb, new_ib_list)
-        for obs in obstacles:
+        for obs in flat_obstacles:
             flat_face = Topology.Difference(flat_face, Face.ByWire(obs))
         
         targets = Topology.Vertices(flat_face)
@@ -1795,6 +1800,21 @@ class Face():
             return None
         simpler_face = Face.RemoveCollinearEdges(return_face)
         if Topology.IsInstance(simpler_face, "face"):
+            if transferDictionaries == True:
+                j_edges = [Topology.Edges(t) for t in obstacles]
+                j_edges = Helper.Flatten(j_edges)
+                j_edges += Topology.Edges(face)
+                i_edges = Topology.Edges(simpler_face)
+                used = [0 for _ in range(len(j_edges))]
+                for i, i_edge in enumerate(i_edges):
+                    d_i = Topology.Dictionary(i_edge)
+                    for j, j_edge in enumerate(j_edges):
+                        if used[j] == 0:
+                            if Edge.IsCollinear(i_edge, j_edge):
+                                d_j = Topology.Dictionary(j_edge)
+                                d_result = Dictionary.ByMergedDictionaries([d_i, d_j])
+                                i_edge = Topology.SetDictionary(i_edge, d_result)
+                                used[j] == 1
             return Topology.Unflatten(simpler_face, origin=origin, direction=normal)
         return Topology.Unflatten(return_face, origin=origin, direction=normal)
 
