@@ -1623,10 +1623,10 @@ class Face():
                 return None
 
         if not Topology.IsInstance(faceA, "Face"):
-            print("Face.IsInside - Error: The input faceA parameter is not a valid topologic face. Returning None.")
+            print("Face.IsCoplanar - Error: The input faceA parameter is not a valid topologic face. Returning None.")
             return None
         if not Topology.IsInstance(faceB, "Face"):
-            print("Face.IsInside - Error: The input faceB parameter is not a valid topologic face. Returning None.")
+            print("Face.IsCoplanar - Error: The input faceB parameter is not a valid topologic face. Returning None.")
             return None
 
         def normalize_plane_coefficients(plane):
@@ -1649,7 +1649,7 @@ class Face():
         return are_planes_coplanar(plane_a, plane_b, tolerance=tolerance)
 
     @staticmethod
-    def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, transferDictionaries: bool = False, metrics: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
+    def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, transferDictionaries: bool = False, metrics: bool = False, triangles: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the face representing the isovist projection from the input viewpoint.
         This method assumes all input is in 2D. Z coordinates are ignored.
@@ -1682,7 +1682,11 @@ class Face():
             - perimeter : float , the perimeter length of the isovist
             - compactness : float , how closely the shape of the isovist approximates a circle (the most compact geometric shape).
             - d_max : float, Maximum Visibility Distance. the length of the longest straight line that can be seen from the viewpoint.
+            - d_min : float, Minimum Visibility Distance. the length of the shortest straight line that can be seen from the viewpoint.
+            - d_avg : float, Average Visibility Distance. the length of the average straight line that can be seen from the viewpoint.
             - v_max : list, Furthest Point measures the x , y , z coordinates of the furthest visible point from the viewpoint.
+            - v_min : list, Closest Point measures the x , y , z coordinates of the closest visible point from the viewpoint.
+            - centroid: list, Centroid measures the x, y, z coordinates of the centroid of the isovist face.
             - v_d :  list, Visibility Distribution quantifies the angular distribution (in degrees) of visible points across the isovist.
                     This metric can tell you whether the visibility from a point is more spread out or concentrated in a certain direction. A uniform visibility distribution indicates a more balanced visual field, while a skewed distribution suggests that the observer's line of sight is constrained in certain directions.
             - v_density : float, Viewpoint Density which refers to the number of visible points per unit area within the isovist.
@@ -1690,6 +1694,8 @@ class Face():
             - d_f : float, Fractal Dimension measures the complexity of the isovist's boundary.
             - e_c : float , Edge Complexity measures how complex the edges of the isovist boundary are.
             - theta : float, Mean Visual Field Angle measures the average angular extent of the visible area from the observation point.
+        triangles : bool , optional
+            If set to True, the subtended triangles of the isovist are created and stored as contents of the returned isovist face. The default is False.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional:
@@ -1855,6 +1861,42 @@ class Face():
         else:
             obstacles = []
         
+        def closest_distance_vertex(vertex, edge, mantissa):
+            point = Vertex.Coordinates(vertex, mantissa=mantissa)
+            line_start = Vertex.Coordinates(Edge.StartVertex(edge), mantissa=mantissa)
+            line_end = Vertex.Coordinates(Edge.EndVertex(edge), mantissa=mantissa)
+
+            # Convert input points to NumPy arrays for vector operations
+            point = np.array(point)
+            line_start = np.array(line_start)
+            line_end = np.array(line_end)
+            
+            # Calculate the direction vector of the edge
+            line_direction = line_end - line_start
+            
+            # Vector from the edge's starting point to the point
+            point_to_start = point - line_start
+            
+            # Calculate the parameter 't' where the projection of the point onto the edge occurs
+            if np.dot(line_direction, line_direction) == 0:
+                t = 0
+            else:
+                t = np.dot(point_to_start, line_direction) / np.dot(line_direction, line_direction)
+            
+            # Check if 't' is outside the range [0, 1], and if so, calculate distance to closest endpoint
+            if t < 0:
+                t = 0
+            elif t > 1:
+                t = 1
+            
+            # Calculate the closest point on the edge to the given point
+            closest_point = line_start + t * line_direction
+            
+            # Calculate the distance between the closest point and the given point
+            distance = np.linalg.norm(point - closest_point)
+            
+            return float(distance), Vertex.ByCoordinates(list(closest_point))
+        
         origin = Topology.Centroid(face)
         normal = Face.Normal(face)
         flat_face = Topology.Flatten(face, origin=origin, direction=normal)
@@ -1879,6 +1921,10 @@ class Face():
         for obs in flat_obstacles:
             flat_face = Topology.Difference(flat_face, Face.ByWire(obs))
         
+        # Check that the viewpoint is inside the face
+        if not Vertex.IsInternal(flat_vertex, flat_face):
+            print("Face.Isovist - Error: The viewpoint is not inside the face. Returning None.")
+            return None
         targets = Topology.Vertices(flat_face)
         distances = []
         for target in targets:
@@ -1958,6 +2004,8 @@ class Face():
             return_face = Topology.Unflatten(simpler_face, origin=origin, direction=normal)
         return_face = Topology.Unflatten(return_face, origin=origin, direction=normal)
         if metrics == True:
+            vertices = Topology.Vertices(return_face)
+            edges = Topology.Edges(return_face)
             # 1 Viewpoint
             viewpoint = Vertex.Coordinates(vertex, mantissa=mantissa)
             # 2 Direction
@@ -1971,30 +2019,59 @@ class Face():
             # 6 Compactness
             compactness = round(Face.Compactness(return_face), mantissa)
             # 7 Maximum Distance (d_max)
-            vertices = Topology.Vertices(return_face)
-            furthest_vertex = vertices[0]
+            # 8 Minimum Distance (d_min)
+            # 9 Average Distance (d_avg)
+            # 10 Furthest Visible Vertex (v_max)
+            # 11 Closest Visible Vertex (v_min)
             d_max = round(Vertex.Distance(vertex, vertices[0]), mantissa)
-            # 8 Furthest Visible Vertex
+            d_min = round(Vertex.Distance(vertex, vertices[0]), mantissa)
+            furthest_vertex = vertices[0]
+            closest_vertex = vertices[0]
             coords = []
+            distances = []
             for v in vertices:
                 coords.append(Vertex.Coordinates(v, mantissa=mantissa))
                 dis = Vertex.Distance(vertex, v, mantissa=mantissa)
+                distances.append(dis)
                 if dis > d_max:
                     d_max  = dis
                     furthest_vertex = v
+            distances = []
+            edges = Topology.Edges(Cluster.ByTopologies([face]+obstacles))
+            for edge in edges:
+                dis, c_v = closest_distance_vertex(vertex, edge, mantissa=mantissa)
+                if dis < d_min and Vertex.IsPeripheral(c_v, return_face):
+                    d_min = dis
+                    closest_vertex = c_v
+            
+            # 12 Average Visible Distance
+            if len(distances) > 0:
+                d_avg = sum(distances)/float(len(distances))
+            else:
+                d_avg = 0
+            
+            # 10 Furthest Visible Vertex (v_max)
             v_max = Vertex.Coordinates(furthest_vertex, mantissa=mantissa)
-            # 9 Visibility Distribution (v_d)
+            # 11 Closest Visible Vertex (v_min)
+            v_min = Vertex.Coordinates(closest_vertex, mantissa=mantissa)
+            # 12 Centroid of Isovist (centroid)
+            centroid = Vertex.Coordinates(Topology.Centroid(return_face), mantissa=mantissa)
+
+            # 13 Visibility Distribution (v_d)
             v_d = visibility_distribution(viewpoint, coords)
             v_d = [round(x) for x in v_d]
-            # 10 Viewpoint density
-            v_density = round(float(len(vertices)) / abs(Face.Area(return_face)), mantissa)
-            # 11 Isovist Symmetry
+            # 14 Viewpoint density
+            if abs(Face.Area(return_face)) > 0:
+                v_density = round(float(len(vertices)) / abs(Face.Area(return_face)), mantissa)
+            else:
+                v_density = 0
+            # 15 Isovist Symmetry
             symmetry = round(isovist_symmetry(viewpoint, coords), mantissa)
-            # 12 Fractal Dimension
+            # 16 Fractal Dimension
             d_f = round(fractal_dimension(coords), mantissa)
-            # 13 Edge Complexity
+            # 17 Edge Complexity
             e_c = round(edge_complexity(coords), mantissa)
-            # 14 Mean Visual Field Angle
+            # 18 Mean Visual Field Angle
             theta = round(mean_visual_field_angle(viewpoint, coords), mantissa)
             keys = ["viewpoint",
                     "direction",
@@ -2003,7 +2080,11 @@ class Face():
                     "perimeter",
                     "compactness",
                     "d_max",
+                    "d_min",
+                    "d_avg",
                     "v_max",
+                    "v_min",
+                    "centroid",
                     "v_d",
                     "v_density",
                     "symmetry",
@@ -2011,21 +2092,47 @@ class Face():
                     "e_c",
                     "theta"]
             values = [viewpoint,
-                        direction,
-                        fov,
-                        area,
-                        perimeter,
-                        compactness,
-                        d_max,
-                        v_max,
-                        v_d,
-                        v_density,
-                        symmetry,
-                        d_f,
-                        e_c,
-                        theta]
+                      direction,
+                      fov,
+                      area,
+                      perimeter,
+                      compactness,
+                      d_max,
+                      d_min,
+                      d_avg,
+                      v_max,
+                      v_min,
+                      centroid,
+                      v_d,
+                      v_density,
+                      symmetry,
+                      d_f,
+                      e_c,
+                      theta]
             d = Dictionary.ByKeysValues(keys, values)
             return_face = Topology.SetDictionary(return_face, d)
+        if triangles:
+            triangle_list = []
+            edges = Topology.Edges(return_face)
+            for edge in edges:
+                d = Topology.Dictionary(edge)
+                if Vertex.Distance(Edge.StartVertex(edge), v) > 0.0001:
+                    e1 = Edge.ByVertices(Edge.StartVertex(edge), v)
+                    if Vertex.Distance(Edge.EndVertex(edge), v) > 0.0001:
+                        e2 = Edge.ByVertices(Edge.EndVertex(edge), v)
+                        triangle = Topology.SelfMerge(Cluster.ByTopologies(edge, e1, e2))
+                        if Topology.IsInstance(triangle, "wire"):
+                            if Wire.IsClosed(triangle):
+                                triangle = Face.ByWire(triangle, silent=True)
+                                if Topology.IsInstance(triangle, "face"):
+                                    if transferDictionaries == True:
+                                        triangle = Topology.SetDictionary(triangle, d)
+                                        tri_edges = Topology.Edges(triangle)
+                                        for tri_edge in tri_edges:
+                                            tri_edge = Topology.SetDictionary(tri_edge, d)
+                                    triangle_list.append(triangle)
+            if len(triangle_list) > 0:
+                return_face = Topology.AddContent(return_face, triangle_list)
         return return_face
 
     @staticmethod

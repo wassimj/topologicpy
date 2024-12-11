@@ -1178,7 +1178,6 @@ class Vertex():
             return False
         return False
     
-    
     @staticmethod
     def IsPeripheral(vertex, topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """
