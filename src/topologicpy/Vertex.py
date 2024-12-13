@@ -1110,13 +1110,18 @@ class Vertex():
         import inspect
 
         if not Topology.IsInstance(vertex, "Vertex"):
-            print("Called from:", inspect.stack()[1][3])
             if not silent:
                 print("Vertex.IsInternal - Error: The input vertex parameter is not a valid vertex. Returning None.", vertex, topology)
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Vertex.IsInternal - Error: The input topology parameter is not a valid topology. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
 
         if Topology.IsInstance(topology, "Vertex"):

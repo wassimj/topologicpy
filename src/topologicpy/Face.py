@@ -594,6 +594,7 @@ class Face():
         # Try the simple method first
         face = None
         ext_boundary = Wire.RemoveCollinearEdges(Shell.ExternalBoundary(shell))
+        #ext_boundary = Shell.ExternalBoundary(shell)
         if Topology.IsInstance(ext_boundary, "Wire"):
             face = Face.ByWire(ext_boundary, silent=silent)
         elif Topology.IsInstance(ext_boundary, "Cluster"):
@@ -652,8 +653,11 @@ class Face():
             for int_boundary in int_boundaries:
                 temp_wires = Topology.Wires(int_boundary)
                 int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance))
+                #int_wires.append(temp_wires[0])
+
             temp_wires = Topology.Wires(ext_boundary)
             ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
+            #ext_wire = temp_wires[0]
             face = Face.ByWires(ext_wire, int_wires)
             face = Topology.Unflatten(face, origin=origin, direction=normal)
             return face
@@ -2573,9 +2577,13 @@ class Face():
         """
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
-
+        import inspect
+        
         if not Topology.IsInstance(face, "Face"):
             print("Face.RemoveCollinearEdges - Error: The input face parameter is not a valid face. Returning None.")
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            print('caller name:', calframe[1][3])
             return None
         eb = Wire.RemoveCollinearEdges(Face.Wire(face), angTolerance=angTolerance, tolerance=tolerance)
         ib = [Wire.RemoveCollinearEdges(w, angTolerance=angTolerance, tolerance=tolerance) for w in Face.InternalBoundaries(face)]

@@ -1456,9 +1456,13 @@ class Shell():
         """
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-
+        import inspect
+        
         if not Topology.IsInstance(shell, "Shell"):
             print("Shell.RemoveCollinearEdges - Error: The input shell parameter is not a valid shell. Returning None.")
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            print('caller name:', calframe[1][3])
             return None
         faces = Shell.Faces(shell)
         clean_faces = []

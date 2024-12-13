@@ -1477,7 +1477,7 @@ class Edge():
         svb = Edge.StartVertex(edgeB)
         evb = Edge.EndVertex(edgeB)
         intVertex = None
-        if Edge.IsCollinear(edgeA, edgeB):
+        if Edge.IsCollinear(edgeA, edgeB, tolerance=tolerance):
             if Vertex.IsInternal(svb, edgeA):
                 intVertex = svb
             elif Vertex.IsInternal(evb, edgeA):

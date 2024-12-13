@@ -4184,7 +4184,6 @@ class Topology():
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
         import inspect
-        print("input topologies:", topologies)
 
         topologies_list = []
         if Topology.IsInstance(topologies, "Topology"):
@@ -6749,8 +6748,13 @@ class Topology():
         from topologicpy.Cell import Cell
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
-        
+        import inspect
         if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.RemoveCollinearEdges - Error: The input topology parameter is not a valid topology. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         return_topology = topology
         if Topology.IsInstance(topology, "Vertex") or Topology.IsInstance(topology, "Edge"): #Vertex or Edge or Cluster, return the original topology
@@ -6776,7 +6780,7 @@ class Topology():
             topologies += Cluster.FreeEdges(topology)
             faces = Topology.Faces(topology)
             for face in faces:
-                topologies.append(Face.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance))
+                topologies.append(Face.RemoveCollinearEdges(face, angTolerance=angTolerance, tolerance=tolerance))
             return_topology = Topology.SelfMerge(Cluster.ByTopologies(topologies), tolerance=tolerance)
         return return_topology
 
@@ -9045,7 +9049,7 @@ class Topology():
         r_shells = Topology.Shells(return_topology)
         r_cells = Topology.Cells(return_topology)
         r_cellComplexes = Topology.CellComplexes(return_topology)
-        
+
         for i, t in enumerate(r_vertices):
             t = Topology.SetDictionary(t, Topology.Dictionary(vertices[i]), silent=True)
         for i, t in enumerate(r_edges):

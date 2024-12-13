@@ -972,9 +972,14 @@ class CellComplex():
         """
         from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
-
+        import inspect
+        
         if not Topology.IsInstance(cellComplex, "CellComplex"):
             print("CellComplex.RemoveCollinearEdges - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
+            print("CellComplex.RemoveCollinearEdges - Inspection:")
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            print('caller name:', calframe[1][3])
             return None
         cells = CellComplex.Cells(cellComplex)
         clean_cells = []

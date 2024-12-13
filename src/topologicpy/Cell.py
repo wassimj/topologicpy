@@ -1967,9 +1967,13 @@ class Cell():
         """
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-
+        import inspect
+        
         if not Topology.IsInstance(cell, "Cell"):
             print("Cell.RemoveCollinearEdges - Error: The input cell parameter is not a valid cell. Returning None.")
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            print('caller name:', calframe[1][3])
             return None
         faces = Cell.Faces(cell)
         clean_faces = []
