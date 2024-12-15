@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cluster module &mdash; topologicpy 0.7.84 documentation</title>
+  <title>topologicpy.Cluster module &mdash; topologicpy 0.7.85 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.84
+                0.7.85
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -153,7 +153,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.ByFormula" title="topologicpy.Cluster.Cluster.ByFormula"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFormula</span></code></a>(formula[, xRange, yRange, ...])</p></td>
 <td><p>Creates a cluster of vertices by evaluating the input formula for a range of x values and, optionally, a range of y values.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.ByTopologies" title="topologicpy.Cluster.Cluster.ByTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopologies</span></code></a>(*args[, transferDictionaries, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.ByTopologies" title="topologicpy.Cluster.Cluster.ByTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopologies</span></code></a>(*topologies[, ...])</p></td>
 <td><p>Creates a topologic Cluster from the input list of topologies.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.CellComplexes" title="topologicpy.Cluster.Cluster.CellComplexes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CellComplexes</span></code></a>(cluster)</p></td>
@@ -266,12 +266,12 @@ xRange and yRange CANNOT be None or unspecified at the same time. One or the oth
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.ByTopologies">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByTopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cluster.Cluster.ByTopologies" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByTopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cluster.Cluster.ByTopologies" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a topologic Cluster from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The list of topologies.</p>
+<dt><strong>*topologies</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>One or more instances of <cite>topologic_core.Topology</cite> to be processed.</p>
 </dd>
 <dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. The default is False.</p>
 </dd>
