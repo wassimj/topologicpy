@@ -1008,7 +1008,7 @@ class Shell():
         v3 = Vertex.ByCoordinates(x3,y3,z3)
         f1 = Face.ByVertices([v2,v1,v3])
         faces.append(f1)
-        returnTopology = Shell.ByFaces(faces, tolerance)
+        returnTopology = Shell.ByFaces(faces, tolerance=tolerance)
         if not returnTopology:
             returnTopology = Cluster.ByTopologies(faces)
         vertices = []
@@ -1456,9 +1456,13 @@ class Shell():
         """
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-
+        import inspect
+        
         if not Topology.IsInstance(shell, "Shell"):
             print("Shell.RemoveCollinearEdges - Error: The input shell parameter is not a valid shell. Returning None.")
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            print('caller name:', calframe[1][3])
             return None
         faces = Shell.Faces(shell)
         clean_faces = []
@@ -1741,7 +1745,7 @@ class Shell():
 
             return numerator / denominator
 
-        def douglas_peucker(wire, tolerance):
+        def douglas_peucker(wire, tolerance=0.0001):
             if isinstance(wire, list):
                 points = wire
             else:
@@ -1769,8 +1773,8 @@ class Shell():
                 return [start_point, end_point]
 
             # Recursively simplify
-            first_segment = douglas_peucker(points[:max_index + 1], tolerance)
-            second_segment = douglas_peucker(points[max_index:], tolerance)
+            first_segment = douglas_peucker(points[:max_index + 1], tolerance=tolerance)
+            second_segment = douglas_peucker(points[max_index:], tolerance=tolerance)
 
             # Merge the two simplified segments
             return first_segment[:-1] + second_segment
@@ -1815,7 +1819,7 @@ class Shell():
         separators = Helper.Flatten(separators)
         results = []
         for w in wires:
-            temp_wire = Wire.ByVertices(douglas_peucker(w, tolerance), close=False)
+            temp_wire = Wire.ByVertices(douglas_peucker(w, tolerance=tolerance), close=False)
             results.append(temp_wire)
         # Make a Cluster out of the results
         cluster = Cluster.ByTopologies(results)

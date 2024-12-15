@@ -86,7 +86,7 @@ class Grid():
             uRange.sort()
             uuVector = Vector.Normalize(uVector)
             for u in uRange:
-                tempVec = Vector.Multiply(uuVector, u, tolerance)
+                tempVec = Vector.Multiply(uuVector, u, tolerance=tolerance)
                 v1 = Vertex.ByCoordinates(Vertex.X(uOrigin, mantissa=mantissa)+tempVec[0], Vertex.Y(uOrigin, mantissa=mantissa)+tempVec[1], Vertex.Z(uOrigin, mantissa=mantissa)+tempVec[2])
                 v2 = Vertex.ByCoordinates(Vertex.X(v1, mantissa=mantissa)+vVector[0], Vertex.Y(v1, mantissa=mantissa)+vVector[1], Vertex.Z(v1, mantissa=mantissa)+vVector[2])
                 e = Edge.ByVertices([v1, v2], tolerance=tolerance)
@@ -107,7 +107,7 @@ class Grid():
             vRange.sort()
             uvVector = Vector.Normalize(vVector)
             for v in vRange:
-                tempVec = Vector.Multiply(uvVector, v, tolerance)
+                tempVec = Vector.Multiply(uvVector, v, tolerance=tolerance)
                 v1 = Vertex.ByCoordinates(Vertex.X(vOrigin, mantissa=mantissa)+tempVec[0], Vertex.Y(vOrigin, mantissa=mantissa)+tempVec[1], Vertex.Z(vOrigin, mantissa=mantissa)+tempVec[2])
                 v2 = Vertex.ByCoordinates(Vertex.X(v1, mantissa=mantissa)+uVector[0], Vertex.Y(v1, mantissa=mantissa)+uVector[1], Vertex.Z(v1, mantissa=mantissa)+uVector[2])
                 e = Edge.ByVertices([v1, v2], tolerance=tolerance)
@@ -282,8 +282,8 @@ class Grid():
             uvVector = Vector.Normalize(vVector)
             for u in uRange:
                 for v in vRange:
-                    uTempVec = Vector.Multiply(uuVector, u, tolerance)
-                    vTempVec = Vector.Multiply(uvVector, v, tolerance)
+                    uTempVec = Vector.Multiply(uuVector, u, tolerance=tolerance)
+                    vTempVec = Vector.Multiply(uvVector, v, tolerance=tolerance)
                     gridVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+uTempVec[0], Vertex.Y(origin, mantissa=mantissa)+vTempVec[1], Vertex.Z(origin, mantissa=mantissa)+uTempVec[2])
                     if clip and Topology.IsInstance(face, "Face"):
                         gridVertex = gridVertex.Intersect(face, False)

@@ -580,4 +580,45 @@ class Helper:
             The current version of the software.
 
         """
-        return topologicpy.__version__
+        
+        import requests
+        from packaging import version
+
+        def compare_version_with_pypi(library_name, input_version):
+            """
+            Compare an input version with the latest version of a Python library on PyPI.
+
+            Args:
+                library_name (str): The name of the Python library on PyPI.
+                input_version (str): The version number to compare (e.g., "0.7.58").
+
+            Returns:
+                str: A message indicating whether the input version is less than,
+                    equal to, or greater than the latest version on PyPI.
+            """
+            try:
+                # Fetch library data from PyPI
+                url = f"https://pypi.org/pypi/{library_name}/json"
+                response = requests.get(url)
+                response.raise_for_status()
+
+                # Extract the latest version from the JSON response
+                data = response.json()
+                latest_version = data['info']['version']
+
+                # Compare versions using the packaging library
+                if version.parse(input_version) < version.parse(latest_version):
+                    return (f"The version that you are using ({input_version}) is OLDER than the latest version {latest_version} from PyPI. Please consider upgrading to the latest version.")
+                elif version.parse(input_version) == version.parse(latest_version):
+                    return (f"The version that you are using ({input_version}) is the latest version available on PyPI.")
+                else:
+                    return (f"The version that you are using ({input_version}) is NEWER than the latest version ({latest_version}) available from PyPI.")
+
+            except requests.exceptions.RequestException as e:
+                return f"Error fetching data from PyPI: {e}"
+            except KeyError:
+                return "Error: Unable to find the latest version in the PyPI response."
+        
+        current_version = topologicpy.__version__
+        result = compare_version_with_pypi("topologicpy", current_version)
+        return result

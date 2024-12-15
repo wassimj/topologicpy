@@ -726,7 +726,7 @@ class Cell():
         from topologicpy.Topology import Topology
         import math
 
-        def createCone(baseWire, topWire, baseVertex, topVertex, tolerance):
+        def createCone(baseWire, topWire, baseVertex, topVertex, tolerance=0.0001):
             if baseWire == None and topWire == None:
                 raise Exception("Cell.Cone - Error: Both radii of the cone cannot be zero at the same time")
             elif baseWire == None:
@@ -789,7 +789,7 @@ class Cell():
             topWire = None
         baseVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+xOffset, Vertex.Y(origin, mantissa=mantissa)+yOffset, Vertex.Z(origin, mantissa=mantissa)+zOffset)
         topVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+xOffset, Vertex.Y(origin, mantissa=mantissa)+yOffset, Vertex.Z(origin, mantissa=mantissa)+zOffset+height)
-        cone = createCone(baseWire, topWire, baseVertex, topVertex, tolerance)
+        cone = createCone(baseWire, topWire, baseVertex, topVertex, tolerance=tolerance)
         if cone == None:
             print("Cell.Cone - Error: Could not create a cone. Returning None.")
             return None
@@ -1304,7 +1304,7 @@ class Cell():
         from topologicpy.Topology import Topology
         import math
 
-        def createHyperboloid(baseVertices, topVertices, tolerance):
+        def createHyperboloid(baseVertices, topVertices, tolerance=0.0001):
             baseWire = Wire.ByVertices(baseVertices, close=True)
             topWire = Wire.ByVertices(topVertices, close=True)
             baseFace = Face.ByWire(baseWire, tolerance=tolerance)
@@ -1358,7 +1358,7 @@ class Cell():
                 topY = math.cos(angle-math.radians(twist))*topRadius + Vertex.Y(w_origin, mantissa=mantissa) + yOffset
                 topV.append(Vertex.ByCoordinates(topX,topY,topZ))
 
-        hyperboloid = createHyperboloid(baseV, topV, tolerance)
+        hyperboloid = createHyperboloid(baseV, topV, tolerance=tolerance)
         if hyperboloid == None:
             print("Cell.Hyperboloid - Error: Could not create a hyperboloid. Returning None.")
             return None
@@ -1967,9 +1967,13 @@ class Cell():
         """
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-
+        import inspect
+        
         if not Topology.IsInstance(cell, "Cell"):
             print("Cell.RemoveCollinearEdges - Error: The input cell parameter is not a valid cell. Returning None.")
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            print('caller name:', calframe[1][3])
             return None
         faces = Cell.Faces(cell)
         clean_faces = []
@@ -2070,7 +2074,7 @@ class Cell():
             if unused[i]:
                 iv = Topology.InternalVertex(cells[i], tolerance=tolerance)
                 for j in range(len(superCells)):
-                    if (Vertex.IsInternal(iv, superCells[j], tolerance)):
+                    if (Vertex.IsInternal(iv, superCells[j], tolerance=tolerance)):
                         sets[j].append(cells[i])
                         unused[i] = False
         return sets

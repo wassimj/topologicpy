@@ -771,7 +771,7 @@ class Vertex():
         from topologicpy.Topology import Topology
         import numpy as np
 
-        def fuse_vertices(vertices, tolerance):
+        def fuse_vertices(vertices, tolerance=0.0001):
             fused_vertices = []
             merged_indices = {}
 
@@ -818,7 +818,7 @@ class Vertex():
             return None
         
         vertices = [(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)) for v in vertices]
-        fused_vertices = fuse_vertices(vertices, tolerance)
+        fused_vertices = fuse_vertices(vertices, tolerance=tolerance)
         return_vertices = [Vertex.ByCoordinates(list(coord)) for coord in fused_vertices]
         return return_vertices
 
@@ -1110,13 +1110,18 @@ class Vertex():
         import inspect
 
         if not Topology.IsInstance(vertex, "Vertex"):
-            print("Called from:", inspect.stack()[1][3])
             if not silent:
                 print("Vertex.IsInternal - Error: The input vertex parameter is not a valid vertex. Returning None.", vertex, topology)
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Vertex.IsInternal - Error: The input topology parameter is not a valid topology. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
 
         if Topology.IsInstance(topology, "Vertex"):
@@ -1177,7 +1182,6 @@ class Vertex():
                     return True
             return False
         return False
-    
     
     @staticmethod
     def IsPeripheral(vertex, topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
