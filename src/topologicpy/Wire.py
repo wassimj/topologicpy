@@ -1445,7 +1445,7 @@ class Wire():
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
 
-        def vIndex(v, vList, tolerance):
+        def vIndex(v, vList, tolerance=0.0001):
             for i in range(len(vList)):
                 if Vertex.Distance(v, vList[i]) < tolerance:
                     return i+1
@@ -1512,7 +1512,7 @@ class Wire():
 
         graph = []
         for anEdge in tEdges:
-            graph.append([vIndex(anEdge.StartVertex(), tVertices, tolerance), vIndex(anEdge.EndVertex(), tVertices, tolerance)])
+            graph.append([vIndex(anEdge.StartVertex(), tVertices, tolerance), vIndex(anEdge.EndVertex(), tVertices, tolerance)]) # Hook to Core
 
         cycles = []
         resultingCycles = main(graph, cycles, maxVertices)
@@ -2331,7 +2331,7 @@ class Wire():
                     j += k
             return False
 
-        def angleBetweenEdges(e1, e2, tolerance):
+        def angleBetweenEdges(e1, e2, tolerance=0.0001):
             a = e1.EndVertex().X() - e1.StartVertex().X()
             b = e1.EndVertex().Y() - e1.StartVertex().Y()
             c = e1.EndVertex().Z() - e1.StartVertex().Z()
@@ -2350,16 +2350,16 @@ class Wire():
             angleInDegrees = math.degrees(math.acos(angle))
             return angleInDegrees
 
-        def getInteriorAngles(edges, tolerance):
+        def getInteriorAngles(edges, tolerance=0.0001):
             angles = []
             for i in range(len(edges)-1):
                 e1 = edges[i]
                 e2 = edges[i+1]
-                angles.append(angleBetweenEdges(e1, e2, tolerance))
+                angles.append(angleBetweenEdges(e1, e2, tolerance=tolerance))
             return angles
 
-        def getRep(edges, tolerance):
-            angles = getInteriorAngles(edges, tolerance)
+        def getRep(edges, tolerance=0.0001):
+            angles = getInteriorAngles(edges, tolerance=tolerance)
             lengths = []
             for anEdge in edges:
                 lengths.append(Edge.Length(anEdge))
@@ -2379,8 +2379,8 @@ class Wire():
         _ = wireB.Edges(None, edgesB)
         if len(edgesA) != len(edgesB):
             return False
-        repA = getRep(list(edgesA), tolerance)
-        repB = getRep(list(edgesB), tolerance)
+        repA = getRep(list(edgesA), tolerance=tolerance)
+        repB = getRep(list(edgesB), tolerance=tolerance)
         if isCyclicallyEquivalent(repA, repB, tolerance, angTolerance):
             return True
         if isCyclicallyEquivalent(repA, repB[::-1], tolerance, angTolerance):
@@ -3091,7 +3091,7 @@ class Wire():
         from topologicpy.Topology import Topology
         import inspect
         
-        def cleanup(wire, tolerance):
+        def cleanup(wire, tolerance=0.0001):
             vertices = Topology.Vertices(wire)
             vertices = Vertex.Fuse(vertices, tolerance=tolerance)
             edges = Topology.Edges(wire)
@@ -3393,7 +3393,7 @@ class Wire():
 
             return numerator / denominator
 
-        def douglas_peucker(wire, tolerance):
+        def douglas_peucker(wire, tolerance=0.0001):
             if isinstance(wire, list):
                 points = wire
             else:
@@ -3416,12 +3416,12 @@ class Wire():
             if max_distance <= tolerance:
                 return [start_point, end_point]
 
-            first_segment = douglas_peucker(points[:max_index + 1], tolerance)
-            second_segment = douglas_peucker(points[max_index:], tolerance)
+            first_segment = douglas_peucker(points[:max_index + 1], tolerance=tolerance)
+            second_segment = douglas_peucker(points[max_index:], tolerance=tolerance)
 
             return first_segment[:-1] + second_segment
 
-        def visvalingam_whyatt(wire, tolerance):
+        def visvalingam_whyatt(wire, tolerance=0.0001):
             if isinstance(wire, list):
                 points = wire
             else:
@@ -3453,7 +3453,7 @@ class Wire():
 
             return simplified_points
 
-        def reumann_witkam(wire, tolerance):
+        def reumann_witkam(wire, tolerance=0.0001):
             if isinstance(wire, list):
                 points = wire
             else:

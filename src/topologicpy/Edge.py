@@ -214,7 +214,7 @@ class Edge():
 
         n = Edge.Normal(edge)
         n = Vector.Normalize(n)
-        n = Vector.Multiply(n, offset, tolerance)
+        n = Vector.Multiply(n, offset, tolerance=tolerance)
         edge = Topology.Translate(edge, n[0], n[1], n[2])
         return edge
 
@@ -1544,7 +1544,7 @@ class Edge():
         vy = Vertex.Y(ev, mantissa=mantissa) - Vertex.Y(sv, mantissa=mantissa)
         vz = Vertex.Z(ev, mantissa=mantissa) - Vertex.Z(sv, mantissa=mantissa)
         vector = Vector.Normalize([vx, vy, vz])
-        vector = Vector.Multiply(vector, distance, tolerance)
+        vector = Vector.Multiply(vector, distance, tolerance=tolerance)
         return Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+vector[0], Vertex.Y(origin, mantissa=mantissa)+vector[1], Vertex.Z(origin, mantissa=mantissa)+vector[2])
     
     @staticmethod

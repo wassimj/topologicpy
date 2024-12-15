@@ -143,14 +143,14 @@ class Cluster():
         return Cluster.ByTopologies(vertices)
     
     @staticmethod
-    def ByTopologies(*args, transferDictionaries: bool = False, silent=False):
+    def ByTopologies(*topologies, transferDictionaries: bool = False, silent=False):
         """
         Creates a topologic Cluster from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.
 
         Parameters
         ----------
-        topologies : list
-            The list of topologies.
+        *topologies : topologic_core.Topology
+            One or more instances of `topologic_core.Topology` to be processed.
         transferDictionaries : bool , optional
             If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. The default is False.
         silent : bool , optional
@@ -167,15 +167,15 @@ class Cluster():
         from topologicpy.Helper import Helper
         import inspect
         
-        if len(args) == 0:
+        if len(topologies) == 0:
             if not silent:
                 print("Cluster.ByTopologies - Error: The input topologies parameter is an empty list. Returning None.")
                 curframe = inspect.currentframe()
                 calframe = inspect.getouterframes(curframe, 2)
                 print('caller name:', calframe[1][3])
             return None
-        if len(args) == 1:
-            topologies = args[0]
+        if len(topologies) == 1:
+            topologies = topologies[0]
             if isinstance(topologies, list):
                 if len(topologies) == 0:
                     if not silent:
@@ -186,7 +186,7 @@ class Cluster():
                     return None
                 else:
                     topologyList = [x for x in topologies if Topology.IsInstance(x, "Topology")]
-                    if len(topologies) == 0:
+                    if len(topologyList) == 0:
                         if not silent:
                             print("Cluster.ByTopologies - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
                             curframe = inspect.currentframe()
@@ -201,7 +201,7 @@ class Cluster():
                     print('caller name:', calframe[1][3])
                 return topologies
         else:
-            topologyList = Helper.Flatten(list(args))
+            topologyList = Helper.Flatten(list(topologies))
             topologyList = [x for x in topologyList if Topology.IsInstance(x, "Topology")]
         if len(topologyList) == 0:
             if not silent:

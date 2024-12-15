@@ -498,8 +498,6 @@ class Plotly:
                 x.append(v[0])
                 y.append(v[1])
                 z.append(v[2])
-                label = " "
-                group = None
                 colors.append(Color.AnyToHex(color))
                 labels.append("Vertex_"+str(m+1).zfill(n))
                 sizes.append(size)
@@ -507,36 +505,37 @@ class Plotly:
                     d = dictionaries[m]
                     if d:
                         if not colorKey == None:
-                            colors[m] = Dictionary.ValueAtKey(d, key=colorKey) or colors[m]
+                            temp_color = Dictionary.ValueAtKey(d, key=colorKey)
+                            if not temp_color == None:
+                                colors[m] = Color.AnyToHex(temp_color)
                         if not labelKey == None:
                             labels[m] = str(Dictionary.ValueAtKey(d, key=labelKey)) or labels[m]
                         if not sizeKey == None:
                             sizes[m] = Dictionary.ValueAtKey(d, key=sizeKey) or sizes[m]
                         if not groupKey == None:
-                            colors[m] = Dictionary.ValueAtKey(d, key=groupKey) or colors[m]
-                    try:
-                        if type(colors[m]) == int or type(colors[m]) == float:
-                            if colors[m] < minGroup:
-                                colors[m] = minGroup
-                            if colors[m] > maxGroup:
-                                colors[m] = maxGroup
-                            temp_color = Color.ByValueInRange(colors[m], minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            colors[m] = Color.AnyToHEX(temp_color)
-
-                        else:
-                            temp_color = Color.ByValueInRange(groups.index(colors[m]), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
-                            colors[m] = Color.AnyToHex(temp_color)
-                    except:
-                        #groupList.append(Color.AnyToHex([0,0,0]))
-                        pass
+                            c_value = Dictionary.ValueAtKey(d, key=groupKey)
+                            if not c_value == None:
+                                if type(c_value) == int or type(c_value) == float:
+                                    if c_value < minGroup:
+                                        c_value = minGroup
+                                    if c_value > maxGroup:
+                                        c_value = maxGroup
+                                    temp_color = Color.ByValueInRange(c_value,
+                                                                        minValue=minGroup,
+                                                                        maxValue=maxGroup,
+                                                                        colorScale=colorScale)
+                                    colors[m] = Color.AnyToHex(temp_color)
+                                elif isinstance(c_value, str):
+                                    temp_color = Color.ByValueInRange(groups.index(c_value), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                                    colors[m] = Color.AnyToHex(temp_color)
         else:
             for v in vertices:
                 x.append(v[0])
                 y.append(v[1])
                 z.append(v[2])
         
-        if len(list(set(colors))) < 2:
-            colors = Color.AnyToHex(color)
+        # if len(list(set(colors))) < 2:
+        #     colors = Color.AnyToHex(color)
         if len(labels) < 1:
             labels = "Vertex_1"
         if len(sizes) < 1:
@@ -903,7 +902,7 @@ class Plotly:
                     label = ""
                     group = None
                     groupList.append(Color.AnyToHex(color)) # Store a default color for that face
-                    labels.append("Mace_"+str(m+1).zfill(n))
+                    labels.append("Face_"+str(m+1).zfill(n))
                     if len(dictionaries) > 0:
                         d = dictionaries[m]
                         if d:

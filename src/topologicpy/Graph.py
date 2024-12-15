@@ -539,7 +539,7 @@ class Graph:
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
 
-        def addIfUnique(graph_vertices, vertex, tolerance):
+        def addIfUnique(graph_vertices, vertex, tolerance=0.0001):
             unique = True
             returnVertex = vertex
             for gv in graph_vertices:
@@ -574,11 +574,11 @@ class Graph:
                 print("Graph.AddEdge - Error: The input edge is not a valid edge. Returning the input graph.")
             return graph
         graph_vertices = Graph.Vertices(graph)
-        graph_edges = Graph.Edges(graph, graph_vertices, tolerance)
+        graph_edges = Graph.Edges(graph, graph_vertices, tolerance=tolerance)
         vertices = Topology.Vertices(edge)
         new_vertices = []
         for vertex in vertices:
-            graph_vertices, nv = addIfUnique(graph_vertices, vertex, tolerance)
+            graph_vertices, nv = addIfUnique(graph_vertices, vertex, tolerance=tolerance)
             new_vertices.append(nv)
         new_edge = Edge.ByVertices([new_vertices[0], new_vertices[1]], tolerance=tolerance)
         if transferEdgeDictionaries == True:
@@ -2537,7 +2537,7 @@ class Graph:
                    outpostsKey: str = "outposts",
                    vertexCategoryKey: str = "category",
                    edgeCategoryKey : str = "category",
-                   useInternalVertex: bool =True,
+                   useInternalVertex: bool = False,
                    storeBREP: bool =False,
                    mantissa: int = 6,
                    tolerance: float = 0.0001):
@@ -2613,7 +2613,7 @@ class Graph:
             eds = []
             for sharedTopology in sharedTops:
                 if useInternalVertex == True:
-                    vst = Topology.InternalVertex(sharedTopology, tolerance)
+                    vst = Topology.InternalVertex(sharedTopology, tolerance=tolerance)
                 else:
                     vst = Topology.CenterOfMass(sharedTopology)
                 d1 = Topology.Dictionary(sharedTopology)
@@ -2636,7 +2636,7 @@ class Graph:
             eds = []
             for sharedAp in sharedAps:
                 if useInternalVertex == True:
-                    vsa = Topology.InternalVertex(sharedAp, tolerance)
+                    vsa = Topology.InternalVertex(sharedAp, tolerance=tolerance)
                 else:
                     vsa = Topology.CenterOfMass(sharedAp)
                 d1 = Topology.Dictionary(sharedAp)
@@ -2658,20 +2658,16 @@ class Graph:
         def _toExteriorTopologies(vt, exteriorTops):
             verts = []
             eds = []
-            for exteriorTop in exteriorTops:
+            for i, exteriorTop in enumerate(exteriorTops):
                 if useInternalVertex == True:
-                    vet = Topology.InternalVertex(exteriorTop, tolerance)
+                    vet = Topology.InternalVertex(exteriorTop, tolerance=tolerance)
                 else:
                     vet = Topology.CenterOfMass(exteriorTop)
-                    vet = Topology.SetDictionary(vet, Topology.Dictionary(exteriorTop), silent=True)
                 d1 = Topology.Dictionary(exteriorTop)
                 d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 3) # exterior topology
                 if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTop), Topology.Type(exteriorTop), Topology.TypeAsString(exteriorTop)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    vet = Topology.SetDictionary(vet, d3, silent=True)
-                else:
-                    vet = Topology.SetDictionary(vet, d1, silent=True)
+                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTop), Topology.Type(exteriorTop), Topology.TypeAsString(exteriorTop)])
+                vet = Topology.SetDictionary(vet, d1, silent=True)
                 verts.append(vet)
                 tempe = Edge.ByStartVertexEndVertex(vt, vet, tolerance=tolerance)
                 tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
@@ -2684,18 +2680,15 @@ class Graph:
             eds = []
             for exAp in exteriorAps:
                 if useInternalVertex == True:
-                    vea = Topology.InternalVertex(exAp, tolerance)
+                    vea = Topology.InternalVertex(exAp, tolerance=tolerance)
                 else:
                     vea = Topology.CenterOfMass(exAp)
                 d1 = Topology.Dictionary(exAp)
                 d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 4) # exterior aperture
                 vea = Vertex.ByCoordinates(Vertex.X(vea, mantissa=mantissa)+(tolerance*100), Vertex.Y(vea, mantissa=mantissa)+(tolerance*100), Vertex.Z(vea, mantissa=mantissa)+(tolerance*100))
                 if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(exAp), Topology.Type(exAp), Topology.TypeAsString(exAp)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    vea = Topology.SetDictionary(vea, d3, silent=True)
-                else:
-                    vea = Topology.SetDictionary(vea, d1, silent=True)
+                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(exAp), Topology.Type(exAp), Topology.TypeAsString(exAp)])
+                vea = Topology.SetDictionary(vea, d1, silent=True)
                 verts.append(vea)
                 tempe = Edge.ByStartVertexEndVertex(vt, vea, tolerance=tolerance)
                 tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
@@ -2710,7 +2703,7 @@ class Graph:
                 if Topology.IsInstance(content, "Aperture"):
                     content = Aperture.Topology(content)
                 if useInternalVertex == True:
-                    vct = Topology.InternalVertex(content, tolerance)
+                    vct = Topology.InternalVertex(content, tolerance=tolerance)
                 else:
                     vct = Topology.CenterOfMass(content)
                 vct = Vertex.ByCoordinates(Vertex.X(vct, mantissa=mantissa)+(tolerance*100), Vertex.Y(vct, mantissa=mantissa)+(tolerance*100), Vertex.Z(vct, mantissa=mantissa)+(tolerance*100))
@@ -2999,7 +2992,7 @@ class Graph:
                         graph_edges += eds
                         for sharedTopology in sharedTopologies:
                             if useInternalVertex == True:
-                                vst = Topology.InternalVertex(sharedTopology, tolerance)
+                                vst = Topology.InternalVertex(sharedTopology, tolerance=tolerance)
                             else:
                                 vst = Topology.CenterOfMass(sharedTopology)
                             d = Topology.Dictionary(sharedTopology)
@@ -3023,7 +3016,7 @@ class Graph:
                         graph_edges += eds
                         for exteriorTopology in exteriorTopologies:
                             if useInternalVertex == True:
-                                vet = Topology.InternalVertex(exteriorTopology, tolerance)
+                                vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
                             else:
                                 vet = Topology.CenterOfMass(exteriorTopology)
                             d = Topology.Dictionary(exteriorTopology)
@@ -3084,7 +3077,7 @@ class Graph:
                     graph_edges += eds
                     for exteriorTopology in exteriorTopologies:
                         if useInternalVertex == True:
-                            vet = Topology.InternalVertex(exteriorTopology, tolerance)
+                            vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
                         else:
                             vet = Topology.CenterOfMass(exteriorTopology)
                         d = Topology.Dictionary(exteriorTopology)
@@ -3243,7 +3236,7 @@ class Graph:
                         graph_edges += eds
                         for sharedTopology in sharedTopologies:
                             if useInternalVertex == True:
-                                vst = Topology.InternalVertex(sharedTopology, tolerance)
+                                vst = Topology.InternalVertex(sharedTopology, tolerance=tolerance)
                             else:
                                 vst = Topology.CenterOfMass(sharedTopology)
                             d = Topology.Dictionary(sharedTopology)
@@ -3267,7 +3260,7 @@ class Graph:
                         graph_edges += eds
                         for exteriorTopology in exteriorTopologies:
                             if useInternalVertex == True:
-                                vet = Topology.InternalVertex(exteriorTopology, tolerance)
+                                vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
                             else:
                                 vet = Topology.CenterOfMass(exteriorTopology)
                             d = Topology.Dictionary(exteriorTopology)
@@ -3328,7 +3321,7 @@ class Graph:
                     graph_edges += eds
                     for exteriorTopology in exteriorTopologies:
                         if useInternalVertex == True:
-                            vet = Topology.InternalVertex(exteriorTopology, tolerance)
+                            vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
                         else:
                             vet = Topology.CenterOfMass(exteriorTopology)
                         d = Topology.Dictionary(exteriorTopology)
@@ -3489,7 +3482,7 @@ class Graph:
                         graph_edges += eds
                         for sharedTopology in sharedTopologies:
                             if useInternalVertex == True:
-                                vst = Topology.InternalVertex(sharedTopology, tolerance)
+                                vst = Topology.InternalVertex(sharedTopology, tolerance=tolerance)
                             else:
                                 vst = Topology.CenterOfMass(sharedTopology)
                             d = Topology.Dictionary(sharedTopology)
@@ -3513,7 +3506,7 @@ class Graph:
                         graph_edges += eds
                         for exteriorTopology in exteriorTopologies:
                             if useInternalVertex == True:
-                                vet = Topology.InternalVertex(exteriorTopology, tolerance)
+                                vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
                             else:
                                 vet = Topology.CenterOfMass(exteriorTopology)
                             d = Topology.Dictionary(exteriorTopology)
@@ -3576,7 +3569,7 @@ class Graph:
                     graph_edges += eds
                     for exteriorTopology in exteriorTopologies:
                         if useInternalVertex == True:
-                            vet = Topology.InternalVertex(exteriorTopology, tolerance)
+                            vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
                         else:
                             vet = Topology.CenterOfMass(exteriorTopology)
                         d = Topology.Dictionary(exteriorTopology)
@@ -3616,7 +3609,7 @@ class Graph:
                     if Topology.IsInstance(content, "Aperture"):
                         content = Aperture.Topology(content)
                     if useInternalVertex == True:
-                        vst = Topology.InternalVertex(content, tolerance)
+                        vst = Topology.InternalVertex(content, tolerance=tolerance)
                     else:
                         vst = Topology.CenterOfMass(content)
                     d1 = Topology.Dictionary(content)
@@ -3651,7 +3644,7 @@ class Graph:
                     outposts = []
                 for outpost in outposts:
                     if useInternalVertex == True:
-                        vop = Topology.InternalVertex(outpost, tolerance)
+                        vop = Topology.InternalVertex(outpost, tolerance=tolerance)
                     else:
                         vop = Topology.CenterOfMass(outpost)
                     tempe = Edge.ByStartVertexEndVertex(topology, vop, tolerance=tolerance)
@@ -4071,7 +4064,7 @@ class Graph:
                     if Topology.IsSame(va, vb):
                         d = 0
                     else:
-                        d = Graph.TopologicalDistance(graph, va, vb, tolerance)
+                        d = Graph.TopologicalDistance(graph, va, vb, tolerance=tolerance)
                     top_dist += d
                 if top_dist == 0:
                     print("Graph.ClosenessCentrality - Warning: Topological Distance is Zero.")
@@ -4086,7 +4079,7 @@ class Graph:
                     if Topology.IsSame(va, vb):
                         d = 0
                     else:
-                        d = Graph.TopologicalDistance(graph, va, vb, tolerance)
+                        d = Graph.TopologicalDistance(graph, va, vb, tolerance=tolerance)
                     top_dist += d
                 if top_dist == 0:
                     scores.append(0)
@@ -4173,7 +4166,7 @@ class Graph:
         if not Topology.IsInstance(edge, "Edge"):
             print("Graph.ContainsEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
-        return graph.ContainsEdge(edge, tolerance)
+        return graph.ContainsEdge(edge, tolerance) # Hook to Core
     
     @staticmethod
     def ContainsVertex(graph, vertex, tolerance=0.0001):
@@ -4203,7 +4196,7 @@ class Graph:
         if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.ContainsVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
-        return graph.ContainsVertex(vertex, tolerance)
+        return graph.ContainsVertex(vertex, tolerance) # Hook to Core
 
 
     @staticmethod
@@ -4567,7 +4560,7 @@ class Graph:
         if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.Edge - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
-        return graph.Edge(vertexA, vertexB, tolerance)
+        return graph.Edge(vertexA, vertexB, tolerance) # Hook to Core
     
     @staticmethod
     def Edges(graph, vertices=None, tolerance=0.0001):
@@ -8474,7 +8467,7 @@ class Graph:
         return shortestPaths
 
     @staticmethod
-    def Show(graph,
+    def Show(*graphs,
              sagitta = 0,
              absolute = False,
              sides = 8,
@@ -8486,6 +8479,8 @@ class Graph:
              vertexLabelKey=None,
              vertexGroupKey=None,
              vertexGroups=[],
+             vertexMinGroup=None,
+             vertexMaxGroup=None,
              showVertices=True,
              showVertexLabel=False,
              showVertexLegend=False,
@@ -8496,6 +8491,8 @@ class Graph:
              edgeLabelKey=None,
              edgeGroupKey=None,
              edgeGroups=[],
+             edgeMinGroup=None,
+             edgeMaxGroup=None,
              showEdges=True,
              showEdgeLabel=False,
              showEdgeLegend=False,
@@ -8522,8 +8519,8 @@ class Graph:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
-            The input graph.
+        *graphs : topologic_core.Graph
+            One or more toplogic_core.graph objects.
         sagitta : float , optional
             The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. The default is 0 which means a straight edge is drawn instead of an arc. The default is 0.
         absolute : bool , optional
@@ -8553,6 +8550,10 @@ class Graph:
             The dictionary key to use to display the vertex group. The default is None.
         vertexGroups : list , optional
             The list of vertex groups against which to index the color of the vertex. The default is [].
+        vertexMinGroup : int or float , optional
+            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.
+        vertexMaxGroup : int or float , optional
+            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
         showVertexLabel : bool , optional
@@ -8579,6 +8580,10 @@ class Graph:
             The dictionary key to use to display the edge group. The default is None.
         edgeGroups : list , optional
             The list of edge groups against which to index the color of the edge. The default is [].
+        edgeMinGroup : int or float , optional
+            For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. The default is None.
+        edgeMaxGroup : int or float , optional
+            For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. The default is None.
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
         showEdgeLabel : bool , optional
@@ -8637,12 +8642,49 @@ class Graph:
         """
         from topologicpy.Plotly import Plotly
         from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
 
-        if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.Show - Error: The input graph is not a valid graph. Returning None.")
+        if isinstance(graphs, tuple):
+            graphs = Helper.Flatten(list(graphs))
+        if isinstance(graphs, list):
+            new_graphs = [t for t in graphs if Topology.IsInstance(t, "Graph")]
+        if len(new_graphs) == 0:
+            if not silent:
+                print("Topology.Show - Error: the input topologies parameter does not contain any valid topology. Returning None.")
             return None
-        
-        data= Plotly.DataByGraph(graph, sagitta=sagitta, absolute=absolute, sides=sides,  angle=angle, vertexColor=vertexColor, vertexColorKey=vertexColorKey, vertexSize=vertexSize, vertexSizeKey=vertexSizeKey, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLabel=showVertexLabel, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeColorKey=edgeColorKey, edgeWidth=edgeWidth, edgeWidthKey=edgeWidthKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLabel=showEdgeLabel, showEdgeLegend=showEdgeLegend, colorScale=colorScale, silent=silent)
+        data = []
+        for graph in new_graphs:
+            data += Plotly.DataByGraph(graph,
+                                       sagitta=sagitta,
+                                       absolute=absolute,
+                                       sides=sides,
+                                       angle=angle,
+                                       vertexColor=vertexColor,
+                                       vertexColorKey=vertexColorKey,
+                                       vertexSize=vertexSize,
+                                       vertexSizeKey=vertexSizeKey,
+                                       vertexLabelKey=vertexLabelKey,
+                                       vertexGroupKey=vertexGroupKey,
+                                       vertexGroups=vertexGroups,
+                                       vertexMinGroup=vertexMinGroup,
+                                       vertexMaxGroup=vertexMaxGroup,
+                                       showVertices=showVertices,
+                                       showVertexLabel=showVertexLabel,
+                                       showVertexLegend=showVertexLegend,
+                                       edgeColor=edgeColor,
+                                       edgeColorKey=edgeColorKey,
+                                       edgeWidth=edgeWidth,
+                                       edgeWidthKey=edgeWidthKey,
+                                       edgeLabelKey=edgeLabelKey,
+                                       edgeGroupKey=edgeGroupKey,
+                                       edgeGroups=edgeGroups,
+                                       edgeMinGroup=edgeMinGroup,
+                                       edgeMaxGroup=edgeMaxGroup,
+                                       showEdges=showEdges,
+                                       showEdgeLabel=showEdgeLabel,
+                                       showEdgeLegend=showEdgeLegend,
+                                       colorScale=colorScale,
+                                       silent=silent)
         fig = Plotly.FigureByData(data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor,
                                   marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom, tolerance=tolerance)
         Plotly.Show(fig, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
@@ -8703,7 +8745,7 @@ class Graph:
         if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.TopologicalDistance - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
-        return graph.TopologicalDistance(vertexA, vertexB, tolerance)
+        return graph.TopologicalDistance(vertexA, vertexB, tolerance) # Hook to Core
     
     @staticmethod
     def Topology(graph):
@@ -8781,7 +8823,7 @@ class Graph:
             if not vertexInList(vertex, vertices):
                 vertices.append(vertex)
                 if parent:
-                    edge = Graph.Edge(graph, parent, vertex, tolerance)
+                    edge = Graph.Edge(graph, parent, vertex, tolerance=tolerance)
                     ev = Edge.EndVertex(edge)
                     if Vertex.Distance(parent, ev) < tolerance:
                         edge = Edge.Reverse(edge)
@@ -8792,7 +8834,7 @@ class Graph:
             dictionary['vertices'] = vertices
             dictionary['edges'] = edges
             for child in children:
-                dictionary = buildTree(graph, dictionary, child, vertex, tolerance)
+                dictionary = buildTree(graph, dictionary, child, vertex, tolerance=tolerance)
             return dictionary
         
         if not Topology.IsInstance(graph, "Graph"):
@@ -8803,7 +8845,7 @@ class Graph:
         else:
             vertex = Graph.NearestVertex(graph, vertex)
         dictionary = {'vertices':[], 'edges':[]}
-        dictionary = buildTree(graph, dictionary, vertex, None, tolerance)
+        dictionary = buildTree(graph, dictionary, vertex, None, tolerance=tolerance)
         return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'])
     
     @staticmethod

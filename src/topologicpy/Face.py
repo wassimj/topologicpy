@@ -1639,7 +1639,7 @@ class Face():
                 return plane
             return [coef / norm for coef in plane]
 
-        def are_planes_coplanar(plane1, plane2, tolerance):
+        def are_planes_coplanar(plane1, plane2, tolerance=0.0001):
             normalized_plane1 = normalize_plane_coefficients(plane1)
             normalized_plane2 = normalize_plane_coefficients(plane2)
             return np.allclose(normalized_plane1, normalized_plane2, atol=tolerance)
@@ -1844,7 +1844,7 @@ class Face():
             # Return the average angle
             return np.mean(angles)
 
-        def vertex_part_of_face(vertex, face, tolerance):
+        def vertex_part_of_face(vertex, face, tolerance=0.0001):
             vertices = Topology.Vertices(face)
             for v in vertices:
                 if Vertex.Distance(vertex, v) < tolerance:

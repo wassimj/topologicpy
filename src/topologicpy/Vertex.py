@@ -771,7 +771,7 @@ class Vertex():
         from topologicpy.Topology import Topology
         import numpy as np
 
-        def fuse_vertices(vertices, tolerance):
+        def fuse_vertices(vertices, tolerance=0.0001):
             fused_vertices = []
             merged_indices = {}
 
@@ -818,7 +818,7 @@ class Vertex():
             return None
         
         vertices = [(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)) for v in vertices]
-        fused_vertices = fuse_vertices(vertices, tolerance)
+        fused_vertices = fuse_vertices(vertices, tolerance=tolerance)
         return_vertices = [Vertex.ByCoordinates(list(coord)) for coord in fused_vertices]
         return return_vertices
 

@@ -158,7 +158,7 @@ class CellComplex():
                 return(temp_cells[0])
             if transferDictionaries == True:
                 for temp_cell in temp_cells:
-                    v = Topology.InternalVertex(temp_cell)
+                    v = Topology.InternalVertex(temp_cell, tolerance=tolerance)
                     enclosing_cells = Vertex.EnclosingCell(v, cluster)
                     dictionaries = [Topology.Dictionary(ec) for ec in enclosing_cells]
                     d = Dictionary.ByMergedDictionaries(dictionaries, silent=silent)
@@ -191,7 +191,7 @@ class CellComplex():
             print("CellComplex.ByCellsCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cells = Topology.Cells(cluster)
-        return CellComplex.ByCells(cells, tolerance)
+        return CellComplex.ByCells(cells, tolerance=tolerance)
 
     @staticmethod
     def ByFaces(faces: list, tolerance: float = 0.0001, silent: bool = False):
@@ -236,7 +236,7 @@ class CellComplex():
             for i in range(1,len(faces)):
                 newCellComplex = None
                 try:
-                    newCellComplex = cellComplex.Merge(faces[i], False, tolerance)
+                    newCellComplex = cellComplex.Merge(faces[i], False, tolerance) # Hook to Core
                 except:
                     if not silent:
                         print("CellComplex.ByFaces - Warning: Failed to merge face #"+str(i)+". Skipping.")
@@ -284,7 +284,7 @@ class CellComplex():
             print("CellComplex.ByFacesCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         faces = Topology.Faces(cluster)
-        return CellComplex.ByFaces(faces, tolerance)
+        return CellComplex.ByFaces(faces, tolerance=tolerance)
 
     @staticmethod
     def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001):

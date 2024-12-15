@@ -637,7 +637,40 @@ class Dictionary():
             return processTopologicDictionary(dictionary, key, value)
         else:
             return None
- 
+    
+    @staticmethod
+    def SetValuesAtKeys(dictionary, keys, values):
+        """
+        Creates a key/value pair in the input dictionary.
+
+        Parameters
+        ----------
+        keys : list
+            A list of strings representing the keys of the dictionary.
+        values : list
+            A list of values corresponding to the list of keys. Values can be integers, floats, strings, or lists
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The created dictionary.
+
+        """
+        
+        if not isinstance(keys, list):
+            print("Dictionary.SetValuesAtKeys - Error: The input keys parameter is not a valid list. Returning None.")
+            return None
+        if not isinstance(values, list):
+            print("Dictionary.SetValuesAtkeys - Error: The input values parameter is not a valid list. Returning None.")
+            return None
+        if len(keys) != len(values):
+            print("Dictionary.SetValuesAtKeys - Error: The input keys and values parameters are not of equal length. Returning None.")
+            return None
+        
+        for i, key in enumerate(keys):
+            dictionary = Dictionary.SetValueAtKey(dictionary, key, values[i])
+        return dictionary
+    
     @staticmethod
     def _ConvertAttribute(attr):
         """

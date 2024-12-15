@@ -286,7 +286,7 @@ class Topology():
                     usedTopologies.append(0)
             ap = 1
             for aperture in apertures:
-                apCenter = Topology.InternalVertex(aperture, tolerance)
+                apCenter = Topology.InternalVertex(aperture, tolerance=tolerance)
                 for i in range(len(subTopologies)):
                     subTopology = subTopologies[i]
                     if exclusive == True and usedTopologies[i] == 1:
@@ -319,7 +319,7 @@ class Topology():
             subTopologies = [topology]
         else:
             subTopologies = Topology.SubTopologies(topology, subTopologyType)
-        processApertures(subTopologies, apertures, exclusive, tolerance)
+        processApertures(subTopologies, apertures, exclusive, tolerance=tolerance)
         return topology
     
     @staticmethod
@@ -1524,7 +1524,7 @@ class Topology():
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
 
-        def topologyByFaces(faces, topologyType, tolerance):
+        def topologyByFaces(faces, topologyType, tolerance=0.0001):
             if len(faces) == 1:
                 return faces[0]
 
@@ -1663,7 +1663,7 @@ class Topology():
             The created topology. The topology will have a dictionary embedded in it that records the input attributes (color, id, lengthUnit, name, type)
 
         """
-        def topologyByFaces(faces, outputMode, tolerance):
+        def topologyByFaces(faces, outputMode, tolerance=0.0001):
             output = None
             if len(faces) == 1:
                 return faces[0]
@@ -2386,6 +2386,10 @@ class Topology():
 
         import ifcopenshell, ifcopenshell.geom
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        import numpy as np
 
         def get_psets(entity):
             # Initialize the PSET dictionary for this entity
@@ -2506,47 +2510,55 @@ class Topology():
                 color = (random.random(), random.random(), random.random())
             
             return color, default_transparency, material_list
-        
+        # Create a 4x4 unity matrix
+        matrix = [[1.0 if i == j else 0.0 for j in range(4)] for i in range(4)]
         def convert_to_topology(entity, settings, transferDictionaries=False):    
             if hasattr(entity, "Representation") and entity.Representation:
                 for rep in entity.Representation.Representations:
                     if rep.is_a("IfcShapeRepresentation"):
                         # Generate the geometry for this entity
                         shape = ifcopenshell.geom.create_shape(settings, entity)
-                        shape_geometry = shape.geometry
-                        verts = shape_geometry.verts
-                        verts = [ [verts[i], verts[i + 1], verts[i + 2]] for i in range(0, len(verts), 3)]
-                        edges = shape_geometry.edges
-                        edges = [[edges[i], edges[i + 1]] for i in range(0, len(edges), 2)]
-                        faces = shape_geometry.faces
-                        faces = [ [faces[i], faces[i + 1], faces[i + 2]] for i in range(0, len(faces), 3)]
-                        # Convert geometry to Topologic format
+                        try:
+                            trans = shape.transformation
+                            # Convert into a 4x4 matrix
+                            matrix = [trans.matrix[i:i+4] for i in range(0, len(trans.matrix), 4)]
+                        except:
+                            pass
+                        # Get grouped vertices and grouped faces     
+                        grouped_verts = shape.geometry.verts
+                        verts = [ [grouped_verts[i], grouped_verts[i + 1], grouped_verts[i + 2]] for i in range(0, len(grouped_verts), 3)]
+                        grouped_edges = shape.geometry.edges
+                        edges = [[grouped_edges[i], grouped_edges[i + 1]] for i in range(0, len(grouped_edges), 2)]
+                        grouped_faces = shape.geometry.faces
+                        faces = [ [grouped_faces[i], grouped_faces[i + 1], grouped_faces[i + 2]] for i in range(0, len(grouped_faces), 3)]
                         #shape_topology = ifc_to_topologic_geometry(verts, edges, faces)
                         #shape_topology = Topology.SelfMerge(Topology.ByGeometry(verts, edges, faces))
                         shape_topology = Topology.ByGeometry(verts, edges, faces, silent=True)
-                        if removeCoplanarFaces == True:
-                            shape_topology = Topology.RemoveCoplanarFaces(shape_topology, epsilon=0.0001)
+                        if not shape_topology == None:
+                            if removeCoplanarFaces == True:
+                                shape_topology = Topology.RemoveCoplanarFaces(shape_topology, epsilon=0.0001)
+                            shape_topology = Topology.Transform(shape_topology, matrix)
 
-                        # Store relevant information
-                        if transferDictionaries == True:
-                            color, transparency, material_list = get_color_transparency_material(entity)
-                            entity_dict = {
-                                "TOPOLOGIC_id": str(Topology.UUID(shape_topology)),
-                                "TOPOLOGIC_name": getattr(entity, 'Name', "Untitled"),
-                                "TOPOLOGIC_type": Topology.TypeAsString(shape_topology),
-                                "TOPOLOGIC_color": color,
-                                "TOPOLOGIC_opacity": 1.0 - transparency,
-                                "IFC_global_id": getattr(entity, 'GlobalId', 0),
-                                "IFC_name": getattr(entity, 'Name', "Untitled"),
-                                "IFC_type": entity.is_a(),
-                                "IFC_material_list": material_list,
-                            }
-                            topology_dict = Dictionary.ByPythonDictionary(entity_dict)
-                            # Get PSETs dictionary
-                            pset_python_dict = get_psets(entity)
-                            pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
-                            topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
-                            shape_topology = Topology.SetDictionary(shape_topology, topology_dict)
+                            # Store relevant information
+                            if transferDictionaries == True:
+                                color, transparency, material_list = get_color_transparency_material(entity)
+                                entity_dict = {
+                                    "TOPOLOGIC_id": str(Topology.UUID(shape_topology)),
+                                    "TOPOLOGIC_name": getattr(entity, 'Name', "Untitled"),
+                                    "TOPOLOGIC_type": Topology.TypeAsString(shape_topology),
+                                    "TOPOLOGIC_color": color,
+                                    "TOPOLOGIC_opacity": 1.0 - transparency,
+                                    "IFC_global_id": getattr(entity, 'GlobalId', 0),
+                                    "IFC_name": getattr(entity, 'Name', "Untitled"),
+                                    "IFC_type": entity.is_a(),
+                                    "IFC_material_list": material_list,
+                                }
+                                topology_dict = Dictionary.ByPythonDictionary(entity_dict)
+                                # Get PSETs dictionary
+                                pset_python_dict = get_psets(entity)
+                                pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
+                                topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
+                                shape_topology = Topology.SetDictionary(shape_topology, topology_dict)
                         return shape_topology
             return None
 
@@ -6228,7 +6240,7 @@ class Topology():
             return Topology.Type(topology)
 
     @staticmethod
-    def InternalVertex(topology, tolerance: float = 0.0001):
+    def _InternalVertex(topology, tolerance: float = 0.0001):
         """
         Returns a vertex guaranteed to be inside the input topology.
 
@@ -6283,10 +6295,53 @@ class Topology():
         elif Topology.IsInstance(top, "Vertex"): #Vertex
             vst = top
         elif Topology.IsInstance(topology, "Aperture"): #Aperture
-            vst = Face.InternalVertex(Aperture.Topology(top), tolerance)
+            vst = Face.InternalVertex(Aperture.Topology(top), tolerance=tolerance)
         else:
             vst = Topology.Centroid(top)
         return vst
+
+    
+
+    @staticmethod
+    def InternalVertex(topology, timeout: int = 10, tolerance: float = 0.0001):
+        """
+        Returns a vertex guaranteed to be inside the input topology.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        timeout : int , optional
+            The amount of seconds to wait before timing out. The default is 10 seconds.
+        tolerance : float , ptional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Vertex
+            A vertex guaranteed to be inside the input topology.
+
+        """
+        import concurrent.futures
+        import time
+        # Wrapper function with timeout
+        def run_with_timeout(func, topology, tolerance=0.0001, timeout=10):
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(func, topology, tolerance=tolerance)
+                try:
+                    result = future.result(timeout=timeout)  # Wait for the result with a timeout
+                    return result
+                except concurrent.futures.TimeoutError:
+                    print("Function took too long, retrying with a different solution.")
+                    return None  # or try another approach here
+
+        result = run_with_timeout(Topology._InternalVertex, topology=topology, tolerance=tolerance, timeout=timeout)  # Set a 10 second timeout
+        if result is None:
+            # Handle failure case (e.g., try a different solution)
+            print("Using a different approach.")
+            result = Topology.Centroid(topology)
+            print("Result is:", result)
+        return result
 
     @staticmethod
     def IsInstance(topology, type: str):
@@ -6371,7 +6426,7 @@ class Topology():
         """
         from topologicpy.Vertex import Vertex
 
-        def isOnPlane(v, plane, tolerance):
+        def isOnPlane(v, plane, tolerance=0.0001):
             x, y, z = v
             a, b, c, d = plane
             if math.fabs(a*x + b*y + c*z + d) <= tolerance:
@@ -6402,7 +6457,7 @@ class Topology():
         else:
             p = plane(vertices[0], vertices[1], vertices[2])
             for i in range(len(vertices)):
-                if isOnPlane([Vertex.X(vertices[i], mantissa=mantissa), Vertex.Y(vertices[i], mantissa=mantissa), Vertex.Z(vertices[i], mantissa=mantissa)], p, tolerance) == False:
+                if isOnPlane([Vertex.X(vertices[i], mantissa=mantissa), Vertex.Y(vertices[i], mantissa=mantissa), Vertex.Z(vertices[i], mantissa=mantissa)], p, tolerance=tolerance) == False:
                     result = False
                     break
         return result
@@ -7869,14 +7924,14 @@ class Topology():
     @staticmethod
     def Show(*topologies,
              opacityKey = "opacity",
-             showVertices=True, vertexSize=1.1, vertexSizeKey = None, vertexColor="black", vertexColorKey = None,
+             showVertices=True, vertexSize=None, vertexSizeKey = None, vertexColor="black", vertexColorKey = None,
              vertexLabelKey=None, showVertexLabel= False,
              vertexGroupKey=None, vertexGroups=[], 
              vertexMinGroup=None, vertexMaxGroup=None, 
              showVertexLegend=False, vertexLegendLabel="Topology Vertices", vertexLegendRank=1, 
              vertexLegendGroup=1, 
 
-             showEdges=True, edgeWidth=1, edgeWidthKey = None, edgeColor="black", edgeColorKey = None,
+             showEdges=True, edgeWidth=None, edgeWidthKey = None, edgeColor="black", edgeColorKey = None,
              edgeLabelKey=None, showEdgeLabel = False,
              edgeGroupKey=None, edgeGroups=[], 
              edgeMinGroup=None, edgeMaxGroup=None, 
@@ -7936,7 +7991,7 @@ class Topology():
             The list of vertex groups against which to index the color of the vertex. The default is [].
         vertexMinGroup : int or float , optional
             For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.
-        edgeMaxGroup : int or float , optional
+        vertexMaxGroup : int or float , optional
             For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.
         showVertexLegend : bool, optional
             If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. The default is False.
@@ -8105,23 +8160,70 @@ class Topology():
             if not silent:
                 print("Topology.Show - Error: the input topologies parameter does not contain any valid topology. Returning None.")
             return None
+        
         if camera[0] == 0 and camera[1] == 0 and up == [0,0,1]:
             up = [0,1,0] #default to positive Y axis being up if looking down or up at the XY plane
         data = []
         for topology in new_topologies:
             if Topology.IsInstance(topology, "Graph"):
-                data += Plotly.DataByGraph(topology, sagitta=sagitta, absolute=absolute, sides=sides,  angle=angle, vertexColor=vertexColor, vertexColorKey=vertexColorKey, vertexSize=vertexSize, vertexSizeKey=vertexSizeKey, vertexLabelKey=vertexLabelKey, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, showVertices=showVertices, showVertexLabel=showVertexLabel, showVertexLegend=showVertexLegend, edgeColor=edgeColor, edgeColorKey=edgeColorKey, edgeWidth=edgeWidth, edgeWidthKey=edgeWidthKey, edgeLabelKey=edgeLabelKey, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, showEdges=showEdges, showEdgeLabel=showEdgeLabel, showEdgeLegend=showEdgeLegend, colorScale=colorScale, silent=silent)
+                if vertexSize == None:
+                    vSize = 6
+                else:
+                    vSize = vertexSize
+                if edgeWidth == None:
+                    eWidth = 1
+                else:
+                    eWidth = edgeWidth
+                data += Plotly.DataByGraph(topology,
+                                           sagitta=sagitta,
+                                           absolute=absolute,
+                                           sides=sides,
+                                           angle=angle,
+                                           vertexColor=vertexColor,
+                                           vertexColorKey=vertexColorKey,
+                                           vertexSize=vSize,
+                                           vertexSizeKey=vertexSizeKey,
+                                           vertexLabelKey=vertexLabelKey,
+                                           vertexGroupKey=vertexGroupKey,
+                                           vertexGroups=vertexGroups,
+                                           vertexMinGroup=vertexMinGroup,
+                                           vertexMaxGroup=vertexMaxGroup,
+                                           showVertices=showVertices,
+                                           showVertexLabel=showVertexLabel,
+                                           showVertexLegend=showVertexLegend,
+                                           edgeColor=edgeColor,
+                                           edgeColorKey=edgeColorKey,
+                                           edgeWidth=eWidth,
+                                           edgeWidthKey=edgeWidthKey,
+                                           edgeLabelKey=edgeLabelKey,
+                                           edgeGroupKey=edgeGroupKey,
+                                           edgeGroups=edgeGroups,
+                                           edgeMinGroup=edgeMinGroup,
+                                           edgeMaxGroup=edgeMaxGroup,
+                                           showEdges=showEdges,
+                                           showEdgeLabel=showEdgeLabel,
+                                           showEdgeLegend=showEdgeLegend,
+                                           colorScale=colorScale,
+                                           silent=silent)
             else:
+                if vertexSize == None:
+                    vSize = 1.1
+                else:
+                    vSize = vertexSize
+                if edgeWidth == None:
+                    eWidth = 1
+                else:
+                    eWidth = edgeWidth
                 d = Topology.Dictionary(topology)
                 if not d == None:
                     faceOpacity = Dictionary.ValueAtKey(d, opacityKey) or faceOpacity
                 data += Plotly.DataByTopology(topology=topology,
-                            showVertices=showVertices, vertexSize=vertexSize, vertexSizeKey=vertexSizeKey, vertexColor=vertexColor, vertexColorKey=vertexColorKey,
+                            showVertices=showVertices, vertexSize=vSize, vertexSizeKey=vertexSizeKey, vertexColor=vertexColor, vertexColorKey=vertexColorKey,
                             vertexLabelKey=vertexLabelKey, showVertexLabel=showVertexLabel, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, 
                             vertexMinGroup=vertexMinGroup, vertexMaxGroup=vertexMaxGroup, 
                             showVertexLegend=showVertexLegend, vertexLegendLabel=vertexLegendLabel, vertexLegendRank=vertexLegendRank,
                             vertexLegendGroup=vertexLegendGroup,
-                            showEdges=showEdges, edgeWidth=edgeWidth, edgeWidthKey=edgeWidthKey, edgeColor=edgeColor, edgeColorKey=edgeColorKey,
+                            showEdges=showEdges, edgeWidth=eWidth, edgeWidthKey=edgeWidthKey, edgeColor=edgeColor, edgeColorKey=edgeColorKey,
                             edgeLabelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, 
                             edgeMinGroup=edgeMinGroup, edgeMaxGroup=edgeMaxGroup, 
                             showEdgeLegend=showEdgeLegend, edgeLegendLabel=edgeLegendLabel, edgeLegendRank=edgeLegendRank, 
@@ -8176,7 +8278,7 @@ class Topology():
             found = False
             for j in range(len(topologies)):
                 if usedTopologies[j] == 0:
-                    if Vertex.IsInternal( selectors[i], topologies[j], tolerance):
+                    if Vertex.IsInternal( selectors[i], topologies[j], tolerance=tolerance):
                         sortedTopologies.append(topologies[j])
                         if exclusive == True:
                             usedTopologies[j] = 1
@@ -8313,7 +8415,7 @@ class Topology():
                     returnTopology = Cell.ByShell(returnTopology)
                 except:
                     try:
-                        returnTopology = CellComplex.ByWires(topologies, tolerance)
+                        returnTopology = CellComplex.ByWires(topologies, tolerance=tolerance)
                         try:
                             returnTopology = CellComplex.ExternalBoundary(returnTopology)
                         except:
@@ -8340,7 +8442,7 @@ class Topology():
             for t in topologies:
                 external_wires.append(topologic.Face.ExternalBoundary(t))
             try:
-                returnTopology = CellComplex.ByWires(external_wires, tolerance)
+                returnTopology = CellComplex.ByWires(external_wires, tolerance=tolerance)
             except:
                 try:
                     returnTopology = Shell.ByWires(external_wires, triangulate=triangulate, tolerance=tolerance, silent=True)
@@ -8850,7 +8952,7 @@ class Topology():
         mergingProcess = MergingProcess(queue, sources_str, sink_items, so_dicts)
         mergingProcess.start()
 
-        workerProcessPool = WorkerProcessPool(numWorkers, queue, sources_str, sink_items, so_dicts, tolerance)
+        workerProcessPool = WorkerProcessPool(numWorkers, queue, sources_str, sink_items, so_dicts, tolerance=tolerance)
         workerProcessPool.startProcesses()
         workerProcessPool.join()
 
