@@ -7931,7 +7931,7 @@ class Topology():
              showVertexLegend=False, vertexLegendLabel="Topology Vertices", vertexLegendRank=1, 
              vertexLegendGroup=1, 
 
-             showEdges=True, edgeWidth=None, edgeWidthKey = None, edgeColor="black", edgeColorKey = None,
+             showEdges=True, edgeWidth=None, edgeWidthKey = None, edgeColor=None, edgeColorKey = None,
              edgeLabelKey=None, showEdgeLabel = False,
              edgeGroupKey=None, edgeGroups=[], 
              edgeMinGroup=None, edgeMaxGroup=None, 
@@ -8167,13 +8167,17 @@ class Topology():
         for topology in new_topologies:
             if Topology.IsInstance(topology, "Graph"):
                 if vertexSize == None:
-                    vSize = 6
+                    vSize = 10
                 else:
                     vSize = vertexSize
                 if edgeWidth == None:
                     eWidth = 1
                 else:
                     eWidth = edgeWidth
+                if edgeColor == None:
+                    eColor = "red"
+                else:
+                    eColor = edgeColor
                 data += Plotly.DataByGraph(topology,
                                            sagitta=sagitta,
                                            absolute=absolute,
@@ -8191,7 +8195,7 @@ class Topology():
                                            showVertices=showVertices,
                                            showVertexLabel=showVertexLabel,
                                            showVertexLegend=showVertexLegend,
-                                           edgeColor=edgeColor,
+                                           edgeColor=eColor,
                                            edgeColorKey=edgeColorKey,
                                            edgeWidth=eWidth,
                                            edgeWidthKey=edgeWidthKey,
@@ -8214,6 +8218,10 @@ class Topology():
                     eWidth = 1
                 else:
                     eWidth = edgeWidth
+                if edgeColor == None:
+                    eColor = "black"
+                else:
+                    eColor = edgeColor
                 d = Topology.Dictionary(topology)
                 if not d == None:
                     faceOpacity = Dictionary.ValueAtKey(d, opacityKey) or faceOpacity
@@ -8223,7 +8231,7 @@ class Topology():
                             vertexMinGroup=vertexMinGroup, vertexMaxGroup=vertexMaxGroup, 
                             showVertexLegend=showVertexLegend, vertexLegendLabel=vertexLegendLabel, vertexLegendRank=vertexLegendRank,
                             vertexLegendGroup=vertexLegendGroup,
-                            showEdges=showEdges, edgeWidth=eWidth, edgeWidthKey=edgeWidthKey, edgeColor=edgeColor, edgeColorKey=edgeColorKey,
+                            showEdges=showEdges, edgeWidth=eWidth, edgeWidthKey=edgeWidthKey, edgeColor=eColor, edgeColorKey=edgeColorKey,
                             edgeLabelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, 
                             edgeMinGroup=edgeMinGroup, edgeMaxGroup=edgeMaxGroup, 
                             showEdgeLegend=showEdgeLegend, edgeLegendLabel=edgeLegendLabel, edgeLegendRank=edgeLegendRank, 

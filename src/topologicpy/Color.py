@@ -483,6 +483,9 @@ class Color:
             print("Color.RGBToHex - Error: The input rgb parameter is not a valid list. Returning None.")
             return None
         r, g, b = rgb
+        r = int(r)
+        g = int(g)
+        b = int(b)
         hex_value = "#{:02x}{:02x}{:02x}".format(r, g, b)
         return hex_value.upper()
     

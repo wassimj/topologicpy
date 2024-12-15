@@ -2162,6 +2162,8 @@ class Graph:
     @staticmethod
     def ByIFCFile(file, includeTypes: list = [], excludeTypes: list = [],
                   includeRels: list = [], excludeRels: list = [],
+                  transferDictionaries: bool = False, storeBREP: bool = False,
+                  removeCoplanarFaces: bool = False,
                   xMin: float = -0.5, yMin: float = -0.5, zMin: float = -0.5,
                   xMax: float = 0.5, yMax: float = 0.5, zMax: float = 0.5,
                   tolerance: float = 0.0001):
@@ -2180,6 +2182,12 @@ class Graph:
             A list of IFC relationship types to include in the graph. The default is [] which means all relationship types are included.
         excludeRels : list , optional
             A list of IFC relationship types to exclude from the graph. The default is [] which mean no relationship type is excluded.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+        storeBREP : bool , optional
+            If set to True, store the BRep of the subtopology in its representative vertex. The default is False.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
         xMin : float, optional
             The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
         yMin : float, optional
@@ -2281,6 +2289,126 @@ class Graph:
                     relationships.append(ifc_rel)
             return relationships
 
+        def get_psets(entity):
+            # Initialize the PSET dictionary for this entity
+            psets = {}
+            
+            # Check if the entity has a GlobalId
+            if not hasattr(entity, 'GlobalId'):
+                raise ValueError("The provided entity does not have a GlobalId.")
+            
+            # Get the property sets related to this entity
+            for definition in entity.IsDefinedBy:
+                if definition.is_a('IfcRelDefinesByProperties'):
+                    property_set = definition.RelatingPropertyDefinition
+                    
+                    # Check if it is a property set
+                    if not property_set == None:
+                        if property_set.is_a('IfcPropertySet'):
+                            pset_name = "IFC_"+property_set.Name
+                            
+                            # Dictionary to hold individual properties
+                            properties = {}
+                            
+                            # Iterate over the properties in the PSET
+                            for prop in property_set.HasProperties:
+                                if prop.is_a('IfcPropertySingleValue'):
+                                    # Get the property name and value
+                                    prop_name = "IFC_"+prop.Name
+                                    prop_value = prop.NominalValue.wrappedValue if prop.NominalValue else None
+                                    properties[prop_name] = prop_value
+                            
+                            # Add this PSET to the dictionary for this entity
+                            psets[pset_name] = properties
+            return psets
+        
+        def get_color_transparency_material(entity):
+            import random
+
+            # Set default Material Name and ID
+            material_list = []
+            # Set default transparency based on entity type or material
+            default_transparency = 0.0
+            
+            # Check if the entity is an opening or made of glass
+            is_a = entity.is_a().lower()
+            if "opening" in is_a or "window" in is_a or "door" in is_a or "space" in is_a:
+                default_transparency = 0.7
+            elif "space" in is_a:
+                default_transparency = 0.8
+            
+            # Check if the entity has constituent materials (e.g., glass)
+            else:
+                # Check for associated materials (ConstituentMaterial or direct material assignment)
+                materials_checked = False
+                if hasattr(entity, 'HasAssociations'):
+                    for rel in entity.HasAssociations:
+                        if rel.is_a('IfcRelAssociatesMaterial'):
+                            material = rel.RelatingMaterial
+                            if material.is_a('IfcMaterial') and 'glass' in material.Name.lower():
+                                default_transparency = 0.5
+                                materials_checked = True
+                            elif material.is_a('IfcMaterialLayerSetUsage'):
+                                material_layers = material.ForLayerSet.MaterialLayers
+                                for layer in material_layers:
+                                    material_list.append(layer.Material.Name)
+                                    if 'glass' in layer.Material.Name.lower():
+                                        default_transparency = 0.5
+                                        materials_checked = True
+                                        
+                # Check for ConstituentMaterial if available
+                if hasattr(entity, 'HasAssociations') and not materials_checked:
+                    for rel in entity.HasAssociations:
+                        if rel.is_a('IfcRelAssociatesMaterial'):
+                            material = rel.RelatingMaterial
+                            if material.is_a('IfcMaterialConstituentSet'):
+                                for constituent in material.MaterialConstituents:
+                                    material_list.append(constituent.Material.Name)
+                                    if 'glass' in constituent.Material.Name.lower():
+                                        default_transparency = 0.5
+                                        materials_checked = True
+
+                # Check if the entity has ShapeAspects with associated materials or styles
+                if hasattr(entity, 'HasShapeAspects') and not materials_checked:
+                    for shape_aspect in entity.HasShapeAspects:
+                        if hasattr(shape_aspect, 'StyledByItem') and shape_aspect.StyledByItem:
+                            for styled_item in shape_aspect.StyledByItem:
+                                for style in styled_item.Styles:
+                                    if style.is_a('IfcSurfaceStyle'):
+                                        for surface_style in style.Styles:
+                                            if surface_style.is_a('IfcSurfaceStyleRendering'):
+                                                transparency = getattr(surface_style, 'Transparency', default_transparency)
+                                                if transparency > 0:
+                                                    default_transparency = transparency
+
+            # Try to get the actual color and transparency if defined
+            if hasattr(entity, 'Representation') and entity.Representation:
+                for rep in entity.Representation.Representations:
+                    for item in rep.Items:
+                        if hasattr(item, 'StyledByItem') and item.StyledByItem:
+                            for styled_item in item.StyledByItem:
+                                if hasattr(styled_item, 'Styles'):
+                                    for style in styled_item.Styles:
+                                        if style.is_a('IfcSurfaceStyle'):
+                                            for surface_style in style.Styles:
+                                                if surface_style.is_a('IfcSurfaceStyleRendering'):
+                                                    color = surface_style.SurfaceColour
+                                                    transparency = getattr(surface_style, 'Transparency', default_transparency)
+                                                    return (color.Red*255, color.Green*255, color.Blue*255), transparency, material_list
+            
+            # If no color is defined, return a consistent random color based on the entity type
+            if "wall" in is_a:
+                color = (175, 175, 175)
+            elif "slab" in is_a:
+                color = (200, 200, 200)
+            elif "space" in is_a:
+                color = (250, 250, 250)
+            else:
+                random.seed(hash(is_a))
+                color = (random.random(), random.random(), random.random())
+            
+            return color, default_transparency, material_list
+
         def vertexByIFCObject(ifc_object, object_types, restrict=False):
             settings = ifcopenshell.geom.settings()
             settings.set(settings.USE_WORLD_COORDS,True)
@@ -2318,8 +2446,47 @@ class Graph:
                     y = random.uniform(yMin,yMax)
                     z = random.uniform(zMin,zMax)
                     centroid = Vertex.ByCoordinates(x, y, z)
-                d = Dictionary.ByKeysValues(["id","psets", "type", "type_id", "name", "label"], [obj_id, psets, obj_type, obj_type_id, name, label])
-                centroid = Topology.SetDictionary(centroid, d)
+                
+                # Store relevant information
+                if transferDictionaries == True:
+                    color, transparency, material_list = get_color_transparency_material(ifc_object)
+                    entity_dict = {
+                        "TOPOLOGIC_id": str(Topology.UUID(centroid)),
+                        "TOPOLOGIC_name": getattr(ifc_object, 'Name', "Untitled"),
+                        "TOPOLOGIC_type": Topology.TypeAsString(centroid),
+                        "TOPOLOGIC_color": color,
+                        "TOPOLOGIC_opacity": 1.0 - transparency,
+                        "IFC_global_id": getattr(ifc_object, 'GlobalId', 0),
+                        "IFC_name": getattr(ifc_object, 'Name', "Untitled"),
+                        "IFC_type": ifc_object.is_a(),
+                        "IFC_material_list": material_list,
+                    }
+                    topology_dict = Dictionary.ByPythonDictionary(entity_dict)
+                    # Get PSETs dictionary
+                    pset_python_dict = get_psets(ifc_object)
+                    pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
+                    topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
+                    if storeBREP == True:
+                        shape_topology = None
+                        if hasattr(ifc_object, "Representation") and ifc_object.Representation:
+                            for rep in ifc_object.Representation.Representations:
+                                if rep.is_a("IfcShapeRepresentation"):
+                                    # Generate the geometry for this entity
+                                    shape = ifcopenshell.geom.create_shape(settings, ifc_object)
+                                    # Get grouped vertices and grouped faces     
+                                    grouped_verts = shape.geometry.verts
+                                    verts = [ [grouped_verts[i], grouped_verts[i + 1], grouped_verts[i + 2]] for i in range(0, len(grouped_verts), 3)]
+                                    grouped_edges = shape.geometry.edges
+                                    edges = [[grouped_edges[i], grouped_edges[i + 1]] for i in range(0, len(grouped_edges), 2)]
+                                    grouped_faces = shape.geometry.faces
+                                    faces = [ [grouped_faces[i], grouped_faces[i + 1], grouped_faces[i + 2]] for i in range(0, len(grouped_faces), 3)]
+                                    shape_topology = Topology.ByGeometry(verts, edges, faces, silent=True)
+                                    if not shape_topology == None:
+                                        if removeCoplanarFaces == True:
+                                            shape_topology = Topology.RemoveCoplanarFaces(shape_topology, epsilon=0.0001)
+                        if not shape_topology == None:
+                            topology_dict = Dictionary.SetValuesAtKeys(topology_dict, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(shape_topology), Topology.Type(shape_topology), Topology.TypeAsString(shape_topology)])
+                    centroid = Topology.SetDictionary(centroid, topology_dict)
                 return centroid
             return None
 
@@ -2333,52 +2500,57 @@ class Graph:
                 if ifc_rel.is_a("IfcRelConnectsPorts"):
                     source = ifc_rel.RelatingPort
                     destinations = ifc_rel.RelatedPorts
-                if ifc_rel.is_a("IfcRelConnectsPortToElement"):
+                elif ifc_rel.is_a("IfcRelConnectsPortToElement"):
                     source = ifc_rel.RelatingPort
                     destinations = [ifc_rel.RelatedElement]
-                if ifc_rel.is_a("IfcRelAggregates"):
+                elif ifc_rel.is_a("IfcRelAggregates"):
                     source = ifc_rel.RelatingObject
                     destinations = ifc_rel.RelatedObjects
-                if ifc_rel.is_a("IfcRelNests"):
+                elif ifc_rel.is_a("IfcRelNests"):
                     source = ifc_rel.RelatingObject
                     destinations = ifc_rel.RelatedObjects
-                if ifc_rel.is_a("IfcRelAssignsToGroup"):
+                elif ifc_rel.is_a("IfcRelAssignsToGroup"):
                     source = ifc_rel.RelatingGroup
                     destinations = ifc_rel.RelatedObjects
-                if ifc_rel.is_a("IfcRelConnectsPathElements"):
+                elif ifc_rel.is_a("IfcRelConnectsPathElements"):
                     source = ifc_rel.RelatingElement
                     destinations = [ifc_rel.RelatedElement]
-                if ifc_rel.is_a("IfcRelConnectsStructuralMember"):
+                elif ifc_rel.is_a("IfcRelConnectsStructuralMember"):
                     source = ifc_rel.RelatingStructuralMember
                     destinations = [ifc_rel.RelatedStructuralConnection]
-                if ifc_rel.is_a("IfcRelContainedInSpatialStructure"):
+                elif ifc_rel.is_a("IfcRelContainedInSpatialStructure"):
                     source = ifc_rel.RelatingStructure
                     destinations = ifc_rel.RelatedElements
-                if ifc_rel.is_a("IfcRelFillsElement"):
+                elif ifc_rel.is_a("IfcRelFillsElement"):
                     source = ifc_rel.RelatingOpeningElement
                     destinations = [ifc_rel.RelatedBuildingElement]
-                if ifc_rel.is_a("IfcRelSpaceBoundary"):
+                elif ifc_rel.is_a("IfcRelSpaceBoundary"):
                     source = ifc_rel.RelatingSpace
                     destinations = [ifc_rel.RelatedBuildingElement]
-                if ifc_rel.is_a("IfcRelVoidsElement"):
+                elif ifc_rel.is_a("IfcRelVoidsElement"):
                     source = ifc_rel.RelatingBuildingElement
                     destinations = [ifc_rel.RelatedOpeningElement]
+                elif ifc_rel.is_a("IfcRelDefinesByProperties") or ifc_rel.is_a("IfcRelAssociatesMaterial") or ifc_rel.is_a("IfcRelDefinesByType"):
+                    source = None
+                    destinations = None
+                else:
+                    print("Graph.ByIFCFile - Warning: The relationship", ifc_rel, "is not supported. Skipping.")
                 if source:
-                    sv = vertexAtKeyValue(vertices, key="id", value=source.id())
+                    sv = vertexAtKeyValue(vertices, key="IFC_global_id", value=getattr(source, 'GlobalId', 0))
                     if sv:
                         si = Vertex.Index(sv, vertices, tolerance=tolerance)
                         if not si == None:
                             for destination in destinations:
                                 if destination == None:
                                     continue
-                                ev = vertexAtKeyValue(vertices, key="id", value=destination.id())
+                                ev = vertexAtKeyValue(vertices, key="IFC_global_id", value=getattr(destination, 'GlobalId', 0),)
                                 if ev:
                                     ei = Vertex.Index(ev, vertices, tolerance=tolerance)
                                     if not ei == None:
                                         if not([si,ei] in tuples or [ei,si] in tuples):
                                             tuples.append([si,ei])
                                             e = Edge.ByVertices([sv,ev])
-                                            d = Dictionary.ByKeysValues(["id", "name", "type"], [ifc_rel.id(), ifc_rel.Name, ifc_rel.is_a()])
+                                            d = Dictionary.ByKeysValues(["IFC_global_id", "IFC_name", "IFC_type"], [ifc_rel.id(), ifc_rel.Name, ifc_rel.is_a()])
                                             e = Topology.SetDictionary(e, d)
                                             edges.append(e)
             return edges
@@ -2399,7 +2571,7 @@ class Graph:
         return g
 
     @staticmethod
-    def ByIFCPath(path, includeTypes=[], excludeTypes=[], includeRels=[], excludeRels=[], xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5):
+    def ByIFCPath(path, includeTypes=[], excludeTypes=[], includeRels=[], excludeRels=[], transferDictionaries=False, storeBREP=False, removeCoplanarFaces=False, xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5):
         """
         Create a Graph from an IFC path. This code is partially based on code from Bruno Postle.
 
@@ -2415,6 +2587,12 @@ class Graph:
             A list of IFC relationship types to include in the graph. The default is [] which means all relationship types are included.
         excludeRels : list , optional
             A list of IFC relationship types to exclude from the graph. The default is [] which mean no relationship type is excluded.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+        storeBREP : bool , optional
+            If set to True, store the BRep of the subtopology in its representative vertex. The default is False.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
         xMin : float, optional
             The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
         yMin : float, optional
@@ -2463,7 +2641,15 @@ class Graph:
         if not ifc_file:
             print("Graph.ByIFCPath - Error: Could not open the IFC file. Returning None.")
             return None
-        return Graph.ByIFCFile(ifc_file, includeTypes=includeTypes, excludeTypes=excludeTypes, includeRels=includeRels, excludeRels=excludeRels, xMin=xMin, yMin=yMin, zMin=zMin, xMax=xMax, yMax=yMax, zMax=zMax)
+        return Graph.ByIFCFile(ifc_file,
+                               includeTypes=includeTypes,
+                               excludeTypes=excludeTypes,
+                               includeRels=includeRels,
+                               excludeRels=excludeRels,
+                               transferDictionaries=transferDictionaries,
+                               storeBREP=storeBREP,
+                               removeCoplanarFaces=removeCoplanarFaces,
+                               xMin=xMin, yMin=yMin, zMin=zMin, xMax=xMax, yMax=yMax, zMax=zMax)
 
     @staticmethod
     def ByMeshData(vertices, edges, vertexDictionaries=None, edgeDictionaries=None, tolerance=0.0001):
@@ -2619,11 +2805,8 @@ class Graph:
                 d1 = Topology.Dictionary(sharedTopology)
                 d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 1) # shared topology
                 if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedTopology), Topology.Type(sharedTopology), Topology.TypeAsString(sharedTopology)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    vst = Topology.SetDictionary(vst, d3, silent=True)
-                else:
-                    vst = Topology.SetDictionary(vst, d1, silent=True)
+                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedTopology), Topology.Type(sharedTopology), Topology.TypeAsString(sharedTopology)])
+                vst = Topology.SetDictionary(vst, d1, silent=True)
                 verts.append(vst)
                 tempe = Edge.ByStartVertexEndVertex(vt, vst, tolerance=tolerance)
                 tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Topologies", 1])
@@ -2643,11 +2826,8 @@ class Graph:
                 d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 2) # shared aperture
                 vsa = Vertex.ByCoordinates(Vertex.X(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Y(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Z(vsa, mantissa=mantissa)+(tolerance*100))
                 if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    vsa = Topology.SetDictionary(vsa, d3, silent=True)
-                else:
-                    vsa = Topology.SetDictionary(vsa, d1, silent=True)
+                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
+                vsa = Topology.SetDictionary(vsa, d1, silent=True)
                 verts.append(vsa)
                 tempe = Edge.ByStartVertexEndVertex(vt, vsa, tolerance=tolerance)
                 tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Apertures", 2])
@@ -2710,11 +2890,8 @@ class Graph:
                 d1 = Topology.Dictionary(content)
                 d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
                 if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    vct = Topology.SetDictionary(vct, d3, silent=True)
-                else:
-                    vct = Topology.SetDictionary(vct, d1, silent=True)
+                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
+                vct = Topology.SetDictionary(vct, d1, silent=True)
                 verts.append(vct)
                 tempe = Edge.ByStartVertexEndVertex(vt, vct, tolerance=tolerance)
                 tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
@@ -2748,11 +2925,8 @@ class Graph:
                 d1 = Topology.Dictionary(vop)
                 d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 6) # outpost
                 if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(outpost), Topology.Type(outpost), Topology.TypeAsString(outpost)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    vop = Topology.SetDictionary(vop, d3, silent=True)
-                else:
-                    vop = Topology.SetDictionary(vop, d1, silent=True)
+                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(outpost), Topology.Type(outpost), Topology.TypeAsString(outpost)])
+                vop = Topology.SetDictionary(vop, d1, silent=True)
                 verts.append(vop)
                 tempe = Edge.ByStartVertexEndVertex(vt, vop, tolerance=tolerance)
                 tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
@@ -2876,11 +3050,8 @@ class Graph:
                 d1 = Topology.Dictionary(cell)
                 d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
                 if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(cell), Topology.Type(cell), Topology.TypeAsString(cell)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    vCell = Topology.SetDictionary(vCell, d3, silent=True)
-                else:
-                    vCell = Topology.SetDictionary(vCell, d1, silent=True)
+                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(cell), Topology.Type(cell), Topology.TypeAsString(cell)])
+                vCell = Topology.SetDictionary(vCell, d1, silent=True)
                 graph_vertices.append(vCell)
             if direct == True:
                 cells = Topology.Cells(topology)
@@ -3007,7 +3178,7 @@ class Graph:
                                 graph_vertices += verts
                                 graph_edges += eds
                     if viaSharedApertures:
-                        verts, eds = _viaSharedTopologies(vCell, sharedApertures)
+                        verts, eds = _viaSharedApertures(vCell, sharedApertures)
                         graph_vertices += verts
                         graph_edges += eds
                     if toExteriorTopologies:
@@ -3251,7 +3422,7 @@ class Graph:
                                 graph_vertices += verts
                                 graph_edges += eds
                     if viaSharedApertures:
-                        verts, eds = _viaSharedTopologies(vFace, sharedApertures)
+                        verts, eds = _viaSharedApertures(vFace, sharedApertures)
                         graph_vertices += verts
                         graph_edges += eds
                     if toExteriorTopologies:
@@ -3497,11 +3668,11 @@ class Graph:
                                 graph_vertices += verts
                                 graph_edges += eds
                     if viaSharedApertures:
-                        verts, eds = _viaSharedTopologies(vCell, sharedApertures)
+                        verts, eds = _viaSharedApertures(vEdge, sharedApertures)
                         graph_vertices += verts
                         graph_edges += eds
                     if toExteriorTopologies:
-                        verts, eds = _toExteriorTopologies(vCell, exteriorTopologies)
+                        verts, eds = _toExteriorTopologies(vEdge, exteriorTopologies)
                         graph_vertices += verts
                         graph_edges += eds
                         for exteriorTopology in exteriorTopologies:
@@ -3533,8 +3704,6 @@ class Graph:
                         graph_vertices += verts
                         graph_edges += eds
             return [graph_vertices, graph_edges]
-
-
 
         def processEdge(item):
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
@@ -3597,7 +3766,6 @@ class Graph:
                     graph_edges += eds
             return [graph_vertices, graph_edges]
 
-
         def processVertex(item):
             topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
             vertices = [topology]
@@ -3654,7 +3822,6 @@ class Graph:
             
             return [vertices, edges]
 
-        
         if not Topology.IsInstance(topology, "Topology"):
             print("Graph.ByTopology - Error: The input topology is not a valid topology. Returning None.")
             return None
@@ -8176,9 +8343,9 @@ class Graph:
                             group = minVertexGroup
                         if group > maxVertexGroup:
                             group = maxVertexGroup
-                        color = Color.RGBToHex(Color.ByValueInRange(group, minValue=minVertexGroup, maxValue=maxVertexGroup, colorScale=colorScale))
+                        color = Color.AnyToHex(Color.ByValueInRange(group, minValue=minVertexGroup, maxValue=maxVertexGroup, colorScale=colorScale))
                     else:
-                        color = Color.RGBToHex(Color.ByValueInRange(vertexGroups.index(group), minValue=minVertexGroup, maxValue=maxVertexGroup, colorScale=colorScale))
+                        color = Color.AnyToHex(Color.ByValueInRange(vertexGroups.index(group), minValue=minVertexGroup, maxValue=maxVertexGroup, colorScale=colorScale))
                     colors.append(color)
                 except:
                     colors.append(vertexColor)
@@ -8474,7 +8641,7 @@ class Graph:
              angle = 0,
              vertexColor="black",
              vertexColorKey=None,
-             vertexSize=6,
+             vertexSize=10,
              vertexSizeKey=None,
              vertexLabelKey=None,
              vertexGroupKey=None,
@@ -8484,7 +8651,7 @@ class Graph:
              showVertices=True,
              showVertexLabel=False,
              showVertexLegend=False,
-             edgeColor="black",
+             edgeColor="red",
              edgeColorKey=None,
              edgeWidth=1,
              edgeWidthKey=None,
