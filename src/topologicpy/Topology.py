@@ -7923,39 +7923,86 @@ class Topology():
     
     @staticmethod
     def Show(*topologies,
+             nameKey = "name",
              opacityKey = "opacity",
-             showVertices=True, vertexSize=None, vertexSizeKey = None, vertexColor="black", vertexColorKey = None,
-             vertexLabelKey=None, showVertexLabel= False,
-             vertexGroupKey=None, vertexGroups=[], 
-             vertexMinGroup=None, vertexMaxGroup=None, 
-             showVertexLegend=False, vertexLegendLabel="Topology Vertices", vertexLegendRank=1, 
-             vertexLegendGroup=1, 
+             showVertices=True,
+             vertexSize=None,
+             vertexSizeKey = None,
+             vertexColor="black",
+             vertexColorKey = None,
+             vertexLabelKey=None,
+             showVertexLabel= False,
+             vertexGroupKey=None,
+             vertexGroups=[], 
+             vertexMinGroup=None,
+             vertexMaxGroup=None, 
+             showVertexLegend=False,
+             vertexLegendLabel="Vertices",
 
-             showEdges=True, edgeWidth=None, edgeWidthKey = None, edgeColor=None, edgeColorKey = None,
-             edgeLabelKey=None, showEdgeLabel = False,
-             edgeGroupKey=None, edgeGroups=[], 
-             edgeMinGroup=None, edgeMaxGroup=None, 
-             showEdgeLegend=False, edgeLegendLabel="Topology Edges", edgeLegendRank=2, 
-             edgeLegendGroup=2, 
+             showEdges=True,
+             edgeWidth=None,
+             edgeWidthKey = None,
+             edgeColor=None,
+             edgeColorKey = None,
+             edgeLabelKey=None,
+             showEdgeLabel = False,
+             edgeGroupKey=None,
+             edgeGroups=[], 
+             edgeMinGroup=None,
+             edgeMaxGroup=None, 
+             showEdgeLegend=False,
+             edgeLegendLabel="Edges",
 
-             showFaces=True, faceOpacity=0.5, faceOpacityKey=None, faceColor="#FAFAFA", faceColorKey = None,
-             faceLabelKey=None, faceGroupKey=None, faceGroups=[], 
-             faceMinGroup=None, faceMaxGroup=None, 
-             showFaceLegend=False, faceLegendLabel="Topology Faces", faceLegendRank=3,
-             faceLegendGroup=3, 
+             showFaces=True,
+             faceOpacity=0.5,
+             faceOpacityKey=None,
+             faceColor="#FAFAFA",
+             faceColorKey = None,
+             faceLabelKey=None,
+             faceGroupKey=None,
+             faceGroups=[], 
+             faceMinGroup=None,
+             faceMaxGroup=None, 
+             showFaceLegend=False,
+             faceLegendLabel="Faces",
              intensityKey=None,
              intensities=[],
              
-             width=950, height=500,
-             xAxis=False, yAxis=False, zAxis=False, axisSize=1, backgroundColor='rgba(0,0,0,0)',
-             marginLeft=0, marginRight=0, marginTop=20, marginBottom=0, camera=[-1.25, -1.25, 1.25],
-             center=[0, 0, 0], up=[0, 0, 1], projection="perspective", renderer="notebook", showScale=False,
+             width=950,
+             height=500,
+             xAxis=False,
+             yAxis=False,
+             zAxis=False,
+             axisSize=1, 
+             backgroundColor='rgba(0,0,0,0)',
+             marginLeft=0,
+             marginRight=0,
+             marginTop=20,
+             marginBottom=0,
+             camera=[-1.25, -1.25, 1.25],
+             center=[0, 0, 0],
+             up=[0, 0, 1],
+             projection="perspective",
+             renderer="notebook",
+             showScale=False,
              
-             cbValues=[], cbTicks=5, cbX=-0.15, cbWidth=15, cbOutlineWidth=0, cbTitle="",
-             cbSubTitle="", cbUnits="", colorScale="Viridis",
+             cbValues=[],
+             cbTicks=5,
+             cbX=-0.15,
+             cbWidth=15,
+             cbOutlineWidth=0,
+             cbTitle="",
+             cbSubTitle="",
+             cbUnits="",
+             colorScale="Viridis",
              
-             sagitta = 0, absolute = False, sides = 8, angle = 0,
-             mantissa=6, tolerance=0.0001, silent=False):
+             sagitta = 0,
+             absolute = False,
+             sides = 8,
+             angle = 0,
+             mantissa=6,
+             tolerance=0.0001,
+             silent=False):
         """
             Shows the input topology on screen.
 
@@ -7997,10 +8044,6 @@ class Topology():
             If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. The default is False.
         vertexLegendLabel : str , optional
             The legend label string used to identify vertices. The default is "Topology Vertices".
-        vertexLegendRank : int , optional
-            The legend rank order of the vertices of this topology. The default is 1.
-        vertexLegendGroup : int , optional
-            The number of the vertex legend group to which the vertices of this topology belong. The default is 1.
         
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
@@ -8034,10 +8077,6 @@ class Topology():
             If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. The default is False.
         edgeLegendLabel : str , optional
             The legend label string used to identify edges. The default is "Topology Edges".
-        edgeLegendRank : int , optional
-            The legend rank order of the edges of this topology. The default is 2.
-        edgeLegendGroup : int , optional
-            The number of the edge legend group to which the edges of this topology belong. The default is 2.
         
         showFaces : bool , optional
             If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
@@ -8069,10 +8108,6 @@ class Topology():
             If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. The default is False.
         faceLegendLabel : str , optional
             The legend label string used to idenitfy edges. The default is "Topology Faces".
-        faceLegendRank : int , optional
-            The legend rank order of the faces of this topology. The default is 3.
-        faceLegendGroup : int , optional
-            The number of the face legend group to which the faces of this topology belong. The default is 3.
         width : int , optional
             The width in pixels of the figure. The default value is 950.
         height : int , optional
@@ -8149,8 +8184,6 @@ class Topology():
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Plotly import Plotly
         from topologicpy.Helper import Helper
-        from topologicpy.Graph import Graph
-        from topologicpy.Color import Color
         
         if isinstance(topologies, tuple):
             topologies = Helper.Flatten(list(topologies))
@@ -8164,8 +8197,18 @@ class Topology():
         if camera[0] == 0 and camera[1] == 0 and up == [0,0,1]:
             up = [0,1,0] #default to positive Y axis being up if looking down or up at the XY plane
         data = []
-        for topology in new_topologies:
+        topology_counter = 0
+        offset = 1
+        if showEdges == True:
+            offset += 1
+        if showFaces == True:
+            offset +=2
+        temp_graphs = [g for g in new_topologies if Topology.IsInstance(g, "Graph")]
+        graph_counter = len(new_topologies)*offset - len(temp_graphs)*offset
+        for i, topology in enumerate(new_topologies):
+            d = Topology.Dictionary(topology)
             if Topology.IsInstance(topology, "Graph"):
+                name = Dictionary.ValueAtKey(d, nameKey) or "Untitled Graph"
                 if vertexSize == None:
                     vSize = 10
                 else:
@@ -8178,6 +8221,9 @@ class Topology():
                     eColor = "red"
                 else:
                     eColor = edgeColor
+                vll = name+" ("+vertexLegendLabel+")"
+                ell = name+" ("+edgeLegendLabel+")"
+                
                 data += Plotly.DataByGraph(topology,
                                            sagitta=sagitta,
                                            absolute=absolute,
@@ -8195,6 +8241,9 @@ class Topology():
                                            showVertices=showVertices,
                                            showVertexLabel=showVertexLabel,
                                            showVertexLegend=showVertexLegend,
+                                           vertexLegendLabel= str(i+1)+": "+vll,
+                                           vertexLegendRank= (graph_counter+1),
+                                           vertexLegendGroup= (graph_counter+1),
                                            edgeColor=eColor,
                                            edgeColorKey=edgeColorKey,
                                            edgeWidth=eWidth,
@@ -8207,9 +8256,14 @@ class Topology():
                                            showEdges=showEdges,
                                            showEdgeLabel=showEdgeLabel,
                                            showEdgeLegend=showEdgeLegend,
+                                           edgeLegendLabel = str(i+1)+": "+ell,
+                                           edgeLegendRank= (graph_counter+2),
+                                           edgeLegendGroup=(graph_counter+2),
                                            colorScale=colorScale,
                                            silent=silent)
+                graph_counter += offset
             else:
+                name = Dictionary.ValueAtKey(d, nameKey) or "Untitled"
                 if vertexSize == None:
                     vSize = 1.1
                 else:
@@ -8222,26 +8276,59 @@ class Topology():
                     eColor = "black"
                 else:
                     eColor = edgeColor
-                d = Topology.Dictionary(topology)
                 if not d == None:
                     faceOpacity = Dictionary.ValueAtKey(d, opacityKey) or faceOpacity
                 data += Plotly.DataByTopology(topology=topology,
-                            showVertices=showVertices, vertexSize=vSize, vertexSizeKey=vertexSizeKey, vertexColor=vertexColor, vertexColorKey=vertexColorKey,
-                            vertexLabelKey=vertexLabelKey, showVertexLabel=showVertexLabel, vertexGroupKey=vertexGroupKey, vertexGroups=vertexGroups, 
-                            vertexMinGroup=vertexMinGroup, vertexMaxGroup=vertexMaxGroup, 
-                            showVertexLegend=showVertexLegend, vertexLegendLabel=vertexLegendLabel, vertexLegendRank=vertexLegendRank,
-                            vertexLegendGroup=vertexLegendGroup,
-                            showEdges=showEdges, edgeWidth=eWidth, edgeWidthKey=edgeWidthKey, edgeColor=eColor, edgeColorKey=edgeColorKey,
-                            edgeLabelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, edgeGroupKey=edgeGroupKey, edgeGroups=edgeGroups, 
-                            edgeMinGroup=edgeMinGroup, edgeMaxGroup=edgeMaxGroup, 
-                            showEdgeLegend=showEdgeLegend, edgeLegendLabel=edgeLegendLabel, edgeLegendRank=edgeLegendRank, 
-                            edgeLegendGroup=edgeLegendGroup,
-                            showFaces=showFaces, faceOpacity=faceOpacity, faceColor=faceColor, faceColorKey=faceColorKey,
-                            faceLabelKey=faceLabelKey, faceGroupKey=faceGroupKey, faceGroups=faceGroups, 
-                            faceMinGroup=faceMinGroup, faceMaxGroup=faceMaxGroup, 
-                            showFaceLegend=showFaceLegend, faceLegendLabel=faceLegendLabel, faceLegendRank=faceLegendRank,
-                            faceLegendGroup=faceLegendGroup, 
-                            intensityKey=intensityKey, intensities=intensities, colorScale=colorScale, mantissa=mantissa, tolerance=tolerance)
+                                              showVertices=showVertices,
+                                              vertexSize=vSize,
+                                              vertexSizeKey=vertexSizeKey,
+                                              vertexColor=vertexColor,
+                                              vertexColorKey=vertexColorKey,
+                                              vertexLabelKey=vertexLabelKey,
+                                              showVertexLabel=showVertexLabel,
+                                              vertexGroupKey=vertexGroupKey,
+                                              vertexGroups=vertexGroups,
+                                              vertexMinGroup=vertexMinGroup,
+                                              vertexMaxGroup=vertexMaxGroup,
+                                              showVertexLegend=showVertexLegend,
+                                              vertexLegendLabel=str(i+1)+": "+name+" ("+vertexLegendLabel+")",
+                                              vertexLegendRank=topology_counter+1,
+                                              vertexLegendGroup=topology_counter+1,
+                                              showEdges=showEdges,
+                                              edgeWidth=eWidth,
+                                              edgeWidthKey=edgeWidthKey,
+                                              edgeColor=eColor,
+                                              edgeColorKey=edgeColorKey,
+                                              edgeLabelKey=edgeLabelKey,
+                                              showEdgeLabel=showEdgeLabel,
+                                              edgeGroupKey=edgeGroupKey,
+                                              edgeGroups=edgeGroups,
+                                              edgeMinGroup=edgeMinGroup,
+                                              edgeMaxGroup=edgeMaxGroup,
+                                              showEdgeLegend=showEdgeLegend,
+                                              edgeLegendLabel=str(i+1)+": "+name+" ("+edgeLegendLabel+")",
+                                              edgeLegendRank=topology_counter+2,
+                                              edgeLegendGroup=topology_counter+2,
+                                              showFaces=showFaces,
+                                              faceOpacity=faceOpacity,
+                                              faceOpacityKey=faceOpacityKey,
+                                              faceColor=faceColor,
+                                              faceColorKey=faceColorKey,
+                                              faceLabelKey=faceLabelKey,
+                                              faceGroupKey=faceGroupKey,
+                                              faceGroups=faceGroups,
+                                              faceMinGroup=faceMinGroup,
+                                              faceMaxGroup=faceMaxGroup,
+                                              showFaceLegend=showFaceLegend,
+                                              faceLegendLabel=str(i+1)+": "+name+" ("+faceLegendLabel+")",
+                                              faceLegendRank=topology_counter+3,
+                                              faceLegendGroup=topology_counter+3,
+                                              intensityKey=intensityKey,
+                                              intensities=intensities,
+                                              colorScale=colorScale,
+                                              mantissa=mantissa,
+                                              tolerance=tolerance)
+                topology_counter += offset
         figure = Plotly.FigureByData(data=data, width=width, height=height,
                                      xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,
                                      backgroundColor=backgroundColor,
@@ -9397,7 +9484,7 @@ class Topology():
         return topology.Type()
     
     @staticmethod
-    def TypeAsString(topology):
+    def TypeAsString(topology, silent=False):
         """
         Returns the type of the input topology as a string.
 
@@ -9405,6 +9492,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        silent : bool , optional
+            If set to True, no warnings or errors will be printed. The default is False.
 
         Returns
         -------
@@ -9412,10 +9501,13 @@ class Topology():
             The type of the topology as a string.
 
         """
-        if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.TypeAsString - Error: The input topology parameter is not a valid topology. Returning None.")
-            return None
-        return topology.GetTypeAsString()
+        if Topology.IsInstance(topology, "Graph"):
+            return "Graph"
+        elif Topology.IsInstance(topology, "Topology"):
+            return topology.GetTypeAsString() # Hook to Core
+        if not silent:
+            print("Topology.TypeAsString - Error: The input topology parameter is not a valid topology or graph. Returning None.")
+        return None
     
     @staticmethod
     def TypeID(name : str = None) -> int:
