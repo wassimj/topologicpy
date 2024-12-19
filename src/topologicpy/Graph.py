@@ -9008,6 +9008,7 @@ class Graph:
                     queue.append((neighbor, distance + 1))
         
         return None  # Target not reachable
+    
     @staticmethod
     def TopologicalDistance(graph, vertexA, vertexB, tolerance=0.0001):
         """
@@ -9043,14 +9044,21 @@ class Graph:
         if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.TopologicalDistance - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
-        vertices = Graph.Vertices(graph)
+        
         g = Graph.AdjacencyDictionary(graph)
+        vertices = Graph.Vertices(graph)
         keys = list(g.keys())
-        index_a = Vertex.Index(vertexA, vertices, tolerance=tolerance)
+        g_vertexA = Graph.NearestVertex(graph, vertexA)
+        g_vertexB = Graph.NearestVertex(graph, vertexB)
+        index_a = Vertex.Index(g_vertexA, vertices, tolerance=tolerance)
+        if index_a == None:
+            return 0
         start = keys[index_a]
-        index_b = Vertex.Index(vertexB, vertices, tolerance=tolerance)
+        index_b = Vertex.Index(g_vertexB, vertices, tolerance=tolerance)
+        if index_b == None:
+            return 0
         target = keys[index_b]
-        return Graph._topological_distance(g, start, target) # Hook to Core
+        return Graph._topological_distance(g, start, target)
     
     @staticmethod
     def Topology(graph):
