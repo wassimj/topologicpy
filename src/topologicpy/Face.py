@@ -1518,7 +1518,7 @@ class Face():
         return list(wires)
 
     @staticmethod
-    def InternalVertex(face, tolerance: float = 0.0001):
+    def InternalVertex(face, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a vertex guaranteed to be inside the input face.
 
@@ -1528,6 +1528,8 @@ class Face():
             The input face.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1535,22 +1537,53 @@ class Face():
             The created vertex.
 
         """
+        def get_uv_radially():
+            """
+            Generate the points of a grid with a given size n, sorted radially from the center to the periphery.
+            n should be an odd number, ensuring that there's a center point (0, 0).
+            
+            Args:
+                n (int): The size of the grid. It should be odd for a clear center point.
+                
+            Returns:
+                list: A list of tuples (x, y) sorted by radial distance from the center (0, 0).
+            """
+            import math
+
+            points = []
+            n = 100
+            # Iterate over the grid, ranging from -n//2 to n//2
+            for x in range(-n//2, n//2 + 1):
+                for y in range(-n//2, n//2 + 1):
+                    points.append((x, y))
+            
+            # Sort points by their Euclidean distance from the center (0, 0)
+            points.sort(key=lambda point: math.sqrt(point[0]**2 + point[1]**2))
+            return_points = []
+            for p in points:
+                new_p = ((p[0]+50)*0.01, (p[1]+50)*0.01)
+                return_points.append(new_p)
+            return return_points
+        
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(face, "Face"):
             return None
-        v = Topology.Centroid(face)
-        if Vertex.IsInternal(v, face, tolerance=tolerance):
-            return v
-        l = [0.4,0.6,0.3,0.7,0.2,0.8,0.1,0.9]
-        for u in l:
-            for v in l:
-                v = Face.VertexByParameters(face, u, v)
-                if Vertex.IsInternal(v, face, tolerance=tolerance):
-                    return v
-        v = topologic.FaceUtility.InternalVertex(face, tolerance) # Hook to Core
-        return v
+        vert = Topology.Centroid(face)
+        if Vertex.IsInternal(vert, face, tolerance=tolerance):
+            return vert
+        uv_list = get_uv_radially()
+        for uv in uv_list:
+            u, v = uv
+            vert = Face.VertexByParameters(face, u, v)
+            if Vertex.IsInternal(vert, face, tolerance=tolerance):
+                return vert
+        if not silent:
+            print("Face.InternalVertex - Warning: Could not find an internal vertex. Returning the first vertex of the face.")
+        vert = Topology.Vertices(face)[0]
+        #v = topologic.FaceUtility.InternalVertex(face, tolerance) # Hook to Core
+        return vert
 
     @staticmethod
     def Invert(face, tolerance: float = 0.0001):
@@ -2365,6 +2398,8 @@ class Face():
             The desired length of the normal edge. The default is 1.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------

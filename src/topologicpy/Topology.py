@@ -6240,7 +6240,7 @@ class Topology():
             return Topology.Type(topology)
 
     @staticmethod
-    def _InternalVertex(topology, tolerance: float = 0.0001):
+    def _InternalVertex(topology, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns a vertex guaranteed to be inside the input topology.
 
@@ -6250,6 +6250,8 @@ class Topology():
             The input topology.
         tolerance : float , ptional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -6271,20 +6273,20 @@ class Topology():
         top = Topology.Copy(topology)
         if Topology.IsInstance(top, "CellComplex"): #CellComplex
             tempCell = Topology.Cells(top)[0]
-            vst = Cell.InternalVertex(tempCell, tolerance=tolerance)
+            vst = Cell.InternalVertex(tempCell, tolerance=tolerance, silent=silent)
         elif Topology.IsInstance(top, "Cell"): #Cell
-            vst = Cell.InternalVertex(top, tolerance=tolerance)
+            vst = Cell.InternalVertex(top, tolerance=tolerance, silent=silent)
         elif Topology.IsInstance(top, "Shell"): #Shell
             tempFace = Topology.Faces(top)[0]
-            vst = Face.InternalVertex(tempFace, tolerance=tolerance)
+            vst = Face.InternalVertex(tempFace, tolerance=tolerance, silent=silent)
         elif Topology.IsInstance(top, "Face"): #Face
-            vst = Face.InternalVertex(top, tolerance=tolerance)
+            vst = Face.InternalVertex(top, tolerance=tolerance, silent=silent)
         elif Topology.IsInstance(top, "Wire"): #Wire
             if top.IsClosed():
                 internalBoundaries = []
                 try:
                     tempFace = topologic.Face.ByExternalInternalBoundaries(top, internalBoundaries)
-                    vst = Face.InternalVertex(tempFace, tolerance=tolerance)
+                    vst = Face.InternalVertex(tempFace, tolerance=tolerance, silent=silent)
                 except:
                     vst = Topology.Centroid(top)
             else:
@@ -6295,7 +6297,7 @@ class Topology():
         elif Topology.IsInstance(top, "Vertex"): #Vertex
             vst = top
         elif Topology.IsInstance(topology, "Aperture"): #Aperture
-            vst = Face.InternalVertex(Aperture.Topology(top), tolerance=tolerance)
+            vst = Face.InternalVertex(Aperture.Topology(top), tolerance=tolerance, silent=silent)
         else:
             vst = Topology.Centroid(top)
         return vst
@@ -6303,7 +6305,7 @@ class Topology():
     
 
     @staticmethod
-    def InternalVertex(topology, timeout: int = 10, tolerance: float = 0.0001):
+    def InternalVertex(topology, timeout: int = 30, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns a vertex guaranteed to be inside the input topology.
 
@@ -6312,9 +6314,11 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         timeout : int , optional
-            The amount of seconds to wait before timing out. The default is 10 seconds.
+            The amount of seconds to wait before timing out. The default is 30 seconds.
         tolerance : float , ptional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -6325,22 +6329,21 @@ class Topology():
         import concurrent.futures
         import time
         # Wrapper function with timeout
-        def run_with_timeout(func, topology, tolerance=0.0001, timeout=10):
+        def run_with_timeout(func, topology, tolerance=0.0001, silent=False, timeout=10):
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(func, topology, tolerance=tolerance)
+                future = executor.submit(func, topology, tolerance=tolerance, silent=silent)
                 try:
                     result = future.result(timeout=timeout)  # Wait for the result with a timeout
                     return result
                 except concurrent.futures.TimeoutError:
-                    print("Function took too long, retrying with a different solution.")
                     return None  # or try another approach here
 
-        result = run_with_timeout(Topology._InternalVertex, topology=topology, tolerance=tolerance, timeout=timeout)  # Set a 10 second timeout
+        result = run_with_timeout(Topology._InternalVertex, topology=topology, tolerance=tolerance, silent=silent, timeout=timeout)  # Set a 10 second timeout
         if result is None:
             # Handle failure case (e.g., try a different solution)
-            print("Using a different approach.")
-            result = Topology.Centroid(topology)
-            print("Result is:", result)
+            if not silent:
+                print("Topology.InternalVertex - Warning: Operation took too long. Returning None")
+            return None
         return result
 
     @staticmethod

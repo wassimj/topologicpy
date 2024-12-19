@@ -1471,7 +1471,7 @@ class Cell():
         return shells
     
     @staticmethod
-    def InternalVertex(cell, tolerance: float = 0.0001):
+    def InternalVertex(cell, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a vertex that is guaranteed to be inside the input cell.
 
@@ -1481,6 +1481,8 @@ class Cell():
             The input cell.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1491,12 +1493,14 @@ class Cell():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cell, "Cell"):
-            print("Cell.InternalVertex - Error: The input cell parameter is not a valid topologic cell. Returning None.")
+            if not silent:
+                print("Cell.InternalVertex - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         try:
             return topologic.CellUtility.InternalVertex(cell, tolerance) # Hook to Core
         except:
-            print("Cell.InternalVertex - Error: Could not create an internal vertex. Returning None.")
+            if not silent:
+                print("Cell.InternalVertex - Error: Could not create an internal vertex. Returning None.")
             return None
     
     @staticmethod

@@ -2160,9 +2160,14 @@ class Graph:
         return {'graphs':graphs, 'labels':labels}
 
     @staticmethod
-    def ByIFCFile(file, includeTypes: list = [], excludeTypes: list = [],
-                  includeRels: list = [], excludeRels: list = [],
-                  transferDictionaries: bool = False, storeBREP: bool = False,
+    def ByIFCFile(file,
+                  includeTypes: list = [],
+                  excludeTypes: list = [],
+                  includeRels: list = [],
+                  excludeRels: list = [],
+                  transferDictionaries: bool = False,
+                  useInternalVertex: bool = False,
+                  storeBREP: bool = False,
                   removeCoplanarFaces: bool = False,
                   xMin: float = -0.5, yMin: float = -0.5, zMin: float = -0.5,
                   xMax: float = 0.5, yMax: float = 0.5, zMax: float = 0.5,
@@ -2184,6 +2189,8 @@ class Graph:
             A list of IFC relationship types to exclude from the graph. The default is [] which mean no relationship type is excluded.
         transferDictionaries : bool , optional
             If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+        useInternalVertex : bool , optional
+            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. The default is False.
         storeBREP : bool , optional
             If set to True, store the BRep of the subtopology in its representative vertex. The default is False.
         removeCoplanarFaces : bool , optional
@@ -2466,7 +2473,7 @@ class Graph:
                     pset_python_dict = get_psets(ifc_object)
                     pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
                     topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
-                    if storeBREP == True:
+                    if storeBREP == True or useInternalVertex == True:
                         shape_topology = None
                         if hasattr(ifc_object, "Representation") and ifc_object.Representation:
                             for rep in ifc_object.Representation.Representations:
@@ -2484,8 +2491,10 @@ class Graph:
                                     if not shape_topology == None:
                                         if removeCoplanarFaces == True:
                                             shape_topology = Topology.RemoveCoplanarFaces(shape_topology, epsilon=0.0001)
-                        if not shape_topology == None:
+                        if not shape_topology == None and storeBREP:
                             topology_dict = Dictionary.SetValuesAtKeys(topology_dict, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(shape_topology), Topology.Type(shape_topology), Topology.TypeAsString(shape_topology)])
+                        if not shape_topology == None and useInternalVertex == True:
+                            centroid = Topology.InternalVertex(shape_topology)
                     centroid = Topology.SetDictionary(centroid, topology_dict)
                 return centroid
             return None
@@ -2571,7 +2580,16 @@ class Graph:
         return g
 
     @staticmethod
-    def ByIFCPath(path, includeTypes=[], excludeTypes=[], includeRels=[], excludeRels=[], transferDictionaries=False, storeBREP=False, removeCoplanarFaces=False, xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5):
+    def ByIFCPath(path,
+                  includeTypes=[],
+                  excludeTypes=[],
+                  includeRels=[],
+                  excludeRels=[],
+                  transferDictionaries=False,
+                  useInternalVertex=False,
+                  storeBREP=False,
+                  removeCoplanarFaces=False,
+                  xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5):
         """
         Create a Graph from an IFC path. This code is partially based on code from Bruno Postle.
 
@@ -2589,6 +2607,8 @@ class Graph:
             A list of IFC relationship types to exclude from the graph. The default is [] which mean no relationship type is excluded.
         transferDictionaries : bool , optional
             If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+        useInternalVertex : bool , optional
+            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. The default is False.
         storeBREP : bool , optional
             If set to True, store the BRep of the subtopology in its representative vertex. The default is False.
         removeCoplanarFaces : bool , optional
@@ -2647,6 +2667,7 @@ class Graph:
                                includeRels=includeRels,
                                excludeRels=excludeRels,
                                transferDictionaries=transferDictionaries,
+                               useInternalVertex=useInternalVertex,
                                storeBREP=storeBREP,
                                removeCoplanarFaces=removeCoplanarFaces,
                                xMin=xMin, yMin=yMin, zMin=zMin, xMax=xMax, yMax=yMax, zMax=zMax)
@@ -4082,6 +4103,79 @@ class Graph:
         return graph
     
     @staticmethod
+    def ConnectedComponents(graph, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the connected components (islands) of the input graph.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+            The list of connected components (island graphs).
+            The list is sorted by the number of vertices in each component (from highest to lowest).
+
+        """
+        def find_connected_components(adjacency_dict):
+            visited = set()
+            components = []
+
+            for vertex_id in adjacency_dict:
+                if vertex_id not in visited:
+                    # Perform DFS using a stack
+                    stack = [vertex_id]
+                    current_island = set()
+                    
+                    while stack:
+                        current = stack.pop()
+                        if current not in visited:
+                            visited.add(current)
+                            current_island.add(current)
+                            stack.extend(set(adjacency_dict[current]) - visited)
+
+                    components.append(current_island)
+
+            return components
+        
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.ConnectedComponents - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        
+        labelKey = "__label__"
+        lengths = [] #List of lengths to sort the list of components by number of their vertices
+        vertices = Graph.Vertices(graph)
+        g_dict = Graph.AdjacencyDictionary(graph, vertexLabelKey=labelKey)
+        components = find_connected_components(g_dict)
+        return_components = []
+        for component in components:
+            i_verts = []
+            for v in component:        
+                vert = Topology.Filter(vertices, searchType="equal to", key=labelKey, value=v)['filtered'][0]
+                d = Topology.Dictionary(vert)
+                d = Dictionary.RemoveKey(d, labelKey)
+                vert = Topology.SetDictionary(vert, d)
+                i_verts.append(vert)
+            i_edges = Graph.Edges(graph, i_verts)
+            lengths.append(len(i_verts))
+            g_component = Graph.ByVerticesEdges(i_verts, i_edges)
+            return_components.append(g_component)
+        return_components = Helper.Sort(return_components, lengths)
+        return_components.reverse()
+        return return_components
+
+    @staticmethod
     def ContractEdge(graph, edge, vertex=None, tolerance=0.0001):
         """
         Contracts the input edge in the input graph into a single vertex. Please note that the dictionary of the edge is transferred to the
@@ -4184,7 +4278,7 @@ class Graph:
         return graph
     
     @staticmethod
-    def ClosenessCentrality(graph, vertices=None, key: str = "closeness_centrality", mantissa: int = 6, tolerance = 0.0001):
+    def ClosenessCentrality(graph, vertices=None, key: str = "closeness_centrality", mantissa: int = 6, tolerance = 0.0001, silent = False):
         """
         Return the closeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the closeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Closeness_centrality.
 
@@ -4200,6 +4294,8 @@ class Graph:
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -4207,56 +4303,68 @@ class Graph:
             The closeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
 
         """
+
+        def closeness_centrality(g):
+            """
+            Computes the closeness centrality for each vertex in the graph.
+
+            Parameters:
+                graph (dict): A dictionary representing the graph where keys are vertices and 
+                            values are lists of neighboring vertices.
+
+            Returns:
+                dict: A dictionary where keys are vertices and values are their closeness centrality.
+            """
+            keys = list(g.keys())
+            N = len(keys)
+
+            centralities = []
+            for v in keys:
+                total_distance = 0
+                reachable_count = 0
+                
+                for u in keys:
+                    if v != u:
+                        distance = Graph._topological_distance(g, v, u)
+                        if distance != None:
+                            total_distance += distance
+                            reachable_count += 1
+                
+                if reachable_count > 0:  # Avoid division by zero
+                    centrality = (reachable_count / total_distance)
+                else:
+                    centrality = 0.0  # Isolated vertex
+            
+                centralities.append(centrality)
+            return centralities
+        
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
+        g = Graph.AdjacencyDictionary(graph)
+        centralities = closeness_centrality(g)
         graphVertices = Graph.Vertices(graph)
-        if not isinstance(vertices, list):
-            vertices = graphVertices
+        if vertices == None:
+            for i, v in enumerate(graphVertices):
+                d = Topology.Dictionary(v)
+                d = Dictionary.SetValueAtKey(d, key, centralities[i])
+                v = Topology.SetDictionary(v, d)
+            return centralities
         else:
-            vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) < 1:
-            print("Graph.ClosenessCentrality - Error: The input list of vertices does not contain any valid vertices. Returning None.")
-            return None
-        n = len(graphVertices)
-
-        scores = []
-        try:
-            for va in tqdm(vertices, desc="Computing Closeness Centrality", leave=False):
-                top_dist = 0
-                for vb in graphVertices:
-                    if Topology.IsSame(va, vb):
-                        d = 0
-                    else:
-                        d = Graph.TopologicalDistance(graph, va, vb, tolerance=tolerance)
-                    top_dist += d
-                if top_dist == 0:
-                    print("Graph.ClosenessCentrality - Warning: Topological Distance is Zero.")
-                    scores.append(0)
-                else:
-                    scores.append(round((n-1)/top_dist, mantissa))
-        except:
-            print("Graph.ClosenessCentrality - Warning: Could not use tqdm.")
-            for va in vertices:
-                top_dist = 0
-                for vb in graphVertices:
-                    if Topology.IsSame(va, vb):
-                        d = 0
-                    else:
-                        d = Graph.TopologicalDistance(graph, va, vb, tolerance=tolerance)
-                    top_dist += d
-                if top_dist == 0:
-                    scores.append(0)
-                else:
-                    scores.append(round((n-1)/top_dist, mantissa))
-        for i, v in enumerate(vertices):
-            d = Topology.Dictionary(v)
-            d = Dictionary.SetValueAtKey(d, key, scores[i])
-            v = Topology.SetDictionary(v, d)
-        return scores
+            return_centralities = []
+            for v in vertices:
+                i = Vertex.Index(v, graphVertices)
+                d = Topology.Dictionary(v)
+                d = Dictionary.SetValueAtKey(d, key, centralities[i])
+                v = Topology.SetDictionary(v, d)
+                return_centralities.append(centralities[i])
+            return centralities
 
     @staticmethod
     def Connect(graph, verticesA, verticesB, tolerance=0.0001):
@@ -8880,6 +8988,27 @@ class Graph:
         return len(Graph.Edges(graph))
 
     @staticmethod
+    def _topological_distance(g, start, target):
+        from collections import deque
+        if start == target:
+            return 0
+        visited = set()
+        queue = deque([(start, 0)])  # Each element is a tuple (vertex, distance)
+
+        while queue:
+            current, distance = queue.popleft()
+            if current in visited:
+                continue
+            
+            visited.add(current)
+            for neighbor in g.get(current, []):
+                if neighbor == target:
+                    return distance + 1
+                if neighbor not in visited:
+                    queue.append((neighbor, distance + 1))
+        
+        return None  # Target not reachable
+    @staticmethod
     def TopologicalDistance(graph, vertexA, vertexB, tolerance=0.0001):
         """
         Returns the topological distance between the input vertices. See https://en.wikipedia.org/wiki/Distance_(graph_theory).
@@ -8901,6 +9030,8 @@ class Graph:
             The topological distance between the input vertices.
 
         """
+        
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(graph, "Graph"):
@@ -8912,7 +9043,14 @@ class Graph:
         if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.TopologicalDistance - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
-        return graph.TopologicalDistance(vertexA, vertexB, tolerance) # Hook to Core
+        vertices = Graph.Vertices(graph)
+        g = Graph.AdjacencyDictionary(graph)
+        keys = list(g.keys())
+        index_a = Vertex.Index(vertexA, vertices, tolerance=tolerance)
+        start = keys[index_a]
+        index_b = Vertex.Index(vertexB, vertices, tolerance=tolerance)
+        target = keys[index_b]
+        return Graph._topological_distance(g, start, target) # Hook to Core
     
     @staticmethod
     def Topology(graph):
