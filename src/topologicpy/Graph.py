@@ -9048,13 +9048,11 @@ class Graph:
         g = Graph.AdjacencyDictionary(graph)
         vertices = Graph.Vertices(graph)
         keys = list(g.keys())
-        g_vertexA = Graph.NearestVertex(graph, vertexA)
-        g_vertexB = Graph.NearestVertex(graph, vertexB)
-        index_a = Vertex.Index(g_vertexA, vertices, tolerance=tolerance)
+        index_a = Vertex.Index(vertexA, vertices, tolerance=tolerance)
         if index_a == None:
             return 0
         start = keys[index_a]
-        index_b = Vertex.Index(g_vertexB, vertices, tolerance=tolerance)
+        index_b = Vertex.Index(vertexB, vertices, tolerance=tolerance)
         if index_b == None:
             return 0
         target = keys[index_b]
