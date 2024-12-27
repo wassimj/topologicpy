@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Face module &mdash; topologicpy 0.7.90 documentation</title>
+  <title>topologicpy.Face module &mdash; topologicpy 0.7.91 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.90
+                0.7.91
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -1175,7 +1175,9 @@ internal boundaries are considered to be those interior to the original face. Th
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Isovist">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Isovist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">1,</span> <span class="pre">0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">360</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Isovist" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the face representing the isovist projection from the input viewpoint.
-This method assumes all input is in 2D. Z coordinates are ignored.</p>
+This method assumes all input is in 2D. Z coordinates are ignored.
+This method and the metrics are largely derived from isovists.org. Even if not explicitly listed, please assume that all credit
+goes to the authors of that website and its associated software.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl>
@@ -1219,6 +1221,12 @@ The acceptable range is 1 to 360. The default is 360.</p>
 <li><p>d_f : float, Fractal Dimension measures the complexity of the isovist’s boundary.</p></li>
 <li><p>e_c : float , Edge Complexity measures how complex the edges of the isovist boundary are.</p></li>
 <li><p>theta : float, Mean Visual Field Angle measures the average angular extent of the visible area from the observation point.</p></li>
+<li><p>occlusivity: float, the proportion of edges of an isovist that are not physically defined.</p></li>
+<li><p>drift: float, the distance from the observation point to the centroid of its isovist.</p></li>
+<li><p>closed_perimeter: float, the total length of non-occluded edges of the isovist.</p></li>
+<li><p>average_radial: float, “the mean view length of all space visible from a location.” (from isovists.org)</p></li>
+<li><p>variance: float, “the mean of the square of deviation between all radial lengths and average radial length of an isovist (Benedikt, 1979).” (from isovists.org)</p></li>
+<li><p>skewness: float, “the mean of the cube of deviation between all radial lengths and average radial length of an isovist (Benediky, 1979).” (from isovists.org)</p></li>
 </ul>
 </dd>
 <dt><strong>triangles</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the subtended triangles of the isovist are created and stored as contents of the returned isovist face. The default is False.</p>
