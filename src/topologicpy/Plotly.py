@@ -411,29 +411,46 @@ class Plotly:
         
         if showVertices:
             vertices = Graph.Vertices(graph)
-            #v_dictionaries = [Topology.Dictionary(v) for v in vertices]
+            v_dictionaries = [Topology.Dictionary(v) for v in vertices]
             e_cluster = Cluster.ByTopologies(vertices)
             geo = Topology.Geometry(e_cluster, mantissa=mantissa)
             vertices = geo['vertices']
             if len(vertices) > 0:
-                v_data = Plotly.DataByTopology(e_cluster,
-                                        vertexColor=vertexColor,
-                                        vertexColorKey=vertexColorKey,
-                                        vertexSize=vertexSize,
-                                        vertexSizeKey=vertexSizeKey,
-                                        vertexLabelKey=vertexLabelKey,
-                                        showVertexLabel=showVertexLabel,
-                                        vertexGroupKey=vertexGroupKey,
-                                        vertexMinGroup=vertexMinGroup,
-                                        vertexMaxGroup=vertexMaxGroup,
-                                        vertexGroups=vertexGroups,
-                                        showVertexLegend=showVertexLegend,
-                                        vertexLegendLabel=vertexLegendLabel,
-                                        vertexLegendGroup=vertexLegendGroup,
-                                        vertexLegendRank=vertexLegendRank,
-                                        colorScale=colorScale)
+                v_data = Plotly.vertexData(vertices,
+                                   dictionaries=v_dictionaries,
+                                   color=vertexColor,
+                                   colorKey=vertexColorKey,
+                                   size=vertexSize,
+                                   sizeKey=vertexSizeKey,
+                                   labelKey=vertexLabelKey,
+                                   showVertexLabel=showVertexLabel,
+                                   groupKey=vertexGroupKey,
+                                   minGroup=vertexMinGroup,
+                                   maxGroup=vertexMaxGroup,
+                                   groups=vertexGroups,
+                                   legendLabel=vertexLegendLabel,
+                                   legendGroup=vertexLegendGroup,
+                                   legendRank=vertexLegendRank,
+                                   showLegend=showVertexLegend,
+                                   colorScale=colorScale)
 
-                data += v_data
+                # v_data = Plotly.DataByTopology(e_cluster,
+                #                         vertexColor=vertexColor,
+                #                         vertexColorKey=vertexColorKey,
+                #                         vertexSize=vertexSize,
+                #                         vertexSizeKey=vertexSizeKey,
+                #                         vertexLabelKey=vertexLabelKey,
+                #                         showVertexLabel=showVertexLabel,
+                #                         vertexGroupKey=vertexGroupKey,
+                #                         vertexMinGroup=vertexMinGroup,
+                #                         vertexMaxGroup=vertexMaxGroup,
+                #                         vertexGroups=vertexGroups,
+                #                         showVertexLegend=showVertexLegend,
+                #                         vertexLegendLabel=vertexLegendLabel,
+                #                         vertexLegendGroup=vertexLegendGroup,
+                #                         vertexLegendRank=vertexLegendRank,
+                #                         colorScale=colorScale)
+                data += [v_data]
         
         if showEdges:
             e_dictionaries = []
@@ -501,7 +518,7 @@ class Plotly:
                 z.append(v[2])
                 colors.append(Color.AnyToHex(color))
                 labels.append("Vertex_"+str(m+1).zfill(n))
-                sizes.append(size)
+                sizes.append(max(size, 1.1))
                 if len(dictionaries) > 0:
                     d = dictionaries[m]
                     if d:
@@ -512,7 +529,11 @@ class Plotly:
                         if not labelKey == None:
                             labels[m] = str(Dictionary.ValueAtKey(d, key=labelKey)) or labels[m]
                         if not sizeKey == None:
-                            sizes[m] = Dictionary.ValueAtKey(d, key=sizeKey) or sizes[m]
+                            sizes[m] = Dictionary.ValueAtKey(d, key=sizeKey)
+                            if sizes[m] == None:
+                               sizes[m] = size
+                            if sizes[m] <= 0:
+                                sizes[m] = 1.1
                         if not groupKey == None:
                             c_value = Dictionary.ValueAtKey(d, key=groupKey)
                             if not c_value == None:
@@ -540,7 +561,7 @@ class Plotly:
         if len(labels) < 1:
             labels = "Vertex_1"
         if len(sizes) < 1:
-            sizes = size
+            sizes = [size]*len(x)
         if showVertexLabel == True:
             mode = "markers+text"
         else:

@@ -1690,6 +1690,8 @@ class Face():
         """
         Returns the face representing the isovist projection from the input viewpoint.
         This method assumes all input is in 2D. Z coordinates are ignored.
+        This method and the metrics are largely derived from isovists.org. Even if not explicitly listed, please assume that all credit
+        goes to the authors of that website and its associated software.
 
         Parameters
         ----------
@@ -1731,6 +1733,12 @@ class Face():
             - d_f : float, Fractal Dimension measures the complexity of the isovist's boundary.
             - e_c : float , Edge Complexity measures how complex the edges of the isovist boundary are.
             - theta : float, Mean Visual Field Angle measures the average angular extent of the visible area from the observation point.
+            - occlusivity: float, the proportion of edges of an isovist that are not physically defined.
+            - drift: float, the distance from the observation point to the centroid of its isovist.
+            - closed_perimeter: float, the total length of non-occluded edges of the isovist.
+            - average_radial: float, "the mean view length of all space visible from a location." (from isovists.org)
+            - variance: float, "the mean of the square of deviation between all radial lengths and average radial length of an isovist (Benedikt, 1979)." (from isovists.org)
+            - skewness: float, "the mean of the cube of deviation between all radial lengths and average radial length of an isovist (Benediky, 1979)." (from isovists.org) 
         triangles : bool , optional
             If set to True, the subtended triangles of the isovist are created and stored as contents of the returned isovist face. The default is False.
         mantissa : int , optional
@@ -1934,6 +1942,81 @@ class Face():
             
             return float(distance), Vertex.ByCoordinates(list(closest_point))
         
+        
+        
+        def compute_average_radial_variance_skewness(vertex, edges, mantissa=6):
+            from math import atan2, pi, sqrt, pow
+
+            def subtended_angle(vertex, edge, mantissa=6):
+                """Compute the angle subtended by the edge at point V."""
+                v = Vertex.Coordinates(vertex, mantissa=mantissa)
+                start = Vertex.Coordinates(Edge.StartVertex(edge), mantissa=mantissa)
+                end = Vertex.Coordinates(Edge.EndVertex(edge), mantissa=mantissa)
+                # Calculate the angles of the start and end vertices relative to V
+                angle_start = atan2(start[1] - v[1], start[0] - v[0])
+                angle_end = atan2(end[1] - v[1], end[0] - v[0])
+                # Ensure the angle is in the range [0, 2*pi]
+                angle_start = angle_start if angle_start >= 0 else angle_start + 2 * pi
+                angle_end = angle_end if angle_end >= 0 else angle_end + 2 * pi
+                # Compute the difference and handle wrapping around 2*pi
+                angle_diff = abs(angle_end - angle_start)
+                return min(angle_diff, 2 * pi - angle_diff)
+        
+            total_weighted_distance = 0
+            total_angle_weight = 0
+            total_weighted_squared_deviation = 0
+            total_weighted_cubed_deviation = 0
+            distances = []
+            angles = []
+            for edge in edges:
+                # Calculate the distance between V and the edge
+                distance = Vertex.Distance(vertex, edge, mantissa=mantissa)
+                distances.append(distance)
+
+                # Calculate the subtended angle for the edge
+                angle = subtended_angle(vertex, edge, mantissa=mantissa)
+                angles.append(angle)
+
+                # Weight the distance by the subtended angle
+                total_weighted_distance += distance * angle
+                total_angle_weight += angle
+
+            # Compute the Average Radial value
+            if total_angle_weight == 0:
+                average_radial = 0  # Avoid division by zero
+            else:
+                average_radial = round(total_weighted_distance / total_angle_weight, mantissa)
+
+            # Compute Variance
+            for i, edge in enumerate(edges):
+                # Calculate the distance between V and the edge
+                distance = distances[i]
+                # Calculate the subtended angle for the edge
+                angle = angles[i]
+
+                # Calculate the deviation squared from the average radial
+                deviation_squared = (distance - average_radial) ** 2
+                # Calculate the deviation cubed from the average radial
+                deviation_cubed = (distance - average_radial) ** 3
+                # Weight the squared deviation by the subtended angle
+                total_weighted_squared_deviation += deviation_squared * angle
+                total_weighted_cubed_deviation += deviation_cubed * angle
+
+            # Compute the Variance value
+            if total_angle_weight == 0:
+                variance = 0  # Avoid division by zero
+            else:
+                variance = round(sqrt(total_weighted_squared_deviation / total_angle_weight), mantissa)
+            
+            # Compute the Skewness value
+            if total_angle_weight == 0:
+                skewness = 0  # Avoid division by zero
+            else:
+                skewness = round(pow(total_weighted_cubed_deviation / total_angle_weight, 1/3), mantissa)
+
+            return average_radial, variance, skewness
+        
+        # Main Code
         origin = Topology.Centroid(face)
         normal = Face.Normal(face)
         flat_face = Topology.Flatten(face, origin=origin, direction=normal)
@@ -2022,7 +2105,7 @@ class Face():
             return None
         simpler_face = Face.RemoveCollinearEdges(return_face)
         if Topology.IsInstance(simpler_face, "face"):
-            if transferDictionaries == True:
+            if transferDictionaries == True or metrics == True:
                 j_edges = [Topology.Edges(t) for t in obstacles]
                 j_edges = Helper.Flatten(j_edges)
                 j_edges += Topology.Edges(face)
@@ -2030,19 +2113,24 @@ class Face():
                 used = [0 for _ in range(len(j_edges))]
                 for i, i_edge in enumerate(i_edges):
                     d_i = Topology.Dictionary(i_edge)
+                    d_i = Dictionary.SetValueAtKey(d_i, "occlusive", True)
+                    i_edge = Topology.SetDictionary(i_edge, d_i)
                     for j, j_edge in enumerate(j_edges):
                         if used[j] == 0:
                             if Edge.IsCollinear(i_edge, j_edge):
+                                d_i = Dictionary.SetValueAtKey(d_i, "occlusive", False)
+                                i_edge = Topology.SetDictionary(i_edge, d_i)
                                 d_j = Topology.Dictionary(j_edge)
                                 d_result = Dictionary.ByMergedDictionaries([d_i, d_j])
-                                i_edge = Topology.SetDictionary(i_edge, d_result)
+                                if transferDictionaries == True:
+                                    i_edge = Topology.SetDictionary(i_edge, d_result)
                                 used[j] == 1
             
             return_face = Topology.Unflatten(simpler_face, origin=origin, direction=normal)
-        return_face = Topology.Unflatten(return_face, origin=origin, direction=normal)
+        else:
+            return_face = Topology.Unflatten(return_face, origin=origin, direction=normal)
         if metrics == True:
             vertices = Topology.Vertices(return_face)
-            edges = Topology.Edges(return_face)
             # 1 Viewpoint
             viewpoint = Vertex.Coordinates(vertex, mantissa=mantissa)
             # 2 Direction
@@ -2110,6 +2198,27 @@ class Face():
             e_c = round(edge_complexity(coords), mantissa)
             # 18 Mean Visual Field Angle
             theta = round(mean_visual_field_angle(viewpoint, coords), mantissa)
+            # 19 Occlusivity
+            occ_length = 0
+            edges = Topology.Edges(return_face)
+            for edge in edges:
+                d = Topology.Dictionary(edge)
+                if Dictionary.ValueAtKey(d, "occlusive") == True:
+                    occ_length += Edge.Length(edge)
+            if perimeter > 0:
+                occlusivity = round(occ_length/perimeter, mantissa)
+            else:
+                occlusivity = round(0.0, 6)
+            
+            # 20 Drift
+            drift = Vertex.Distance(vertex, Topology.Centroid(return_face), mantissa=mantissa)
+
+            # 21 Closed Perimeter
+            closed_perimeter = round(perimeter - occ_length, mantissa)
+
+            # 22/23/24 Average Radial, Variance, and Skewness
+            average_radial, variance, skewness = compute_average_radial_variance_skewness(vertex, edges, mantissa=6)
+
             keys = ["viewpoint",
                     "direction",
                     "fov",
@@ -2127,7 +2236,14 @@ class Face():
                     "symmetry",
                     "d_f",
                     "e_c",
-                    "theta"]
+                    "theta",
+                    "occlusivity",
+                    "drift",
+                    "closed_perimeter",
+                    "average_radial",
+                    "variance",
+                    "skewness"]
+            
             values = [viewpoint,
                       direction,
                       fov,
@@ -2145,7 +2261,13 @@ class Face():
                       symmetry,
                       d_f,
                       e_c,
-                      theta]
+                      theta,
+                      occlusivity,
+                      drift,
+                      closed_perimeter,
+                      average_radial,
+                      variance,
+                      skewness]
             d = Dictionary.ByKeysValues(keys, values)
             return_face = Topology.SetDictionary(return_face, d)
         if triangles:

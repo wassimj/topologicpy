@@ -1328,7 +1328,113 @@ class Graph:
         return bot_graph.serialize(format=format)
 
     @staticmethod
-    def BetweenessCentrality(graph, vertices=None, sources=None, destinations=None, key: str = "betweeness_centrality", mantissa: int = 6, tolerance: float = 0.001):
+    def BetweenessCentrality(graph, key: str = "betweeness_centrality", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
+        """
+            Returns the betweeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Betweenness_centrality.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        key : str , optional
+            The dictionary key under which to save the betweeness centrality score. The default is "betweneess_centrality".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The betweeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
+
+        """
+        def vertex_betweenness_centrality(graph, vertices):
+            """
+            Compute the betweenness centrality for vertices in the given TopologicPy graph.
+
+            Args:
+                graph: The TopologicPy Graph object.
+
+            Returns:
+                dict: A dictionary mapping each vertex to its betweenness centrality value.
+            """
+            from collections import defaultdict
+            n = len(vertices)
+            idList = []
+            vertex_map = {}
+            for i, v in enumerate(vertices):
+                d = Topology.Dictionary(v)
+                d = Dictionary.SetValueAtKey(d, "__id_", str(i))
+                v = Topology.SetDictionary(v, d)
+                idList.append(str(i))
+                vertex_map[str(i)] = v
+            if n < 2:
+                return {v: 0.0 for v in idList}
+            centrality = defaultdict(float)
+
+            for source in idList:
+                stack, paths, sigma = [], {}, {v: 0.0 for v in idList}
+                sigma[source] = 1.0
+                paths[source] = []
+
+                queue = [source]
+                while queue:
+                    v = queue.pop(0)
+                    stack.append(v)
+                    vertex = vertex_map[v]
+                    for neighbor in Graph.AdjacentVertices(graph, vertex):
+                        d = Topology.Dictionary(neighbor)
+                        neighbor_id = Dictionary.ValueAtKey(d, "__id_")
+                        if neighbor_id not in paths:
+                            queue.append(neighbor_id)
+                            paths[neighbor_id] = [v]
+                        elif v not in paths[neighbor_id]:
+                            paths[neighbor_id].append(v)
+                        sigma[neighbor_id] += sigma[v]
+
+                delta = {v: 0.0 for v in idList}
+                while stack:
+                    w = stack.pop()
+                    for v in paths.get(w, []):
+                        delta[v] += (sigma[v] / sigma[w]) * (1 + delta[w])
+                    if w != source:
+                        centrality[w] += delta[w]
+            # Normalize centrality values
+            max_centrality = max([centrality[v] for v in idList])
+            min_centrality = min([centrality[v] for v in idList])
+            centrality = [round((centrality[v]-min_centrality)/max_centrality, mantissa) for v in idList]
+            for i, v in enumerate(vertices):
+                d = Topology.Dictionary(v)
+                d = Dictionary.SetValueAtKey(d, "betweeness_centrality", centrality[i])
+                d = Dictionary.RemoveKey(d, "__id_")
+                v = Topology.SetDictionary(v, d)
+            return centrality
+        
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.BetweenessCentrality - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        
+        vertices = Graph.Vertices(graph)
+
+        if len(vertices) < 1:
+            if not silent:
+                print("Graph.BetweenessCentrality - Error: The input graph does not contain valid vertices. Returning None.")
+            return None
+        if len(vertices) == 1:
+            d = Topology.Dictionary(vertices[0])
+            d = Dictionary.SetValueAtKey(d, key, 1.0)
+            vertices[0] = Topology.SetDictionary(vertices[0], d)
+            return [1.0]
+        
+        return vertex_betweenness_centrality(graph, vertices)
+
+    @staticmethod
+    def BetweenessCentrality_old(graph, vertices=None, sources=None, destinations=None, key: str = "betweeness_centrality", mantissa: int = 6, tolerance: float = 0.001):
         """
             Returns the betweeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Betweenness_centrality.
 
@@ -2729,7 +2835,82 @@ class Graph:
                         g_e = Topology.SetDictionary(g_e, d)
             g_edges.append(g_e)
         return Graph.ByVerticesEdges(g_vertices, g_edges)
-    
+
+    @staticmethod
+    def ByNetworkXGraph(nxGraph, xKey="x", yKey="y", zKey="z", range=(-1, 1), mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Converts the input NetworkX graph into a topologic Graph. See http://networkx.org
+
+        Parameters
+        ----------
+        nxGraph : NetworkX graph
+            The input NetworkX graph.
+        xKey : str , optional
+            The dictionary key under which to find the X-Coordinate of the vertex. The default is 'x'.
+        yKey : str , optional
+            The dictionary key under which to find the Y-Coordinate of the vertex. The default is 'y'.
+        zKey : str , optional
+            The dictionary key under which to find the Z-Coordinate of the vertex. The default is 'z'.
+        range : tuple , optional
+            The range to use for position coordinates if no values are found in the dictionaries. The default is (-1,1)
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologicpy.Graph
+            The created topologic graph.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        import random
+        import numpy as np
+
+        # Create a mapping from NetworkX nodes to TopologicPy vertices
+        nx_to_topologic_vertex = {}
+
+        # Create TopologicPy vertices for each node in the NetworkX graph
+        vertices = []
+        for node, data in nxGraph.nodes(data=True):
+            # Attempt to get X, Y, Z from the node data
+            x = round(data.get(xKey, random.uniform(*range)), mantissa)
+            y = round(data.get(yKey, random.uniform(*range)), mantissa)
+            z = round(data.get(zKey, 0), mantissa) # If there are no Z values, this is probably a flat graph.
+            # Create a TopologicPy vertex with the node data dictionary
+            vertex = Vertex.ByCoordinates(x,y,z)
+            cleaned_values = []
+            for value in data.values():
+                if isinstance(value, np.ndarray):
+                    value = list(value)
+                cleaned_values.append(value)
+                
+            node_dict = Dictionary.ByKeysValues(list(data.keys()), cleaned_values)
+            vertex = Topology.SetDictionary(vertex, node_dict)
+            nx_to_topologic_vertex[node] = vertex
+            vertices.append(vertex)
+
+        # Create TopologicPy edges for each edge in the NetworkX graph
+        edges = []
+        for u, v, data in nxGraph.edges(data=True):
+            start_vertex = nx_to_topologic_vertex[u]
+            end_vertex = nx_to_topologic_vertex[v]
+
+            # Create a TopologicPy edge with the edge data dictionary
+            edge_dict = Dictionary.ByKeysValues(list(data.keys()), list(data.values()))
+            edge = Edge.ByVertices([start_vertex, end_vertex], tolerance=tolerance)
+            edge = Topology.SetDictionary(edge, edge_dict)
+            edges.append(edge)
+
+        # Create and return the TopologicPy graph
+        topologic_graph = Graph.ByVerticesEdges(vertices, edges)
+        return topologic_graph
+
     @staticmethod
     def ByTopology(topology,
                    direct: bool = True,
@@ -4103,6 +4284,48 @@ class Graph:
         return graph
     
     @staticmethod
+    def Complete(graph, silent: bool = False):
+        """
+        Completes the graph by conneting unconnected vertices.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologicpy.Graph
+            the completed graph
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.ConnectedComponents - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        
+        vertices = Graph.Vertices(graph)
+        edges = Graph.Edges(graph)
+        visited = set()
+        new_edges = []
+        for sv in vertices:
+            for ev in vertices:
+                if sv != ev and not (sv, ev) in visited:
+                    visited.add((sv, ev))
+                    visited.add((ev,sv))
+                    edge = Graph.Edge(graph, sv, ev)
+                    if edge == None:
+                        new_edges.append(Edge.ByVertices(sv, ev))
+        edges += new_edges
+        return Graph.ByVerticesEdges(vertices, edges)
+
+    @staticmethod
     def ConnectedComponents(graph, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the connected components (islands) of the input graph.
@@ -4367,6 +4590,68 @@ class Graph:
             return centralities
 
     @staticmethod
+    def Community(graph, key: str = "community", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Computes the best community partition of the input graph based on the Louvain method. See https://en.wikipedia.org/wiki/Louvain_method.
+        This method depends on NetworkX and the python-louvain libraries
+
+        Parameters
+        ----------
+        graph : topologicp.Graph
+            The input topologic graph.
+        key : str , optional
+            The dictionary key under which to save the closeness centrality score. The default is "community".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        Returns
+        -------
+        topologicpy.Graph
+            The created topologic graph.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import os
+        import warnings
+        
+        try:
+            import community as community_louvain
+        except:
+            print("Graph.Community - Installing required pyhon-louvain library.")
+            try:
+                os.system("pip install python-louvain")
+            except:
+                os.system("pip install python-louvain --user")
+            try:
+                import community as community_louvain
+                print("Graph.Community - python-louvain library installed correctly.")
+            except:
+                warnings.warn("Graph.Community - Error: Could not import python-louvain. Please install manually.")
+        
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.Community - Error: The input graph parameter is not a valid topologic graph. Returning None")
+            return None
+        
+        vertices = Graph.Vertices(graph)
+        nx_graph = Graph.NetworkXGraph(graph, mantissa=mantissa, tolerance=tolerance)
+        # Apply the Louvain algorithm
+        partition = community_louvain.best_partition(nx_graph)
+        communities = []
+        # Add the partition value to each node's properties
+        for node, community_id in partition.items():
+            nx_graph.nodes[node][key] = community_id
+            d = Topology.Dictionary(vertices[node])
+            d = Dictionary.SetValueAtKey(d, key, community_id)
+            vertices[node] = Topology.SetDictionary(vertices[node], d)
+            communities.append(community_id)
+        return communities
+
+    @staticmethod
     def Connect(graph, verticesA, verticesB, tolerance=0.0001):
         """
         Connects the two lists of input vertices.
@@ -4412,6 +4697,53 @@ class Graph:
             return None
         _ = graph.Connect(verticesA, verticesB, tolerance) # Hook to Core
         return graph
+    
+    @staticmethod
+    def Connectivity(graph, vertices=None, key: str = "connectivity", edgeKey: str = None, tolerance = 0.0001, silent = False):
+        """
+        Return the connectivity measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the connectivity of all the vertices in the input graph is computed. See https://www.spacesyntax.online/term/connectivity/.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertices : list , optional
+            The input list of vertices. The default is None.
+        key : str , optional
+            The dictionary key under which to save the connectivity score. The default is "connectivity".
+        edgeKey : str , optional
+            If specified, the value in the connected edges' dictionary specified by the edgeKey string will be aggregated to calculate
+            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+            The closeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
+
+        """
+        
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if vertices == None:
+            vertices = Graph.Vertices(graph)
+        connectivities = [Graph.VertexDegree(graph, v, edgeKey=edgeKey, tolerance=tolerance, silent=silent) for v in vertices]
+        for i, v in enumerate(vertices):
+            d = Topology.Dictionary(v)
+            d = Dictionary.SetValueAtKey(d, key, connectivities[i])
+            v = Topology.SetDictionary(v, d)
+        return connectivities
     
     @staticmethod
     def ContainsEdge(graph, edge, tolerance=0.0001):
@@ -5898,11 +6230,12 @@ class Graph:
     
     @staticmethod
     def Reshape(graph,
-                shape="spring_2d",
+                shape="spring 2D",
                 k=0.8, seed=None,
                 iterations=50,
                 rootVertex=None,
                 size=1,
+                factor=1,
                 sides=16,
                 key="",
                 tolerance=0.0001,
@@ -5916,16 +6249,17 @@ class Graph:
             The input graph.
         shape : str , optional
             The desired shape of the graph.
-            If set to 'spring_2d' or 'spring_3d', the algorithm uses a simplified version of the Fruchterman-Reingold force-directed algorithm to distribute the vertices.
-            If set to 'radial_2d', the nodes will be distributed along concentric circles in the XY plane.
-            If set to 'tree_2d' or 'tree_3d', the nodes will be distributed using the Reingold-Tillford layout.
-            If set to 'circle_2d', the nodes will be distributed on the cirumference of a segemented circles  in the XY plane, based on the size and sides input parameter (radius=size/2).
-            If set to 'line_2d', the nodes will be distributed on a line in the XY plane based on the size input parameter (length=size).
-            If set to 'spehere_3d', the nodes will be distributed on the surface of a sphere based on the size input parameter raidus=size/2).
-            If set to 'grid_2d', the nodes will be distributed on a grid in the XY plane with size based on the size input parameter (length=width=size).
-            If set to 'grid_3d', the nodes will be distributed on a 3D cubic grid/matrix based on the size input parameter(width=length=height=size).
-            If set to 'cluster_2d', or 'cluster_3d, the nodes will be clustered according to the 'key' input parameter. The overall radius of the cluster is determined by the size input parameter (radius = size/2)
-            The default is 'spring_2d'.
+            ['circle 2D', 'grid 2D', 'line 2D', 'radial 2D', 'spring 2D', 'tree 2D', 'grid 3D', 'sphere 3D', 'tree 3D']
+            If set to 'spring 2D' or 'spring_3d', the algorithm uses a simplified version of the Fruchterman-Reingold force-directed algorithm to distribute the vertices.
+            If set to 'radial 2D', the nodes will be distributed along concentric circles in the XY plane.
+            If set to 'tree 2D' or 'tree 3D', the nodes will be distributed using the Reingold-Tillford layout.
+            If set to 'circle 2D', the nodes will be distributed on the cirumference of a segemented circles  in the XY plane, based on the size and sides input parameter (radius=size/2).
+            If set to 'line 2D', the nodes will be distributed on a line in the XY plane based on the size input parameter (length=size).
+            If set to 'spehere 3D', the nodes will be distributed on the surface of a sphere based on the size input parameter raidus=size/2).
+            If set to 'grid 2D', the nodes will be distributed on a grid in the XY plane with size based on the size input parameter (length=width=size).
+            If set to 'grid 3D', the nodes will be distributed on a 3D cubic grid/matrix based on the size input parameter(width=length=height=size).
+            If set to 'cluster 2D', or 'cluster 3D, the nodes will be clustered according to the 'key' input parameter. The overall radius of the cluster is determined by the size input parameter (radius = size/2)
+            The default is 'spring 2D'.
         k : float, optional
             The desired spring constant to use for the attractive and repulsive forces. The default is 0.8.
         seed : int , optional
@@ -5934,6 +6268,8 @@ class Graph:
             The desired maximum number of iterations to solve the forces in the 'spring' mode. The default is 50.
         rootVertex : topologic_core.Vertex , optional
             The desired vertex to use as the root of the tree and radial layouts.
+        size : float , optional
+            The desired overall size of the graph.
         sides : int , optional
             The desired number of sides of the circle layout option. The default is 16
         length : float, optional
@@ -6163,7 +6499,7 @@ class Graph:
 
             for i, c_v in enumerate(c_vertices):
                 d = Topology.Dictionary(vertices[i])
-                c_v = Topology.SetDictionary(c_v, d)
+                c_v = Topology.SetDictionary(c_v, d, silent=True)
             adj_dict = Graph.AdjacencyDictionary(graph)
             keys = adj_dict.keys()
             
@@ -6185,7 +6521,7 @@ class Graph:
                         orig_edge_index = edge_dict.get(str(x)+"_"+str(y), edge_dict.get(str(y)+"_"+str(x), None))
                         if orig_edge_index:
                             d = Topology.Dictionary(edges[orig_edge_index])
-                            e = Topology.SetDictionary(e, d)
+                            e = Topology.SetDictionary(e, d, silent=True)
                             c_edges.append(e)
                             used[x][y] = 1
                             used[y][x] = 1
@@ -6355,7 +6691,7 @@ class Graph:
             c_vertices = [Vertex.ByCoordinates(coord) for coord in c_points]
             for i, c_v in enumerate(c_vertices):
                 d = Topology.Dictionary(vertices[i])
-                c_v = Topology.SetDictionary(c_v, d)
+                c_v = Topology.SetDictionary(c_v, d, silent=True)
             adj_dict = Graph.AdjacencyDictionary(graph)
             keys = adj_dict.keys()
             
@@ -6377,7 +6713,7 @@ class Graph:
                         orig_edge_index = edge_dict.get(str(x)+"_"+str(y), edge_dict.get(str(y)+"_"+str(x), None))
                         if orig_edge_index:
                             d = Topology.Dictionary(edges[orig_edge_index])
-                            e = Topology.SetDictionary(e, d)
+                            e = Topology.SetDictionary(e, d, silent=True)
                             c_edges.append(e)
                             used[x][y] = 1
                             used[y][x] = 1
@@ -6407,7 +6743,7 @@ class Graph:
 
             for i, c_v in enumerate(c_vertices):
                 d = Topology.Dictionary(vertices[i])
-                c_v = Topology.SetDictionary(c_v, d)
+                c_v = Topology.SetDictionary(c_v, d, silent=True)
             adj_dict = Graph.AdjacencyDictionary(graph)
             keys = adj_dict.keys()
             
@@ -6422,7 +6758,7 @@ class Graph:
                         orig_edge_index = edge_dict.get(str(x)+"_"+str(y), edge_dict.get(str(y)+"_"+str(x), None))
                         if orig_edge_index:
                             d = Topology.Dictionary(edges[orig_edge_index])
-                            e = Topology.SetDictionary(e, d)
+                            e = Topology.SetDictionary(e, d, silent=True)
                             c_edges.append(e)
                             used[x][y] = 1
                             used[y][x] = 1
@@ -6448,7 +6784,7 @@ class Graph:
 
             for i, c_v in enumerate(c_vertices):
                 d = Topology.Dictionary(vertices[i])
-                c_v = Topology.SetDictionary(c_v, d)
+                c_v = Topology.SetDictionary(c_v, d, silent=True)
             adj_dict = Graph.AdjacencyDictionary(graph)
             keys = adj_dict.keys()
             c_edges = []
@@ -6465,7 +6801,7 @@ class Graph:
                         
                         orig_edge_index = edge_dict[str(x)+"_"+str(y)]
                         d = Topology.Dictionary(edges[orig_edge_index])
-                        e = Topology.SetDictionary(e, d)
+                        e = Topology.SetDictionary(e, d, silent=True)
                         c_edges.append(e)
                         used[x][y] = 1
                         used[y][x] = 1
@@ -6490,7 +6826,7 @@ class Graph:
 
             for i, c_v in enumerate(c_vertices):
                 d = Topology.Dictionary(vertices[i])
-                c_v = Topology.SetDictionary(c_v, d)
+                c_v = Topology.SetDictionary(c_v, d, silent=True)
             adj_dict = Graph.AdjacencyDictionary(graph)
             keys = adj_dict.keys()
             
@@ -6505,7 +6841,7 @@ class Graph:
                         orig_edge_index = edge_dict.get(str(x)+"_"+str(y), edge_dict.get(str(y)+"_"+str(x), None))
                         if orig_edge_index:
                             d = Topology.Dictionary(edges[orig_edge_index])
-                            e = Topology.SetDictionary(e, d)
+                            e = Topology.SetDictionary(e, d, silent=True)
                             c_edges.append(e)
                             used[x][y] = 1
                             used[y][x] = 1
@@ -6682,46 +7018,97 @@ class Graph:
 
             return pos
 
+        
+
         def radial_layout_2d(edge_list, root_index=0):
+            import numpy as np
+            from collections import deque
+            # Build tree and get layout from Buchheim
             root, num_nodes = tree_from_edge_list(edge_list, root_index)
             dt = buchheim(root)
+
+            # Initialize positions array
             pos = np.zeros((num_nodes, 2))
+            pos[int(dt.tree.node)] = [dt.x, dt.y]
 
-            pos[int(dt.tree.node), 0] = dt.x
-            pos[int(dt.tree.node), 1] = dt.y
+            # Efficient tree traversal using a queue
+            queue = deque([dt])
+            while queue:
+                current = queue.popleft()
+                for child in current.children:
+                    pos[int(child.tree.node)] = [child.x, child.y]
+                    queue.append(child)
 
-            old_roots = [dt]
-            new_roots = []
+            # Normalize positions
+            pos[:, 0] -= np.min(pos[:, 0])
+            pos[:, 1] -= np.min(pos[:, 1])
+            pos[:, 0] /= np.max(pos[:, 0])
+            pos[:, 1] /= np.max(pos[:, 1])
 
-            while(len(old_roots) > 0):
-                new_roots = []
-                for temp_root in old_roots:
-                    children = temp_root.children
-                    for child in children:
-                        pos[int(child.tree.node), 0] = child.x
-                        pos[int(child.tree.node), 1] = child.y
-                    new_roots.extend(children)
-                    
-                old_roots = new_roots
+            # Center the root and scale the x-coordinates
+            pos[:, 0] -= pos[root_index, 0]
+            pos[:, 0] /= (np.max(pos[:, 0]) - np.min(pos[:, 0]))
+            pos[:, 0] *= np.pi * 1.98
 
-            # pos[:, 1] = np.max(pos[:, 1]) - pos[:, 1]
-            pos[:, 0] = pos[:, 0] - np.min(pos[:, 0])
-            pos[:, 1] = pos[:, 1] - np.min(pos[:, 1])
-
-            pos[:, 0] = pos[:, 0] / np.max(pos[:, 0])
-            pos[:, 0] = pos[:, 0] - pos[:, 0][root_index]
-            
-            range_ = np.max(pos[:, 0]) - np.min(pos[:, 0])
-            pos[:, 0] = pos[:, 0] / range_
-
-            pos[:, 0] = pos[:, 0] * np.pi * 1.98
-            pos[:, 1] = pos[:, 1] / np.max(pos[:, 1]) 
-
-            new_pos = np.zeros((num_nodes, 2))
+            # Convert to polar coordinates
+            new_pos = np.zeros_like(pos)
             new_pos[:, 0] = pos[:, 1] * np.cos(pos[:, 0])
             new_pos[:, 1] = pos[:, 1] * np.sin(pos[:, 0])
-            
+
             return new_pos
+        
+        def dendrimer_layout_2d(graph, root_index=0, base_radius=1, radius_factor=1.5):
+            """
+            Given a graph as an adjacency dictionary, this function generates a dendrimer layout
+            and returns positions of the nodes in 2D space.
+            
+            :param graph: dict, adjacency dictionary where keys are node ids and values are sets/lists of neighboring nodes
+            :param root_index: int, index of the node to start the layout (default: 0)
+            :return: list of positions [x, y] for each node, sorted by node id
+            """
+            import numpy as np
+            
+            # Initialize variables
+            positions = {}
+            visited = set()
+            layers = {}
+
+            # Helper function to perform a DFS and organize nodes in layers
+            def dfs(node, depth):
+                visited.add(node)
+                if depth not in layers:
+                    layers[depth] = []
+                layers[depth].append(node)
+                for neighbor in graph.get(node, []):
+                    if neighbor not in visited:
+                        dfs(neighbor, depth + 1)
+            
+            # Start DFS from the given root node
+            starting_node = list(graph.keys())[root_index]
+            dfs(starting_node, 0)
+            
+            # Perform DFS for all nodes to handle disconnected components
+            for node in graph.keys():
+                if node not in visited:
+                    dfs(node, 0)  # Start a new DFS for each unvisited node
+
+            # Compute positions based on layers
+            for depth, nodes in layers.items():
+                print("depth:", depth)
+                # Place nodes in a circular arrangement at each layer
+                num_nodes = len(nodes)
+                angle_step = 2 * np.pi / num_nodes if num_nodes > 0 else 0
+                for i, node in enumerate(nodes):
+                    angle = i * angle_step
+                    x = base_radius*depth*np.cos(angle)
+                    y = base_radius*depth*np.sin(angle)
+                    positions[node] = (x, y)
+
+            # Sort the positions by node id and return them
+            keys = list(positions.keys())
+            keys.sort()
+            return_values = [list(positions[key]) for key in keys]
+            return return_values
 
         def spherical_layout_3d(edge_list, root_index=0):
             root, num_nodes = tree_from_edge_list(edge_list, root_index)
@@ -6794,7 +7181,7 @@ class Graph:
             return line_layout_2d(graph, length=size)
         elif 'grid' in shape.lower() and '2d' in shape.lower():
             return grid_layout_2d(graph, size=size)
-        elif 'sphere' == shape.lower() and '3d' in shape.lower():
+        elif 'sphere' in shape.lower() and '3d' in shape.lower():
             return sphere_layout_3d(graph, radius=size/2)
         elif 'grid' in shape.lower() and '3d' in shape.lower():
             return grid_layout_3d(graph, size=size)
@@ -6825,12 +7212,13 @@ class Graph:
             elif 'tree' in shape.lower() and '2d' in shape.lower():
                 positions = tree_layout_2d(edges, root_index=root_index)
             elif 'tree' in shape.lower() and '3d' in shape.lower():
-                positions = tree_layout_3d(edges, root_index=root_index, base_radius=1.0, radius_factor=1.5)
+                positions = tree_layout_3d(edges, root_index=root_index, base_radius=size/2, radius_factor=factor)
+            elif 'dendrimer' in shape.lower() and '2d' in shape.lower():
+                positions = dendrimer_layout_2d(Graph.AdjacencyDictionary(graph), root_index=root_index, base_radius=size/2, radius_factor=factor)
             else:
                 if not silent:
                     print(f"{shape} is not implemented yet. Please choose from ['circle 2D', 'grid 2D', 'line 2D', 'radial 2D', 'spring 2D', 'tree 2D', 'grid 3D', 'sphere 3D', 'tree 3D']. Returning None.")
                 return None
-            positions = positions.tolist()
             if len(positions[0]) == 3:
                 positions = [[p[0], p[1], p[2]] for p in positions]
             else:
@@ -7361,6 +7749,113 @@ class Graph:
         json_string = json.dumps(json_data, indent=indent, sort_keys=sortKeys)
         return json_string
     
+    @staticmethod
+    def Leaves(graph, edgeKey: str = None, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns a list of all vertices that have a degree of 1, also called leaf nodes.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        edgeKey : str , optional
+            If specified, the value in the connected edges' dictionary specified by the edgeKey string will be aggregated to calculate
+            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        list
+            The list of leaf nodes
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.Leaves - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        return [v for v in Graph.Vertices(graph) if Graph.VertexDegree(graph, v, edgeKey=edgeKey, tolerance=tolerance, silent=silent) == 1]
+    
+    @staticmethod
+    def LineGraph(graph, transferVertexDictionaries=False, transferEdgeDictionaries=False, tolerance=0.0001, silent=False):
+        """
+        Create a line graph based on the input graph. See https://en.wikipedia.org/wiki/Line_graph.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        transferVertexDictionaries : bool, optional
+            If set to True, the dictionaries of the vertices of the input graph are transferred to the edges of the line graph.
+        transferEdgeDictionaries : bool, optional
+            If set to True, the dictionaries of the edges of the input graph are transferred to the vertices of the line graph.
+        tolerance : float, optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        topologic_core.Graph
+            The created line graph.
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.LineGraph - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        
+        graph_vertices = Graph.Vertices(graph)
+        graph_edges = Graph.Edges(graph)
+
+        # Create line graph vertices (centroids of original graph edges)
+        if transferEdgeDictionaries == True:
+            lg_vertices = [
+                Topology.SetDictionary(Topology.Centroid(edge), Topology.Dictionary(edge), silent=silent)
+                for edge in graph_edges
+            ]
+        else:
+            lg_vertices = [Topology.Centroid(edge) for edge in graph_edges]
+        
+        lg_edges = []
+        if transferVertexDictionaries == True:
+            for v in graph_vertices:
+                edges = Graph.Edges(graph, vertices=[v])
+                if len(edges) > 1:
+                    d = Topology.Dictionary(v)  # Only need to call Dictionary once
+                    visited = set()  # Use a set to track visited pairs of edges
+                    centroids = [Topology.Centroid(e) for e in edges]  # Precompute centroids once
+                    for i in range(len(edges)):
+                        for j in range(i + 1, len(edges)):  # Only loop over pairs (i, j) where i < j
+                            if (i, j) not in visited:
+                                lg_edge = Edge.ByVertices([centroids[i], centroids[j]], tolerance=tolerance, silent=silent)
+                                lg_edge = Topology.SetDictionary(lg_edge, d, silent=silent)
+                                lg_edges.append(lg_edge)
+                                visited.add((i, j))
+                                visited.add((j, i))  # Ensure both directions are marked as visited
+        else:
+            for v in graph_vertices:
+                edges = Graph.Edges(graph, vertices=[v])
+                if len(edges) > 1:
+                    visited = set()  # Use a set to track visited pairs of edges
+                    centroids = [Topology.Centroid(e) for e in edges]  # Precompute centroids once
+                    for i in range(len(edges)):
+                        for j in range(i + 1, len(edges)):  # Only loop over pairs (i, j) where i < j
+                            if (i, j) not in visited:
+                                lg_edge = Edge.ByVertices([centroids[i], centroids[j]], tolerance=tolerance, silent=silent)
+                                lg_edges.append(lg_edge)
+                                visited.add((i, j))
+                                visited.add((j, i))  # Ensure both directions are marked as visited
+
+        return Graph.ByVerticesEdges(lg_vertices, lg_edges)
+
     @staticmethod
     def LocalClusteringCoefficient(graph, vertices: list = None, key: str = "lcc", mantissa: int = 6, tolerance: float = 0.0001):
         """
@@ -8020,18 +8515,26 @@ class Graph:
         return nearestVertex
 
     @staticmethod
-    def NetworkXGraph(graph, mantissa: int = 6, tolerance: float = 0.0001):
+    def NetworkXGraph(graph, xKey='x', yKey='y', zKey='z', mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-        converts the input graph into a NetworkX Graph. See http://networkx.org
+        Converts the input graph into a NetworkX Graph. See http://networkx.org
 
         Parameters
         ----------
         graph : topologic_core.Graph
             The input graph.
+        xKey : str , optional
+            The dictionary key under which to save the X-Coordinate of the vertex. The default is 'x'.
+        yKey : str , optional
+            The dictionary key under which to save the Y-Coordinate of the vertex. The default is 'y'.
+        zKey : str , optional
+            The dictionary key under which to save the Z-Coordinate of the vertex. The default is 'z'.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -8059,7 +8562,8 @@ class Graph:
                 return None
         
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.NetworkXGraph - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.NetworkXGraph - Error: The input graph is not a valid graph. Returning None.")
             return None
 
         nxGraph = nx.Graph()
@@ -8076,8 +8580,7 @@ class Graph:
                 values = Dictionary.Values(d)
                 if not values:
                     values = []
-                keys += ["x","y","z"]
-                import random
+                keys += [xKey,yKey,zKey]
                 values += [Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)]
                 d = Dictionary.ByKeysValues(keys,values)
                 pythonD = Dictionary.PythonDictionary(d)
@@ -9160,7 +9663,7 @@ class Graph:
         return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'])
     
     @staticmethod
-    def VertexDegree(graph, vertex, edgeKey: str = None, tolerance: float = 0.0001):
+    def VertexDegree(graph, vertex, edgeKey: str = None, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the degree of the input vertex. See https://en.wikipedia.org/wiki/Degree_(graph_theory).
 
@@ -9175,6 +9678,8 @@ class Graph:
             the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -9187,10 +9692,12 @@ class Graph:
         import numbers
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.VertexDegree - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.VertexDegree - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not Topology.IsInstance(vertex, "Vertex"):
-            print("Graph.VertexDegree - Error: The input vertex is not a valid vertex. Returning None.")
+            if not silent:
+                print("Graph.VertexDegree - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         if not isinstance(edgeKey, str):
             edgeKey = ""
