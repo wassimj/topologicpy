@@ -264,7 +264,7 @@ class _DrawTree(object):
         return self.__str__()
 
 class Graph:
-    def AdjacencyDictionary(graph, vertexLabelKey: str = "label", edgeKey: str = "Length", includeWeights: bool = False, reverse: bool = False, mantissa: int = 6):
+    def AdjacencyDictionary(graph, vertexLabelKey: str = None, edgeKey: str = "Length", includeWeights: bool = False, reverse: bool = False, mantissa: int = 6):
         """
         Returns the adjacency dictionary of the input Graph.
 
@@ -274,7 +274,7 @@ class Graph:
             The input graph.
         vertexLabelKey : str , optional
             The returned vertices are labelled according to the dictionary values stored under this key.
-            If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically and stored in the vertex dictionary under this key. The default is "label".
+            If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically and stored in the vertex dictionary under this key. The default is None.
         edgeKey : str , optional
             If set, the edges' dictionaries will be searched for this key to set their weight. If the key is set to "length" (case insensitive), the length of the edge will be used as its weight. If set to None, a weight of 1 will be used. The default is "Length".
         includeWeights : bool , optional
@@ -298,6 +298,8 @@ class Graph:
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.AdjacencyDictionary - Error: The input graph is not a valid graph. Returning None.")
             return None
+        if vertexLabelKey == None:
+            vertexLabelKey = "__label__"
         if not isinstance(vertexLabelKey, str):
             print("Graph.AdjacencyDictionary - Error: The input vertexLabelKey is not a valid string. Returning None.")
             return None
@@ -353,6 +355,12 @@ class Graph:
                         temp_list.append(adjLabel)
             temp_list.sort()
             adjDict[vertex_label] = temp_list
+        if vertexLabelKey == "__label__": # This is label we added, so remove it
+            vertices = Graph.Vertices(graph)
+            for v in vertices:
+                d = Topology.Dictionary(v)
+                d = Dictionary.RemoveKey(d, vertexLabelKey)
+                v = Topology.SetDictionary(v, d)
         return adjDict
     
     @staticmethod
@@ -1328,16 +1336,16 @@ class Graph:
         return bot_graph.serialize(format=format)
 
     @staticmethod
-    def BetweenessCentrality(graph, key: str = "betweeness_centrality", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
+    def BetweennessCentrality(graph, key: str = "betweenness_centrality", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
         """
-            Returns the betweeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Betweenness_centrality.
+            Returns the betweenness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Betweenness_centrality.
 
         Parameters
         ----------
         graph : topologic_core.Graph
             The input graph.
         key : str , optional
-            The dictionary key under which to save the betweeness centrality score. The default is "betweneess_centrality".
+            The dictionary key under which to save the betweeness centrality score. The default is "betweenness_centrality".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -1346,70 +1354,38 @@ class Graph:
         Returns
         -------
         list
-            The betweeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
+            The betweenness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
 
         """
-        def vertex_betweenness_centrality(graph, vertices):
-            """
-            Compute the betweenness centrality for vertices in the given TopologicPy graph.
+        def bfs_paths(source):
+            queue = [(source, [source])]
+            while queue:
+                (vertex, path) = queue.pop(0)
+                for next in set(py_graph[vertex]) - set(path):
+                    queue.append((next, path + [next]))
+                    yield path + [next]
 
-            Args:
-                graph: The TopologicPy Graph object.
+        def shortest_paths_count(source):
+            paths = list(bfs_paths(source))
+            shortest_paths = {v: [] for v in py_graph}
+            for path in paths:
+                shortest_paths[path[-1]].append(path)
+            return shortest_paths
 
-            Returns:
-                dict: A dictionary mapping each vertex to its betweenness centrality value.
-            """
-            from collections import defaultdict
-            n = len(vertices)
-            idList = []
-            vertex_map = {}
-            for i, v in enumerate(vertices):
-                d = Topology.Dictionary(v)
-                d = Dictionary.SetValueAtKey(d, "__id_", str(i))
-                v = Topology.SetDictionary(v, d)
-                idList.append(str(i))
-                vertex_map[str(i)] = v
-            if n < 2:
-                return {v: 0.0 for v in idList}
-            centrality = defaultdict(float)
-
-            for source in idList:
-                stack, paths, sigma = [], {}, {v: 0.0 for v in idList}
-                sigma[source] = 1.0
-                paths[source] = []
-
-                queue = [source]
-                while queue:
-                    v = queue.pop(0)
-                    stack.append(v)
-                    vertex = vertex_map[v]
-                    for neighbor in Graph.AdjacentVertices(graph, vertex):
-                        d = Topology.Dictionary(neighbor)
-                        neighbor_id = Dictionary.ValueAtKey(d, "__id_")
-                        if neighbor_id not in paths:
-                            queue.append(neighbor_id)
-                            paths[neighbor_id] = [v]
-                        elif v not in paths[neighbor_id]:
-                            paths[neighbor_id].append(v)
-                        sigma[neighbor_id] += sigma[v]
-
-                delta = {v: 0.0 for v in idList}
-                while stack:
-                    w = stack.pop()
-                    for v in paths.get(w, []):
-                        delta[v] += (sigma[v] / sigma[w]) * (1 + delta[w])
-                    if w != source:
-                        centrality[w] += delta[w]
-            # Normalize centrality values
-            max_centrality = max([centrality[v] for v in idList])
-            min_centrality = min([centrality[v] for v in idList])
-            centrality = [round((centrality[v]-min_centrality)/max_centrality, mantissa) for v in idList]
-            for i, v in enumerate(vertices):
-                d = Topology.Dictionary(v)
-                d = Dictionary.SetValueAtKey(d, "betweeness_centrality", centrality[i])
-                d = Dictionary.RemoveKey(d, "__id_")
-                v = Topology.SetDictionary(v, d)
-            return centrality
+        def calculate_betweenness():
+            betweenness = {v: 0.0 for v in py_graph}
+            for s in py_graph:
+                shortest_paths = shortest_paths_count(s)
+                dependency = {v: 0.0 for v in py_graph}
+                for t in py_graph:
+                    if t != s:
+                        for path in shortest_paths[t]:
+                            for v in path[1:-1]:
+                                dependency[v] += 1.0 / len(shortest_paths[t])
+                for v in py_graph:
+                    if v != s:
+                        betweenness[v] += dependency[v]
+            return betweenness
         
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -1431,115 +1407,26 @@ class Graph:
             vertices[0] = Topology.SetDictionary(vertices[0], d)
             return [1.0]
         
-        return vertex_betweenness_centrality(graph, vertices)
+        py_graph = Graph.AdjacencyDictionary(g)
+        betweenness = calculate_betweenness()
+        for v in betweenness:
+            betweenness[v] /= 2.0  # Each shortest path is counted twice
 
-    @staticmethod
-    def BetweenessCentrality_old(graph, vertices=None, sources=None, destinations=None, key: str = "betweeness_centrality", mantissa: int = 6, tolerance: float = 0.001):
-        """
-            Returns the betweeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Betweenness_centrality.
-
-        Parameters
-        ----------
-        graph : topologic_core.Graph
-            The input graph.
-        vertices : list , optional
-            The input list of vertices. The default is None which means all vertices in the input graph are considered.
-        sources : list , optional
-            The input list of source vertices. The default is None which means all vertices in the input graph are considered.
-        destinations : list , optional
-            The input list of destination vertices. The default is None which means all vertices in the input graph are considered.
-        key : str , optional
-            The dictionary key under which to save the betweeness centrality score. The default is "betweneess_centrality".
-        mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        list
-            The betweeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-
-        def betweeness(vertices, topologies, tolerance=0.001):
-            returnList = [0] * len(vertices)
-            for topology in topologies:
-                t_vertices = Topology.Vertices(topology)
-                for t_v in t_vertices:
-                    index = Vertex.Index(t_v, vertices, strict=False, tolerance=tolerance)
-                    if not index == None:
-                        returnList[index] = returnList[index]+1
-            return returnList
-
-        if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.BetweenessCentrality - Error: The input graph is not a valid graph. Returning None.")
-            return None
-        graphVertices = Graph.Vertices(graph)
+        max_betweenness = max(betweenness.values())
+        if max_betweenness > 0:
+            for v in betweenness:
+                betweenness[v] /= max_betweenness  # Normalize to [0, 1]
         
-        if not isinstance(vertices, list):
-            vertices = graphVertices
-        else:
-            vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) < 1:
-            print("Graph.BetweenessCentrality - Error: The input list of vertices does not contain valid vertices. Returning None.")
-            return None
-        if not isinstance(sources, list):
-            sources = graphVertices
-        else:
-            sources = [v for v in sources if Topology.IsInstance(v, "Vertex")]
-        if len(sources) < 1:
-            print("Graph.BetweenessCentrality - Error: The input list of sources does not contain valid vertices. Returning None.")
-            return None
-        if not isinstance(destinations, list):
-            destinations = graphVertices
-        else:
-            destinations = [v for v in destinations if Topology.IsInstance(v, "Vertex")]
-        if len(destinations) < 1:
-            print("Graph.BetweenessCentrality - Error: The input list of destinations does not contain valid vertices. Returning None.")
-            return None
-        graphEdges = Graph.Edges(graph)
-        if len(graphEdges) == 0:
-            print("Graph.BetweenessCentrality - Warning: The input graph is a null graph.")
-            scores = [0 for t in vertices]
-            for i, v in enumerate(vertices):
-                d = Topology.Dictionary(v)
-                d = Dictionary.SetValueAtKey(d, key, scores[i])
-                v = Topology.SetDictionary(v, d)
-            return scores
-        paths = []
-        try:
-            for so in tqdm(sources, desc="Computing Shortest Paths", leave=False):
-                v1 = Graph.NearestVertex(graph, so)
-                for si in destinations:
-                    v2 = Graph.NearestVertex(graph, si)
-                    if not v1 == v2:
-                        path = Graph.ShortestPath(graph, v1, v2)
-                        if path:
-                            paths.append(path)
-        except:
-            for so in sources:
-                v1 = Graph.NearestVertex(graph, so)
-                for si in destinations:
-                    v2 = Graph.NearestVertex(graph, si)
-                    if not v1 == v2:
-                        path = Graph.ShortestPath(graph, v1, v2)
-                        if path:
-                            paths.append(path)
-
-        scores = betweeness(vertices, paths, tolerance=tolerance)
-        minValue = min(scores)
-        maxValue = max(scores)
-        size = maxValue - minValue
-        scores = [round((v-minValue)/size, mantissa) for v in scores]
-        for i, v in enumerate(vertices):
-            d = Topology.Dictionary(v)
-            d = Dictionary.SetValueAtKey(d, key, scores[i])
-            v = Topology.SetDictionary(v, d)
-        return scores
+        
+        return_betweenness = [0]*len(vertices)
+        for i, v in betweenness.items():
+            vertex = vertices[int(i)]
+            d = Topology.Dictionary(vertex)
+            d = Dictionary.SetValueAtKey(d, key, round(v, mantissa))
+            vertex = Topology.SetDictionary(vertex, d)
+            return_betweenness[int(i)] = v
+        
+        return return_betweenness
     
     @staticmethod
     def ByAdjacencyMatrixCSVPath(path: str, dictionaries: list = None, silent: bool = False):
@@ -1571,17 +1458,21 @@ class Graph:
         return Graph.ByAdjacencyMatrix(adjacencyMatrix=adjacency_matrix, dictionaries=dictionaries, silent=silent)
 
     @staticmethod
-    def ByAdjacencyMatrix(adjacencyMatrix, dictionaries = None, xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5, silent=False):
+    def ByAdjacencyMatrix(adjacencyMatrix, dictionaries = None, edgeKeyFwd="weightFwd", edgeKeyBwd="weightBwd", xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5, silent=False):
         """
         Returns graphs according to the input folder path. This method assumes the CSV files follow DGL's schema.
 
         Parameters
         ----------
         adjacencyMatrix : list
-            The adjacency matrix expressed as a nested list of 0s and 1s.
+            The adjacency matrix expressed as a nested list of 0s and a number not 0 which represents the edge weight.
         dictionaries : list , optional
             A list of dictionaries to assign to the vertices of the graph. This list should be in
             the same order and of the same length as the rows in the adjacency matrix.
+        edgeKeyFwd : str , optional
+            The dictionary key under which to store the edge weight value for forward edge. The default is "weight".
+        edgeKeyBwd : str , optional
+            The dictionary key under which to store the edge weight value for backward edge. The default is "weight".
         xMin : float , optional
             The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
         yMin : float , optional
@@ -1606,6 +1497,7 @@ class Graph:
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
         import  random
 
         if not isinstance(adjacencyMatrix, list):
@@ -1632,11 +1524,17 @@ class Graph:
         
         # Add edges based on the adjacency matrix
         edges = []
+        visited = []
         for i in range(len(adjacencyMatrix)):
             for j in range(len(adjacencyMatrix)):
                 if not i == j:
-                    if not adjacencyMatrix[i][j] == 0:
-                        edges.append(Edge.ByVertices([vertices[i], vertices[j]]))
+                    if (adjacencyMatrix[i][j] != 0 or adjacencyMatrix[j][i] != 0) and not (i,j) in visited:
+                        edge = Edge.ByVertices([vertices[i], vertices[j]]) # Create only one edge
+                        d = Dictionary.ByKeysValues([edgeKeyFwd, edgeKeyBwd], [adjacencyMatrix[i][j], adjacencyMatrix[j][i]])
+                        edge = Topology.SetDictionary(edge, d)
+                        edges.append(edge)
+                        visited.append((i,j))
+                        visited.append((j,i))
         
         return Graph.ByVerticesEdges(vertices, edges)
 
