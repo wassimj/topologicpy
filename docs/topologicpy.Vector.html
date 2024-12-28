@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vector module &mdash; topologicpy 0.7.91 documentation</title>
+  <title>topologicpy.Vector module &mdash; topologicpy 0.7.92 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.7.91
+                0.7.92
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -177,13 +177,13 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.CompassAngle" title="topologicpy.Vector.Vector.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(vectorA, vectorB[, mantissa, ...])</p></td>
 <td><p>Returns the horizontal compass angle in degrees between the two input vectors.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Coordinates" title="topologicpy.Vector.Vector.Coordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Coordinates</span></code></a>(vector[, outputType, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Coordinates" title="topologicpy.Vector.Vector.Coordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Coordinates</span></code></a>(vector[, outputType, mantissa, ...])</p></td>
 <td><p>Returns the coordinates of the input vector.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Cross" title="topologicpy.Vector.Vector.Cross"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cross</span></code></a>(vectorA, vectorB[, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Cross" title="topologicpy.Vector.Vector.Cross"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cross</span></code></a>(vectorA, vectorB[, mantissa, ...])</p></td>
 <td><p>Returns the cross product of the two input vectors.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Dot" title="topologicpy.Vector.Vector.Dot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dot</span></code></a>(vectorA, vectorB[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Dot" title="topologicpy.Vector.Vector.Dot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dot</span></code></a>(vectorA, vectorB[, mantissa, tolerance, ...])</p></td>
 <td><p>Returns the dot product of the two input vectors which is a measure of how much they are aligned.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Down" title="topologicpy.Vector.Vector.Down"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Down</span></code></a>()</p></td>
@@ -492,7 +492,7 @@ If the altitude is -90 or 90, the azimuth is assumed to be 0.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.CompassAngle">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CompassAngle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.CompassAngle" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CompassAngle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.CompassAngle" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the horizontal compass angle in degrees between the two input vectors. The angle is measured in clockwise fashion.
 0 is along the positive Y-axis, 90 is along the positive X axis.
 Only the first two elements in the input vectors are considered.</p>
@@ -507,6 +507,8 @@ Only the first two elements in the input vectors are considered.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -520,7 +522,7 @@ Only the first two elements in the input vectors are considered.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.Coordinates">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xyz'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Coordinates" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xyz'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Coordinates" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the coordinates of the input vector.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -530,6 +532,8 @@ Only the first two elements in the input vectors are considered.</p>
 <dt><strong>outputType</strong><span class="classifier">string, optional</span></dt><dd><p>The desired output type. Could be any permutation or substring of “xyz” or the string “matrix”. The default is “xyz”. The input is case insensitive and the coordinates will be returned in the specified order.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -544,7 +548,7 @@ Only the first two elements in the input vectors are considered.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.Cross">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Cross</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Cross" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Cross</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Cross" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the cross product of the two input vectors. The resulting vector is perpendicular to the plane defined by the two input vectors.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -556,6 +560,8 @@ Only the first two elements in the input vectors are considered.</p>
 <dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>the desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -570,7 +576,7 @@ Only the first two elements in the input vectors are considered.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.Dot">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Dot" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Dot" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the dot product of the two input vectors which is a measure of how much they are aligned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -580,6 +586,10 @@ Only the first two elements in the input vectors are considered.</p>
 <dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second vector.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>the desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
 </dd>
 </dl>
 </dd>
