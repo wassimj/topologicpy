@@ -312,7 +312,7 @@ class Vector(list):
         return vector
 
     @staticmethod
-    def CompassAngle(vectorA, vectorB, mantissa=6, tolerance=0.0001):
+    def CompassAngle(vectorA, vectorB, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the horizontal compass angle in degrees between the two input vectors. The angle is measured in clockwise fashion.
         0 is along the positive Y-axis, 90 is along the positive X axis.
@@ -328,6 +328,8 @@ class Vector(list):
             The length of the desired mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -335,9 +337,21 @@ class Vector(list):
             The horizontal compass angle in degrees between the two input vectors.
 
         """
+        if not isinstance(vectorA, list):
+            if not silent:
+                print("Vector.Coordinates - Error: The input vectorA parameter is not a valid vector. Returning Nonne.")
+            return None
+        if not isinstance(vectorB, list):
+            if not silent:
+                print("Vector.Coordinates - Error: The input vectorB parameter is not a valid vector. Returning Nonne.")
+            return None
         if abs(vectorA[0]) < tolerance and abs(vectorA[1]) < tolerance:
+            if not silent:
+                print("Vector.CompassAngle - Error: The input vectorA parameter is vertical in the Z Axis. Returning Nonne.")
             return None
         if abs(vectorB[0]) < tolerance and abs(vectorB[1]) < tolerance:
+            if not silent:
+                print("Vector.CompassAngle - Error: The input vectorB parameter is vertical in the Z Axis. Returning Nonne.")
             return None
         p1 = (vectorA[0], vectorA[1])
         p2 = (vectorB[0], vectorB[1])
@@ -346,7 +360,7 @@ class Vector(list):
         return round(rad2deg((ang1 - ang2) % (2 * pi)), mantissa)
 
     @staticmethod
-    def Coordinates(vector, outputType="xyz", mantissa: int = 6):
+    def Coordinates(vector, outputType="xyz", mantissa: int = 6, silent: bool = False):
         """
         Returns the coordinates of the input vector.
 
@@ -358,6 +372,8 @@ class Vector(list):
             The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". The default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -366,6 +382,8 @@ class Vector(list):
 
         """
         if not isinstance(vector, list):
+            if not silent:
+                print("Vector.Coordinates - Error: The input vector parameter is not a valid vector. Returning None.")
             return None
         x = round(vector[0], mantissa)
         y = round(vector[1], mantissa)
@@ -390,7 +408,7 @@ class Vector(list):
         return output
     
     @staticmethod
-    def Cross(vectorA, vectorB, mantissa=6, tolerance=0.0001):
+    def Cross(vectorA, vectorB, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the cross product of the two input vectors. The resulting vector is perpendicular to the plane defined by the two input vectors.
 
@@ -404,6 +422,8 @@ class Vector(list):
             The length of the desired mantissa. The default is 6.
         tolerance : float, optional
             the desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -411,9 +431,21 @@ class Vector(list):
             The vector representing the cross product of the two input vectors.
 
         """
-        if not isinstance(vectorA, list) or not isinstance(vectorB, list):
+        if not isinstance(vectorA, list):
+            if not silent:
+                print("Vector.Cross - Error: The input vectorA parameter is not a valid vector. Returning None.")
             return None
-        if Vector.Magnitude(vector=vectorA, mantissa=mantissa) < tolerance or Vector.Magnitude(vector=vectorB, mantissa=mantissa) < tolerance:
+        if not isinstance(vectorB, list):
+            if not silent:
+                print("Vector.Cross - Error: The input vectorB parameter is not a valid vector. Returning None.")
+            return None
+        if Vector.Magnitude(vector=vectorA, mantissa=mantissa) < tolerance:
+            if not silent:
+                print("Vector.Cross - Error: The magnitude of the input vectorA parameter is less than the input tolerance parameter. Returning None.")
+            return None
+        if Vector.Magnitude(vector=vectorB, mantissa=mantissa) < tolerance:
+            if not silent:
+                print("Vector.Cross - Error: The magnitude of the input vectorB parameter is less than the input tolerance parameter. Returning None.")
             return None
         vecA = np.array(vectorA)
         vecB = np.array(vectorB)
@@ -423,7 +455,7 @@ class Vector(list):
         return [round(vecC[0], mantissa), round(vecC[1], mantissa), round(vecC[2], mantissa)]
 
     @staticmethod
-    def Dot(vectorA, vectorB, mantissa=6):
+    def Dot(vectorA, vectorB, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the dot product of the two input vectors which is a measure of how much they are aligned.
 
@@ -435,6 +467,10 @@ class Vector(list):
             The second vector.
         mantissa : int, optional
             The length of the desired mantissa. The default is 6.
+        tolerance : float, optional
+            the desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -442,6 +478,22 @@ class Vector(list):
             The vector representing the cross product of the two input vectors.
 
         """
+        if not isinstance(vectorA, list):
+            if not silent:
+                print("Vector.Dot - Error: The input vectorA parameter is not a valid vector. Returning None.")
+            return None
+        if not isinstance(vectorB, list):
+            if not silent:
+                print("Vector.Dot - Error: The input vectorB parameter is not a valid vector. Returning None.")
+            return None
+        if Vector.Magnitude(vector=vectorA, mantissa=mantissa) < tolerance:
+            if not silent:
+                print("Vector.Dot - Error: The magnitude of the input vectorA parameter is less than the input tolerance parameter. Returning None.")
+            return None
+        if Vector.Magnitude(vector=vectorB, mantissa=mantissa) < tolerance:
+            if not silent:
+                print("Vector.Dot - Error: The magnitude of the input vectorB parameter is less than the input tolerance parameter. Returning None.")
+            return None
         return round(sum(a*b for a, b in zip(vectorA, vectorB)), mantissa)
     
     @staticmethod
@@ -501,42 +553,6 @@ class Vector(list):
         # Check if the angle between vectors is either 0 or 180 degrees
         dot_product = np.dot(vector1_norm, vector2_norm)
         if np.isclose(dot_product, -1.0):
-            return True
-        else:
-            # Compute bisecting vector
-            return False
-    
-    @staticmethod
-    def IsParallel(vectorA, vectorB):
-        """
-        Returns True if the input vectors are parallel. Returns False otherwise.
-        
-        Parameters
-        ----------
-        vectorA : list
-            The first input vector.
-        vectorB : list
-            The second input vector.
-            
-        Returns
-        -------
-        bool
-            True if the input vectors are parallel. False otherwise.
-        
-        """
-        import numpy as np
-
-        # Ensure vectors are numpy arrays
-        vector1 = np.array(vectorA)
-        vector2 = np.array(vectorB)
-        
-        # Normalize input vectors
-        vector1_norm = vector1 / np.linalg.norm(vector1)
-        vector2_norm = vector2 / np.linalg.norm(vector2)
-        
-        # Check if the angle between vectors is either 0 or 180 degrees
-        dot_product = np.dot(vector1_norm, vector2_norm)
-        if np.isclose(dot_product, 1.0):
             return True
         else:
             # Compute bisecting vector
