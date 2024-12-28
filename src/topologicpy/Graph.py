@@ -1407,7 +1407,7 @@ class Graph:
             vertices[0] = Topology.SetDictionary(vertices[0], d)
             return [1.0]
         
-        py_graph = Graph.AdjacencyDictionary(g)
+        py_graph = Graph.AdjacencyDictionary(graph)
         betweenness = calculate_betweenness()
         for v in betweenness:
             betweenness[v] /= 2.0  # Each shortest path is counted twice
@@ -6992,7 +6992,6 @@ class Graph:
 
             # Compute positions based on layers
             for depth, nodes in layers.items():
-                print("depth:", depth)
                 # Place nodes in a circular arrangement at each layer
                 num_nodes = len(nodes)
                 angle_step = 2 * np.pi / num_nodes if num_nodes > 0 else 0
