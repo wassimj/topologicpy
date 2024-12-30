@@ -1421,6 +1421,157 @@ class Wire():
         ch = Topology.Unflatten(ch, origin=origin, direction=normal)
         return ch
 
+
+    @staticmethod
+    def CShape(origin=None,
+            width=1,
+            length=1,
+            a=0.25,
+            b=0.25,
+            c =0.25,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates a C-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the C-shape. The default is None which results in the C-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the C-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the C-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the C-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the lower horizontal arm of the C-shape. The default is 0.25.
+        c : float , optional
+            The vertical thickness of the upper horizontal arm of the C-shape. The default is 0.25.
+        direction : list , optional
+            The vector representing the up direction of the C-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the C-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The created C-shape.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Wire.CShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Wire.CShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Wire.CShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Wire.CShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Wire.CShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Wire.CShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Wire.CShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Wire.CShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if c <= tolerance:
+            if not silent:
+                print("Wire.CShape - Error: The c input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Wire.CShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b+c >= (length - tolerance):
+            if not silent:
+                print("Wire.CShape - Error: The b and c input parameters must add to less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Wire.CShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Wire.CShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Wire.CShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        
+        # Define the vertices of the C-shape (counterclockwise)
+        v1 = Vertex.Origin()  # Base origin
+        v2 = Vertex.ByCoordinates(width, 0)
+        v3 = Vertex.ByCoordinates(width, b)
+        v4 = Vertex.ByCoordinates(a, b)
+        v5 = Vertex.ByCoordinates(a, length-c)
+        v6 = Vertex.ByCoordinates(width, length-c)
+        v7 = Vertex.ByCoordinates(width, length)
+        v8 = Vertex.ByCoordinates(0, length)
+
+        # Create the C-shaped wire
+        c_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6, v7, v8], close=True)
+        c_shape = Topology.Translate(c_shape, -width/2, -length/2, 0)
+        c_shape = Topology.Translate(c_shape, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+        reverse = False
+        if flipHorizontal == True:
+            xScale = -1
+            reverse = not reverse
+        else:
+            xScale = 1
+        if flipVertical == True:
+            yScale = -1
+            reverse = not reverse
+        else:
+            yScale = 1
+        if xScale == -1 or yScale == -1:
+            c_shape = Topology.Scale(c_shape, x=xScale, y=yScale, z=1)
+            if reverse == True:
+                c_shape = Wire.Reverse(c_shape)
+        if placement.lower() == "lowerleft":
+            c_shape = Topology.Translate(c_shape, width/2, length/2, 0)
+        elif placement.lower() == "upperright":
+            c_shape = Topology.Translate(c_shape, -width/2, -length/2, 0)
+        elif placement.lower() == "upperleft":
+            c_shape = Topology.Translate(c_shape, width/2, -length/2, 0)
+        elif placement.lower() == "lowerright":
+            c_shape = Topology.Translate(c_shape, -width/2, length/2, 0)
+        
+        if direction != [0, 0, 1]:
+            c_shape = Topology.Orient(c_shape, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return c_shape
+
     @staticmethod
     def Cycles(wire, maxVertices: int = 4, tolerance: float = 0.0001) -> list:
         """
@@ -2387,6 +2538,161 @@ class Wire():
             return True
         return False
 
+
+    @staticmethod
+    def IShape(origin=None,
+            width=1,
+            length=1,
+            a=0.25,
+            b=0.25,
+            c =0.25,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates an I-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the I-shape. The default is None which results in the I-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the I-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the I-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the central vertical arm of the I-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the lower horizontal arm of the I-shape. The default is 0.25.
+        c : float , optional
+            The vertical thickness of the upper horizontal arm of the I-shape. The default is 0.25.
+        direction : list , optional
+            The vector representing the up direction of the I-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the I-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The created I-shape.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Wire.IShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Wire.IShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Wire.IShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Wire.IShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Wire.IShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Wire.IShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Wire.IShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Wire.IShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if c <= tolerance:
+            if not silent:
+                print("Wire.IShape - Error: The c input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Wire.IShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b+c >= (length - tolerance):
+            if not silent:
+                print("Wire.IShape - Error: The b and c input parameters must add to less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Wire.IShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Wire.IShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Wire.IShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        
+        # Define the vertices of the I-shape (counterclockwise)
+        v1 = Vertex.Origin()  # Base origin
+        v2 = Vertex.ByCoordinates(width, 0)
+        v3 = Vertex.ByCoordinates(width, b)
+        v4 = Vertex.ByCoordinates(width/2+a/2, b)
+        v5 = Vertex.ByCoordinates(width/2+a/2, length-c)
+        v6 = Vertex.ByCoordinates(width, length-c)
+        v7 = Vertex.ByCoordinates(width, length)
+        v8 = Vertex.ByCoordinates(0, length)
+        v9 = Vertex.ByCoordinates(0, length-c)
+        v10 = Vertex.ByCoordinates(width/2-a/2, length-c)
+        v11 = Vertex.ByCoordinates(width/2-a/2, b)
+        v12 = Vertex.ByCoordinates(0,b)
+
+        # Create the I-shaped wire
+        i_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12], close=True)
+        i_shape = Topology.Translate(i_shape, -width/2, -length/2, 0)
+        i_shape = Topology.Translate(i_shape, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+        reverse = False
+        if flipHorizontal == True:
+            xScale = -1
+            reverse = not reverse
+        else:
+            xScale = 1
+        if flipVertical == True:
+            yScale = -1
+            reverse = not reverse
+        else:
+            yScale = 1
+        if xScale == -1 or yScale == -1:
+            i_shape = Topology.Scale(i_shape, x=xScale, y=yScale, z=1)
+            if reverse == True:
+                i_shape = Wire.Reverse(i_shape)
+        if placement.lower() == "lowerleft":
+            i_shape = Topology.Translate(i_shape, width/2, length/2, 0)
+        elif placement.lower() == "upperright":
+            i_shape = Topology.Translate(i_shape, -width/2, -length/2, 0)
+        elif placement.lower() == "upperleft":
+            i_shape = Topology.Translate(i_shape, width/2, -length/2, 0)
+        elif placement.lower() == "lowerright":
+            i_shape = Topology.Translate(i_shape, -width/2, length/2, 0)
+        
+        if direction != [0, 0, 1]:
+            i_shape = Topology.Orient(i_shape, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return i_shape
+
     @staticmethod
     def Length(wire, mantissa: int = 6) -> float:
         """
@@ -2480,7 +2786,148 @@ class Wire():
             vertices.append(Edge.VertexByParameter(edge, i*unitDistance))
         vertices.append(Edge.EndVertex(edge))
         return Wire.ByVertices(vertices)
-    
+
+    @staticmethod
+    def LShape(origin=None,
+            width=1,
+            length=1,
+            a=0.25,
+            b=0.25,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates an L-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the L-shape. The default is None which results in the L-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the L-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the L-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the L-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the horizontal arm of the L-shape. The default is 0.25.
+        direction : list , optional
+            The vector representing the up direction of the L-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the L-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The created L-shape.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Wire.LShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Wire.LShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Wire.LShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Wire.LShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Wire.LShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Wire.LShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Wire.LShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Wire.LShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Wire.LShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b >= (length - tolerance):
+            if not silent:
+                print("Wire.LShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Wire.LShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Wire.LShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Wire.LShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        
+        # Define the vertices of the L-shape (counterclockwise)
+        v1 = Vertex.Origin()  # Base origin
+        v2 = Vertex.ByCoordinates(width, 0)  # End of horizontal arm
+        v3 = Vertex.ByCoordinates(width, b)  # Top of horizontal arm
+        v4 = Vertex.ByCoordinates(a, b)  # Transition to vertical arm
+        v5 = Vertex.ByCoordinates(a, length)  # End of vertical arm
+        v6 = Vertex.ByCoordinates(0, length)  # Top of vertical arm
+
+        # Create the L-shaped wire
+        l_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6], close=True)
+        l_shape = Topology.Translate(l_shape, -width/2, -length/2, 0)
+        l_shape = Topology.Translate(l_shape, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+        reverse = False
+        if flipHorizontal == True:
+            xScale = -1
+            reverse = not reverse
+        else:
+            xScale = 1
+        if flipVertical == True:
+            yScale = -1
+            reverse = not reverse
+        else:
+            yScale = 1
+        if xScale == -1 or yScale == -1:
+            l_shape = Topology.Scale(l_shape, x=xScale, y=yScale, z=1)
+            if reverse == True:
+                l_shape = Wire.Reverse(l_shape)
+        if placement.lower() == "lowerleft":
+            l_shape = Topology.Translate(l_shape, width/2, length/2, 0)
+        elif placement.lower() == "upperright":
+            l_shape = Topology.Translate(l_shape, -width/2, -length/2, 0)
+        elif placement.lower() == "upperleft":
+            l_shape = Topology.Translate(l_shape, width/2, -length/2, 0)
+        elif placement.lower() == "lowerright":
+            l_shape = Topology.Translate(l_shape, -width/2, length/2, 0)
+        
+        if direction != [0, 0, 1]:
+            l_shape = Topology.Orient(l_shape, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return l_shape
+
     @staticmethod
     def Miter(wire, offset: float = 0, offsetKey: str = None, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -4063,6 +4510,150 @@ class Wire():
         if direction != [0, 0, 1]:
             baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
+
+
+    @staticmethod
+    def TShape(origin=None,
+            width=1,
+            length=1,
+            a=0.25,
+            b=0.25,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates a T-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the T-shape. The default is None which results in the L-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the T-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the T-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the T-shape. The default is 0.5.
+        b : float , optional
+            The vertical thickness of the horizontal arm of the T-shape. The default is 0.5.
+        direction : list , optional
+            The vector representing the up direction of the T-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the T-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The created T-shape.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Wire.LShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Wire.LShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Wire.LShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Wire.LShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Wire.LShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Wire.LShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Wire.LShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Wire.LShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Wire.LShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b >= (length - tolerance):
+            if not silent:
+                print("Wire.LShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Wire.LShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Wire.LShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Wire.LShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        
+        # Define the vertices of the T-shape (counterclockwise)
+        v1 = Vertex.ByCoordinates(width/2-a/2, 0)
+        v2 = Vertex.ByCoordinates(width/2+a/2, 0)
+        v3 = Vertex.ByCoordinates(width/2+a/2, length-b)
+        v4 = Vertex.ByCoordinates(width, length-b)
+        v5 = Vertex.ByCoordinates(width, length)
+        v6 = Vertex.ByCoordinates(0, length)
+        v7 = Vertex.ByCoordinates(0, length-b)
+        v8 = Vertex.ByCoordinates(width/2-a/2, length-b)  # Top of vertical arm
+
+        # Create the T-shaped wire
+        t_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6, v7, v8], close=True)
+        t_shape = Topology.Translate(t_shape, -width/2, -length/2, 0)
+        t_shape = Topology.Translate(t_shape, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+        reverse = False
+        if flipHorizontal == True:
+            xScale = -1
+            reverse = not reverse
+        else:
+            xScale = 1
+        if flipVertical == True:
+            yScale = -1
+            reverse = not reverse
+        else:
+            yScale = 1
+        if xScale == -1 or yScale == -1:
+            t_shape = Topology.Scale(t_shape, x=xScale, y=yScale, z=1)
+            if reverse == True:
+                t_shape = Wire.Reverse(t_shape)
+        if placement.lower() == "lowerleft":
+            t_shape = Topology.Translate(t_shape, width/2, length/2, 0)
+        elif placement.lower() == "upperright":
+            t_shape = Topology.Translate(t_shape, -width/2, -length/2, 0)
+        elif placement.lower() == "upperleft":
+            t_shape = Topology.Translate(t_shape, width/2, -length/2, 0)
+        elif placement.lower() == "lowerright":
+            t_shape = Topology.Translate(t_shape, -width/2, length/2, 0)
+        
+        if direction != [0, 0, 1]:
+            t_shape = Topology.Orient(t_shape, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return t_shape
 
     @staticmethod
     def VertexDistance(wire, vertex, origin= None, mantissa: int = 6, tolerance: float = 0.0001):

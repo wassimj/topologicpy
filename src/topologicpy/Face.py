@@ -1125,6 +1125,123 @@ class Face():
         return Vector.CompassAngle(vectorA=dirA, vectorB=north, mantissa=mantissa, tolerance=tolerance)
 
     @staticmethod
+    def CShape(origin=None,
+            width=1,
+            length=1,
+            a=0.25,
+            b=0.25,
+            c=0.25,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates a C-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the C-shape. The default is None which results in the C-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the C-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the C-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the C-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the bottom horizontal arm of the C-shape. The default is 0.25.
+        c : float , optional
+            The vertical thickness of the top horizontal arm of the C-shape. The default is 0.25.
+        direction : list , optional
+            The vector representing the up direction of the C-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the C-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created C-shape.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Face.CShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Face.CShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Face.CShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Face.CShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Face.CShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Face.CShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Face.CShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Face.CShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Face.CShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b+c >= (length - tolerance):
+            if not silent:
+                print("Face.CShape - Error: The b and c input parameters must add to less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Face.CShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Face.CShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Face.CShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        c_shape_wire = Wire.CShape(origin=origin,
+                                   width=width,
+                                   length=length,
+                                   a=a,
+                                   b=b,
+                                   c=c,
+                                   flipHorizontal=flipHorizontal,
+                                   flipVertical=flipVertical,
+                                   direction=direction,
+                                   placement=placement,
+                                   tolerance=tolerance,
+                                   silent=silent)
+        return Face.ByWire(c_shape_wire, tolerance=tolerance, silent=silent)
+
+    @staticmethod
     def Edges(face) -> list:
         """
         Returns the edges of the input face.
@@ -1684,6 +1801,123 @@ class Face():
         plane_b = [eq_b['a'], eq_b['b'], eq_b['c'], eq_b['d']]
         plane_b = normalize_plane_coefficients(plane_b)
         return are_planes_coplanar(plane_a, plane_b, tolerance=tolerance)
+
+    @staticmethod
+    def IShape(origin=None,
+            width=1,
+            length=1,
+            a=0.25,
+            b=0.25,
+            c=0.25,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates an I-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the I-shape. The default is None which results in the I-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the I-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the I-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the central vertical arm of the I-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the bottom horizontal arm of the I-shape. The default is 0.25.
+        c : float , optional
+            The vertical thickness of the top horizontal arm of the I-shape. The default is 0.25.
+        direction : list , optional
+            The vector representing the up direction of the I-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the I-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created I-shape.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Face.IShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Face.IShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Face.IShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Face.IShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Face.IShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Face.IShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Face.IShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Face.IShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Face.IShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b+c >= (length - tolerance):
+            if not silent:
+                print("Face.IShape - Error: The b and c input parameters must add to less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Face.IShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Face.IShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Face.IShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        i_shape_wire = Wire.IShape(origin=origin,
+                                   width=width,
+                                   length=length,
+                                   a=a,
+                                   b=b,
+                                   c=c,
+                                   flipHorizontal=flipHorizontal,
+                                   flipVertical=flipVertical,
+                                   direction=direction,
+                                   placement=placement,
+                                   tolerance=tolerance,
+                                   silent=silent)
+        return Face.ByWire(i_shape_wire, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, transferDictionaries: bool = False, metrics: bool = False, triangles: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
@@ -2293,6 +2527,120 @@ class Face():
             if len(triangle_list) > 0:
                 return_face = Topology.AddContent(return_face, triangle_list)
         return return_face
+
+
+    @staticmethod
+    def LShape(origin=None,
+            width=1,
+            length=1,
+            a=0.25,
+            b=0.25,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates an L-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the L-shape. The default is None which results in the L-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the L-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the L-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the L-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the horizontal arm of the L-shape. The default is 0.25.
+        direction : list , optional
+            The vector representing the up direction of the L-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the L-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created L-shape.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Face.LShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Face.LShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Face.LShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Face.LShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Face.LShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Face.LShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Face.LShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Face.LShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Face.LShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b >= (length - tolerance):
+            if not silent:
+                print("Face.LShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Face.LShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Face.LShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Face.LShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        l_shape_wire = Wire.LShape(origin=origin,
+                                   width=width,
+                                   length=length,
+                                   a=a,
+                                   b=b,
+                                   flipHorizontal=flipHorizontal,
+                                   flipVertical=flipVertical,
+                                   direction=direction,
+                                   placement=placement,
+                                   tolerance=tolerance,
+                                   silent=silent)
+        return Face.ByWire(l_shape_wire, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def MedialAxis(face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001):
@@ -3193,6 +3541,119 @@ class Face():
             trimmed_face = face.Difference(trimmed_face)
         return trimmed_face
     
+    @staticmethod
+    def TShape(origin=None,
+            width=1,
+            length=1,
+            a=0.5,
+            b=0.5,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates a T-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the T-shape. The default is None which results in the T-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the T-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the T-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the T-shape. The default is 0.5.
+        b : float , optional
+            The vertical thickness of the horizontal arm of the T-shape. The default is 0.5.
+        direction : list , optional
+            The vector representing the up direction of the T-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the T-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created T-shape.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Face.TShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Face.TShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Face.TShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Face.LShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Face.TShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Face.TShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Face.TShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Face.TShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Face.TShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b >= (length - tolerance):
+            if not silent:
+                print("Face.TShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Face.TShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Face.TShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Face.TShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        t_shape_wire = Wire.TShape(origin=origin,
+                                   width=width,
+                                   length=length,
+                                   a=a,
+                                   b=b,
+                                   flipHorizontal=flipHorizontal,
+                                   flipVertical=flipVertical,
+                                   direction=direction,
+                                   placement=placement,
+                                   tolerance=tolerance,
+                                   silent=silent)
+        return Face.ByWire(t_shape_wire, tolerance=tolerance, silent=silent)
+
     @staticmethod
     def VertexByParameters(face, u: float = 0.5, v: float = 0.5):
         """
