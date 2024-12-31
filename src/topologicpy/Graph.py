@@ -751,102 +751,6 @@ class Graph:
         return paths
 
     @staticmethod
-    def IsIsomorphic(graphA, graphB, maxIterations=10, silent=False):
-        """
-        Tests if the two input graphs are isomorphic according to the Weisfeiler Lehman graph isomorphism test. See https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test
-        
-        Parameters
-        ----------
-        graphA : topologic_core.Graph
-            The first input graph.
-        graphB : topologic_core.Graph
-            The second input graph.
-        maxIterations : int , optional
-            This number limits the number of iterations to prevent the function from running indefinitely, particularly for very large or complex graphs.
-        silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
-        
-        Returns
-        -------
-        bool
-            True if the two input graphs are isomorphic. False otherwise
-
-        """
-
-        from topologicpy.Topology import Topology
-
-        def weisfeiler_lehman_test(graph1, graph2, max_iterations=10):
-            """
-            Test if two graphs are isomorphic using the Weisfeiler-Leman (WL) algorithm with early stopping.
-
-            Parameters:
-            graph1 (dict): Adjacency list representation of the first graph.
-            graph2 (dict): Adjacency list representation of the second graph.
-            max_iterations (int): Maximum WL iterations allowed (default is 10).
-
-            Returns:
-            bool: True if the graphs are WL-isomorphic, False otherwise.
-            """
-
-            def wl_iteration(labels, graph):
-                """Perform one WL iteration and return updated labels."""
-                new_labels = {}
-                for node in graph:
-                    neighborhood_labels = sorted([labels[neighbor] for neighbor in graph[node]])
-                    new_labels[node] = (labels[node], tuple(neighborhood_labels))
-                unique_labels = {}
-                count = 0
-                for node in sorted(new_labels):
-                    if new_labels[node] not in unique_labels:
-                        unique_labels[new_labels[node]] = count
-                        count += 1
-                    new_labels[node] = unique_labels[new_labels[node]]
-                return new_labels
-
-            # Initialize labels
-            labels1 = {node: 1 for node in graph1}
-            labels2 = {node: 1 for node in graph2}
-
-            for i in range(max_iterations):
-                # Perform WL iteration for both graphs
-                new_labels1 = wl_iteration(labels1, graph1)
-                new_labels2 = wl_iteration(labels2, graph2)
-
-                # Check if the label distributions match
-                if sorted(new_labels1.values()) != sorted(new_labels2.values()):
-                    return False
-
-                # Check for stability (early stopping)
-                if new_labels1 == labels1 and new_labels2 == labels2:
-                    break
-
-                # Update labels for next iteration
-                labels1, labels2 = new_labels1, new_labels2
-
-            return True
-        
-        if not Topology.IsInstance(graphA, "Graph") and not Topology.IsInstance(graphB, "Graph"):
-            if not silent:
-                print("Graph.IsIsomorphic - Error: The input graph parameters are not valid graphs. Returning None.")
-            return None
-        if not Topology.IsInstance(graphA, "Graph"):
-            if not silent:
-                print("Graph.IsIsomorphic - Error: The input graphA parameter is not a valid graph. Returning None.")
-            return None
-        if not Topology.IsInstance(graphB, "Graph"):
-            if not silent:
-                print("Graph.IsIsomorphic - Error: The input graphB parameter is not a valid graph. Returning None.")
-            return None
-        if maxIterations <= 0:
-            if not silent:
-                print("Graph.IsIsomorphic - Error: The input maxIterations parameter is not within a valid range. Returning None.")
-            return None
-        
-        g1 = Graph.AdjacencyDictionary(graphA)
-        g2 = Graph.AdjacencyDictionary(graphB)
-        return weisfeiler_lehman_test(g1, g2, max_iterations=maxIterations)
-
-    @staticmethod
     def AverageClusteringCoefficient(graph, mantissa: int = 6, silent: bool = False):
         """
         Returns the average clustering coefficient of the input graph. See https://en.wikipedia.org/wiki/Clustering_coefficient.
@@ -1345,7 +1249,7 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         key : str , optional
-            The dictionary key under which to save the betweeness centrality score. The default is "betweenness_centrality".
+            The dictionary key under which to store the betweeness centrality score. The default is "betweenness_centrality".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -1427,7 +1331,75 @@ class Graph:
             return_betweenness[int(i)] = v
         
         return return_betweenness
-    
+
+    @staticmethod
+    def Bridges(graph, key: str = "bridge", silent: bool = False):
+        """
+        Returns the list of bridge edges in the input graph. See: https://en.wikipedia.org/wiki/Bridge_(graph_theory)
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        key : str , optional
+            The edge dictionary key under which to store the bridge status. 0 means the edge is NOT a bridge. 1 means that the edge IS a bridge. The default is "bridge".
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        list
+            The list of bridge edges in the input graph.
+
+        """
+        import os
+        import warnings
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        try:
+            import igraph as ig
+        except:
+            print("Graph.Bridges - Installing required pyhon-igraph library.")
+            try:
+                os.system("pip install python-igraph")
+            except:
+                os.system("pip install python-igraph --user")
+            try:
+                import igraph as ig
+                print("Graph.Bridges - python-igraph library installed correctly.")
+            except:
+                warnings.warn("Graph.Bridges - Error: Could not import python-igraph. Please install manually.")
+        
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.Bridges - Error: The input graph parameter is not a valid topologic graph. Returning None")
+            return None
+
+        edges = Graph.Edges(graph)
+        if len(edges) < 1:
+            return []
+        if len(edges) == 1:
+            d = Topology.Dictionary(edge)
+            d = Dictionary.SetValueAtKey(d, key, 1)
+            edge = Topology.SetDictionary(edge, d)
+            return [edge]
+        mesh_data = Graph.MeshData(graph)
+        graph_edges = mesh_data['edges']
+        ig_graph = ig.Graph(edges=graph_edges)
+
+        bridges = ig_graph.bridges()
+        bridge_edges = []
+        for i, edge in enumerate(edges):
+            d = Topology.Dictionary(edge)
+            if i in bridges:
+                d = Dictionary.SetValueAtKey(d, key, 1)
+                bridge_edges.append(edge)
+            else:
+                d = Dictionary.SetValueAtKey(d, key, 0)
+            edge = Topology.SetDictionary(edge, d)
+        return bridge_edges
+
     @staticmethod
     def ByAdjacencyMatrixCSVPath(path: str, dictionaries: list = None, silent: bool = False):
         """
@@ -4410,7 +4382,7 @@ class Graph:
         vertices : list , optional
             The input list of vertices. The default is None.
         key : str , optional
-            The dictionary key under which to save the closeness centrality score. The default is "closeness_centrality".
+            The dictionary key under which to store the closeness centrality score. The default is "closeness_centrality".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -4498,7 +4470,7 @@ class Graph:
         graph : topologicp.Graph
             The input topologic graph.
         key : str , optional
-            The dictionary key under which to save the closeness centrality score. The default is "community".
+            The dictionary key under which to store the closeness centrality score. The default is "community".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -4610,7 +4582,7 @@ class Graph:
         vertices : list , optional
             The input list of vertices. The default is None.
         key : str , optional
-            The dictionary key under which to save the connectivity score. The default is "connectivity".
+            The dictionary key under which to store the connectivity score. The default is "connectivity".
         edgeKey : str , optional
             If specified, the value in the connected edges' dictionary specified by the edgeKey string will be aggregated to calculate
             the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.
@@ -4705,6 +4677,67 @@ class Graph:
             return None
         return graph.ContainsVertex(vertex, tolerance) # Hook to Core
 
+    @staticmethod
+    def CutVertices(graph, key: str = "cut", silent: bool = False):
+        """
+        Returns the list of cut vertices in the input graph. See: https://en.wikipedia.org/wiki/Bridge_(graph_theory)
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        key : str , optional
+            The vertex dictionary key under which to store the cut status. 0 means the vertex is NOT a cut vertex. 1 means that the vertex IS a cut vertex. The default is "cut".
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        list
+            The list of bridge edges in the input graph.
+
+        """
+        import os
+        import warnings
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        try:
+            import igraph as ig
+        except:
+            print("Graph.CutVertices - Installing required pyhon-igraph library.")
+            try:
+                os.system("pip install python-igraph")
+            except:
+                os.system("pip install python-igraph --user")
+            try:
+                import igraph as ig
+                print("Graph.CutVertices - python-igraph library installed correctly.")
+            except:
+                warnings.warn("Graph.CutVertices - Error: Could not import python-igraph. Please install manually.")
+        
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.CutVertices - Error: The input graph parameter is not a valid topologic graph. Returning None")
+            return None
+        
+        vertices = Graph.Vertices(graph)
+        mesh_data = Graph.MeshData(graph)
+        graph_edges = mesh_data['edges']
+        ig_graph = ig.Graph(edges=graph_edges)
+        articulation_points = ig_graph.vs[ig_graph.articulation_points()]
+        articulation_points_list = [v.index for v in articulation_points]
+        cut_vertices = []
+        for i, vertex in enumerate(vertices):
+            d = Topology.Dictionary(vertex)
+            if i in articulation_points_list:
+                d = Dictionary.SetValueAtKey(d, key, 1)
+                cut_vertices.append(vertex)
+            else:
+                d = Dictionary.SetValueAtKey(d, key, 0)
+            vertex = Topology.SetDictionary(vertex, d)
+                
+        return cut_vertices
 
     @staticmethod
     def Degree(graph, vertices=None, key: str = "degree", edgeKey: str = None, mantissa: int = 6, tolerance = 0.0001):
@@ -4718,7 +4751,7 @@ class Graph:
         vertices : list , optional
             The input list of vertices. The default is None.
         key : str , optional
-            The dictionary key under which to save the closeness centrality score. The default is "degree".
+            The dictionary key under which to store the closeness centrality score. The default is "degree".
         edgeKey : str , optional
             If specified, the value in the connected edges' dictionary specified by the edgeKey string will be aggregated to calculate
             the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.
@@ -4874,7 +4907,7 @@ class Graph:
         vertices : list , optional
             The input list of vertices. The default is None.
         key : str , optional
-            The dictionary key under which to save the depth score. The default is "depth".
+            The dictionary key under which to store the depth score. The default is "depth".
         type : str , optional
             The type of depth distance to calculate. The options are "topological" or "metric". The default is "topological". See https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/.
         mantissa : int , optional
@@ -6127,7 +6160,103 @@ class Graph:
                 f.close()
                 return False
         return False
-    
+
+    @staticmethod
+    def IsIsomorphic(graphA, graphB, maxIterations=10, silent=False):
+        """
+        Tests if the two input graphs are isomorphic according to the Weisfeiler Lehman graph isomorphism test. See https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test
+        
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        maxIterations : int , optional
+            This number limits the number of iterations to prevent the function from running indefinitely, particularly for very large or complex graphs.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        bool
+            True if the two input graphs are isomorphic. False otherwise
+
+        """
+
+        from topologicpy.Topology import Topology
+
+        def weisfeiler_lehman_test(graph1, graph2, max_iterations=10):
+            """
+            Test if two graphs are isomorphic using the Weisfeiler-Leman (WL) algorithm with early stopping.
+
+            Parameters:
+            graph1 (dict): Adjacency list representation of the first graph.
+            graph2 (dict): Adjacency list representation of the second graph.
+            max_iterations (int): Maximum WL iterations allowed (default is 10).
+
+            Returns:
+            bool: True if the graphs are WL-isomorphic, False otherwise.
+            """
+
+            def wl_iteration(labels, graph):
+                """Perform one WL iteration and return updated labels."""
+                new_labels = {}
+                for node in graph:
+                    neighborhood_labels = sorted([labels[neighbor] for neighbor in graph[node]])
+                    new_labels[node] = (labels[node], tuple(neighborhood_labels))
+                unique_labels = {}
+                count = 0
+                for node in sorted(new_labels):
+                    if new_labels[node] not in unique_labels:
+                        unique_labels[new_labels[node]] = count
+                        count += 1
+                    new_labels[node] = unique_labels[new_labels[node]]
+                return new_labels
+
+            # Initialize labels
+            labels1 = {node: 1 for node in graph1}
+            labels2 = {node: 1 for node in graph2}
+
+            for i in range(max_iterations):
+                # Perform WL iteration for both graphs
+                new_labels1 = wl_iteration(labels1, graph1)
+                new_labels2 = wl_iteration(labels2, graph2)
+
+                # Check if the label distributions match
+                if sorted(new_labels1.values()) != sorted(new_labels2.values()):
+                    return False
+
+                # Check for stability (early stopping)
+                if new_labels1 == labels1 and new_labels2 == labels2:
+                    break
+
+                # Update labels for next iteration
+                labels1, labels2 = new_labels1, new_labels2
+
+            return True
+        
+        if not Topology.IsInstance(graphA, "Graph") and not Topology.IsInstance(graphB, "Graph"):
+            if not silent:
+                print("Graph.IsIsomorphic - Error: The input graph parameters are not valid graphs. Returning None.")
+            return None
+        if not Topology.IsInstance(graphA, "Graph"):
+            if not silent:
+                print("Graph.IsIsomorphic - Error: The input graphA parameter is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "Graph"):
+            if not silent:
+                print("Graph.IsIsomorphic - Error: The input graphB parameter is not a valid graph. Returning None.")
+            return None
+        if maxIterations <= 0:
+            if not silent:
+                print("Graph.IsIsomorphic - Error: The input maxIterations parameter is not within a valid range. Returning None.")
+            return None
+        
+        g1 = Graph.AdjacencyDictionary(graphA)
+        g2 = Graph.AdjacencyDictionary(graphB)
+        return weisfeiler_lehman_test(g1, g2, max_iterations=maxIterations)
+
     @staticmethod
     def Reshape(graph,
                 shape="spring 2D",
@@ -7767,7 +7896,7 @@ class Graph:
         vertices : list , optional
             The input list of vertices. If set to None, the local clustering coefficient of all vertices will be computed. The default is None.
         key : str , optional
-            The dictionary key under which to save the local clustering coefficient score. The default is "lcc".
+            The dictionary key under which to store the local clustering coefficient score. The default is "lcc".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -8424,11 +8553,11 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         xKey : str , optional
-            The dictionary key under which to save the X-Coordinate of the vertex. The default is 'x'.
+            The dictionary key under which to store the X-Coordinate of the vertex. The default is 'x'.
         yKey : str , optional
-            The dictionary key under which to save the Y-Coordinate of the vertex. The default is 'y'.
+            The dictionary key under which to store the Y-Coordinate of the vertex. The default is 'y'.
         zKey : str , optional
-            The dictionary key under which to save the Z-Coordinate of the vertex. The default is 'z'.
+            The dictionary key under which to store the Z-Coordinate of the vertex. The default is 'z'.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -8627,7 +8756,7 @@ class Graph:
         directed : bool , optional
             If set to True, the graph is considered as a directed graph. Otherwise, it will be considered as an undirected graph. The default is False.
         key : str , optional
-            The dictionary key under which to save the page_rank score. The default is "page_rank"
+            The dictionary key under which to store the page_rank score. The default is "page_rank"
         mantissa : int , optional
             The desired length of the mantissa.
         tolerance : float , optional
