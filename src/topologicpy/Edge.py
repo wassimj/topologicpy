@@ -1251,7 +1251,7 @@ class Edge():
             ev = Edge.VertexByDistance(edge, 1.0, Edge.StartVertex(edge))
         else:
             sv = Edge.VertexByDistance(edge, 1.0, Edge.StartVertex(edge))
-            ev = Edge.EndVertexedge()
+            ev = Edge.EndVertex(edge)
         return Edge.ByVertices([sv, ev], tolerance=tolerance)
 
     @staticmethod
