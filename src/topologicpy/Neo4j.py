@@ -413,6 +413,7 @@ class Neo4j:
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Graph import Graph
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -458,8 +459,8 @@ class Neo4j:
             nodes.append(n)
         for i in range(len(edges)):
             e = edges[i]
-            sv = e.StartVertex()
-            ev = e.EndVertex()
+            sv = Edge.StartVertex(e)
+            ev = Edge.EndVertex(e)
             sn = nodes[Vertex.Index(vertex=sv, vertices=vertices, strict=False, tolerance=tolerance)]
             en = nodes[Vertex.Index(vertex=ev, vertices=vertices, strict=False, tolerance=tolerance)]
             ed = Topology.Dictionary(e)

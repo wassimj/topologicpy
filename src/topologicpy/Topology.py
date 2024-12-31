@@ -4145,7 +4145,7 @@ class Topology():
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.CenterofMass - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        return topology.CenterOfMass()
+        return topology.CenterOfMass() # Hook to Core
     
     @staticmethod
     def Centroid(topology):
@@ -4169,8 +4169,8 @@ class Topology():
             print("Topology.Centroid - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if Topology.IsInstance(topology, "Aperture"):
-            return Aperture.Topology(topology).Centroid()
-        return topology.Centroid()
+            return Aperture.Topology(topology).Centroid() # Hook to Core
+        return topology.Centroid() # Hook to Core
 
     @staticmethod
     def ClusterByKeys(topologies, *keys, silent=False):
@@ -6140,6 +6140,7 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Face import Face
 
         vertices = []
@@ -6164,8 +6165,8 @@ class Topology():
             topEdges = Topology.Edges(topology)
         for anEdge in topEdges:
             e = []
-            sv = anEdge.StartVertex()
-            ev = anEdge.EndVertex()
+            sv = Edge.StartVertex(anEdge)
+            ev = Edge.EndVertex(anEdge)
             try:
                 svIndex = vertices.index(Vertex.Coordinates(sv, mantissa=mantissa))
             except:

@@ -427,8 +427,8 @@ class Edge():
         if not Topology.IsInstance(edge, "Edge"):
             print("Edge.Direction - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
-        ev = edge.EndVertex()
-        sv = edge.StartVertex()
+        sv = Edge.StartVertex(edge)
+        ev = Edge.EndVertex(edge)
         x = Vertex.X(ev, mantissa=mantissa) - Vertex.X(sv, mantissa=mantissa)
         y = Vertex.Y(ev, mantissa=mantissa) - Vertex.Y(sv, mantissa=mantissa)
         z = Vertex.Z(ev, mantissa=mantissa) - Vertex.Z(sv, mantissa=mantissa)
@@ -461,7 +461,7 @@ class Edge():
             return None
         vert = None
         try:
-            vert = edge.EndVertex()
+            vert = edge.EndVertex() # Hook to core
         except:
             vert = None
         return vert
@@ -1247,11 +1247,11 @@ class Edge():
             print("Edge.Normalize - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         if not useEndVertex:
-            sv = edge.StartVertex()
-            ev = Edge.VertexByDistance(edge, 1.0, edge.StartVertex())
+            sv = Edge.StartVertex(edge)
+            ev = Edge.VertexByDistance(edge, 1.0, Edge.StartVertex(edge))
         else:
-            sv = Edge.VertexByDistance(edge, 1.0, edge.StartVertex())
-            ev = edge.EndVertex()
+            sv = Edge.VertexByDistance(edge, 1.0, Edge.StartVertex(edge))
+            ev = Edge.EndVertexedge()
         return Edge.ByVertices([sv, ev], tolerance=tolerance)
 
     @staticmethod
@@ -1316,7 +1316,7 @@ class Edge():
         if not Topology.IsInstance(edge, "Edge"):
             print("Edge.Reverse - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
-        return Edge.ByVertices([edge.EndVertex(), edge.StartVertex()], tolerance=tolerance)
+        return Edge.ByVertices([Edge.EndVertex(edge), Edge.StartVertex(edge)], tolerance=tolerance)
     
     @staticmethod
     def SetLength(edge , length: float = 1.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001):
@@ -1375,7 +1375,7 @@ class Edge():
             return None
         vert = None
         try:
-            vert = edge.StartVertex()
+            vert = edge.StartVertex() # Hook to core
         except:
             vert = None
         return vert
@@ -1534,12 +1534,12 @@ class Edge():
             print("Edge.TrimByEdge2D - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         if not Topology.IsInstance(origin, "Vertex"):
-            origin = edge.StartVertex()
+            origin = Edge.StartVertex(edge)
         if not Topology.IsInstance(origin, "Vertex"):
             print("Edge.TrimByEdge2D - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
-        sv = edge.StartVertex()
-        ev = edge.EndVertex()
+        sv = Edge.StartVertex(edge)
+        ev = Edge.EndVertex(edge)
         vx = Vertex.X(ev, mantissa=mantissa) - Vertex.X(sv, mantissa=mantissa)
         vy = Vertex.Y(ev, mantissa=mantissa) - Vertex.Y(sv, mantissa=mantissa)
         vz = Vertex.Z(ev, mantissa=mantissa) - Vertex.Z(sv, mantissa=mantissa)
@@ -1572,9 +1572,9 @@ class Edge():
             return None
         vertex = None
         if u == 0:
-            vertex = edge.StartVertex()
+            vertex = Edge.StartVertex(edge)
         elif u == 1:
-            vertex = edge.EndVertex()
+            vertex = Edge.EndVertex(edge)
         else:
             dir = Edge.Direction(edge)
             edge_length = Edge.Length(edge)

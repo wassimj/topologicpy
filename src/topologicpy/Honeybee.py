@@ -255,7 +255,7 @@ class Honeybee:
 
         def cellFloor(cell):
             faces = Topology.Faces(cell)
-            c = [x.CenterOfMass().Z() for x in faces]
+            c = [Vertex.Z(Topology.CenterOfMass(x)) for x in faces]
             return round(min(c),2)
 
         def floorLevels(cells, min_difference):

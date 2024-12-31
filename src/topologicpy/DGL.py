@@ -1633,6 +1633,7 @@ class DGL:
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Graph import Graph
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
@@ -1661,8 +1662,8 @@ class DGL:
 
         for i in range(len(edges)):
             e = edges[i]
-            sv = e.StartVertex()
-            ev = e.EndVertex()
+            sv = Edge.StartVertex(e)
+            ev = Edge.EndVertex(e)
             sn = nodes[Vertex.Index(vertex=sv, vertices=vertices, strict=False, tolerance=tolerance)]
             en = nodes[Vertex.Index(vertex=ev, vertices=vertices, strict=False, tolerance=tolerance)]
             if (([sn,en] in graph_edges) == False) and (([en,sn] in graph_edges) == False):

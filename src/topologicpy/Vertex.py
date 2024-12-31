@@ -1728,11 +1728,13 @@ class Vertex():
             The X coordinate of the input vertex.
 
         """
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(vertex, "Vertex"):
-            return None
-        return round(vertex.X(), mantissa)
+        try:
+            return round(vertex.X(), mantissa) # Hook to Core
+        except:
+            try:
+                return round(vertex.x(), mantissa) # Hook to Core
+            except:
+                return None
 
     @staticmethod
     def Y(vertex, mantissa: int = 6) -> float:
@@ -1752,11 +1754,13 @@ class Vertex():
             The Y coordinate of the input vertex.
 
         """
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(vertex, "Vertex"):
-            return None
-        return round(vertex.Y(), mantissa)
+        try:
+            return round(vertex.Y(), mantissa) # Hook to Core
+        except:
+            try:
+                return round(vertex.y(), mantissa) # Hook to Core
+            except:
+                return None
 
     @staticmethod
     def Z(vertex, mantissa: int = 6) -> float:
@@ -1776,9 +1780,11 @@ class Vertex():
             The Z coordinate of the input vertex.
 
         """
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(vertex, "Vertex"):
-            return None
-        return round(vertex.Z(), mantissa)
+        try:
+            return round(vertex.Z(), mantissa) # Hook to Core
+        except:
+            try:
+                return round(vertex.z(), mantissa) # Hook to Core
+            except:
+                return None
            

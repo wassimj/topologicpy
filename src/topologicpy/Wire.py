@@ -982,9 +982,9 @@ class Wire():
         sides = int(math.floor(sides))
         for i in range(sides+1):
             angle = fromAngle + math.radians(angleRange/sides)*i
-            x = math.sin(angle)*radius + origin.X()
-            y = math.cos(angle)*radius + origin.Y()
-            z = origin.Z()
+            x = math.sin(angle)*radius + Vertex.X(origin)
+            y = math.cos(angle)*radius + Vertex.Y(origin)
+            z = Vertex.Z(origin)
             xList.append(x)
             yList.append(y)
             baseV.append(Vertex.ByCoordinates(x, y, z))
@@ -1663,7 +1663,7 @@ class Wire():
 
         graph = []
         for anEdge in tEdges:
-            graph.append([vIndex(anEdge.StartVertex(), tVertices, tolerance), vIndex(anEdge.EndVertex(), tVertices, tolerance)]) # Hook to Core
+            graph.append([vIndex(Edge.StartVertex(anEdge), tVertices, tolerance), vIndex(Edge.EndVertex(anEdge), tVertices, tolerance)]) # Hook to Core
 
         cycles = []
         resultingCycles = main(graph, cycles, maxVertices)
@@ -1952,9 +1952,9 @@ class Wire():
         sides = int(math.floor(sides))
         for i in range(sides+1):
             angle = fromAngle + math.radians(angleRange/sides)*i
-            x = math.sin(angle)*a + origin.X()
-            y = math.cos(angle)*b + origin.Y()
-            z = origin.Z()
+            x = math.sin(angle)*a + Vertex.X(origin)
+            y = math.cos(angle)*b + Vertex.Y(origin)
+            z = Vertex.Z(origin)
             xList.append(x)
             yList.append(y)
             baseV.append(Vertex.ByCoordinates(x, y, z))
@@ -1968,8 +1968,8 @@ class Wire():
             baseWire = Topology.Translate(baseWire, a, b, 0)
         baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         # Create a Cluster of the two foci
-        v1 = Vertex.ByCoordinates(c+origin.X(), 0+origin.Y(), 0)
-        v2 = Vertex.ByCoordinates(-c+origin.X(), 0+origin.Y(), 0)
+        v1 = Vertex.ByCoordinates(c+Vertex.X(origin), 0+Vertex.Y(origin), 0)
+        v2 = Vertex.ByCoordinates(-c+Vertex.X(origin), 0+Vertex.Y(origin), 0)
         foci = Cluster.ByTopologies([v1, v2])
         if placement.lower() == "lowerleft":
             foci = Topology.Translate(foci, a, b, 0)
@@ -2483,18 +2483,18 @@ class Wire():
             return False
 
         def angleBetweenEdges(e1, e2, tolerance=0.0001):
-            a = e1.EndVertex().X() - e1.StartVertex().X()
-            b = e1.EndVertex().Y() - e1.StartVertex().Y()
-            c = e1.EndVertex().Z() - e1.StartVertex().Z()
-            d = Vertex.Distance(e1.EndVertex(), e2.StartVertex())
+            a = Vertex.X(Edge.EndVertex(e1)) - Vertex.X(Edge.StartVertex(e1))
+            b = Vertex.Y(Edge.EndVertex(e1)) - Vertex.Y(Edge.StartVertex(e1))
+            c = Vertex.Z(Edge.EndVertex(e1)) - Vertex.Z(Edge.StartVertex(e1))
+            d = Vertex.Distance(Edge.EndVertex(e1), Edge.StartVertex(e2))
             if d <= tolerance:
-                d = e2.StartVertex().X() - e2.EndVertex().X()
-                e = e2.StartVertex().Y() - e2.EndVertex().Y()
-                f = e2.StartVertex().Z() - e2.EndVertex().Z()
+                d = Vertex.X(Edge.StartVertex(e2)) - Vertex.X(Edge.EndVertex(e2))
+                e = Vertex.Y(Edge.StartVertex(e2)) - Vertex.Y(Edge.EndVertex(e2))
+                f = Vertex.Z(Edge.StartVertex(e2)) - Vertex.Z(Edge.EndVertex(e2))
             else:
-                d = e2.EndVertex().X() - e2.StartVertex().X()
-                e = e2.EndVertex().Y() - e2.StartVertex().Y()
-                f = e2.EndVertex().Z() - e2.StartVertex().Z()
+                d = Vertex.X(Edge.EndVertex(e2)) - Vertex.X(Edge.StartVertex(e2))
+                e = Vertex.Y(Edge.EndVertex(e2)) - Vertex.Y(Edge.StartVertex(e2))
+                f = Vertex.Z(Edge.EndVertex(e2)) - Vertex.Z(Edge.StartVertex(e2))
             dotProduct = a*d + b*e + c*f
             modOfVector1 = math.sqrt( a*a + b*b + c*c)*math.sqrt(d*d + e*e + f*f) 
             angle = dotProduct/modOfVector1
@@ -2537,7 +2537,6 @@ class Wire():
         if isCyclicallyEquivalent(repA, repB[::-1], tolerance, angTolerance):
             return True
         return False
-
 
     @staticmethod
     def IShape(origin=None,
@@ -3318,7 +3317,7 @@ class Wire():
             return None
         if not direction:
             direction = -1*Face.Normal(face, outputType="xyz", mantissa=mantissa)
-        large_face = Topology.Scale(face, face.CenterOfMass(), 500, 500, 500)
+        large_face = Topology.Scale(face, Topology.CenterOfMass(face), 500, 500, 500)
         edges = []
         _ = wire.Edges(None, edges)
         projected_edges = []
@@ -3328,8 +3327,8 @@ class Wire():
                 for edge in edges:
                     if edge:
                         if (Topology.Type(edge) == Topology.TypeID("Edge")):
-                            sv = edge.StartVertex()
-                            ev = edge.EndVertex()
+                            sv = Edge.StartVertex(edge)
+                            ev = Edge.EndVertex(edge)
 
                             psv = Vertex.Project(vertex=sv, face=large_face, direction=direction)
                             pev = Vertex.Project(vertex=ev, face=large_face, direction=direction)
@@ -3404,10 +3403,10 @@ class Wire():
             xOffset = -width*0.5
             yOffset = -length*0.5
 
-        vb1 = Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())
-        vb2 = Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())
-        vb3 = Vertex.ByCoordinates(origin.X()+width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
-        vb4 = Vertex.ByCoordinates(origin.X()-width*0.5+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
+        vb1 = Vertex.ByCoordinates(Vertex.X(origin)-width*0.5+xOffset,Vertex.Y(origin)-length*0.5+yOffset,Vertex.Z(origin))
+        vb2 = Vertex.ByCoordinates(Vertex.X(origin)+width*0.5+xOffset,Vertex.Y(origin)-length*0.5+yOffset,Vertex.Z(origin))
+        vb3 = Vertex.ByCoordinates(Vertex.X(origin)+width*0.5+xOffset,Vertex.Y(origin)+length*0.5+yOffset,Vertex.Z(origin))
+        vb4 = Vertex.ByCoordinates(Vertex.X(origin)-width*0.5+xOffset,Vertex.Y(origin)+length*0.5+yOffset,Vertex.Z(origin))
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], True)
         if direction != [0, 0, 1]:
@@ -3629,6 +3628,88 @@ class Wire():
             return wire
     
     @staticmethod
+    def Representation(wire, normalize: bool = True, rotate: bool = True, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Returns a normalized representation of a closed wire with alternating edge lengths and interior angles.
+
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire.
+        normalize : bool , optional
+            If set to True, the lengths in the list are normalized so that the shortest edge has a length of 1. the default is True.
+        rotate : bool , optional
+            If set to True, the list is rotated such that the shortest edge appears first.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The representation list.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        import math
+
+        def angleBetweenEdges(e1, e2, tolerance=0.0001):
+            a = Vertex.X(Edge.EndVertex(e1)) - Vertex.X(Edge.StartVertex(e1))
+            b = Vertex.Y(Edge.EndVertex(e1)) - Vertex.Y(Edge.StartVertex(e1))
+            c = Vertex.Z(Edge.EndVertex(e1)) - Vertex.Z(Edge.StartVertex(e1))
+            d = Vertex.Distance(Edge.EndVertex(e1), Edge.StartVertex(e2))
+            if d <= tolerance:
+                d = Vertex.X(Edge.StartVertex(e2)) - Vertex.X(Edge.EndVertex(e2))
+                e = Vertex.Y(Edge.StartVertex(e2)) - Vertex.Y(Edge.EndVertex(e2))
+                f = Vertex.Z(Edge.StartVertex(e2)) - Vertex.Z(Edge.EndVertex(e2))
+            else:
+                d = Vertex.X(Edge.EndVertex(e2)) -  Vertex.X(Edge.StartVertex(e2))
+                e = Vertex.Y(Edge.EndVertex(e2)) - Vertex.Y(Edge.StartVertex(e2))
+                f = Vertex.Z(Edge.EndVertex(e2)) - Vertex.Z(Edge.StartVertex(e2))
+            dotProduct = a*d + b*e + c*f
+            modOfVector1 = math.sqrt( a*a + b*b + c*c)*math.sqrt(d*d + e*e + f*f) 
+            angle = dotProduct/modOfVector1
+            angleInDegrees = math.degrees(math.acos(angle))
+            return angleInDegrees
+
+        def getInteriorAngles(edges, tolerance=0.0001):
+            angles = []
+            for i in range(len(edges)-1):
+                e1 = edges[i]
+                e2 = edges[i+1]
+                angles.append(angleBetweenEdges(e1, e2, tolerance=tolerance))
+            return angles
+
+        def rotate_list_to_minimum(nums):
+            if not nums:
+                return nums  # Return the empty list as-is
+
+            min_index = nums.index(min(nums))
+            return nums[min_index:] + nums[:min_index]
+        
+        def getRep(edges, normalize=True, rotate=True, tolerance=0.0001):
+            angles = getInteriorAngles(edges, tolerance=tolerance)
+            lengths = []
+            normalizedLengths = []
+            for anEdge in edges:
+                lengths.append(Edge.Length(anEdge))
+            if normalize == True:
+                minLength = min(lengths)
+            else:
+                minLength = 1
+            for aLength in lengths:
+                normalizedLengths.append(aLength/minLength)
+            if rotate == True:
+                return rotate_list_to_minimum([x for x in itertools.chain(*itertools.zip_longest(normalizedLengths, angles)) if x is not None])
+            return [x for x in itertools.chain(*itertools.zip_longest(normalizedLengths, angles)) if x is not None]
+
+        edges = Topology.Edges(wire)
+        return_list = [round(x, mantissa) for x in getRep(edges, normalize=normalize, rotate=rotate, tolerance=tolerance)]
+        return return_list
+    
+    @staticmethod
     def Reverse(wire, transferDictionaries = False, tolerance: float = 0.0001):
         """
         Creates a wire that has the reverse direction of the input wire.
@@ -3752,7 +3833,7 @@ class Wire():
             eb_vertices = Topology.Vertices(eb_wire)
             if normal[2] > 0:
                 eb_vertices = list(reversed(eb_vertices))
-            eb_polygon_coordinates = [(v.X(), v.Y(), v.Z()) for v in eb_vertices]
+            eb_polygon_coordinates = [(Vertex.X(v), Vertex.Y(v), Vertex.Z(v)) for v in eb_vertices]
             eb_polygonxy = [(x[0], x[1]) for x in eb_polygon_coordinates]
 
             ib_polygonsxy = []
@@ -3761,7 +3842,7 @@ class Wire():
                 ib_vertices = Topology.Vertices(ib_wire)
                 if normal[2] > 0:
                     ib_vertices = list(reversed(ib_vertices))
-                ib_polygon_coordinates = [(v.X(), v.Y(), v.Z()) for v in ib_vertices]
+                ib_polygon_coordinates = [(Vertex.X(v), Vertex.Y(v), Vertex.Z(v)) for v in ib_vertices]
                 ib_polygonxy = [(x[0], x[1]) for x in ib_polygon_coordinates]
                 ib_polygonsxy.append(ib_polygonxy)
                 zero_coordinates += ib_polygon_coordinates
@@ -3828,12 +3909,12 @@ class Wire():
 
         def perpendicular_distance(point, line_start, line_end):
             # Calculate the perpendicular distance from a point to a line segment
-            x0 = point.X()
-            y0 = point.Y()
-            x1 = line_start.X()
-            y1 = line_start.Y()
-            x2 = line_end.X()
-            y2 = line_end.Y()
+            x0 = Vertex.X(point)
+            y0 = Vertex.Y(point)
+            x1 = Vertex.X(line_start)
+            y1 = Vertex.Y(line_start)
+            x2 = Vertex.X(line_end)
+            y2 = Vertex.Y(line_end)
 
             numerator = abs((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1)
             denominator = Vertex.Distance(line_start, line_end)
@@ -3880,7 +3961,7 @@ class Wire():
             # Calculate the effective area for each point except the first and last
             def effective_area(p1, p2, p3):
                 # Triangle area formed by p1, p2, and p3
-                return 0.5 * abs(p1.X() * (p2.Y() - p3.Y()) + p2.X() * (p3.Y() - p1.Y()) + p3.X() * (p1.Y() - p2.Y()))
+                return 0.5 * abs(Vertex.X(p1) * (Vertex.Y(p2) - Vertex.Y(p3)) + Vertex.X(p2) * (Vertex.Y(p3) - Vertex.Y(p1)) + Vertex.X(p3) * (Vertex.Y(p1) - Vertex.Y(p2)))
 
             # Keep track of effective areas
             areas = [None]  # First point has no area
@@ -4358,9 +4439,9 @@ class Wire():
             else:
                 radius = radiusB
             angle = math.radians(360/sides)*i
-            x = math.sin(angle)*radius + origin.X()
-            y = math.cos(angle)*radius + origin.Y()
-            z = origin.Z()
+            x = math.sin(angle)*radius + Vertex.X(origin)
+            y = math.cos(angle)*radius + Vertex.Y(origin)
+            z = Vertex.Z(origin)
             xList.append(x)
             yList.append(y)
             baseV.append([x, y])
@@ -4368,29 +4449,29 @@ class Wire():
         if placement.lower() == "lowerleft":
             xmin = min(xList)
             ymin = min(yList)
-            xOffset = origin.X() - xmin
-            yOffset = origin.Y() - ymin
+            xOffset = Vertex.X(origin) - xmin
+            yOffset = Vertex.Y(origin) - ymin
         elif placement.lower() == "upperleft":
             xmin = min(xList)
             ymax = max(yList)
-            xOffset = origin.X() - xmin
-            yOffset = origin.Y() - ymax
+            xOffset = Vertex.X(origin) - xmin
+            yOffset = Vertex.Y(origin) - ymax
         elif placement.lower() == "lowerright":
             xmax = max(xList)
             ymin = min(yList)
-            xOffset = origin.X() - xmax
-            yOffset = origin.Y() - ymin
+            xOffset = Vertex.X(origin) - xmax
+            yOffset = Vertex.Y(origin) - ymin
         elif placement.lower() == "upperright":
             xmax = max(xList)
             ymax = max(yList)
-            xOffset = origin.X() - xmax
-            yOffset = origin.Y() - ymax
+            xOffset = Vertex.X(origin) - xmax
+            yOffset = Vertex.Y(origin) - ymax
         else:
             xOffset = 0
             yOffset = 0
         tranBase = []
         for coord in baseV:
-            tranBase.append(Vertex.ByCoordinates(coord[0]+xOffset, coord[1]+yOffset, origin.Z()))
+            tranBase.append(Vertex.ByCoordinates(coord[0]+xOffset, coord[1]+yOffset, Vertex.Z(origin)))
         
         baseWire = Wire.ByVertices(tranBase, True)
         baseWire = Wire.Reverse(baseWire)
@@ -4501,10 +4582,10 @@ class Wire():
             xOffset = -(max((widthA*0.5 + offsetA), (widthB*0.5 + offsetB)))
             yOffset = -length*0.5
 
-        vb1 = Vertex.ByCoordinates(origin.X()-widthA*0.5+offsetA+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())
-        vb2 = Vertex.ByCoordinates(origin.X()+widthA*0.5+offsetA+xOffset,origin.Y()-length*0.5+yOffset,origin.Z())
-        vb3 = Vertex.ByCoordinates(origin.X()+widthB*0.5+offsetB+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
-        vb4 = Vertex.ByCoordinates(origin.X()-widthB*0.5++offsetB+xOffset,origin.Y()+length*0.5+yOffset,origin.Z())
+        vb1 = Vertex.ByCoordinates(Vertex.X(origin)-widthA*0.5+offsetA+xOffset,Vertex.Y(origin)-length*0.5+yOffset,Vertex.Z(origin))
+        vb2 = Vertex.ByCoordinates(Vertex.X(origin)+widthA*0.5+offsetA+xOffset,Vertex.Y(origin)-length*0.5+yOffset,Vertex.Z(origin))
+        vb3 = Vertex.ByCoordinates(Vertex.X(origin)+widthB*0.5+offsetB+xOffset,Vertex.Y(origin)+length*0.5+yOffset,Vertex.Z(origin))
+        vb4 = Vertex.ByCoordinates(Vertex.X(origin)-widthB*0.5++offsetB+xOffset,Vertex.Y(origin)+length*0.5+yOffset,Vertex.Z(origin))
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], True)
         if direction != [0, 0, 1]:

@@ -348,8 +348,8 @@ class Cell():
         bottomEdges = Topology.Edges(bottomFace)
         for bottomEdge in bottomEdges:
             topEdge = Topology.Translate(bottomEdge, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
-            sideEdge1 = Edge.ByVertices([bottomEdge.StartVertex(), topEdge.StartVertex()], tolerance=tolerance, silent=True)
-            sideEdge2 = Edge.ByVertices([bottomEdge.EndVertex(), topEdge.EndVertex()], tolerance=tolerance, silent=True)
+            sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)], tolerance=tolerance, silent=True)
+            sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)], tolerance=tolerance, silent=True)
             cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]), tolerance=tolerance)
             cellFaces.append(Face.ByWire(cellWire, tolerance=tolerance))
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
@@ -485,23 +485,23 @@ class Cell():
                     e3 = None
                     e4 = None
                     try:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=True)
+                        e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=True)
                     except:
                         try:
-                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=True)
+                            e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=True)
                             faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4], tolerance=tolerance), tolerance=tolerance))
                         except:
                             pass
                     try:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=True)
+                        e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=True)
                     except:
                         try:
-                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=True)
+                            e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=True)
                             faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3], tolerance=tolerance), tolerance=tolerance))
                         except:
                             pass
                     if e3 and e4:
-                        e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()], tolerance=tolerance, silent=True)
+                        e5 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=True)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
                         faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
             else:
@@ -511,17 +511,17 @@ class Cell():
                     e3 = None
                     e4 = None
                     try:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=True)
+                        e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=True)
                     except:
                         try:
-                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=True)
+                            e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=True)
                         except:
                             pass
                     try:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=True)
+                        e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=True)
                     except:
                         try:
-                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=True)
+                            e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=True)
                         except:
                             pass
                     if e3 and e4:
@@ -764,8 +764,8 @@ class Cell():
             yOffset = max(baseRadius, topRadius)
             zOffset = 0
 
-        baseZ = origin.Z() + zOffset
-        topZ = origin.Z() + zOffset + height
+        baseZ = Vertex.Z(origin) + zOffset
+        topZ = Vertex.Z(origin) + zOffset + height
         baseV = []
         topV = []
         for i in range(uSides):
@@ -913,7 +913,7 @@ class Cell():
             baseY = Vertex.Y(origin, mantissa=mantissa) + yOffset
             size = radius*3
             for i in range(1, vSides):
-                baseZ = origin.Z() + zOffset + float(height)/float(vSides)*i
+                baseZ = Vertex.Z(origin) + zOffset + float(height)/float(vSides)*i
                 tool_origin = Vertex.ByCoordinates(baseX, baseY, baseZ)
                 cutting_planes.append(Face.ByWire(Wire.Rectangle(origin=tool_origin, width=size, length=size), tolerance=tolerance))
             cutting_planes_cluster = Cluster.ByTopologies(cutting_planes)
@@ -950,6 +950,7 @@ class Cell():
             8. "inclinedApertures": list of inclined apertures
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Vector import Vector
         from topologicpy.Aperture import Aperture
@@ -986,7 +987,7 @@ class Cell():
         faces = Cell.Faces(cell)
         zList = []
         for f in faces:
-            zList.append(f.Centroid().Z())
+            zList.append(Vertex.Z(Topology.Centroid(f)))
         zMin = min(zList)
         zMax = max(zList)
         up = [0, 0, 1]
@@ -997,14 +998,14 @@ class Cell():
                 verticalFaces.append(aFace)
                 verticalApertures += getApertures(aFace)
             elif aCode == 1:
-                if abs(aFace.Centroid().Z() - zMin) < tolerance:
+                if abs(Vertex.Z(Topology.Centroid(aFace)) - zMin) < tolerance:
                     bottomHorizontalFaces.append(aFace)
                     bottomHorizontalApertures += getApertures(aFace)
                 else:
                     topHorizontalFaces.append(aFace)
                     topHorizontalApertures += getApertures(aFace)
             elif aCode == 2:
-                if abs(aFace.Centroid().Z() - zMax) < tolerance:
+                if abs(Vertex.Z(Topology.Centroid(aFace)) - zMax) < tolerance:
                     topHorizontalFaces.append(aFace)
                     topHorizontalApertures += getApertures(aFace)
                 else:
@@ -1344,8 +1345,8 @@ class Cell():
         elif placement.lower() == "lowerleft":
             xOffset = max(baseRadius, topRadius)
             yOffset = max(baseRadius, topRadius)
-        baseZ = w_origin.Z() + zOffset
-        topZ = w_origin.Z() + zOffset + height
+        baseZ = Vertex.Z(w_origin) + zOffset
+        topZ = Vertex.Z(w_origin) + zOffset + height
         for i in range(sides):
             angle = math.radians(360/sides)*i
             if baseRadius > 0:
@@ -1789,8 +1790,8 @@ class Cell():
         topV = []
 
         if Topology.IsInstance(profile, "Wire"):
-            baseWire = Topology.Translate(profile, 0 , 0, sv.Z())
-            topWire = Topology.Translate(profile, 0 , 0, sv.Z()+dist)
+            baseWire = Topology.Translate(profile, 0 , 0, Vertex.Z(sv))
+            topWire = Topology.Translate(profile, 0 , 0, Vertex.Z(sv)+dist)
         else:
             for i in range(sides):
                 angle = math.radians(360/sides)*i
@@ -1813,13 +1814,13 @@ class Cell():
         pipe = Topology.Rotate(pipe, origin=sv, axis=[0, 0, 1], angle=phi)
         zzz = Vertex.ByCoordinates(0, 0, 0)
         if endcapA:
-            origin = edge.StartVertex()
+            origin = Edge.StartVertex(edge)
             x1 = Vertex.X(origin, mantissa=mantissa)
             y1 = Vertex.Y(origin, mantissa=mantissa)
             z1 = Vertex.Z(origin, mantissa=mantissa)
-            x2 = Vertex.X(edge.EndVertex(), mantissa=mantissa)
-            y2 = Vertex.Y(edge.EndVertex(), mantissa=mantissa)
-            z2 = Vertex.Z(edge.EndVertex(), mantissa=mantissa)
+            x2 = Vertex.X(Edge.EndVertex(edge), mantissa=mantissa)
+            y2 = Vertex.Y(Edge.EndVertex(edge), mantissa=mantissa)
+            z2 = Vertex.Z(Edge.EndVertex(edge), mantissa=mantissa)
             dx = x2 - x1
             dy = y2 - y1
             dz = z2 - z1    
@@ -1834,13 +1835,13 @@ class Cell():
             endcapA = Topology.Rotate(endcapA, origin=zzz, axis=[0, 0, 1], angle=phi+180)
             endcapA = Topology.Translate(endcapA, Vertex.X(origin, mantissa=mantissa), Vertex.Y(origin, mantissa=mantissa), Vertex.Z(origin, mantissa=mantissa))
         if endcapB:
-            origin = edge.EndVertex()
+            origin = Edge.EndVertex(edge)
             x1 = Vertex.X(origin, mantissa=mantissa)
             y1 = Vertex.Y(origin, mantissa=mantissa)
             z1 = Vertex.Z(origin, mantissa=mantissa)
-            x2 = Vertex.X(edge.StartVertex(), mantissa=mantissa)
-            y2 = Vertex.Y(edge.StartVertex(), mantissa=mantissa)
-            z2 = Vertex.Z(edge.StartVertex(), mantissa=mantissa)
+            x2 = Vertex.X(Edge.StartVertex(edge), mantissa=mantissa)
+            y2 = Vertex.Y(Edge.StartVertex(edge), mantissa=mantissa)
+            z2 = Vertex.Z(Edge.StartVertex(edge), mantissa=mantissa)
             dx = x2 - x1
             dy = y2 - y1
             dz = z2 - z1    

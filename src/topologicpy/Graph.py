@@ -751,7 +751,7 @@ class Graph:
         return paths
 
     @staticmethod
-    def AreIsomorphic(graphA, graphB, maxIterations=10, silent=False):
+    def IsIsomorphic(graphA, graphB, maxIterations=10, silent=False):
         """
         Tests if the two input graphs are isomorphic according to the Weisfeiler Lehman graph isomorphism test. See https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test
         
@@ -827,19 +827,19 @@ class Graph:
         
         if not Topology.IsInstance(graphA, "Graph") and not Topology.IsInstance(graphB, "Graph"):
             if not silent:
-                print("Graph.AreIsomorphic - Error: The input graph parameters are not valid graphs. Returning None.")
+                print("Graph.IsIsomorphic - Error: The input graph parameters are not valid graphs. Returning None.")
             return None
         if not Topology.IsInstance(graphA, "Graph"):
             if not silent:
-                print("Graph.AreIsomorphic - Error: The input graphA parameter is not a valid graph. Returning None.")
+                print("Graph.IsIsomorphic - Error: The input graphA parameter is not a valid graph. Returning None.")
             return None
         if not Topology.IsInstance(graphB, "Graph"):
             if not silent:
-                print("Graph.AreIsomorphic - Error: The input graphB parameter is not a valid graph. Returning None.")
+                print("Graph.IsIsomorphic - Error: The input graphB parameter is not a valid graph. Returning None.")
             return None
         if maxIterations <= 0:
             if not silent:
-                print("Graph.AreIsomorphic - Error: The input maxIterations parameter is not within a valid range. Returning None.")
+                print("Graph.IsIsomorphic - Error: The input maxIterations parameter is not within a valid range. Returning None.")
             return None
         
         g1 = Graph.AdjacencyDictionary(graphA)
@@ -4517,37 +4517,39 @@ class Graph:
         import warnings
         
         try:
-            import community as community_louvain
+            import igraph as ig
         except:
-            print("Graph.Community - Installing required pyhon-louvain library.")
+            print("Graph.Community - Installing required pyhon-igraph library.")
             try:
-                os.system("pip install python-louvain")
+                os.system("pip install python-igraph")
             except:
-                os.system("pip install python-louvain --user")
+                os.system("pip install python-igraph --user")
             try:
-                import community as community_louvain
-                print("Graph.Community - python-louvain library installed correctly.")
+                import igraph as ig
+                print("Graph.Community - python-igraph library installed correctly.")
             except:
-                warnings.warn("Graph.Community - Error: Could not import python-louvain. Please install manually.")
+                warnings.warn("Graph.Community - Error: Could not import python-igraph. Please install manually.")
         
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
                 print("Graph.Community - Error: The input graph parameter is not a valid topologic graph. Returning None")
             return None
         
+        mesh_data = Graph.MeshData(graph)
+        # Create an igraph graph from the edge list
+        ig_graph = ig.Graph(edges=mesh_data['edges'])
+
+        # Detect communities using Louvain method
+        communities = ig_graph.community_multilevel()
+
+        # Get the list of communities sorted same as vertices
+        community_list = communities.membership
         vertices = Graph.Vertices(graph)
-        nx_graph = Graph.NetworkXGraph(graph, mantissa=mantissa, tolerance=tolerance)
-        # Apply the Louvain algorithm
-        partition = community_louvain.best_partition(nx_graph)
-        communities = []
-        # Add the partition value to each node's properties
-        for node, community_id in partition.items():
-            nx_graph.nodes[node][key] = community_id
-            d = Topology.Dictionary(vertices[node])
-            d = Dictionary.SetValueAtKey(d, key, community_id)
-            vertices[node] = Topology.SetDictionary(vertices[node], d)
-            communities.append(community_id)
-        return communities
+        for i, v in enumerate(vertices):
+            d = Topology.Dictionary(v)
+            d = Dictionary.SetValueAtKey(d, key, community_list[i])
+            v = Topology.SetDictionary(v, d)
+        return community_list
 
     @staticmethod
     def Connect(graph, verticesA, verticesB, tolerance=0.0001):
@@ -8102,6 +8104,7 @@ class Graph:
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
 
@@ -8116,8 +8119,8 @@ class Graph:
         m_edges = []
         e_dicts = []
         for g_edge in g_edges:
-            sv = g_edge.StartVertex()
-            ev = g_edge.EndVertex()
+            sv = Edge.StartVertex(g_edge)
+            ev = Edge.EndVertex(g_edge)
             si = Vertex.Index(sv, g_vertices, tolerance=tolerance)
             ei = Vertex.Index(ev, g_vertices, tolerance=tolerance)
             if (not si == None) and (not ei == None):

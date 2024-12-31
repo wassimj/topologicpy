@@ -350,10 +350,10 @@ class CellComplex():
                 e3 = None
                 e4 = None
                 try:
-                    e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance, silent=True)
+                    e3 = Edge.ByStartVertexEndVertex(Edge.StartVertex(e1), Edge.StartVertex(e2), tolerance=tolerance, silent=True)
                 except:
                     try:
-                        e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance, silent=True)
+                        e4 = Edge.ByStartVertexEndVertex(Edge.EndVertex(e1), Edge.EndVertex(e2), tolerance=tolerance, silent=True)
                         f = Face.ByExternalBoundary(Wire.ByEdges([e1, e2, e4], tolerance=tolerance))
                         if triangulate == True:
                             if len(Topology.Vertices(face)) > 3:
@@ -366,10 +366,10 @@ class CellComplex():
                     except:
                         pass
                 try:
-                    e4 = Edge.ByStartVertexEndVertex(e1.EndVertex(), e2.EndVertex(), tolerance=tolerance, silent=True)
+                    e4 = Edge.ByStartVertexEndVertex(Edge.EndVertex(e1), Edge.EndVertex(e2), tolerance=tolerance, silent=True)
                 except:
                     try:
-                        e3 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.StartVertex(), tolerance=tolerance, silent=True)
+                        e3 = Edge.ByStartVertexEndVertex(Edge.StartVertex(e1), Edge.StartVertex(e2), tolerance=tolerance, silent=True)
                         f = Face.ByWire(Wire.ByEdges([e1, e2, e3], tolerance=tolerance), tolerance=tolerance)
                         if triangulate == True:
                             if len(Topology.Vertices(face)) > 3:
@@ -383,7 +383,7 @@ class CellComplex():
                         pass
                 if e3 and e4:
                     if triangulate == True:
-                        e5 = Edge.ByStartVertexEndVertex(e1.StartVertex(), e2.EndVertex(), tolerance=tolerance, silent=True)
+                        e5 = Edge.ByStartVertexEndVertex(Edge.StartVertex(e1), Edge.EndVertex(e2), tolerance=tolerance, silent=True)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
                         faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
                     else:
@@ -485,6 +485,7 @@ class CellComplex():
             15. "internalInclinedApertures": list of internal inclined apertures
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Vector import Vector
         from topologicpy.Aperture import Aperture
@@ -527,7 +528,7 @@ class CellComplex():
         faces = CellComplex.Faces(cellComplex)
         zList = []
         for f in faces:
-            zList.append(f.Centroid().Z())
+            zList.append(Vertex.Z(Topology.Centroid(f)))
         zMin = min(zList)
         zMax = max(zList)
         up = [0, 0, 1]
@@ -545,7 +546,7 @@ class CellComplex():
                     internalVerticalApertures += getApertures(aFace)
             elif aCode == 1:
                 if n == 1:
-                    if abs(aFace.Centroid().Z() - zMin) < tolerance:
+                    if abs(Vertex.Z(Topology.Centroid(aFace)) - zMin) < tolerance:
                         bottomHorizontalFaces.append(aFace)
                         bottomHorizontalApertures += getApertures(aFace)
                     else:
@@ -556,7 +557,7 @@ class CellComplex():
                     internalHorizontalApertures += getApertures(aFace)
             elif aCode == 2:
                 if n == 1:
-                    if abs(aFace.Centroid().Z() - zMax) < tolerance:
+                    if abs(Vertex.Z(Topology.Centroid(aFace)) - zMax) < tolerance:
                         topHorizontalFaces.append(aFace)
                         topHorizontalApertures += getApertures(aFace)
                     else:

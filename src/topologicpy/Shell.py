@@ -432,17 +432,17 @@ class Shell():
                     e3 = None
                     e4 = None
                     try:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=silent)
+                        e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
                     except:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=silent)
+                        e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e4], tolerance=tolerance), tolerance=tolerance))
                     try:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=silent)
+                        e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
                     except:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=silent)
+                        e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e2, e3],tolerance=tolerance), tolerance=tolerance))
                     if e3 and e4:
-                        e5 = Edge.ByVertices([e1.StartVertex(), e2.EndVertex()], tolerance=tolerance, silent=silent)
+                        e5 = Edge.ByVertices([Edge.StartVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
                         faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
                         faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
                     elif e3:
@@ -470,17 +470,17 @@ class Shell():
                     e3 = None
                     e4 = None
                     try:
-                        e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=silent)
+                        e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
                     except:
                         try:
-                            e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=silent)
+                            e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
                         except:
                             pass
                     try:
-                        e4 = Edge.ByVertices([e1.EndVertex(), e2.EndVertex()], tolerance=tolerance, silent=silent)
+                        e4 = Edge.ByVertices([Edge.EndVertex(e1), Edge.EndVertex(e2)], tolerance=tolerance, silent=silent)
                     except:
                         try:
-                            e3 = Edge.ByVertices([e1.StartVertex(), e2.StartVertex()], tolerance=tolerance, silent=silent)
+                            e3 = Edge.ByVertices([Edge.StartVertex(e1), Edge.StartVertex(e2)], tolerance=tolerance, silent=silent)
                         except:
                             pass
                     if e3 and e4:

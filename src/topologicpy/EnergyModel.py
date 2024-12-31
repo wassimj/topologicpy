@@ -307,7 +307,7 @@ class EnergyModel:
             building_cells = [building]
         for spaceNumber, buildingCell in enumerate(building_cells):
             osSpace = openstudio.model.Space(osModel)
-            osSpaceZ = Vertex.Z(buildingCell.CenterOfMass(), mantissa=mantissa)
+            osSpaceZ = Vertex.Z(Topology.CenterOfMass(buildingCell), mantissa=mantissa)
             osBuildingStory = osBuildingStorys[0]
             for x in osBuildingStorys:
                 osBuildingStoryZ = x.nominalZCoordinate().get()
@@ -372,7 +372,7 @@ class EnergyModel:
                             osSurface.setSurfaceType("RoofCeiling")
                             osSurface.setOutsideBoundaryCondition("Outdoors")
                             osSurface.setName(osSpace.name().get() + "_TopHorizontalSlab_" + str(faceNumber))
-                            if max(list(map(lambda vertex: vertex.Z(), Topology.SubTopologies(buildingFace, "Vertex")))) < 1e-6:
+                            if max(list(map(lambda vertex: Vertex.Z(vertex), Topology.SubTopologies(buildingFace, "Vertex")))) < 1e-6:
                                 osSurface.setSurfaceType("Floor")
                                 osSurface.setOutsideBoundaryCondition("Ground")
                                 osSurface.setName(osSpace.name().get() + "_BottomHorizontalSlab_" + str(faceNumber))
@@ -1039,14 +1039,14 @@ class EnergyModel:
             surfaceEdges = []
             surfaceVertices = surface.vertices()
             for i in range(len(surfaceVertices)-1):
-                sv = Vertex.ByCoordinates(surfaceVertices[i].x(), surfaceVertices[i].y(), surfaceVertices[i].z())
-                ev = Vertex.ByCoordinates(surfaceVertices[i+1].x(), surfaceVertices[i+1].y(), surfaceVertices[i+1].z())
+                sv = Vertex.ByCoordinates(Vertex.X(surfaceVertices[i]), Vertex.Y(surfaceVertices[i]), Vertex.Z(surfaceVertices[i]))
+                ev = Vertex.ByCoordinates(Vertex.X(surfaceVertices[i+1]), Vertex.Y(surfaceVertices[i+1]), Vertex.Z(surfaceVertices[i+1]))
                 edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance, silent=False)
                 if not edge:
                     continue
                 surfaceEdges.append(edge)
-            sv = Vertex.ByCoordinates(surfaceVertices[len(surfaceVertices)-1].x(), surfaceVertices[len(surfaceVertices)-1].y(), surfaceVertices[len(surfaceVertices)-1].z())
-            ev = Vertex.ByCoordinates(surfaceVertices[0].x(), surfaceVertices[0].y(), surfaceVertices[0].z())
+            sv = Vertex.ByCoordinates(Vertex.X(surfaceVertices[len(surfaceVertices)-1]), Vertex.Y(surfaceVertices[len(surfaceVertices)-1]), Vertex.Z(surfaceVertices[len(surfaceVertices)-1]))
+            ev = Vertex.ByCoordinates(Vertex.X(surfaceVertices[0]), Vertex.Y(surfaceVertices[0]), Vertex.Z(surfaceVertices[0]))
             edge = Edge.ByStartVertexEndVertex(sv, ev, tolerance=tolerance, silent=False)
             surfaceEdges.append(edge)
             surfaceWire = Wire.ByEdges(surfaceEdges, tolerance=tolerance)
@@ -1057,7 +1057,7 @@ class EnergyModel:
         def addApertures(face, apertures):
             usedFaces = []
             for aperture in apertures:
-                cen = aperture.CenterOfMass()
+                cen = Topology.CenterOfMass(aperture)
                 try:
                     params = face.ParametersAtVertex(cen)
                     u = params[0]
