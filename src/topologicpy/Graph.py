@@ -1240,9 +1240,9 @@ class Graph:
         return bot_graph.serialize(format=format)
 
     @staticmethod
-    def BetweennessCentrality(graph, key: str = "betweenness_centrality", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
+    def BetweennessCentrality(graph, key: str = "betweenness_centrality", method="vertex", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
         """
-            Returns the betweenness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the betweeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Betweenness_centrality.
+            Returns the betweenness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See https://en.wikipedia.org/wiki/Betweenness_centrality.
 
         Parameters
         ----------
@@ -1250,6 +1250,8 @@ class Graph:
             The input graph.
         key : str , optional
             The dictionary key under which to store the betweeness centrality score. The default is "betweenness_centrality".
+        method : str , optional
+            The method of computing the betweenness centrality. The options are "vertex" or "edge". The default is "vertex".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -1276,7 +1278,7 @@ class Graph:
                 shortest_paths[path[-1]].append(path)
             return shortest_paths
 
-        def calculate_betweenness():
+        def calculate_vertex_betweenness():
             betweenness = {v: 0.0 for v in py_graph}
             for s in py_graph:
                 shortest_paths = shortest_paths_count(s)
@@ -1291,6 +1293,56 @@ class Graph:
                         betweenness[v] += dependency[v]
             return betweenness
         
+        def calculate_edge_betweenness(graph_adj_matrix):
+            n = len(graph_adj_matrix)
+            edge_betweenness_scores = {}
+
+            # Iterate over all node pairs as source and target nodes
+            for source in range(n):
+                # Initialize the 'distance' and 'predecessors' for each node
+                distance = [-1] * n
+                predecessors = [[] for _ in range(n)]
+                distance[source] = 0
+                stack = []
+                queue = [source]
+
+                # Breadth-first search to find shortest paths
+                while queue:
+                    current_node = queue.pop(0)
+                    stack.append(current_node)
+                    for neighbor in range(n):
+                        if graph_adj_matrix[current_node][neighbor] == 1:
+                            if distance[neighbor] == -1:  # First time visiting neighbor
+                                distance[neighbor] = distance[current_node] + 1
+                                queue.append(neighbor)
+                            if distance[neighbor] == distance[current_node] + 1:  # Shortest path
+                                predecessors[neighbor].append(current_node)
+
+                # Initialize the dependency values for each node
+                dependency = [0] * n
+
+                # Process the nodes in reverse order of discovery
+                while stack:
+                    current_node = stack.pop()
+                    for pred in predecessors[current_node]:
+                        dependency[pred] += (1 + dependency[current_node]) / len(predecessors[current_node])
+
+                        # Update edge betweenness scores
+                        if pred < current_node:
+                            edge = (pred, current_node)
+                        else:
+                            edge = (current_node, pred)
+                        
+                        if edge not in edge_betweenness_scores:
+                            edge_betweenness_scores[edge] = 0
+                        edge_betweenness_scores[edge] += dependency[current_node]
+
+            # Normalize edge betweenness scores by dividing by 2 (since each edge is counted twice)
+            for edge in edge_betweenness_scores:
+                edge_betweenness_scores[edge] /= 2
+
+            return edge_betweenness_scores
+        
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
@@ -1299,38 +1351,75 @@ class Graph:
                 print("Graph.BetweenessCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
         
-        vertices = Graph.Vertices(graph)
+        if "v" in method.lower():
+            vertices = Graph.Vertices(graph)
 
-        if len(vertices) < 1:
-            if not silent:
-                print("Graph.BetweenessCentrality - Error: The input graph does not contain valid vertices. Returning None.")
-            return None
-        if len(vertices) == 1:
-            d = Topology.Dictionary(vertices[0])
-            d = Dictionary.SetValueAtKey(d, key, 1.0)
-            vertices[0] = Topology.SetDictionary(vertices[0], d)
-            return [1.0]
-        
-        py_graph = Graph.AdjacencyDictionary(graph)
-        betweenness = calculate_betweenness()
-        for v in betweenness:
-            betweenness[v] /= 2.0  # Each shortest path is counted twice
+            if len(vertices) < 1:
+                if not silent:
+                    print("Graph.BetweenessCentrality - Error: The input graph does not contain valid vertices. Returning None.")
+                return None
+            if len(vertices) == 1:
+                d = Topology.Dictionary(vertices[0])
+                d = Dictionary.SetValueAtKey(d, key, 1.0)
+                vertices[0] = Topology.SetDictionary(vertices[0], d)
+                return [1.0]
+            
+            py_graph = Graph.AdjacencyDictionary(graph)
+            vertex_betweenness = calculate_vertex_betweenness()
+            for v in vertex_betweenness:
+                vertex_betweenness[v] /= 2.0  # Each shortest path is counted twice
 
-        max_betweenness = max(betweenness.values())
-        if max_betweenness > 0:
-            for v in betweenness:
-                betweenness[v] /= max_betweenness  # Normalize to [0, 1]
-        
-        
-        return_betweenness = [0]*len(vertices)
-        for i, v in betweenness.items():
-            vertex = vertices[int(i)]
-            d = Topology.Dictionary(vertex)
-            d = Dictionary.SetValueAtKey(d, key, round(v, mantissa))
-            vertex = Topology.SetDictionary(vertex, d)
-            return_betweenness[int(i)] = v
-        
-        return return_betweenness
+            min_betweenness = min(vertex_betweenness.values())
+            max_betweenness = max(vertex_betweenness.values())
+            if (max_betweenness - min_betweenness) > 0:
+                for v in vertex_betweenness:
+                    vertex_betweenness[v] = (vertex_betweenness[v] - min_betweenness)/ (max_betweenness - min_betweenness)  # Normalize to [0, 1]
+            
+            
+            vertex_betweenness_scores = [0]*len(vertices)
+            for i, score in vertex_betweenness.items():
+                vertex = vertices[int(i)]
+                d = Topology.Dictionary(vertex)
+                d = Dictionary.SetValueAtKey(d, key, round(score, mantissa))
+                vertex = Topology.SetDictionary(vertex, d)
+                vertex_betweenness_scores[int(i)] = round(score, mantissa)
+            
+            return vertex_betweenness_scores
+        else:
+            graph_edges = Graph.Edges(graph)
+            adj_matrix = Graph.AdjacencyMatrix(graph)
+            meshData = Graph.MeshData(graph)
+            edges = meshData["edges"]
+            if len(graph_edges) < 1:
+                if not silent:
+                    print("Graph.BetweenessCentrality - Error: The input graph does not contain any edges. Returning None.")
+                return None
+            if len(graph_edges) == 1:
+                d = Topology.Dictionary(graph_edges[0])
+                d = Dictionary.SetValueAtKey(d, key, 1.0)
+                graph_edges[0] = Topology.SetDictionary(graph_edges[0], d)
+                return [1.0]
+            
+            edge_betweenness = calculate_edge_betweenness(adj_matrix)
+            keys = list(edge_betweenness.keys())
+            values = list(edge_betweenness.values())
+            min_value = min(values)
+            max_value = max(values)
+            edge_betweenness_scores = []
+            for i, edge in enumerate(edges):
+                u,v = edge
+                if (u,v) in keys:
+                    score = edge_betweenness[(u,v)]
+                elif (v,u) in keys:
+                    score = edge_betweenness[(v,u)]
+                else:
+                    score = 0
+                score = (score - min_value)/(max_value - min_value)
+                edge_betweenness_scores.append(round(score, mantissa))
+                d = Topology.Dictionary(graph_edges[i])
+                d = Dictionary.SetValueAtKey(d, key, round(score, mantissa))
+                graph_edges[i] = Topology.SetDictionary(graph_edges[i], d)
+            return edge_betweenness_scores
 
     @staticmethod
     def Bridges(graph, key: str = "bridge", silent: bool = False):
@@ -1345,59 +1434,91 @@ class Graph:
             The edge dictionary key under which to store the bridge status. 0 means the edge is NOT a bridge. 1 means that the edge IS a bridge. The default is "bridge".
         silent : bool , optional
             If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
-        
+
         Returns
         -------
         list
             The list of bridge edges in the input graph.
-
         """
-        import os
-        import warnings
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Graph import Graph
 
-        try:
-            import igraph as ig
-        except:
-            print("Graph.Bridges - Installing required pyhon-igraph library.")
-            try:
-                os.system("pip install python-igraph")
-            except:
-                os.system("pip install python-igraph --user")
-            try:
-                import igraph as ig
-                print("Graph.Bridges - python-igraph library installed correctly.")
-            except:
-                warnings.warn("Graph.Bridges - Error: Could not import python-igraph. Please install manually.")
-        
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
                 print("Graph.Bridges - Error: The input graph parameter is not a valid topologic graph. Returning None")
             return None
 
-        edges = Graph.Edges(graph)
-        if len(edges) < 1:
-            return []
-        if len(edges) == 1:
+        graph_edges = Graph.Edges(graph)
+        for edge in graph_edges:
+            d = Topology.Dictionary(edge)
+            d = Dictionary.SetValueAtKey(d, key, 0)
+            edge = Topology.SetDictionary(edge, d)
+        mesh_data = Graph.MeshData(graph)
+        mesh_edges = mesh_data['edges']
+
+        # Get adjacency dictionary
+        adjacency_dict = Graph.AdjacencyDictionary(graph)
+        if not adjacency_dict:
+            if not silent:
+                print("Graph.Bridges - Error: Failed to retrieve adjacency dictionary. Returning None")
+            return None
+
+        # Helper function to perform DFS and find bridges
+        def dfs(vertex, parent, time, low, disc, visited, adjacency_dict, bridges, edge_map):
+            visited[int(vertex)] = True
+            disc[int(vertex)] = low[int(vertex)] = time[0]
+            time[0] += 1
+            for neighbor in adjacency_dict[vertex]:
+                if not visited[int(neighbor)]:
+                    dfs(neighbor, vertex, time, low, disc, visited, adjacency_dict, bridges, edge_map)
+                    low[int(vertex)] = min(low[int(vertex)], low[int(neighbor)])
+                    
+                    # Check if edge is a bridge
+                    if low[int(neighbor)] > disc[int(vertex)]:
+                        bridges.add((vertex, neighbor))
+                elif neighbor != parent:
+                    low[int(vertex)] = min(low[int(vertex)], disc[int(neighbor)])
+
+        # Prepare adjacency list and edge mapping
+        vertices = list(adjacency_dict.keys())
+        num_vertices = len(vertices)
+        visited = [False] * num_vertices
+        disc = [-1] * num_vertices
+        low = [-1] * num_vertices
+        time = [0]
+        bridges = set()
+
+        # Map edges to indices
+        edge_map = {}
+        index = 0
+        for vertex, neighbors in adjacency_dict.items():
+            for neighbor in neighbors:
+                if (neighbor, vertex) not in edge_map:  # Avoid duplicating edges in undirected graphs
+                    edge_map[(vertex, neighbor)] = index
+                    index += 1
+
+        # Run DFS from all unvisited vertices
+        for i, vertex in enumerate(vertices):
+            if not visited[i]:
+                dfs(vertex, -1, time, low, disc, visited, adjacency_dict, bridges, edge_map)
+
+        # Mark bridges in the edges' dictionaries
+        bridge_edges = []
+        for edge in bridges:
+            i, j = edge
+            i = int(i)
+            j = int(j)
+            try:
+                edge_index = mesh_edges.index([i,j])
+            except:
+                edge_index = mesh_edges.index([j,i])
+            bridge_edges.append(graph_edges[edge_index])
+        for edge in bridge_edges:
             d = Topology.Dictionary(edge)
             d = Dictionary.SetValueAtKey(d, key, 1)
             edge = Topology.SetDictionary(edge, d)
-            return [edge]
-        mesh_data = Graph.MeshData(graph)
-        graph_edges = mesh_data['edges']
-        ig_graph = ig.Graph(edges=graph_edges)
 
-        bridges = ig_graph.bridges()
-        bridge_edges = []
-        for i, edge in enumerate(edges):
-            d = Topology.Dictionary(edge)
-            if i in bridges:
-                d = Dictionary.SetValueAtKey(d, key, 1)
-                bridge_edges.append(edge)
-            else:
-                d = Dictionary.SetValueAtKey(d, key, 0)
-            edge = Topology.SetDictionary(edge, d)
         return bridge_edges
 
     @staticmethod
@@ -1486,7 +1607,8 @@ class Graph:
         for i in range(len(adjacencyMatrix)):
             x, y, z = random.uniform(xMin,xMax), random.uniform(yMin,yMax), random.uniform(zMin,zMax)
             v = Vertex.ByCoordinates(x, y, z)
-            v = Topology.SetDictionary(v, dictionaries[i])
+            if isinstance(dictionaries, list):
+                v = Topology.SetDictionary(v, dictionaries[i])
             vertices.append(v)
 
         # Create the graph using vertices and edges
@@ -4154,6 +4276,82 @@ class Graph:
         return graph
     
     @staticmethod
+    def Complement(graph, tolerance=0.0001, silent=False):
+        """
+        Creates the complement graph of the input graph. See https://en.wikipedia.org/wiki/Complement_graph
+
+        Parameters
+        ----------
+        graph : topologicpy.Graph
+            The input topologic graph.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologicpy.Graph
+            The created complement topologic graph.
+
+        """
+        def complement_graph(adj_dict):
+            """
+            Creates the complement graph from an input adjacency dictionary.
+
+            Parameters:
+                adj_dict (dict): The adjacency dictionary where keys are nodes and 
+                                values are lists of connected nodes.
+
+            Returns:
+                list of tuples: A list of edge index tuples representing the complement graph.
+            """
+            # Get all nodes in the graph
+            nodes = list(adj_dict.keys())
+            # Initialize a set to store edges of the complement graph
+            complement_edges = set()
+            # Convert adjacency dictionary to a set of existing edges
+            existing_edges = set()
+            for node, neighbors in adj_dict.items():
+                for neighbor in neighbors:
+                    # Add the edge as an ordered tuple to ensure no duplicates
+                    existing_edges.add(tuple(sorted((node, neighbor))))
+            # Generate all possible edges and check if they exist in the original graph
+            for i, node1 in enumerate(nodes):
+                for j in range(i + 1, len(nodes)):
+                    node2 = nodes[j]
+                    edge = tuple(sorted((node1, node2)))
+                    # Add the edge if it's not in the original graph
+                    if edge not in existing_edges:
+                        complement_edges.add(edge)
+            # Return the complement edges as a sorted list of tuples
+            return sorted(complement_edges)
+    
+        from topologicpy.Graph import Graph
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.Complement - Error: The input graph parameter is not a valid topologic graph. Returning None.")
+            return None
+        adj_dict = Graph.AdjacencyDictionary(graph)
+        py_edges = complement_graph(adj_dict)
+        vertices = Graph.Vertices(graph)
+        adjusted_vertices = Vertex.Separate(vertices, minDistance=tolerance)
+        edges = []
+        for py_edge in py_edges:
+            start, end = py_edge
+            sv = adjusted_vertices[int(start)]
+            ev = adjusted_vertices[int(end)]
+            edge = Edge.ByVertices(sv, ev, tolerance=tolerance, silent=silent)
+            if Topology.IsInstance(edge, "edge"):
+                edges.append(edge)    
+        return_graph = Graph.ByVerticesEdges(adjusted_vertices, edges)
+        return return_graph
+
+    @staticmethod
     def Complete(graph, silent: bool = False):
         """
         Completes the graph by conneting unconnected vertices.
@@ -4792,6 +4990,28 @@ class Graph:
             v = Topology.SetDictionary(v, d)
             scores.append(degree)
         return scores
+    
+    @staticmethod
+    def DegreeMatrix(graph):
+        """
+        Returns the degree matrix of the input graph. See https://en.wikipedia.org/wiki/Degree_matrix.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+
+        Returns
+        -------
+        list
+            The degree matrix of the input graph.
+
+        """
+        import numpy as np
+        adj_matrix = Graph.AdjacencyMatrix(g)
+        np_adj_matrix = np.array(adj_matrix)
+        degree_matrix = np.diag(np_adj_matrix.sum(axis=1))
+        return degree_matrix.tolist()
     
     @staticmethod
     def DegreeSequence(graph):
@@ -6162,6 +6382,37 @@ class Graph:
         return False
 
     @staticmethod
+    def FiedlerVector(graph, mantissa = 6, silent: bool = False):
+        """
+        Computes the Fiedler vector of a graph. See https://en.wikipedia.org/wiki/Algebraic_connectivity.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph
+        mantissa : int , optional
+                The desired length of the mantissa. The default is 6.
+        silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        list
+            The Fiedler vector (eigenvector corresponding to the second smallest eigenvalue).
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Matrix import Matrix
+        import numpy as np
+
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.FiedlerVector - Error: The input graph parameter is not a valid graph. Returning None.")
+            
+        laplacian = Graph.Laplacian(graph)
+        eigenvalues, eigenvectors = Matrix.EigenvaluesAndVectors(laplacian, mantissa=mantissa)
+        return eigenvectors[1]
+
+    @staticmethod
     def IsIsomorphic(graphA, graphB, maxIterations=10, silent=False):
         """
         Tests if the two input graphs are isomorphic according to the Weisfeiler Lehman graph isomorphism test. See https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test
@@ -7512,6 +7763,59 @@ class Graph:
         return graph.IsComplete()
     
     @staticmethod
+    def IsConnected(graph, vertexA, vertexB, silent: bool = False):
+        """
+        Returns True if the two input vertices are directly connected by an edge. Returns False otherwise.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertexA : topologic_core.Vertex
+            The first input vertex.
+        vertexB : topologic_core.Vertex
+            The second input vertex
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        bool
+            True if the input vertices are connected by an edge. False otherwise.
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.IsConnected - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        
+        if not Topology.IsInstance(vertexA, "vertex"):
+            if not silent:
+                print("Graph.IsConnected - Error: The input vertexA parameter is not a valid vertex. Returning None.")
+            return None
+        
+        if not Topology.IsInstance(vertexB, "vertex"):
+            if not silent:
+                print("Graph.IsConnected - Error: The input vertexB parameter is not a valid vertex. Returning None.")
+            return None
+        
+        if vertexA == vertexB:
+            if not silent:
+                print("Graph.IsConnected - Warrning: The two input vertices are the same vertex. Returning False.")
+            return False
+        shortest_path = Graph.ShortestPath(graph, vertexA, vertexB)
+        if shortest_path == None:
+            return False
+        else:
+            edges = Topology.Edges(shortest_path)
+            if len(edges) == 1:
+                return True
+            else:
+                return False
+    
+    @staticmethod
     def IsErdoesGallai(graph, sequence):
         """
         Returns True if the input sequence satisfies the Erdős–Gallai theorem. Returns False otherwise. See https://en.wikipedia.org/wiki/Erd%C5%91s%E2%80%93Gallai_theorem.
@@ -7777,6 +8081,61 @@ class Graph:
         json_string = json.dumps(json_data, indent=indent, sort_keys=sortKeys)
         return json_string
     
+    def Laplacian(graph, silent: bool = False, normalized: bool = False):
+        """
+        Returns the Laplacian matrix of the input graph. See https://en.wikipedia.org/wiki/Laplacian_matrix.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        normalized : bool , optional
+            If set to True, the returned Laplacian matrix is normalized. The default is False.
+
+        Returns
+        -------
+        list
+            The Laplacian matrix as a nested list.
+        """
+        from topologicpy.Topology import Topology
+        import numpy as np
+
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.Laplacian - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+
+        # Get vertices of the graph
+        vertices = Graph.Vertices(graph)
+        n = len(vertices)
+
+        # Initialize Laplacian matrix
+        laplacian = np.zeros((n, n))
+
+        # Fill Laplacian matrix
+        for i, v1 in enumerate(vertices):
+            for j, v2 in enumerate(vertices):
+                if i == j:
+                    laplacian[i][j] = float(Graph.VertexDegree(graph, v1))
+                elif Graph.IsConnected(graph, v1, v2):
+                    laplacian[i][j] = -1.0
+                else:
+                    laplacian[i][j] = 0.0
+
+        # Normalize the Laplacian if requested
+        if normalized:
+            degree_matrix = np.diag(laplacian.diagonal())
+            with np.errstate(divide='ignore'):  # Suppress warnings for division by zero
+                d_inv_sqrt = np.diag(1.0 / np.sqrt(degree_matrix.diagonal()))
+                d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0  # Replace infinities with zero
+
+            normalized_laplacian = d_inv_sqrt @ laplacian @ d_inv_sqrt
+            return normalized_laplacian.tolist()
+
+        return laplacian.tolist()
+
     @staticmethod
     def Leaves(graph, edgeKey: str = None, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -9518,6 +9877,86 @@ class Graph:
             print("Graph.Size - Error: The input graph is not a valid graph. Returning None.")
             return None
         return len(Graph.Edges(graph))
+
+    @staticmethod
+    def Subgraph(graph, vertices, vertexKey="cutVertex", edgeKey="cutEdge", tolerance=0.0001, silent: bool = False):
+        """
+        Returns a subgraph of the input graph as defined by the input vertices.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertexKey : str , optional
+            The dictionary key under which to store the cut vertex status of each vertex. See https://en.wikipedia.org/wiki/Cut_(graph_theory).
+            vertex cuts are indicated with a value of 1. The default is "cutVertex".
+        edgeKey : str , optional
+            The dictionary key under which to store the cut edge status of each edge. See https://en.wikipedia.org/wiki/Cut_(graph_theory).
+            edge cuts are indicated with a value of 1. The default is "cutVertex".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        topologic_core.Graph
+            The created subgraph.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.Subgraph - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        
+        if not isinstance(vertices, list):
+            if not silent:
+                print("Graph.Subgraph - Error: The input vertices parameter is not a valid list. Returning None.")
+            return None
+        
+        vertex_list = [v for v in vertices if Topology.IsInstance(v, "vertex")]
+        if len(vertex_list) < 1:
+            if not silent:
+                print("Graph.Subgraph - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+            return None
+
+        edges = Graph.Edges(graph, vertices=vertex_list)
+        # Set the vertexCut status to 0 for all input vertices
+        for v in vertex_list:
+            d = Topology.Dictionary(v)
+            d = Dictionary.SetValueAtKey(d, vertexKey, 0)
+            v = Topology.SetDictionary(v, d)
+
+        final_edges = []
+        if not edges == None:
+            for edge in edges:
+                sv = Edge.StartVertex(edge)
+                status_1 = any([Vertex.IsCoincident(sv, v, tolerance=tolerance) for v in vertices])                
+                ev = Edge.EndVertex(edge)
+                status_2 = any([Vertex.IsCoincident(ev, v, tolerance=tolerance) for v in vertices])
+                if status_1 and status_2:
+                    cutEdge = 0
+                else:
+                    cutEdge = 1
+                d = Topology.Dictionary(edge)
+                d = Dictionary.SetValueAtKey(d, edgeKey, cutEdge)
+                edge = Topology.SetDictionary(edge, d)
+                final_edges.append(edge)
+        return_graph = Graph.ByVerticesEdges(vertex_list, final_edges)
+        graph_vertices = Graph.Vertices(return_graph)
+        # Any vertex in the final graph that does not have a vertexCut of 0 is a new vertex and as such needs to have a vertexCut of 1.
+        for v in graph_vertices:
+            d = Topology.Dictionary(v)
+            value = Dictionary.ValueAtKey(d, vertexKey)
+            if not value == 0:
+                d = Dictionary.SetValueAtKey(d, vertexKey, 1)
+                v = Topology.SetDictionary(v, d)
+        return return_graph
 
     @staticmethod
     def _topological_distance(g, start, target):

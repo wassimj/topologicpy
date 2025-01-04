@@ -165,6 +165,69 @@ class Matrix:
                 [translateX,translateY,translateZ,1]]
     
     @staticmethod
+    def EigenvaluesAndVectors(matrix, mantissa: int = 6, silent: bool = False):
+        import numpy as np
+        """
+        Returns the eigenvalues and eigenvectors of the input matrix. See https://en.wikipedia.org/wiki/Eigenvalues_and_eigenvectors
+        
+        Parameters
+        ----------
+        matrix : list
+            The input matrix. Assumed to be a laplacian matrix.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+            The list of eigenvalues and eigenvectors of the input matrix.
+
+        """
+        from topologicpy.Helper import Helper
+        import numpy as np
+
+        if not isinstance(matrix, list):
+            if not silent:
+                print("Matrix.Eigenvalues - Error: The input matrix parameter is not a valid matrix. Returning None.")
+            return None
+        
+        np_matrix = np.array(matrix)
+        if not isinstance(np_matrix, np.ndarray):
+            if not silent:
+                print("Matrix.Eigenvalues - Error: The input matrix parameter is not a valid matrix. Returning None.")
+            return None
+        
+        # Square check
+        if np_matrix.shape[0] != np_matrix.shape[1]:
+            if not silent:
+                print("Matrix.Eigenvalues - Error: The input matrix parameter is not a square matrix. Returning None.")
+            return None
+        
+        # Symmetry check
+        if not np.allclose(np_matrix, np_matrix.T):
+            if not silent:
+                print("Matrix.Eigenvalues - Error: The input matrix is not symmetric. Returning None.")
+            return None
+        
+        # # Degree matrix
+        # degree_matrix = np.diag(np_matrix.sum(axis=1))
+        
+        # # Laplacian matrix
+        # laplacian_matrix = degree_matrix - np_matrix
+        
+        # Eigenvalues
+        eigenvalues, eigenvectors = np.linalg.eig(np_matrix)
+        
+        e_values = [round(x, mantissa) for x in list(np.sort(eigenvalues))]
+        e_vectors = []
+        for eigenvector in eigenvectors:
+            e_vectors.append([round(x, mantissa) for x in eigenvector])
+        e_vectors = Helper.Sort(e_vectors, list(eigenvalues))
+        return e_values, e_vectors
+    
+    @staticmethod
     def Multiply(matA, matB):
         """
         Multiplies the two input matrices. When transforming an object, the first input matrix is applied first

@@ -1711,6 +1711,89 @@ class Vertex():
         return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 
     @staticmethod
+    def Separate(*vertices, minDistance: float = 0.0001, silent: bool = False):
+        """
+        Separates the input vertices such that no two vertices are within the input minimum distance.
+
+        Parameters
+        ----------
+        vertices : *topologicpy.Vertex
+            One or more instances of a topologic vertex to be processed.
+        minDistance : float , optional
+            The desired minimum distance. The default is 0.0001.
+        silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+            The list of vertices with adjusted positions
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
+        from math import sqrt
+        from scipy.spatial import KDTree
+        import numpy as np
+
+        if len(vertices) == 0:
+            if not silent:
+                print("Vertex.Separate - Error: The input vertices parameter is an empty list. Returning None.")
+            return None
+        if len(vertices) == 1:
+            vertices = vertices[0]
+            if isinstance(vertices, list):
+                if len(vertices) == 0:
+                    if not silent:
+                        print("Vertex.Separate - Error: The input vertices parameter is an empty list. Returning None.")
+                    return None
+                else:
+                    vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
+                    if len(vertexList) == 0:
+                        if not silent:
+                            print("Vertex.Separate - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+                        return None
+            else:
+                if not silent:
+                    print("Vertex.Separate - Warning: The input vertices parameter contains only one vertex. Returning the same vertex.")
+                return vertices
+        else:
+            vertexList = Helper.Flatten(list(vertices))
+            vertexList = [x for x in vertexList if Topology.IsInstance(x, "Vertex")]
+        if len(vertexList) == 0:
+            if not silent:
+                print("Vertex.Separate - Error: The input parameters do not contain any valid vertices. Returning None.")
+            return None
+    
+        coords = np.array([[v.X(), v.Y(), v.Z()] for v in vertexList])  # Extract coordinates
+        tree = KDTree(coords)  # Build k-d tree for efficient neighbor search
+        
+        for i, vertex in enumerate(coords):
+            neighbors = tree.query_ball_point(vertex, minDistance)
+            for neighbor_index in neighbors:
+                if neighbor_index != i:  # Avoid self-comparison
+                    direction = coords[neighbor_index] - vertex
+                    distance = np.linalg.norm(direction)
+                    if distance < minDistance:
+                        # Move current vertex away from its neighbor
+                        adjustment = (minDistance - distance) / 2
+                        unit_vector = direction / distance if distance != 0 else np.random.rand(3)
+                        coords[i] -= unit_vector * adjustment
+                        coords[neighbor_index] += unit_vector * adjustment
+
+            # Rebuild the k-d tree after adjustment
+            tree = KDTree(coords)
+
+        # Convert adjusted coordinates back to Vertex objects
+        separated_vertices = [Vertex.ByCoordinates(x, y, z) for x, y, z in coords]
+        for i, vertex in enumerate(vertexList):
+            d = Topology.Dictionary(vertex)
+            if len(Dictionary.Keys(d)) > 0:
+                separated_vertices[i] = Topology.SetDictionary(separated_vertices[i], d)
+        return separated_vertices
+
+    @staticmethod
     def X(vertex, mantissa: int = 6) -> float:
         """
         Returns the X coordinate of the input vertex.
