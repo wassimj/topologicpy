@@ -1487,8 +1487,8 @@ class Graph:
                     print("Graph.Partition - Warning: Reached the maximum number of tries.")
         return_vertices = Graph.Vertices(graph)
         return_edges = Graph.Edges(graph) + cut_edges
-        return_graph = Graph.ByVerticesEdges(return_vertices, return_edges)
-        return return_graph
+        graph = Graph.ByVerticesEdges(return_vertices, return_edges)
+        return graph
     
     @staticmethod
     def Bridges(graph, key: str = "bridge", silent: bool = False):
@@ -9412,21 +9412,18 @@ class Graph:
             The partitioned topologic graph.
 
         """ 
-        
+
         m_d = Graph.MeshData(graph)
         new_graph = Graph.ByMeshData(vertices = m_d['vertices'],
                                     edges = m_d['edges'],
                                     vertexDictionaries = m_d['vertexDictionaries'],
                                     edgeDictionaries = m_d['edgeDictionaries'])
         if "between" in method.lower():
-            _ = Graph.BetweennessPartition(new_graph, n=n, m=m, key=key, tolerance=tolerance, silent=silent)
-            return new_graph
+            return Graph.BetweennessPartition(new_graph, n=n, m=m, key=key, tolerance=tolerance, silent=silent)
         elif "community" in method.lower() or "louvain" in method.lower():
-            _ = Graph.CommunityPartition(new_graph, key=key, mantissa=mantissa, tolerance=tolerance, silent=silent)
-            return new_graph
+            return Graph.CommunityPartition(new_graph, key=key, mantissa=mantissa, tolerance=tolerance, silent=silent)
         elif "fied" in method.lower() or "eig" in method.lower():
-            _ = Graph.FiedlerVectorPartition(new_graph, key=key, mantissa=mantissa, tolerance=tolerance, silent=silent)
-            return new_graph
+            return Graph.FiedlerVectorPartition(new_graph, key=key, mantissa=mantissa, tolerance=tolerance, silent=silent)
         else:
             if not silent:
                 print("Graph.Partition - Error: The chosen method is not supported. Returning None.")
