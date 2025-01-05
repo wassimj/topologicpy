@@ -1422,6 +1422,75 @@ class Graph:
             return edge_betweenness_scores
 
     @staticmethod
+    def BetweennessPartition(graph, n=2, m=10, key="partition", tolerance=0.0001, silent=False):
+        """
+        Computes a partition of the input graph based on the edge betweenness method. See https://en.wikipedia.org/wiki/Graph_partition.
+
+        Parameters
+        ----------
+        graph : topologicp.Graph
+            The input topologic graph.
+        n : int , optional
+            The desired number of partitions when selecting the "Betweenness" method. This parameter is ignored for other methods. The default is 2.
+        m : int , optional
+            The desired maximum number of tries to partition the graph when selecting the "Betweenness" method. This parameter is ignored for other methods. The default is 10.
+        key : str , optional
+            The vertex and edge dictionary key under which to store the parition number. The default is "partition".
+            Valid partition numbers start from 1. Cut edges receive a partition number of 0.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologicpy.Graph
+            The partitioned topologic graph.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
+
+        edge_scores = Graph.BetweennessCentrality(graph, method="edge")
+        graph_edges = Graph.Edges(graph)
+
+        graph_edges = Helper.Sort(graph_edges, edge_scores)
+        graph_edges.reverse()
+        cut_edges = []
+        components = 1
+        tries = 0
+        while components < n and tries < m:
+            components = len(Graph.ConnectedComponents(graph, key=key, tolerance=tolerance, silent=silent))
+            if components == n:
+                if not silent:
+                    print("Graph.BetweennessPartition - Warning: The input graph is already partitioned into partitions that are equal in number to the desired number of partitions.")
+                return graph
+            elif components > n:
+                if not silent:
+                    print("Graph.BetweennessPartition - Warning: The input graph is already partitioned into partitions that are greater in number than the desired number of partitions.")
+                return graph
+            elif len(graph_edges) < 1:
+                components = n
+            else:
+                edge = graph_edges[0]
+                d = Topology.Dictionary(edge)
+                d = Dictionary.SetValueAtKey(d, key, 0) # 0 indicates a cut edge
+                edge = Topology.SetDictionary(edge, d)
+                cut_edges.append(edge)
+                graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance)
+                graph_edges = graph_edges[1:]
+                components = len(Graph.ConnectedComponents(graph, key=key, tolerance=tolerance, silent=silent))
+            tries += 1
+            if tries == m:
+                if not silent:
+                    print("Graph.Partition - Warning: Reached the maximum number of tries.")
+        return_vertices = Graph.Vertices(graph)
+        return_edges = Graph.Edges(graph) + cut_edges
+        return_graph = Graph.ByVerticesEdges(return_vertices, return_edges)
+        return return_graph
+    
+    @staticmethod
     def Bridges(graph, key: str = "bridge", silent: bool = False):
         """
         Returns the list of bridge edges in the input graph. See: https://en.wikipedia.org/wiki/Bridge_(graph_theory)
@@ -4394,7 +4463,7 @@ class Graph:
         return Graph.ByVerticesEdges(vertices, edges)
 
     @staticmethod
-    def ConnectedComponents(graph, tolerance: float = 0.0001, silent: bool = False):
+    def ConnectedComponents(graph, key: str = "component", tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the connected components (islands) of the input graph.
 
@@ -4402,6 +4471,8 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
+        key : str , optional
+            The vertex and edge dictionary key under which to store the component number. The default is "component".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -4447,23 +4518,36 @@ class Graph:
         labelKey = "__label__"
         lengths = [] #List of lengths to sort the list of components by number of their vertices
         vertices = Graph.Vertices(graph)
+        vertex_map = {}
+        for i, v in enumerate(vertices):
+            d = Topology.Dictionary(v)
+            d = Dictionary.SetValueAtKey(d, labelKey, i)
+            v = Topology.SetDictionary(v, d)
+            vertex_map[i] = v
         g_dict = Graph.AdjacencyDictionary(graph, vertexLabelKey=labelKey)
         components = find_connected_components(g_dict)
         return_components = []
-        for component in components:
+        for i, component in enumerate(components):
             i_verts = []
-            for v in component:        
-                vert = Topology.Filter(vertices, searchType="equal to", key=labelKey, value=v)['filtered'][0]
+            for v in component:
+                vert = vertex_map[v]
                 d = Topology.Dictionary(vert)
                 d = Dictionary.RemoveKey(d, labelKey)
+                d = Dictionary.SetValueAtKey(d, key, i+1)
                 vert = Topology.SetDictionary(vert, d)
                 i_verts.append(vert)
-            i_edges = Graph.Edges(graph, i_verts)
-            lengths.append(len(i_verts))
-            g_component = Graph.ByVerticesEdges(i_verts, i_edges)
-            return_components.append(g_component)
-        return_components = Helper.Sort(return_components, lengths)
-        return_components.reverse()
+            if len(i_verts) > 0:
+                i_edges = Graph.Edges(graph, i_verts)
+                for i_edge in i_edges:
+                    d = Topology.Dictionary(i_edge)
+                    d = Dictionary.SetValueAtKey(d, key, i+1)
+                    i_edge = Topology.SetDictionary(i_edge, d)
+                lengths.append(len(i_verts))
+                g_component = Graph.ByVerticesEdges(i_verts, i_edges)
+                return_components.append(g_component)
+        if len(return_components) > 0:
+            return_components = Helper.Sort(return_components, lengths)
+            return_components.reverse()
         return return_components
 
     @staticmethod
@@ -4658,17 +4742,16 @@ class Graph:
             return centralities
 
     @staticmethod
-    def Community(graph, key: str = "community", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def Community(graph, key: str = "partition", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Computes the best community partition of the input graph based on the Louvain method. See https://en.wikipedia.org/wiki/Louvain_method.
-        This method depends on NetworkX and the python-louvain libraries
 
         Parameters
         ----------
         graph : topologicp.Graph
             The input topologic graph.
         key : str , optional
-            The dictionary key under which to store the closeness centrality score. The default is "community".
+            The dictionary key under which to store the partition number. The default is "partition".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -4678,9 +4761,38 @@ class Graph:
         Returns
         -------
         topologicpy.Graph
-            The created topologic graph.
+            The partitioned topologic graph.
 
         """
+        if not silent:
+            print("Graph.Community - Warning: This method is deprectated. Please use Graph.CommunityPartition instead.")
+        return Graph.CommunityPartition(graph=graph, key=key, mantissa=mantissa, tolerance=tolerance, silent=silent)
+    
+    @staticmethod
+    def CommunityPartition(graph, key: str = "partition", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Computes the best community partition of the input graph based on the Louvain method. See https://en.wikipedia.org/wiki/Louvain_method.
+
+        Parameters
+        ----------
+        graph : topologicp.Graph
+            The input topologic graph.
+        key : str , optional
+            The dictionary key under which to store the partition number. The default is "partition".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        Returns
+        -------
+        topologicpy.Graph
+            The partitioned topologic graph.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         import os
@@ -4713,13 +4825,39 @@ class Graph:
         communities = ig_graph.community_multilevel()
 
         # Get the list of communities sorted same as vertices
-        community_list = communities.membership
+        partition_list = communities.membership
         vertices = Graph.Vertices(graph)
         for i, v in enumerate(vertices):
             d = Topology.Dictionary(v)
-            d = Dictionary.SetValueAtKey(d, key, community_list[i])
+            d = Dictionary.SetValueAtKey(d, key, partition_list[i]+1)
             v = Topology.SetDictionary(v, d)
-        return community_list
+        edges = Graph.Edges(graph)
+        if not edges == None:
+            for edge in edges:
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+                status_1 = False
+                status_2 = False
+                partition_1 = 0
+                partition_2 = 0
+                for i, v in enumerate(vertices):
+                    if Vertex.IsCoincident(sv, v, tolerance=tolerance):
+                        status_1 = True
+                        partition_1 = Dictionary.ValueAtKey(Topology.Dictionary(v), key)
+                        break
+                for i, v in enumerate(vertices):
+                    if Vertex.IsCoincident(ev, v, tolerance=tolerance):
+                        status_2 = True
+                        partition_2 = Dictionary.ValueAtKey(Topology.Dictionary(v), key)
+                        break
+                partition = 0
+                if status_1 and status_2:
+                    if partition_1 == partition_2:
+                        partition = partition_1
+                d = Topology.Dictionary(edge)
+                d = Dictionary.SetValueAtKey(d, key, partition)
+                edge = Topology.SetDictionary(edge, d)
+        return graph
 
     @staticmethod
     def Connect(graph, verticesA, verticesB, tolerance=0.0001):
@@ -6411,6 +6549,80 @@ class Graph:
         laplacian = Graph.Laplacian(graph)
         eigenvalues, eigenvectors = Matrix.EigenvaluesAndVectors(laplacian, mantissa=mantissa)
         return eigenvectors[1]
+
+    @staticmethod
+    def FiedlerVectorPartition(graph, key="partition", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Partitions the input graph based on FiedlerVector method. See https://en.wikipedia.org/wiki/Graph_partition.
+
+        Parameters
+        ----------
+        graph : topologicp.Graph
+            The input topologic graph.
+        key : str , optional
+            The vertex and edge dictionary key under which to store the parition number. The default is "partition".
+            Valid partition numbers start from 1. Cut edges receive a partition number of 0.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        topologicpy.Graph
+            The partitioned topologic graph.
+
+        """ 
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge    
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.FiedlerVectorPartition - Error: The input graph parameter is not a valid topologic graph. Returning None.")
+            return None
+
+        fiedler_vector = Graph.FiedlerVector(graph, mantissa=mantissa, silent=silent)
+
+        vertices = Graph.Vertices(graph)
+        for i, f_v in enumerate(fiedler_vector):
+            if f_v >=0:
+                partition = 1
+            else:
+                partition = 2 
+            d = Topology.Dictionary(vertices[i])
+            d = Dictionary.SetValueAtKey(d, key, partition)
+            vertices[i] = Topology.SetDictionary(vertices[i], d)
+        edges = Graph.Edges(graph)
+        if not edges == None:
+            for edge in edges:
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+                status_1 = False
+                status_2 = False
+                partition_1 = 0
+                partition_2 = 0
+                for i, v in enumerate(vertices):
+                    if Vertex.IsCoincident(sv, v, tolerance=tolerance):
+                        status_1 = True
+                        partition_1 = Dictionary.ValueAtKey(Topology.Dictionary(v), key)
+                        break
+                for i, v in enumerate(vertices):
+                    if Vertex.IsCoincident(ev, v, tolerance=tolerance):
+                        status_2 = True
+                        partition_2 = Dictionary.ValueAtKey(Topology.Dictionary(v), key)
+                        break
+                partition = 0
+                if status_1 and status_2:
+                    if partition_1 == partition_2:
+                        partition = partition_1
+                d = Topology.Dictionary(edge)
+                d = Dictionary.SetValueAtKey(d, key, partition)
+                edge = Topology.SetDictionary(edge, d)
+        return graph
 
     @staticmethod
     def IsIsomorphic(graphA, graphB, maxIterations=10, silent=False):
@@ -9163,7 +9375,63 @@ class Graph:
             d = Dictionary.SetValueAtKey(d, key, scores[i])
             v = Topology.SetDictionary(v, d)
         return scores
-    
+
+    @staticmethod
+    def Partition(graph, method: str = "Betweenness", n: int = 2, m: int = 10, key: str ="partition",
+                mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Partitions the input graph based on the desired partition method. See https://en.wikipedia.org/wiki/Graph_partition.
+
+        Parameters
+        ----------
+        graph : topologicp.Graph
+            The input topologic graph.
+        method : str , optional
+            The desired partitioning method. The options are:
+            - "Betweenness"
+            - "Community" or "Louvain"
+            - "Fiedler" or "Eigen"
+            It is case insensitive. The default is "Betweenness"
+        n : int , optional
+            The desired number of partitions when selecting the "Betweenness" method. This parameter is ignored for other methods. The default is 2.
+        m : int , optional
+            The desired maximum number of tries to partition the graph when selecting the "Betweenness" method. This parameter is ignored for other methods. The default is 10.
+        key : str , optional
+            The vertex and edge dictionary key under which to store the parition number. The default is "partition".
+            Valid partition numbers start from 1. Cut edges receive a partition number of 0.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        topologicpy.Graph
+            The partitioned topologic graph.
+
+        """ 
+        
+        m_d = Graph.MeshData(graph)
+        new_graph = Graph.ByMeshData(vertices = m_d['vertices'],
+                                    edges = m_d['edges'],
+                                    vertexDictionaries = m_d['vertexDictionaries'],
+                                    edgeDictionaries = m_d['edgeDictionaries'])
+        if "between" in method.lower():
+            _ = Graph.BetweennessPartition(new_graph, n=n, m=m, key=key, tolerance=tolerance, silent=silent)
+            return new_graph
+        elif "community" in method.lower() or "louvain" in method.lower():
+            _ = Graph.CommunityPartition(new_graph, key=key, mantissa=mantissa, tolerance=tolerance, silent=silent)
+            return new_graph
+        elif "fied" in method.lower() or "eig" in method.lower():
+            _ = Graph.FiedlerVectorPartition(new_graph, key=key, mantissa=mantissa, tolerance=tolerance, silent=silent)
+            return new_graph
+        else:
+            if not silent:
+                print("Graph.Partition - Error: The chosen method is not supported. Returning None.")
+            return None
+
     @staticmethod
     def Path(graph, vertexA, vertexB, tolerance=0.0001):
         """
