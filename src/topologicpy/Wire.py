@@ -2570,7 +2570,7 @@ class Wire():
             return None
         vertices = Topology.Vertices(wire)
         reversed_vertices = vertices[::-1]
-        return Wire.ByVertices(reversed_vertices, closed=Wire.IsClosed(wire), tolerance=tolerance)
+        return Wire.ByVertices(reversed_vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
 
     @staticmethod
     def IsClosed(wire) -> bool:
