@@ -1248,6 +1248,73 @@ class Cluster():
         return cluster
 
     @staticmethod
+    def Tripod(size: float = 1.0,
+               radius: float = 0.03,
+               sides: int = 4,
+               faceColorKey="faceColor",
+               xColor = "red",
+               yColor = "green",
+               zColor = "blue",
+               matrix=None):
+        """
+        Creates a color-coded Axes tripod for X, Y, and Z axes. X-Axis is red, Y-Axis is "green", and Z-Axis= "blue"
+
+        Parameters
+        ----------
+        size : float , optional
+            The desired size of the tripod. The default is 1.0.
+        radius : float , optional
+            The desired radiues of the tripod. The default is 0.03
+        sides : int , optional
+            The desired number of sides of the tripod. The default is 4.
+        faceColorKey : str , optional
+            The dictionary key under which to store the colors of the axes.
+        xColor : str , optional
+            The color to use for the X axis. The default is "red".
+        yColor : str , optional
+            The color to use for the Y axis. The default is "green".
+        zColor : str , optional
+            The color to use for the Z axis. The default is "blue".
+        matrix : list , optional
+            The desired 4X4 transformation matrix to use for transforming the tripod. The default is None which means the tripod will be placed at the origin and will be axis-aligned. 
+
+        Returns
+        -------
+        topologic_core.Cluster
+            The created tripod
+
+        """
+
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        cyl = Cell.Cylinder(radius=radius, height=size - size*0.3, uSides=sides, placement="bottom")
+        cone = Cell.Cone(baseRadius=radius*2.25, height=size*0.3, placement="bottom", uSides=sides)
+        cone = Topology.Translate(cone, 0, 0, size - size*0.3)
+        z_arrow = Topology.Union(cyl, cone)
+        x_arrow = Topology.Rotate(z_arrow, axis=[0,1,0], angle=90)
+        y_arrow = Topology.Rotate(z_arrow, axis=[1,0,0], angle=-90)
+
+        x_faces = Topology.Faces(x_arrow)
+        for x_face in x_faces:
+            d = Dictionary.ByKeyValue(faceColorKey, xColor)
+            x_face = Topology.SetDictionary(x_face, d)
+        y_faces = Topology.Faces(y_arrow)
+        for y_face in y_faces:
+            d = Dictionary.ByKeyValue(faceColorKey, yColor)
+            y_face = Topology.SetDictionary(y_face, d)
+        z_faces = Topology.Faces(z_arrow)
+        for z_face in z_faces:
+            d = Dictionary.ByKeyValue(faceColorKey, zColor)
+            z_face = Topology.SetDictionary(z_face, d)
+
+        cluster = Cluster.ByTopologies(x_arrow, y_arrow, z_arrow)
+        if not matrix == None:
+            cluster = Topology.Transform(cluster, matrix=matrix)
+        return cluster
+
+    @staticmethod
     def Vertices(cluster) -> list:
         """
         Returns the vertices of the input cluster.
