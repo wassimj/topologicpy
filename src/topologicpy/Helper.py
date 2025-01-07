@@ -98,29 +98,29 @@ class Helper:
     @staticmethod
     def ClusterByKeys(elements, dictionaries, *keys, silent=False):
         """
-            Clusters the input list of elements and dictionaries based on the input key or keys.
+        Clusters the input list of elements and dictionaries based on the input key or keys.
 
-            Parameters
-            ----------
-            elements : list
-                The input list of elements to be clustered.
-            dictionaries : list[Topology.Dictionary]
-                The input list of dictionaries to be consulted for clustering. This is assumed to be in the same order as the list of elements.
-            keys : str or list or comma-separated str input parameters
-                The key or keys in the topology's dictionary to use for clustering.
-            silent : bool , optional
-                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        Parameters
+        ----------
+        elements : list
+            The input list of elements to be clustered.
+        dictionaries : list[Topology.Dictionary]
+            The input list of dictionaries to be consulted for clustering. This is assumed to be in the same order as the list of elements.
+        keys : str or list or comma-separated str input parameters
+            The key or keys in the topology's dictionary to use for clustering.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
 
-            Returns
-            -------
-            dict
-                A dictionary containing the elements and the dictionaries, but clustered. The dictionary has two keys:
-                "elements": list
-                    A nested list of elements where each item is a list of elements with the same key values.
-                "dictionaries": list
-                    A nested list of dictionaries where each item is a list of dictionaries with the same key values.
-            """
+        Returns
+        -------
+        dict
+            A dictionary containing the elements and the dictionaries, but clustered. The dictionary has two keys:
+            "elements": list
+                A nested list of elements where each item is a list of elements with the same key values.
+            "dictionaries": list
+                A nested list of dictionaries where each item is a list of dictionaries with the same key values.
+        """
         
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
@@ -276,6 +276,41 @@ class Helper:
         return iterated_list
     
     @staticmethod
+    def MakeUnique(listA):
+        """
+        Forces the strings in the input list to be unique if they have duplicates.
+
+        Parameters
+        ----------
+        listA : list
+            The input list of strings.
+
+        Returns
+        -------
+        list
+            The input list, but with each item ensured to be unique if they have duplicates.
+
+        """
+        # Create a dictionary to store counts of each string
+        counts = {}
+        # Create a list to store modified strings
+        unique_strings = []
+        
+        for string in listA:
+            # If the string already exists in the counts dictionary
+            if string in counts:
+                # Increment the count
+                counts[string] += 1
+                # Append the modified string with underscore and count
+                unique_strings.append(f"{string}_{counts[string]}")
+            else:
+                # If it's the first occurrence of the string, add it to the counts dictionary
+                counts[string] = 0
+                unique_strings.append(string)
+        
+        return unique_strings
+    
+    @staticmethod
     def MergeByThreshold(listA, threshold=0.0001):
         """
         Merges the numbers in the input list so that numbers within the input threshold are averaged into one number.
@@ -312,39 +347,76 @@ class Helper:
         return merged_list
     
     @staticmethod
-    def MakeUnique(listA):
+    def MaximumIndices(listA, silent: bool = False):
         """
-        Forces the strings in the input list to be unique if they have duplicates.
+        Returns a list of indices of the maximum value in the input list.
+        For example, if the input list is [7,3,4,7,5,7] then the returned list is [0,3,5] to indicate the indices of the maximum value (7).
 
         Parameters
         ----------
         listA : list
-            The input list of strings.
+            The input list.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
         list
-            The input list, but with each item ensured to be unique if they have duplicates.
+            The resulting list.
 
         """
-        # Create a dictionary to store counts of each string
-        counts = {}
-        # Create a list to store modified strings
-        unique_strings = []
+        if not isinstance(listA, list):
+            if not silent:
+                print("Helper.MaximumIndices - Error: The input listA parameter is not a valid list. Returning None.")
+            return None
+        if len(listA) == 0:
+            return []
+        if len(listA) == 1:
+            return [0]
+    
+        # Find the maximum value in the list
+        max_value = min(listA)
         
-        for string in listA:
-            # If the string already exists in the counts dictionary
-            if string in counts:
-                # Increment the count
-                counts[string] += 1
-                # Append the modified string with underscore and count
-                unique_strings.append(f"{string}_{counts[string]}")
-            else:
-                # If it's the first occurrence of the string, add it to the counts dictionary
-                counts[string] = 0
-                unique_strings.append(string)
+        # Find all indices where this minimum value occurs
+        indices = [i for i, value in enumerate(listA) if value == max_value]
         
-        return unique_strings
+        return indices
+    
+    @staticmethod
+    def MinimumIndices(listA, silent: bool = False):
+        """
+        Returns a list of indices of the minimum value in the input list.
+        For example, if the input list is [1,3,4,1,5,1] then the returned list is [0,3,5] to indicate the indices of the minimum value (1).
+
+        Parameters
+        ----------
+        listA : list
+            The input list.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+            The resulting list.
+
+        """
+        if not isinstance(listA, list):
+            if not silent:
+                print("Helper.MinimumIndices - Error: The input listA parameter is not a valid list. Returning None.")
+            return None
+        if len(listA) == 0:
+            return []
+        if len(listA) == 1:
+            return [0]
+    
+        # Find the minimum value in the list
+        min_value = min(listA)
+        
+        # Find all indices where this minimum value occurs
+        indices = [i for i, value in enumerate(listA) if value == min_value]
+        
+        return indices
     
     @staticmethod
     def Normalize(listA, mantissa: int = 6):
@@ -356,7 +428,7 @@ class Helper:
         listA : list
             The input nested list.
         mantissa : int , optional
-            The desired mantissa value. The default is 6.
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -414,6 +486,48 @@ class Helper:
 
         # If the target is not found, return the position where it would be inserted
         return left
+    
+    @staticmethod 
+    def RemoveEven(listA):
+        """
+        Removes the even indexed members of the input list.
+
+        Parameters
+        ----------
+        listA : list
+            The input list.
+
+        Returns
+        -------
+        list
+            The resulting list.
+
+        """
+        return_list = []
+        for i in range(1, len(listA), 2):
+            return_list.append(listA[i])
+        return return_list
+    
+    @staticmethod 
+    def RemoveOdd(listA):
+        """
+        Removes the odd indexed members of the input list.
+
+        Parameters
+        ----------
+        listA : list
+            The input list.
+
+        Returns
+        -------
+        list
+            The resulting list.
+
+        """
+        return_list = []
+        for i in range(0, len(listA), 2):
+            return_list.append(listA[i])
+        return return_list
     
     @staticmethod
     def Repeat(listA):

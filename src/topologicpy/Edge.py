@@ -17,6 +17,63 @@
 import topologic_core as topologic
 
 class Edge():
+
+    @staticmethod
+    def Align2D(edgeA, edgeB):
+        """
+        Compute the 4x4 transformation matrix to fully align edgeA to edgeB.
+
+        Parameters:
+            edge1 (Edge): The source 2D edge to transform.
+            edge2 (Edge): The target 2D edge.
+
+        Returns:
+            list: A 4x4 transformation matrix.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Matrix import Matrix
+        from topologicpy.Vector import Vector
+
+        centroid1 = Topology.Centroid(edgeA)
+        centroid2 = Topology.Centroid(edgeB)
+        # Extract coordinates
+        x1, y1, z1 = Vertex.Coordinates(centroid1)
+        x2, y2, z2 = Vertex.Coordinates(centroid2)
+
+        # Translation to move edge1 to the origin
+        move_to_origin = Matrix.ByTranslation(-x1, -y1, -z1)
+        
+        # Translation to move edge1 from the origin to the start of edge2
+        move_to_target = Matrix.ByTranslation(x2, y2, z2)
+
+        # Lengths of the edges
+        length1 = Edge.Length(edgeA)
+        length2 = Edge.Length(edgeB)
+
+        if length1 == 0 or length2 == 0:
+            raise ValueError("Edges must have non-zero length.")
+
+        # Calculate scaling factor
+        scale_factor = length2 / length1
+        # Scaling matrix
+        scaling_matrix = Matrix.ByScaling(scale_factor, scale_factor, 1.0)
+
+        # Calculate angles of the edges relative to the X-axis
+        angle1 = Vector.CompassAngle(Edge.Direction(edgeA), [1,0,0])
+        angle2 = Vector.CompassAngle(Edge.Direction(edgeB), [1,0,0])
+        # Rotation angle
+        rotation_angle = angle2 - angle1
+        # Rotation matrix (about Z-axis for 2D alignment)
+        rotation_matrix = Matrix.ByRotation(0, 0, rotation_angle, order="xyz")
+
+        # Combine transformations: Move to origin -> Scale -> Rotate -> Move to target
+        transformation_matrix = Matrix.Multiply(scaling_matrix, move_to_origin)
+        transformation_matrix = Matrix.Multiply(rotation_matrix, transformation_matrix)
+        transformation_matrix = Matrix.Multiply(move_to_target, transformation_matrix)
+        return transformation_matrix
+
     @staticmethod
     def Angle(edgeA, edgeB, mantissa: int = 6, bracket: bool = False) -> float:
         """

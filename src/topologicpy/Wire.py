@@ -147,7 +147,7 @@ class Wire():
         vertices = []
         for arc_point in arc_points:
             vertices.append(Vertex.ByCoordinates(list(arc_point)))
-        arc = Wire.ByVertices(vertices, close=False)
+        arc = Wire.ByVertices(vertices, close=False, tolerance=tolerance)
         if not Topology.IsInstance(arc, "Wire"):
             if not silent:
                 print("Wire.Arc - Error: Could not create an arc. Returning None.")
@@ -271,7 +271,7 @@ class Wire():
         if result == True:
             print("Wire.BoundingRectangle - Error: Could not find three vertices that are not colinear within 30 seconds. Returning None.")
             return None
-        w = Wire.ByVertices(vList)
+        w = Wire.ByVertices(vList, close=True, tolerance=tolerance)
         if not Topology.IsInstance(w, "Wire"):
             print("Wire.BoundingRectangle - Error: Could not create wire from three vertices. Returning None.")
             return None
@@ -472,7 +472,7 @@ class Wire():
             fac = 1
         origin = Topology.Centroid(wire)
         temp_vertices = [Topology.Vertices(wire)[0], Topology.Vertices(wire)[1], Topology.Centroid(wire)]
-        temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True), silent=silent)
+        temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True, tolerance=tolerance), silent=silent)
         temp_normal = Face.Normal(temp_face)
         flat_wire = Topology.Flatten(wire, direction=temp_normal, origin=origin)
         normal = Face.Normal(temp_face)
@@ -602,7 +602,7 @@ class Wire():
         #     #w_e = Edge.SetLength(w_e, Edge.Length(w_e)+(2*epsilon), bothSides = True)
         #     wire_edges.append(w_e)
         
-        return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
+        return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
         #wire_edges = Topology.Edges(wire_edges)
         wire_edges = [Edge.SetLength(w_e, Edge.Length(w_e)+(2*epsilon), bothSides=True) for w_e in Topology.Edges(return_wire)]
         return_wire_edges = Topology.Edges(return_wire)
@@ -895,7 +895,7 @@ class Wire():
         return wire
 
     @staticmethod
-    def ByVerticesCluster(cluster, close: bool = True):
+    def ByVerticesCluster(cluster, close: bool = True, tolerance: float = 0.0001):
         """
         Creates a wire from the input cluster of vertices.
 
@@ -905,6 +905,8 @@ class Wire():
             the input cluster of vertices.
         close : bool , optional
             If True the last vertex will be connected to the first vertex to close the wire. The default is True.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001
 
         Returns
         -------
@@ -917,7 +919,7 @@ class Wire():
         if not Topology.IsInstance(cluster, "Cluster"):
             return None
         vertices = Topology.Vertices(cluster)
-        return Wire.ByVertices(vertices, close)
+        return Wire.ByVertices(vertices, close=close, tolerance=tolerance)
 
     @staticmethod
     def Circle(origin= None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
@@ -990,9 +992,9 @@ class Wire():
             baseV.append(Vertex.ByCoordinates(x, y, z))
 
         if angleRange == 360:
-            baseWire = Wire.ByVertices(baseV[::-1], close=False) #reversing the list so that the normal points up in Blender
+            baseWire = Wire.ByVertices(baseV[::-1], close=False, tolerance=tolerance) #reversing the list so that the normal points up in Blender
         else:
-            baseWire = Wire.ByVertices(baseV[::-1], close=close) #reversing the list so that the normal points up in Blender
+            baseWire = Wire.ByVertices(baseV[::-1], close=close, tolerance=tolerance) #reversing the list so that the normal points up in Blender
 
         if placement.lower() == "lowerleft":
             baseWire = Topology.Translate(baseWire, radius, radius, 0)
@@ -1268,7 +1270,7 @@ class Wire():
         while not Topology.IsInstance(f, "Face"):
             vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
             v = sample(vertices, 3)
-            w = Wire.ByVertices(v)
+            w = Wire.ByVertices(v, tolerance=tolerance)
             f = Face.ByWire(w, tolerance=tolerance, silent=True)
             if not f == None:
                 origin = Topology.Centroid(f)
@@ -1283,7 +1285,7 @@ class Wire():
         hull_vertices = []
         for p in hull:
             hull_vertices.append(Vertex.ByCoordinates(p[0], p[1], 0))
-        ch = Wire.ByVertices(hull_vertices, close=True)
+        ch = Wire.ByVertices(hull_vertices, close=True, tolerance=tolerance)
         ch = Topology.Unflatten(ch, origin=origin, direction=normal)
         return ch
 
@@ -1403,7 +1405,7 @@ class Wire():
         while not Topology.IsInstance(f, "Face"):
             vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
             v = sample(vertices, 3)
-            w = Wire.ByVertices(v)
+            w = Wire.ByVertices(v, tolerance=tolerance)
             f = Face.ByWire(w, tolerance=tolerance)
             origin = Topology.Centroid(f)
             normal = Face.Normal(f, mantissa=mantissa)
@@ -1417,11 +1419,198 @@ class Wire():
         hull_vertices = []
         for p in hull:
             hull_vertices.append(Vertex.ByCoordinates(points[p][0], points[p][1], 0))
-        ch = Wire.ByVertices(hull_vertices)
+        ch = Wire.ByVertices(hull_vertices, tolerance=tolerance)
         ch = Topology.Unflatten(ch, origin=origin, direction=normal)
         return ch
 
+    @staticmethod
+    def CrossShape(origin=None,
+            width=1,
+            length=1,
+            a=0.25,
+            b=0.25,
+            c=None,
+            d=None,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates a Cross-shape.
 
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the T-shape. The default is None which results in the Cross-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the Cross-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the Cross-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the Cross-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the horizontal arm of the Cross-shape. The default is 0.25.
+        c : float , optional
+            The distance of the vertical symmetry axis measured from the left side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the Y-axis.
+        d : float , optional
+            The distance of the horizontal symmetry axis measured from the bottom side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the X-axis.
+        direction : list , optional
+            The vector representing the up direction of the Cross-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the Cross-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The created Cross-shape.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if c == None:
+            c = width/2
+        if d == None:
+            d = length/2
+        if not isinstance(c, int) and not isinstance(c, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(d, int) and not isinstance(d, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The d input parameter is not a valid number. Returning None.")
+        if width <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if c <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if d <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The d input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance*2):
+            if not silent:
+                print("Wire.CrossShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b >= (length - tolerance*2):
+            if not silent:
+                print("Wire.CrossShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
+            return None
+        if c <= (tolerance + a/2):
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter must be more than half the a input parameter. Returning None.")
+            return None
+        if d <= (tolerance + b/2):
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter must be more than half the b input parameter. Returning None.")
+            return None
+        if c >= (width - tolerance - a/2):
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter must be less than the width minus half the a input parameter. Returning None.")
+            return None
+        if d >= (length - tolerance - b/2):
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter must be less than the width minus half the b input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Wire.CrossShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Wire.CrossShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Wire.CrossShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        
+        # Define the vertices of the Cross-shape (counterclockwise)
+        v1 = Vertex.ByCoordinates(c-a/2, 0)
+        v2 = Vertex.ByCoordinates(c+a/2, 0)
+        v3 = Vertex.ByCoordinates(c+a/2, d-b/2)
+        v4 = Vertex.ByCoordinates(width, d-b/2)
+        v5 = Vertex.ByCoordinates(width, d+b/2)
+        v6 = Vertex.ByCoordinates(c+a/2, d+b/2)
+        v7 = Vertex.ByCoordinates(c+a/2, length)
+        v8 = Vertex.ByCoordinates(c-a/2, length)  # Top of vertical arm
+        v9 = Vertex.ByCoordinates(c-a/2, d+b/2)  # Top of vertical arm
+        v10 = Vertex.ByCoordinates(0, d+b/2)  # Top of vertical arm
+        v11 = Vertex.ByCoordinates(0, d-b/2)  # Top of vertical arm
+        v12 = Vertex.ByCoordinates(c-a/2, d-b/2)  # Top of vertical arm
+
+        # Create the T-shaped wire
+        cross_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6, v7, v8, v9,v10, v11, v12], close=True, tolerance=tolerance)
+        cross_shape = Topology.Translate(cross_shape, -width/2, -length/2, 0)
+        cross_shape = Topology.Translate(cross_shape, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+        reverse = False
+        if flipHorizontal == True:
+            xScale = -1
+            reverse = not reverse
+        else:
+            xScale = 1
+        if flipVertical == True:
+            yScale = -1
+            reverse = not reverse
+        else:
+            yScale = 1
+        if xScale == -1 or yScale == -1:
+            cross_shape = Topology.Scale(cross_shape, x=xScale, y=yScale, z=1)
+            if reverse == True:
+                cross_shape = Wire.Reverse(cross_shape)
+        if placement.lower() == "lowerleft":
+            cross_shape = Topology.Translate(cross_shape, width/2, length/2, 0)
+        elif placement.lower() == "upperright":
+            cross_shape = Topology.Translate(cross_shape, -width/2, -length/2, 0)
+        elif placement.lower() == "upperleft":
+            cross_shape = Topology.Translate(cross_shape, width/2, -length/2, 0)
+        elif placement.lower() == "lowerright":
+            cross_shape = Topology.Translate(cross_shape, -width/2, length/2, 0)
+        
+        if direction != [0, 0, 1]:
+            cross_shape = Topology.Orient(cross_shape, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return cross_shape
+    
     @staticmethod
     def CShape(origin=None,
             width=1,
@@ -1541,7 +1730,7 @@ class Wire():
         v8 = Vertex.ByCoordinates(0, length)
 
         # Create the C-shaped wire
-        c_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6, v7, v8], close=True)
+        c_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6, v7, v8], close=True, tolerance=tolerance)
         c_shape = Topology.Translate(c_shape, -width/2, -length/2, 0)
         c_shape = Topology.Translate(c_shape, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
         reverse = False
@@ -1713,7 +1902,7 @@ class Wire():
         return edges
 
     @staticmethod
-    def Einstein(origin= None, radius: float = 0.5, direction: list = [0, 0, 1], placement: str = "center", mantissa: int = 6):
+    def Einstein(origin= None, radius: float = 0.5, direction: list = [0, 0, 1], placement: str = "center", mantissa: int = 6, tolerance: float = 0.0001):
         """
         Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physicist). See https://arxiv.org/abs/2303.10798
 
@@ -1729,6 +1918,8 @@ class Wire():
             The description of the placement of the origin of the hexagon determining the location of the tile. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         Returns
         -------
         topologic_core.Wire
@@ -1761,7 +1952,7 @@ class Wire():
         v13 = Vertex.ByCoordinates(-cos(30)*d, sin(30)*d, 0)
         vertices = [v1, v13, v12, v11, v10, v9, v8, v7, v6, v5, v4, v3, v2]
         # [v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13]
-        einstein = Wire.ByVertices(vertices, close=True)
+        einstein = Wire.ByVertices(vertices, close=True, tolerance=tolerance)
 
         einstein = Topology.Rotate(einstein, origin=origin, axis=[1,0,0], angle=180)
         
@@ -1960,9 +2151,9 @@ class Wire():
             baseV.append(Vertex.ByCoordinates(x, y, z))
 
         if angleRange == 360:
-            baseWire = Wire.ByVertices(baseV[::-1], close=False) #reversing the list so that the normal points up in Blender
+            baseWire = Wire.ByVertices(baseV[::-1], close=False, tolerance=tolerance) #reversing the list so that the normal points up in Blender
         else:
-            baseWire = Wire.ByVertices(baseV[::-1], close=close) #reversing the list so that the normal points up in Blender
+            baseWire = Wire.ByVertices(baseV[::-1], close=close, tolerance=tolerance) #reversing the list so that the normal points up in Blender
 
         if placement.lower() == "lowerleft":
             baseWire = Topology.Translate(baseWire, a, b, 0)
@@ -2170,7 +2361,7 @@ class Wire():
                         final_vertices.append(v)
             else:
                 final_vertices.append(v)
-        flat_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
+        flat_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
         # Unflatten the wire
         return_wire = Topology.Unflatten(flat_wire, origin=Vertex.Origin(), direction=normal)
         return return_wire
@@ -2331,7 +2522,7 @@ class Wire():
             contour = process(verticesA=verticesA, verticesB=verticesB, n=n)
             contours += contour
             for c in contour:
-                finalWires.append(Wire.ByVertices(c, Wire.IsClosed(wires[i])))
+                finalWires.append(Wire.ByVertices(c, close=Wire.IsClosed(wires[i], tolerance=tolerance)))
 
         contours.append(vertices[-1])
         finalWires.append(wires[-1])
@@ -2356,7 +2547,7 @@ class Wire():
         return Topology.SelfMerge(Cluster.ByTopologies(finalWires+ridges), tolerance=tolerance)
     
     @staticmethod
-    def Invert(wire):
+    def Invert(wire, tolerance: float = 0.0001):
         """
         Creates a wire that is an inverse (mirror) of the input wire.
 
@@ -2364,6 +2555,8 @@ class Wire():
         ----------
         wire : topologic_core.Wire
             The input wire.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -2377,7 +2570,7 @@ class Wire():
             return None
         vertices = Topology.Vertices(wire)
         reversed_vertices = vertices[::-1]
-        return Wire.ByVertices(reversed_vertices)
+        return Wire.ByVertices(reversed_vertices, closed=Wire.IsClosed(wire), tolerance=tolerance)
 
     @staticmethod
     def IsClosed(wire) -> bool:
@@ -2661,7 +2854,7 @@ class Wire():
         v12 = Vertex.ByCoordinates(0,b)
 
         # Create the I-shaped wire
-        i_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12], close=True)
+        i_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12], close=True, tolerance=tolerance)
         i_shape = Topology.Translate(i_shape, -width/2, -length/2, 0)
         i_shape = Topology.Translate(i_shape, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
         reverse = False
@@ -2729,7 +2922,7 @@ class Wire():
         return totalLength
 
     @staticmethod
-    def Line(origin= None, length: float = 1, direction: list = [1, 0, 0], sides: int = 2, placement: str ="center"):
+    def Line(origin= None, length: float = 1, direction: list = [1, 0, 0], sides: int = 2, placement: str ="center", tolerance: float = 0.0001):
         """
         Creates a straight line wire using the input parameters.
 
@@ -2749,6 +2942,8 @@ class Wire():
             2. "start" which places the start of the edge at the origin.
             3. "end" which places the end of the edge at the origin.
             The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
 
         Returns
         -------
@@ -2784,7 +2979,7 @@ class Wire():
         for i in range(1, sides):
             vertices.append(Edge.VertexByParameter(edge, i*unitDistance))
         vertices.append(Edge.EndVertex(edge))
-        return Wire.ByVertices(vertices)
+        return Wire.ByVertices(vertices, closed=False, tolerance=tolerance)
 
     @staticmethod
     def LShape(origin=None,
@@ -2896,7 +3091,7 @@ class Wire():
         v6 = Vertex.ByCoordinates(0, length)  # Top of vertical arm
 
         # Create the L-shaped wire
-        l_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6], close=True)
+        l_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6], close=True, tolerance=tolerance)
         l_shape = Topology.Translate(l_shape, -width/2, -length/2, 0)
         l_shape = Topology.Translate(l_shape, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
         reverse = False
@@ -3030,7 +3225,7 @@ class Wire():
                         final_vertices.append(v)
             else:
                 final_vertices.append(v)
-        flat_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire))
+        flat_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
         # Unflatten the wire
         return_wire = Topology.Unflatten(flat_wire, origin=Vertex.Origin(), direction=normal)
         return return_wire
@@ -3213,7 +3408,7 @@ class Wire():
         for i, edge in enumerate(oriented_edges):
             vertices.append(Edge.EndVertex(edge))
             
-        return_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(wire))
+        return_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
         if transferDictionaries:
             return_wire = Topology.TransferDictionariesBySelectors(return_wire, selectors=edge_selectors, tranEdges=True)
             return_wire = Topology.TransferDictionariesBySelectors(return_wire, selectors=original_vertices, tranVertices=True)
@@ -3408,7 +3603,7 @@ class Wire():
         vb3 = Vertex.ByCoordinates(Vertex.X(origin)+width*0.5+xOffset,Vertex.Y(origin)+length*0.5+yOffset,Vertex.Z(origin))
         vb4 = Vertex.ByCoordinates(Vertex.X(origin)-width*0.5+xOffset,Vertex.Y(origin)+length*0.5+yOffset,Vertex.Z(origin))
 
-        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], True)
+        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True, tolerance=tolerance)
         if direction != [0, 0, 1]:
             baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
@@ -3472,7 +3667,7 @@ class Wire():
                     filtered_vertices.append(vertex)
 
             if len(filtered_vertices) > 2:
-                return Wire.ByVertices(filtered_vertices, close=wire.IsClosed())
+                return Wire.ByVertices(filtered_vertices, close=wire.IsClosed(), tolerance=tolerance)
             elif len(filtered_vertices) == 2:
                 return Edge.ByStartVertexEndVertex(filtered_vertices[0], filtered_vertices[1], tolerance=tolerance, silent=True)
             else:
@@ -3573,9 +3768,9 @@ class Wire():
                     wire_verts.append(aVertex)
             if len(wire_verts) > 2:
                 if wire.IsClosed():
-                    final_wire = Wire.ByVertices(wire_verts, close=True)
+                    final_wire = Wire.ByVertices(wire_verts, close=True, tolerance=tolerance)
                 else:
-                    final_wire = Wire.ByVertices(wire_verts, close=False)
+                    final_wire = Wire.ByVertices(wire_verts, close=False, tolerance=tolerance)
             elif len(wire_verts) == 2:
                 final_wire = Edge.ByStartVertexEndVertex(wire_verts[0], wire_verts[1], tolerance=tolerance, silent=True)
             return final_wire
@@ -4043,7 +4238,7 @@ class Wire():
             if not silent:
                 print("Wire.Simplify - Warning: Could not generate enough vertices for a simplified wire. Returning the original wire.")
             wire
-        new_wire = Wire.ByVertices(new_vertices, close=Wire.IsClosed(wire))
+        new_wire = Wire.ByVertices(new_vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
         if not Topology.IsInstance(new_wire, "wire"):
             if not silent:
                 print("Wire.Simplify - Warning: Could not generate a simplified wire. Returning the original wire.")
@@ -4102,7 +4297,8 @@ class Wire():
             The vector representing the up direction of the spiral. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the spiral. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
-
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         Returns
         -------
         topologic_core.Wire
@@ -4180,7 +4376,7 @@ class Wire():
         y_min = min(yList)
         maxY = max(yList)
         radius = radiusA + radiusB*turns*0.5
-        baseWire = Wire.ByVertices(vertices, close=False)
+        baseWire = Wire.ByVertices(vertices, close=False, tolerance=tolerance)
         if placement.lower() == "center":
             baseWire = Topology.Translate(baseWire, 0, 0, -height*0.5)
         if placement.lower() == "lowerleft":
@@ -4369,7 +4565,7 @@ class Wire():
         for i, x in enumerate(x_list):
             v = Vertex.ByCoordinates(x, y_list[i], 0)
             vertices.append(v)
-        baseWire = Wire.ByVertices(vertices, close=True)
+        baseWire = Wire.ByVertices(vertices, close=True, tolerance=tolerance)
         baseWire = Topology.RemoveCollinearEdges(baseWire, angTolerance=angTolerance, tolerance=tolerance)
         baseWire = Wire.Simplify(baseWire, tolerance=tolerance)
         if placement.lower() == "lowerleft":
@@ -4473,7 +4669,7 @@ class Wire():
         for coord in baseV:
             tranBase.append(Vertex.ByCoordinates(coord[0]+xOffset, coord[1]+yOffset, Vertex.Z(origin)))
         
-        baseWire = Wire.ByVertices(tranBase, True)
+        baseWire = Wire.ByVertices(tranBase, close=True, tolerance=tolerance)
         baseWire = Wire.Reverse(baseWire)
         if direction != [0, 0, 1]:
             baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
@@ -4587,7 +4783,7 @@ class Wire():
         vb3 = Vertex.ByCoordinates(Vertex.X(origin)+widthB*0.5+offsetB+xOffset,Vertex.Y(origin)+length*0.5+yOffset,Vertex.Z(origin))
         vb4 = Vertex.ByCoordinates(Vertex.X(origin)-widthB*0.5++offsetB+xOffset,Vertex.Y(origin)+length*0.5+yOffset,Vertex.Z(origin))
 
-        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], True)
+        baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True, tolerance=tolerance)
         if direction != [0, 0, 1]:
             baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
@@ -4611,15 +4807,15 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the T-shape. The default is None which results in the L-shape being placed at (0, 0, 0).
+            The location of the origin of the T-shape. The default is None which results in the T-shape being placed at (0, 0, 0).
         width : float , optional
             The overall width of the T-shape. The default is 1.0.
         length : float , optional
             The overall length of the T-shape. The default is 1.0.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the T-shape. The default is 0.5.
+            The hortizontal thickness of the vertical arm of the T-shape. The default is 0.25.
         b : float , optional
-            The vertical thickness of the horizontal arm of the T-shape. The default is 0.5.
+            The vertical thickness of the horizontal arm of the T-shape. The default is 0.25.
         direction : list , optional
             The vector representing the up direction of the T-shape. The default is [0, 0, 1].
         placement : str , optional
@@ -4671,11 +4867,11 @@ class Wire():
             if not silent:
                 print("Wire.LShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
             return None
-        if a >= (width - tolerance):
+        if a >= (width - tolerance*2):
             if not silent:
                 print("Wire.LShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
             return None
-        if b >= (length - tolerance):
+        if b >= (length - tolerance*2):
             if not silent:
                 print("Wire.LShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
             return None
@@ -4705,7 +4901,7 @@ class Wire():
         v8 = Vertex.ByCoordinates(width/2-a/2, length-b)  # Top of vertical arm
 
         # Create the T-shaped wire
-        t_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6, v7, v8], close=True)
+        t_shape = Wire.ByVertices([v1, v2, v3, v4, v5, v6, v7, v8], close=True, tolerance=tolerance)
         t_shape = Topology.Translate(t_shape, -width/2, -length/2, 0)
         t_shape = Topology.Translate(t_shape, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
         reverse = False

@@ -1125,6 +1125,162 @@ class Face():
         return Vector.CompassAngle(vectorA=dirA, vectorB=north, mantissa=mantissa, tolerance=tolerance)
 
     @staticmethod
+    def CrossShape(origin=None,
+            width=1,
+            length=1,
+            a=0.25,
+            b=0.25,
+            c=None,
+            d=None,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates a Cross-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the T-shape. The default is None which results in the Cross-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the Cross-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the Cross-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the Cross-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the horizontal arm of the Cross-shape. The default is 0.25.
+        c : float , optional
+            The distance of the vertical symmetry axis measured from the left side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the Y-axis.
+        d : float , optional
+            The distance of the horizontal symmetry axis measured from the bottom side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the X-axis.
+        direction : list , optional
+            The vector representing the up direction of the Cross-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the Cross-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created Cross-shape.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if c == None:
+            c = width/2
+        if d == None:
+            d = length/2
+        if not isinstance(c, int) and not isinstance(c, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(d, int) and not isinstance(d, float):
+            if not silent:
+                print("Wire.CrossShape - Error: The d input parameter is not a valid number. Returning None.")
+        if width <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if c <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if d <= tolerance:
+            if not silent:
+                print("Wire.CrossShape - Error: The d input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance*2):
+            if not silent:
+                print("Wire.CrossShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b >= (length - tolerance*2):
+            if not silent:
+                print("Wire.CrossShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
+            return None
+        if c <= (tolerance + a/2):
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter must be more than half the a input parameter. Returning None.")
+            return None
+        if d <= (tolerance + b/2):
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter must be more than half the b input parameter. Returning None.")
+            return None
+        if c >= (width - tolerance - a/2):
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter must be less than the width minus half the a input parameter. Returning None.")
+            return None
+        if d >= (length - tolerance - b/2):
+            if not silent:
+                print("Wire.CrossShape - Error: The c input parameter must be less than the width minus half the b input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Wire.CrossShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Wire.CrossShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Wire.CrossShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        cross_shape_wire = Wire.CrossShape(origin=origin,
+                                   width=width,
+                                   length=length,
+                                   a=a,
+                                   b=b,
+                                   c=c,
+                                   d=d,
+                                   flipHorizontal=flipHorizontal,
+                                   flipVertical=flipVertical,
+                                   direction=direction,
+                                   placement=placement,
+                                   tolerance=tolerance,
+                                   silent=silent)
+        return Face.ByWire(cross_shape_wire, tolerance=tolerance, silent=silent)
+
+    @staticmethod
     def CShape(origin=None,
             width=1,
             length=1,
@@ -3545,8 +3701,8 @@ class Face():
     def TShape(origin=None,
             width=1,
             length=1,
-            a=0.5,
-            b=0.5,
+            a=0.25,
+            b=0.25,
             flipHorizontal = False,
             flipVertical = False,
             direction=[0,0,1],
@@ -3565,9 +3721,9 @@ class Face():
         length : float , optional
             The overall length of the T-shape. The default is 1.0.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the T-shape. The default is 0.5.
+            The hortizontal thickness of the vertical arm of the T-shape. The default is 0.25.
         b : float , optional
-            The vertical thickness of the horizontal arm of the T-shape. The default is 0.5.
+            The vertical thickness of the horizontal arm of the T-shape. The default is 0.25.
         direction : list , optional
             The vector representing the up direction of the T-shape. The default is [0, 0, 1].
         placement : str , optional

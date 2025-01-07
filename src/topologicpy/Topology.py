@@ -6492,6 +6492,87 @@ class Topology():
             return None
         return topologic.Topology.IsSame(topologyA, topologyB)
     
+    def IsVertexMatched(topologyA, topologyB, mantissa: int = 6, tolerance=0.0001, silent : bool = False):
+        """
+        Returns True if the input topologies are vertex matched (have same number of vertices and all vertices are coincedent within a tolerance). Returns False otherwise.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        bool
+            True of the input topologies are vertex matched. False otherwise.
+
+        """
+        from topologicpy.Vertex import Vertex
+
+        def coordinates_match(list1, list2, tolerance):
+            """
+            Checks if all coordinates in list1 have a corresponding coordinate in list2
+            within a specified tolerance, with each match being unique.
+
+            Parameters
+            ----------
+            list1 : list of list of float
+                The first list of coordinates, where each coordinate is [x, y, z].
+            list2 : list of list of float
+                The second list of coordinates, where each coordinate is [x, y, z].
+            tolerance : float
+                The maximum distance within which two coordinates are considered matching.
+
+            Returns
+            -------
+            bool
+                True if all coordinates in list1 have a corresponding coordinate in list2
+                within the tolerance. False otherwise.
+            """
+            def distance(coord1, coord2):
+                """Calculate the Euclidean distance between two coordinates."""
+                return np.linalg.norm(np.array(coord1) - np.array(coord2))
+
+            # Copy list2 to keep track of unvisited coordinates
+            unmatched = list2.copy()
+
+            for coord1 in list1:
+                match_found = False
+                for i, coord2 in enumerate(unmatched):
+                    if distance(coord1, coord2) <= tolerance:
+                        # Mark the coordinate as visited by removing it
+                        unmatched.pop(i)
+                        match_found = True
+                        break
+                if not match_found:
+                    return False
+            return True
+
+        if not Topology.IsInstance(topologyA, "topology"):
+            if not silent:
+                print("Topology.IsVertexMatched - Error: The input topologyA parameter is not a valid topology. Returning None.")
+            return None
+        if not Topology.IsInstance(topologyB, "topology"):
+            if not silent:
+                print("Topology.IsVertexMatched - Error: The input topologyB parameter is not a valid topology. Returning None.")
+            return None
+        
+        vertices_a = Topology.Vertices(topologyA)
+        vertices_b = Topology.Vertices(topologyB)
+        if not len(vertices_a) == len(vertices_b):
+            return False
+        coords_a = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices_a]
+        coords_b = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices_b]
+        return coordinates_match(coords_a, coords_b, tolerance=tolerance)
+
     @staticmethod
     def MergeAll(topologies, tolerance=0.0001):
         """
@@ -9229,9 +9310,9 @@ class Topology():
         kRotation31 = matrix[2][0]
         kRotation32 = matrix[2][1]
         kRotation33 = matrix[2][2]
-        kTranslationX = matrix[3][0]
-        kTranslationY = matrix[3][1]
-        kTranslationZ = matrix[3][2]
+        kTranslationX = matrix[0][3]
+        kTranslationY = matrix[1][3]
+        kTranslationZ = matrix[2][3]
 
         return_topology = topologic.TopologyUtility.Transform(topology, kTranslationX, kTranslationY, kTranslationZ, kRotation11, kRotation12, kRotation13, kRotation21, kRotation22, kRotation23, kRotation31, kRotation32, kRotation33)
         

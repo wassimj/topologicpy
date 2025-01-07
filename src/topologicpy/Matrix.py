@@ -49,70 +49,47 @@ class Matrix:
 
     @staticmethod
     def ByRotation(angleX=0, angleY=0, angleZ=0, order="xyz"):
-        """
-        Creates a 4x4 rotation matrix.
-
-        Parameters
-        ----------
-        angleX : float , optional
-            The desired rotation angle in degrees around the X axis. The default is 0.
-        angleY : float , optional
-            The desired rotation angle in degrees around the Y axis. The default is 0.
-        angleZ : float , optional
-            The desired rotation angle in degrees around the Z axis. The default is 0.
-        order : string , optional
-            The order by which the roatations will be applied. The possible values are any permutation of "xyz". This input is case insensitive. The default is "xyz".
-
-        Returns
-        -------
-        list
-            The created 4X4 rotation matrix.
-
-        """
         def rotateXMatrix(radians):
-            """ Return matrix for rotating about the x-axis by 'radians' radians """
             c = math.cos(radians)
             s = math.sin(radians)
             return [[1, 0, 0, 0],
-                    [0, c,-s, 0],
+                    [0, c, -s, 0],
                     [0, s, c, 0],
                     [0, 0, 0, 1]]
 
         def rotateYMatrix(radians):
-            """ Return matrix for rotating about the y-axis by 'radians' radians """
-            
             c = math.cos(radians)
             s = math.sin(radians)
-            return [[ c, 0, s, 0],
-                    [ 0, 1, 0, 0],
+            return [[c, 0, s, 0],
+                    [0, 1, 0, 0],
                     [-s, 0, c, 0],
-                    [ 0, 0, 0, 1]]
+                    [0, 0, 0, 1]]
 
         def rotateZMatrix(radians):
-            """ Return matrix for rotating about the z-axis by 'radians' radians """
-            
             c = math.cos(radians)
             s = math.sin(radians)
-            return [[c,-s, 0, 0],
+            return [[c, -s, 0, 0],
                     [s, c, 0, 0],
                     [0, 0, 1, 0],
                     [0, 0, 0, 1]]
-        
+
         xMat = rotateXMatrix(math.radians(angleX))
         yMat = rotateYMatrix(math.radians(angleY))
         zMat = rotateZMatrix(math.radians(angleZ))
+
         if order.lower() == "xyz":
-            return Matrix.Multiply(Matrix.Multiply(zMat,yMat),xMat)
+            return Matrix.Multiply(Matrix.Multiply(zMat, yMat), xMat)
         if order.lower() == "xzy":
-            return Matrix.Multiply(Matrix.Multiply(yMat,zMat),xMat)
+            return Matrix.Multiply(Matrix.Multiply(yMat, zMat), xMat)
         if order.lower() == "yxz":
-            return Matrix.Multiply(Matrix.Multiply(zMat,xMat),yMat)
-        if order.lower == "yzx":
-            return Matrix.Multiply(Matrix.Multiply(xMat,zMat),yMat)
+            return Matrix.Multiply(Matrix.Multiply(zMat, xMat), yMat)
+        if order.lower() == "yzx":
+            return Matrix.Multiply(Matrix.Multiply(xMat, zMat), yMat)
         if order.lower() == "zxy":
-            return Matrix.Multiply(Matrix.Multiply(yMat,xMat),zMat)
+            return Matrix.Multiply(Matrix.Multiply(yMat, xMat), zMat)
         if order.lower() == "zyx":
-            return Matrix.Multiply(Matrix.Multiply(xMat,yMat),zMat)
+            return Matrix.Multiply(Matrix.Multiply(xMat, yMat), zMat)
+
     
     @staticmethod
     def ByScaling(scaleX=1.0, scaleY=1.0, scaleZ=1.0):
@@ -159,10 +136,10 @@ class Matrix:
             The created 4X4 translation matrix.
 
         """
-        return [[1,0,0,0],
-                [0,1,0,0],
-                [0,0,1,0],
-                [translateX,translateY,translateZ,1]]
+        return [[1,0,0,translateX],
+                [0,1,0,translateY],
+                [0,0,1,translateZ],
+                [0,0,0,1]]
     
     @staticmethod
     def EigenvaluesAndVectors(matrix, mantissa: int = 6, silent: bool = False):
@@ -230,47 +207,42 @@ class Matrix:
     @staticmethod
     def Multiply(matA, matB):
         """
-        Multiplies the two input matrices. When transforming an object, the first input matrix is applied first
-        then the second input matrix.
-        
+        Multiplies two matrices (matA and matB). The first matrix (matA) is applied first in the transformation,
+        followed by the second matrix (matB).
+
         Parameters
         ----------
-        matA : list
+        matA : list of list of float
             The first input matrix.
-        matB : list
+        matB : list of list of float
             The second input matrix.
 
         Returns
         -------
-        list
-            The matrix resulting from the multiplication of the two input matrices.
+        list of list of float
+            The resulting matrix after multiplication.
 
         """
-        if not isinstance(matA, list):
-            return None
-        if not isinstance(matB, list):
-            return None
-        nr = len(matA)
-        nc = len(matA[0])
-        matC = []
-        for i in range(nr):
-            tempRow = []
-            for j in range(nc):
-                tempRow.append(0)
-            matC.append(tempRow)
-        if not isinstance(matA, list):
-            return None
-        if not isinstance(matB, list):
-            return None
-        # iterate through rows of X
-        for i in range(len(matA)):
-            # iterate through columns of Y
-            tempRow = []
-            for j in range(len(matB[0])):
-                # iterate through rows of Y
-                for k in range(len(matB)):
-                    matC[i][j] += matA[i][k] * matB[k][j]
-        return matC
+        # Input validation
+        if not (isinstance(matA, list) and all(isinstance(row, list) for row in matA) and
+                isinstance(matB, list) and all(isinstance(row, list) for row in matB)):
+            raise ValueError("Both inputs must be 2D lists representing matrices.")
+        
+        # Check matrix dimension compatibility
+        if len(matA[0]) != len(matB):
+            raise ValueError("Number of columns in matA must equal the number of rows in matB.")
+
+        # Dimensions of the resulting matrix
+        rows_A, cols_A = len(matA), len(matA[0])
+        rows_B, cols_B = len(matB), len(matB[0])
+        result = [[0.0] * cols_B for _ in range(rows_A)]
+
+        # Matrix multiplication
+        for i in range(rows_A):
+            for j in range(cols_B):
+                result[i][j] = sum(matA[i][k] * matB[k][j] for k in range(cols_A))
+
+        return result
 
     @staticmethod
     def Subtract(matA, matB):
