@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Helper module &mdash; topologicpy 0.8.0 documentation</title>
+  <title>topologicpy.Helper module &mdash; topologicpy 0.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.0
+                0.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -165,14 +165,26 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MakeUnique" title="topologicpy.Helper.Helper.MakeUnique"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MakeUnique</span></code></a>(listA)</p></td>
 <td><p>Forces the strings in the input list to be unique if they have duplicates.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MergeByThreshold" title="topologicpy.Helper.Helper.MergeByThreshold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeByThreshold</span></code></a>(listA[, threshold])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MaximumIndices" title="topologicpy.Helper.Helper.MaximumIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumIndices</span></code></a>(listA[, silent])</p></td>
+<td><p>Returns a list of indices of the maximum value in the input list.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MergeByThreshold" title="topologicpy.Helper.Helper.MergeByThreshold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeByThreshold</span></code></a>(listA[, threshold])</p></td>
 <td><p>Merges the numbers in the input list so that numbers within the input threshold are averaged into one number.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MinimumIndices" title="topologicpy.Helper.Helper.MinimumIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumIndices</span></code></a>(listA[, silent])</p></td>
+<td><p>Returns a list of indices of the minimum value in the input list.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Normalize" title="topologicpy.Helper.Helper.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normalize</span></code></a>(listA[, mantissa])</p></td>
 <td><p>Normalizes the input list so that it is in the range 0 to 1</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Position" title="topologicpy.Helper.Helper.Position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Position</span></code></a>(item, listA)</p></td>
 <td><p>Returns the position of the item in the list or the position it would have been inserts.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.RemoveEven" title="topologicpy.Helper.Helper.RemoveEven"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEven</span></code></a>(listA)</p></td>
+<td><p>Removes the even indexed members of the input list.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.RemoveOdd" title="topologicpy.Helper.Helper.RemoveOdd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveOdd</span></code></a>(listA)</p></td>
+<td><p>Removes the odd indexed members of the input list.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Repeat" title="topologicpy.Helper.Helper.Repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Repeat</span></code></a>(listA)</p></td>
 <td><p>Repeats the input nested list so that each sublist has the same number of members.</p></td>
@@ -310,6 +322,29 @@ For example Iterate([[1,2,3],[‘m’,’n’,’o’,’p’],[‘a’,’b’,
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.MaximumIndices">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MaximumIndices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.MaximumIndices" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of indices of the maximum value in the input list.
+For example, if the input list is [7,3,4,7,5,7] then the returned list is [0,3,5] to indicate the indices of the maximum value (7).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input list.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The resulting list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Helper.Helper.MergeByThreshold">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MergeByThreshold</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.MergeByThreshold" title="Permalink to this definition"></a></dt>
 <dd><p>Merges the numbers in the input list so that numbers within the input threshold are averaged into one number.</p>
@@ -332,6 +367,29 @@ For example Iterate([[1,2,3],[‘m’,’n’,’o’,’p’],[‘a’,’b’,
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.MinimumIndices">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MinimumIndices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.MinimumIndices" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of indices of the minimum value in the input list.
+For example, if the input list is [1,3,4,1,5,1] then the returned list is [0,3,5] to indicate the indices of the minimum value (1).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input list.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The resulting list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Helper.Helper.Normalize">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Normalize" title="Permalink to this definition"></a></dt>
 <dd><p>Normalizes the input list so that it is in the range 0 to 1</p>
@@ -340,7 +398,7 @@ For example Iterate([[1,2,3],[‘m’,’n’,’o’,’p’],[‘a’,’b’,
 <dd class="field-odd"><dl class="simple">
 <dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input nested list.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mantissa value. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -370,6 +428,46 @@ item is assumed to be numeric. listA is assumed to contain only numeric values a
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>int</dt><dd><p>The position of the item within the list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.RemoveEven">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveEven</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.RemoveEven" title="Permalink to this definition"></a></dt>
+<dd><p>Removes the even indexed members of the input list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input list.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The resulting list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.RemoveOdd">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveOdd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.RemoveOdd" title="Permalink to this definition"></a></dt>
+<dd><p>Removes the odd indexed members of the input list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>listA</strong><span class="classifier">list</span></dt><dd><p>The input list.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The resulting list.</p>
 </dd>
 </dl>
 </dd>

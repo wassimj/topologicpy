@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Wire module &mdash; topologicpy 0.8.0 documentation</title>
+  <title>topologicpy.Wire module &mdash; topologicpy 0.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.0
+                0.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -174,7 +174,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByVertices" title="topologicpy.Wire.Wire.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(vertices[, close, tolerance])</p></td>
 <td><p>Creates a wire from the input list of vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByVerticesCluster" title="topologicpy.Wire.Wire.ByVerticesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesCluster</span></code></a>(cluster[, close])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ByVerticesCluster" title="topologicpy.Wire.Wire.ByVerticesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesCluster</span></code></a>(cluster[, close, tolerance])</p></td>
 <td><p>Creates a wire from the input cluster of vertices.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.CShape" title="topologicpy.Wire.Wire.CShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
@@ -192,139 +192,142 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ConvexHull" title="topologicpy.Wire.Wire.ConvexHull"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvexHull</span></code></a>(topology[, mantissa, tolerance])</p></td>
 <td><p>Returns a wire representing the 2D convex hull of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Cycles" title="topologicpy.Wire.Wire.Cycles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cycles</span></code></a>(wire[, maxVertices, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.CrossShape" title="topologicpy.Wire.Wire.CrossShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CrossShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
+<td><p>Creates a Cross-shape.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Cycles" title="topologicpy.Wire.Wire.Cycles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cycles</span></code></a>(wire[, maxVertices, tolerance])</p></td>
 <td><p>Returns the closed circuits of wires found within the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Edges" title="topologicpy.Wire.Wire.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(wire)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Edges" title="topologicpy.Wire.Wire.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(wire)</p></td>
 <td><p>Returns the edges of the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Einstein" title="topologicpy.Wire.Wire.Einstein"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Einstein</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Einstein" title="topologicpy.Wire.Wire.Einstein"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Einstein</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physicist).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Ellipse" title="topologicpy.Wire.Wire.Ellipse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ellipse</span></code></a>([origin, inputMode, width, length, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Ellipse" title="topologicpy.Wire.Wire.Ellipse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ellipse</span></code></a>([origin, inputMode, width, length, ...])</p></td>
 <td><p>Creates an ellipse and returns all its geometry and parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.EllipseAll" title="topologicpy.Wire.Wire.EllipseAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EllipseAll</span></code></a>([origin, inputMode, width, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.EllipseAll" title="topologicpy.Wire.Wire.EllipseAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EllipseAll</span></code></a>([origin, inputMode, width, ...])</p></td>
 <td><p>Creates an ellipse and returns all its geometry and parameters.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.EndVertex" title="topologicpy.Wire.Wire.EndVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EndVertex</span></code></a>(wire)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.EndVertex" title="topologicpy.Wire.Wire.EndVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EndVertex</span></code></a>(wire)</p></td>
 <td><p>Returns the end vertex of the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ExteriorAngles" title="topologicpy.Wire.Wire.ExteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExteriorAngles</span></code></a>(wire[, tolerance, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ExteriorAngles" title="topologicpy.Wire.Wire.ExteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExteriorAngles</span></code></a>(wire[, tolerance, mantissa])</p></td>
 <td><p>Returns the exterior angles of the input wire in degrees.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ExternalBoundary" title="topologicpy.Wire.Wire.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(wire)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ExternalBoundary" title="topologicpy.Wire.Wire.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(wire)</p></td>
 <td><p>Returns the external boundary (cluster of vertices where degree == 1) of the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Fillet" title="topologicpy.Wire.Wire.Fillet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fillet</span></code></a>(wire[, radius, sides, radiusKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Fillet" title="topologicpy.Wire.Wire.Fillet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fillet</span></code></a>(wire[, radius, sides, radiusKey, ...])</p></td>
 <td><p>Fillets (rounds) the interior and exterior corners of the input wire given the input radius.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IShape" title="topologicpy.Wire.Wire.IShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IShape" title="topologicpy.Wire.Wire.IShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
 <td><p>Creates an I-shape.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.InteriorAngles" title="topologicpy.Wire.Wire.InteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InteriorAngles</span></code></a>(wire[, tolerance, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.InteriorAngles" title="topologicpy.Wire.Wire.InteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InteriorAngles</span></code></a>(wire[, tolerance, mantissa])</p></td>
 <td><p>Returns the interior angles of the input wire in degrees.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Interpolate" title="topologicpy.Wire.Wire.Interpolate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Interpolate</span></code></a>(wires[, n, outputType, mapping, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Interpolate" title="topologicpy.Wire.Wire.Interpolate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Interpolate</span></code></a>(wires[, n, outputType, mapping, ...])</p></td>
 <td><p>Creates <em>n</em> number of wires that interpolate between wireA and wireB.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Invert" title="topologicpy.Wire.Wire.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(wire)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Invert" title="topologicpy.Wire.Wire.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(wire[, tolerance])</p></td>
 <td><p>Creates a wire that is an inverse (mirror) of the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsClosed" title="topologicpy.Wire.Wire.IsClosed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsClosed</span></code></a>(wire)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsClosed" title="topologicpy.Wire.Wire.IsClosed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsClosed</span></code></a>(wire)</p></td>
 <td><p>Returns True if the input wire is closed.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsManifold" title="topologicpy.Wire.Wire.IsManifold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsManifold</span></code></a>(wire[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsManifold" title="topologicpy.Wire.Wire.IsManifold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsManifold</span></code></a>(wire[, silent])</p></td>
 <td><p>Returns True if the input wire is manifold.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsSimilar" title="topologicpy.Wire.Wire.IsSimilar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSimilar</span></code></a>(wireA, wireB[, angTolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.IsSimilar" title="topologicpy.Wire.Wire.IsSimilar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSimilar</span></code></a>(wireA, wireB[, angTolerance, ...])</p></td>
 <td><p>Returns True if the input wires are similar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.LShape" title="topologicpy.Wire.Wire.LShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LShape</span></code></a>([origin, width, length, a, b, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.LShape" title="topologicpy.Wire.Wire.LShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LShape</span></code></a>([origin, width, length, a, b, ...])</p></td>
 <td><p>Creates an L-shape.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Length" title="topologicpy.Wire.Wire.Length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Length</span></code></a>(wire[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Length" title="topologicpy.Wire.Wire.Length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Length</span></code></a>(wire[, mantissa])</p></td>
 <td><p>Returns the length of the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Line" title="topologicpy.Wire.Wire.Line"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Line</span></code></a>([origin, length, direction, sides, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Line" title="topologicpy.Wire.Wire.Line"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Line</span></code></a>([origin, length, direction, sides, ...])</p></td>
 <td><p>Creates a straight line wire using the input parameters.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Miter" title="topologicpy.Wire.Wire.Miter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Miter</span></code></a>(wire[, offset, offsetKey, tolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Miter" title="topologicpy.Wire.Wire.Miter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Miter</span></code></a>(wire[, offset, offsetKey, tolerance, ...])</p></td>
 <td><p>Fillets (rounds) the interior and exterior corners of the input wire given the input radius.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Normal" title="topologicpy.Wire.Wire.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>(wire[, outputType, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Normal" title="topologicpy.Wire.Wire.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>(wire[, outputType, mantissa])</p></td>
 <td><p>Returns the normal vector to the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.OrientEdges" title="topologicpy.Wire.Wire.OrientEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OrientEdges</span></code></a>(wire, vertexA[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.OrientEdges" title="topologicpy.Wire.Wire.OrientEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OrientEdges</span></code></a>(wire, vertexA[, ...])</p></td>
 <td><p>Returns a correctly oriented head-to-tail version of the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Planarize" title="topologicpy.Wire.Wire.Planarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planarize</span></code></a>(wire[, origin, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Planarize" title="topologicpy.Wire.Wire.Planarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planarize</span></code></a>(wire[, origin, mantissa, tolerance])</p></td>
 <td><p>Returns a planarized version of the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Project" title="topologicpy.Wire.Wire.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(wire, face[, direction, mantissa, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Project" title="topologicpy.Wire.Wire.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(wire, face[, direction, mantissa, ...])</p></td>
 <td><p>Creates a projection of the input wire unto the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Rectangle" title="topologicpy.Wire.Wire.Rectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rectangle</span></code></a>([origin, width, length, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Rectangle" title="topologicpy.Wire.Wire.Rectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rectangle</span></code></a>([origin, width, length, ...])</p></td>
 <td><p>Creates a rectangle.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.RemoveCollinearEdges" title="topologicpy.Wire.Wire.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(wire[, angTolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.RemoveCollinearEdges" title="topologicpy.Wire.Wire.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(wire[, angTolerance, ...])</p></td>
 <td><p>Removes any collinear edges in the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.RemoveCollinearEdges_old" title="topologicpy.Wire.Wire.RemoveCollinearEdges_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges_old</span></code></a>(wire[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.RemoveCollinearEdges_old" title="topologicpy.Wire.Wire.RemoveCollinearEdges_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges_old</span></code></a>(wire[, ...])</p></td>
 <td><p>Removes any collinear edges in the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Representation" title="topologicpy.Wire.Wire.Representation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Representation</span></code></a>(wire[, normalize, rotate, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Representation" title="topologicpy.Wire.Wire.Representation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Representation</span></code></a>(wire[, normalize, rotate, ...])</p></td>
 <td><p>Returns a normalized representation of a closed wire with alternating edge lengths and interior angles.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Reverse" title="topologicpy.Wire.Wire.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(wire[, transferDictionaries, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Reverse" title="topologicpy.Wire.Wire.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(wire[, transferDictionaries, tolerance])</p></td>
 <td><p>Creates a wire that has the reverse direction of the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Roof" title="topologicpy.Wire.Wire.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, boundary, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Roof" title="topologicpy.Wire.Wire.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, boundary, tolerance])</p></td>
 <td><p>Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Simplify" title="topologicpy.Wire.Wire.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(wire[, method, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Simplify" title="topologicpy.Wire.Wire.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(wire[, method, tolerance, silent])</p></td>
 <td><p>Simplifies the input wire edges based on the selected algorithm: Douglas-Peucker or Visvalingam–Whyatt.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Skeleton" title="topologicpy.Wire.Wire.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>(face[, boundary, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Skeleton" title="topologicpy.Wire.Wire.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>(face[, boundary, tolerance])</p></td>
 <td><p>Creates a straight skeleton.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Spiral" title="topologicpy.Wire.Wire.Spiral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spiral</span></code></a>([origin, radiusA, radiusB, height, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Spiral" title="topologicpy.Wire.Wire.Spiral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spiral</span></code></a>([origin, radiusA, radiusB, height, ...])</p></td>
 <td><p>Creates a spiral.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Split" title="topologicpy.Wire.Wire.Split"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Split</span></code></a>(wire)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Split" title="topologicpy.Wire.Wire.Split"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Split</span></code></a>(wire)</p></td>
 <td><p>Splits the input wire into segments at its intersections (i.e.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Square" title="topologicpy.Wire.Wire.Square"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Square</span></code></a>([origin, size, direction, placement, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Square" title="topologicpy.Wire.Wire.Square"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Square</span></code></a>([origin, size, direction, placement, ...])</p></td>
 <td><p>Creates a square.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Squircle" title="topologicpy.Wire.Wire.Squircle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Squircle</span></code></a>([origin, radius, sides, a, b, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Squircle" title="topologicpy.Wire.Wire.Squircle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Squircle</span></code></a>([origin, radius, sides, a, b, ...])</p></td>
 <td><p>Creates a Squircle which is a hybrid between a circle and a square.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Star" title="topologicpy.Wire.Wire.Star"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Star</span></code></a>([origin, radiusA, radiusB, rays, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Star" title="topologicpy.Wire.Wire.Star"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Star</span></code></a>([origin, radiusA, radiusB, rays, ...])</p></td>
 <td><p>Creates a star.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.StartEndVertices" title="topologicpy.Wire.Wire.StartEndVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartEndVertices</span></code></a>(wire)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.StartEndVertices" title="topologicpy.Wire.Wire.StartEndVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartEndVertices</span></code></a>(wire)</p></td>
 <td><p>Returns the start and end vertices of the input wire.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.StartVertex" title="topologicpy.Wire.Wire.StartVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartVertex</span></code></a>(wire)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.StartVertex" title="topologicpy.Wire.Wire.StartVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartVertex</span></code></a>(wire)</p></td>
 <td><p>Returns the start vertex of the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.TShape" title="topologicpy.Wire.Wire.TShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TShape</span></code></a>([origin, width, length, a, b, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.TShape" title="topologicpy.Wire.Wire.TShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TShape</span></code></a>([origin, width, length, a, b, ...])</p></td>
 <td><p>Creates a T-shape.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Trapezoid" title="topologicpy.Wire.Wire.Trapezoid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trapezoid</span></code></a>([origin, widthA, widthB, offsetA, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Trapezoid" title="topologicpy.Wire.Wire.Trapezoid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trapezoid</span></code></a>([origin, widthA, widthB, offsetA, ...])</p></td>
 <td><p>Creates a trapezoid.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexByDistance" title="topologicpy.Wire.Wire.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(wire[, distance, origin, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexByDistance" title="topologicpy.Wire.Wire.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(wire[, distance, origin, ...])</p></td>
 <td><p>Creates a vertex along the input wire offset by the input distance from the input origin.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexByParameter" title="topologicpy.Wire.Wire.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(wire[, u])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexByParameter" title="topologicpy.Wire.Wire.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(wire[, u])</p></td>
 <td><p>Creates a vertex along the input wire offset by the input <em>u</em> parameter.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexDistance" title="topologicpy.Wire.Wire.VertexDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDistance</span></code></a>(wire, vertex[, origin, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.VertexDistance" title="topologicpy.Wire.Wire.VertexDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDistance</span></code></a>(wire, vertex[, origin, ...])</p></td>
 <td><p>Returns the distance, computed along the input wire of the input vertex from the input origin vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Vertices" title="topologicpy.Wire.Wire.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(wire)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Vertices" title="topologicpy.Wire.Wire.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(wire)</p></td>
 <td><p>Returns the list of vertices of the input wire.</p></td>
 </tr>
 </tbody>
@@ -582,7 +585,7 @@ The default is None which causes the algorithm to use twice the number of cpu co
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.ByVerticesCluster">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByVerticesCluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.ByVerticesCluster" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByVerticesCluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">close</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.ByVerticesCluster" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a wire from the input cluster of vertices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -590,6 +593,8 @@ The default is None which causes the algorithm to use twice the number of cpu co
 <dt><strong>cluster</strong><span class="classifier">topologic_core.cluster</span></dt><dd><p>the input cluster of vertices.</p>
 </dd>
 <dt><strong>close</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the last vertex will be connected to the first vertex to close the wire. The default is True.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001</p>
 </dd>
 </dl>
 </dd>
@@ -755,6 +760,46 @@ less concave hull, while decreasing <cite>k</cite> may yield a more detailed, co
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Wire.Wire.CrossShape">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CrossShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipHorizontal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipVertical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.CrossShape" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a Cross-shape.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. The default is None which results in the Cross-shape being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the Cross-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The overall length of the Cross-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>a</strong><span class="classifier">float , optional</span></dt><dd><p>The hortizontal thickness of the vertical arm of the Cross-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>b</strong><span class="classifier">float , optional</span></dt><dd><p>The vertical thickness of the horizontal arm of the Cross-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>c</strong><span class="classifier">float , optional</span></dt><dd><p>The distance of the vertical symmetry axis measured from the left side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the Y-axis.</p>
+</dd>
+<dt><strong>d</strong><span class="classifier">float , optional</span></dt><dd><p>The distance of the horizontal symmetry axis measured from the bottom side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the X-axis.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the Cross-shape. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the Cross-shape. This can be “center”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Wire</dt><dd><p>The created Cross-shape.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Cycles">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Cycles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Wire.Wire.Cycles" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the closed circuits of wires found within the input wire.</p>
@@ -800,7 +845,7 @@ less concave hull, while decreasing <cite>k</cite> may yield a more detailed, co
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Einstein">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Einstein</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Einstein" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Einstein</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Einstein" title="Permalink to this definition"></a></dt>
 <dd><p>Creates an aperiodic monotile, also called an ‘einstein’ tile (meaning one tile in German, not the name of the famous physicist). See <a class="reference external" href="https://arxiv.org/abs/2303.10798">https://arxiv.org/abs/2303.10798</a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -814,6 +859,8 @@ less concave hull, while decreasing <cite>k</cite> may yield a more detailed, co
 <dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the hexagon determining the location of the tile. This can be “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
@@ -1126,12 +1173,14 @@ This code has been contributed by Yidan Xue.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Invert">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Invert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Invert" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Invert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Invert" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a wire that is an inverse (mirror) of the input wire.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1272,7 +1321,7 @@ This code has been contributed by Yidan Xue.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.Line">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[1,</span> <span class="pre">0,</span> <span class="pre">0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Line" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[1,</span> <span class="pre">0,</span> <span class="pre">0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.Line" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a straight line wire using the input parameters.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1290,6 +1339,8 @@ This code has been contributed by Yidan Xue.</p>
 2. “start” which places the start of the edge at the origin.
 3. “end” which places the end of the edge at the origin.
 The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1683,11 +1734,11 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the spiral. This can be “center”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
 </dd>
-</dl>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The created spiral.</p>
+<dt><strong>Returns</strong></dt><dd></dd>
+<dt><strong>——-</strong></dt><dd></dd>
+<dt><strong>topologic_core.Wire</strong></dt><dd><p>The created spiral.</p>
 </dd>
 </dl>
 </dd>
@@ -1831,15 +1882,15 @@ A value of 1 will create a circle. Higher values will create a more square-like 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. The default is None which results in the L-shape being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. The default is None which results in the T-shape being placed at (0, 0, 0).</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the T-shape. The default is 1.0.</p>
 </dd>
 <dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The overall length of the T-shape. The default is 1.0.</p>
 </dd>
-<dt><strong>a</strong><span class="classifier">float , optional</span></dt><dd><p>The hortizontal thickness of the vertical arm of the T-shape. The default is 0.5.</p>
+<dt><strong>a</strong><span class="classifier">float , optional</span></dt><dd><p>The hortizontal thickness of the vertical arm of the T-shape. The default is 0.25.</p>
 </dd>
-<dt><strong>b</strong><span class="classifier">float , optional</span></dt><dd><p>The vertical thickness of the horizontal arm of the T-shape. The default is 0.5.</p>
+<dt><strong>b</strong><span class="classifier">float , optional</span></dt><dd><p>The vertical thickness of the horizontal arm of the T-shape. The default is 0.25.</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the T-shape. The default is [0, 0, 1].</p>
 </dd>

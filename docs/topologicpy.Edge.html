@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Edge module &mdash; topologicpy 0.8.0 documentation</title>
+  <title>topologicpy.Edge module &mdash; topologicpy 0.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.0
+                0.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -150,107 +150,123 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Angle" title="topologicpy.Edge.Edge.Angle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Angle</span></code></a>(edgeA, edgeB[, mantissa, bracket])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Align2D" title="topologicpy.Edge.Edge.Align2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Align2D</span></code></a>(edgeA, edgeB)</p></td>
+<td><p>Compute the 4x4 transformation matrix to fully align edgeA to edgeB.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Angle" title="topologicpy.Edge.Edge.Angle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Angle</span></code></a>(edgeA, edgeB[, mantissa, bracket])</p></td>
 <td><p>Returns the angle in degrees between the two input edges.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Bisect" title="topologicpy.Edge.Edge.Bisect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bisect</span></code></a>(edgeA, edgeB[, length, placement, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Bisect" title="topologicpy.Edge.Edge.Bisect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bisect</span></code></a>(edgeA, edgeB[, length, placement, ...])</p></td>
 <td><p>Creates a bisecting edge between edgeA and edgeB.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByFaceNormal" title="topologicpy.Edge.Edge.ByFaceNormal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFaceNormal</span></code></a>(face[, origin, length, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByFaceNormal" title="topologicpy.Edge.Edge.ByFaceNormal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFaceNormal</span></code></a>(face[, origin, length, tolerance])</p></td>
 <td><p>Creates a straight edge representing the normal to the input face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOffset2D" title="topologicpy.Edge.Edge.ByOffset2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset2D</span></code></a>(edge[, offset, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOffset2D" title="topologicpy.Edge.Edge.ByOffset2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset2D</span></code></a>(edge[, offset, tolerance])</p></td>
 <td><p>Creates and edge offset from the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByStartVertexEndVertex" title="topologicpy.Edge.Edge.ByStartVertexEndVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByStartVertexEndVertex</span></code></a>(vertexA, vertexB[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByStartVertexEndVertex" title="topologicpy.Edge.Edge.ByStartVertexEndVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByStartVertexEndVertex</span></code></a>(vertexA, vertexB[, ...])</p></td>
 <td><p>Creates a straight edge that connects the input vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByVertices" title="topologicpy.Edge.Edge.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(*args[, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByVertices" title="topologicpy.Edge.Edge.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(*args[, tolerance, silent])</p></td>
 <td><p>Creates a straight edge that connects the input list of vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByVerticesCluster" title="topologicpy.Edge.Edge.ByVerticesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesCluster</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByVerticesCluster" title="topologicpy.Edge.Edge.ByVerticesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesCluster</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Creates a straight edge that connects the input cluster of vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Connection" title="topologicpy.Edge.Edge.Connection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connection</span></code></a>(edgeA, edgeB[, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Connection" title="topologicpy.Edge.Edge.Connection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connection</span></code></a>(edgeA, edgeB[, tolerance, silent])</p></td>
 <td><p>Returns the edge representing the connection between the first input edge to the second input edge using the two closest vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Direction" title="topologicpy.Edge.Edge.Direction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Direction</span></code></a>(edge[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Direction" title="topologicpy.Edge.Edge.Direction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Direction</span></code></a>(edge[, mantissa])</p></td>
 <td><p>Returns the direction of the input edge expressed as a list of three numbers.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.EndVertex" title="topologicpy.Edge.Edge.EndVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EndVertex</span></code></a>(edge)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.EndVertex" title="topologicpy.Edge.Edge.EndVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EndVertex</span></code></a>(edge)</p></td>
 <td><p>Returns the end vertex of the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Equation2D" title="topologicpy.Edge.Edge.Equation2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Equation2D</span></code></a>(edge[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Equation2D" title="topologicpy.Edge.Edge.Equation2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Equation2D</span></code></a>(edge[, mantissa])</p></td>
 <td><p>Returns the 2D equation of the input edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Extend" title="topologicpy.Edge.Edge.Extend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Extend</span></code></a>(edge[, distance, bothSides, reverse, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Extend" title="topologicpy.Edge.Edge.Extend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Extend</span></code></a>(edge[, distance, bothSides, reverse, ...])</p></td>
 <td><p>Extends the input edge by the input distance.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ExtendToEdge" title="topologicpy.Edge.Edge.ExtendToEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExtendToEdge</span></code></a>(edgeA, edgeB[, mantissa, step, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ExtendToEdge" title="topologicpy.Edge.Edge.ExtendToEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExtendToEdge</span></code></a>(edgeA, edgeB[, mantissa, step, ...])</p></td>
 <td><p>Extends the first input edge to meet the second input edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ExternalBoundary" title="topologicpy.Edge.Edge.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(edge)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ExternalBoundary" title="topologicpy.Edge.Edge.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(edge)</p></td>
 <td><p>Returns the external boundary (cluster of end vertices) of the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Index" title="topologicpy.Edge.Edge.Index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Index</span></code></a>(edge, edges[, strict, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Index" title="topologicpy.Edge.Edge.Index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Index</span></code></a>(edge, edges[, strict, tolerance])</p></td>
 <td><p>Returns index of the input edge in the input list of edges</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Intersect2D" title="topologicpy.Edge.Edge.Intersect2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Intersect2D</span></code></a>(edgeA, edgeB[, silent, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Intersect2D" title="topologicpy.Edge.Edge.Intersect2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Intersect2D</span></code></a>(edgeA, edgeB[, silent, ...])</p></td>
 <td><p>Returns the intersection vertex of the two input edges.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsCollinear" title="topologicpy.Edge.Edge.IsCollinear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCollinear</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsCollinear" title="topologicpy.Edge.Edge.IsCollinear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCollinear</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
 <td><p>Return True if the two input edges are collinear.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsCoplanar" title="topologicpy.Edge.Edge.IsCoplanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoplanar</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsCoplanar" title="topologicpy.Edge.Edge.IsCoplanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoplanar</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
 <td><p>Return True if the two input edges are coplanar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsParallel" title="topologicpy.Edge.Edge.IsParallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsParallel</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.IsParallel" title="topologicpy.Edge.Edge.IsParallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsParallel</span></code></a>(edgeA, edgeB[, mantissa, tolerance])</p></td>
 <td><p>Return True if the two input edges are parallel.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Length" title="topologicpy.Edge.Edge.Length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Length</span></code></a>(edge[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Length" title="topologicpy.Edge.Edge.Length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Length</span></code></a>(edge[, mantissa])</p></td>
 <td><p>Returns the length of the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Line" title="topologicpy.Edge.Edge.Line"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Line</span></code></a>([origin, length, direction, placement, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Line" title="topologicpy.Edge.Edge.Line"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Line</span></code></a>([origin, length, direction, placement, ...])</p></td>
 <td><p>Creates a straight edge (line) using the input parameters.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Normal" title="topologicpy.Edge.Edge.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>(edge[, angle])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Normal" title="topologicpy.Edge.Edge.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>(edge[, angle])</p></td>
 <td><p>Returns the normal (perpendicular) vector to the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.NormalEdge" title="topologicpy.Edge.Edge.NormalEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalEdge</span></code></a>(edge[, length, u, angle, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.NormalEdge" title="topologicpy.Edge.Edge.NormalEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalEdge</span></code></a>(edge[, length, u, angle, ...])</p></td>
 <td><p>Returns the normal (perpendicular) vector to the input edge as an edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Normalize" title="topologicpy.Edge.Edge.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normalize</span></code></a>(edge[, useEndVertex, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Normalize" title="topologicpy.Edge.Edge.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normalize</span></code></a>(edge[, useEndVertex, tolerance])</p></td>
 <td><p>Creates a normalized edge that has the same direction as the input edge, but a length of 1.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ParameterAtVertex" title="topologicpy.Edge.Edge.ParameterAtVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParameterAtVertex</span></code></a>(edge, vertex[, mantissa, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ParameterAtVertex" title="topologicpy.Edge.Edge.ParameterAtVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParameterAtVertex</span></code></a>(edge, vertex[, mantissa, ...])</p></td>
 <td><p>Returns the <em>u</em> parameter along the input edge based on the location of the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Reverse" title="topologicpy.Edge.Edge.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(edge[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Reverse" title="topologicpy.Edge.Edge.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(edge[, tolerance])</p></td>
 <td><p>Creates an edge that has the reverse direction of the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.SetLength" title="topologicpy.Edge.Edge.SetLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetLength</span></code></a>(edge[, length, bothSides, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.SetLength" title="topologicpy.Edge.Edge.SetLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetLength</span></code></a>(edge[, length, bothSides, ...])</p></td>
 <td><p>Returns an edge with the new length in the same direction as the input edge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.StartVertex" title="topologicpy.Edge.Edge.StartVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartVertex</span></code></a>(edge)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.StartVertex" title="topologicpy.Edge.Edge.StartVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartVertex</span></code></a>(edge)</p></td>
 <td><p>Returns the start vertex of the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Trim" title="topologicpy.Edge.Edge.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(edge[, distance, bothSides, reverse, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Trim" title="topologicpy.Edge.Edge.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(edge[, distance, bothSides, reverse, ...])</p></td>
 <td><p>Trims the input edge by the input distance.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByEdge" title="topologicpy.Edge.Edge.TrimByEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByEdge</span></code></a>(edgeA, edgeB[, reverse, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.TrimByEdge" title="topologicpy.Edge.Edge.TrimByEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByEdge</span></code></a>(edgeA, edgeB[, reverse, ...])</p></td>
 <td><p>Trims the first input edge by the second input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByDistance" title="topologicpy.Edge.Edge.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(edge[, distance, origin, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByDistance" title="topologicpy.Edge.Edge.VertexByDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByDistance</span></code></a>(edge[, distance, origin, ...])</p></td>
 <td><p>Creates a vertex along the input edge offset by the input distance from the input origin.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByParameter" title="topologicpy.Edge.Edge.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(edge[, u])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.VertexByParameter" title="topologicpy.Edge.Edge.VertexByParameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameter</span></code></a>(edge[, u])</p></td>
 <td><p>Creates a vertex along the input edge offset by the input <em>u</em> parameter.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Vertices" title="topologicpy.Edge.Edge.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(edge)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Vertices" title="topologicpy.Edge.Edge.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(edge)</p></td>
 <td><p>Returns the list of vertices of the input edge.</p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.Align2D">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Align2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.Align2D" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the 4x4 transformation matrix to fully align edgeA to edgeB.</p>
+<dl class="simple">
+<dt>Parameters:</dt><dd><p>edge1 (Edge): The source 2D edge to transform.
+edge2 (Edge): The target 2D edge.</p>
+</dd>
+<dt>Returns:</dt><dd><p>list: A 4x4 transformation matrix.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.Angle">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Angle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bracket</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#topologicpy.Edge.Edge.Angle" title="Permalink to this definition"></a></dt>

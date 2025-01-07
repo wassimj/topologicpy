@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Matrix module &mdash; topologicpy 0.8.0 documentation</title>
+  <title>topologicpy.Matrix module &mdash; topologicpy 0.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.0
+                0.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -153,22 +153,19 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Add" title="topologicpy.Matrix.Matrix.Add"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Add</span></code></a>(matA, matB)</p></td>
 <td><p>Adds the two input matrices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByRotation" title="topologicpy.Matrix.Matrix.ByRotation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByRotation</span></code></a>([angleX, angleY, angleZ, order])</p></td>
-<td><p>Creates a 4x4 rotation matrix.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByScaling" title="topologicpy.Matrix.Matrix.ByScaling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByScaling</span></code></a>([scaleX, scaleY, scaleZ])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByScaling" title="topologicpy.Matrix.Matrix.ByScaling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByScaling</span></code></a>([scaleX, scaleY, scaleZ])</p></td>
 <td><p>Creates a 4x4 scaling matrix.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByTranslation" title="topologicpy.Matrix.Matrix.ByTranslation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTranslation</span></code></a>([translateX, translateY, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByTranslation" title="topologicpy.Matrix.Matrix.ByTranslation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTranslation</span></code></a>([translateX, translateY, ...])</p></td>
 <td><p>Creates a 4x4 translation matrix.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Multiply" title="topologicpy.Matrix.Matrix.Multiply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Multiply</span></code></a>(matA, matB)</p></td>
-<td><p>Multiplies the two input matrices.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Multiply" title="topologicpy.Matrix.Matrix.Multiply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Multiply</span></code></a>(matA, matB)</p></td>
+<td><p>Multiplies two matrices (matA and matB).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Subtract" title="topologicpy.Matrix.Matrix.Subtract"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subtract</span></code></a>(matA, matB)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Subtract" title="topologicpy.Matrix.Matrix.Subtract"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subtract</span></code></a>(matA, matB)</p></td>
 <td><p>Subtracts the two input matrices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Transpose" title="topologicpy.Matrix.Matrix.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(matrix)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Transpose" title="topologicpy.Matrix.Matrix.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(matrix)</p></td>
 <td><p>Transposes the input matrix.</p></td>
 </tr>
 </tbody>
@@ -179,7 +176,10 @@
 <col style="width: 29%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><strong>EigenvaluesAndVectors</strong></p></td>
+<tr class="row-odd"><td><p><strong>ByRotation</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>EigenvaluesAndVectors</strong></p></td>
 <td></td>
 </tr>
 </tbody>
@@ -209,28 +209,7 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.ByRotation">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByRotation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">angleX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angleY</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angleZ</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xyz'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.ByRotation" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a 4x4 rotation matrix.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>angleX</strong><span class="classifier">float , optional</span></dt><dd><p>The desired rotation angle in degrees around the X axis. The default is 0.</p>
-</dd>
-<dt><strong>angleY</strong><span class="classifier">float , optional</span></dt><dd><p>The desired rotation angle in degrees around the Y axis. The default is 0.</p>
-</dd>
-<dt><strong>angleZ</strong><span class="classifier">float , optional</span></dt><dd><p>The desired rotation angle in degrees around the Z axis. The default is 0.</p>
-</dd>
-<dt><strong>order</strong><span class="classifier">string , optional</span></dt><dd><p>The order by which the roatations will be applied. The possible values are any permutation of “xyz”. This input is case insensitive. The default is “xyz”.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The created 4X4 rotation matrix.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.ByScaling">
@@ -288,20 +267,20 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.Multiply">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Multiply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matB</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.Multiply" title="Permalink to this definition"></a></dt>
-<dd><p>Multiplies the two input matrices. When transforming an object, the first input matrix is applied first
-then the second input matrix.</p>
+<dd><p>Multiplies two matrices (matA and matB). The first matrix (matA) is applied first in the transformation,
+followed by the second matrix (matB).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>matA</strong><span class="classifier">list</span></dt><dd><p>The first input matrix.</p>
+<dt><strong>matA</strong><span class="classifier">list of list of float</span></dt><dd><p>The first input matrix.</p>
 </dd>
-<dt><strong>matB</strong><span class="classifier">list</span></dt><dd><p>The second input matrix.</p>
+<dt><strong>matB</strong><span class="classifier">list of list of float</span></dt><dd><p>The second input matrix.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The matrix resulting from the multiplication of the two input matrices.</p>
+<dt>list of list of float</dt><dd><p>The resulting matrix after multiplication.</p>
 </dd>
 </dl>
 </dd>

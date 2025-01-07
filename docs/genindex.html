@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; topologicpy 0.8.0 documentation</title>
+  <title>Index &mdash; topologicpy 0.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -30,7 +30,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.0
+                0.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -141,16 +141,18 @@
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.AdjacentVertices">AdjacentVertices() (topologicpy.Graph.Graph static method)</a>
 </li>
+      <li><a href="topologicpy.Edge.html#topologicpy.Edge.Edge.Align2D">Align2D() (topologicpy.Edge.Edge static method)</a>
+</li>
       <li><a href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AlignCoordinates">AlignCoordinates() (topologicpy.Vertex.Vertex static method)</a>
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.AllPaths">AllPaths() (topologicpy.Graph.Graph static method)</a>
 </li>
       <li><a href="topologicpy.Sun.html#topologicpy.Sun.Sun.Altitude">Altitude() (topologicpy.Sun.Sun static method)</a>
 </li>
-      <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.Analyze">Analyze() (topologicpy.Topology.Topology static method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.Analyze">Analyze() (topologicpy.Topology.Topology static method)</a>
+</li>
       <li><a href="topologicpy.Edge.html#topologicpy.Edge.Edge.Angle">Angle() (topologicpy.Edge.Edge static method)</a>
 
       <ul>
@@ -583,14 +585,14 @@
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.CommunityPartition">CommunityPartition() (topologicpy.Graph.Graph static method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Cell.html#topologicpy.Cell.Cell.Compactness">Compactness() (topologicpy.Cell.Cell static method)</a>
 
       <ul>
         <li><a href="topologicpy.Face.html#topologicpy.Face.Face.Compactness">(topologicpy.Face.Face static method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="topologicpy.Face.html#topologicpy.Face.Face.CompassAngle">CompassAngle() (topologicpy.Face.Face static method)</a>
 
       <ul>
@@ -655,6 +657,12 @@
 </li>
       <li><a href="topologicpy.Vector.html#topologicpy.Vector.Vector.Cross">Cross() (topologicpy.Vector.Vector static method)</a>
 </li>
+      <li><a href="topologicpy.Face.html#topologicpy.Face.Face.CrossShape">CrossShape() (topologicpy.Face.Face static method)</a>
+
+      <ul>
+        <li><a href="topologicpy.Wire.html#topologicpy.Wire.Wire.CrossShape">(topologicpy.Wire.Wire static method)</a>
+</li>
+      </ul></li>
       <li><a href="topologicpy.Face.html#topologicpy.Face.Face.CShape">CShape() (topologicpy.Face.Face static method)</a>
 
       <ul>
@@ -1233,6 +1241,8 @@
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.IsTree">IsTree() (topologicpy.Graph.Graph static method)</a>
 </li>
+      <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.IsVertexMatched">IsVertexMatched() (topologicpy.Topology.Topology method)</a>
+</li>
       <li><a href="topologicpy.Helper.html#topologicpy.Helper.Helper.Iterate">Iterate() (topologicpy.Helper.Helper static method)</a>
 </li>
   </ul></td>
@@ -1331,6 +1341,8 @@
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.MaximumFlow">MaximumFlow() (topologicpy.Graph.Graph static method)</a>
 </li>
+      <li><a href="topologicpy.Helper.html#topologicpy.Helper.Helper.MaximumIndices">MaximumIndices() (topologicpy.Helper.Helper static method)</a>
+</li>
       <li><a href="topologicpy.Face.html#topologicpy.Face.Face.MedialAxis">MedialAxis() (topologicpy.Face.Face static method)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.Merge">Merge() (topologicpy.Topology.Topology static method)</a>
@@ -1358,6 +1370,8 @@
       <li><a href="topologicpy.ANN.html#topologicpy.ANN.ANN.Metrics">Metrics() (topologicpy.ANN.ANN static method)</a>
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.MinimumDelta">MinimumDelta() (topologicpy.Graph.Graph static method)</a>
+</li>
+      <li><a href="topologicpy.Helper.html#topologicpy.Helper.Helper.MinimumIndices">MinimumIndices() (topologicpy.Helper.Helper static method)</a>
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.MinimumSpanningTree">MinimumSpanningTree() (topologicpy.Graph.Graph static method)</a>
 </li>
@@ -1712,18 +1726,22 @@
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveEdges">RemoveEdges() (topologicpy.Topology.Topology static method)</a>
 </li>
+      <li><a href="topologicpy.Helper.html#topologicpy.Helper.Helper.RemoveEven">RemoveEven() (topologicpy.Helper.Helper static method)</a>
+</li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveFaces">RemoveFaces() (topologicpy.Topology.Topology static method)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveFacesBySelectors">RemoveFacesBySelectors() (topologicpy.Topology.Topology static method)</a>
 </li>
       <li><a href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.RemoveKey">RemoveKey() (topologicpy.Dictionary.Dictionary static method)</a>
 </li>
-      <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.RemoveVertex">RemoveVertex() (topologicpy.Graph.Graph static method)</a>
+      <li><a href="topologicpy.Helper.html#topologicpy.Helper.Helper.RemoveOdd">RemoveOdd() (topologicpy.Helper.Helper static method)</a>
 </li>
-      <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveVertices">RemoveVertices() (topologicpy.Topology.Topology static method)</a>
+      <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.RemoveVertex">RemoveVertex() (topologicpy.Graph.Graph static method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.RemoveVertices">RemoveVertices() (topologicpy.Topology.Topology static method)</a>
+</li>
       <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.Renderer">Renderer() (topologicpy.Plotly.Plotly static method)</a>
 </li>
       <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.Renderers">Renderers() (topologicpy.Plotly.Plotly static method)</a>
@@ -2311,6 +2329,8 @@
       <li><a href="topologicpy.Edge.html#topologicpy.Edge.Edge.TrimByEdge">TrimByEdge() (topologicpy.Edge.Edge static method)</a>
 </li>
       <li><a href="topologicpy.Face.html#topologicpy.Face.Face.TrimByWire">TrimByWire() (topologicpy.Face.Face static method)</a>
+</li>
+      <li><a href="topologicpy.Cluster.html#topologicpy.Cluster.Cluster.Tripod">Tripod() (topologicpy.Cluster.Cluster static method)</a>
 </li>
       <li><a href="topologicpy.Face.html#topologicpy.Face.Face.TShape">TShape() (topologicpy.Face.Face static method)</a>
 

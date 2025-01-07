@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cluster module &mdash; topologicpy 0.8.0 documentation</title>
+  <title>topologicpy.Cluster module &mdash; topologicpy 0.8.2 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.0
+                0.8.2
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -210,10 +210,13 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Simplify" title="topologicpy.Cluster.Cluster.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(cluster)</p></td>
 <td><p>Simplifies the input cluster if possible.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Vertices" title="topologicpy.Cluster.Cluster.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cluster)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Tripod" title="topologicpy.Cluster.Cluster.Tripod"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tripod</span></code></a>([size, radius, sides, faceColorKey, ...])</p></td>
+<td><p>Creates a color-coded Axes tripod for X, Y, and Z axes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Vertices" title="topologicpy.Cluster.Cluster.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cluster)</p></td>
 <td><p>Returns the vertices of the input cluster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Wires" title="topologicpy.Cluster.Cluster.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cluster)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Wires" title="topologicpy.Cluster.Cluster.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cluster)</p></td>
 <td><p>Returns the wires of the input cluster.</p></td>
 </tr>
 </tbody>
@@ -694,6 +697,40 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Topology or list</dt><dd><p>The simplification of the cluster.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.Tripod">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tripod</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.03</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'faceColor'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'red'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'green'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'blue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cluster.Cluster.Tripod" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a color-coded Axes tripod for X, Y, and Z axes. X-Axis is red, Y-Axis is “green”, and Z-Axis= “blue”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the tripod. The default is 1.0.</p>
+</dd>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radiues of the tripod. The default is 0.03</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the tripod. The default is 4.</p>
+</dd>
+<dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the colors of the axes.</p>
+</dd>
+<dt><strong>xColor</strong><span class="classifier">str , optional</span></dt><dd><p>The color to use for the X axis. The default is “red”.</p>
+</dd>
+<dt><strong>yColor</strong><span class="classifier">str , optional</span></dt><dd><p>The color to use for the Y axis. The default is “green”.</p>
+</dd>
+<dt><strong>zColor</strong><span class="classifier">str , optional</span></dt><dd><p>The color to use for the Z axis. The default is “blue”.</p>
+</dd>
+<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to use for transforming the tripod. The default is None which means the tripod will be placed at the origin and will be axis-aligned.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cluster</dt><dd><p>The created tripod</p>
 </dd>
 </dl>
 </dd>
