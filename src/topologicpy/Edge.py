@@ -326,6 +326,50 @@ class Edge():
         return edge
     
     @staticmethod
+    def ByOriginDirectionLength(origin = None, direction=[0,0,1], length: float = 1.0, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a straight edge from the input parameters.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex
+            The origin (start vertex) of the edge.
+        direction : list , optional
+            The desired direction vector of the edge. The default is [0,0,1] (pointing up in the Z direction)
+        length: float , optional
+            The desired length of edge. The default is 1.0.
+        tolerance : float , optional
+            The desired tolerance to decide if an edge can be created. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Edge
+            The created edge.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if origin == None:
+            origin = Vertex.Origin()
+        
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Edge.ByVertexDirectionLength - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        
+        if length < tolerance:
+            if not silent:
+                print("Edge.ByVertexDirectionLength - Error: The input edge parameter must not be less than the input tolerance parameter. Returning None.")
+            return None
+
+        endVertex = Topology.TranslateByDirectionDistance(origin, direction=direction[:3], distance=length)
+        edge = Edge.ByVertices(origin, endVertex, tolerance=tolerance)
+        return edge
+
+    @staticmethod
     def ByVertices(*args, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a straight edge that connects the input list of vertices.

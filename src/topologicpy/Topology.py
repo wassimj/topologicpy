@@ -4126,6 +4126,116 @@ class Topology():
             return None
         return Topology.ByXYZFile(file, frameIdKey=frameIdKey, vertexIdKey=frameIdKey)
     
+    def CanonicalMatrix(topology, n: int = 10, normalize: bool = False, mantissa: int = 6, silent: bool = False):
+        """
+        Returns the canonical matrix of the input topology.
+        The canonical matrix refers to a transformation matrix that maps an object's
+        coordinate system to a canonical coordinate frame, where:
+        . The origin of the object aligns with the world origin
+        . The principal axes of the object align with the world axes
+        This transformation is computed using Principal Component Analysis (PCA),
+        leveraging the eigenvectors of the covariance matrix of the object's vertices
+        and thus can give erroneous results. The transformation matrix may not yield an object oriented as expected.
+        
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        n : int , optional
+            The number of segments to use to increase the number of points on each face. The default is 10.
+        normalize : bool , optional
+            If set to True, the longest edge in the input topology is scaled to become of length 1. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        list
+            The 4X4 canonical matrix.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Topology import Topology
+        from topologicpy.Grid import Grid
+        from topologicpy.Matrix import Matrix
+        import numpy as np
+
+        def generate_floats(n):
+            if n < 2:
+                return [0.0] if n == 1 else []
+            return [i / (n - 1) for i in range(n)]
+
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.CanonicalMatrix - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        
+        faces = Topology.Faces(topology)
+        if len(faces) == 0:
+            if not silent:
+                print("Topology.CanonicalMatrix - Error: The input topology parameter does not contain any faces. Returning None.")
+            return None
+        
+        # Step 1: Derive a copy topology to work with.
+        if Topology.IsInstance(topology, "CellComplex"):
+            top = CellComplex.ExternalBoundary(topology)
+        else:
+            top = Topology.Copy(topology)
+        
+        # Step 2: Create a Translation Matrix to translate to origin
+        centroid = Topology.Centroid(top)
+        translation_matrix = Matrix.ByTranslation(-Vertex.X(centroid, mantissa=mantissa), -Vertex.Y(centroid, mantissa=mantissa), -Vertex.Z(centroid, mantissa=mantissa))
+        translated_top = Topology.Translate(top, -Vertex.X(centroid, mantissa=mantissa), -Vertex.Y(centroid, mantissa=mantissa), -Vertex.Z(centroid, mantissa=mantissa))
+
+        # Step 3: Create a Scaling matrix to normalize size (e.g., largest edge length to 1)
+        if normalize == False:
+            scale_factor = 1.0
+        else:
+            edges = Topology.Edges(translated_top)
+            max_edge_length = max([Edge.Length(edge, mantissa=mantissa) for edge in edges])
+            scale_factor = 1.0 / max_edge_length if max_edge_length != 0 else 1.0
+        scaling_matrix = Matrix.ByScaling(scaleX=scale_factor, scaleY=scale_factor, scaleZ=scale_factor)
+        scaled_top = Topology.Scale(translated_top, origin=Vertex.Origin(), x=scale_factor, y=scale_factor, z=scale_factor)
+
+        # Step 4: Increase the number of vertices by adding a grid of points on each face.
+        faces = Topology.Faces(scaled_top)
+        vertices = Topology.Vertices(scaled_top)
+        r = generate_floats(n)
+        for face in faces:
+            vertices += Topology.Vertices(Grid.VerticesByParameters(face=face, uRange=r, vRange=r, clip=True))
+        points = np.array([[Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)] for v in vertices])
+
+        # Step 5: Align orientation using PCA
+        # Compute PCA
+        mean = points.mean(axis=0)
+        centered_points = points - mean
+        covariance_matrix = np.cov(centered_points.T)
+        eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
+
+        # Step 6: Sort eigenvectors by eigenvalues (largest first)
+        sorted_indices = np.argsort(-eigenvalues)
+        eigenvectors = eigenvectors[:, sorted_indices]
+
+        # Step 7: Enforce consistent orientation by flipping eigenvectors
+        for i in range(3):  # Ensure each eigenvector points in a positive direction
+            if np.dot(eigenvectors[:, i], [1, 0, 0]) < 0:
+                eigenvectors[:, i] *= -1
+        
+        # Step 8: Create the rotation matrix
+        rotation_matrix = np.eye(4)
+        rotation_matrix[:3, :3] = eigenvectors.T  # Use transpose to align points to axes
+        
+        # Step 9: Rotate the object to align it 
+        transformation_matrix = Matrix.Multiply(scaling_matrix, translation_matrix)
+        transformation_matrix = Matrix.Multiply(rotation_matrix.tolist(), transformation_matrix)
+
+        # Step 10: Return the resulting matrix
+        return transformation_matrix
+
     @staticmethod
     def CenterOfMass(topology):
         """
@@ -6833,7 +6943,7 @@ class Topology():
         originB : topologic_core.Vertex , optional
             The new location at which to place the topology. If set to None, the world origin (0, 0, 0) is used. The default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. The default is 6.
 
         Returns
         -------
@@ -6859,6 +6969,90 @@ class Topology():
             print("Topology.Place - Error: (Topologic>TopologyUtility.Place) operation failed. Returning None.")
             newTopology = None
         return newTopology
+
+    @staticmethod
+    def PrincipalAxes(topology, n: int = 10, mantissa: int = 6, silent: bool = False):
+        """
+        Returns the prinicipal axes (vectors) of the input topology.
+        Please note that this is not a perfect algorithm and it can get confused based on the geometry of the input.
+        Also, please note that there is no guarantee that three returned vectors match your expectation for an x,y,z axis order.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        n : int , optional
+            The number of segments to use to increase the number of points on each face. The default is 10.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        list
+            The list of x, y, and z vectors representing the principal axes of the topology.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Topology import Topology
+        from topologicpy.Grid import Grid
+        from topologicpy.Vector import Vector
+        import numpy as np
+
+        def generate_floats(n):
+            if n < 2:
+                return [0.0] if n == 1 else []
+            return [i / (n - 1) for i in range(n)]
+
+        
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.CanonicalMatrix - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        
+        faces = Topology.Faces(topology)
+        if len(faces) == 0:
+            if not silent:
+                print("Topology.CanonicalMatrix - Error: The input topology parameter does not contain any faces. Returning None.")
+            return None
+        
+        # Step 1: Derive a copy topology to work with.
+        if Topology.IsInstance(topology, "CellComplex"):
+            top = CellComplex.ExternalBoundary(topology)
+        else:
+            top = Topology.Copy(topology)
+        
+        # Step 2: Increase the number of vertices by adding a grid of points on each face.
+        faces = Topology.Faces(top)
+        vertices = Topology.Vertices(top)
+        r = generate_floats(n)
+        for face in faces:
+            vertices += Topology.Vertices(Grid.VerticesByParameters(face=face, uRange=r, vRange=r, clip=True))
+        points = np.array([[Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)] for v in vertices])
+
+        # Step 3: Align orientation using PCA
+        # Compute PCA
+        mean = points.mean(axis=0)
+        centered_points = points - mean
+        covariance_matrix = np.cov(centered_points.T)
+        eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
+
+        # Sort eigenvectors by eigenvalues (largest first)
+        sorted_indices = np.argsort(-eigenvalues)
+        eigenvectors = eigenvectors[:, sorted_indices]
+
+        # Enforce consistent orientation by flipping eigenvectors
+        for i in range(3):  # Ensure each eigenvector points in a positive direction
+            if np.dot(eigenvectors[:, i], [1, 0, 0]) < 0:
+                eigenvectors[:, i] *= -1
+        
+        # Retrieve and return the principal axes
+        x_axis = Vector.ByCoordinates(*eigenvectors[:, 0])
+        y_axis = Vector.ByCoordinates(*eigenvectors[:, 1])
+        z_axis = Vector.ByCoordinates(*eigenvectors[:, 2])
+        return x_axis, y_axis, z_axis
 
     @staticmethod
     def RemoveCollinearEdges(topology, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):

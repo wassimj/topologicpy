@@ -205,6 +205,46 @@ class Matrix:
         return e_values, e_vectors
     
     @staticmethod
+    def Invert(matA, silent: bool = False):
+        """
+        Inverts the input matrix.
+
+        Parameters
+        ----------
+        matA : list of list of float
+            The input matrix.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list of list of float
+            The resulting matrix after it has been inverted.
+
+        """
+        import numpy as np
+
+        if not isinstance(matA, list):
+            if not silent:
+                print("Matrix.Invert - Error: The input matA parameter is not a valid 4X4 matrix. Returning None.")
+            return None
+        np_matrix = np.array(matA)
+        if np_matrix.shape != (4, 4):
+            if not silent:
+                print("Matrix.Invert - Error: The input matA parameter is not a valid 4X4 matrix. Returning None.")
+            return None
+        
+        # Check if the matrix is invertible
+        if np.isclose(np.linalg.det(np_matrix), 0):
+            if not silent:
+                print("Matrix.Invert - Error: The input matA parameter is not invertible. Returning None.")
+            return None
+        
+        # Invert the matrix
+        inverted_matrix = np.linalg.inv(np_matrix)
+        return inverted_matrix.tolist()
+    
+    @staticmethod
     def Multiply(matA, matB):
         """
         Multiplies two matrices (matA and matB). The first matrix (matA) is applied first in the transformation,
