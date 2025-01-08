@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Matrix module &mdash; topologicpy 0.8.2 documentation</title>
+  <title>topologicpy.Matrix module &mdash; topologicpy 0.8.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.2
+                0.8.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -159,13 +159,16 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByTranslation" title="topologicpy.Matrix.Matrix.ByTranslation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTranslation</span></code></a>([translateX, translateY, ...])</p></td>
 <td><p>Creates a 4x4 translation matrix.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Multiply" title="topologicpy.Matrix.Matrix.Multiply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Multiply</span></code></a>(matA, matB)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Invert" title="topologicpy.Matrix.Matrix.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(matA[, silent])</p></td>
+<td><p>Inverts the input matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Multiply" title="topologicpy.Matrix.Matrix.Multiply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Multiply</span></code></a>(matA, matB)</p></td>
 <td><p>Multiplies two matrices (matA and matB).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Subtract" title="topologicpy.Matrix.Matrix.Subtract"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subtract</span></code></a>(matA, matB)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Subtract" title="topologicpy.Matrix.Matrix.Subtract"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subtract</span></code></a>(matA, matB)</p></td>
 <td><p>Subtracts the two input matrices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Transpose" title="topologicpy.Matrix.Matrix.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(matrix)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Transpose" title="topologicpy.Matrix.Matrix.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(matrix)</p></td>
 <td><p>Transposes the input matrix.</p></td>
 </tr>
 </tbody>
@@ -263,6 +266,28 @@
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.EigenvaluesAndVectors">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EigenvaluesAndVectors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.EigenvaluesAndVectors" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.Invert">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Invert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.Invert" title="Permalink to this definition"></a></dt>
+<dd><p>Inverts the input matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>matA</strong><span class="classifier">list of list of float</span></dt><dd><p>The input matrix.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list of list of float</dt><dd><p>The resulting matrix after it has been inverted.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.Multiply">
