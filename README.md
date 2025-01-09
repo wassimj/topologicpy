@@ -72,12 +72,12 @@ To cite one of the main papers that defines topologicpy, you can use:
 
 Or you can import the following .bib formatted references into your favourite reference manager
 ```
-@misc{Jabi2024,
+@misc{Jabi2025,
    author = {Wassim Jabi},
    doi = {https://doi.org/10.5281/zenodo.11555173},
    title = {topologicpy},
    url = {http://pypi.org/projects/topologicpy},
-   year = {2024},
+   year = {2025},
 }
 ```
 ```
@@ -97,6 +97,6 @@ Or you can import the following .bib formatted references into your favourite re
 }
 ```
 
-topologicpy: © 2024 Wassim Jabi
+topologicpy: © 2025 Wassim Jabi
 
-Topologic: © 2024 Cardiff University and UCL
+Topologic: © 2025 Cardiff University and UCL

@@ -6602,9 +6602,9 @@ class Topology():
             return None
         return topologic.Topology.IsSame(topologyA, topologyB)
     
-    def IsVertexMatched(topologyA, topologyB, mantissa: int = 6, tolerance=0.0001, silent : bool = False):
+    def IsVertexCongruent(topologyA, topologyB, mantissa: int = 6, tolerance=0.0001, silent : bool = False):
         """
-        Returns True if the input topologies are vertex matched (have same number of vertices and all vertices are coincedent within a tolerance). Returns False otherwise.
+        Returns True if the input topologies are vertex matched (have same number of vertices and all vertices are congruent within a tolerance). Returns False otherwise.
 
         Parameters
         ----------
@@ -6622,7 +6622,7 @@ class Topology():
         Returns
         -------
         bool
-            True of the input topologies are vertex matched. False otherwise.
+            True of the input topologies are vertex congruent. False otherwise.
 
         """
         from topologicpy.Vertex import Vertex
@@ -6682,6 +6682,104 @@ class Topology():
         coords_a = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices_a]
         coords_b = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices_b]
         return coordinates_match(coords_a, coords_b, tolerance=tolerance)
+
+    @staticmethod
+    def LargestFaces(topology, removeCoplanarFaces: bool = False, epsilon: float = 0.001, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the list of the largest faces found in the input topology.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed to find the true largest faces. Otherwise they are not. The default is False.
+        epsilon : float , optional
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        Returns
+        -------
+        list
+            The list of the largest faces found in the input topology.
+        
+        """
+        from topologicpy.Face import Face
+
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.LaregestFaces - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        faces = Topology.Faces(topology)
+        if len(faces) == 0:
+            if not silent:
+                print("Topology.LargestFaces - Error: The input topology parameter does not contain any faces. Returning None.")
+            return None
+        if len(faces) == 1:
+            return faces
+        
+        if removeCoplanarFaces == True:
+            simple_topology = Topology.RemoveCoplanarFaces(topology)
+            simple_topology = Topology.RemoveCollinearEdges(simple_topology)
+            faces = Topology.Faces(simple_topology)
+        face_areas = [Face.Area(face) for face in faces]
+        max_area = max(face_areas)
+        max_faces = []
+        for i, face_area in enumerate(face_areas):
+            if abs(max_area - face_area) < tolerance:
+                max_faces.append(faces[i])
+        return max_faces
+
+    @staticmethod
+    def LongestEdges(topology, removeCoplanarFaces: bool = False, epsilon: float = 0.001, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the list of the longest edges found in the input topology.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed to find the true longest straight edges. Otherwise they are not. The default is False.
+        epsilon : float , optional
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        Returns
+        -------
+        list
+            The list of of the longest edges found in the input topology.
+        
+        """
+        from topologicpy.Edge import Edge
+
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.LongestEdges - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        edges = Topology.Edges(topology)
+        if len(edges) == 0:
+            if not silent:
+                print("Topology.LongestEdges - Error: The input topology parameter does not contain any edges. Returning None.")
+            return None
+        if len(edges) == 1:
+            return edges
+        
+        if removeCoplanarFaces == True:
+            simple_topology = Topology.RemoveCoplanarFaces(topology)
+            simple_topology = Topology.RemoveCollinearEdges(simple_topology)
+            edges = Topology.Edges(simple_topology)
+        edge_lengths = [Edge.Length(edge) for edge in edges]
+        max_length = max(edge_lengths)
+        max_edges = []
+        for i, edge_length in enumerate(edge_lengths):
+            if abs(max_length - edge_length) < tolerance:
+                max_edges.append(edges[i])
+        return max_edges
 
     @staticmethod
     def MergeAll(topologies, tolerance=0.0001):
@@ -8172,7 +8270,6 @@ class Topology():
                 l = None
         return l
     
-    
     @staticmethod
     def SharedFaces(topologyA, topologyB):
         """
@@ -8199,7 +8296,56 @@ class Topology():
             except:
                 l = None
         return l
-    
+
+    @staticmethod
+    def ShortestEdges(topology, removeCoplanarFaces: bool = False, epsilon: float = 0.001, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the list of the shortest edges found in the input topology.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed to find the true shortest straight edges. Otherwise they are not. The default is False.
+        epsilon : float , optional
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        Returns
+        -------
+        list
+            The list of the shortest edges found in the input topology.
+        
+        """
+        from topologicpy.Edge import Edge
+
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.ShortestEdges - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        edges = Topology.Edges(topology)
+        if len(edges) == 0:
+            if not silent:
+                print("Topology.ShortestEdges - Error: The input topology parameter does not contain any edges. Returning None.")
+            return None
+        if len(edges) == 1:
+            return edges[0]
+        
+        if removeCoplanarFaces == True:
+            simple_topology = Topology.RemoveCoplanarFaces(topology)
+            simple_topology = Topology.RemoveCollinearEdges(simple_topology)
+            edges = Topology.Edges(simple_topology)
+        edge_lengths = [Edge.Length(edge) for edge in edges]
+        min_length = min(edge_lengths)
+        min_edges = []
+        for i, edge_length in enumerate(edge_lengths):
+            if abs(min_length - edge_length) < tolerance:
+                min_edges.append(edges[i])
+        return min_edges
+
     @staticmethod
     def Show(*topologies,
              nameKey = "name",
@@ -8617,6 +8763,55 @@ class Topology():
         if showScale:
             figure = Plotly.AddColorBar(figure, values=cbValues, nTicks=cbTicks, xPosition=cbX, width=cbWidth, outlineWidth=cbOutlineWidth, title=cbTitle, subTitle=cbSubTitle, units=cbUnits, colorScale=colorScale, mantissa=mantissa)
         Plotly.Show(figure=figure, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
+
+    @staticmethod
+    def SmallestFaces(topology, removeCoplanarFaces: bool = False, epsilon: float = 0.001, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the list of the smallest faces found in the input topology.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed to find the true smallest faces. Otherwise they are not. The default is False.
+        epsilon : float , optional
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        Returns
+        -------
+        list
+            The list of the smallest faces found in the input topology.
+        
+        """
+        from topologicpy.Face import Face
+
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.SmallestFaces - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        faces = Topology.Faces(topology)
+        if len(faces) == 0:
+            if not silent:
+                print("Topology.SmallestFaces - Error: The input topology parameter does not contain any faces. Returning None.")
+            return None
+        if len(faces) == 1:
+            return faces
+        
+        if removeCoplanarFaces == True:
+            simple_topology = Topology.RemoveCoplanarFaces(topology)
+            simple_topology = Topology.RemoveCollinearEdges(simple_topology)
+            faces = Topology.Faces(simple_topology)
+        face_areas = [Face.Area(face) for face in faces]
+        min_area = min(face_areas)
+        min_faces = []
+        for i, face_area in enumerate(face_areas):
+            if abs(min_area - face_area) < tolerance:
+                min_faces.append(faces[i])
+        return min_faces
 
     @staticmethod
     def SortBySelectors(topologies, selectors, exclusive=False, tolerance=0.0001):

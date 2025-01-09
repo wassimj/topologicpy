@@ -714,15 +714,6 @@ class Plotly:
             traces.append(trace)
         return traces
 
-
-
-
-
-
-
-
-
-
     @staticmethod
     def DataByTopology(topology,
                        showVertices=True,
@@ -1106,9 +1097,10 @@ class Plotly:
                 faceColor = Dictionary.ValueAtKey(d, key=faceColorKey) or faceColor
             if not faceOpacityKey == None:
                 d = Topology.Dictionary(topology)
-                d_opacity = Dictionary.ValueAtKey(d, key=faceOpacityKey) or faceOpacity
-                if 0 < d_opacity < 1:
-                    faceOpacity = d_opacity
+                d_opacity = Dictionary.ValueAtKey(d, key=faceOpacityKey)
+                if not d_opacity == None:
+                    if 0 <= d_opacity <= 1:
+                        faceOpacity = d_opacity
             if Topology.IsInstance(topology, "Face"):
                 tp_faces = [topology]
             else:
