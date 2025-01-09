@@ -4195,8 +4195,10 @@ class Topology():
         if normalize == False:
             scale_factor = 1.0
         else:
-            edges = Topology.Edges(translated_top)
-            max_edge_length = max([Edge.Length(edge, mantissa=mantissa) for edge in edges])
+            #edges = Topology.Edges(translated_top)
+            #max_edge_length = max([Edge.Length(edge, mantissa=mantissa) for edge in edges])
+            longest_edges = Topology.LongestEdges(translated_top, removeCoplanarFaces=True)
+            max_edge_length = Edge.Length(longest_edges[0])
             scale_factor = 1.0 / max_edge_length if max_edge_length != 0 else 1.0
         scaling_matrix = Matrix.ByScaling(scaleX=scale_factor, scaleY=scale_factor, scaleZ=scale_factor)
         scaled_top = Topology.Scale(translated_top, origin=Vertex.Origin(), x=scale_factor, y=scale_factor, z=scale_factor)
