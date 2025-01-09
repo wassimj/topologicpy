@@ -2515,50 +2515,55 @@ class Topology():
         def convert_to_topology(entity, settings, transferDictionaries=False):    
             if hasattr(entity, "Representation") and entity.Representation:
                 for rep in entity.Representation.Representations:
+                    shape_topology = None
                     if rep.is_a("IfcShapeRepresentation"):
                         # Generate the geometry for this entity
-                        shape = ifcopenshell.geom.create_shape(settings, entity)
                         try:
+                            shape = ifcopenshell.geom.create_shape(settings, entity)
                             trans = shape.transformation
                             # Convert into a 4x4 matrix
                             matrix = [trans.matrix[i:i+4] for i in range(0, len(trans.matrix), 4)]
+                            # Get grouped vertices and grouped faces     
+                            grouped_verts = shape.geometry.verts
+                            verts = [ [grouped_verts[i], grouped_verts[i + 1], grouped_verts[i + 2]] for i in range(0, len(grouped_verts), 3)]
+                            grouped_edges = shape.geometry.edges
+                            edges = [[grouped_edges[i], grouped_edges[i + 1]] for i in range(0, len(grouped_edges), 2)]
+                            grouped_faces = shape.geometry.faces
+                            faces = [ [grouped_faces[i], grouped_faces[i + 1], grouped_faces[i + 2]] for i in range(0, len(grouped_faces), 3)]
+                            #shape_topology = ifc_to_topologic_geometry(verts, edges, faces)
+                            #shape_topology = Topology.SelfMerge(Topology.ByGeometry(verts, edges, faces))
+                            shape_topology = Topology.ByGeometry(verts, edges, faces, silent=True)
+                            if not shape_topology == None:
+                                if removeCoplanarFaces == True:
+                                    shape_topology = Topology.RemoveCoplanarFaces(shape_topology, epsilon=0.0001)
+                                shape_topology = Topology.Transform(shape_topology, matrix)
+
+                                # Store relevant information
+                                if transferDictionaries == True:
+                                    color, transparency, material_list = get_color_transparency_material(entity)
+                                    if color == None:
+                                        color = "white"
+                                    if transparency == None:
+                                        transparency = 0
+                                    entity_dict = {
+                                        "TOPOLOGIC_id": str(Topology.UUID(shape_topology)),
+                                        "TOPOLOGIC_name": getattr(entity, 'Name', "Untitled"),
+                                        "TOPOLOGIC_type": Topology.TypeAsString(shape_topology),
+                                        "TOPOLOGIC_color": color,
+                                        "TOPOLOGIC_opacity": 1.0 - transparency,
+                                        "IFC_global_id": getattr(entity, 'GlobalId', 0),
+                                        "IFC_name": getattr(entity, 'Name', "Untitled"),
+                                        "IFC_type": entity.is_a(),
+                                        "IFC_material_list": material_list,
+                                    }
+                                    topology_dict = Dictionary.ByPythonDictionary(entity_dict)
+                                    # Get PSETs dictionary
+                                    pset_python_dict = get_psets(entity)
+                                    pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
+                                    topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
+                                    shape_topology = Topology.SetDictionary(shape_topology, topology_dict)
                         except:
                             pass
-                        # Get grouped vertices and grouped faces     
-                        grouped_verts = shape.geometry.verts
-                        verts = [ [grouped_verts[i], grouped_verts[i + 1], grouped_verts[i + 2]] for i in range(0, len(grouped_verts), 3)]
-                        grouped_edges = shape.geometry.edges
-                        edges = [[grouped_edges[i], grouped_edges[i + 1]] for i in range(0, len(grouped_edges), 2)]
-                        grouped_faces = shape.geometry.faces
-                        faces = [ [grouped_faces[i], grouped_faces[i + 1], grouped_faces[i + 2]] for i in range(0, len(grouped_faces), 3)]
-                        #shape_topology = ifc_to_topologic_geometry(verts, edges, faces)
-                        #shape_topology = Topology.SelfMerge(Topology.ByGeometry(verts, edges, faces))
-                        shape_topology = Topology.ByGeometry(verts, edges, faces, silent=True)
-                        if not shape_topology == None:
-                            if removeCoplanarFaces == True:
-                                shape_topology = Topology.RemoveCoplanarFaces(shape_topology, epsilon=0.0001)
-                            shape_topology = Topology.Transform(shape_topology, matrix)
-
-                            # Store relevant information
-                            if transferDictionaries == True:
-                                color, transparency, material_list = get_color_transparency_material(entity)
-                                entity_dict = {
-                                    "TOPOLOGIC_id": str(Topology.UUID(shape_topology)),
-                                    "TOPOLOGIC_name": getattr(entity, 'Name', "Untitled"),
-                                    "TOPOLOGIC_type": Topology.TypeAsString(shape_topology),
-                                    "TOPOLOGIC_color": color,
-                                    "TOPOLOGIC_opacity": 1.0 - transparency,
-                                    "IFC_global_id": getattr(entity, 'GlobalId', 0),
-                                    "IFC_name": getattr(entity, 'Name', "Untitled"),
-                                    "IFC_type": entity.is_a(),
-                                    "IFC_material_list": material_list,
-                                }
-                                topology_dict = Dictionary.ByPythonDictionary(entity_dict)
-                                # Get PSETs dictionary
-                                pset_python_dict = get_psets(entity)
-                                pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
-                                topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
-                                shape_topology = Topology.SetDictionary(shape_topology, topology_dict)
                         return shape_topology
             return None
 
