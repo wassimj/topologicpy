@@ -360,6 +360,120 @@ class Vector(list):
         return round(rad2deg((ang1 - ang2) % (2 * pi)), mantissa)
 
     @staticmethod
+    def CompassDirection(vector, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the compass direction of the input direction.
+        The possible returned values are:
+        - North, East, South, West
+        - Northeast, Southeast, Southwest, Northwest
+        - A combination of the above (e.g. Up_Noertheast)
+        - Up, Down
+        - Origin
+
+        Parameters
+        ----------
+        vector : list
+            The input vector.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        str
+            The compass direction of the input vector. The possible values are:
+            - North, East, South, West
+            - Northeast, Southeast, Southwest, Northwest
+            - A combination of the above (e.g. Up_Noertheast)
+            - Up, Down
+            - Origin
+
+        """
+        import math
+
+        if not isinstance(vector, list):
+            if not silent:
+                print("Vector.CompassDirection - Error: The input vector parameter is not a valid vector. Returning None.")
+            return None
+        if len(vector) != 3:
+            if not silent:
+                print("Vector.CompassDirection - Error: The input vector parameter is not a valid vector. Returning None.")
+            return None
+        
+        x, y, z = vector
+        
+        # Handle the origin
+        if abs(x) < tolerance and abs(y) < tolerance and abs(z) < tolerance:
+            return "Origin"
+        
+        # Normalize vector to prevent magnitude bias
+        magnitude = math.sqrt(x**2 + y**2 + z**2)
+        x, y, z = x / magnitude, y / magnitude, z / magnitude
+        
+        # Apply tolerance to components
+        x = 0 if abs(x) < tolerance else x
+        y = 0 if abs(y) < tolerance else y
+        z = 0 if abs(z) < tolerance else z
+        
+        # Compass-based direction in the XY-plane
+        if x == 0 and y > 0:
+            horizontal_dir = "North"
+        elif x == 0 and y < 0:
+            horizontal_dir = "South"
+        elif y == 0 and x > 0:
+            horizontal_dir = "East"
+        elif y == 0 and x < 0:
+            horizontal_dir = "West"
+        elif x > 0 and y > 0:
+            horizontal_dir = "Northeast"
+        elif x < 0 and y > 0:
+            horizontal_dir = "Northwest"
+        elif x < 0 and y < 0:
+            horizontal_dir = "Southwest"
+        elif x > 0 and y < 0:
+            horizontal_dir = "Southeast"
+        else:
+            horizontal_dir = ""
+        
+        # Add vertical direction
+        if z > 0:
+            if horizontal_dir:
+                return f"Up_{horizontal_dir}"
+            return "Up"
+        elif z < 0:
+            if horizontal_dir:
+                return f"Down_{horizontal_dir}"
+            return "Down"
+        else:
+            return horizontal_dir
+    
+    @staticmethod
+    def CompassDirections():
+        """
+        Returns the list of allowed compass directions.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        list
+            The list of compass directions. These are:
+            - ["Origin", "Up", "Down",
+              "North", "Northeast", "East", "Southeast", "South", "Southwest", "West", "Northwest",
+              "Up_North", "Up_Northeast", "Up_East", "Up_Southeast", "Up_South", "Up_Southwest", "Up_West", "Up_Northwest",
+               "Down_North", "Down_Northeast", "Down_East", "Down_Southeast", "Down_South", "Down_Southwest", "Down_West", "Down_Northwest",
+              ]
+
+        """
+        return ["Origin", "Up", "Down",
+                "North", "Northeast", "East", "Southeast", "South", "Southwest", "West", "Northwest",
+                "Up_North", "Up_Northeast", "Up_East", "Up_Southeast", "Up_South", "Up_Southwest", "Up_West", "Up_Northwest",
+                "Down_North", "Down_Northeast", "Down_East", "Down_Southeast", "Down_South", "Down_Southwest", "Down_West", "Down_Northwest"
+                ]
+    
+    @staticmethod
     def Coordinates(vector, outputType="xyz", mantissa: int = 6, silent: bool = False):
         """
         Returns the coordinates of the input vector.

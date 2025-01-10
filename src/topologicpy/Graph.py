@@ -264,6 +264,164 @@ class _DrawTree(object):
         return self.__str__()
 
 class Graph:
+    @staticmethod
+    def AddEdge(graph, edge, transferVertexDictionaries: bool = False, transferEdgeDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Adds the input edge to the input Graph.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        edge : topologic_core.Edge
+            The input edge.
+        transferVertexDictionaries : bool, optional
+            If set to True, the dictionaries of the vertices are transferred to the graph.
+        transferEdgeDictionaries : bool, optional
+            If set to True, the dictionaries of the edges are transferred to the graph.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The input graph with the input edge added to it.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
+        def addIfUnique(graph_vertices, vertex, tolerance=0.0001):
+            unique = True
+            returnVertex = vertex
+            for gv in graph_vertices:
+                if (Vertex.Distance(vertex, gv) < tolerance):
+                    if transferVertexDictionaries == True:
+                        gd = Topology.Dictionary(gv)
+                        vd = Topology.Dictionary(vertex)
+                        gk = gd.Keys()
+                        vk = vd.Keys()
+                        d = None
+                        if (len(gk) > 0) and (len(vk) > 0):
+                            d = Dictionary.ByMergedDictionaries([gd, vd])
+                        elif (len(gk) > 0) and (len(vk) < 1):
+                            d = gd
+                        elif (len(gk) < 1) and (len(vk) > 0):
+                            d = vd
+                        if d:
+                            _ = Topology.SetDictionary(gv, d, silent=True)
+                    unique = False
+                    returnVertex = gv
+                    break
+            if unique:
+                graph_vertices.append(vertex)
+            return [graph_vertices, returnVertex]
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.AddEdge - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Graph.AddEdge - Error: The input edge is not a valid edge. Returning the input graph.")
+            return graph
+        graph_vertices = Graph.Vertices(graph)
+        graph_edges = Graph.Edges(graph, graph_vertices, tolerance=tolerance)
+        vertices = Topology.Vertices(edge)
+        new_vertices = []
+        for vertex in vertices:
+            graph_vertices, nv = addIfUnique(graph_vertices, vertex, tolerance=tolerance)
+            new_vertices.append(nv)
+        new_edge = Edge.ByVertices([new_vertices[0], new_vertices[1]], tolerance=tolerance)
+        if transferEdgeDictionaries == True:
+            d = Topology.Dictionary(edge)
+            keys = Dictionary.Keys(d)
+            if isinstance(keys, list):
+                if len(keys) > 0:
+                    _ = Topology.SetDictionary(new_edge, d, silent=True)
+        graph_edges.append(new_edge)
+        new_graph = Graph.ByVerticesEdges(graph_vertices, graph_edges)
+        return new_graph
+    
+    @staticmethod
+    def AddVertex(graph, vertex, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Adds the input vertex to the input graph.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertex : topologic_core.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The input graph with the input vertex added to it.
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.AddVertex - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Graph.AddVertex - Error: The input vertex is not a valid vertex. Returning the input graph.")
+            return graph
+        _ = graph.AddVertices([vertex], tolerance) # Hook to Core
+        return graph
+
+    @staticmethod
+    def AddVertices(graph, vertices, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Adds the input vertex to the input graph.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertices : list
+            The input list of vertices.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The input graph with the input vertex added to it.
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.AddVertices - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertices, list):
+            if not silent:
+                print("Graph.AddVertices - Error: The input list of vertices is not a valid list. Returning None.")
+            return None
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        if len(vertices) < 1:
+            if not silent:
+                print("Graph.AddVertices - Error: Could not find any valid vertices in the input list of vertices. Returning None.")
+            return None
+        _ = graph.AddVertices(vertices, tolerance) # Hook to Core
+        return graph
+    
     def AdjacencyDictionary(graph, vertexLabelKey: str = None, edgeKey: str = "Length", includeWeights: bool = False, reverse: bool = False, mantissa: int = 6):
         """
         Returns the adjacency dictionary of the input Graph.
@@ -517,164 +675,6 @@ class Graph:
         return adjList
 
     @staticmethod
-    def AddEdge(graph, edge, transferVertexDictionaries: bool = False, transferEdgeDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Adds the input edge to the input Graph.
-
-        Parameters
-        ----------
-        graph : topologic_core.Graph
-            The input graph.
-        edge : topologic_core.Edge
-            The input edge.
-        transferVertexDictionaries : bool, optional
-            If set to True, the dictionaries of the vertices are transferred to the graph.
-        transferEdgeDictionaries : bool, optional
-            If set to True, the dictionaries of the edges are transferred to the graph.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-        silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
-
-        Returns
-        -------
-        topologic_core.Graph
-            The input graph with the input edge added to it.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Topology import Topology
-
-        def addIfUnique(graph_vertices, vertex, tolerance=0.0001):
-            unique = True
-            returnVertex = vertex
-            for gv in graph_vertices:
-                if (Vertex.Distance(vertex, gv) < tolerance):
-                    if transferVertexDictionaries == True:
-                        gd = Topology.Dictionary(gv)
-                        vd = Topology.Dictionary(vertex)
-                        gk = gd.Keys()
-                        vk = vd.Keys()
-                        d = None
-                        if (len(gk) > 0) and (len(vk) > 0):
-                            d = Dictionary.ByMergedDictionaries([gd, vd])
-                        elif (len(gk) > 0) and (len(vk) < 1):
-                            d = gd
-                        elif (len(gk) < 1) and (len(vk) > 0):
-                            d = vd
-                        if d:
-                            _ = Topology.SetDictionary(gv, d, silent=True)
-                    unique = False
-                    returnVertex = gv
-                    break
-            if unique:
-                graph_vertices.append(vertex)
-            return [graph_vertices, returnVertex]
-
-        if not Topology.IsInstance(graph, "Graph"):
-            if not silent:
-                print("Graph.AddEdge - Error: The input graph is not a valid graph. Returning None.")
-            return None
-        if not Topology.IsInstance(edge, "Edge"):
-            if not silent:
-                print("Graph.AddEdge - Error: The input edge is not a valid edge. Returning the input graph.")
-            return graph
-        graph_vertices = Graph.Vertices(graph)
-        graph_edges = Graph.Edges(graph, graph_vertices, tolerance=tolerance)
-        vertices = Topology.Vertices(edge)
-        new_vertices = []
-        for vertex in vertices:
-            graph_vertices, nv = addIfUnique(graph_vertices, vertex, tolerance=tolerance)
-            new_vertices.append(nv)
-        new_edge = Edge.ByVertices([new_vertices[0], new_vertices[1]], tolerance=tolerance)
-        if transferEdgeDictionaries == True:
-            d = Topology.Dictionary(edge)
-            keys = Dictionary.Keys(d)
-            if isinstance(keys, list):
-                if len(keys) > 0:
-                    _ = Topology.SetDictionary(new_edge, d, silent=True)
-        graph_edges.append(new_edge)
-        new_graph = Graph.ByVerticesEdges(graph_vertices, graph_edges)
-        return new_graph
-    
-    @staticmethod
-    def AddVertex(graph, vertex, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Adds the input vertex to the input graph.
-
-        Parameters
-        ----------
-        graph : topologic_core.Graph
-            The input graph.
-        vertex : topologic_core.Vertex
-            The input vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-        silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
-
-        Returns
-        -------
-        topologic_core.Graph
-            The input graph with the input vertex added to it.
-
-        """
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(graph, "Graph"):
-            if not silent:
-                print("Graph.AddVertex - Error: The input graph is not a valid graph. Returning None.")
-            return None
-        if not Topology.IsInstance(vertex, "Vertex"):
-            if not silent:
-                print("Graph.AddVertex - Error: The input vertex is not a valid vertex. Returning the input graph.")
-            return graph
-        _ = graph.AddVertices([vertex], tolerance) # Hook to Core
-        return graph
-
-    @staticmethod
-    def AddVertices(graph, vertices, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Adds the input vertex to the input graph.
-
-        Parameters
-        ----------
-        graph : topologic_core.Graph
-            The input graph.
-        vertices : list
-            The input list of vertices.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-        silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
-
-        Returns
-        -------
-        topologic_core.Graph
-            The input graph with the input vertex added to it.
-
-        """
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(graph, "Graph"):
-            if not silent:
-                print("Graph.AddVertices - Error: The input graph is not a valid graph. Returning None.")
-            return None
-        if not isinstance(vertices, list):
-            if not silent:
-                print("Graph.AddVertices - Error: The input list of vertices is not a valid list. Returning None.")
-            return None
-        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) < 1:
-            if not silent:
-                print("Graph.AddVertices - Error: Could not find any valid vertices in the input list of vertices. Returning None.")
-            return None
-        _ = graph.AddVertices(vertices, tolerance) # Hook to Core
-        return graph
-    
-    @staticmethod
     def AdjacentVertices(graph, vertex, silent: bool = False):
         """
         Returns the list of vertices connected to the input vertex.
@@ -707,6 +707,118 @@ class Graph:
         vertices = []
         _ = graph.AdjacentVertices(vertex, vertices) # Hook to Core
         return list(vertices)
+    
+    @staticmethod
+    def AdjacentVerticesByCompassDirection(graph, vertex, compassDirection: str = "Up", tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the list of vertices connected to the input vertex that are in the input compass direction.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertex : topologic_core.Vertex
+            the input vertex.
+        compassDirection : str , optional
+            The compass direction. See Vector.CompassDirections(). The default is "Up".
+        tolerance : float , optional
+                The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+            The list of adjacent vertices that are in the compass direction.
+
+        """
+        from topologicpy.Vector import Vector
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.AdjacentVerticesByCompassDirection - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(vertex, "vertex"):
+            if not silent:
+                print("Graph.AdjacentVerticesByCompassDirection - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        if not isinstance(compassDirection, str):
+            if not silent:
+                print("Graph.AdjacentVerticesByCompassDirection - Error: The input compassDirection parameter is not a valid string. Returning None.")
+            return None
+        
+        directions = [v.lower() for v in Vector.CompassDirections()]
+
+        if not compassDirection.lower() in directions:
+            if not silent:
+                print("Graph.AdjacentVerticesByCompassDirection - Error: The input compassDirection parameter is not a valid compass direction. Returning None.")
+            return None
+
+        adjacent_vertices = Graph.AdjacentVertices(graph, vertex)
+        return_vertices = []
+        for v in adjacent_vertices:
+            e = Edge.ByVertices(vertex, v)
+            vector = Edge.Direction(e)
+            compass_direction = Vector.CompassDirection(vector, tolerance=tolerance)
+            if compass_direction.lower() == compassDirection.lower():
+                return_vertices.append(v)
+        return return_vertices
+
+    @staticmethod
+    def AdjacentVerticesByVector(graph, vertex, vector: list = [0,0,1], tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the list of vertices connected to the input vertex that are in the input vector direction.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertex : topologic_core.Vertex
+            the input vertex.
+        vector : list , optional
+            The vector direction. The default is [0,0,1].
+        tolerance : float , optional
+                The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+            The list of adjacent vertices that are in the vector direction.
+
+        """
+        from topologicpy.Vector import Vector
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.AdjacentVerticesByVector- Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(vertex, "vertex"):
+            if not silent:
+                print("Graph.AdjacentVerticesByVector- Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        if not isinstance(vector, list):
+            if not silent:
+                print("Graph.AdjacentVerticesByVector- Error: The input vector parameter is not a valid vector. Returning None.")
+            return None
+        if len(vector) != 3:
+            if not silent:
+                print("Graph.AdjacentVerticesByVector- Error: The input vector parameter is not a valid vector. Returning None.")
+            return None
+
+        adjacent_vertices = Graph.AdjacentVertices(graph, vertex)
+        return_vertices = []
+        for v in adjacent_vertices:
+            e = Edge.ByVertices(vertex, v)
+            edge_vector = Edge.Direction(e)
+            if Vector.CompassDirection(vector, tolerance=tolerance).lower() == Vector.CompassDirection(edge_vector, tolerance=tolerance).lower():
+                return_vertices.append(v)
+        return return_vertices
     
     @staticmethod
     def AllPaths(graph, vertexA, vertexB, timeLimit=10, silent: bool = False):
@@ -8789,7 +8901,7 @@ class Graph:
         return max_flow
 
     @staticmethod
-    def MeshData(g, tolerance: float = 0.0001):
+    def MeshData(graph, tolerance: float = 0.0001):
         """
         Returns the mesh data of the input graph.
 
@@ -8815,14 +8927,14 @@ class Graph:
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
 
-        g_vertices = Graph.Vertices(g)
+        g_vertices = Graph.Vertices(graph)
         m_vertices = []
         v_dicts = []
         for g_vertex in g_vertices:
             m_vertices.append(Vertex.Coordinates(g_vertex))
             d = Dictionary.PythonDictionary(Topology.Dictionary(g_vertex))
             v_dicts.append(d)
-        g_edges = Graph.Edges(g)
+        g_edges = Graph.Edges(graph)
         m_edges = []
         e_dicts = []
         for g_edge in g_edges:
