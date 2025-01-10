@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vector module &mdash; topologicpy 0.8.7 documentation</title>
+  <title>topologicpy.Vector module &mdash; topologicpy 0.8.8 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.7
+                0.8.8
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -176,6 +176,12 @@
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.CompassAngle" title="topologicpy.Vector.Vector.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(vectorA, vectorB[, mantissa, ...])</p></td>
 <td><p>Returns the horizontal compass angle in degrees between the two input vectors.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.CompassDirection" title="topologicpy.Vector.Vector.CompassDirection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassDirection</span></code></a>(vector[, tolerance, silent])</p></td>
+<td><p>Returns the compass direction of the input direction.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.CompassDirections" title="topologicpy.Vector.Vector.CompassDirections"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassDirections</span></code></a>()</p></td>
+<td><p>Returns the list of allowed compass directions.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Coordinates" title="topologicpy.Vector.Vector.Coordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Coordinates</span></code></a>(vector[, outputType, mantissa, ...])</p></td>
 <td><p>Returns the coordinates of the input vector.</p></td>
@@ -514,6 +520,68 @@ Only the first two elements in the input vectors are considered.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>float</dt><dd><p>The horizontal compass angle in degrees between the two input vectors.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Vector.Vector.CompassDirection">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CompassDirection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.CompassDirection" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the compass direction of the input direction.
+The possible returned values are:
+- North, East, South, West
+- Northeast, Southeast, Southwest, Northwest
+- A combination of the above (e.g. Up_Noertheast)
+- Up, Down
+- Origin</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vector</strong><span class="classifier">list</span></dt><dd><p>The input vector.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The compass direction of the input vector. The possible values are:
+- North, East, South, West
+- Northeast, Southeast, Southwest, Northwest
+- A combination of the above (e.g. Up_Noertheast)
+- Up, Down
+- Origin</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Vector.Vector.CompassDirections">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CompassDirections</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.CompassDirections" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the list of allowed compass directions.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><blockquote>
+<div></div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt>list</dt><dd><p>The list of compass directions. These are:
+- [“Origin”, “Up”, “Down”,</p>
+<blockquote>
+<div><p>“North”, “Northeast”, “East”, “Southeast”, “South”, “Southwest”, “West”, “Northwest”,
+“Up_North”, “Up_Northeast”, “Up_East”, “Up_Southeast”, “Up_South”, “Up_Southwest”, “Up_West”, “Up_Northwest”,</p>
+<blockquote>
+<div><p>“Down_North”, “Down_Northeast”, “Down_East”, “Down_Southeast”, “Down_South”, “Down_Southwest”, “Down_West”, “Down_Northwest”,</p>
+</div></blockquote>
+<p>]</p>
+</div></blockquote>
 </dd>
 </dl>
 </dd>
