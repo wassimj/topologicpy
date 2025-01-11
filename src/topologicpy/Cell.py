@@ -2353,6 +2353,128 @@ class Cell():
         return volume
 
     @staticmethod
+    def Wedge(origin=None,
+            width=1,
+            length=1,
+            height=1,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates a Wedge.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the Wedge. The default is None which results in the Wedge being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the Wedge. The default is 1.0.
+        length : float , optional
+            The overall length of the Wedge. The default is 1.0.
+        height : float , optional
+            The overall height of the Wedge. The default is 1.0.
+        direction : list , optional
+            The vector representing the up direction of the Wedge. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the Wedge. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created Wedge.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Cell.Wedge - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Cell.Wedge - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(height, int) and not isinstance(height, float):
+            if not silent:
+                print("Cell.Wedge - Error: The height input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Cell.Wedge - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Cell.Wedge - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if height <= tolerance:
+            if not silent:
+                print("Cell.Wedge - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Cell.Wedge - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Cell.Wedge - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Cell.Wedge - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        
+        # Define the vertices of the T-shape (counterclockwise)
+        v1 = Vertex.ByCoordinates(0,0,0)
+        v2 = Vertex.ByCoordinates(width, 0, 0)
+        v3 = Vertex.ByCoordinates(width, length, 0)
+        v4 = Vertex.ByCoordinates(0, length, 0)
+        v5 = Vertex.ByCoordinates(0, length, height)
+        v6 = Vertex.ByCoordinates(0, 0, height)
+
+        f1 = Face.ByVertices([v1, v2, v3, v4], tolerance=tolerance)
+        f2 = Face.ByVertices([v1, v2, v6], tolerance=tolerance)
+        f3 = Face.ByVertices([v4, v5, v3], tolerance=tolerance)
+        f4 = Face.ByVertices([v1, v6, v5, v4], tolerance=tolerance)
+        f5 = Face.ByVertices([v2, v3, v5, v6], tolerance=tolerance)
+        cell = Cell.ByFaces([f1, f2, f3, f4, f5])
+        cell = Topology.Translate(cell, -width/2, -length/2, -height/2)
+        cell = Topology.Translate(cell, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
+        if flipHorizontal == True:
+            xScale = -1
+        else:
+            xScale = 1
+        if flipVertical == True:
+            zScale = -1
+        else:
+            zScale = 1
+        if xScale == -1 or zScale == -1:
+            cell = Topology.Scale(cell, origin=origin, x=xScale, y=1, z=zScale)
+        if placement.lower() == "lowerleft":
+            cell = Topology.Translate(cell, origin=origin, x=width/2, y=length/2, z=height/2)
+        elif placement.lower() == "upperright":
+            cell = Topology.Translate(cell, origin=origin, x=-width/2, y=-length/2, z=-height/2)
+        elif placement.lower() == "upperleft":
+            cell = Topology.Translate(cell, origin=origin, x=width/2, y=-length/2, z=-height/2)
+        elif placement.lower() == "lowerright":
+            cell = Topology.Translate(cell, origin=origin, x=-width/2, y=length/2, z=height/2)
+        
+        if direction != [0, 0, 1]:
+            cell = Topology.Orient(cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        
+        return cell
+
+    @staticmethod
     def Wires(cell) -> list:
         """
         Returns the wires of the input cell.

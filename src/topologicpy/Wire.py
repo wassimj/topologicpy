@@ -51,7 +51,6 @@ class Wire():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
         import numpy as np
 
@@ -183,7 +182,6 @@ class Wire():
 
         """
         from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
@@ -233,7 +231,6 @@ class Wire():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -453,7 +450,6 @@ class Wire():
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Dictionary import Dictionary
-        from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
@@ -724,7 +720,6 @@ class Wire():
             The created wire.
 
         """
-        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -1472,7 +1467,6 @@ class Wire():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not isinstance(width, int) and not isinstance(width, float):
@@ -1595,7 +1589,7 @@ class Wire():
         else:
             yScale = 1
         if xScale == -1 or yScale == -1:
-            cross_shape = Topology.Scale(cross_shape, x=xScale, y=yScale, z=1)
+            cross_shape = Topology.Scale(cross_shape, origin=origin, x=xScale, y=yScale, z=1)
             if reverse == True:
                 cross_shape = Wire.Reverse(cross_shape)
         if placement.lower() == "lowerleft":
@@ -1657,7 +1651,6 @@ class Wire():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not isinstance(width, int) and not isinstance(width, float):
@@ -1745,7 +1738,7 @@ class Wire():
         else:
             yScale = 1
         if xScale == -1 or yScale == -1:
-            c_shape = Topology.Scale(c_shape, x=xScale, y=yScale, z=1)
+            c_shape = Topology.Scale(c_shape, origin=origin, x=xScale, y=yScale, z=1)
             if reverse == True:
                 c_shape = Wire.Reverse(c_shape)
         if placement.lower() == "lowerleft":
@@ -2287,7 +2280,6 @@ class Wire():
         import math
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
@@ -2777,7 +2769,6 @@ class Wire():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not isinstance(width, int) and not isinstance(width, float):
@@ -2869,7 +2860,7 @@ class Wire():
         else:
             yScale = 1
         if xScale == -1 or yScale == -1:
-            i_shape = Topology.Scale(i_shape, x=xScale, y=yScale, z=1)
+            i_shape = Topology.Scale(i_shape, origin=origin, x=xScale, y=yScale, z=1)
             if reverse == True:
                 i_shape = Wire.Reverse(i_shape)
         if placement.lower() == "lowerleft":
@@ -3024,7 +3015,6 @@ class Wire():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not isinstance(width, int) and not isinstance(width, float):
@@ -3106,7 +3096,7 @@ class Wire():
         else:
             yScale = 1
         if xScale == -1 or yScale == -1:
-            l_shape = Topology.Scale(l_shape, x=xScale, y=yScale, z=1)
+            l_shape = Topology.Scale(l_shape, origin=origing, x=xScale, y=yScale, z=1)
             if reverse == True:
                 l_shape = Wire.Reverse(l_shape)
         if placement.lower() == "lowerleft":
@@ -3163,9 +3153,7 @@ class Wire():
         import math
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
         from topologicpy.Dictionary import Dictionary
@@ -3632,7 +3620,6 @@ class Wire():
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
@@ -3727,7 +3714,6 @@ class Wire():
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         import inspect
@@ -4537,7 +4523,6 @@ class Wire():
             return x*radius, y*radius
         
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
         
         if not Topology.IsInstance(origin, "Vertex"):
@@ -4788,7 +4773,6 @@ class Wire():
             baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
 
-
     @staticmethod
     def TShape(origin=None,
             width=1,
@@ -4832,7 +4816,6 @@ class Wire():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not isinstance(width, int) and not isinstance(width, float):
@@ -4916,7 +4899,7 @@ class Wire():
         else:
             yScale = 1
         if xScale == -1 or yScale == -1:
-            t_shape = Topology.Scale(t_shape, x=xScale, y=yScale, z=1)
+            t_shape = Topology.Scale(t_shape, origin=origin, x=xScale, y=yScale, z=1)
             if reverse == True:
                 t_shape = Wire.Reverse(t_shape)
         if placement.lower() == "lowerleft":

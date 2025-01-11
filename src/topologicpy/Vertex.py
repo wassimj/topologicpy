@@ -35,7 +35,7 @@ except:
 
 class Vertex():
     @staticmethod
-    def AlignCoordinates(vertex, xList=None, yList=None, zList=None, transferDictionary=False, mantissa=6, silent=False):
+    def AlignCoordinates(vertex, xList: list = None, yList: list = None, zList: list = None, xEpsilon: float = 0.0001, yEpsilon: float = 0.0001, zEpsilon: float = 0.0001, transferDictionary: bool = False, mantissa: int = 6, silent: bool = False):
         """
             Aligns the coordinates of the input vertex with the list of x,y, and z coordinates.
 
@@ -49,6 +49,12 @@ class Vertex():
                 The input numerical list of y-coordinates. The default is None.
             zList : list , optional
                 The input numerical list of z-coordinates. The default is None.
+            xEpsilon : float , optional
+                The desired tolerance for the x coordinates. The default is 0.0001.
+            yEpsilon : float , optional
+                The desired tolerance for the y coordinates. The default is 0.0001. 
+            zEpsilon : float , optional
+                The desired tolerance for the z coordinates. The default is 0.0001. 
             transferDictionary : bool , optional
                 if set to True, the dictionary of the input vertex is transferred to the new vertex.
             mantissa : int , optional
@@ -70,17 +76,24 @@ class Vertex():
                 print("Vertex.AlignCoordinates - Error: The input vertex parameter is not a topologic vertex. Returning None.")
             return None
         
-        closest_x, closest_y, closest_z = Vertex.Coordinates(vertex, mantissa=mantissa)
+        x, y, z = Vertex.Coordinates(vertex, mantissa=mantissa)
         if isinstance(xList, list):
             if len(xList) > 0:
-                closest_x = xList[Helper.ClosestMatch(closest_x, xList)]
+                closest_x = round(xList[Helper.ClosestMatch(x, xList)], mantissa)
         if isinstance(yList, list):
             if len(yList) > 0:
-                closest_y = yList[Helper.ClosestMatch(closest_y, yList)]
+                closest_y = round(yList[Helper.ClosestMatch(y, yList)], mantissa)
         if isinstance(zList, list):
             if len(zList) > 0:
-                closest_z = zList[Helper.ClosestMatch(closest_z, zList)]
-        return_vertex = Vertex.ByCoordinates(closest_x, closest_y, closest_z)
+                closest_z = round(zList[Helper.ClosestMatch(z, zList)], mantissa)
+        
+        if abs(x - closest_x) < xEpsilon:
+            x = closest_x
+        if abs(y - closest_y) < yEpsilon:
+            y = closest_y
+        if abs(z - closest_z) < zEpsilon:
+            z = closest_z
+        return_vertex = Vertex.ByCoordinates(x, y, z)
         if transferDictionary == True:
             return_vertex = Topology.SetDictionary(return_vertex, Topology.Dictionary(vertex), silent=silent)
         return return_vertex
