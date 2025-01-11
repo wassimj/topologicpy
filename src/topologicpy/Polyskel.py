@@ -137,7 +137,7 @@ class Line2:
     def intersect(self, other):
         # Line intersection formula
         det = self.v.x * other.v.y - self.v.y * other.v.x
-        if abs(det) < EPSILON:
+        if abs(det) <= EPSILON:
             return None  # Lines are parallel
 
         dx = other.p.x - self.p.x
@@ -323,8 +323,8 @@ class _LAVertex:
 					# check eligibility of b
 					# a valid b should lie within the area limited by the edge and the bisectors of its two vertices:
 					xleft	= _cross(edge.bisector_left.v.normalized(), (b - edge.bisector_left.p).normalized()) > -EPSILON
-					xright	= _cross(edge.bisector_right.v.normalized(), (b - edge.bisector_right.p).normalized()) < EPSILON
-					xedge	= _cross(edge.edge.v.normalized(), (b - edge.edge.p).normalized()) < EPSILON
+					xright	= _cross(edge.bisector_right.v.normalized(), (b - edge.bisector_right.p).normalized()) <= EPSILON
+					xedge	= _cross(edge.edge.v.normalized(), (b - edge.edge.p).normalized()) <= EPSILON
 
 					if not (xleft and xright and xedge):
 						log.debug("\t\tDiscarded candidate %s (%s-%s-%s)", b, xleft, xright, xedge)

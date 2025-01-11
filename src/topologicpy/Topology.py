@@ -291,7 +291,7 @@ class Topology():
                     subTopology = subTopologies[i]
                     if exclusive == True and usedTopologies[i] == 1:
                         continue
-                    if Vertex.Distance(apCenter, subTopology) < tolerance:
+                    if Vertex.Distance(apCenter, subTopology) <= tolerance:
                         context = topologic.Context.ByTopologyParameters(subTopology, 0.5, 0.5, 0.5)
                         _ = Aperture.ByTopologyContext(aperture, context)
                         if exclusive == True:
@@ -1288,7 +1288,7 @@ class Topology():
         axes : str , optional
             Sets what axes are to be used for rotating the bounding box. This can be any permutation or substring of "xyz". It is not case sensitive. The default is "xyz".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
@@ -1444,7 +1444,7 @@ class Topology():
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
         baseFace = Face.ByWire(baseWire, tolerance=tolerance)
-        if abs(z_max - z_min) < tolerance:
+        if abs(z_max - z_min) <= tolerance:
             box = baseFace
         else:
             box = Cell.ByThickenedFace(baseFace, planarize=False, thickness=abs(z_max - z_min), bothSides=False)
@@ -6735,7 +6735,7 @@ class Topology():
         max_area = max(face_areas)
         max_faces = []
         for i, face_area in enumerate(face_areas):
-            if abs(max_area - face_area) < tolerance:
+            if abs(max_area - face_area) <= tolerance:
                 max_faces.append(faces[i])
         return max_faces
 
@@ -6784,7 +6784,7 @@ class Topology():
         max_length = max(edge_lengths)
         max_edges = []
         for i, edge_length in enumerate(edge_lengths):
-            if abs(max_length - edge_length) < tolerance:
+            if abs(max_length - edge_length) <= tolerance:
                 max_edges.append(edges[i])
         return max_edges
 
@@ -8349,7 +8349,7 @@ class Topology():
         min_length = min(edge_lengths)
         min_edges = []
         for i, edge_length in enumerate(edge_lengths):
-            if abs(min_length - edge_length) < tolerance:
+            if abs(min_length - edge_length) <= tolerance:
                 min_edges.append(edges[i])
         return min_edges
 
@@ -8816,7 +8816,7 @@ class Topology():
         min_area = min(face_areas)
         min_faces = []
         for i, face_area in enumerate(face_areas):
-            if abs(min_area - face_area) < tolerance:
+            if abs(min_area - face_area) <= tolerance:
                 min_faces.append(faces[i])
         return min_faces
 
@@ -9585,7 +9585,7 @@ class Topology():
                 for vertex in vertices:
                     for selector in selectors:
                         d = Vertex.Distance(selector, vertex)
-                        if d < tolerance:
+                        if d <= tolerance:
                             vertex = Topology.SetDictionary(vertex, Topology.Dictionary(selector), silent=True)
                             break
             if tranEdges == True:
@@ -9593,7 +9593,7 @@ class Topology():
                 for selector in selectors:
                     for edge in edges:
                         d = Vertex.Distance(selector, edge)
-                        if d < tolerance:
+                        if d <= tolerance:
 
                             edge = Topology.SetDictionary(edge, Topology.Dictionary(selector), silent=True)
                             break
@@ -9602,7 +9602,7 @@ class Topology():
                 for face in faces:
                     for selector in selectors:
                         d = Vertex.Distance(selector, face)
-                        if d < tolerance:
+                        if d <= tolerance:
                             face = Topology.SetDictionary(face, Topology.Dictionary(selector), silent=True)
                             break
             if tranCells == True:

@@ -36,6 +36,61 @@ except:
 
 class Helper:
     @staticmethod
+    def BinAndAverage(listA, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Groups numbers within a specified tolerance into bins, calculates the average
+        of each bin, and returns a sorted list of these averages.
+
+        Parameters
+        ----------
+        listA : list
+            The input list.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        list
+            The sorted list of bin averages.
+
+        """
+        if not isinstance(listA, list):
+            if not silent:
+                print("Helper.BinAndAverage = Error: The input listA parameter is not a valid list. Returning None.")
+            return None
+        
+        if len(listA) < 1:
+            if not silent:
+                print("Helper.BinAndAverage = Error: The input listA parameter is not an empty list. Returning None.")
+            return None
+        
+        if len(listA) == 1:
+            return listA
+            
+        # Sort numbers to facilitate grouping
+        listA = sorted(listA)
+        bins = []
+        current_bin = [listA[0]]
+
+        # Group numbers into bins based on tolerance
+        for num in listA[1:]:
+            if abs(num - current_bin[-1]) <= tolerance:
+                current_bin.append(num)
+            else:
+                bins.append(current_bin)
+                current_bin = [num]
+        bins.append(current_bin)  # Add the last bin
+
+        # Calculate averages of each bin
+        bin_averages = [round(sum(bin) / len(bin), mantissa) for bin in bins]
+
+        return sorted(bin_averages)
+    
+    @staticmethod
     def ClosestMatch(item, listA):
         """
         Returns the index of the closest match in the input list to the input item.

@@ -345,11 +345,11 @@ class Vector(list):
             if not silent:
                 print("Vector.Coordinates - Error: The input vectorB parameter is not a valid vector. Returning Nonne.")
             return None
-        if abs(vectorA[0]) < tolerance and abs(vectorA[1]) < tolerance:
+        if abs(vectorA[0]) <= tolerance and abs(vectorA[1]) <= tolerance:
             if not silent:
                 print("Vector.CompassAngle - Error: The input vectorA parameter is vertical in the Z Axis. Returning Nonne.")
             return None
-        if abs(vectorB[0]) < tolerance and abs(vectorB[1]) < tolerance:
+        if abs(vectorB[0]) <= tolerance and abs(vectorB[1]) <= tolerance:
             if not silent:
                 print("Vector.CompassAngle - Error: The input vectorB parameter is vertical in the Z Axis. Returning Nonne.")
             return None
@@ -404,7 +404,7 @@ class Vector(list):
         x, y, z = vector
         
         # Handle the origin
-        if abs(x) < tolerance and abs(y) < tolerance and abs(z) < tolerance:
+        if abs(x) <= tolerance and abs(y) <= tolerance and abs(z) <= tolerance:
             return "Origin"
         
         # Normalize vector to prevent magnitude bias
@@ -412,9 +412,9 @@ class Vector(list):
         x, y, z = x / magnitude, y / magnitude, z / magnitude
         
         # Apply tolerance to components
-        x = 0 if abs(x) < tolerance else x
-        y = 0 if abs(y) < tolerance else y
-        z = 0 if abs(z) < tolerance else z
+        x = 0 if abs(x) <= tolerance else x
+        y = 0 if abs(y) <= tolerance else y
+        z = 0 if abs(z) <= tolerance else z
         
         # Compass-based direction in the XY-plane
         if x == 0 and y > 0:
@@ -553,18 +553,18 @@ class Vector(list):
             if not silent:
                 print("Vector.Cross - Error: The input vectorB parameter is not a valid vector. Returning None.")
             return None
-        if Vector.Magnitude(vector=vectorA, mantissa=mantissa) < tolerance:
+        if Vector.Magnitude(vector=vectorA, mantissa=mantissa) <= tolerance:
             if not silent:
                 print("Vector.Cross - Error: The magnitude of the input vectorA parameter is less than the input tolerance parameter. Returning None.")
             return None
-        if Vector.Magnitude(vector=vectorB, mantissa=mantissa) < tolerance:
+        if Vector.Magnitude(vector=vectorB, mantissa=mantissa) <= tolerance:
             if not silent:
                 print("Vector.Cross - Error: The magnitude of the input vectorB parameter is less than the input tolerance parameter. Returning None.")
             return None
         vecA = np.array(vectorA)
         vecB = np.array(vectorB)
         vecC = list(np.cross(vecA, vecB))
-        if Vector.Magnitude(vecC) < tolerance:
+        if Vector.Magnitude(vecC) <= tolerance:
             return [0, 0, 0]
         return [round(vecC[0], mantissa), round(vecC[1], mantissa), round(vecC[2], mantissa)]
 
@@ -600,11 +600,11 @@ class Vector(list):
             if not silent:
                 print("Vector.Dot - Error: The input vectorB parameter is not a valid vector. Returning None.")
             return None
-        if Vector.Magnitude(vector=vectorA, mantissa=mantissa) < tolerance:
+        if Vector.Magnitude(vector=vectorA, mantissa=mantissa) <= tolerance:
             if not silent:
                 print("Vector.Dot - Error: The magnitude of the input vectorA parameter is less than the input tolerance parameter. Returning None.")
             return None
-        if Vector.Magnitude(vector=vectorB, mantissa=mantissa) < tolerance:
+        if Vector.Magnitude(vector=vectorB, mantissa=mantissa) <= tolerance:
             if not silent:
                 print("Vector.Dot - Error: The magnitude of the input vectorB parameter is less than the input tolerance parameter. Returning None.")
             return None
@@ -763,7 +763,7 @@ class Vector(list):
             True if the input vectors are the same. False otherwise.
         
         """
-        return all(abs(a - b) < tolerance for a, b in zip(vectorA, vectorB))
+        return all(abs(a - b) <= tolerance for a, b in zip(vectorA, vectorB))
 
     @staticmethod
     def Length(vector, mantissa: int = 6):
@@ -825,7 +825,7 @@ class Vector(list):
             The created vector that multiplies the input vector by the input magnitude.
 
         """
-        if abs(magnitude) < tolerance:
+        if abs(magnitude) <= tolerance:
             return [0.0] * len(vector)
         scaled_vector = [component * (magnitude) for component in vector]
         return scaled_vector

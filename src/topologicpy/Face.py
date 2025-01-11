@@ -325,7 +325,7 @@ class Face():
                 print("Face.ByOffset - Warning: The input face parameter is not a valid face. Returning None.")
             return None
         
-        if abs(Face.Normal(face)[2] + 1) < tolerance:
+        if abs(Face.Normal(face)[2] + 1) <= tolerance:
             reverse = not(reverse)
         eb = Face.Wire(face)
         
@@ -494,7 +494,7 @@ class Face():
                 # We want this difference to be as close to 0 as possible
                 loss = (new_area - area) ** 2
                 # If the loss is less than the tolerance, accept the result and return a loss of 0.
-                if loss < tolerance:
+                if loss <= tolerance:
                     return 0
                 # Otherwise, return the actual loss value.
                 return loss 
@@ -1622,7 +1622,7 @@ class Face():
             dV = direction
         uV = Vector.Normalize(dV)
         dot = sum([i*j for (i, j) in zip(uV, faceNormal)])
-        if dot < tolerance:
+        if dot <= tolerance:
             return False
         return True
 
@@ -2278,7 +2278,7 @@ class Face():
         def vertex_part_of_face(vertex, face, tolerance=0.0001):
             vertices = Topology.Vertices(face)
             for v in vertices:
-                if Vertex.Distance(vertex, v) < tolerance:
+                if Vertex.Distance(vertex, v) <= tolerance:
                     return True
             return False
 
@@ -3040,9 +3040,9 @@ class Face():
             if not silent:
                 print("Face.NormalEdge - Error: The input face parameter is not a valid face. Retuning None.")
             return None
-        if length < tolerance:
+        if length <= tolerance:
             if not silent:
-                print("Face.NormalEdge - Error: The input length parameter is less than the input tolerance. Retuning None.")
+                print("Face.NormalEdge - Error: The input length parameter is less than or equal to the input tolerance. Retuning None.")
             return None
         iv = Face.InternalVertex(face)
         u, v = Face.VertexParameters(face, iv)

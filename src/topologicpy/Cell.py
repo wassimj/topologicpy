@@ -998,14 +998,14 @@ class Cell():
                 verticalFaces.append(aFace)
                 verticalApertures += getApertures(aFace)
             elif aCode == 1:
-                if abs(Vertex.Z(Topology.Centroid(aFace)) - zMin) < tolerance:
+                if abs(Vertex.Z(Topology.Centroid(aFace)) - zMin) <= tolerance:
                     bottomHorizontalFaces.append(aFace)
                     bottomHorizontalApertures += getApertures(aFace)
                 else:
                     topHorizontalFaces.append(aFace)
                     topHorizontalApertures += getApertures(aFace)
             elif aCode == 2:
-                if abs(Vertex.Z(Topology.Centroid(aFace)) - zMax) < tolerance:
+                if abs(Vertex.Z(Topology.Centroid(aFace)) - zMax) <= tolerance:
                     topHorizontalFaces.append(aFace)
                     topHorizontalApertures += getApertures(aFace)
                 else:

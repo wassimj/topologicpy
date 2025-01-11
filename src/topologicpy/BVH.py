@@ -282,7 +282,7 @@ class BVH:
             # Add an edge from the parent to this vertex (if a parent exists)
             if parent_vertex is not None:
                 d = Vertex.Distance(parent_vertex, current_vertex)
-                if d < tolerance:
+                if d <= tolerance:
                     current_vertex = Topology.Translate(current_vertex, tolerance*random.uniform(2,50), tolerance*random.uniform(2,50), tolerance*random.uniform(2,50))
                 edge = Edge.ByVertices(parent_vertex, current_vertex, tolerance=tolerance)
                 graph = Graph.AddEdge(graph, edge, silent=True)

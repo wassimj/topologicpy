@@ -774,7 +774,7 @@ class Wire():
                 # We want this difference to be as close to 0 as possible
                 loss = (new_area - area) ** 2
                 # If the loss is less than the tolerance, accept the result and return a loss of 0.
-                if loss < tolerance:
+                if loss <= tolerance:
                     return 0
                 # Otherwise, return the actual loss value.
                 return loss 
@@ -960,10 +960,10 @@ class Wire():
             print("Wire.Circle - Error: The input placement parameter is not a recognized string. Returning None.")
             return None
         radius = abs(radius)
-        if radius < tolerance:
+        if radius <= tolerance:
             return None
         
-        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) < tolerance:
+        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) <= tolerance:
             return None
         baseV = []
         xList = []
@@ -971,7 +971,7 @@ class Wire():
 
         if toAngle < fromAngle:
             toAngle += 360
-        if abs(toAngle-fromAngle) < tolerance:
+        if abs(toAngle-fromAngle) <= tolerance:
             return None
         angleRange = toAngle - fromAngle
         fromAngle = math.radians(fromAngle)
@@ -1057,7 +1057,7 @@ class Wire():
                 if i1 == None or i2 == None:
                     print("Wire.Close - Error: Something went wrong. Returning None.")
                     return None
-                if d < tolerance:
+                if d <= tolerance:
                     g_vertices[i1] = Vertex.Coordinates(end)
                     g_vertices[i2] = Vertex.Coordinates(end)
                 else:
@@ -1780,7 +1780,7 @@ class Wire():
 
         def vIndex(v, vList, tolerance=0.0001):
             for i in range(len(vList)):
-                if Vertex.Distance(v, vList[i]) < tolerance:
+                if Vertex.Distance(v, vList[i]) <= tolerance:
                     return i+1
             return None
         
@@ -2080,7 +2080,7 @@ class Wire():
             return None
         if placement.lower() not in ["center", "lowerleft"]:
             return None
-        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) < tolerance:
+        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) <= tolerance:
             return None
         width = abs(width)
         length = abs(length)
@@ -2089,7 +2089,7 @@ class Wire():
         majorAxisLength=abs(majorAxisLength)
         minorAxisLength=abs(minorAxisLength)
         sides = abs(sides)
-        if width < tolerance or length < tolerance or focalLength < tolerance or eccentricity < tolerance or majorAxisLength < tolerance or minorAxisLength < tolerance or sides < 3:
+        if width <= tolerance or length <= tolerance or focalLength <= tolerance or eccentricity <= tolerance or majorAxisLength <= tolerance or minorAxisLength <= tolerance or sides < 3:
             return None
         if inputMode == 1:
             w = width
@@ -2127,7 +2127,7 @@ class Wire():
 
         if toAngle < fromAngle:
             toAngle += 360
-        if abs(toAngle - fromAngle) < tolerance:
+        if abs(toAngle - fromAngle) <= tolerance:
             return None
 
         angleRange = toAngle - fromAngle
@@ -2310,7 +2310,7 @@ class Wire():
             if len(edges) == 2:
                 for edge in edges:
                     ev = Edge.EndVertex(edge)
-                    if Vertex.Distance(v, ev) < tolerance:
+                    if Vertex.Distance(v, ev) <= tolerance:
                         edge0 = edge
                     else:
                         edge1 = edge
@@ -3184,7 +3184,7 @@ class Wire():
             if len(edges) == 2:
                 for edge in edges:
                     ev = Edge.EndVertex(edge)
-                    if Vertex.Distance(v, ev) < tolerance:
+                    if Vertex.Distance(v, ev) <= tolerance:
                         edge0 = edge
                     else:
                         edge1 = edge
@@ -3378,10 +3378,10 @@ class Wire():
         while remaining_edges:
             next_edge = None
             for edge in remaining_edges:
-                if Vertex.Distance(Edge.StartVertex(edge), current_vertex) < tolerance:
+                if Vertex.Distance(Edge.StartVertex(edge), current_vertex) <= tolerance:
                     next_edge = edge
                     break
-                elif Vertex.Distance(Edge.EndVertex(edge), current_vertex) < tolerance:
+                elif Vertex.Distance(Edge.EndVertex(edge), current_vertex) <= tolerance:
                     next_edge = Edge.Reverse(edge)
                     break
 
@@ -3565,10 +3565,10 @@ class Wire():
             return None
         width = abs(width)
         length = abs(length)
-        if width < tolerance or length < tolerance:
+        if width <= tolerance or length <= tolerance:
             print("Wire.Rectangle - Error: One or more of the specified dimensions is below the tolerance value. Returning None.")
             return None
-        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) < tolerance:
+        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) <= tolerance:
             print("Wire.Rectangle - Error: The direction vector magnitude is below the tolerance value. Returning None.")
             return None
         xOffset = 0
@@ -4155,7 +4155,7 @@ class Wire():
             sorted_areas = sorted([(area, idx) for area, idx in areas[1:-1] if area is not None])
 
             # Remove points with area below the tolerance threshold
-            remove_indices = {idx for area, idx in sorted_areas if area < tolerance}
+            remove_indices = {idx for area, idx in sorted_areas if area <= tolerance}
 
             # Construct the simplified list of points
             simplified_points = [point for i, point in enumerate(points) if i not in remove_indices]
@@ -4322,7 +4322,7 @@ class Wire():
         if not placement.lower() in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
             print("Wire.Spiral - Error: the input placement string is not one of center, lowerleft, upperleft, lowerright, or upperright. Returning None.")
             return None
-        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) < tolerance:
+        if (abs(direction[0]) + abs(direction[1]) + abs(direction[2])) <= tolerance:
             print("Wire.Spiral - Error: the input direction vector is not a valid direction. Returning None.")
             return None
         
@@ -4534,7 +4534,7 @@ class Wire():
             print("Wire.Squircle - Error: The input placement parameter is not a recognized string. Returning None.")
             return None
         radius = abs(radius)
-        if radius < tolerance:
+        if radius <= tolerance:
             return None
         
         if a <= 0:
@@ -4602,7 +4602,7 @@ class Wire():
             return None
         radiusA = abs(radiusA)
         radiusB = abs(radiusB)
-        if radiusA < tolerance or radiusB < tolerance:
+        if radiusA <= tolerance or radiusB <= tolerance:
             return None
         rays = abs(rays)
         if rays < 3:
@@ -4741,7 +4741,7 @@ class Wire():
         widthA = abs(widthA)
         widthB = abs(widthB)
         length = abs(length)
-        if widthA < tolerance or widthB < tolerance or length < tolerance:
+        if widthA <= tolerance or widthB <= tolerance or length <= tolerance:
             return None
         if not placement.lower() in ["center", "lowerleft", "upperleft", "lowerright", "upperright"]:
             return None
@@ -4950,7 +4950,7 @@ class Wire():
             print("Wire.VertexDistance - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         wire_length = Wire.Length(wire)
-        if wire_length < tolerance:
+        if wire_length <= tolerance:
             print("Wire.VertexDistance: The input wire parameter is a degenerate topologic wire. Returning None.")
             return None
         if not Topology.IsInstance(origin, "Vertex"):
@@ -5030,12 +5030,12 @@ class Wire():
             print("Wire.VertexByDistance - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
         wire_length = Wire.Length(wire)
-        if wire_length < tolerance:
+        if wire_length <= tolerance:
             print("Wire.VertexByDistance: The input wire parameter is a degenerate topologic wire. Returning None.")
             return None
-        if abs(distance) < tolerance:
+        if abs(distance) <= tolerance:
             return Wire.StartVertex(wire)
-        if abs(distance - wire_length) < tolerance:
+        if abs(distance - wire_length) <= tolerance:
             return Wire.EndVertex(wire)
         if not Wire.IsManifold(wire):
             print("Wire.VertexAtParameter - Error: The input wire parameter is non-manifold. Returning None.")
@@ -5048,9 +5048,9 @@ class Wire():
         if not Vertex.IsInternal(origin, wire, tolerance=tolerance):
             print("Wire.VertexByDistance - Error: The input origin parameter is not internal to the input wire parameter. Returning None.")
             return None
-        if Vertex.Distance(Wire.StartVertex(wire), origin) < tolerance:
+        if Vertex.Distance(Wire.StartVertex(wire), origin) <= tolerance:
             u = distance/wire_length
-        elif Vertex.Distance(Wire.EndVertex(wire), origin) < tolerance:
+        elif Vertex.Distance(Wire.EndVertex(wire), origin) <= tolerance:
             u = 1 - distance/wire_length
         else:
             d = Wire.VertexDistance(wire, origin) + distance

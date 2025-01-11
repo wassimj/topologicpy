@@ -153,15 +153,15 @@ class Edge():
             
             shared_vertex = None
             
-            if Vertex.Distance(start1, start2) < tolerance:
+            if Vertex.Distance(start1, start2) <= tolerance:
                 shared_vertex = start1
-            elif Vertex.Distance(start1, end2) < tolerance:
+            elif Vertex.Distance(start1, end2) <= tolerance:
                 shared_vertex = start1
                 edge2 = Edge.Reverse(edge2)
-            elif Vertex.Distance(end1, start2) < tolerance:
+            elif Vertex.Distance(end1, start2) <= tolerance:
                 shared_vertex = start2
                 edge1 = Edge.Reverse(edge1)
-            elif Vertex.Distance(end1, end2) < tolerance:
+            elif Vertex.Distance(end1, end2) <= tolerance:
                 shared_vertex = end1
                 edge1 = Edge.Reverse(edge1)
                 edge2 = Edge.Reverse(edge2)
@@ -176,10 +176,10 @@ class Edge():
         if not Topology.IsInstance(edgeB, "Edge"):
             print("Edge.Bisect - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
-        if Edge.Length(edgeA) < tolerance:
+        if Edge.Length(edgeA) <= tolerance:
             print("Edge.Bisect - Error: The input edgeA parameter is shorter than the input tolerance parameter. Returning None.")
             return None
-        if Edge.Length(edgeB) < tolerance:
+        if Edge.Length(edgeB) <= tolerance:
             print("Edge.Bisect - Error: The input edgeB parameter is shorter than the input tolerance parameter. Returning None.")
             return None
         
@@ -313,7 +313,7 @@ class Edge():
             if not silent:
                 print("Edge.ByStartVertexEndVertex - Error: The input vertexA and vertexB parameters are the same vertex. Returning None.")
             return None
-        if Vertex.Distance(vertexA, vertexB) < tolerance:
+        if Vertex.Distance(vertexA, vertexB) <= tolerance:
             if not silent:
                 print("Edge.ByStartVertexEndVertex - Error: The distance between the input vertexA and vertexB parameters is less than the input tolerance. Returning None.")
             return None
@@ -360,7 +360,7 @@ class Edge():
                 print("Edge.ByVertexDirectionLength - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         
-        if length < tolerance:
+        if length <= tolerance:
             if not silent:
                 print("Edge.ByVertexDirectionLength - Error: The input edge parameter must not be less than the input tolerance parameter. Returning None.")
             return None
@@ -646,7 +646,7 @@ class Edge():
             print("Edge.Extend - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         distance = abs(distance)
-        if distance < tolerance:
+        if distance <= tolerance:
             return edge
         sv = Edge.StartVertex(edge)
         ev = Edge.EndVertex(edge)
@@ -810,11 +810,11 @@ class Edge():
                 evb = Edge.EndVertex(edges[i])
                 dsvsv = Vertex.Distance(sva, svb)
                 devev = Vertex.Distance(eva, evb)
-                if dsvsv < tolerance and devev < tolerance:
+                if dsvsv <= tolerance and devev <= tolerance:
                     return i
                 dsvev = Vertex.Distance(sva, evb)
                 devsv = Vertex.Distance(eva, svb)
-                if dsvev < tolerance and devsv < tolerance:
+                if dsvev <= tolerance and devsv <= tolerance:
                     return i
         return None
 
@@ -856,7 +856,7 @@ class Edge():
             distances.append(Vertex.Distance(pair[0], pair[1]))
         v_list = Helper.Sort(v_list, distances)
         closest_pair = v_list[0]
-        if Vertex.Distance(closest_pair[0], closest_pair[1]) < tolerance:
+        if Vertex.Distance(closest_pair[0], closest_pair[1]) <= tolerance:
             return Topology.Centroid(Cluster.ByTopologies(closest_pair))
         
         if Edge.IsCollinear(edgeA, edgeB, tolerance=tolerance):
@@ -915,11 +915,11 @@ class Edge():
         if not Topology.IsInstance(edgeB, "Edge"):
             print("Edge.IsCollinear - Error: The input parameter edgeB is not a valid edge. Returning None")
             return None
-        if Edge.Length(edgeA) < tolerance:
-            print("Edge.IsCollinear - Error: The length of edgeA is less than the tolerance. Returning None")
+        if Edge.Length(edgeA) <= tolerance:
+            print("Edge.IsCollinear - Error: The length of edgeA is less than or equal the tolerance. Returning None")
             return None
-        if Edge.Length(edgeB) < tolerance:
-            print("Edge.IsCollinear - Error: The length of edgeB is less than the tolerance. Returning None")
+        if Edge.Length(edgeB) <= tolerance:
+            print("Edge.IsCollinear - Error: The length of edgeB is less than or equal to the tolerance. Returning None")
             return None
         
         # Get start and end points of the first edge
@@ -962,7 +962,7 @@ class Edge():
         distance_end = distance_from_line(end_b, start_a_coords, direction_a)
 
         # Check if both distances are within tolerance
-        return bool(distance_start < tolerance) and bool(distance_end < tolerance)
+        return bool(distance_start <= tolerance) and bool(distance_end <= tolerance)
     
     @staticmethod
     def IsCoplanar(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001):
@@ -996,11 +996,11 @@ class Edge():
         if not Topology.IsInstance(edgeB, "Edge"):
             print("Edge.IsCoplanar - Error: The input parameter edgeB is not a valid edge. Returning None")
             return None
-        if Edge.Length(edgeA) < tolerance:
-            print("Edge.IsCoplanar - Error: The length of edgeA is less than the tolerance. Returning None")
+        if Edge.Length(edgeA) <= tolerance:
+            print("Edge.IsCoplanar - Error: The length of edgeA is less than or equal to the tolerance. Returning None")
             return None
-        if Edge.Length(edgeB) < tolerance:
-            print("Edge.IsCoplanar - Error: The length of edgeB is less than the tolerance. Returning None")
+        if Edge.Length(edgeB) <= tolerance:
+            print("Edge.IsCoplanar - Error: The length of edgeB is less than or equal to the tolerance. Returning None")
             return None
         
         # Extract points
@@ -1513,8 +1513,8 @@ class Edge():
         distance = abs(distance)
         if distance == 0:
             return edge
-        if distance < tolerance:
-            print("Edge.Trim - Warning: The input distance parameter is less than the input tolerance parameter. Returning the input edge.")
+        if distance <= tolerance:
+            print("Edge.Trim - Warning: The input distance parameter is less than or equal to the input tolerance parameter. Returning the input edge.")
             return edge
         sv = Edge.StartVertex(edge)
         ev = Edge.EndVertex(edge)

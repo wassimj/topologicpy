@@ -801,7 +801,7 @@ class Vertex():
 
                     other_vertex = vertices[i]
                     distance = np.linalg.norm(np.array(vertex) - np.array(other_vertex))
-                    if distance < tolerance:
+                    if distance <= tolerance:
                         # Choose the coordinate with the least amount of decimal points
                         if count_decimal_points(other_vertex) < count_decimal_points(fused_vertex):
                             fused_vertex = other_vertex
@@ -870,7 +870,7 @@ class Vertex():
         incoming_edges = []
         for edge in edges:
             ev = Edge.EndVertex(edge)
-            if Vertex.Distance(vertex, ev) < tolerance:
+            if Vertex.Distance(vertex, ev) <= tolerance:
                 incoming_edges.append(edge)
         return incoming_edges
     
@@ -911,7 +911,7 @@ class Vertex():
                     return i
             else:
                 d = Vertex.Distance(vertex, vertices[i])
-                if d < tolerance:
+                if d <= tolerance:
                     return i
         return None
 
@@ -967,7 +967,7 @@ class Vertex():
 
             n_p = nearest_points[0]
             n_d = n_p[0]
-            if n_d < tolerance:
+            if n_d <= tolerance:
                 return n_p[1]
 
             # Calculate the weights for each nearest point based on inverse distance
@@ -1138,7 +1138,7 @@ class Vertex():
             return None
 
         if Topology.IsInstance(topology, "Vertex"):
-            return Vertex.Distance(vertex, topology) < tolerance
+            return Vertex.Distance(vertex, topology) <= tolerance
         elif Topology.IsInstance(topology, "Edge"):
             try:
                 parameter = Edge.ParameterAtVertex(topology, vertex)
@@ -1502,7 +1502,7 @@ class Vertex():
         outgoing_edges = []
         for edge in edges:
             sv = Edge.StartVertex(edge)
-            if Vertex.Distance(vertex, sv) < tolerance:
+            if Vertex.Distance(vertex, sv) <= tolerance:
                 outgoing_edges.append(edge)
         return outgoing_edges
     

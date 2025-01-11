@@ -1247,7 +1247,7 @@ class Shell():
             return None
         if toAngle < fromAngle:
             toAngle += 360
-        if abs(toAngle-fromAngle) < tolerance:
+        if abs(toAngle-fromAngle) <= tolerance:
             return None
         fromAngle = math.radians(fromAngle)
         toAngle = math.radians(toAngle)
@@ -1258,14 +1258,14 @@ class Shell():
             temp = radiusA
             radiusA = radiusB
             radiusB = temp
-        if abs(radiusA - radiusB) < tolerance or radiusA < tolerance:
+        if abs(radiusA - radiusB) <= tolerance or radiusA <= tolerance:
             return None
         radiusRange = radiusA - radiusB
         sides = int(abs(math.floor(sides)))
         if sides < 3:
             return None
         rings = int(abs(rings))
-        if radiusB < tolerance:
+        if radiusB <= tolerance:
             radiusB = 0
         xOffset = 0
         yOffset = 0
@@ -1516,7 +1516,7 @@ class Shell():
         angle = abs(angle)
         if angle >= 90-tolerance:
             return None
-        if angle < tolerance:
+        if angle <= tolerance:
             return None
         origin = Topology.Centroid(face)
         normal = Face.Normal(face, mantissa=mantissa)

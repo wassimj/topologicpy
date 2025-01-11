@@ -299,7 +299,7 @@ class Graph:
             unique = True
             returnVertex = vertex
             for gv in graph_vertices:
-                if (Vertex.Distance(vertex, gv) < tolerance):
+                if (Vertex.Distance(vertex, gv) <= tolerance):
                     if transferVertexDictionaries == True:
                         gd = Topology.Dictionary(gv)
                         vd = Topology.Dictionary(vertex)
@@ -7943,7 +7943,7 @@ class Graph:
         incoming_edges = []
         for edge in edges:
             ev = Edge.EndVertex(edge)
-            if Vertex.Distance(vertex, ev) < tolerance:
+            if Vertex.Distance(vertex, ev) <= tolerance:
                 incoming_edges.append(edge)
         return incoming_edges
     
@@ -8751,7 +8751,7 @@ class Graph:
         longest_path = Topology.SelfMerge(Cluster.ByTopologies(new_edges), tolerance=tolerance)
 
         sv = Topology.Vertices(longest_path)[0]
-        if Vertex.Distance(sv, vertexB) < tolerance: # Wire is reversed. Re-reverse it
+        if Vertex.Distance(sv, vertexB) <= tolerance: # Wire is reversed. Re-reverse it
             if Topology.IsInstance(longest_path, "Edge"):
                 longest_path = Edge.Reverse(longest_path)
             elif Topology.IsInstance(longest_path, "Wire"):
@@ -9048,7 +9048,7 @@ class Graph:
 
         def vertexInList(vertex, vertexList, tolerance=0.0001):
             for v in vertexList:
-                if Vertex.Distance(v, vertex) < tolerance:
+                if Vertex.Distance(v, vertex) <= tolerance:
                     return True
             return False
         
@@ -9382,7 +9382,7 @@ class Graph:
         outgoing_edges = []
         for edge in edges:
             sv = Edge.StartVertex(edge)
-            if Vertex.Distance(vertex, sv) < tolerance:
+            if Vertex.Distance(vertex, sv) <= tolerance:
                 outgoing_edges.append(edge)
         return outgoing_edges
     
@@ -9481,7 +9481,7 @@ class Graph:
                 new_scores[i] = alpha * incoming_score + (1 - alpha) / num_vertices
 
             # Check for convergence
-            if all(abs(new_scores[i] - scores[i]) < tolerance for i in range(len(vertices))):
+            if all(abs(new_scores[i] - scores[i]) <= tolerance for i in range(len(vertices))):
                 break
 
             scores = new_scores
@@ -9938,7 +9938,7 @@ class Graph:
                 if Topology.IsInstance(shortest_path, "Edge"):
                         shortest_path = Wire.ByEdges([shortest_path])
                 sv = Topology.Vertices(shortest_path)[0]
-                if Vertex.Distance(sv, gev) < tolerance: # Path is reversed. Correct it.
+                if Vertex.Distance(sv, gev) <= tolerance: # Path is reversed. Correct it.
                     if Topology.IsInstance(shortest_path, "Wire"):
                         shortest_path = Wire.Reverse(shortest_path)
                 shortest_path = Wire.OrientEdges(shortest_path, Wire.StartVertex(shortest_path), tolerance=tolerance)
@@ -10491,7 +10491,7 @@ class Graph:
                 if parent:
                     edge = Graph.Edge(graph, parent, vertex, tolerance=tolerance)
                     ev = Edge.EndVertex(edge)
-                    if Vertex.Distance(parent, ev) < tolerance:
+                    if Vertex.Distance(parent, ev) <= tolerance:
                         edge = Edge.Reverse(edge)
                     edges.append(edge)
             if parent == None:
