@@ -1352,7 +1352,7 @@ class Graph:
         return bot_graph.serialize(format=format)
 
     @staticmethod
-    def BetweennessCentrality(graph, key: str = "betweenness_centrality", method="vertex", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
+    def BetweennessCentrality(graph, method: str = "vertex", weightKey="length", normalize: bool = False, nx: bool = False, key: str = "betweenness_centrality", colorKey="bc_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
         """
             Returns the betweenness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See https://en.wikipedia.org/wiki/Betweenness_centrality.
 
@@ -1360,10 +1360,24 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
-        key : str , optional
-            The dictionary key under which to store the betweeness centrality score. The default is "betweenness_centrality".
         method : str , optional
             The method of computing the betweenness centrality. The options are "vertex" or "edge". The default is "vertex".
+        weightKey : str , optional
+            If None, all edge weights are considered equal. Otherwise holds the name of the edge dictionary key to be used as weight.
+            Weights are used to calculate weighted shortest paths, so they are interpreted as distances.
+            If you wish to use the actual length of the edge, then use the "length" as key. the default is "length".
+        normalize : bool , optional
+            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
+        nx : bool , optional
+            If set to True, and normalize input parameter is also set to True, the values are set to be identical to NetworkX values. Otherwise, they are normalized between 0 and 1. The default is False.
+        key : str , optional
+            The desired dictionary key under which to store the betweeness centrality score. The default is "betweenness_centrality".
+        colorKey : str , optional
+            The desired dictionary key under which to store the betweeness centrality color. The default is "betweenness_centrality".
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
+
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -1375,163 +1389,55 @@ class Graph:
             The betweenness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
 
         """
-        def bfs_paths(source):
-            queue = [(source, [source])]
-            while queue:
-                (vertex, path) = queue.pop(0)
-                for next in set(py_graph[vertex]) - set(path):
-                    queue.append((next, path + [next]))
-                    yield path + [next]
+        import warnings
 
-        def shortest_paths_count(source):
-            paths = list(bfs_paths(source))
-            shortest_paths = {v: [] for v in py_graph}
-            for path in paths:
-                shortest_paths[path[-1]].append(path)
-            return shortest_paths
-
-        def calculate_vertex_betweenness():
-            betweenness = {v: 0.0 for v in py_graph}
-            for s in py_graph:
-                shortest_paths = shortest_paths_count(s)
-                dependency = {v: 0.0 for v in py_graph}
-                for t in py_graph:
-                    if t != s:
-                        for path in shortest_paths[t]:
-                            for v in path[1:-1]:
-                                dependency[v] += 1.0 / len(shortest_paths[t])
-                for v in py_graph:
-                    if v != s:
-                        betweenness[v] += dependency[v]
-            return betweenness
+        try:
+            import networkx as nx
+        except:
+            print("Graph.BetwennessCentrality - Information: Installing required networkx library.")
+            try:
+                os.system("pip install networkx")
+            except:
+                os.system("pip install networkx --user")
+            try:
+                import networkx as nx
+                print("Graph.BetwennessCentrality - Infromation: networkx library installed correctly.")
+            except:
+                warnings.warn("Graph.BetwennessCentrality - Error: Could not import networkx. Please try to install networkx manually. Returning None.")
+                return None
         
-        def calculate_edge_betweenness(graph_adj_matrix):
-            n = len(graph_adj_matrix)
-            edge_betweenness_scores = {}
-
-            # Iterate over all node pairs as source and target nodes
-            for source in range(n):
-                # Initialize the 'distance' and 'predecessors' for each node
-                distance = [-1] * n
-                predecessors = [[] for _ in range(n)]
-                distance[source] = 0
-                stack = []
-                queue = [source]
-
-                # Breadth-first search to find shortest paths
-                while queue:
-                    current_node = queue.pop(0)
-                    stack.append(current_node)
-                    for neighbor in range(n):
-                        if graph_adj_matrix[current_node][neighbor] == 1:
-                            if distance[neighbor] == -1:  # First time visiting neighbor
-                                distance[neighbor] = distance[current_node] + 1
-                                queue.append(neighbor)
-                            if distance[neighbor] == distance[current_node] + 1:  # Shortest path
-                                predecessors[neighbor].append(current_node)
-
-                # Initialize the dependency values for each node
-                dependency = [0] * n
-
-                # Process the nodes in reverse order of discovery
-                while stack:
-                    current_node = stack.pop()
-                    for pred in predecessors[current_node]:
-                        dependency[pred] += (1 + dependency[current_node]) / len(predecessors[current_node])
-
-                        # Update edge betweenness scores
-                        if pred < current_node:
-                            edge = (pred, current_node)
-                        else:
-                            edge = (current_node, pred)
-                        
-                        if edge not in edge_betweenness_scores:
-                            edge_betweenness_scores[edge] = 0
-                        edge_betweenness_scores[edge] += dependency[current_node]
-
-            # Normalize edge betweenness scores by dividing by 2 (since each edge is counted twice)
-            for edge in edge_betweenness_scores:
-                edge_betweenness_scores[edge] /= 2
-
-            return edge_betweenness_scores
-        
-        from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
 
-        if not Topology.IsInstance(graph, "Graph"):
-            if not silent:
-                print("Graph.BetweenessCentrality - Error: The input graph is not a valid graph. Returning None.")
-            return None
-        
-        if "v" in method.lower():
-            vertices = Graph.Vertices(graph)
-
-            if len(vertices) < 1:
-                if not silent:
-                    print("Graph.BetweenessCentrality - Error: The input graph does not contain valid vertices. Returning None.")
-                return None
-            if len(vertices) == 1:
-                d = Topology.Dictionary(vertices[0])
-                d = Dictionary.SetValueAtKey(d, key, 1.0)
-                vertices[0] = Topology.SetDictionary(vertices[0], d)
-                return [1.0]
-            
-            py_graph = Graph.AdjacencyDictionary(graph)
-            vertex_betweenness = calculate_vertex_betweenness()
-            for v in vertex_betweenness:
-                vertex_betweenness[v] /= 2.0  # Each shortest path is counted twice
-
-            min_betweenness = min(vertex_betweenness.values())
-            max_betweenness = max(vertex_betweenness.values())
-            if (max_betweenness - min_betweenness) > 0:
-                for v in vertex_betweenness:
-                    vertex_betweenness[v] = (vertex_betweenness[v] - min_betweenness)/ (max_betweenness - min_betweenness)  # Normalize to [0, 1]
-            
-            
-            vertex_betweenness_scores = [0]*len(vertices)
-            for i, score in vertex_betweenness.items():
-                vertex = vertices[int(i)]
-                d = Topology.Dictionary(vertex)
-                d = Dictionary.SetValueAtKey(d, key, round(score, mantissa))
-                vertex = Topology.SetDictionary(vertex, d)
-                vertex_betweenness_scores[int(i)] = round(score, mantissa)
-            
-            return vertex_betweenness_scores
+        if weightKey:
+            if "len" in weightKey.lower():
+                weightKey = "length"
+        nx_graph = Graph.NetworkXGraph(graph)
+        if "vert" in method.lower():
+            elements = Graph.Vertices(graph)
+            elements_dict = nx.betweenness_centrality(nx_graph, normalized=normalize, weight=weightKey)
+            values = list(elements_dict.values())
         else:
-            graph_edges = Graph.Edges(graph)
-            adj_matrix = Graph.AdjacencyMatrix(graph)
-            meshData = Graph.MeshData(graph)
-            edges = meshData["edges"]
-            if len(graph_edges) < 1:
-                if not silent:
-                    print("Graph.BetweenessCentrality - Error: The input graph does not contain any edges. Returning None.")
-                return None
-            if len(graph_edges) == 1:
-                d = Topology.Dictionary(graph_edges[0])
-                d = Dictionary.SetValueAtKey(d, key, 1.0)
-                graph_edges[0] = Topology.SetDictionary(graph_edges[0], d)
-                return [1.0]
-            
-            edge_betweenness = calculate_edge_betweenness(adj_matrix)
-            keys = list(edge_betweenness.keys())
-            values = list(edge_betweenness.values())
+            elements = Graph.Edges(graph)
+            elements_dict = nx.edge_betweenness_centrality(nx_graph, normalized=normalize, weight=weightKey)
+            values = list(elements_dict.values())
+        if nx == False:
+            values = Helper.Normalize(values)
+            min_value = 0
+            max_value = 1
+        else:
             min_value = min(values)
             max_value = max(values)
-            edge_betweenness_scores = []
-            for i, edge in enumerate(edges):
-                u,v = edge
-                if (u,v) in keys:
-                    score = edge_betweenness[(u,v)]
-                elif (v,u) in keys:
-                    score = edge_betweenness[(v,u)]
-                else:
-                    score = 0
-                score = (score - min_value)/(max_value - min_value)
-                edge_betweenness_scores.append(round(score, mantissa))
-                d = Topology.Dictionary(graph_edges[i])
-                d = Dictionary.SetValueAtKey(d, key, round(score, mantissa))
-                graph_edges[i] = Topology.SetDictionary(graph_edges[i], d)
-            return edge_betweenness_scores
+
+        for i, value in enumerate(values):
+            d = Topology.Dictionary(elements[i])
+            color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
+            elements[i] = Topology.SetDictionary(elements[i], d)
+
+        return values
 
     @staticmethod
     def BetweennessPartition(graph, n=2, m=10, key="partition", tolerance=0.0001, silent=False):
@@ -4771,94 +4677,92 @@ class Graph:
         graph = Graph.RemoveVertex(graph,ev, tolerance=tolerance)
         return graph
     
+
     @staticmethod
-    def ClosenessCentrality(graph, vertices=None, key: str = "closeness_centrality", mantissa: int = 6, tolerance = 0.0001, silent = False):
+    def ClosenessCentrality(graph, weightKey="length", normalize: bool = False, nx: bool = True, key: str = "closeness_centrality", colorKey="cc_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
         """
-        Return the closeness centrality measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the closeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Closeness_centrality.
+            Returns the closeness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See https://en.wikipedia.org/wiki/Betweenness_centrality.
 
         Parameters
         ----------
         graph : topologic_core.Graph
             The input graph.
-        vertices : list , optional
-            The input list of vertices. The default is None.
+        weightKey : str , optional
+            If None, all edge weights are considered equal. Otherwise holds the name of the edge dictionary key to be used as weight.
+            Weights are used to calculate weighted shortest paths, so they are interpreted as distances.
+            If you wish to use the actual length of the edge, then use the "length" as key. the default is "length".
+        normalize : bool , optional
+            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
+        nx : bool , optional
+            If set to True, use networkX to scale by the fraction of nodes reachable. This gives the Wasserman and Faust improved formula.
+            For single component graphs it is the same as the original formula.
         key : str , optional
-            The dictionary key under which to store the closeness centrality score. The default is "closeness_centrality".
+            The desired dictionary key under which to store the closeness centrality score. The default is "closeness_centrality".
+        colorKey : str , optional
+            The desired dictionary key under which to store the closeness centrality color. The default is "cc_color".
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
-        silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
         list
-            The closeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
+            The betweenness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
 
         """
+        import warnings
 
-        def closeness_centrality(g):
-            """
-            Computes the closeness centrality for each vertex in the graph.
-
-            Parameters:
-                graph (dict): A dictionary representing the graph where keys are vertices and 
-                            values are lists of neighboring vertices.
-
-            Returns:
-                dict: A dictionary where keys are vertices and values are their closeness centrality.
-            """
-            keys = list(g.keys())
-            N = len(keys)
-
-            centralities = []
-            for v in keys:
-                total_distance = 0
-                reachable_count = 0
-                
-                for u in keys:
-                    if v != u:
-                        distance = Graph._topological_distance(g, v, u)
-                        if distance != None:
-                            total_distance += distance
-                            reachable_count += 1
-                
-                if reachable_count > 0:  # Avoid division by zero
-                    centrality = (reachable_count / total_distance)
-                else:
-                    centrality = 0.0  # Isolated vertex
-            
-                centralities.append(centrality)
-            return centralities
+        try:
+            import networkx as nx
+        except:
+            print("Graph.BetwennessCentrality - Information: Installing required networkx library.")
+            try:
+                os.system("pip install networkx")
+            except:
+                os.system("pip install networkx --user")
+            try:
+                import networkx as nx
+                print("Graph.ClosenessCentrality - Infromation: networkx library installed correctly.")
+            except:
+                warnings.warn("Graph.ClosenessCentrality - Error: Could not import networkx. Please try to install networkx manually. Returning None.")
+                return None
         
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+        from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
 
-        if not Topology.IsInstance(graph, "Graph"):
+        if not Topology.IsInstance(graph, "graph"):
             if not silent:
                 print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
-        g = Graph.AdjacencyDictionary(graph)
-        centralities = closeness_centrality(g)
-        graphVertices = Graph.Vertices(graph)
-        if vertices == None:
-            for i, v in enumerate(graphVertices):
-                d = Topology.Dictionary(v)
-                d = Dictionary.SetValueAtKey(d, key, centralities[i])
-                v = Topology.SetDictionary(v, d)
-            return centralities
+        
+        if weightKey:
+            if "len" in weightKey.lower():
+                weightKey = "length"
+        nx_graph = Graph.NetworkXGraph(graph)
+        elements = Graph.Vertices(graph)
+        elements_dict = nx.closeness_centrality(nx_graph, distance=weightKey, wf_improved=nx)
+        values = list(elements_dict.values())
+        if normalize == True:
+            values = Helper.Normalize(values)
+            min_value = 0
+            max_value = 1
         else:
-            return_centralities = []
-            for v in vertices:
-                i = Vertex.Index(v, graphVertices)
-                d = Topology.Dictionary(v)
-                d = Dictionary.SetValueAtKey(d, key, centralities[i])
-                v = Topology.SetDictionary(v, d)
-                return_centralities.append(centralities[i])
-            return centralities
+            min_value = min(values)
+            max_value = max(values)
+
+        for i, value in enumerate(values):
+            d = Topology.Dictionary(elements[i])
+            color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
+            elements[i] = Topology.SetDictionary(elements[i], d)
+
+        return values
 
     @staticmethod
     def Community(graph, key: str = "partition", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
@@ -9264,6 +9168,101 @@ class Graph:
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        import warnings
+
+        try:
+            import networkx as nx
+        except:
+            print("Graph.NetworkXGraph - Information: Installing required networkx library.")
+            try:
+                os.system("pip install networkx")
+            except:
+                os.system("pip install networkx --user")
+            try:
+                import networkx as nx
+                print("Graph.NetworkXGraph - Information: networkx library installed correctly.")
+            except:
+                warnings.warn("Graph - Error: Could not import networkx. Please try to install networkx manually. Returning None.")
+                return None
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.NetworkXGraph - Error: The input graph is not a valid graph. Returning None.")
+            return None
+
+        nxGraph = nx.Graph()
+        vertices = Graph.Vertices(graph)
+        edges = Graph.Edges(graph)
+        mesh_data = Graph.MeshData(graph)
+        order = len(vertices)
+        nodes = []
+        for i in range(order):
+            v = vertices[i]
+            d = Topology.Dictionary(vertices[i])
+            if d:
+                keys = Dictionary.Keys(d)
+                if not keys:
+                    keys = []
+                values = Dictionary.Values(d)
+                if not values:
+                    values = []
+                keys += [xKey, yKey, zKey]
+                values += [Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)]
+                d = Dictionary.ByKeysValues(keys, values)
+                pythonD = Dictionary.PythonDictionary(d)
+                nodes.append((i, pythonD))
+            else:
+                nodes.append((i, {"name": str(i)}))
+        nxGraph.add_nodes_from(nodes)
+
+        mesh_edges = mesh_data['edges']
+        for i, mesh_edge in enumerate(mesh_edges):
+            sv_i = mesh_edge[0]
+            ev_i = mesh_edge[1]
+            sv = vertices[sv_i]
+            ev = vertices[ev_i]
+            edge_length = Vertex.Distance(sv, ev, mantissa=mantissa)
+            edge_dict = Topology.Dictionary(edges[i])
+            edge_attributes = Dictionary.PythonDictionary(edge_dict) if edge_dict else {}
+            edge_attributes['length'] = edge_length
+            nxGraph.add_edge(sv_i, ev_i, **edge_attributes)
+
+        pos = nx.spring_layout(nxGraph, k=0.2)
+        nx.set_node_attributes(nxGraph, pos, "pos")
+        return nxGraph
+
+    @staticmethod
+    def NetworkXGraph_old(graph, xKey='x', yKey='y', zKey='z', mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Converts the input graph into a NetworkX Graph. See http://networkx.org
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        xKey : str , optional
+            The dictionary key under which to store the X-Coordinate of the vertex. The default is 'x'.
+        yKey : str , optional
+            The dictionary key under which to store the Y-Coordinate of the vertex. The default is 'y'.
+        zKey : str , optional
+            The dictionary key under which to store the Z-Coordinate of the vertex. The default is 'z'.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        networkX Graph
+            The created networkX Graph
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import warnings
 
         try:
             import networkx as nx

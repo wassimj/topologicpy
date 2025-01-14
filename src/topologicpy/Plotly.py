@@ -492,11 +492,10 @@ class Plotly:
         x = []
         y = []
         z = []
-        sizes = []
-        labels = []
-        colors = []
-        label = ""
-        group = None
+        n = len(str(len(vertices)))
+        sizes = [size for i in range(len(vertices))]
+        labels = ["Vertex_"+str(i+1).zfill(n) for i in range(len(vertices))]
+        colors = [Color.AnyToHex(color) for i in range(len(vertices))]
         if colorKey or sizeKey or labelKey or groupKey:
             if groups:
                 if len(groups) > 0:
@@ -516,9 +515,9 @@ class Plotly:
                 x.append(v[0])
                 y.append(v[1])
                 z.append(v[2])
-                colors.append(Color.AnyToHex(color))
-                labels.append("Vertex_"+str(m+1).zfill(n))
-                sizes.append(max(size, 1.1))
+                #colors.append(Color.AnyToHex(color))
+                #labels.append("Vertex_"+str(m+1).zfill(n))
+                #sizes.append(max(size, 1.1))
                 if len(dictionaries) > 0:
                     d = dictionaries[m]
                     if d:
@@ -677,7 +676,7 @@ class Plotly:
                                     z=z,
                                     name=legendLabel,
                                     showlegend=showLegend,
-                                    marker=dict(symbol="circle", size=marker_width),
+                                    marker=dict(symbol="circle", size=marker_width, color=color),
                                     mode=mode,
                                     line=dict(color=d_color, width=width),
                                     legendgroup=legendGroup,

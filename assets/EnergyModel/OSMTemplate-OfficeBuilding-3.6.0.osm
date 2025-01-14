@@ -548,10 +548,10 @@ OS:ScheduleTypeLimits,
 
 OS:SimulationControl,
   {657ba578-29ab-439c-87b6-218865343bf2}, ! Handle
-  No,                                     ! Do Zone Sizing Calculation
-  No,                                     ! Do System Sizing Calculation
-  No,                                     ! Do Plant Sizing Calculation
-  No,                                     ! Run Simulation for Sizing Periods
+  Yes,                                     ! Do Zone Sizing Calculation
+  Yes,                                     ! Do System Sizing Calculation
+  Yes,                                     ! Do Plant Sizing Calculation
+  Yes,                                     ! Run Simulation for Sizing Periods
   Yes,                                    ! Run Simulation for Weather File Run Periods
   0.040000000000000001,                   ! Loads Convergence Tolerance Value
   0.40000000000000002,                    ! Temperature Convergence Tolerance Value

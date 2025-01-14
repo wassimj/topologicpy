@@ -250,77 +250,6 @@ class Topology():
         
         topology = Topology.AddContent(topology, apertures, subTopologyType=subTopologyType, tolerance=tolerance)
         return topology
-
-
-
-    @staticmethod
-    def AddApertures_old(topology, apertures, exclusive=False, subTopologyType=None, tolerance=0.001):
-        """
-        Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.
-
-        Parameters
-        ----------
-        topology : topologic_core.Topology
-            The input topology.
-        apertures : list
-            The input list of apertures.
-        exclusive : bool , optional
-            If set to True, one (sub)topology will accept only one aperture. Otherwise, one (sub)topology can accept multiple apertures. The default is False.
-        subTopologyType : string , optional
-            The subtopology type to which to add the apertures. This can be "cell", "face", "edge", or "vertex". It is case insensitive. If set to None, the apertures will be added to the input topology. The default is None.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.001. This is larger than the usual 0.0001 as it seems to work better.
-
-        Returns
-        -------
-        topologic_core.Topology
-            The input topology with the apertures added to it.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Aperture import Aperture
-        def processApertures(subTopologies, apertures, exclusive=False, tolerance=0.001):
-            usedTopologies = []
-            for subTopology in subTopologies:
-                    usedTopologies.append(0)
-            ap = 1
-            for aperture in apertures:
-                apCenter = Topology.InternalVertex(aperture, tolerance=tolerance)
-                for i in range(len(subTopologies)):
-                    subTopology = subTopologies[i]
-                    if exclusive == True and usedTopologies[i] == 1:
-                        continue
-                    if Vertex.Distance(apCenter, subTopology) <= tolerance:
-                        context = topologic.Context.ByTopologyParameters(subTopology, 0.5, 0.5, 0.5)
-                        _ = Aperture.ByTopologyContext(aperture, context)
-                        if exclusive == True:
-                            usedTopologies[i] = 1
-                ap = ap + 1
-            return None
-
-        if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.AddApertures - Error: The input topology parameter is not a valid topology. Returning None.")
-            return None
-        if not apertures:
-            return topology
-        if not isinstance(apertures, list):
-            print("Topology.AddApertures - Error: the input apertures parameter is not a list. Returning None.")
-            return None
-        apertures = [x for x in apertures if Topology.IsInstance(x , "Topology")]
-        if len(apertures) < 1:
-            return topology
-        if not subTopologyType:
-            subTopologyType = "self"
-        if not subTopologyType.lower() in ["self", "cell", "face", "edge", "vertex"]:
-            print("Topology.AddApertures - Error: the input subtopology type parameter is not a recognized type. Returning None.")
-            return None
-        if subTopologyType.lower() == "self":
-            subTopologies = [topology]
-        else:
-            subTopologies = Topology.SubTopologies(topology, subTopologyType)
-        processApertures(subTopologies, apertures, exclusive, tolerance=tolerance)
-        return topology
     
     @staticmethod
     def AddContent(topology, contents, subTopologyType=None, tolerance=0.0001):
@@ -1486,7 +1415,6 @@ class Topology():
                 st = None
         return st
     
-
     @staticmethod
     def ByGeometry(vertices=[], edges=[], faces=[], topologyType: str = None, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -1624,180 +1552,6 @@ class Topology():
                 returnTopology = topologyByEdges(topEdges, topologyType)
         else:
             returnTopology = Cluster.ByTopologies(topVerts)
-        return returnTopology
-
-
-
-
-
-
-    @staticmethod
-    def ByGeometry_old(vertices=[], edges=[], faces=[], color=[1.0, 1.0, 1.0, 1.0], id=None, name=None, lengthUnit="METERS", outputMode="default", tolerance=0.0001):
-        """
-        Create a topology by the input lists of vertices, edges, and faces.
-
-        Parameters
-        ----------
-        vertices : list
-            The input list of vertices in the form of [x, y, z]
-        edges : list , optional
-            The input list of edges in the form of [i, j] where i and j are vertex indices.
-        faces : list , optional
-            The input list of faces in the form of [i, j, k, l, ...] where the items in the list are vertex indices. The face is assumed to be closed to the last vertex is connected to the first vertex automatically.
-        color : list , optional
-            The desired color of the object in the form of [r, g, b, a] where the components are between 0 and 1 and represent red, blue, green, and alpha (transparency) respectively. The default is [1.0, 1.0, 1.0, 1.0].
-        id : str , optional
-            The desired ID of the object. If set to None, an automatic uuid4 will be assigned to the object. The default is None.
-        name : str , optional
-            The desired name of the object. If set to None, a default name "Topologic_[topology_type]" will be assigned to the object. The default is None.
-        lengthUnit : str , optional
-            The length unit used for the object. The default is "METERS"
-        outputMode : str , optional
-            The desired output mode of the object. This can be "wire", "shell", "cell", "cellcomplex", or "default". It is case insensitive. The default is "default".
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        topology : topologic_core.Topology
-            The created topology. The topology will have a dictionary embedded in it that records the input attributes (color, id, lengthUnit, name, type)
-
-        """
-        def topologyByFaces(faces, outputMode, tolerance=0.0001):
-            output = None
-            if len(faces) == 1:
-                return faces[0]
-            if outputMode.lower() == "cell":
-                output = Cell.ByFaces(faces, tolerance=tolerance)
-                if output:
-                    return output
-                else:
-                    return None
-            if outputMode.lower() == "cellcomplex":
-                output = CellComplex.ByFaces(faces, tolerance=tolerance)
-                if output:
-                    return output
-                else:
-                    return None
-            if outputMode.lower() == "shell":
-                output = Shell.ByFaces(faces, tolerance=tolerance) # This can return a list
-                if Topology.IsInstance(output, "Shell"):
-                    return output
-                else:
-                    return None
-            if outputMode.lower() == "default":
-                output = Cluster.ByTopologies(faces)
-                if output:
-                    return output
-            return output
-        def topologyByEdges(edges, outputMode):
-            output = None
-            if len(edges) == 1:
-                return edges[0]
-            output = Cluster.ByTopologies(edges)
-            if outputMode.lower() == "wire":
-                output = Topology.SelfMerge(output, tolerance=tolerance)
-                if Topology.IsInstance(output, "Wire"):
-                    return output
-                else:
-                    return None
-            return output
-        def edgesByVertices(vertices, topVerts):
-            if len(vertices) < 2:
-                return []
-            edges = []
-            for i in range(len(vertices)-1):
-                v1 = vertices[i]
-                v2 = vertices[i+1]
-                e1 = Edge.ByVertices([topVerts[v1], topVerts[v2]], tolerance=tolerance)
-                edges.append(e1)
-            # connect the last vertex to the first one
-            v1 = vertices[-1]
-            v2 = vertices[0]
-            e1 = Edge.ByVertices([topVerts[v1], topVerts[v2]], tolerance=tolerance)
-            edges.append(e1)
-            return edges
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Wire import Wire
-        from topologicpy.Face import Face
-        from topologicpy.Shell import Shell
-        from topologicpy.Cell import Cell
-        from topologicpy.CellComplex import CellComplex
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Dictionary import Dictionary
-        import uuid
-        returnTopology = None
-        topVerts = []
-        topEdges = []
-        topFaces = []
-        vertices = [v for v in vertices if not len(v) == 0]
-        edges = [e for e in edges if not len(e) == 0]
-        faces = [f for f in faces if not len(f) == 0]
-        if len(vertices) > 0:
-            for aVertex in vertices:
-                v = Vertex.ByCoordinates(aVertex[0], aVertex[1], aVertex[2])
-                topVerts.append(v)
-        else:
-            return None
-        if (outputMode.lower == "wire") and (len(edges) > 0):
-            for anEdge in edges:
-                topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]], tolerance=tolerance)
-                topEdges.append(topEdge)
-            if len(topEdges) > 0:
-                returnTopology = topologyByEdges(topEdges)
-        elif len(faces) > 0:
-            for aFace in faces:
-                faceEdges = edgesByVertices(aFace, topVerts)
-                if len(faceEdges) > 2:
-                    faceWire = Wire.ByEdges(faceEdges, tolerance=tolerance)
-                    try:
-                        topFace = Face.ByWire(faceWire, tolerance=tolerance, silent=True)
-                        if Topology.IsInstance(topFace, "Face"):
-                            topFaces.append(topFace)
-                        elif isinstance(topFace, list):
-                            topFaces += topFace
-                    except:
-                        pass
-            if len(topFaces) > 0:
-                returnTopology = topologyByFaces(topFaces, outputMode=outputMode, tolerance=tolerance)
-        elif len(edges) > 0:
-            for anEdge in edges:
-                topEdge = Edge.ByVertices([topVerts[anEdge[0]], topVerts[anEdge[1]]], tolerance=tolerance)
-                topEdges.append(topEdge)
-            if len(topEdges) > 0:
-                returnTopology = topologyByEdges(topEdges, outputMode=outputMode)
-        else:
-            returnTopology = Cluster.ByTopologies(topVerts)
-        if returnTopology:
-            keys = []
-            values = []
-            keys.append("TOPOLOGIC_color")
-            keys.append("TOPOLOGIC_id")
-            keys.append("TOPOLOGIC_name")
-            keys.append("TOPOLOGIC_type")
-            keys.append("TOPOLOGIC_length_unit")
-            if color:
-                if isinstance(color, tuple):
-                    color = list(color)
-                elif isinstance(color, list):
-                    if isinstance(color[0], tuple):
-                        color = list(color[0])
-                values.append(color)
-            else:
-                values.append([1.0, 1.0, 1.0, 1.0])
-            if id:
-                values.append(id)
-            else:
-                values.append(str(uuid.uuid4()))
-            if name:
-                values.append(name)
-            else:
-                values.append("Topologic_"+Topology.TypeAsString(returnTopology))
-            values.append(Topology.TypeAsString(returnTopology))
-            values.append(lengthUnit)
-            topDict = Dictionary.ByKeysValues(keys, values)
-            Topology.SetDictionary(returnTopology, topDict)
         return returnTopology
     
     @staticmethod
@@ -4168,6 +3922,7 @@ class Topology():
         from topologicpy.Grid import Grid
         from topologicpy.Matrix import Matrix
         import numpy as np
+        from itertools import permutations
 
         def generate_floats(n):
             if n < 2:
@@ -4232,16 +3987,34 @@ class Topology():
             if np.dot(eigenvectors[:, i], [1, 0, 0]) < 0:
                 eigenvectors[:, i] *= -1
         
-        # Step 8: Create the rotation matrix
-        rotation_matrix = np.eye(4)
-        rotation_matrix[:3, :3] = eigenvectors.T  # Use transpose to align points to axes
+        # Step 8: Generate all permutations of aligning principal axes to world axes
+        world_axes = np.eye(3)  # X, Y, Z unit vectors
+        permutations_axes = list(permutations(world_axes))
+
+        # Create a list to hold all canonical matrices
+        canonical_matrices = []
+
+        for perm in permutations_axes:
+            # Construct the rotation matrix for this permutation
+            rotation_matrix = np.eye(4)
+            rotation_matrix[:3, :3] = np.array(perm).T @ eigenvectors.T  # Align points to axes for this permutation
+
+            # Combine transformations: scale -> translate -> rotate
+            combined_matrix = Matrix.Multiply(rotation_matrix.tolist(), scaling_matrix)
+            combined_matrix = Matrix.Multiply(combined_matrix, translation_matrix)
+
+            # Add the combined matrix to the list
+            canonical_matrices.append(combined_matrix)
+        # # Step 8: Create the rotation matrix
+        # rotation_matrix = np.eye(4)
+        # rotation_matrix[:3, :3] = eigenvectors.T  # Use transpose to align points to axes
         
-        # Step 9: Rotate the object to align it 
-        transformation_matrix = Matrix.Multiply(scaling_matrix, translation_matrix)
-        transformation_matrix = Matrix.Multiply(rotation_matrix.tolist(), transformation_matrix)
+        # # Step 9: Rotate the object to align it 
+        # transformation_matrix = Matrix.Multiply(scaling_matrix, translation_matrix)
+        # transformation_matrix = Matrix.Multiply(rotation_matrix.tolist(), transformation_matrix)
 
         # Step 10: Return the resulting matrix
-        return transformation_matrix
+        return canonical_matrices
 
     @staticmethod
     def CenterOfMass(topology):
@@ -4459,127 +4232,6 @@ class Topology():
             final_clusters.append(Topology.SelfMerge(Cluster.ByTopologies(cluster), tolerance=tolerance))
         return final_clusters
     
-    @staticmethod
-    def ClusterFaces_orig(topology, angTolerance=0.1, tolerance=0.0001):
-        """
-        Clusters the faces of the input topology by their direction.
-
-        Parameters
-        ----------
-        topology : topologic_core.Topology
-            The input topology.
-        angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
-        tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        list
-            The list of clusters of faces where faces in the same cluster have the same direction.
-
-        """
-        from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
-
-        def angle_between(v1, v2):
-            u1 = v1 / norm(v1)
-            u2 = v2 / norm(v2)
-            y = u1 - u2
-            x = u1 + u2
-            if norm(x) == 0:
-                return 0
-            a0 = 2 * arctan(norm(y) / norm(x))
-            if (not signbit(a0)) or signbit(pi - a0):
-                return a0
-            elif signbit(a0):
-                return 0
-            else:
-                return pi
-
-        def collinear(v1, v2, tol):
-            ang = angle_between(v1, v2)
-            if math.isnan(ang) or math.isinf(ang):
-                raise Exception("Face.IsCollinear - Error: Could not determine the angle between the input faces")
-            elif abs(ang) < tol or abs(pi - ang) < tol:
-                return True
-            return False
-        
-        def sumRow(matrix, i):
-            return np.sum(matrix[i,:])
-        
-        def buildSimilarityMatrix(samples, tol):
-            numOfSamples = len(samples)
-            matrix = np.zeros(shape=(numOfSamples, numOfSamples))
-            for i in range(len(matrix)):
-                for j in range(len(matrix)):
-                    if collinear(samples[i], samples[j], tol):
-                        matrix[i, j] = 1
-            return matrix
-
-        def determineRow(matrix):
-            maxNumOfOnes = -1
-            row = -1
-            for i in range(len(matrix)):
-                if maxNumOfOnes < sumRow(matrix, i):
-                    maxNumOfOnes = sumRow(matrix, i)
-                    row = i
-            return row
-
-        def categorizeIntoClusters(matrix):
-            groups = []
-            while np.sum(matrix) > 0:
-                group = []
-                row = determineRow(matrix)
-                indexes = addIntoGroup(matrix, row)
-                groups.append(indexes)
-                matrix = deleteChosenRowsAndCols(matrix, indexes)
-            return groups
-
-        def addIntoGroup(matrix, ind):
-            change = True
-            indexes = []
-            for col in range(len(matrix)):
-                if matrix[ind, col] == 1:
-                    indexes.append(col)
-            while change == True:
-                change = False
-                numIndexes = len(indexes)
-                for i in indexes:
-                    for col in range(len(matrix)):
-                        if matrix[i, col] == 1:
-                            if col not in indexes:
-                                indexes.append(col)
-                numIndexes2 = len(indexes)
-                if numIndexes != numIndexes2:
-                    change = True
-            return indexes
-
-        def deleteChosenRowsAndCols(matrix, indexes):
-            for i in indexes:
-                matrix[i, :] = 0
-                matrix[:, i] = 0
-            return matrix
-        if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.ClusterFaces - Error: the input topology parameter is not a valid topology. Returning None.")
-            return None
-        faces = []
-        _ = topology.Faces(None, faces)
-        normals = []
-        for aFace in faces:
-            normals.append(Face.Normal(aFace, outputType="XYZ", mantissa=3))
-        # build a matrix of similarity
-        mat = buildSimilarityMatrix(normals, angTolerance)
-        categories = categorizeIntoClusters(mat)
-        returnList = []
-        for aCategory in categories:
-            tempList = []
-            if len(aCategory) > 0:
-                for index in aCategory:
-                    tempList.append(faces[index])
-                returnList.append(Topology.SelfMerge(Cluster.ByTopologies(tempList), tolerance=tolerance))
-        return returnList
-
     @staticmethod
     def Contents(topology):
         """
@@ -6609,7 +6261,225 @@ class Topology():
             return None
         return topologic.Topology.IsSame(topologyA, topologyB)
     
-    def IsVertexCongruent(topologyA, topologyB, mantissa: int = 6, tolerance=0.0001, silent : bool = False):
+    @staticmethod
+    def IsSimilar(topologyA, topologyB, removeCoplanarFaces: bool = False, mantissa: int = 6, epsilon: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns True if the input topologies are similar. False otherwise. See https://en.wikipedia.org/wiki/Similarity_(geometry).
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        epsilon : float , optional
+            The desired epsilon (another form of percentage tolerance) for finding if two objects are similar. Should be in the range 0 to 1. The default is 0.1 (10%).
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        [bool, list]
+            True if the input topologies are similar., False otherwise and the matrix needed to tranform topologyA to match topologyB
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Matrix import Matrix
+        from topologicpy.Vector import Vector
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(topologyA, "topology"):
+            if not silent:
+                print("Topology.IsSimilar - Error: The input topologyA parameter is not a valid topology. Returning None.")
+            return None
+        if not Topology.IsInstance(topologyB, "topology"):
+            if not silent:
+                print("Topology.IsSimilar - Error: The input topologyB parameter is not a valid topology. Returning None.")
+            return None
+        if removeCoplanarFaces == True:
+            topologyA = Topology.RemoveCoplanarFaces(topologyA, epsilon=epsilon, tolerance=tolerance)
+            topologyB = Topology.RemoveCoplanarFaces(topologyB, epsilon=epsilon, tolerance=tolerance)
+        Topology.Show(topologyA, topologyB)
+        len_vertices_a = len(Topology.Vertices(topologyA))
+        if len_vertices_a < 1 and not Topology.IsInstance(topologyA, "vertex"):
+            if not silent:
+                print("Topology.IsSimilar - Error: The input topologyA parameter is not a valid topology. Returning None.")
+            return None
+        len_vertices_b = len(Topology.Vertices(topologyB))
+        if len_vertices_b < 1 and not Topology.IsInstance(topologyB, "vertex"):
+            if not silent:
+                print("Topology.IsSimilar - Error: The input topologyB parameter is not a valid topology. Returning None.")
+            return None
+        if not isinstance(epsilon, int) and not isinstance(epsilon, float):
+            if not silent:
+                print("Topology.IsSimilar - Error: The input epsilon parameter is not a valid float. Returning None.")
+            return None
+        if not (0 <= epsilon <= 1):
+            if not silent:
+                print("Topology.IsSimilar - Error: The input epsilon parameter is not within a valid range. Returning None.")
+            return None
+        # Trivial cases - All vertices are similar to each other.
+        if Topology.IsInstance(topologyA, "vertex") and Topology.IsInstance(topologyB, "vertex"):
+            centroid_a = Topology.Centroid(topologyA)
+            centroid_b = Topology.Centroid(topologyB)
+            trans_matrix_a = Matrix.ByTranslation(-Vertex.X(centroid_a), -Vertex.Y(centroid_a), -Vertex.Z(centroid_a))
+            trans_matrix_b = Matrix.ByTranslation(Vertex.X(centroid_b), Vertex.Y(centroid_b), Vertex.Z(centroid_b))
+            combined_matrix = Matrix.Multiply(trans_matrix_b, trans_matrix_a)
+            return True, combined_matrix
+        
+        # EXCLUSION TESTS
+        # Topology Type
+        if Topology.Type(topologyA) != Topology.Type(topologyB):
+            return False, None
+        # Number of vertices
+        max_len = max([len_vertices_a, len_vertices_b])
+        if abs(len_vertices_a - len_vertices_b)/max_len > epsilon:
+            if not silent:
+                print("Topology.IsSimilar - Info: Failed number of vertices check. Returning False.")
+            return False, None
+        # Number of edges
+        len_edges_a = len(Topology.Edges(topologyA))
+        len_edges_b = len(Topology.Edges(topologyB))
+        max_len = max([len_edges_a, len_edges_b])
+        if max_len > 0: # Check only if the topologies do actually have edges
+            if abs(len_edges_a - len_edges_b)/max_len > epsilon:
+                if not silent:
+                    print("Topology.IsSimilar - Info: Failed number of edges check. Returning False.")
+                return False, None
+        # Number of faces
+        len_faces_a = len(Topology.Faces(topologyA))
+        len_faces_b = len(Topology.Faces(topologyB))
+        max_len = max([len_faces_a, len_faces_b])
+        if max_len > 0: # Check only if the topologies do actually have faces
+            if abs(len_faces_a - len_faces_b)/max_len > epsilon:
+                if not silent:
+                    print("Topology.IsSimilar - Info: Failed number of faces check. Returning False.")
+                return False, None
+        # Number of cells
+        len_cells_a = len(Topology.Cells(topologyA))
+        len_cells_b = len(Topology.Cells(topologyB))
+        max_len = max([len_cells_a, len_cells_b])
+        if max_len > 0: # Check only if the topologies do actually have cells
+            if abs(len_cells_a - len_cells_b)/max_len > epsilon:
+                if not silent:
+                    print("Topology.IsSimilar - Info: Failed number of cells check. Returning False.")
+                return False, None
+        if Topology.IsInstance(topologyA, "face"):
+            compactness_a = Face.Compactness(topologyA, mantissa=mantissa)
+            compactness_b = Face.Compactness(topologyB, mantissa=mantissa)
+            max_compactness = max([compactness_a, compactness_b])
+            if max_compactness > 0: # Check only if the topologies do actually have compactness
+                if abs(compactness_a - compactness_b)/max_compactness >= epsilon:
+                    if not silent:
+                        print("Topology.IsSimilar - Info: Failed compactness check. Returning False.")
+                    return False, None
+        if Topology.IsInstance(topologyA, "cell"):
+            compactness_a = Cell.Compactness(topologyA, mantissa=mantissa)
+            compactness_b = Cell.Compactness(topologyB, mantissa=mantissa)
+            max_compactness = max([compactness_a, compactness_b])
+            if max_compactness > 0: # Check only if the topologies do actually have compactness
+                if abs(compactness_a - compactness_b)/max_compactness > epsilon:
+                    if not silent:
+                        print("Topology.IsSimilar - Info: Failed compactness check. Returning False.")
+                    return False, None
+        # Done with Exclusion Tests.
+
+        faces_a = Topology.Faces(topologyA)
+        faces_b = Topology.Faces(topologyB)
+        if len(faces_a) > 0 and len(faces_b) > 0:
+            largest_faces_a = Topology.LargestFaces(topologyA)
+            largest_faces_b = Topology.LargestFaces(topologyB)
+
+
+    # Process largest faces
+        largest_faces_a = Topology.LargestFaces(topologyA)
+        largest_faces_b = Topology.LargestFaces(topologyB)
+        face_a_d = Dictionary.ByKeyValue("faceColor", "red")
+        face_b_d = Dictionary.ByKeyValue("faceColor", "blue")
+        for face_a in largest_faces_a:
+            centroid_a = Topology.Centroid(face_a)
+            normal_a = Face.Normal(face_a)
+            third_vertex_a = Face.ThirdVertex(face_a)  # Pick a third vertex for orientation
+            orientation_a = Vector.Normalize(Vector.ByVertices(centroid_a, third_vertex_a))
+
+            for face_b in largest_faces_b:
+                face_copy_b = Topology.SetDictionary(Topology.Copy(face_b), face_b_d)
+                centroid_b = Topology.Centroid(face_b)
+                normal_b = Face.Normal(face_b)
+                third_vertex_b = Face.ThirdVertex(face_b)
+                orientation_b = Vector.Normalize(Vector.ByVertices(centroid_b, third_vertex_b))
+
+                # Compute transformation matrix
+                rotation_matrix = Matrix.ByVectors(normal_a, normal_b, orientation_a, orientation_b)
+                scaling_factor = (Face.Area(face_b) / Face.Area(face_a)) ** (1/2)
+                scaling_matrix = Matrix.ByScaling(scaling_factor, scaling_factor, scaling_factor)
+                
+                translation_matrix = Matrix.ByTranslation(
+                    Vertex.X(centroid_b) - Vertex.X(centroid_a),
+                    Vertex.Y(centroid_b) - Vertex.Y(centroid_a),
+                    Vertex.Z(centroid_b) - Vertex.Z(centroid_a)
+                )
+                combined_matrix = Matrix.Multiply(rotation_matrix, scaling_matrix)
+                combined_matrix = Matrix.Multiply(translation_matrix, combined_matrix)
+                
+                transformed_centroid_a = Topology.Transform(centroid_a, combined_matrix)
+
+                # One last translation to synchronise the two centroids.
+                translation_matrix = Matrix.ByTranslation(
+                    Vertex.X(centroid_b) - Vertex.X(transformed_centroid_a),
+                    Vertex.Y(centroid_b) - Vertex.Y(transformed_centroid_a),
+                    Vertex.Z(centroid_b) - Vertex.Z(transformed_centroid_a)
+                )
+                combined_matrix = Matrix.Multiply(translation_matrix, combined_matrix)
+                # Apply transformation and compare
+                transformedA = Topology.Transform(topologyA, combined_matrix)
+                transformed_face_a = Topology.Transform(face_a, combined_matrix)
+                transformed_face_a = Topology.SetDictionary(face_a, face_a_d)
+
+                Topology.Show(transformedA, topologyB, transformed_face_a, face_copy_b, faceColorKey="faceColor", vertexSizeKey="vertexSize")
+                if Topology.IsVertexCongruent(transformedA, topologyB, mantissa=mantissa, epsilon=epsilon, tolerance=tolerance, silent=silent):
+                    return True, combined_matrix
+
+        return False, None
+        # for l_f_a in largest_faces_a:
+        #     l_e_a = Face.NormalEdge(l_f_a)
+        #     centroid_a = Edge.StartVertex(l_e_a)
+        #     dir_a = Vector.Normalize(Edge.Direction(l_e_a))
+        #     trans_matrix_a = Matrix.ByTranslation(-Vertex.X(centroid_a), -Vertex.Y(centroid_a), -Vertex.Z(centroid_a))
+        #     sf_a = 1/Face.Area(l_f_a)
+        #     scaling_matrix_a = Matrix.ByScaling(sf_a, sf_a, sf_a)
+        #     for l_f_b in largest_faces_b:
+        #         l_e_b = Face.NormalEdge(l_f_b)
+        #         centroid_b = Edge.StartVertex(l_e_b)
+        #         dir_b = Vector.Normalize(Edge.Direction(l_e_b))
+        #         rotation_matrix = Matrix.ByVectors(dir_a, dir_b)
+        #         sf_b = 1/Face.Area(l_f_b)
+        #         scaling_matrix_b = Matrix.ByScaling(sf_b, sf_b, sf_b)
+        #         trans_matrix_b = Matrix.ByTranslation(-Vertex.X(centroid_b), -Vertex.Y(centroid_b), -Vertex.Z(centroid_b))
+        #         combined_matrix_a = Matrix.Multiply(rotation_matrix, scaling_matrix_a)
+        #         combined_matrix_a = Matrix.Multiply(combined_matrix_a, trans_matrix_a)
+        #         combined_matrix_b = Matrix.Multiply(scaling_matrix_b, trans_matrix_b)
+        #         top_a = Topology.Transform(topologyA, combined_matrix_a)
+        #         top_b = Topology.Transform(topologyB, combined_matrix_b)
+        #         Topology.Show(top_a, top_b)
+        #         if Topology.IsVertexCongruent(top_a, top_b, mantissa=mantissa, epsilon=epsilon, tolerance=tolerance, silent=silent):
+        #             Topology.Show(top_a, top_b)
+        #             final_matrix = Matrix.Multiply(Matrix.Invert(combined_matrix_b), combined_matrix_a)
+        #             return True, final_matrix
+
+        return False, None
+ 
+    @staticmethod
+    def IsVertexCongruent(topologyA, topologyB, mantissa: int = 6, epsilon: float = 0.1, tolerance: float = 0.0001, silent : bool = False):
         """
         Returns True if the input topologies are vertex matched (have same number of vertices and all vertices are congruent within a tolerance). Returns False otherwise.
 
@@ -6620,7 +6490,7 @@ class Topology():
         topologyB : topologic_core.Topology
             The second input topology.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -6634,10 +6504,10 @@ class Topology():
         """
         from topologicpy.Vertex import Vertex
 
-        def coordinates_match(list1, list2, tolerance):
+        def coordinates_unmatched_ratio(list1, list2, tolerance):
             """
-            Checks if all coordinates in list1 have a corresponding coordinate in list2
-            within a specified tolerance, with each match being unique.
+            Calculates the percentage of coordinates in list1 that do not have a corresponding
+            coordinate in list2 within a specified tolerance, with each match being unique.
 
             Parameters
             ----------
@@ -6650,45 +6520,62 @@ class Topology():
 
             Returns
             -------
-            bool
-                True if all coordinates in list1 have a corresponding coordinate in list2
-                within the tolerance. False otherwise.
+            float
+                The percentage of coordinates in list1 that did not find a match in list2.
             """
             def distance(coord1, coord2):
                 """Calculate the Euclidean distance between two coordinates."""
                 return np.linalg.norm(np.array(coord1) - np.array(coord2))
 
-            # Copy list2 to keep track of unvisited coordinates
+            unmatched_count = 0
             unmatched = list2.copy()
 
             for coord1 in list1:
                 match_found = False
                 for i, coord2 in enumerate(unmatched):
                     if distance(coord1, coord2) <= tolerance:
-                        # Mark the coordinate as visited by removing it
-                        unmatched.pop(i)
+                        unmatched.pop(i)  # Remove matched coordinate
                         match_found = True
                         break
                 if not match_found:
-                    return False
-            return True
+                    unmatched_count += 1
+
+            total_coordinates = len(list1)
+            unmatched_ratio = (unmatched_count / total_coordinates)
+            
+            return unmatched_ratio
 
         if not Topology.IsInstance(topologyA, "topology"):
             if not silent:
-                print("Topology.IsVertexMatched - Error: The input topologyA parameter is not a valid topology. Returning None.")
+                print("Topology.IsVertexCongruent - Error: The input topologyA parameter is not a valid topology. Returning None.")
             return None
         if not Topology.IsInstance(topologyB, "topology"):
             if not silent:
-                print("Topology.IsVertexMatched - Error: The input topologyB parameter is not a valid topology. Returning None.")
+                print("Topology.IsVertexCongruent - Error: The input topologyB parameter is not a valid topology. Returning None.")
             return None
         
         vertices_a = Topology.Vertices(topologyA)
+        len_vertices_a = len(vertices_a)
+        if len_vertices_a < 1:
+            if not silent:
+                print("Topology.IsVertexCongruent - Error: The input topologyA parameter is not a valid topology. Returning None.")
+            return None
         vertices_b = Topology.Vertices(topologyB)
-        if not len(vertices_a) == len(vertices_b):
+        len_vertices_b = len(vertices_b)
+        if len_vertices_b < 1:
+            if not silent:
+                print("Topology.IsVertexCongruent - Error: The input topologyB parameter is not a valid topology. Returning None.")
+            return None
+        # Number of vertices
+        max_len = max([len_vertices_a, len_vertices_b])
+        if abs(len_vertices_a - len_vertices_a)/max_len >= epsilon:
             return False
         coords_a = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices_a]
         coords_b = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices_b]
-        return coordinates_match(coords_a, coords_b, tolerance=tolerance)
+        unmatched_ratio = coordinates_unmatched_ratio(coords_a, coords_b, tolerance=tolerance)
+        if unmatched_ratio <= epsilon:
+            return True
+        return False
 
     @staticmethod
     def LargestFaces(topology, removeCoplanarFaces: bool = False, epsilon: float = 0.001, tolerance: float = 0.0001, silent: bool = False):
@@ -6779,6 +6666,7 @@ class Topology():
         if removeCoplanarFaces == True:
             simple_topology = Topology.RemoveCoplanarFaces(topology)
             simple_topology = Topology.RemoveCollinearEdges(simple_topology)
+
             edges = Topology.Edges(simple_topology)
         edge_lengths = [Edge.Length(edge) for edge in edges]
         max_length = max(edge_lengths)
@@ -9666,7 +9554,7 @@ class Topology():
 
     
     @staticmethod
-    def Transform(topology, matrix):
+    def Transform(topology, matrix: list, silent: bool = False):
         """
         Transforms the input topology by the input 4X4 transformation matrix.
 
@@ -9676,6 +9564,8 @@ class Topology():
             The input topology.
         matrix : list
             The input 4x4 transformation matrix.
+        silent : bool , optional
+            If set to True, no warnings or errors will be printed. The default is False.
 
         Returns
         -------
@@ -9683,6 +9573,10 @@ class Topology():
             The transformed topology.
 
         """
+        from topologicpy.Vertex import Vertex
+
+        import numpy as np
+
         kTranslationX = 0.0
         kTranslationY = 0.0
         kTranslationZ = 0.0
@@ -9710,7 +9604,52 @@ class Topology():
         kTranslationY = matrix[1][3]
         kTranslationZ = matrix[2][3]
 
-        return_topology = topologic.TopologyUtility.Transform(topology, kTranslationX, kTranslationY, kTranslationZ, kRotation11, kRotation12, kRotation13, kRotation21, kRotation22, kRotation23, kRotation31, kRotation32, kRotation33)
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.Trasnform - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        
+        try:
+            return_topology = topologic.TopologyUtility.Transform(topology, kTranslationX, kTranslationY, kTranslationZ, kRotation11, kRotation12, kRotation13, kRotation21, kRotation22, kRotation23, kRotation31, kRotation32, kRotation33)
+        except:
+            print("topologic.TopologyUtility.Transform failed. Attempting a workaround.")
+            
+            # Extract translation (last column of the matrix)
+            translation = [m[3] for m in matrix[:3]]
+            print("translation", translation)
+            x_translate, y_translate, z_translate = translation
+            
+            # Extract rotation (top-left 3x3 part of the matrix)
+            rotation_matrix = [m[:3] for m in matrix[:3]]
+            
+            # Extract scaling (diagonal of the matrix)
+            scaling_factors = [matrix[m][m] for m in [0,1,2]]  # scaling is stored in the diagonal of the rotation matrix
+            print(scaling_factors)
+            x_scale, y_scale, z_scale = scaling_factors
+            
+            # Step 1: Apply Scaling
+            # Here, origin is assumed to be (0,0,0) for simplicity
+            return_topology = Topology.Scale(topology, origin=Vertex.ByCoordinates(0, 0, 0), x=x_scale, y=y_scale, z=z_scale)
+            
+            # Step 2: Apply Rotation
+            # The rotation axis and angle need to be derived from the rotation matrix
+            # For simplicity, we assume the matrix represents a standard rotation (angle and axis).
+            # The angle can be computed from the matrix as the arccos of the trace.
+            
+            angle_rad = np.arccos((np.trace(rotation_matrix) - 1) / 2.0)  # Using trace to compute angle
+            axis = np.array([rotation_matrix[2, 1] - rotation_matrix[1, 2],
+                            rotation_matrix[0, 2] - rotation_matrix[2, 0],
+                            rotation_matrix[1, 0] - rotation_matrix[0, 1]])
+            axis = axis / np.linalg.norm(axis)  # Normalize the axis
+            
+            # Convert the angle from radians to degrees
+            angle_deg = np.degrees(angle_rad)
+            
+            # Apply rotation
+            return_topology = Topology.Rotate(return_topology, origin=Vertex.ByCoordinates(0, 0, 0), axis=axis, angle=angle_deg)
+            
+            # Step 3: Apply Translation
+            return_topology = Topology.Translate(return_topology, x=x_translate, y=y_translate, z=z_translate)
         
         vertices = Topology.Vertices(topology)
         edges = Topology.Edges(topology)
@@ -9747,7 +9686,7 @@ class Topology():
         return return_topology
     
     @staticmethod
-    def Translate(topology, x=0, y=0, z=0):
+    def Translate(topology, x=0, y=0, z=0, silent: bool = False):
         """
         Translates (moves) the input topology.
 
@@ -9761,6 +9700,8 @@ class Topology():
             The y translation value. The default is 0.
         z : float , optional
             The z translation value. The default is 0.
+        silent : bool , optional
+            If set to True, no warnings or errors will be printed. The default is False.
 
         Returns
         -------
@@ -9772,7 +9713,8 @@ class Topology():
         from topologicpy.Dictionary import Dictionary
 
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.Translate - Error: The input topology parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Translate - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
         
         if Topology.IsInstance(topology, "vertex"):
@@ -9791,7 +9733,9 @@ class Topology():
         try:
             return_topology = topologic.TopologyUtility.Translate(topology, x, y, z)
         except:
-            return_topology = topology
+            if not silent:
+                print("Topology.Translate - Error: The operation failed. Returning the original input.")
+            return topology
         
         r_vertices = Topology.Vertices(return_topology)
         r_edges = Topology.Edges(return_topology)
@@ -9965,7 +9909,7 @@ class Topology():
         return topology.Type()
     
     @staticmethod
-    def TypeAsString(topology, silent=False):
+    def TypeAsString(topology, silent: bool = False):
         """
         Returns the type of the input topology as a string.
 

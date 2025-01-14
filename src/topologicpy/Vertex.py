@@ -1807,6 +1807,63 @@ class Vertex():
         return separated_vertices
 
     @staticmethod
+    def Transform(vertex, matrix, mantissa: int = 6, silent: bool = False):
+        """
+        Transforms a 3D vertex using a 4x4 transformation matrix.
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex
+        matrix : list
+            The 4x4 transformation matrix.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Vertex
+            The transformed vertex.
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(vertex, "vertex"):
+            if not silent:
+                print("Vertex.Transform - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            return None
+        
+        if not isinstance(matrix, list):
+            if not silent:
+                print("Vertex.Transform - Error: The input matrix parameter is not a valid 4X4 matrix. Returning None.")
+            return None
+        
+        matrix = np.array(matrix)  # Convert list to numpy array if necessary
+    
+        # Check if the shape of the matrix is (4, 4)
+        if not matrix.shape == (4, 4):
+            if not silent:
+                print("Vertex.Transform - Error: The input matrix parameter is not a valid 4X4 matrix. Returning None.")
+            return None
+        
+        # Convert the vertex to a 4D homogeneous coordinate
+        coords = Vertex.Coordinates(vertex, mantissa=mantissa)
+        homogeneous_coords= np.array([coords[0], coords[1], coords[2], 1.0])
+        
+        # Perform matrix multiplication
+        transformed_coords = np.dot(matrix, homogeneous_coords)
+        
+        # Convert back to 3D by dividing by w
+        if not np.isclose(transformed_coords[3], 0):  # Avoid division by zero
+            transformed_coords /= transformed_coords[3]
+        
+        # Return the transformed (x', y', z') as a list
+        coords = transformed_coords[:3].tolist()
+        coords = [round(v, mantissa) for v in coords]
+        return Vertex.ByCoordinates(coords)
+    
+    @staticmethod
     def X(vertex, mantissa: int = 6) -> float:
         """
         Returns the X coordinate of the input vertex.

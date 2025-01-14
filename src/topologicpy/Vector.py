@@ -275,13 +275,13 @@ class Vector(list):
         return [x, y, z]
     
     @staticmethod
-    def ByVertices(vertices, normalize: bool = True, mantissa: int = 6):
+    def ByVertices(*vertices, normalize: bool = True, mantissa: int = 6, silent: bool = False):
         """
         Creates a vector by the specified input list of vertices.
 
         Parameters
         ----------
-        vertices : list
+        *vertices : list
             The the input list of topologic vertices. The first element in the list is considered the start vertex. The last element in the list is considered the end vertex.
         normalize : bool , optional
             If set to True, the resulting vector is normalized (i.e. its length is set to 1)
@@ -296,16 +296,59 @@ class Vector(list):
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+        import inspect
 
-        if not isinstance(vertices, list):
+        if len(vertices) == 0:
+            if not silent:
+                print("Vector.ByVertices - Error: The input vertices parameter is an empty list. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
-        if not isinstance(normalize, bool):
+        if len(vertices) == 1:
+            vertices = vertices[0]
+            if isinstance(vertices, list):
+                if len(vertices) == 0:
+                    if not silent:
+                        print("Vector.ByVertices - Error: The input vertices parameter is an empty list. Returning None.")
+                        curframe = inspect.currentframe()
+                        calframe = inspect.getouterframes(curframe, 2)
+                        print('caller name:', calframe[1][3])
+                    return None
+                else:
+                    vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
+                    if len(vertexList) == 0:
+                        if not silent:
+                            print("Vector.ByVertices - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+                            curframe = inspect.currentframe()
+                            calframe = inspect.getouterframes(curframe, 2)
+                            print('caller name:', calframe[1][3])
+                        return None
+            else:
+                if not silent:
+                    print("Vector.ByVertices - Warning: The input vertices parameter contains only one vertex. Returning None.")
+                    curframe = inspect.currentframe()
+                    calframe = inspect.getouterframes(curframe, 2)
+                    print('caller name:', calframe[1][3])
+                return None
+        else:
+            vertexList = Helper.Flatten(list(vertices))
+            vertexList = [x for x in vertexList if Topology.IsInstance(x, "Vertex")]
+        if len(vertexList) == 0:
+            if not silent:
+                print("Vector.ByVertices - Error: The input parameters do not contain any valid vertices. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
-        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) < 2:
+
+        if len(vertexList) < 2:
+            if not silent:
+                print("Vector.ByVertices - Error: The input parameters do not contain a minimum of two valid vertices. Returning None.")
             return None
-        v1 = vertices[0]
-        v2 = vertices[-1]
+        v1 = vertexList[0]
+        v2 = vertexList[-1]
         vector = [Vertex.X(v2, mantissa=mantissa)-Vertex.X(v1, mantissa=mantissa), Vertex.Y(v2, mantissa=mantissa)-Vertex.Y(v1, mantissa=mantissa), Vertex.Z(v2, mantissa=mantissa)-Vertex.Z(v1, mantissa=mantissa)]
         if normalize:
             vector = Vector.Normalize(vector)
@@ -673,22 +716,26 @@ class Vector(list):
             return False
     
     @staticmethod
-    def IsCollinear(vectorA, vectorB):
+    def IsCollinear(vectorA, vectorB, tolerance=0.0001):
         """
-        Returns True if the input vectors are collinear (parallel or anti-parallel). Returns False otherwise.
-        
+        Returns True if the input vectors are collinear (parallel or anti-parallel) 
+        within a given tolerance. Returns False otherwise.
+
         Parameters
         ----------
         vectorA : list
             The first input vector.
         vectorB : list
             The second input vector.
+        tolerance : float, optional
+            The desired tolerance for determining collinearity. The default is 0.0001.
             
         Returns
         -------
         bool
-            True if the input vectors are collinear (parallel or anti-parallel). False otherwise.
-        
+            True if the input vectors are collinear (parallel or anti-parallel). 
+            False otherwise.
+
         """
         import numpy as np
 
@@ -700,17 +747,19 @@ class Vector(list):
         vector1_norm = vector1 / np.linalg.norm(vector1)
         vector2_norm = vector2 / np.linalg.norm(vector2)
         
-        # Check if the angle between vectors is either 0 or 180 degrees
+        # Check if the dot product is within the tolerance of 1.0 or -1.0
         dot_product = np.dot(vector1_norm, vector2_norm)
-        if np.isclose(dot_product, 1.0) or np.isclose(dot_product, -1.0):
+        if (1.0 - tolerance) <= dot_product <= (1.0 + tolerance) or \
+        (-1.0 - tolerance) <= dot_product <= (-1.0 + tolerance):
             return True
         else:
             return False
     
     @staticmethod
-    def IsParallel(vectorA, vectorB):
+    def IsParallel(vectorA, vectorB, tolerance=0.0001):
         """
-        Returns True if the input vectors are parallel. Returns False otherwise.
+        Returns True if the input vectors are parallel within a given tolerance.
+        Returns False otherwise.
         
         Parameters
         ----------
@@ -718,12 +767,13 @@ class Vector(list):
             The first input vector.
         vectorB : list
             The second input vector.
+        tolerance : float, optional
+            The desired tolerance for determining parallelism. The default is 0.0001.
             
         Returns
         -------
         bool
             True if the input vectors are parallel. False otherwise.
-        
         """
         import numpy as np
 
@@ -735,14 +785,13 @@ class Vector(list):
         vector1_norm = vector1 / np.linalg.norm(vector1)
         vector2_norm = vector2 / np.linalg.norm(vector2)
         
-        # Check if the angle between vectors is either 0 or 180 degrees
+        # Check if the dot product is within the tolerance of 1.0
         dot_product = np.dot(vector1_norm, vector2_norm)
-        if np.isclose(dot_product, 1.0):
+        if (1.0 - tolerance) <= dot_product <= (1.0 + tolerance):
             return True
         else:
-            # Compute bisecting vector
             return False
-    
+
     @staticmethod
     def IsSame(vectorA, vectorB, tolerance=0.0001):
         """

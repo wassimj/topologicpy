@@ -3596,7 +3596,6 @@ class Wire():
             baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
 
-
     @staticmethod
     def RemoveCollinearEdges(wire, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -3690,124 +3689,6 @@ class Wire():
         else:
             return Topology.SelfMerge(Cluster.ByTopologies(processed_wires, silent=silent))
 
-    @staticmethod
-    def RemoveCollinearEdges_old(wire, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Removes any collinear edges in the input wire.
-
-        Parameters
-        ----------
-        wire : topologic_core.Wire
-            The input wire.
-        angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-        silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
-
-        Returns
-        -------
-        topologic_core.Wire
-            The created wire without any collinear edges.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
-        import inspect
-        
-        def cleanup(wire, tolerance=0.0001):
-            vertices = Topology.Vertices(wire)
-            vertices = Vertex.Fuse(vertices, tolerance=tolerance)
-            edges = Topology.Edges(wire)
-            new_edges = []
-            for edge in edges:
-                sv = Edge.StartVertex(edge)
-                sv = vertices[Vertex.Index(sv, vertices, tolerance=tolerance)]
-                ev = Edge.EndVertex(edge)
-                ev = vertices[Vertex.Index(ev, vertices, tolerance=tolerance)]
-                if Vertex.Distance(sv, ev) > tolerance:
-                    new_edges.append(Edge.ByVertices([sv,ev]))
-            if len(new_edges) > 0:
-                return Topology.SelfMerge(Cluster.ByTopologies(new_edges, silent=silent), tolerance=tolerance)
-            return wire
-        
-        def rce(wire, angTolerance=0.1):
-            if not Topology.IsInstance(wire, "Wire"):
-                return wire
-            final_wire = None
-            vertices = []
-            wire_verts = []
-            try:
-                vertices = Topology.Vertices(wire)
-            except:
-                return wire
-            for aVertex in vertices:
-                edges = []
-                _ = aVertex.Edges(wire, edges)
-                if len(edges) > 1:
-                    if not Edge.IsCollinear(edges[0], edges[1], tolerance=tolerance):
-                        wire_verts.append(aVertex)
-                else:
-                    wire_verts.append(aVertex)
-            if len(wire_verts) > 2:
-                if wire.IsClosed():
-                    final_wire = Wire.ByVertices(wire_verts, close=True, tolerance=tolerance)
-                else:
-                    final_wire = Wire.ByVertices(wire_verts, close=False, tolerance=tolerance)
-            elif len(wire_verts) == 2:
-                final_wire = Edge.ByStartVertexEndVertex(wire_verts[0], wire_verts[1], tolerance=tolerance, silent=True)
-            return final_wire
-        
-        if Topology.IsInstance(wire, "cluster"):
-            wires = Topology.Wires(wire)
-            temp_wires = []
-            for w in wires:
-                temp_w = Wire.RemoveCollinearEdges(w)
-                if not temp_w == None:
-                    temp_wires.append(temp_w)
-            if len(temp_wires) > 0:
-                result = Topology.SelfMerge(Cluster.ByTopologies(temp_w))
-                return result
-        if not Topology.IsInstance(wire, "Wire"):
-            if not silent:
-                print("Wire.RemoveCollinearEdges - Error: The input wire parameter is not a valid wire. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
-            return None
-        new_wire = cleanup(wire, tolerance=tolerance)
-        if not Wire.IsManifold(new_wire):
-            wires = Wire.Split(new_wire)
-        else:
-            wires = [new_wire]
-        returnWires = []
-        for aWire in wires:
-            if not Topology.IsInstance(aWire, "Wire"):
-                returnWires.append(aWire)
-            else:
-                returnWires.append(rce(aWire, angTolerance=angTolerance))
-        if len(returnWires) == 1:
-            returnWire = returnWires[0]
-            if Topology.IsInstance(returnWire, "Edge"):
-                return Wire.ByEdges([returnWire], tolerance=tolerance)
-            elif Topology.IsInstance(returnWire, "Wire"):
-                return returnWire
-            else:
-                return wire
-        elif len(returnWires) > 1:
-            returnWire = Topology.SelfMerge(Cluster.ByTopologies(returnWires, silent=silent))
-            if Topology.IsInstance(returnWire, "Edge"):
-                return Wire.ByEdges([returnWire], tolerance=tolerance)
-            elif Topology.IsInstance(returnWire, "Wire"):
-                return returnWire
-            else:
-                return wire
-        else:
-            return wire
-    
     @staticmethod
     def Representation(wire, normalize: bool = True, rotate: bool = True, mantissa: int = 6, tolerance: float = 0.0001):
         """

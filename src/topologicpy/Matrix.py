@@ -142,6 +142,192 @@ class Matrix:
                 [0,0,0,1]]
     
     @staticmethod
+    def ByVectors(vectorA: list, vectorB: list, orientationA: list = [1, 0, 0], orientationB: list = [1, 0, 0]):
+        """
+        Creates a rotation matrix that aligns vectorA with vectorB and adjusts orientationA to match orientationB.
+
+        Parameters
+        ----------
+        vectorA : list
+            The first input vector.
+        vectorB : list
+            The second input vector to align with.
+        orientationA : list
+            The orientation vector associated with vectorA.
+        orientationB : list
+            The orientation vector associated with vectorB.
+
+        Returns
+        -------
+        list
+            The 4x4 transformation matrix.
+        """
+        from topologicpy.Vector import Vector
+        import numpy as np
+
+        def to_numpy(vector):
+            """Converts a list or array-like to a numpy array."""
+            return np.array(vector, dtype=np.float64)
+
+        # Normalize input vectors and convert them to numpy arrays
+        vectorA = to_numpy(Vector.Normalize(vectorA))
+        vectorB = to_numpy(Vector.Normalize(vectorB))
+        orientationA = to_numpy(Vector.Normalize(orientationA))
+        orientationB = to_numpy(Vector.Normalize(orientationB))
+
+        # Step 1: Compute rotation matrix to align vectorA with vectorB
+        axis = np.cross(vectorA, vectorB)
+        angle = np.arccos(np.clip(np.dot(vectorA, vectorB), -1.0, 1.0))
+
+        if np.isclose(angle, 0):  # Vectors are already aligned
+            rotation_matrix_normal = np.eye(3)
+        elif np.isclose(angle, np.pi):  # Vectors are anti-parallel
+            # Choose a perpendicular axis for rotation
+            axis = to_numpy([1, 0, 0]) if not np.isclose(vectorA[0], 0) else to_numpy([0, 1, 0])
+            rotation_matrix_normal = (
+                np.eye(3)
+                - 2 * np.outer(vectorA, vectorA)  # Reflect through the plane perpendicular to vectorA
+            )
+        else:
+            axis = axis / np.linalg.norm(axis)
+            K = np.array([
+                [0, -axis[2], axis[1]],
+                [axis[2], 0, -axis[0]],
+                [-axis[1], axis[0], 0]
+            ])
+            rotation_matrix_normal = (
+                np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * np.dot(K, K)
+            )
+
+        # Step 2: Rotate orientationA using the first rotation matrix
+        rotated_orientationA = np.dot(rotation_matrix_normal, orientationA)
+
+        # Step 3: Compute rotation to align rotated_orientationA with orientationB in the plane of vectorB
+        projected_orientationA = rotated_orientationA - np.dot(rotated_orientationA, vectorB) * vectorB
+        projected_orientationB = orientationB - np.dot(orientationB, vectorB) * vectorB
+
+        if np.linalg.norm(projected_orientationA) < 1e-6 or np.linalg.norm(projected_orientationB) < 1e-6:
+            # If either projected vector is near zero, skip secondary rotation
+            rotation_matrix_orientation = np.eye(3)
+        else:
+            projected_orientationA = projected_orientationA / np.linalg.norm(projected_orientationA)
+            projected_orientationB = projected_orientationB / np.linalg.norm(projected_orientationB)
+            axis = np.cross(projected_orientationA, projected_orientationB)
+            angle = np.arccos(np.clip(np.dot(projected_orientationA, projected_orientationB), -1.0, 1.0))
+            if np.isclose(angle, 0):  # Already aligned
+                rotation_matrix_orientation = np.eye(3)
+            else:
+                axis = axis / np.linalg.norm(axis)
+                K = np.array([
+                    [0, -axis[2], axis[1]],
+                    [axis[2], 0, -axis[0]],
+                    [-axis[1], axis[0], 0]
+                ])
+                rotation_matrix_orientation = (
+                    np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * np.dot(K, K)
+                )
+
+        # Step 4: Combine the two rotation matrices
+        rotation_matrix = np.dot(rotation_matrix_orientation, rotation_matrix_normal)
+
+        # Convert to 4x4 transformation matrix
+        transform_matrix = np.eye(4)
+        transform_matrix[:3, :3] = rotation_matrix
+
+        return transform_matrix.tolist()
+
+    def ByVectors_old(vectorA: list, vectorB: list, orientationA: list = [1,0,0], orientationB: list = [1,0,0]):
+        """
+        Creates a rotation matrix that aligns vectorA with vectorB and adjusts orientationA to match orientationB.
+        
+        Parameters
+        ----------
+        vectorA : list
+            The first input vector.
+        vectorB : list
+            The second input vector to align with.
+        orientationA : list
+            The orientation vector associated with vectorA.
+        orientationB : list
+            The orientation vector associated with vectorB.
+        
+        Returns
+        -------
+        list
+            The 4x4 transformation matrix.
+        """
+        from topologicpy.Vector import Vector
+        import numpy as np
+
+        # Normalize input vectors
+        vectorA = Vector.Normalize(vectorA)
+        vectorB = Vector.Normalize(vectorB)
+        orientationA = Vector.Normalize(orientationA)
+        orientationB = Vector.Normalize(orientationB)
+
+        # Step 1: Compute rotation matrix to align vectorA with vectorB
+        axis = np.cross(vectorA, vectorB)
+        angle = np.arccos(np.clip(np.dot(vectorA, vectorB), -1.0, 1.0))
+
+        if np.isclose(angle, 0):  # Vectors are already aligned
+            rotation_matrix_normal = np.eye(3)
+        elif np.isclose(angle, np.pi):  # Vectors are anti-parallel
+            # Choose a perpendicular axis for rotation
+            axis = np.array([1, 0, 0]) if not np.isclose(vectorA[0], 0) else np.array([0, 1, 0])
+            rotation_matrix_normal = (
+                np.eye(3)
+                - 2 * np.outer(vectorA, vectorA)  # Reflect through the plane perpendicular to vectorA
+            )
+        else:
+            axis = Vector.Normalize(axis)
+            K = np.array([
+                [0, -axis[2], axis[1]],
+                [axis[2], 0, -axis[0]],
+                [-axis[1], axis[0], 0]
+            ])
+            rotation_matrix_normal = (
+                np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * np.dot(K, K)
+            )
+
+        # Step 2: Rotate orientationA using the first rotation matrix
+        rotated_orientationA = np.dot(rotation_matrix_normal, orientationA)
+
+        # Step 3: Compute rotation to align rotated_orientationA with orientationB in the plane of vectorB
+        projected_orientationA = rotated_orientationA - np.dot(rotated_orientationA, vectorB) * vectorB
+        projected_orientationB = orientationB - np.dot(orientationB, vectorB) * vectorB
+
+        if np.linalg.norm(projected_orientationA) < 1e-6 or np.linalg.norm(projected_orientationB) < 1e-6:
+            # If either projected vector is near zero, skip secondary rotation
+            rotation_matrix_orientation = np.eye(3)
+        else:
+            projected_orientationA = Vector.Normalize(projected_orientationA)
+            projected_orientationB = Vector.Normalize(projected_orientationB)
+            axis = np.cross(projected_orientationA, projected_orientationB)
+            angle = np.arccos(np.clip(np.dot(projected_orientationA, projected_orientationB), -1.0, 1.0))
+            if np.isclose(angle, 0):  # Already aligned
+                rotation_matrix_orientation = np.eye(3)
+            else:
+                axis = Vector.Normalize(axis)
+                K = np.array([
+                    [0, -axis[2], axis[1]],
+                    [axis[2, 0, -axis[0]]],
+                    [-axis[1], axis[0], 0]
+                ])
+                rotation_matrix_orientation = (
+                    np.eye(3) + np.sin(angle) * K + (1 - np.cos(angle)) * np.dot(K, K)
+                )
+
+        # Step 4: Combine the two rotation matrices
+        rotation_matrix = np.dot(rotation_matrix_orientation, rotation_matrix_normal)
+
+        # Convert to 4x4 transformation matrix
+        transform_matrix = np.eye(4)
+        transform_matrix[:3, :3] = rotation_matrix
+
+        return transform_matrix.tolist()
+
+    
+    @staticmethod
     def EigenvaluesAndVectors(matrix, mantissa: int = 6, silent: bool = False):
         import numpy as np
         """
@@ -203,6 +389,25 @@ class Matrix:
             e_vectors.append([round(x, mantissa) for x in eigenvector])
         e_vectors = Helper.Sort(e_vectors, list(eigenvalues))
         return e_values, e_vectors
+
+    @staticmethod
+    def Identity():
+        """
+        Creates a 4x4 identity translation matrix.
+
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        list
+            The created 4X4 identity matrix.
+
+        """
+        return [[1,0,0,0],
+                [0,1,0,0],
+                [0,0,1,0],
+                [0,0,0,1]]
     
     @staticmethod
     def Invert(matA, silent: bool = False):
@@ -226,12 +431,13 @@ class Matrix:
 
         if not isinstance(matA, list):
             if not silent:
-                print("Matrix.Invert - Error: The input matA parameter is not a valid 4X4 matrix. Returning None.")
+                print(matA, matA.__class__)
+                print("1. Matrix.Invert - Error: The input matA parameter is not a valid 4X4 matrix. Returning None.")
             return None
         np_matrix = np.array(matA)
         if np_matrix.shape != (4, 4):
             if not silent:
-                print("Matrix.Invert - Error: The input matA parameter is not a valid 4X4 matrix. Returning None.")
+                print("2. Matrix.Invert - Error: The input matA parameter is not a valid 4X4 matrix. Returning None.")
             return None
         
         # Check if the matrix is invertible
@@ -264,9 +470,9 @@ class Matrix:
 
         """
         # Input validation
-        if not (isinstance(matA, list) and all(isinstance(row, list) for row in matA) and
-                isinstance(matB, list) and all(isinstance(row, list) for row in matB)):
-            raise ValueError("Both inputs must be 2D lists representing matrices.")
+        # if not (isinstance(matA, list) and all(isinstance(row, list) for row in matA) and
+        #         isinstance(matB, list) and all(isinstance(row, list) for row in matB)):
+        #     raise ValueError("Both inputs must be 2D lists representing matrices.")
         
         # Check matrix dimension compatibility
         if len(matA[0]) != len(matB):

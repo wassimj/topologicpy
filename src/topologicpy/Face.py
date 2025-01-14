@@ -3411,6 +3411,61 @@ class Face():
             return None
         return Face.ByWire(wire, tolerance=tolerance)
 
+
+    @staticmethod
+    def ThirdVertex(face, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns a third vertex on the input face to enable rotation matrix creation.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created face.
+
+        """
+        from topologicpy.Vector import Vector
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.ThirdVertex - Error: The input face parameter is not a valid face. Returning None.")
+            return None
+        # Retrieve all vertices of the face
+        vertices = Face.Vertices(face)
+        centroid = Topology.Centroid(face)
+        normal = Face.Normal(face)
+        for vertex in vertices:
+            # Skip the centroid itself
+            if Vertex.Distance(centroid, vertex) <= tolerance:
+                continue
+            
+            # Vector from the centroid to the current vertex
+            vector_to_vertex = Vector.ByVertices(centroid, vertex)
+            vector_to_vertex_normalized = Vector.Normalize(vector_to_vertex)
+
+
+            # Check if the vector_to_vertex is collinear with the normal direction
+            if Vector.IsCollinear(vector_to_vertex_normalized, normal, tolerance):
+                continue
+
+            # If not collinear, return this vertex
+            return vertex
+
+        # No valid third vertex found
+        if not silent:
+                print("Face.ThirdVertex - Warning: No valid third vertex could be found. Returning None.")
+        return None
+
     @staticmethod
     def Trapezoid(origin= None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
