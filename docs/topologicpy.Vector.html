@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vector module &mdash; topologicpy 0.8.10 documentation</title>
+  <title>topologicpy.Vector module &mdash; topologicpy 0.8.11 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.10
+                0.8.11
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -171,7 +171,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.ByCoordinates" title="topologicpy.Vector.Vector.ByCoordinates"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCoordinates</span></code></a>(x, y, z)</p></td>
 <td><p>Creates a vector by the specified x, y, z inputs.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.ByVertices" title="topologicpy.Vector.Vector.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(vertices[, normalize, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.ByVertices" title="topologicpy.Vector.Vector.ByVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVertices</span></code></a>(*vertices[, normalize, mantissa, ...])</p></td>
 <td><p>Creates a vector by the specified input list of vertices.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.CompassAngle" title="topologicpy.Vector.Vector.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(vectorA, vectorB[, mantissa, ...])</p></td>
@@ -201,11 +201,11 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.IsAntiParallel" title="topologicpy.Vector.Vector.IsAntiParallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsAntiParallel</span></code></a>(vectorA, vectorB)</p></td>
 <td><p>Returns True if the input vectors are anti-parallel.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.IsCollinear" title="topologicpy.Vector.Vector.IsCollinear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCollinear</span></code></a>(vectorA, vectorB)</p></td>
-<td><p>Returns True if the input vectors are collinear (parallel or anti-parallel).</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.IsCollinear" title="topologicpy.Vector.Vector.IsCollinear"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCollinear</span></code></a>(vectorA, vectorB[, tolerance])</p></td>
+<td><p>Returns True if the input vectors are collinear (parallel or anti-parallel)  within a given tolerance.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.IsParallel" title="topologicpy.Vector.Vector.IsParallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsParallel</span></code></a>(vectorA, vectorB)</p></td>
-<td><p>Returns True if the input vectors are parallel.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.IsParallel" title="topologicpy.Vector.Vector.IsParallel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsParallel</span></code></a>(vectorA, vectorB[, tolerance])</p></td>
+<td><p>Returns True if the input vectors are parallel within a given tolerance.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.IsSame" title="topologicpy.Vector.Vector.IsSame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSame</span></code></a>(vectorA, vectorB[, tolerance])</p></td>
 <td><p>Returns True if the input vectors are the same.</p></td>
@@ -474,12 +474,12 @@ If the altitude is -90 or 90, the azimuth is assumed to be 0.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.ByVertices">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.ByVertices" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.ByVertices" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a vector by the specified input list of vertices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The the input list of topologic vertices. The first element in the list is considered the start vertex. The last element in the list is considered the end vertex.</p>
+<dt><strong>*vertices</strong><span class="classifier">list</span></dt><dd><p>The the input list of topologic vertices. The first element in the list is considered the start vertex. The last element in the list is considered the end vertex.</p>
 </dd>
 <dt><strong>normalize</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the resulting vector is normalized (i.e. its length is set to 1)</p>
 </dd>
@@ -722,8 +722,9 @@ The possible returned values are:
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.IsCollinear">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsCollinear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.IsCollinear" title="Permalink to this definition"></a></dt>
-<dd><p>Returns True if the input vectors are collinear (parallel or anti-parallel). Returns False otherwise.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsCollinear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.IsCollinear" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True if the input vectors are collinear (parallel or anti-parallel) 
+within a given tolerance. Returns False otherwise.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -731,11 +732,14 @@ The possible returned values are:
 </dd>
 <dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second input vector.</p>
 </dd>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance for determining collinearity. The default is 0.0001.</p>
+</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True if the input vectors are collinear (parallel or anti-parallel). False otherwise.</p>
+<dt>bool</dt><dd><p>True if the input vectors are collinear (parallel or anti-parallel). 
+False otherwise.</p>
 </dd>
 </dl>
 </dd>
@@ -744,14 +748,17 @@ The possible returned values are:
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.IsParallel">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsParallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.IsParallel" title="Permalink to this definition"></a></dt>
-<dd><p>Returns True if the input vectors are parallel. Returns False otherwise.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsParallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.IsParallel" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True if the input vectors are parallel within a given tolerance.
+Returns False otherwise.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vectorA</strong><span class="classifier">list</span></dt><dd><p>The first input vector.</p>
 </dd>
 <dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second input vector.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance for determining parallelism. The default is 0.0001.</p>
 </dd>
 </dl>
 </dd>

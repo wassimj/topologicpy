@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Face module &mdash; topologicpy 0.8.10 documentation</title>
+  <title>topologicpy.Face module &mdash; topologicpy 0.8.11 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.10
+                0.8.11
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -306,28 +306,31 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.TShape" title="topologicpy.Face.Face.TShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TShape</span></code></a>([origin, width, length, a, b, ...])</p></td>
 <td><p>Creates a T-shape.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Trapezoid" title="topologicpy.Face.Face.Trapezoid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trapezoid</span></code></a>([origin, widthA, widthB, offsetA, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ThirdVertex" title="topologicpy.Face.Face.ThirdVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ThirdVertex</span></code></a>(face[, tolerance, silent])</p></td>
+<td><p>Returns a third vertex on the input face to enable rotation matrix creation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Trapezoid" title="topologicpy.Face.Face.Trapezoid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trapezoid</span></code></a>([origin, widthA, widthB, offsetA, ...])</p></td>
 <td><p>Creates a trapezoid.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Triangulate" title="topologicpy.Face.Face.Triangulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triangulate</span></code></a>(face[, mode, meshSize, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Triangulate" title="topologicpy.Face.Face.Triangulate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triangulate</span></code></a>(face[, mode, meshSize, ...])</p></td>
 <td><p>Triangulates the input face and returns a list of faces.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.TrimByWire" title="topologicpy.Face.Face.TrimByWire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByWire</span></code></a>(face, wire[, reverse])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.TrimByWire" title="topologicpy.Face.Face.TrimByWire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrimByWire</span></code></a>(face, wire[, reverse])</p></td>
 <td><p>Trims the input face by the input wire.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.VertexByParameters" title="topologicpy.Face.Face.VertexByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameters</span></code></a>(face[, u, v])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.VertexByParameters" title="topologicpy.Face.Face.VertexByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexByParameters</span></code></a>(face[, u, v])</p></td>
 <td><p>Creates a vertex at the <em>u</em> and <em>v</em> parameters of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.VertexParameters" title="topologicpy.Face.Face.VertexParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexParameters</span></code></a>(face, vertex[, outputType, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.VertexParameters" title="topologicpy.Face.Face.VertexParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexParameters</span></code></a>(face, vertex[, outputType, ...])</p></td>
 <td><p>Returns the <em>u</em> and <em>v</em> parameters of the input face at the location of the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Vertices" title="topologicpy.Face.Face.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(face)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Vertices" title="topologicpy.Face.Face.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(face)</p></td>
 <td><p>Returns the vertices of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Wire" title="topologicpy.Face.Face.Wire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wire</span></code></a>(face)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Wire" title="topologicpy.Face.Face.Wire"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wire</span></code></a>(face)</p></td>
 <td><p>Returns the external boundary (closed wire) of the input face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Wires" title="topologicpy.Face.Face.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(face)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Wires" title="topologicpy.Face.Face.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(face)</p></td>
 <td><p>Returns the wires of the input face.</p></td>
 </tr>
 </tbody>
@@ -1836,6 +1839,30 @@ A value of 1 will create a circle. Higher values will create a more square-like 
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Face</dt><dd><p>The created T-shape.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Face.Face.ThirdVertex">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ThirdVertex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.ThirdVertex" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a third vertex on the input face to enable rotation matrix creation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>

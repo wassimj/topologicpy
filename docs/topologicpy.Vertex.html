@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vertex module &mdash; topologicpy 0.8.10 documentation</title>
+  <title>topologicpy.Vertex module &mdash; topologicpy 0.8.11 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.10
+                0.8.11
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -243,13 +243,16 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Separate" title="topologicpy.Vertex.Vertex.Separate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Separate</span></code></a>(*vertices[, minDistance, silent])</p></td>
 <td><p>Separates the input vertices such that no two vertices are within the input minimum distance.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.X" title="topologicpy.Vertex.Vertex.X"><code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code></a>(vertex[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Transform" title="topologicpy.Vertex.Vertex.Transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transform</span></code></a>(vertex, matrix[, mantissa, silent])</p></td>
+<td><p>Transforms a 3D vertex using a 4x4 transformation matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.X" title="topologicpy.Vertex.Vertex.X"><code class="xref py py-obj docutils literal notranslate"><span class="pre">X</span></code></a>(vertex[, mantissa])</p></td>
 <td><p>Returns the X coordinate of the input vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Y" title="topologicpy.Vertex.Vertex.Y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Y</span></code></a>(vertex[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Y" title="topologicpy.Vertex.Vertex.Y"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Y</span></code></a>(vertex[, mantissa])</p></td>
 <td><p>Returns the Y coordinate of the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Z" title="topologicpy.Vertex.Vertex.Z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Z</span></code></a>(vertex[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Z" title="topologicpy.Vertex.Vertex.Z"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Z</span></code></a>(vertex[, mantissa])</p></td>
 <td><p>Returns the Z coordinate of the input vertex.</p></td>
 </tr>
 </tbody>
@@ -1019,6 +1022,32 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The list of vertices with adjusted positions</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Vertex.Vertex.Transform">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vertex.Vertex.Transform" title="Permalink to this definition"></a></dt>
+<dd><p>Transforms a 3D vertex using a 4x4 transformation matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex</p>
+</dd>
+<dt><strong>matrix</strong><span class="classifier">list</span></dt><dd><p>The 4x4 transformation matrix.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Vertex</dt><dd><p>The transformed vertex.</p>
 </dd>
 </dl>
 </dd>
