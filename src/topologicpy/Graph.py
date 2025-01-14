@@ -522,7 +522,7 @@ class Graph:
         return adjDict
     
     @staticmethod
-    def AdjacencyMatrix(graph, vertexKey=None, reverse=False, edgeKeyFwd=None, edgeKeyBwd=None, bidirKey=None, bidirectional=True, useEdgeIndex=False, useEdgeLength=False, tolerance=0.0001):
+    def AdjacencyMatrix(graph, vertexKey=None, reverse=False, edgeKeyFwd=None, edgeKeyBwd=None, bidirKey=None, bidirectional=True, useEdgeIndex=False, useEdgeLength=False, mantissa: int = 6, tolerance=0.0001):
         """
         Returns the adjacency matrix of the input Graph. See https://en.wikipedia.org/wiki/Adjacency_matrix.
 
@@ -542,10 +542,12 @@ class Graph:
             If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. The default is None
         bidirectional : bool , optional
             If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. The default is True.
-        useEdgeIndex : bool , False
+        useEdgeIndex : bool , optional
             If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
-        useEdgeLength : bool , False
+        useEdgeLength : bool , optional
             If set to True, the adjacency matrix values will the length of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -599,12 +601,16 @@ class Graph:
                     bidir = bidirectional
             if edgeKeyFwd == None:
                 valueFwd = 1
+            elif "len" in edgeKeyFwd.lower() or "dis" in edgeKeyFwd.lower():
+                valueFwd = Edge.Length(edge, mantissa=mantissa)
             else:
                 valueFwd = Dictionary.ValueAtKey(Topology.Dictionary(edge), edgeKeyFwd)
                 if valueFwd == None:
                     valueFwd = 1
             if edgeKeyBwd == None:
                 valueBwd = 1
+            elif "len" in edgeKeyBwd.lower() or "dis" in edgeKeyBwd.lower():
+                valueBwd = Edge.Length(edge, mantissa=mantissa)
             else:
                 valueBwd = Dictionary.ValueAtKey(Topology.Dictionary(edge), edgeKeyBwd)
                 if valueBwd == None:
@@ -613,8 +619,8 @@ class Graph:
                 valueFwd = i+1
                 valueBwd = i+1
             if useEdgeLength:
-                valueFwd = Edge.Length(edge)
-                valueBwd = Edge.Length(edge)
+                valueFwd = Edge.Length(edge, mantissa=mantissa)
+                valueBwd = Edge.Length(edge, mantissa=mantissa)
             if not svi == None and not evi == None:
                 matrix[svi][evi] = valueFwd
                 if bidir:
@@ -1363,21 +1369,20 @@ class Graph:
         method : str , optional
             The method of computing the betweenness centrality. The options are "vertex" or "edge". The default is "vertex".
         weightKey : str , optional
-            If None, all edge weights are considered equal. Otherwise holds the name of the edge dictionary key to be used as weight.
-            Weights are used to calculate weighted shortest paths, so they are interpreted as distances.
-            If you wish to use the actual length of the edge, then use the "length" as key. the default is "length".
+            If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
+            the shortest path. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
+            This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
         normalize : bool , optional
             If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
         nx : bool , optional
             If set to True, and normalize input parameter is also set to True, the values are set to be identical to NetworkX values. Otherwise, they are normalized between 0 and 1. The default is False.
         key : str , optional
-            The desired dictionary key under which to store the betweeness centrality score. The default is "betweenness_centrality".
+            The desired dictionary key under which to store the betweenness centrality score. The default is "betweenness_centrality".
         colorKey : str , optional
-            The desired dictionary key under which to store the betweeness centrality color. The default is "betweenness_centrality".
+            The desired dictionary key under which to store the betweenness centrality color. The default is "betweenness_centrality".
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
             In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
-
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -1412,7 +1417,7 @@ class Graph:
         from topologicpy.Helper import Helper
 
         if weightKey:
-            if "len" in weightKey.lower():
+            if "len" in weightKey.lower() or "dis" in wireightKey.lower():
                 weightKey = "length"
         nx_graph = Graph.NetworkXGraph(graph)
         if "vert" in method.lower():
@@ -1422,9 +1427,12 @@ class Graph:
         else:
             elements = Graph.Edges(graph)
             elements_dict = nx.edge_betweenness_centrality(nx_graph, normalized=normalize, weight=weightKey)
-            values = list(elements_dict.values())
+            values = [round(value, mantissa) for value in list(elements_dict.values())]
         if nx == False:
-            values = Helper.Normalize(values)
+            if mantissa > 0: # We cannot have values in the range 0 to 1 with a mantissa < 1
+                values = [round(v, mantissa) for v in Helper.Normalize(values)]
+            else:
+                values = Helper.Normalize(values)
             min_value = 0
             max_value = 1
         else:
@@ -4677,7 +4685,6 @@ class Graph:
         graph = Graph.RemoveVertex(graph,ev, tolerance=tolerance)
         return graph
     
-
     @staticmethod
     def ClosenessCentrality(graph, weightKey="length", normalize: bool = False, nx: bool = True, key: str = "closeness_centrality", colorKey="cc_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
         """
@@ -4688,9 +4695,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         weightKey : str , optional
-            If None, all edge weights are considered equal. Otherwise holds the name of the edge dictionary key to be used as weight.
-            Weights are used to calculate weighted shortest paths, so they are interpreted as distances.
-            If you wish to use the actual length of the edge, then use the "length" as key. the default is "length".
+            If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
+            the shortest path. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
+            This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
         normalize : bool , optional
             If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
         nx : bool , optional
@@ -4719,7 +4726,7 @@ class Graph:
         try:
             import networkx as nx
         except:
-            print("Graph.BetwennessCentrality - Information: Installing required networkx library.")
+            print("Graph.ClosenessCentrality - Information: Installing required networkx library.")
             try:
                 os.system("pip install networkx")
             except:
@@ -4742,14 +4749,17 @@ class Graph:
             return None
         
         if weightKey:
-            if "len" in weightKey.lower():
+            if "len" in weightKey.lower() or "dis" in weightKey.lower():
                 weightKey = "length"
         nx_graph = Graph.NetworkXGraph(graph)
         elements = Graph.Vertices(graph)
         elements_dict = nx.closeness_centrality(nx_graph, distance=weightKey, wf_improved=nx)
-        values = list(elements_dict.values())
+        values = [round(v, mantissa) for v in list(elements_dict.values())]
         if normalize == True:
-            values = Helper.Normalize(values)
+            if mantissa > 0: # We cannot round numbers from 0 to 1 with a mantissa = 0.
+                values = [round(v, mantissa) for v in Helper.Normalize(values)]
+            else:
+                values = Helper.Normalize(values)
             min_value = 0
             max_value = 1
         else:
@@ -4930,7 +4940,7 @@ class Graph:
         return graph
     
     @staticmethod
-    def Connectivity(graph, vertices=None, key: str = "connectivity", edgeKey: str = None, tolerance = 0.0001, silent = False):
+    def Connectivity(graph, vertices=None, weightKey: str = None, normalize: bool = False, key: str = "connectivity", colorKey: str = "cn_color", colorScale="Viridis", mantissa: int = 6, tolerance = 0.0001, silent = False):
         """
         Return the connectivity measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the connectivity of all the vertices in the input graph is computed. See https://www.spacesyntax.online/term/connectivity/.
 
@@ -4939,15 +4949,22 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertices : list , optional
-            The input list of vertices. The default is None.
+            The input list of vertices. The default is None which means all graph vertices are computed.
+        normalize : bool , optional
+            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
+        weightKey : str , optional
+            If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
+            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
+            This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
         key : str , optional
             The dictionary key under which to store the connectivity score. The default is "connectivity".
-        edgeKey : str , optional
-            If specified, the value in the connected edges' dictionary specified by the edgeKey string will be aggregated to calculate
-            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
+        colorKey : str , optional
+            The desired dictionary key under which to store the connectivity color. The default is "cn_color".
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -4956,25 +4973,40 @@ class Graph:
         Returns
         -------
         list
-            The closeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
+            The connectivity score of the input list of vertices within the input graph. The values are in the range 0 to 1 if normalized.
 
         """
         
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+        from topologicpy.Color import Color
 
         if not Topology.IsInstance(graph, "Graph"):
             if not silent:
-                print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
+                print("Graph.Connectivity - Error: The input graph is not a valid graph. Returning None.")
             return None
         if vertices == None:
             vertices = Graph.Vertices(graph)
-        connectivities = [Graph.VertexDegree(graph, v, edgeKey=edgeKey, tolerance=tolerance, silent=silent) for v in vertices]
-        for i, v in enumerate(vertices):
-            d = Topology.Dictionary(v)
-            d = Dictionary.SetValueAtKey(d, key, connectivities[i])
-            v = Topology.SetDictionary(v, d)
-        return connectivities
+        values = [Graph.VertexDegree(graph, v, weightKey=weightKey, mantissa=mantissa, tolerance=tolerance, silent=silent) for v in vertices]
+        values = [round(v, mantissa) for v in values]
+        if normalize == True:
+            if mantissa > 0:
+                values = [round(v, mantissa) for v in Helper.Normalize(values)]
+            else:
+                values = Helper.Normalize(values)
+            min_value = 0
+            max_value = 1
+        else:
+            min_value = min(values)
+            max_value = max(values)
+
+        for i, value in enumerate(values):
+            color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+            d = Topology.Dictionary(vertices[i])
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
+            v = Topology.SetDictionary(vertices[i], d)
+        return values
     
     @staticmethod
     def ContainsEdge(graph, edge, tolerance=0.0001):
@@ -5097,23 +5129,38 @@ class Graph:
             vertex = Topology.SetDictionary(vertex, d)
                 
         return cut_vertices
-
+    
     @staticmethod
-    def Degree(graph, vertices=None, key: str = "degree", edgeKey: str = None, mantissa: int = 6, tolerance = 0.0001):
+    def DegreeCentrality(graph,
+                         vertices: list = None,
+                         weightKey: str= None,
+                         normalize: bool = False,
+                         key: str = "degree_centrality",
+                         colorKey="dc_color",
+                         colorScale="viridis",
+                         mantissa: int = 6,
+                         tolerance: float = 0.001,
+                         silent: bool = False):
         """
-        Return the degree measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the closeness centrality of all the vertices in the input graph is computed. See https://en.wikipedia.org/wiki/Degree_(graph_theory).
+            Returns the degree centrality of the input graph. The order of the returned list is the same as the order of vertices. See https://en.wikipedia.org/wiki/Degree_centrality.
 
         Parameters
         ----------
         graph : topologic_core.Graph
             The input graph.
-        vertices : list , optional
-            The input list of vertices. The default is None.
+        weightKey : str , optional
+            If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
+            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
+            This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
+       normalize : bool , optional
+            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
         key : str , optional
-            The dictionary key under which to store the closeness centrality score. The default is "degree".
-        edgeKey : str , optional
-            If specified, the value in the connected edges' dictionary specified by the edgeKey string will be aggregated to calculate
-            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.
+            The desired dictionary key under which to store the degree centrality score. The default is "degree_centrality".
+        colorKey : str , optional
+            The desired dictionary key under which to store the degree centrality color. The default is "dc_color".
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
@@ -5122,35 +5169,30 @@ class Graph:
         Returns
         -------
         list
-            The degree of the input list of vertices within the input graph.
+            The betweenness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
 
         """
-        from topologicpy.Topology import Topology
+        
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
 
-        if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.DegreeCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
-        graphVertices = Graph.Vertices(graph)
-        if not isinstance(vertices, list):
-            vertices = graphVertices
-        else:
-            vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) < 1:
-            print("Graph.Degree - Error: The input list of vertices does not contain any valid vertices. Returning None.")
-            return None
-        n = len(graphVertices)
 
-        scores = []
-        for i, v in enumerate(vertices):
-            degree = Graph.VertexDegree(graph, v, edgeKey= edgeKey, tolerance = tolerance)
-            if isinstance(degree, float):
-                degree = round(degree, mantissa)
-            d = Topology.Dictionary(v)
-            d = Dictionary.SetValueAtKey(d, key, degree)
-            v = Topology.SetDictionary(v, d)
-            scores.append(degree)
-        return scores
+        return Graph.Connectivity(graph,
+                                  vertices=vertices,
+                                  weightKey=weightKey,
+                                  normalize=normalize,
+                                  key=key,
+                                  colorKey=colorKey,
+                                  colorScale=colorScale,
+                                  mantissa=mantissa,
+                                  tolerance=tolerance,
+                                  silent=silent)
     
     @staticmethod
     def DegreeMatrix(graph):
@@ -8372,7 +8414,7 @@ class Graph:
         return laplacian.tolist()
 
     @staticmethod
-    def Leaves(graph, edgeKey: str = None, tolerance: float = 0.0001, silent: bool = False):
+    def Leaves(graph, weightKey: str = None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns a list of all vertices that have a degree of 1, also called leaf nodes.
 
@@ -8380,9 +8422,12 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
-        edgeKey : str , optional
-            If specified, the value in the connected edges' dictionary specified by the edgeKey string will be aggregated to calculate
-            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.
+        weightKey : str , optional
+            If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
+            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
+            This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -8400,7 +8445,7 @@ class Graph:
             if not silent:
                 print("Graph.Leaves - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
-        return [v for v in Graph.Vertices(graph) if Graph.VertexDegree(graph, v, edgeKey=edgeKey, tolerance=tolerance, silent=silent) == 1]
+        return [v for v in Graph.Vertices(graph) if Graph.VertexDegree(graph, v, weightKey=weightKey, mantissa=mantissa, tolerance=tolerance, silent=silent) == 1]
     
     @staticmethod
     def LineGraph(graph, transferVertexDictionaries=False, transferEdgeDictionaries=False, tolerance=0.0001, silent=False):
@@ -9228,93 +9273,6 @@ class Graph:
             nxGraph.add_edge(sv_i, ev_i, **edge_attributes)
 
         pos = nx.spring_layout(nxGraph, k=0.2)
-        nx.set_node_attributes(nxGraph, pos, "pos")
-        return nxGraph
-
-    @staticmethod
-    def NetworkXGraph_old(graph, xKey='x', yKey='y', zKey='z', mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Converts the input graph into a NetworkX Graph. See http://networkx.org
-
-        Parameters
-        ----------
-        graph : topologic_core.Graph
-            The input graph.
-        xKey : str , optional
-            The dictionary key under which to store the X-Coordinate of the vertex. The default is 'x'.
-        yKey : str , optional
-            The dictionary key under which to store the Y-Coordinate of the vertex. The default is 'y'.
-        zKey : str , optional
-            The dictionary key under which to store the Z-Coordinate of the vertex. The default is 'z'.
-        mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-        silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
-
-        Returns
-        -------
-        networkX Graph
-            The created networkX Graph
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        import warnings
-
-        try:
-            import networkx as nx
-        except:
-            print("Graph.NetworkXGraph - Information: Installing required networkx library.")
-            try:
-                os.system("pip install networkx")
-            except:
-                os.system("pip install networkx --user")
-            try:
-                import networkx as nx
-                print("Graph.NetworkXGraph - Infromation: networkx library installed correctly.")
-            except:
-                warnings.warn("Graph - Error: Could not import networkx. Please try to install networkx manually. Returning None.")
-                return None
-        
-        if not Topology.IsInstance(graph, "Graph"):
-            if not silent:
-                print("Graph.NetworkXGraph - Error: The input graph is not a valid graph. Returning None.")
-            return None
-
-        nxGraph = nx.Graph()
-        vertices = Graph.Vertices(graph)
-        order = len(vertices)
-        nodes = []
-        for i in range(order):
-            v = vertices[i]
-            d = Topology.Dictionary(vertices[i])
-            if d:
-                keys = Dictionary.Keys(d)
-                if not keys:
-                    keys = []
-                values = Dictionary.Values(d)
-                if not values:
-                    values = []
-                keys += [xKey,yKey,zKey]
-                values += [Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)]
-                d = Dictionary.ByKeysValues(keys,values)
-                pythonD = Dictionary.PythonDictionary(d)
-                nodes.append((i, pythonD))
-            else:
-                nodes.append((i, {"name": str(i)}))
-        nxGraph.add_nodes_from(nodes)
-        for i in range(order):
-            v = vertices[i]
-            adjVertices = Graph.AdjacentVertices(graph, vertices[i])
-            for adjVertex in adjVertices:
-                adjIndex = Vertex.Index(vertex=adjVertex, vertices=vertices, strict=True, tolerance=tolerance)
-                if not adjIndex == None:
-                    nxGraph.add_edge(i,adjIndex, length=(Vertex.Distance(v, adjVertex, mantissa=mantissa)))
-
-        pos=nx.spring_layout(nxGraph, k=0.2)
         nx.set_node_attributes(nxGraph, pos, "pos")
         return nxGraph
 
@@ -10514,7 +10472,7 @@ class Graph:
         return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'])
     
     @staticmethod
-    def VertexDegree(graph, vertex, edgeKey: str = None, tolerance: float = 0.0001, silent: bool = False):
+    def VertexDegree(graph, vertex, weightKey: str = None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the degree of the input vertex. See https://en.wikipedia.org/wiki/Degree_(graph_theory).
 
@@ -10524,9 +10482,12 @@ class Graph:
             The input graph.
         vertex : topologic_core.Vertex
             The input vertex.
-        edgeKey : str , optional
-            If specified, the value in the connected edges' dictionary specified by the edgeKey string will be aggregated to calculate
-            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead. This is used in weighted graphs.
+        weightKey : str , optional
+            If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
+            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
+            This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -10538,6 +10499,7 @@ class Graph:
             The degree of the input vertex.
 
         """
+        from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         import numbers
@@ -10550,18 +10512,20 @@ class Graph:
             if not silent:
                 print("Graph.VertexDegree - Error: The input vertex is not a valid vertex. Returning None.")
             return None
-        if not isinstance(edgeKey, str):
-            edgeKey = ""
         edges = Graph.Edges(graph, [vertex], tolerance=tolerance)
         degree = 0
         for edge in edges:
-            d = Topology.Dictionary(edge)
-            value = Dictionary.ValueAtKey(d, edgeKey)
-            if isinstance(value, numbers.Number):
-                degree += value
+            if weightKey == None:
+                value = 1
+            elif "len" in weightKey.lower() or "dis" in weightKey.lower():
+                value = Edge.Length(edge, mantissa=mantissa)
             else:
-                degree += 1
-        return degree
+                d = Topology.Dictionary(edge)
+                value = Dictionary.ValueAtKey(d, weightKey)
+                if not isinstance(value, numbers.Number):
+                    value = 1
+            degree += value
+        return round(degree, mantissa)
     
     @staticmethod
     def Vertices(graph, vertexKey=None, reverse=False):
