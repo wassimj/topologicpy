@@ -2185,62 +2185,154 @@ class Cell():
         return Cell.Area(cell=cell, mantissa=mantissa)
     
     @staticmethod
-    def Tetrahedron(origin= None, radius: float = 0.5,
-                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
+    def Tetrahedron(origin = None, length: float = 1, depth: int = 1, direction=[0,0,1], placement="center", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a tetrahedron. See https://en.wikipedia.org/wiki/Tetrahedron.
+        Creates a recursive tetrahedron cell.
 
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
             The origin location of the tetrahedron. The default is None which results in the tetrahedron being placed at (0, 0, 0).
-        radius : float , optional
-            The radius of the tetrahedron's circumscribed sphere. The default is 0.5.
+        length : float , optional
+            The length of the edge of the tetrahedron. The default is 1.
+        depth : int , optional
+            The desired maximum number of recrusive subdivision levels.
         direction : list , optional
             The vector representing the up direction of the tetrahedron. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the tetrahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         
         Returns
         -------
-        topologic_core.Cell
+        topologic_core.CellComplex
             The created tetrahedron.
 
         """
-        
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        import math
+        from topologicpy.Dictionary import Dictionary
 
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Vertex.ByCoordinates(0, 0, 0)
-        if not Topology.IsInstance(origin, "Vertex"):
-            print("Cell.Tetrahedron - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
-            return None
+        from math import sqrt
 
-        vb1 = Vertex.ByCoordinates(math.sqrt(8/9), 0, -1/3)
-        vb2 = Vertex.ByCoordinates(-math.sqrt(2/9), math.sqrt(2/3), -1/3)
-        vb3 = Vertex.ByCoordinates(-math.sqrt(2/9), -math.sqrt(2/3), -1/3)
-        vb4 = Vertex.ByCoordinates(0, 0, 1)
-        f1 = Face.ByVertices([vb1, vb2, vb3])
-        f2 = Face.ByVertices([vb4, vb1, vb2])
-        f3 = Face.ByVertices([vb4, vb2, vb3])
-        f4 = Face.ByVertices([vb4, vb3, vb1])
-        tetrahedron = Cell.ByFaces([f1, f2, f3, f4])
-        tetrahedron = Topology.Scale(tetrahedron, origin=Vertex.Origin(), x=0.5, y=0.5, z=0.5)
-        tetrahedron = Topology.Scale(tetrahedron, origin=Vertex.Origin(), x=radius/0.5, y=radius/0.5, z=radius/0.5)
+        def subdivide_tetrahedron(tetrahedron, depth):
+            """
+            Recursively subdivides a tetrahedron into smaller tetrahedra.
 
-        if placement.lower() == "lowerleft":
-            tetrahedron = Topology.Translate(tetrahedron, radius, radius, radius)
+            Parameters:
+                tetrahedron (Cell): The tetrahedron to subdivide.
+                depth (int): Recursion depth for the subdivision.
+
+            Returns:
+                list: List of smaller tetrahedral cells.
+            """
+            if depth == 0:
+                return [tetrahedron]
+
+            # Extract the vertices of the tetrahedron
+            vertices = Topology.Vertices(tetrahedron)
+            v0, v1, v2, v3 = vertices
+
+            # Calculate midpoints of the edges
+            m01 = Vertex.ByCoordinates((v0.X() + v1.X()) / 2, (v0.Y() + v1.Y()) / 2, (v0.Z() + v1.Z()) / 2)
+            m02 = Vertex.ByCoordinates((v0.X() + v2.X()) / 2, (v0.Y() + v2.Y()) / 2, (v0.Z() + v2.Z()) / 2)
+            m03 = Vertex.ByCoordinates((v0.X() + v3.X()) / 2, (v0.Y() + v3.Y()) / 2, (v0.Z() + v3.Z()) / 2)
+            m12 = Vertex.ByCoordinates((v1.X() + v2.X()) / 2, (v1.Y() + v2.Y()) / 2, (v1.Z() + v2.Z()) / 2)
+            m13 = Vertex.ByCoordinates((v1.X() + v3.X()) / 2, (v1.Y() + v3.Y()) / 2, (v1.Z() + v3.Z()) / 2)
+            m23 = Vertex.ByCoordinates((v2.X() + v3.X()) / 2, (v2.Y() + v3.Y()) / 2, (v2.Z() + v3.Z()) / 2)
+
+            # Create smaller tetrahedra
+            tetrahedra = [
+                Cell.ByFaces([
+                    Face.ByVertices([v0, m01, m02]),
+                    Face.ByVertices([v0, m01, m03]),
+                    Face.ByVertices([v0, m02, m03]),
+                    Face.ByVertices([m01, m02, m03])
+                ]),
+                Cell.ByFaces([
+                    Face.ByVertices([m01, v1, m12]),
+                    Face.ByVertices([m01, v1, m13]),
+                    Face.ByVertices([m01, m12, m13]),
+                    Face.ByVertices([v1, m12, m13])
+                ]),
+                Cell.ByFaces([
+                    Face.ByVertices([m02, m12, v2]),
+                    Face.ByVertices([m02, m12, m23]),
+                    Face.ByVertices([m02, v2, m23]),
+                    Face.ByVertices([m12, v2, m23])
+                ]),
+                Cell.ByFaces([
+                    Face.ByVertices([m03, m13, m23]),
+                    Face.ByVertices([m03, v3, m13]),
+                    Face.ByVertices([m03, v3, m23]),
+                    Face.ByVertices([m13, v3, m23])
+                ])
+            ]
+
+            # Recursively subdivide the smaller tetrahedra
+            result = []
+            for t in tetrahedra:
+                result.extend(subdivide_tetrahedron(t, depth - 1))
+            return result
+
+        if not Topology.IsInstance(origin, "vertex"):
+            origin = Vertex.Origin()
+        
+        # Define the four vertices of the tetrahedron
+        v0 = Vertex.ByCoordinates(0, 0, 0)
+        v1 = Vertex.ByCoordinates(length, 0, 0)
+        v2 = Vertex.ByCoordinates(length/2, sqrt(3)/2*length, 0)
+        v3 = Vertex.ByCoordinates(length/2, sqrt(3)/2*length/3, sqrt(2/3)*length)
+
+        # Create the initial tetrahedron
+        tetrahedron = Cell.ByFaces([
+            Face.ByVertices([v0, v1, v2]),
+            Face.ByVertices([v0, v1, v3]),
+            Face.ByVertices([v1, v2, v3]),
+            Face.ByVertices([v2, v0, v3]),
+        ])
+
+        bbox = Topology.BoundingBox(tetrahedron)
+        d = Topology.Dictionary(bbox)
+        bb_width = Dictionary.ValueAtKey(d, "width")
+        bb_length = Dictionary.ValueAtKey(d, "length")
+        bb_height = Dictionary.ValueAtKey(d, "height")
+        
+        centroid = Topology.Centroid(tetrahedron)
+        c_x, c_y, c_z = Vertex.Coordinates(centroid, mantissa=mantissa)
+
+        if placement.lower() == "center":
+            tetrahedron = Topology.Translate(tetrahedron, -c_x, -c_y, -c_z)
         elif placement.lower() == "bottom":
-            tetrahedron = Topology.Translate(tetrahedron, 0, 0, radius)
-        tetrahedron = Topology.Place(tetrahedron, originA=Vertex.Origin(), originB=origin)
-        tetrahedron = Topology.Orient(tetrahedron, origin=origin, dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
-        return tetrahedron
+            tetrahedron = Topology.Translate(tetrahedron,-c_x, -c_y, 0)
+        elif placement.lower() == "upperleft":
+            tetrahedron = Topology.Translate(tetrahedron, 0, 0, -bb_height)
+        elif placement.lower() == "upperright":
+            tetrahedron = Topology.Translate(tetrahedron, -bb_width, -bb_length, -bb_height)
+        elif placement.lower() == "bottomright":
+            tetrahedron = Topology.Translate(tetrahedron, -bb_width, -bb_length, 0)
+        elif placement.lower() == "top":
+            tetrahedron = Topology.Translate(tetrahedron,-c_x, -c_y, -bb_height)
+        
+        tetrahedron = Topology.Place(tetrahedron, Vertex.Origin(), origin)
+        if not direction == [0,0,1]:
+            tetrahedron = Topology.Orient(tetrahedron, origin=origin, dirA=[0,0,1], dirB=direction)
+
+        depth = max(depth, 0)
+        if depth == 0:
+            return tetrahedron
+        else:
+            # Recursively subdivide the tetrahedron
+            subdivided_tetrahedra = subdivide_tetrahedron(tetrahedron, depth)
+            # Create a cell complex from the subdivided tetrahedra
+            return CellComplex.ExternalBoundary(CellComplex.ByCells([tetrahedron]+subdivided_tetrahedra))
     
     @staticmethod
     def Torus(origin= None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):

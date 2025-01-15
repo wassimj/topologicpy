@@ -300,33 +300,27 @@ class Honeybee:
         sensorGrids = []
         for spaceNumber, tpCell in enumerate(tpCells):
             tpDictionary = Topology.Dictionary(tpCell)
-            tpCellName = None
-            tpCellStory = None
+            tpCellName = "Untitled Space"
+            tpCellStory = fl[0]
             tpCellProgramIdentifier = None
             tpCellConstructionSetIdentifier = None
             tpCellConditioned = True
             if tpDictionary:
                 keyName = getKeyName(tpDictionary, 'Story')
-                try:
-                    tpCellStory = Dictionary.ValueAtKey(tpDictionary, keyName)
-                    if tpCellStory:
-                        tpCellStory = tpCellStory.replace(" ","_")
-                except:
-                    tpCellStory = fl[spaceNumber]
+                tpCellStory = Dictionary.ValueAtKey(tpDictionary, keyName, silent=True) or fl[spaceNumber]
+                if tpCellStory:
+                    tpCellStory = tpCellStory.replace(" ","_")
+                else:
+                    tpCellStory = "Untitled_Floor"
                 if roomNameKey:
                     keyName = getKeyName(tpDictionary, roomNameKey)
                 else:
                     keyName = getKeyName(tpDictionary, 'Name')
-                try:
-                    tpCellName = Dictionary.ValueAtKey(tpDictionary,keyName)
-                    if tpCellName:
-                        tpCellName = createUniqueName(tpCellName.replace(" ","_"), spaceNames, 1)
-                except:
-                    tpCellName = tpCellStory+"_SPACE_"+(str(spaceNumber+1))
+                tpCellName = Dictionary.ValueAtKey(tpDictionary,keyName, silent=True) or createUniqueName(tpCellStory+"_SPACE_"+(str(spaceNumber+1)), spaceNames, 1)
                 if roomTypeKey:
                     keyName = getKeyName(tpDictionary, roomTypeKey)
                 try:
-                    tpCellProgramIdentifier = Dictionary.ValueAtKey(tpDictionary, keyName)
+                    tpCellProgramIdentifier = Dictionary.ValueAtKey(tpDictionary, keyName, silent=True)
                     if tpCellProgramIdentifier:
                         program = prog_type_lib.program_type_by_identifier(tpCellProgramIdentifier)
                     elif defaultProgramIdentifier:
@@ -335,7 +329,7 @@ class Honeybee:
                     program = prog_type_lib.office_program #Default Office Program as a last resort
                 keyName = getKeyName(tpDictionary, 'construction_set')
                 try:
-                    tpCellConstructionSetIdentifier = Dictionary.ValueAtKey(tpDictionary, keyName)
+                    tpCellConstructionSetIdentifier = Dictionary.ValueAtKey(tpDictionary, keyName, silent=True)
                     if tpCellConstructionSetIdentifier:
                         constr_set = constr_set_lib.construction_set_by_identifier(tpCellConstructionSetIdentifier)
                     elif defaultConstructionSetIdentifier:
@@ -344,7 +338,7 @@ class Honeybee:
                     constr_set = constr_set_lib.construction_set_by_identifier("Default Generic Construction Set")
             else:
                 tpCellStory = fl[spaceNumber]
-                tpCellName = tpCellStory+"_SPACE_"+(str(spaceNumber+1))
+                tpCellName = str(tpCellStory)+"_SPACE_"+(str(spaceNumber+1))
                 program = prog_type_lib.office_program
                 constr_set = constr_set_lib.construction_set_by_identifier("Default Generic Construction Set")
             spaceNames.append(tpCellName)
@@ -366,7 +360,7 @@ class Honeybee:
                             tpFaceApertureDictionary = Topology.Dictionary(apertureTopology)
                             if tpFaceApertureDictionary:
                                 apertureKeyName = getKeyName(tpFaceApertureDictionary, apertureTypeKey)
-                                tpFaceApertureType = Dictionary.ValueAtKey(tpFaceApertureDictionary,apertureKeyName)
+                                tpFaceApertureType = Dictionary.ValueAtKey(tpFaceApertureDictionary,apertureKeyName, silent=True)
                             hbFaceAperturePoints = []
                             tpFaceApertureVertices = []
                             tpFaceApertureVertices = Topology.Vertices(Face.ExternalBoundary(apertureTopology))
@@ -383,7 +377,7 @@ class Honeybee:
                     else:
                         tpFaceDictionary = Topology.Dictionary(tpCellFace)
                         if (abs(tpCellFaceNormal[2]) < 1e-6) and tpFaceDictionary: #It is a mostly vertical wall and has a dictionary
-                            apertureRatio = Dictionary.ValueAtKey(tpFaceDictionary,'apertureRatio')
+                            apertureRatio = Dictionary.ValueAtKey(tpFaceDictionary,'apertureRatio', silent=True)
                             if apertureRatio:
                                 hbRoomFace.apertures_by_ratio(apertureRatio, tolerance=0.01)
                     fType = honeybee.facetype.get_type_from_normal(Vector3D(tpCellFaceNormal[0],tpCellFaceNormal[1],tpCellFaceNormal[2]), roof_angle=30, floor_angle=150)
