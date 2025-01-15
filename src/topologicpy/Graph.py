@@ -1358,7 +1358,7 @@ class Graph:
         return bot_graph.serialize(format=format)
 
     @staticmethod
-    def BetweennessCentrality(graph, method: str = "vertex", weightKey="length", normalize: bool = False, nx: bool = False, key: str = "betweenness_centrality", colorKey="bc_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
+    def BetweennessCentrality(graph, method: str = "vertex", weightKey="length", normalize: bool = False, nxCompatible: bool = False, key: str = "betweenness_centrality", colorKey="bc_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
         """
             Returns the betweenness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See https://en.wikipedia.org/wiki/Betweenness_centrality.
 
@@ -1374,7 +1374,7 @@ class Graph:
             This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
         normalize : bool , optional
             If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
-        nx : bool , optional
+        nxCompatible : bool , optional
             If set to True, and normalize input parameter is also set to True, the values are set to be identical to NetworkX values. Otherwise, they are normalized between 0 and 1. The default is False.
         key : str , optional
             The desired dictionary key under which to store the betweenness centrality score. The default is "betweenness_centrality".
@@ -1423,12 +1423,12 @@ class Graph:
         if "vert" in method.lower():
             elements = Graph.Vertices(graph)
             elements_dict = nx.betweenness_centrality(nx_graph, normalized=normalize, weight=weightKey)
-            values = list(elements_dict.values())
+            values = [round(value, mantissa) for value in list(elements_dict.values())]
         else:
             elements = Graph.Edges(graph)
             elements_dict = nx.edge_betweenness_centrality(nx_graph, normalized=normalize, weight=weightKey)
             values = [round(value, mantissa) for value in list(elements_dict.values())]
-        if nx == False:
+        if nxCompatible == False:
             if mantissa > 0: # We cannot have values in the range 0 to 1 with a mantissa < 1
                 values = [round(v, mantissa) for v in Helper.Normalize(values)]
             else:
@@ -4686,7 +4686,7 @@ class Graph:
         return graph
     
     @staticmethod
-    def ClosenessCentrality(graph, weightKey="length", normalize: bool = False, nx: bool = True, key: str = "closeness_centrality", colorKey="cc_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
+    def ClosenessCentrality(graph, weightKey="length", normalize: bool = False, nxCompatible: bool = True, key: str = "closeness_centrality", colorKey="cc_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
         """
             Returns the closeness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See https://en.wikipedia.org/wiki/Betweenness_centrality.
 
@@ -4700,7 +4700,7 @@ class Graph:
             This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
         normalize : bool , optional
             If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
-        nx : bool , optional
+        nxCompatible : bool , optional
             If set to True, use networkX to scale by the fraction of nodes reachable. This gives the Wasserman and Faust improved formula.
             For single component graphs it is the same as the original formula.
         key : str , optional
@@ -4753,7 +4753,7 @@ class Graph:
                 weightKey = "length"
         nx_graph = Graph.NetworkXGraph(graph)
         elements = Graph.Vertices(graph)
-        elements_dict = nx.closeness_centrality(nx_graph, distance=weightKey, wf_improved=nx)
+        elements_dict = nx.closeness_centrality(nx_graph, distance=weightKey, wf_improved=nxCompatible)
         values = [round(v, mantissa) for v in list(elements_dict.values())]
         if normalize == True:
             if mantissa > 0: # We cannot round numbers from 0 to 1 with a mantissa = 0.
