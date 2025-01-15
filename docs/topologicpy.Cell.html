@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cell module &mdash; topologicpy 0.8.13 documentation</title>
+  <title>topologicpy.Cell module &mdash; topologicpy 0.8.14 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.13
+                0.8.14
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -258,8 +258,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.SurfaceArea" title="topologicpy.Cell.Cell.SurfaceArea"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SurfaceArea</span></code></a>(cell[, mantissa])</p></td>
 <td><p>Returns the surface area of the input cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Tetrahedron" title="topologicpy.Cell.Cell.Tetrahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tetrahedron</span></code></a>([origin, radius, direction, ...])</p></td>
-<td><p>Creates a tetrahedron.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Tetrahedron" title="topologicpy.Cell.Cell.Tetrahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tetrahedron</span></code></a>([origin, length, depth, ...])</p></td>
+<td><p>Creates a recursive tetrahedron cell.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Torus" title="topologicpy.Cell.Cell.Torus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Torus</span></code></a>([origin, majorRadius, minorRadius, ...])</p></td>
 <td><p>Creates a torus.</p></td>
@@ -1316,18 +1316,22 @@ This algorithm depends on the polyskel code which is included in the library. Po
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cell.Cell.Tetrahedron">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tetrahedron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.Tetrahedron" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a tetrahedron. See <a class="reference external" href="https://en.wikipedia.org/wiki/Tetrahedron">https://en.wikipedia.org/wiki/Tetrahedron</a>.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tetrahedron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.Tetrahedron" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a recursive tetrahedron cell.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the tetrahedron. The default is None which results in the tetrahedron being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the tetrahedron’s circumscribed sphere. The default is 0.5.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the edge of the tetrahedron. The default is 1.</p>
+</dd>
+<dt><strong>depth</strong><span class="classifier">int , optional</span></dt><dd><p>The desired maximum number of recrusive subdivision levels.</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the tetrahedron. The default is [0, 0, 1].</p>
 </dd>
 <dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the tetrahedron. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
@@ -1335,7 +1339,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cell</dt><dd><p>The created tetrahedron.</p>
+<dt>topologic_core.CellComplex</dt><dd><p>The created tetrahedron.</p>
 </dd>
 </dl>
 </dd>
