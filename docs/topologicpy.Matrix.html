@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Matrix module &mdash; topologicpy 0.8.14 documentation</title>
+  <title>topologicpy.Matrix module &mdash; topologicpy 0.8.15 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.14
+                0.8.15
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -153,31 +153,34 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Add" title="topologicpy.Matrix.Matrix.Add"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Add</span></code></a>(matA, matB)</p></td>
 <td><p>Adds the two input matrices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByScaling" title="topologicpy.Matrix.Matrix.ByScaling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByScaling</span></code></a>([scaleX, scaleY, scaleZ])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByCoordinateSystems" title="topologicpy.Matrix.Matrix.ByCoordinateSystems"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCoordinateSystems</span></code></a>(source, target[, ...])</p></td>
+<td><p>Calculates the 4x4 transformation matrix that maps the source coordinate system to the target coordinate system.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByScaling" title="topologicpy.Matrix.Matrix.ByScaling"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByScaling</span></code></a>([scaleX, scaleY, scaleZ])</p></td>
 <td><p>Creates a 4x4 scaling matrix.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByTranslation" title="topologicpy.Matrix.Matrix.ByTranslation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTranslation</span></code></a>([translateX, translateY, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByTranslation" title="topologicpy.Matrix.Matrix.ByTranslation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTranslation</span></code></a>([translateX, translateY, ...])</p></td>
 <td><p>Creates a 4x4 translation matrix.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByVectors" title="topologicpy.Matrix.Matrix.ByVectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVectors</span></code></a>(vectorA, vectorB[, orientationA, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByVectors" title="topologicpy.Matrix.Matrix.ByVectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVectors</span></code></a>(vectorA, vectorB[, orientationA, ...])</p></td>
 <td><p>Creates a rotation matrix that aligns vectorA with vectorB and adjusts orientationA to match orientationB.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByVectors_old" title="topologicpy.Matrix.Matrix.ByVectors_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVectors_old</span></code></a>(vectorB[, orientationA, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.ByVectors_old" title="topologicpy.Matrix.Matrix.ByVectors_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVectors_old</span></code></a>(vectorB[, orientationA, ...])</p></td>
 <td><p>Creates a rotation matrix that aligns vectorA with vectorB and adjusts orientationA to match orientationB.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Identity" title="topologicpy.Matrix.Matrix.Identity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Identity</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Identity" title="topologicpy.Matrix.Matrix.Identity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Identity</span></code></a>()</p></td>
 <td><p>Creates a 4x4 identity translation matrix.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Invert" title="topologicpy.Matrix.Matrix.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(matA[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Invert" title="topologicpy.Matrix.Matrix.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(matA[, silent])</p></td>
 <td><p>Inverts the input matrix.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Multiply" title="topologicpy.Matrix.Matrix.Multiply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Multiply</span></code></a>(matA, matB)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Multiply" title="topologicpy.Matrix.Matrix.Multiply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Multiply</span></code></a>(matA, matB)</p></td>
 <td><p>Multiplies two matrices (matA and matB).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Subtract" title="topologicpy.Matrix.Matrix.Subtract"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subtract</span></code></a>(matA, matB)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Subtract" title="topologicpy.Matrix.Matrix.Subtract"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subtract</span></code></a>(matA, matB)</p></td>
 <td><p>Subtracts the two input matrices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Transpose" title="topologicpy.Matrix.Matrix.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(matrix)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Matrix.Matrix.Transpose" title="topologicpy.Matrix.Matrix.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(matrix)</p></td>
 <td><p>Transposes the input matrix.</p></td>
 </tr>
 </tbody>
@@ -212,6 +215,39 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The matrix resulting from the addition of the two input matrices.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Matrix.Matrix.ByCoordinateSystems">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByCoordinateSystems</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Matrix.Matrix.ByCoordinateSystems" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates the 4x4 transformation matrix that maps the source coordinate system to the target coordinate system.
+An example of a coordinate system matrix is:
+source = [
+[0, 0, 0],  # Origin
+[1, 0, 0],  # X-axis
+[0, 1, 0],  # Y-axis
+[0, 0, 1]   # Z-axis
+]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>source</strong><span class="classifier">list</span></dt><dd><p>The 4X3 matrix representing source coordinate system. The rows are in the order: Origin, X-Axis, Y-Axis, Z-Axis.</p>
+</dd>
+<dt><strong>target</strong><span class="classifier">list</span></dt><dd><p>The 4X3 matrix representing target coordinate system. The rows are in the order: Origin, X-Axis, Y-Axis, Z-Axis.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The 4x4 transformation matrix.</p>
 </dd>
 </dl>
 </dd>
