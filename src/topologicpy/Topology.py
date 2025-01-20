@@ -1498,6 +1498,8 @@ class Topology():
         edges = [e for e in edges if e]
         faces = [f for f in faces if f]
 
+        return_topology = None
+
         if not vertices:
             return None
 
@@ -1527,7 +1529,7 @@ class Topology():
         if topologyType == "wire" and edges:
             topEdges = [Edge.ByVertices([topVerts[e[0]], topVerts[e[1]]], tolerance=tolerance) for e in edges]
             if topEdges:
-                returnTopology = topologyByEdges(topEdges, topologyType)
+                return_topology = topologyByEdges(topEdges, topologyType)
         elif faces:
             for aFace in faces:
                 faceEdges = [Edge.ByVertices([topVerts[aFace[i]], topVerts[aFace[i + 1]]], tolerance=tolerance) for i in range(len(aFace) - 1)]
@@ -1545,14 +1547,14 @@ class Topology():
                     except:
                         pass
             if topFaces:
-                returnTopology = topologyByFaces(topFaces, topologyType=topologyType, tolerance=tolerance)
+                return_topology = topologyByFaces(topFaces, topologyType=topologyType, tolerance=tolerance)
         elif edges:
             topEdges = [Edge.ByVertices([topVerts[e[0]], topVerts[e[1]]], tolerance=tolerance) for e in edges]
             if topEdges:
-                returnTopology = topologyByEdges(topEdges, topologyType)
+                return_topology = topologyByEdges(topEdges, topologyType)
         else:
-            returnTopology = Cluster.ByTopologies(topVerts)
-        return returnTopology
+            return_topology = Cluster.ByTopologies(topVerts)
+        return return_topology
     
     @staticmethod
     def ByBIMPath(path, guidKey: str = "guid", colorKey: str = "color", typeKey: str = "type",
@@ -6264,7 +6266,7 @@ class Topology():
     @staticmethod
     def IsSimilar(topologyA, topologyB, removeCoplanarFaces: bool = False, mantissa: int = 6, epsilon: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
-        Returns True if the input topologies are similar. False otherwise. See https://en.wikipedia.org/wiki/Similarity_(geometry).
+        Calculates if the input topologies are similar. See https://en.wikipedia.org/wiki/Similarity_(geometry).
 
         Parameters
         ----------
@@ -6286,7 +6288,8 @@ class Topology():
         Returns
         -------
         [bool, list]
-            True if the input topologies are similar., False otherwise and the matrix needed to tranform topologyA to match topologyB
+            True if the input topologies are similar, False otherwise and the matrix needed to tranform topologyA to match topologyB.
+            If the topologies are not similar, the transformation matrix is None.
 
         """
         from topologicpy.Vertex import Vertex
@@ -6308,7 +6311,6 @@ class Topology():
         if removeCoplanarFaces == True:
             topologyA = Topology.RemoveCoplanarFaces(topologyA, epsilon=epsilon, tolerance=tolerance)
             topologyB = Topology.RemoveCoplanarFaces(topologyB, epsilon=epsilon, tolerance=tolerance)
-        Topology.Show(topologyA, topologyB)
         len_vertices_a = len(Topology.Vertices(topologyA))
         if len_vertices_a < 1 and not Topology.IsInstance(topologyA, "vertex"):
             if not silent:
@@ -6398,90 +6400,58 @@ class Topology():
         if len(faces_a) > 0 and len(faces_b) > 0:
             largest_faces_a = Topology.LargestFaces(topologyA)
             largest_faces_b = Topology.LargestFaces(topologyB)
-
+        else:
+            if not silent:
+                print("Topology.IsSimilar - Error: The topologies do not have faces. Returning None.")
+            return False, None
 
     # Process largest faces
-        largest_faces_a = Topology.LargestFaces(topologyA)
-        largest_faces_b = Topology.LargestFaces(topologyB)
-        face_a_d = Dictionary.ByKeyValue("faceColor", "red")
-        face_b_d = Dictionary.ByKeyValue("faceColor", "blue")
         for face_a in largest_faces_a:
+            l_edge_a = Topology.LongestEdges(face_a)[0]
+            length_a = Edge.Length(l_edge_a)
             centroid_a = Topology.Centroid(face_a)
-            normal_a = Face.Normal(face_a)
+            origin_a = Vertex.Coordinates(centroid_a)
+            zaxis_a = Face.Normal(face_a)
             third_vertex_a = Face.ThirdVertex(face_a)  # Pick a third vertex for orientation
-            orientation_a = Vector.Normalize(Vector.ByVertices(centroid_a, third_vertex_a))
+            xaxis_a = Vector.Normalize(Vector.ByVertices(centroid_a, third_vertex_a))
+            yaxis_a = Vector.Cross(xaxis_a, zaxis_a)
+            # Build Coordinate System matrix. The origin will be (0,0,0) once the trans matrix is applied.
+            cs_a = [[0,0,0]]+[xaxis_a]+[yaxis_a]+[zaxis_a]
+            tran_matrix_a = Matrix.ByTranslation(translateX=-origin_a[0], translateY=-origin_a[1], translateZ=-origin_a[2])
 
+            # Check against the faces of B:
             for face_b in largest_faces_b:
-                face_copy_b = Topology.SetDictionary(Topology.Copy(face_b), face_b_d)
+                l_edge_b = Topology.LongestEdges(face_b)[0]
+                length_b = Edge.Length(l_edge_b)
+                scale_factor = length_b/length_a
+                scale_matrix = Matrix.ByScaling(scaleX=scale_factor, scaleY=scale_factor, scaleZ=scale_factor)
                 centroid_b = Topology.Centroid(face_b)
-                normal_b = Face.Normal(face_b)
+                origin_b = Vertex.Coordinates(centroid_b)
+                zaxis_b = Face.Normal(face_b)
                 third_vertex_b = Face.ThirdVertex(face_b)
-                orientation_b = Vector.Normalize(Vector.ByVertices(centroid_b, third_vertex_b))
-
+                xaxis_b = Vector.Normalize(Vector.ByVertices(centroid_b, third_vertex_b))
+                yaxis_b = Vector.Cross(xaxis_b, zaxis_b)
+                cs_b = [origin_b]+[xaxis_b]+[yaxis_b]+[zaxis_b]
                 # Compute transformation matrix
-                rotation_matrix = Matrix.ByVectors(normal_a, normal_b, orientation_a, orientation_b)
-                scaling_factor = (Face.Area(face_b) / Face.Area(face_a)) ** (1/2)
-                scaling_matrix = Matrix.ByScaling(scaling_factor, scaling_factor, scaling_factor)
-                
-                translation_matrix = Matrix.ByTranslation(
-                    Vertex.X(centroid_b) - Vertex.X(centroid_a),
-                    Vertex.Y(centroid_b) - Vertex.Y(centroid_a),
-                    Vertex.Z(centroid_b) - Vertex.Z(centroid_a)
-                )
-                combined_matrix = Matrix.Multiply(rotation_matrix, scaling_matrix)
-                combined_matrix = Matrix.Multiply(translation_matrix, combined_matrix)
-                
-                transformed_centroid_a = Topology.Transform(centroid_a, combined_matrix)
-
-                # One last translation to synchronise the two centroids.
-                translation_matrix = Matrix.ByTranslation(
-                    Vertex.X(centroid_b) - Vertex.X(transformed_centroid_a),
-                    Vertex.Y(centroid_b) - Vertex.Y(transformed_centroid_a),
-                    Vertex.Z(centroid_b) - Vertex.Z(transformed_centroid_a)
-                )
-                combined_matrix = Matrix.Multiply(translation_matrix, combined_matrix)
+                # translate to origin, scale, then transform coordinate systems
+                combined_matrix = Matrix.Multiply(scale_matrix, tran_matrix_a)
+                matching_matrix = Matrix.ByCoordinateSystems(cs_a, cs_b)
+                combined_matrix = Matrix.Multiply(matching_matrix, combined_matrix)
                 # Apply transformation and compare
-                transformedA = Topology.Transform(topologyA, combined_matrix)
-                transformed_face_a = Topology.Transform(face_a, combined_matrix)
-                transformed_face_a = Topology.SetDictionary(face_a, face_a_d)
-
-                Topology.Show(transformedA, topologyB, transformed_face_a, face_copy_b, faceColorKey="faceColor", vertexSizeKey="vertexSize")
-                if Topology.IsVertexCongruent(transformedA, topologyB, mantissa=mantissa, epsilon=epsilon, tolerance=tolerance, silent=silent):
-                    return True, combined_matrix
-
-        return False, None
-        # for l_f_a in largest_faces_a:
-        #     l_e_a = Face.NormalEdge(l_f_a)
-        #     centroid_a = Edge.StartVertex(l_e_a)
-        #     dir_a = Vector.Normalize(Edge.Direction(l_e_a))
-        #     trans_matrix_a = Matrix.ByTranslation(-Vertex.X(centroid_a), -Vertex.Y(centroid_a), -Vertex.Z(centroid_a))
-        #     sf_a = 1/Face.Area(l_f_a)
-        #     scaling_matrix_a = Matrix.ByScaling(sf_a, sf_a, sf_a)
-        #     for l_f_b in largest_faces_b:
-        #         l_e_b = Face.NormalEdge(l_f_b)
-        #         centroid_b = Edge.StartVertex(l_e_b)
-        #         dir_b = Vector.Normalize(Edge.Direction(l_e_b))
-        #         rotation_matrix = Matrix.ByVectors(dir_a, dir_b)
-        #         sf_b = 1/Face.Area(l_f_b)
-        #         scaling_matrix_b = Matrix.ByScaling(sf_b, sf_b, sf_b)
-        #         trans_matrix_b = Matrix.ByTranslation(-Vertex.X(centroid_b), -Vertex.Y(centroid_b), -Vertex.Z(centroid_b))
-        #         combined_matrix_a = Matrix.Multiply(rotation_matrix, scaling_matrix_a)
-        #         combined_matrix_a = Matrix.Multiply(combined_matrix_a, trans_matrix_a)
-        #         combined_matrix_b = Matrix.Multiply(scaling_matrix_b, trans_matrix_b)
-        #         top_a = Topology.Transform(topologyA, combined_matrix_a)
-        #         top_b = Topology.Transform(topologyB, combined_matrix_b)
-        #         Topology.Show(top_a, top_b)
-        #         if Topology.IsVertexCongruent(top_a, top_b, mantissa=mantissa, epsilon=epsilon, tolerance=tolerance, silent=silent):
-        #             Topology.Show(top_a, top_b)
-        #             final_matrix = Matrix.Multiply(Matrix.Invert(combined_matrix_b), combined_matrix_a)
-        #             return True, final_matrix
+                try:
+                    transformedA = Topology.Transform(topologyA, combined_matrix)
+                    status = Topology.IsVertexCongruent(transformedA, topologyB, mantissa=mantissa, epsilon=epsilon, tolerance=tolerance, silent=silent)
+                    if status:
+                        return True, combined_matrix
+                except:
+                    pass
 
         return False, None
- 
+
     @staticmethod
     def IsVertexCongruent(topologyA, topologyB, mantissa: int = 6, epsilon: float = 0.1, tolerance: float = 0.0001, silent : bool = False):
         """
-        Returns True if the input topologies are vertex matched (have same number of vertices and all vertices are congruent within a tolerance). Returns False otherwise.
+        Returns True if the input topologies are vertex congruent (have same number of vertices and all vertices are congruent within a tolerance). Returns False otherwise.
 
         Parameters
         ----------
@@ -6491,6 +6461,9 @@ class Topology():
             The second input topology.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
+        epsilon : float , optional
+            The desired accepted tolerance for the number of matched number of vertices. For example, an epsilon of 0.1 indicates that
+            the algorithm will return True even if 10% of the vertices do not match. The default is 0.1.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -6504,7 +6477,7 @@ class Topology():
         """
         from topologicpy.Vertex import Vertex
 
-        def coordinates_unmatched_ratio(list1, list2, tolerance):
+        def coordinates_unmatched_ratio(list1, list2, mantissa, tolerance):
             """
             Calculates the percentage of coordinates in list1 that do not have a corresponding
             coordinate in list2 within a specified tolerance, with each match being unique.
@@ -6543,7 +6516,7 @@ class Topology():
             total_coordinates = len(list1)
             unmatched_ratio = (unmatched_count / total_coordinates)
             
-            return unmatched_ratio
+            return round(unmatched_ratio, mantissa)
 
         if not Topology.IsInstance(topologyA, "topology"):
             if not silent:
@@ -6568,11 +6541,12 @@ class Topology():
             return None
         # Number of vertices
         max_len = max([len_vertices_a, len_vertices_b])
-        if abs(len_vertices_a - len_vertices_a)/max_len >= epsilon:
+        ratio = round(float(abs(len_vertices_a - len_vertices_b))/float(max_len), mantissa)
+        if ratio > epsilon:
             return False
         coords_a = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices_a]
         coords_b = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices_b]
-        unmatched_ratio = coordinates_unmatched_ratio(coords_a, coords_b, tolerance=tolerance)
+        unmatched_ratio = coordinates_unmatched_ratio(coords_a, coords_b, mantissa=mantissa, tolerance=tolerance)
         if unmatched_ratio <= epsilon:
             return True
         return False

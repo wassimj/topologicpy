@@ -1909,7 +1909,7 @@ class Cell():
             uRect = Wire.Rectangle(origin=origin, width=height*1.2, length=length*1.2, direction=[1, 0, 0], placement="center")
             for i in range(1, uSides):
                 sliceFaces.append(Topology.Translate(Face.ByWire(uRect, tolerance=tolerance), width/uSides*i - width*0.5, 0, 0))
-            vRect = Wire.Rectangle(origin=origin, width=height*1.2, length=width*1.2, direction=[0, 1, 0], placement="center")
+            vRect = Wire.Rectangle(origin=origin, length=height*1.2, width=width*1.2, direction=[0, 1, 0], placement="center")
             for i in range(1, vSides):
                 sliceFaces.append(Topology.Translate(Face.ByWire(vRect, tolerance=tolerance), 0, length/vSides*i - length*0.5, 0))
             if len(sliceFaces) > 0:

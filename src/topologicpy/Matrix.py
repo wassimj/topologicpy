@@ -48,6 +48,83 @@ class Matrix:
         return matC
 
     @staticmethod
+    def ByCoordinateSystems(source, target, mantissa: int = 6, silent: bool = False):
+        """
+        Calculates the 4x4 transformation matrix that maps the source coordinate system to the target coordinate system.
+        An example of a coordinate system matrix is:
+        source = [
+        [0, 0, 0],  # Origin
+        [1, 0, 0],  # X-axis
+        [0, 1, 0],  # Y-axis
+        [0, 0, 1]   # Z-axis
+        ]
+        
+        Parameters
+        ----------
+        source : list
+            The 4X3 matrix representing source coordinate system. The rows are in the order: Origin, X-Axis, Y-Axis, Z-Axis.
+        target : list
+            The 4X3 matrix representing target coordinate system. The rows are in the order: Origin, X-Axis, Y-Axis, Z-Axis.
+        mantissa : int , optional
+                The desired length of the mantissa. The default is 6.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+            The 4x4 transformation matrix.
+        """
+        import numpy as np
+
+        if not isinstance(source, list):
+            if not silent:
+                print("Matrix.ByCoordinateSystems - Error: The source input parameter is not a valid list. Returning None.")
+            return None
+        if not isinstance(target, list):
+            if not silent:
+                print("Matrix.ByCoordinateSystems - Error: The taget input parameter is not a valid list. Returning None.")
+            return None
+        
+        # Convert to numpy arrays
+        source_matrix = np.array(source)
+        target_matrix = np.array(target)
+
+        if source_matrix.shape != (4, 3):
+            if not silent:
+                print("Matrix.ByCoordinateSystems - Error: The source input parameter must be 4x3 matrix. Returning None.")
+            return None
+        if target_matrix.shape != (4, 3):
+            if not silent:
+                print("Matrix.ByCoordinateSystems - Error: The target input parameter must be 4x3 matrix. Returning None.")
+            return None
+        
+        # Convert input matrices to homogeneous transformations
+        source_to_world = np.eye(4)
+        source_to_world[:3, 0] = source_matrix[1, :] # X-axis
+        source_to_world[:3, 1] = source_matrix[2, :] # Y-axis
+        source_to_world[:3, 2] = source_matrix[3, :] # Z-axis
+        source_to_world[:3, 3] = source_matrix[0, :] # Origin
+
+        target_to_world = np.eye(4)
+        target_to_world[:3, 0] = target_matrix[1, :] # X-axis
+        target_to_world[:3, 1] = target_matrix[2, :] # Y-axis
+        target_to_world[:3, 2] = target_matrix[3, :] # Z-axis
+        target_to_world[:3, 3] = target_matrix[0, :] # Origin
+
+        # Compute the world-to-source transformation (inverse of source_to_world)
+        world_to_source = np.linalg.inv(source_to_world)
+
+        # Compute the source-to-target transformation
+        source_to_target = target_to_world @ world_to_source
+
+        # Convert the result to a list and round values
+        result_list = source_to_target.tolist()
+        rounded_result = [[round(value, mantissa) for value in row] for row in result_list]
+
+        return rounded_result
+
+    @staticmethod
     def ByRotation(angleX=0, angleY=0, angleZ=0, order="xyz"):
         def rotateXMatrix(radians):
             c = math.cos(radians)
