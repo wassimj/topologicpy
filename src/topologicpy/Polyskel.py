@@ -159,15 +159,15 @@ def skeletonize(polygon, holes=None):
         event_queue.put_all(events)
         if arc is not None:
             output.append(arc)
-    skeleton_edges = []
-    for i in range(len(output)):
-        v1 = polygon[i]
-        v2 = polygon[(i + 1) % len(polygon)]
-        mid = Vertex.ByCoordinates((v1.X() + v2.X()) / 2, (v1.Y() + v2.Y()) / 2, 0)
-        skeleton_edges.append(Edge.ByVertices([v1, mid]))
+    # skeleton_edges = []
+    # for i in range(len(output)):
+    #     v1 = polygon[i]
+    #     v2 = polygon[(i + 1) % len(polygon)]
+    #     mid = Vertex.ByCoordinates((v1.X() + v2.X()) / 2, (v1.Y() + v2.Y()) / 2, 0)
+    #     skeleton_edges.append(Edge.ByVertices([v1, mid]))
     
-    skeleton_wire = Topology.SelfMerge(Cluster.ByTopologies(skeleton_edges))
-    Topology.Show(skeleton_wire, outer_wire, vertexSize=8)
+    # skeleton_wire = Topology.SelfMerge(Cluster.ByTopologies(skeleton_edges))
+    # Topology.Show(skeleton_wire, outer_wire, vertexSize=8)
     return output
  
 
