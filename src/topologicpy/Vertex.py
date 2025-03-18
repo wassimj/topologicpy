@@ -313,17 +313,17 @@ class Vertex():
             return None
         if len(args) > 0:
             value = args[0]
-            if isinstance(value, list) and len(value) > 3:
+            if (isinstance(value, list) or isinstance(value, tuple)) and len(value) > 3:
                 print("Vertex.ByCoordinates - Error: Input parameters are greater than 3. Returning None.")
                 return None
-            elif isinstance(value, list) and len(value) == 3:
+            elif (isinstance(value, list) or isinstance(value, tuple)) and len(value) == 3:
                 x = value[0]
                 y = value[1]
                 z = value[2]
-            elif isinstance(value, list) and len(value) == 2:
+            elif (isinstance(value, list) or isinstance(value, tuple)) and len(value) == 2:
                 x = value[0]
                 y = value[1]
-            elif isinstance(value, list) and len(value) == 1:
+            elif (isinstance(value, list) or isinstance(value, tuple)) and len(value) == 1:
                 x = value[0]
             elif len(args) == 3:
                 x = args[0]

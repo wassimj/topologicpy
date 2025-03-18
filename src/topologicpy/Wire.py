@@ -3862,26 +3862,26 @@ class Wire():
                 source = subtree.source
                 height = subtree.height
                 z = slope * height
-                source_vertex = Vertex.ByCoordinates(source.x, source.y, z)
+                source_vertex = Vertex.ByCoordinates(source.X(), source.Y(), z)
 
                 for sink in subtree.sinks:
-                    if (sink.x, sink.y) in polygon_z:
+                    if (sink.X(), sink.Y()) in polygon_z:
                         z = 0
                     else:
                         z = None
                         for st in subtrees:
-                            if st.source.x == sink.x and st.source.y == sink.y:
+                            if st.source.X() == sink.X() and st.source.Y() == sink.Y():
                                 z = slope * st.height
                                 break
                             for sk in st.sinks:
-                                if sk.x == sink.x and sk.y == sink.y:
+                                if sk.X() == sink.X() and sk.Y() == sink.Y():
                                     z = slope * st.height
                                     break
                         if z is None:
                             height = subtree.height
                             z = slope * height
-                    sink_vertex = Vertex.ByCoordinates(sink.x, sink.y, z)
-                    if (source.x, source.y) == (sink.x, sink.y):
+                    sink_vertex = Vertex.ByCoordinates(sink.X(), sink.Y(), z)
+                    if (source.X(), source.Y()) == (sink.X(), sink.Y()):
                         continue
                     e = Edge.ByStartVertexEndVertex(source_vertex, sink_vertex, tolerance=tolerance, silent=True)
                     if e not in edges and e != None:

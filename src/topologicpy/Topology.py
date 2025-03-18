@@ -3076,6 +3076,118 @@ class Topology():
         return Topology.ByJSONDictionary(json_dict, tolerance=tolerance)
 
     @staticmethod
+    def ByMeshData(dictionary, transferDictionaries: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Create a cluster by the input python dictionary of vertices, edges, faces, and cells.
+
+        Parameters
+        ----------
+        dictionary : dict
+            The input python dictionary of vertices, edges, faces, and cells in the form of:
+            { 'mode': int,  The expected mode of input face data:
+                                0: The faces list is indexed into the vertices list.
+                                1: The faces list is indexesd into the edges list.
+            'vertices': list, (list of coordinates)
+            'edges': list,   (list of indices into the list of vertices)
+            'faces': list,   (list of indices into the list of edges)
+            'cells': list,   (list of indices into the list of faces)
+            'vertex_dict': list of dicts,
+            'edge_dicts': list of dicts,
+            'face_dicts', list of dicts,
+            'cell_dicts', list of dicts
+            }
+        transferDictionaries : bool , optional
+            If set to True, the python dictionaries will be transferred to the coorespoding topologies. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Cluster
+            The created cluster of vertices, edges, faces, and cells.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+
+        if not type(dictionary) == type({}):
+            if not silent:
+                print("Topology.ByMeshData - Error: The input dictionary parameter is not a valid dictionary. Returning None.")
+            return None
+        
+        vertices = dictionary['vertices']
+        edges = dictionary['edges']
+        faces = dictionary['faces']
+        cells = dictionary['cells']
+        if not 'mode' in dictionary.keys():
+            mode = 0
+        else:
+            mode = dictionary['mode']
+        if transferDictionaries == True:
+            vertex_dicts = dictionary['vertex_dicts']
+            edge_dicts = dictionary['edge_dicts']
+            face_dicts = dictionary['face_dicts']
+            cell_dicts = dictionary['cell_dicts']
+        else:
+            vertex_dicts = [{}]*len(vertices)
+            edge_dicts = [{}]*len(edges)
+            face_dicts = [{}]*len(faces)
+            cell_dicts = [{}]*len(cells)
+                
+        top_verts = []
+        for i, vertex in enumerate(vertices):
+            top_vertex = Vertex.ByCoordinates(vertex)
+            if Topology.IsInstance(top_vertex, "Vertex"):
+                if transferDictionaries:
+                    d = Dictionary.ByPythonDictionary(vertex_dicts[i])
+                    top_vertex = Topology.SetDictionary(top_vertex, d, silent=True)
+                top_verts.append(top_vertex)
+        
+        top_edges = []
+        for i, edge in enumerate(edges):
+            top_edge = Edge.ByVertices(top_verts[edge[0]], top_verts[edge[1]], tolerance=tolerance, silent=silent)
+            if Topology.IsInstance(top_edge, "Edge"):
+                if transferDictionaries:
+                    d = Dictionary.ByPythonDictionary(edge_dicts[i])
+                    top_edge = Topology.SetDictionary(top_edge, d, silent=True)
+                top_edges.append(top_edge)
+        
+        top_faces = []
+        for i, face in enumerate(faces):
+            if mode == 0:
+                face_vertices = [top_verts[v] for v in face]
+                top_face = Face.ByVertices(face_vertices, tolerance=tolerance, silent=silent)
+            else:
+                face_edges = [top_edges[e] for e in face]
+                top_face = Face.ByEdges(face_edges, tolerance=tolerance, silent=silent)
+            if Topology.IsInstance(top_face, "Face"):
+                if transferDictionaries:
+                    d = Dictionary.ByPythonDictionary(face_dicts[i])
+                    top_face = Topology.SetDictionary(top_face, d, silent=True)
+                top_faces.append(top_face)
+
+        top_cells = []
+        for i, cell in enumerate(cells):
+            cell_faces = [top_faces[f] for f in cell]
+            top_cell = Cell.ByFaces(cell_faces, tolerance=tolerance, silent=silent)
+            if Topology.IsInstance(top_cell, "Cell"):
+                if transferDictionaries:
+                    d = Dictionary.ByPythonDictionary(cell_dicts[i])
+                    top_cell = Topology.SetDictionary(top_cell, d, silent=True)
+                top_cells.append(top_cell)
+        
+        return Cluster.ByTopologies(top_verts+top_edges+top_faces+top_cells)
+
+    @staticmethod
     def ByOBJFile(objFile, mtlFile = None,
                 defaultColor: list = [255,255,255],
                 defaultOpacity: float = 1.0,
@@ -3303,7 +3415,7 @@ class Topology():
                 vertex = list(map(float, parts[1:4]))
                 vertex = [round(coord, mantissa) for coord in vertex]
                 if transposeAxes == True:
-                    vertex = [vertex[0], vertex[2], vertex[1]]
+                    vertex = [vertex[0], -vertex[2], vertex[1]]
                 vertices.append(vertex)
             elif parts[0] == 'vt':
                 texture = list(map(float, parts[1:3]))
@@ -5893,7 +6005,7 @@ class Topology():
         return flat_topology
     
     @staticmethod
-    def Geometry(topology, mantissa: int = 6):
+    def Geometry(topology, transferDictionaries: bool = False, mantissa: int = 6, silent: bool = False):
         """
         Returns the geometry (mesh data format) of the input topology as a dictionary of vertices, edges, and faces.
 
@@ -5901,8 +6013,12 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        transferDictionaries : bool , optional
+            If set to True, vertex, edge, and face dictionaries will be included in the output. Otherwise, they are not. The default is False.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -5913,22 +6029,34 @@ class Topology():
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
+        from topologicpy.Dictionary import Dictionary
 
         vertices = []
         edges = []
         faces = []
-        if topology == None:
-            return [None, None, None]
+        vertex_dicts = []
+        edge_dicts = []
+        face_dicts = []
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.Geometry - Error: The input topology parameter is not a valid topology. Retruning None.")
+            return None
         topVerts = []
         if Topology.Type(topology) == Topology.TypeID("Vertex"): #input is a vertex, just add it and process it
             topVerts.append(topology)
         else:
             topVerts = Topology.Vertices(topology)
         for aVertex in topVerts:
+            py_dict = {}
+            if transferDictionaries == True:
+                d = Topology.Dictionary(aVertex)
+                if len(Dictionary.Keys(d)) > 0:
+                    py_dict = Dictionary.PythonDictionary(d)
             try:
                 vertices.index(Vertex.Coordinates(aVertex, mantissa=mantissa)) # Vertex already in list
             except:
                 vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa)) # Vertex not in list, add it.
+                vertex_dicts.append(py_dict)
         topEdges = []
         if (Topology.Type(topology) == Topology.TypeID("Edge")): #Input is an Edge, just add it and process it
             topEdges.append(topology)
@@ -5951,13 +6079,18 @@ class Topology():
             e.append(svIndex)
             e.append(evIndex)
             edges.append(e)
+            py_dict = {}
+            if transferDictionaries == True:
+                d = Topology.Dictionary(anEdge)
+                if len(Dictionary.Keys(d)) > 0:
+                    py_dict = Dictionary.PythonDictionary(d)
+                edge_dicts.append(py_dict)
         topFaces = []
         if (Topology.Type(topology) == Topology.TypeID("Face")): # Input is a Face, just add it and process it
             topFaces.append(topology)
         elif (Topology.Type(topology) > Topology.TypeID("Face")):
             _ = topology.Faces(None, topFaces)
         for aFace in topFaces:
-            f_dir = Face.Normal(aFace)
             ib = []
             _ = aFace.InternalBoundaries(ib)
             if(len(ib) > 0):
@@ -5986,7 +6119,13 @@ class Topology():
                         fVertexIndex = len(vertices)-1
                     f.append(fVertexIndex)
                 faces.append(f)
-        return {"vertices":vertices, "edges":edges, "faces":faces}
+            py_dict = {}
+            if transferDictionaries == True:
+                d = Topology.Dictionary(aFace)
+                if len(Dictionary.Keys(d)) > 0:
+                    py_dict = Dictionary.PythonDictionary(d)
+                face_dicts.append(py_dict)
+        return {"vertices":vertices, "edges":edges, "faces":faces, "vertex_dicts": vertex_dicts, "edge_dicts": edge_dicts, "face_dicts": face_dicts}
 
     @staticmethod
     def HighestType(topology):
@@ -6477,45 +6616,26 @@ class Topology():
         """
         from topologicpy.Vertex import Vertex
 
+    
         def coordinates_unmatched_ratio(list1, list2, mantissa, tolerance):
             """
-            Calculates the percentage of coordinates in list1 that do not have a corresponding
-            coordinate in list2 within a specified tolerance, with each match being unique.
-
-            Parameters
-            ----------
-            list1 : list of list of float
-                The first list of coordinates, where each coordinate is [x, y, z].
-            list2 : list of list of float
-                The second list of coordinates, where each coordinate is [x, y, z].
-            tolerance : float
-                The maximum distance within which two coordinates are considered matching.
-
-            Returns
-            -------
-            float
-                The percentage of coordinates in list1 that did not find a match in list2.
+            Optimized version using KDTree for faster nearest-neighbor search.
             """
-            def distance(coord1, coord2):
-                """Calculate the Euclidean distance between two coordinates."""
-                return np.linalg.norm(np.array(coord1) - np.array(coord2))
-
-            unmatched_count = 0
-            unmatched = list2.copy()
-
-            for coord1 in list1:
-                match_found = False
-                for i, coord2 in enumerate(unmatched):
-                    if distance(coord1, coord2) <= tolerance:
-                        unmatched.pop(i)  # Remove matched coordinate
-                        match_found = True
-                        break
-                if not match_found:
-                    unmatched_count += 1
-
-            total_coordinates = len(list1)
-            unmatched_ratio = (unmatched_count / total_coordinates)
+            from scipy.spatial import KDTree
+            import numpy as np
+            rounded_list1 = [np.round(coord, mantissa) for coord in list1]
+            rounded_list2 = [np.round(coord, mantissa) for coord in list2]
             
+            tree = KDTree(rounded_list2)
+            unmatched_count = 0
+            
+            for coord in rounded_list1:
+                distances, indices = tree.query(coord, k=1)
+                if distances > tolerance:
+                    unmatched_count += 1
+            
+            total_coordinates = len(list1)
+            unmatched_ratio = unmatched_count / total_coordinates
             return round(unmatched_ratio, mantissa)
 
         if not Topology.IsInstance(topologyA, "topology"):
@@ -6680,6 +6800,161 @@ class Topology():
             return None
         return Topology.SelfMerge(Cluster.ByTopologies(topologyList), tolerance=tolerance)
     
+    @staticmethod
+    def MeshData(topology, mode: int = 1, transferDictionaries: bool = False, mantissa: int = 6, silent: bool = False):
+        """
+        Creates a mesh data python dictionary from the input topology.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        mode : int , optional
+            The desired mode of conversion:
+            0: The faces list indexes into the vertices list.
+            1: The faces list indexes into the edges list.
+            The default is 1.
+        transferDictionaries : bool , optional
+            If set to True, the python dictionaries will be transferred to the coorespoding topologies. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        dict
+            The created mesh data python dictionary of vertices, edges, faces, and cells in the form of:
+            { 'mode' : int (the mode of the face data)
+            'vertices': list, (list of coordinates)
+            'edges': list,   (list of indices into the list of vertices)
+            'faces': list,   (list of indices into the list of edges or list of vertices based on mode)
+            'cells': list,   (list of indices into the list of faces)
+            'vertex_dict': list of dicts,
+            'edge_dicts': list of dicts,
+            'face_dicts', list of dicts,
+            'cell_dicts', list of dicts
+            }
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
+
+        vertex_dicts = []
+        edge_dicts = []
+        face_dicts = []
+        cell_dicts = []
+        top = Topology.Copy(topology)
+        top = Topology.Triangulate(top, transferDictionaries=transferDictionaries)
+        vertices = Topology.Vertices(top)
+        edges = Topology.Edges(top)
+        faces = Topology.Faces(top)
+        if Topology.IsInstance(top, "Vertex"):
+            vertices = [top]
+            edges = []
+            faces = []
+            cells = []
+        elif Topology.IsInstance(top, "Edge"):
+            vertices = Topology.Vertices(top)
+            edges = [top]
+            faces = []
+            cells = []
+        elif Topology.IsInstance(top, "Wire"):
+            vertices = Topology.Vertices(top)
+            edges = Topology.Edges(top)
+            faces = []
+            cells = []
+        elif Topology.IsInstance(top, "Face"):
+            vertices = Topology.Vertices(top)
+            edges = Topology.Edges(top)
+            faces = [top]
+            cells = []
+        elif Topology.IsInstance(top, "Shell"):
+            vertices = Topology.Vertices(top)
+            edges = Topology.Edges(top)
+            faces = Topology.Faces(top)
+            cells = []
+        elif Topology.IsInstance(top, "Cell"):
+            vertices = Topology.Vertices(top)
+            edges = Topology.Edges(top)
+            faces = Topology.Faces(top)
+            cells = [top]
+        elif Topology.IsInstance(top, "CellComplex"):
+            vertices = Topology.Vertices(top)
+            edges = Topology.Edges(top)
+            faces = Topology.Faces(top)
+            cells = Topology.Cells(top)
+        elif Topology.IsInstance(top, "Cluster"):
+            vertices = Topology.Vertices(top)
+            edges = Topology.Edges(top)
+            faces = Topology.Faces(top)
+            cells = Topology.Cells(top)
+        else:
+            if not silent:
+                print("Topology.MeshData - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+
+        m_verts = []
+        m_edges = []
+        m_faces = []
+        m_cells = []
+        key = "_n_"
+
+        for i, v in enumerate(vertices):
+            d = Topology.Dictionary(v)
+            v = Topology.SetDictionary(v, Dictionary.ByKeyValue(key, i))
+            m_verts.append(Vertex.Coordinates(v, mantissa=mantissa))
+            vertex_dicts.append(Dictionary.PythonDictionary(d))
+
+        for i, e in enumerate(edges):
+            d = Topology.Dictionary(e)
+            e = Topology.SetDictionary(e, Dictionary.ByKeyValue(key, i), silent=True)
+            sv, ev = Topology.Vertices(e)
+            sv_n = Dictionary.ValueAtKey(Topology.Dictionary(sv), key)
+            ev_n = Dictionary.ValueAtKey(Topology.Dictionary(ev), key)
+            m_edges.append([sv_n, ev_n])
+            edge_dicts.append(Dictionary.PythonDictionary(d))
+
+        for i, f in enumerate(faces):
+            d = Topology.Dictionary(f)
+            f = Topology.SetDictionary(f, Dictionary.ByKeyValue(key, i), silent=True)
+            if mode == 1:
+                f_edges = Topology.Edges(f)
+                edge_indices = []
+                for f_edge in f_edges:
+                    edge_indices.append(Dictionary.ValueAtKey(Topology.Dictionary(f_edge), key))
+                m_faces.append(edge_indices)
+            else:
+                f_vertices = Topology.Vertices(f)
+                vertex_indices = []
+                for f_vertex in f_vertices:
+                    vertex_indices.append(Dictionary.ValueAtKey(Topology.Dictionary(f_vertex), key))
+                m_faces.append(vertex_indices)
+            face_dicts.append(Dictionary.PythonDictionary(d))
+
+        for i, c in enumerate(cells):
+            d = Topology.Dictionary(c)
+            c = Topology.SetDictionary(c, Dictionary.ByKeyValue(key, i), silent=True)
+            c_faces = Topology.Faces(c)
+            face_indices = []
+            for c_face in c_faces:
+                face_indices.append(Dictionary.ValueAtKey(Topology.Dictionary(c_face), key))
+            m_cells.append(face_indices)
+            cell_dicts.append(Dictionary.PythonDictionary(d))
+        
+        return {"mode": mode,
+                "vertices": m_verts,
+                "edges": m_edges,
+                "faces": m_faces,
+                "cells": m_cells,
+                "vertex_dicts": vertex_dicts,
+                "edge_dicts": edge_dicts,
+                "face_dicts": face_dicts,
+                "cell_dicts": cell_dicts
+                }
+
     @staticmethod
     def Move(topology, x=0, y=0, z=0):
         """
@@ -9765,7 +10040,7 @@ class Topology():
 
     
     @staticmethod
-    def Triangulate(topology, transferDictionaries: bool = False, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001):
+    def Triangulate(topology, transferDictionaries: bool = False, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001, silent: bool = False):
         """
         Triangulates the input topology.
 
@@ -9792,6 +10067,8 @@ class Topology():
             calculated automatically and set to 10% of the overall size of the face.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no warnings or errors will be printed. The default is False.
 
         Returns
         -------
@@ -9806,28 +10083,33 @@ class Topology():
         from topologicpy.Cluster import Cluster
 
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.Triangulate - Error: The input parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Triangulate - Error: The input parameter is not a valid topology. Returning None.")
             return None
         t = Topology.Type(topology)
         if (t == Topology.TypeID("Vertex")) or (t == Topology.TypeID("Edge")) or (t == Topology.TypeID("Wire")):
+            if not silent:
+                print("Topology.Triangulate - Warning: The input topology parameter contains no faces. Returning the original topology.")
             return topology
         elif t == Topology.TypeID("Cluster"):
             temp_topologies = []
             cellComplexes = Topology.SubTopologies(topology, subTopologyType="cellcomplex") or []
             for cc in cellComplexes:
-                temp_topologies.append(Topology.Triangulate(cc, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance))
+                temp_topologies.append(Topology.Triangulate(cc, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance, silent=silent))
             cells = Cluster.FreeCells(topology, tolerance=tolerance) or []
             for c in cells:
-                temp_topologies.append(Topology.Triangulate(c, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance))
+                temp_topologies.append(Topology.Triangulate(c, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance, silent=silent))
             shells = Cluster.FreeShells(topology, tolerance=tolerance) or []
             for s in shells:
-                temp_topologies.append(Topology.Triangulate(s, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance))
+                temp_topologies.append(Topology.Triangulate(s, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance, silent=silent))
             faces = Cluster.FreeFaces(topology, tolerance=tolerance) or []
             for f in faces:
-                temp_topologies.append(Topology.Triangulate(f, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance))
+                temp_topologies.append(Topology.Triangulate(f, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance, silent=silent))
             if len(temp_topologies) > 0:
                 return Cluster.ByTopologies(temp_topologies)
             else:
+                if not silent:
+                    print("Topology.Triangulate - Warning: The input topology parameter contains no faces. Returning the original topology.")
                 return topology
         topologyFaces = []
         _ = topology.Faces(None, topologyFaces)
@@ -9840,7 +10122,7 @@ class Topology():
                 triFaces = [aFace]
             for triFace in triFaces:
                 if transferDictionaries:
-                    selectors.append(Topology.SetDictionary(Face.Centroid(triFace), Topology.Dictionary(aFace)))
+                    selectors.append(Topology.SetDictionary(Topology.Centroid(triFace), Topology.Dictionary(aFace), silent=True))
                 faceTriangles.append(triFace)
         return_topology = None
         if t == Topology.TypeID("Face") or t == Topology.TypeID("Shell"): # Face or Shell

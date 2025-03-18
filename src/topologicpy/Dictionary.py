@@ -345,6 +345,30 @@ class Dictionary():
         return Dictionary.ByKeysValues(keys, values)
 
     @staticmethod
+    def Copy(dictionary, silent: bool = False):
+        """
+        Creates a copy of the input dictionary.
+
+        Parameters
+        ----------
+        dictionary : topologic_core.Dictionary
+            The input dictionary.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            A copy of the input dictionary.
+
+        """
+        if not isinstance(dictionary, topologic_core.Dictionary):
+            if not silent:
+                print("Dictionary.Copy - Error: The input dictionary parameter is not a valid dictionary. Returning None.")
+            return None
+        keys = Dictionary.Keys(dictionary)
+        values = Dictionary.Values(dictionary)
+        return Dictionary.ByKeysValues(keys, values)
+        
+    @staticmethod
     def Filter(elements, dictionaries, searchType="any", key=None, value=None):
         """
         Filters the input list of dictionaries based on the input parameters.

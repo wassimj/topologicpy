@@ -201,7 +201,7 @@ class Face():
         return br_face
     
     @staticmethod
-    def ByEdges(edges: list, tolerance : float = 0.0001):
+    def ByEdges(edges: list, tolerance : float = 0.0001, silent: bool = False):
         """
         Creates a face from the input list of edges.
 
@@ -211,6 +211,8 @@ class Face():
             The input list of edges.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -222,24 +224,28 @@ class Face():
         from topologicpy.Topology import Topology
 
         if not isinstance(edges, list):
-            print("Face.ByEdges - Error: The input edges parameter is not a valid list. Returning None.")
+            if not silent:
+                print("Face.ByEdges - Error: The input edges parameter is not a valid list. Returning None.")
             return None
         edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
         if len(edges) < 1:
-            print("Face.ByEdges - Error: The input edges parameter does not contain any valid edges. Returning None.")
+            if not silent:
+                print("Face.ByEdges - Error: The input edges parameter does not contain any valid edges. Returning None.")
             return None
         wire = Wire.ByEdges(edges, tolerance=tolerance)
         if not Topology.IsInstance(wire, "Wire"):
-            print("Face.ByEdges - Error: Could not create the required wire. Returning None.")
+            if not silent:
+                print("Face.ByEdges - Error: Could not create the required wire. Returning None.")
             return None
         face = Face.ByWire(wire, tolerance=tolerance)
         if not Topology.IsInstance(face, "Face"):
-            print("Face.ByEdges - Warning: Could not create face from base wire. Returning None.")
+            if not silent:
+                print("Face.ByEdges - Error: Could not create face from base wire. Returning None.")
             return None
         return face
 
     @staticmethod
-    def ByEdgesCluster(cluster, tolerance: float = 0.0001):
+    def ByEdgesCluster(cluster, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a face from the input cluster of edges.
 
@@ -249,6 +255,8 @@ class Face():
             The input cluster of edges.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -260,15 +268,18 @@ class Face():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
-            print("Face.ByEdgesCluster - Warning: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            if not silent:
+                print("Face.ByEdgesCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         edges = Cluster.Edges(cluster)
         if len(edges) < 1:
-            print("Face.ByEdgesCluster - Warning: The input cluster parameter does not contain any valid edges. Returning None.")
+            if not silent:
+                print("Face.ByEdgesCluster - Error: The input cluster parameter does not contain any valid edges. Returning None.")
             return None
         face = Face.ByEdges(edges, tolerance=tolerance)
         if not Topology.IsInstance(face, "Face"):
-            print("Face.ByEdgesCluster - Warning: Could not create face from edges. Returning None.")
+            if not silent:
+                print("Face.ByEdgesCluster - Error: Could not create face from edges. Returning None.")
             return None
         return face
 
@@ -729,7 +740,7 @@ class Face():
         return return_face
     
     @staticmethod
-    def ByVertices(vertices: list, tolerance: float = 0.0001):
+    def ByVertices(vertices: list, tolerance: float = 0.0001, silent: bool = False):
         
         """
         Creates a face from the input list of vertices.
@@ -740,6 +751,8 @@ class Face():
             The input list of vertices.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -751,17 +764,33 @@ class Face():
         from topologicpy.Wire import Wire
 
         if not isinstance(vertices, list):
+            if not silent:
+                print("Face.ByVertices - Error: The input vertices parameter is not a valid list. Returning None.")
             return None
         vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
         if len(vertexList) < 3:
+            if not silent:
+                print("Face.ByVertices - Error: The input vertices parameter does not contain at least three valid vertices. Returning None.")
             return None
         
         w = Wire.ByVertices(vertexList, tolerance=tolerance)
+        if not Topology.IsInstance(w, "Wire"):
+            if not silent:
+                print("Face.ByVertices - Error: Could not create the base wire. Returning None.")
+            return None
+        if not Wire.IsClosed(w):
+            if not silent:
+                print("Face.ByVertices - Error: Could not create a closed base wire. Returning None.")
+            return None
         f = Face.ByWire(w, tolerance=tolerance)
+        if not Topology.IsInstance(w, "Wire"):
+            if not silent:
+                print("Face.ByVertices - Error: Could not create the face. Returning None.")
+            return None
         return f
 
     @staticmethod
-    def ByVerticesCluster(cluster, tolerance: float = 0.0001):
+    def ByVerticesCluster(cluster, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a face from the input cluster of vertices.
 
@@ -771,6 +800,8 @@ class Face():
             The input cluster of vertices.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -778,12 +809,17 @@ class Face():
             The created face.
 
         """
-        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Face.ByVertices - Error: The input cluster parameter is not a valid cluster. Returning None.")
             return None
         vertices = Topology.Vertices(cluster)
+        if len(vertices) < 3:
+            if not silent:
+                print("Face.ByVertices - Error: The input cluster parameter does not contain at least three valid vertices. Returning None.")
+            return None
         return Face.ByVertices(vertices, tolerance=tolerance)
 
     @staticmethod
