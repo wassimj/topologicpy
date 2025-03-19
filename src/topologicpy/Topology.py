@@ -3438,7 +3438,7 @@ class Topology():
             elif parts[0] == 'usemtl':
                 current_material = parts[1]
             elif parts[0] == 'g' or parts[0] == 'o':
-                current_group = parts[1] if len(parts) > 1 else None
+                current_group = ' '.join(parts[1:]) if len(parts) > 1 else None
 
         obj_data = {
             'vertices': vertices,
@@ -7383,7 +7383,7 @@ class Topology():
         return topology.RemoveContents(contents)
     
     @staticmethod
-    def RemoveCoplanarFaces(topology, epsilon=0.01, tolerance=0.0001):
+    def RemoveCoplanarFaces(topology, epsilon=0.01, tolerance=0.0001, silent: bool = False):
         """
         Removes coplanar faces in the input topology
 
@@ -7395,6 +7395,8 @@ class Topology():
             The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -7410,7 +7412,8 @@ class Topology():
         from topologicpy.Cluster import Cluster
 
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.RemoveCoplanarFaces - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+            if not silent:
+                print("Topology.RemoveCoplanarFaces - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
         t = Topology.Type(topology)
         if (t == Topology.TypeID("Vertex")) or (t == Topology.TypeID("Edge")) or (t == Topology.TypeID("Wire")) or (t == Topology.TypeID("Face")):
@@ -7459,7 +7462,8 @@ class Topology():
                     if Topology.IsInstance(f, "Face"):
                         final_faces.append(f)
                     else:
-                        print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
+                        if not silent:
+                            print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
                         final_faces += Shell.Faces(t)
             else: # It is a cluster
                 shells = Topology.Shells(t)
@@ -7468,7 +7472,8 @@ class Topology():
                     if Topology.IsInstance(f, "Face"):
                         final_faces.append(f)
                     else:
-                        print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
+                        if not silent:
+                            print("Topology.RemoveCoplanarFaces - Warning: Could not remove some coplanar faces. Re-adding original faces.")
                         final_faces += Shell.Faces(shell)
                 if len(shells) == 0:
                     faces = Topology.Faces(t)
@@ -7477,16 +7482,16 @@ class Topology():
                 final_faces += faces
         return_topology = None
         if Topology.IsInstance(topology, "CellComplex"):
-            return_topology = CellComplex.ByFaces(final_faces, tolerance=tolerance)
+            return_topology = CellComplex.ByFaces(final_faces, tolerance=tolerance, silent=silent)
         elif Topology.IsInstance(topology, "Cell"):
-            return_topology = Cell.ByFaces(final_faces, tolerance=tolerance)
+            return_topology = Cell.ByFaces(final_faces, tolerance=tolerance, silent=silent)
         elif Topology.IsInstance(topology, "Shell"):
             if len(final_faces) == 1:
                 return_topology = final_faces[0]
             else:
-                return_topology = Shell.ByFaces(final_faces, tolerance=tolerance)
+                return_topology = Shell.ByFaces(final_faces, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(return_topology, "Topology"):
-            return_topology = Cluster.ByTopologies(final_faces)
+            return_topology = Cluster.ByTopologies(final_faces, silent=silent)
         return return_topology
 
     @staticmethod
