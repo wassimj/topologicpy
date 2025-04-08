@@ -8500,10 +8500,14 @@ class Topology():
              nameKey = "name",
              opacityKey = "opacity",
              showVertices=True,
-             vertexSize=None,
+             vertexSize=2.8,
              vertexSizeKey = None,
              vertexColor="black",
              vertexColorKey = None,
+             vertexBorderWidth=0,
+             vertexBorderColor="black",
+             vertexBorderWidthKey=None,
+             vertexBorderColorKey=None,
              vertexLabelKey=None,
              showVertexLabel= False,
              vertexGroupKey=None,
@@ -8602,6 +8606,16 @@ class Topology():
             The default is "black".
         vertexColorKey : str , optional
             The key under which to find the color of the vertex. The default is None.
+        vertexBorderWidth : float , optional
+            The desired width of the borders of the output vertices. The default is 0.
+        vertexBorderColor : str , optional
+            The desired color of the borders of the output vertices. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
         vertexLabelKey : str , optional
             The dictionary key to use to display the vertex label. The default is None.
         showVertexLabels : bool , optional
@@ -8798,7 +8812,7 @@ class Topology():
                 vll = name+" ("+vertexLegendLabel+")"
                 ell = name+" ("+edgeLegendLabel+")"
                 
-                data += Plotly.DataByGraph(topology,
+                data.extend(Plotly.DataByGraph(topology,
                                            sagitta=sagitta,
                                            absolute=absolute,
                                            sides=sides,
@@ -8807,6 +8821,10 @@ class Topology():
                                            vertexColorKey=vertexColorKey,
                                            vertexSize=vSize,
                                            vertexSizeKey=vertexSizeKey,
+                                           vertexBorderColor= vertexBorderColor,
+                                           vertexBorderWidth=vertexBorderWidth,
+                                           vertexBorderColorKey= vertexBorderColorKey,
+                                           vertexBorderWidthKey=vertexBorderWidthKey,
                                            vertexLabelKey=vertexLabelKey,
                                            vertexGroupKey=vertexGroupKey,
                                            vertexGroups=vertexGroups,
@@ -8834,7 +8852,7 @@ class Topology():
                                            edgeLegendRank= (graph_counter+2),
                                            edgeLegendGroup=(graph_counter+2),
                                            colorScale=colorScale,
-                                           silent=silent)
+                                           silent=silent))
                 graph_counter += offset
             else:
                 name = Dictionary.ValueAtKey(d, nameKey) or "Untitled"
@@ -8852,12 +8870,16 @@ class Topology():
                     eColor = edgeColor
                 if not d == None:
                     faceOpacity = Dictionary.ValueAtKey(d, opacityKey) or faceOpacity
-                data += Plotly.DataByTopology(topology=topology,
+                data.extend(Plotly.DataByTopology(topology=topology,
                                               showVertices=showVertices,
                                               vertexSize=vSize,
                                               vertexSizeKey=vertexSizeKey,
                                               vertexColor=vertexColor,
                                               vertexColorKey=vertexColorKey,
+                                              vertexBorderWidth=vertexBorderWidth,
+                                              vertexBorderColor=vertexBorderColor,
+                                              vertexBorderColorKey= vertexBorderColorKey,
+                                              vertexBorderWidthKey=vertexBorderWidthKey,
                                               vertexLabelKey=vertexLabelKey,
                                               showVertexLabel=showVertexLabel,
                                               vertexGroupKey=vertexGroupKey,
@@ -8901,7 +8923,7 @@ class Topology():
                                               intensities=intensities,
                                               colorScale=colorScale,
                                               mantissa=mantissa,
-                                              tolerance=tolerance)
+                                              tolerance=tolerance))
                 topology_counter += offset
         figure = Plotly.FigureByData(data=data, width=width, height=height,
                                      xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,

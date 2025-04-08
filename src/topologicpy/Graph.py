@@ -8850,7 +8850,7 @@ class Graph:
         return max_flow
 
     @staticmethod
-    def MeshData(graph, tolerance: float = 0.0001):
+    def MeshData(graph, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Returns the mesh data of the input graph.
 
@@ -8858,6 +8858,8 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
 
@@ -8880,7 +8882,7 @@ class Graph:
         m_vertices = []
         v_dicts = []
         for g_vertex in g_vertices:
-            m_vertices.append(Vertex.Coordinates(g_vertex))
+            m_vertices.append(Vertex.Coordinates(g_vertex, mantissa=mantissa))
             d = Dictionary.PythonDictionary(Topology.Dictionary(g_vertex))
             v_dicts.append(d)
         g_edges = Graph.Edges(graph)
@@ -9779,6 +9781,31 @@ class Graph:
         return graph
     
     @staticmethod
+    def RemoveIsolatedVertices(graph, tolerance=0.0001):
+        """
+        Removes all isolated vertices from the input graph.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The input graph with all isolated vertices removed.
+
+        """
+        from topologicpy.Topology import Topology
+
+        vertices = Graph.Vertices(graph)
+        edges = Graph.Edges(graph)
+        vertices = [v for v in vertices if Graph.VertexDegree(graph, v) > 0]
+        return Graph.ByVerticesEdges(vertices, edges)
+
+    @staticmethod
     def RemoveVertex(graph, vertex, tolerance=0.0001):
         """
         Removes the input vertex from the input graph.
@@ -10298,6 +10325,125 @@ class Graph:
                 d = Dictionary.SetValueAtKey(d, vertexKey, 1)
                 v = Topology.SetDictionary(v, d)
         return return_graph
+
+    @staticmethod
+    def SubGraphMatches(subGraph, superGraph, strict=False, vertexMatcher=None, vertexKey: str = "id", mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Finds all subgraph matches from `subgraph` into `supergraph`.
+        A match is valid if:
+        - Each subgraph vertex maps to a unique supergraph vertex either by the vertexMatcher function or through matching the vertexKey values.
+        - Each subgraph edge is represented either by an edge (if strict is set to True) or by an edge or a path (if strict is set to False) in the supergraph.
+
+        Parameters
+        ----------
+        subGraph : topologic_core.Graph
+            The input subgraph.
+        superGraph : topologic_core.Graph
+            The input supergraph.
+        strict : bool , optional
+            If set to True, each subgraph edge must be represented by a single edge in the supergraph. Otherwise, an edge in the subgraph can be represented either with an edge or a path in the supergraph. The default is False.
+        vertexMatcher : callable, optional
+            If specified, this function is called to check if two vertices are matched. The format must be vertex_matcher(sub_vertex, super_vertex, mantissa, tolerance) -> bool.
+        vertexKey : str , optional
+            The dictionary key to use for vertex matching if the vertexMatcher input parameter is set to None. The default is "id".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            A list of subgraphs matched to the supergraph. Each vertex in the matched subgraph has a dictionary that merges the keys and values from both the subgraph and the supergraph. 
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+        import itertools
+
+        sub_vertices = Graph.Vertices(subGraph)
+        super_vertices = Graph.Vertices(superGraph)
+
+        sub_ids = [Dictionary.ValueAtKey(Topology.Dictionary(v), vertexKey) for v in sub_vertices]
+
+        # Map vertex instance to index in sub_vertices
+        sub_vertex_indices = {vid: i for i, vid in enumerate(sub_ids)}
+
+        # Default matcher by dictionary vertexKey
+        if vertexMatcher is None:
+            def vertexMatcher(v1, v2, mantissa=mantissa, tolerance=tolerance):
+                d1 = Topology.Dictionary(v1)
+                d2 = Topology.Dictionary(v2)
+                id1 = Dictionary.ValueAtKey(d1, vertexKey) if d1 else None
+                id2 = Dictionary.ValueAtKey(d2, vertexKey) if d2 else None
+                return id1 == id2 and id1 is not None
+
+        # Step 1: Build candidate list for each subgraph vertex (by index)
+        candidate_map = {}
+        for i, sv in enumerate(sub_vertices):
+            candidates = [v for v in super_vertices if vertexMatcher(sv, v, mantissa=mantissa, tolerance=tolerance)]
+            if not candidates:
+                return []  # No match for this vertex
+            candidate_map[i] = candidates
+
+        # Step 2: Generate all injective mappings
+        all_matches = []
+        sub_indices = list(candidate_map.keys())
+        candidate_lists = [candidate_map[i] for i in sub_indices]
+
+        for combo in itertools.product(*candidate_lists):
+            if len(set(combo)) < len(combo):
+                continue  # Not injective
+
+            mapping = dict(zip(sub_indices, combo))
+
+            # Step 3: Check that each subgraph edge corresponds to a path in supergraph
+            valid = True
+            for edge in Graph.Edges(subGraph):
+                sv1 = Edge.StartVertex(edge)
+                sv2 = Edge.EndVertex(edge)
+                d1 = Topology.Dictionary(sv1)
+                d2 = Topology.Dictionary(sv2)
+                id1 = Dictionary.ValueAtKey(d1, vertexKey) if d1 else None
+                id2 = Dictionary.ValueAtKey(d2, vertexKey) if d2 else None
+                if id1 == None or id2 == None:
+                    continue
+                else:
+                    i1 = sub_vertex_indices[id1]
+                    i2 = sub_vertex_indices[id2]
+                    gv1 = mapping[i1]
+                    gv2 = mapping[i2]
+
+                    path = Graph.ShortestPath(superGraph, gv1, gv2)
+                    if not path:
+                        valid = False
+                        break
+                    elif strict:
+                        if Topology.IsInstance(path, "Wire"):
+                            if len(Topology.Edges(path)) > 1:
+                                valid = False
+                                break
+
+            if valid:
+                all_matches.append(mapping)
+
+        matched_subgraphs = []
+        if len(all_matches) > 0:
+            vertex_dictionaries = []
+            d = Graph.MeshData(subGraph)
+            subgraph_edges = d['edges']
+            edge_dictionaries = d['edgeDictionaries']
+            positions = []
+            for i, mapping in enumerate(all_matches, 1):
+                for svid, gv in mapping.items():
+                    positions.append(Vertex.Coordinates(gv))
+                    sd = Topology.Dictionary(sub_vertices[svid])
+                    gd = Topology.Dictionary(gv)
+                    vertex_dictionaries.append(Dictionary.ByMergedDictionaries(sd, gd))
+                matched_subgraphs.append(Graph.ByMeshData(positions, subgraph_edges, vertexDictionaries=vertex_dictionaries, edgeDictionaries=edge_dictionaries))
+        return matched_subgraphs
 
     @staticmethod
     def _topological_distance(g, start, target):

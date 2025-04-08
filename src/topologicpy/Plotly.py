@@ -282,6 +282,10 @@ class Plotly:
                     vertexSize: float = 10,
                     vertexSizeKey: str = None,
                     vertexLabelKey: str = None,
+                    vertexBorderColor: str = "black",
+                    vertexBorderWidth: float = 1,
+                    vertexBorderColorKey: str = None,
+                    vertexBorderWidthKey: float = None,
                     vertexGroupKey: str = None,
                     vertexGroups: list = [],
                     vertexMinGroup = None,
@@ -422,6 +426,10 @@ class Plotly:
                                    colorKey=vertexColorKey,
                                    size=vertexSize,
                                    sizeKey=vertexSizeKey,
+                                   borderColor=vertexBorderColor,
+                                   borderWidth=vertexBorderWidth,
+                                   borderColorKey=vertexBorderColorKey,
+                                   borderWidthKey=vertexBorderWidthKey,
                                    labelKey=vertexLabelKey,
                                    showVertexLabel=showVertexLabel,
                                    groupKey=vertexGroupKey,
@@ -433,24 +441,7 @@ class Plotly:
                                    legendRank=vertexLegendRank,
                                    showLegend=showVertexLegend,
                                    colorScale=colorScale)
-
-                # v_data = Plotly.DataByTopology(e_cluster,
-                #                         vertexColor=vertexColor,
-                #                         vertexColorKey=vertexColorKey,
-                #                         vertexSize=vertexSize,
-                #                         vertexSizeKey=vertexSizeKey,
-                #                         vertexLabelKey=vertexLabelKey,
-                #                         showVertexLabel=showVertexLabel,
-                #                         vertexGroupKey=vertexGroupKey,
-                #                         vertexMinGroup=vertexMinGroup,
-                #                         vertexMaxGroup=vertexMaxGroup,
-                #                         vertexGroups=vertexGroups,
-                #                         showVertexLegend=showVertexLegend,
-                #                         vertexLegendLabel=vertexLegendLabel,
-                #                         vertexLegendGroup=vertexLegendGroup,
-                #                         vertexLegendRank=vertexLegendRank,
-                #                         colorScale=colorScale)
-                data += [v_data]
+                data += v_data
         
         if showEdges:
             e_dictionaries = []
@@ -486,17 +477,45 @@ class Plotly:
         return data
     
     @staticmethod
-    def vertexData(vertices, dictionaries=[], color="black", colorKey=None, size=1.1, sizeKey=None, labelKey=None, showVertexLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Vertices", legendGroup=1, legendRank=1, showLegend=True, colorScale="Viridis"):
+    def vertexData(vertices,
+                   dictionaries=[],
+                   color="black",
+                   colorKey=None,
+                   size=1.1,
+                   sizeKey=None,
+                   borderColor="black",
+                   borderWidth=0,
+                   borderColorKey=None,
+                   borderWidthKey=None,
+                   labelKey=None,
+                   showVertexLabel = False,
+                   groupKey=None,
+                   minGroup=None,
+                   maxGroup=None,
+                   groups=[],
+                   legendLabel="Topology Vertices",
+                   legendGroup=1,
+                   legendRank=1,
+                   showLegend=True,
+                   colorScale="Viridis"):
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Color import Color
         x = []
         y = []
         z = []
         n = len(str(len(vertices)))
-        sizes = [size for i in range(len(vertices))]
-        labels = ["Vertex_"+str(i+1).zfill(n) for i in range(len(vertices))]
-        colors = [Color.AnyToHex(color) for i in range(len(vertices))]
-        if colorKey or sizeKey or labelKey or groupKey:
+        sizes = []
+        labels = []
+        colors = []
+        borderColors = []
+        borderSizes = []
+        for i in range(len(vertices)):
+            sizes.append(size)
+            labels.append("Vertex_"+str(i+1).zfill(n))
+            colors.append(Color.AnyToHex(color))
+            borderColors.append(borderColor)
+            borderSizes.append(size+borderWidth*2)
+        if colorKey or sizeKey or borderColorKey or borderWidthKey or labelKey or groupKey:
             if groups:
                 if len(groups) > 0:
                     if type(groups[0]) == int or type(groups[0]) == float:
@@ -515,10 +534,8 @@ class Plotly:
                 x.append(v[0])
                 y.append(v[1])
                 z.append(v[2])
-                #colors.append(Color.AnyToHex(color))
-                #labels.append("Vertex_"+str(m+1).zfill(n))
-                #sizes.append(max(size, 1.1))
                 if len(dictionaries) > 0:
+
                     d = dictionaries[m]
                     if d:
                         if not colorKey == None:
@@ -533,6 +550,16 @@ class Plotly:
                                sizes[m] = size
                             if sizes[m] <= 0:
                                 sizes[m] = 1.1
+                        if not borderColorKey == None:
+                            temp_color = Dictionary.ValueAtKey(d, key=borderColorKey)
+                            if not temp_color == None:
+                                borderColors[m] = Color.AnyToHex(temp_color)
+                        if not borderWidthKey == None:
+                            temp_width = Dictionary.ValueAtKey(d, key=borderWidthKey)
+                            if temp_width == None or temp_width <= 0:
+                               borderSizes[m] = 0
+                            else:
+                                borderSizes[m] = sizes[m] + temp_width*2
                         if not groupKey == None:
                             c_value = Dictionary.ValueAtKey(d, key=groupKey)
                             if not c_value == None:
@@ -565,14 +592,16 @@ class Plotly:
             mode = "markers+text"
         else:
             mode = "markers"
-        vData= go.Scatter3d(x=x,
+        vData2 = go.Scatter3d(x=x,
                             y=y,
                             z=z,
                             name=legendLabel,
                             showlegend=showLegend,
                             marker=dict(color=colors,
-                                        size=sizes, 
-                                        opacity=1),
+                                        size=sizes,
+                                        symbol="circle", 
+                                        opacity=1,
+                                        sizemode="diameter"),
                             mode=mode,
                             legendgroup=legendGroup,
                             legendrank=legendRank,
@@ -580,7 +609,24 @@ class Plotly:
                             hoverinfo='text',
                             hovertext=labels
                             )
-        return vData
+        if borderWidth > 0 or borderWidthKey:
+            vData1 = go.Scatter3d(x=x,
+                                y=y,
+                                z=z,
+                                name=legendLabel,
+                                showlegend=showLegend,
+                                marker=dict(color=borderColors,
+                                            size=borderSizes,
+                                            symbol="circle", 
+                                            opacity=1,
+                                            sizemode="diameter"),
+                                mode=mode
+                                )
+            
+            return_value = [vData1]+[vData2]
+        else:
+            return_value = [vData2]
+        return return_value
 
     @staticmethod
     def edgeData(vertices, edges, dictionaries=None, color="black", colorKey=None, width=1, widthKey=None, labelKey=None, showEdgeLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
@@ -716,11 +762,15 @@ class Plotly:
     @staticmethod
     def DataByTopology(topology,
                        showVertices=True,
-                       vertexSize=1.1,
+                       vertexSize=2.8,
                        vertexSizeKey=None,
                        vertexColor="black",
                        vertexColorKey=None,
                        vertexLabelKey=None,
+                       vertexBorderColor: str = "black",
+                       vertexBorderWidth: float = 0,
+                       vertexBorderColorKey: str = None,
+                       vertexBorderWidthKey: float = None,
                        showVertexLabel=False,
                        vertexGroupKey=None,
                        vertexGroups=[], 
@@ -771,7 +821,7 @@ class Plotly:
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
         vertexSize : float , optional
-            The desired size of the vertices. The default is 1.1.
+            The desired size of the output vertices. The default is 1.1.
         vertexSizeKey : str , optional
             The dictionary key under which to find the vertex size.The default is None.
         vertexColor : str , optional
@@ -784,6 +834,16 @@ class Plotly:
             The default is "black".
         vertexColorKey : str , optional
             The dictionary key under which to find the vertex color.The default is None.
+        vertexBorderWidth : float , optional
+            The desired width of the border of the output vertices. The default is 1.
+        vertexBorderColor : str , optional
+            The desired color of the border of the output vertices. This can be any plotly color string and may be specified as:
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is "black".
         vertexLabelKey : str , optional
             The dictionary key to use to display the vertex label. The default is None.
         vertexGroupKey : str , optional
@@ -1066,11 +1126,31 @@ class Plotly:
             if showVertices:
                 if len(vertices) == 0:
                     for i, tp_v in enumerate(tp_vertices):
-                        if vertexColorKey or vertexSizeKey or vertexLabelKey or vertexGroupKey:
+                        if vertexColorKey or vertexSizeKey or vertexBorderColorKey or vertexBorderWidthKey or vertexLabelKey or vertexGroupKey:
                             d = Topology.Dictionary(tp_v)
                             v_dictionaries.append(d)
                         vertices.append([Vertex.X(tp_v, mantissa=mantissa), Vertex.Y(tp_v, mantissa=mantissa), Vertex.Z(tp_v, mantissa=mantissa)])
-                data.append(Plotly.vertexData(vertices, dictionaries=v_dictionaries, color=vertexColor, colorKey=vertexColorKey, size=vertexSize, sizeKey=vertexSizeKey, labelKey=vertexLabelKey, showVertexLabel=showVertexLabel, groupKey=vertexGroupKey, minGroup=vertexMinGroup, maxGroup=vertexMaxGroup, groups=vertexGroups, legendLabel=vertexLegendLabel, legendGroup=vertexLegendGroup, legendRank=vertexLegendRank, showLegend=showVertexLegend, colorScale=colorScale))
+                data.extend(Plotly.vertexData(vertices,
+                                              dictionaries=v_dictionaries,
+                                              color=vertexColor,
+                                              colorKey=vertexColorKey,
+                                              size=vertexSize,
+                                              sizeKey=vertexSizeKey,
+                                              borderColor=vertexBorderColor,
+                                              borderWidth=vertexBorderWidth,
+                                              borderColorKey=vertexBorderColorKey,
+                                              borderWidthKey=vertexBorderWidthKey,
+                                              labelKey=vertexLabelKey,
+                                              showVertexLabel=showVertexLabel,
+                                              groupKey=vertexGroupKey,
+                                              minGroup=vertexMinGroup,
+                                              maxGroup=vertexMaxGroup,
+                                              groups=vertexGroups,
+                                              legendLabel=vertexLegendLabel,
+                                              legendGroup=vertexLegendGroup,
+                                              legendRank=vertexLegendRank,
+                                              showLegend=showVertexLegend,
+                                              colorScale=colorScale))
             
         if showEdges and Topology.Type(topology) > Topology.TypeID("Vertex"):
             if Topology.Type(topology) == Topology.TypeID("Edge"):
