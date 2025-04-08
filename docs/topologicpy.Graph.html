@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.8.18 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.8.19 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.18
+                0.8.19
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -390,7 +390,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MaximumFlow" title="topologicpy.Graph.Graph.MaximumFlow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumFlow</span></code></a>(graph, source, sink[, ...])</p></td>
 <td><p>Returns the maximum flow of the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MeshData" title="topologicpy.Graph.Graph.MeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshData</span></code></a>(graph[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MeshData" title="topologicpy.Graph.Graph.MeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshData</span></code></a>(graph[, mantissa, tolerance])</p></td>
 <td><p>Returns the mesh data of the input graph.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MetricDistance" title="topologicpy.Graph.Graph.MetricDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MetricDistance</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
@@ -435,26 +435,32 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.RemoveEdge" title="topologicpy.Graph.Graph.RemoveEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEdge</span></code></a>(graph, edge[, tolerance])</p></td>
 <td><p>Removes the input edge from the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.RemoveVertex" title="topologicpy.Graph.Graph.RemoveVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveVertex</span></code></a>(graph, vertex[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.RemoveIsolatedVertices" title="topologicpy.Graph.Graph.RemoveIsolatedVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveIsolatedVertices</span></code></a>(graph[, tolerance])</p></td>
+<td><p>Removes all isolated vertices from the input graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.RemoveVertex" title="topologicpy.Graph.Graph.RemoveVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveVertex</span></code></a>(graph, vertex[, tolerance])</p></td>
 <td><p>Removes the input vertex from the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Reshape" title="topologicpy.Graph.Graph.Reshape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reshape</span></code></a>(graph[, shape, k, seed, iterations, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Reshape" title="topologicpy.Graph.Graph.Reshape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reshape</span></code></a>(graph[, shape, k, seed, iterations, ...])</p></td>
 <td><p>Reshapes the input graph according to the desired input shape parameter.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.SetDictionary" title="topologicpy.Graph.Graph.SetDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code></a>(graph, dictionary)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.SetDictionary" title="topologicpy.Graph.Graph.SetDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code></a>(graph, dictionary)</p></td>
 <td><p>Sets the input graph's dictionary to the input dictionary</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ShortestPath" title="topologicpy.Graph.Graph.ShortestPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPath</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ShortestPath" title="topologicpy.Graph.Graph.ShortestPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPath</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
 <td><p>Returns the shortest path that connects the input vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ShortestPaths" title="topologicpy.Graph.Graph.ShortestPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPaths</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ShortestPaths" title="topologicpy.Graph.Graph.ShortestPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPaths</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
 <td><p>Returns the shortest path that connects the input vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Show" title="topologicpy.Graph.Graph.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(*graphs[, sagitta, absolute, sides, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Show" title="topologicpy.Graph.Graph.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(*graphs[, sagitta, absolute, sides, ...])</p></td>
 <td><p>Shows the graph using Plotly.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Size" title="topologicpy.Graph.Graph.Size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Size</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Size" title="topologicpy.Graph.Graph.Size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Size</span></code></a>(graph)</p></td>
 <td><p>Returns the graph size of the input graph.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.SubGraphMatches" title="topologicpy.Graph.Graph.SubGraphMatches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubGraphMatches</span></code></a>(subGraph, superGraph[, ...])</p></td>
+<td><p>Finds all subgraph matches from <cite>subgraph</cite> into <cite>supergraph</cite>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Subgraph" title="topologicpy.Graph.Graph.Subgraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subgraph</span></code></a>(graph, vertices[, vertexKey, ...])</p></td>
 <td><p>Returns a subgraph of the input graph as defined by the input vertices.</p></td>
@@ -3119,12 +3125,14 @@ This is used in weighted graphs. if weightKey is set to “Length” or “Dista
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.MeshData">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeshData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.MeshData" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeshData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.MeshData" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the mesh data of the input graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
@@ -3559,6 +3567,28 @@ Valid partition numbers start from 1. Cut edges receive a partition number of 0.
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.RemoveIsolatedVertices">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveIsolatedVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.RemoveIsolatedVertices" title="Permalink to this definition"></a></dt>
+<dd><p>Removes all isolated vertices from the input graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Graph</dt><dd><p>The input graph with all isolated vertices removed.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.RemoveVertex">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveVertex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.RemoveVertex" title="Permalink to this definition"></a></dt>
 <dd><p>Removes the input vertex from the input graph.</p>
@@ -3867,6 +3897,41 @@ The default is “rgba(0,0,0,0)”.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>int</dt><dd><p>The number of edges in the input graph.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.SubGraphMatches">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SubGraphMatches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">superGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexMatcher</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.SubGraphMatches" title="Permalink to this definition"></a></dt>
+<dd><p>Finds all subgraph matches from <cite>subgraph</cite> into <cite>supergraph</cite>.
+A match is valid if:
+- Each subgraph vertex maps to a unique supergraph vertex either by the vertexMatcher function or through matching the vertexKey values.
+- Each subgraph edge is represented either by an edge (if strict is set to True) or by an edge or a path (if strict is set to False) in the supergraph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>subGraph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input subgraph.</p>
+</dd>
+<dt><strong>superGraph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input supergraph.</p>
+</dd>
+<dt><strong>strict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, each subgraph edge must be represented by a single edge in the supergraph. Otherwise, an edge in the subgraph can be represented either with an edge or a path in the supergraph. The default is False.</p>
+</dd>
+<dt><strong>vertexMatcher</strong><span class="classifier">callable, optional</span></dt><dd><p>If specified, this function is called to check if two vertices are matched. The format must be vertex_matcher(sub_vertex, super_vertex, mantissa, tolerance) -&gt; bool.</p>
+</dd>
+<dt><strong>vertexKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use for vertex matching if the vertexMatcher input parameter is set to None. The default is “id”.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>A list of subgraphs matched to the supergraph. Each vertex in the matched subgraph has a dictionary that merges the keys and values from both the subgraph and the supergraph.</p>
 </dd>
 </dl>
 </dd>
