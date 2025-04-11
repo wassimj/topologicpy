@@ -4378,6 +4378,220 @@ class Graph:
         return graph
     
     @staticmethod
+    def Compare(graphA, graphB,
+                weightAttributes: float = 1.0,
+                weightGeometry: float = 1.0,
+                weightMetrics: float = 1.0,
+                weightStructure: float = 1.0,
+                weightWL: float = 1.0,
+                iterations: int = 3,
+                mantissa: int = 6,
+                silent: bool = False):
+        """
+        Compares two graphs and returns a similarity score based on attributres, geometry, metrics, structure, and
+        the Weisfeiler-Lehman graph kernel. See https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test
+
+        Parameters
+        ----------
+        graphA : topologic Graph
+            The first input graph.
+        graphB : topologic Graph
+            The second input graph.
+        weightAttributes : float , optional
+            The desired weight for attribute similarity (dictionary key overlap at vertices). Default is 1.0.
+        weightGeometry : float , optional
+            The desired weight for geometric similarity (vertex positions). Default is 1.0.
+        weightMetrics : float , optional
+            The desired weight for metric similarity (graph-level and node-level). Default is 1.0.
+            The compared metrics are: betweenness centrality, closeness centrality, clustering coefficient, degree, diameter, and pagerank.
+        weightStructure : float , optional
+            The desired weight for structural similarity (number of vertices and edges). Default is 1.0.
+        weightWL : float , optional
+            The desired weight for Weisfeiler-Lehman kernel similarity (iterative label propagation). Default is 1.0.
+        iterations : int , optional
+            The desired number of Weisfeiler-Lehman iterations. Default is 3.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        dict
+            A dictionary of similarity scores between 0 (completely dissimilar) and 1 (identical), based on weighted components.
+            The keys in the dictionary are:
+            "attribute"
+            "geometry"
+            "metrics"
+            "structure"
+            "wl"
+            "overall"
+
+        """
+        
+        import hashlib
+        from collections import Counter
+        from topologicpy.Graph import Graph
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        def attribute_similarity(graphA, graphB, mantissa=6):
+            v1 = Graph.Vertices(graphA)
+            v2 = Graph.Vertices(graphB)
+            if len(v1) != len(v2) or len(v1) == 0:
+                return 0
+
+            match_score = 0
+            for a, b in zip(v1, v2):
+                dict_a = Topology.Dictionary(a)
+                dict_b = Topology.Dictionary(b)
+
+                keys_a = set(Dictionary.Keys(dict_a)) if dict_a else set()
+                keys_b = set(Dictionary.Keys(dict_b)) if dict_b else set()
+
+                if not keys_a and not keys_b:
+                    match_score += 1
+                else:
+                    intersection = len(keys_a & keys_b)
+                    union = len(keys_a | keys_b)
+                    match_score += intersection / union if union > 0 else 0
+
+            return round(match_score / len(v1), mantissa)
+        
+        def geometry_similarity(graphA, graphB, mantissa=6):
+            v1 = Graph.Vertices(graphA)
+            v2 = Graph.Vertices(graphB)
+            if len(v1) != len(v2) or len(v1) == 0:
+                return 0
+
+            total_dist = 0
+            for a, b in zip(v1, v2):  # assumes same order
+                p1 = Vertex.Coordinates(a, mantissa=mantissa)
+                p2 = Vertex.Coordinates(b, mantissa=mantissa)
+                total_dist += sum((i - j) ** 2 for i, j in zip(p1, p2)) ** 0.5
+            avg_dist = total_dist / len(v1)
+            return round(1 / (1 + avg_dist), mantissa) # Inverse average distance
+        
+        def metrics_similarity(graphA, graphB, mantissa=6):
+            # Example using global metrics + mean of node metrics
+            def safe_mean(lst):
+                return sum(lst)/len(lst) if lst else 0
+
+            metrics1 = {
+                "closeness": safe_mean(Graph.ClosenessCentrality(graphA)),
+                "betweenness": safe_mean(Graph.BetweennessCentrality(graphA)),
+                "degree": safe_mean(Graph.DegreeCentrality(graphA)),
+                "pagerank": safe_mean(Graph.PageRank(graphA)),
+                "clustering": Graph.GlobalClusteringCoefficient(graphA),
+                "diameter": Graph.Diameter(graphA)
+            }
+
+            metrics2 = {
+                "closeness": safe_mean(Graph.ClosenessCentrality(graphB)),
+                "betweenness": safe_mean(Graph.BetweennessCentrality(graphB)),
+                "degree": safe_mean(Graph.DegreeCentrality(graphB)),
+                "pagerank": safe_mean(Graph.PageRank(graphB)),
+                "clustering": Graph.GlobalClusteringCoefficient(graphB),
+                "diameter": Graph.Diameter(graphB)
+            }
+
+            # Compute similarity as 1 - normalized absolute difference
+            similarities = []
+            for key in metrics1:
+                v1, v2 = metrics1[key], metrics2[key]
+                if v1 == 0 and v2 == 0:
+                    similarities.append(1)
+                else:
+                    diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
+                    similarities.append(1 - diff)
+
+            return round(sum(similarities) / len(similarities), mantissa)
+        
+        def structure_similarity(graphA, graphB, mantissa=6):
+            v1 = Graph.Vertices(graphA)
+            v2 = Graph.Vertices(graphB)
+            e1 = Graph.Edges(graphA)
+            e2 = Graph.Edges(graphB)
+
+            vertex_score = 1 - abs(len(v1) - len(v2)) / max(len(v1), len(v2), 1)
+            edge_score = 1 - abs(len(e1) - len(e2)) / max(len(e1), len(e2), 1)
+
+            return round((vertex_score + edge_score) / 2, mantissa)
+
+        def weisfeiler_lehman_fingerprint(graph, iterations=3):
+            vertices = Graph.Vertices(graph)
+            labels = {}
+
+            for v in vertices:
+                d = Topology.Dictionary(v)
+                label = str(Dictionary.ValueAtKey(d, "label")) if d and Dictionary.ValueAtKey(d, "label") else "0"
+                labels[v] = label
+
+            all_label_counts = Counter()
+
+            for _ in range(iterations):
+                new_labels = {}
+                for v in vertices:
+                    neighbors = Graph.AdjacentVertices(graph, v)
+                    neighbor_labels = sorted(labels.get(n, "0") for n in neighbors)
+                    long_label = labels[v] + "_" + "_".join(neighbor_labels)
+                    hashed_label = hashlib.md5(long_label.encode()).hexdigest()
+                    new_labels[v] = hashed_label
+                    all_label_counts[hashed_label] += 1
+                labels = new_labels
+
+            return all_label_counts
+
+        def weisfeiler_lehman_similarity(graphA, graphB, iterations=3, mantissa=6):
+            f1 = weisfeiler_lehman_fingerprint(graphA, iterations)
+            f2 = weisfeiler_lehman_fingerprint(graphB, iterations)
+
+            common_labels = set(f1.keys()) & set(f2.keys())
+            score = sum(min(f1[label], f2[label]) for label in common_labels)
+            norm = max(sum(f1.values()), sum(f2.values()), 1)
+
+            return round(score / norm, mantissa)
+        
+        if not Topology.IsInstance(graphA, "graph"):
+            if not silent:
+                print("Graph.Compare - Error: The graphA input parameter is not a valid topologic graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "graph"):
+            if not silent:
+                print("Graph.Compare - Error: The graphB input parameter is not a valid topologic graph. Returning None.")
+            return 
+        
+        total_weight = weightAttributes + weightGeometry + weightMetrics + weightStructure + weightWL
+
+        attribute_score = attribute_similarity(graphA, graphB, mantissa=mantissa) if weightAttributes else 0
+        geometry_score = geometry_similarity(graphA, graphB, mantissa=mantissa) if weightGeometry else 0
+        metrics_score = metrics_similarity(graphA, graphB, mantissa=mantissa) if weightMetrics else 0
+        structure_score = structure_similarity(graphA, graphB, mantissa=mantissa) if weightStructure else 0
+        wl_score = weisfeiler_lehman_similarity(graphA, graphB, iterations, mantissa=mantissa) if weightWL else 0
+
+        weighted_sum = (
+            attribute_score * weightAttributes +
+            geometry_score * weightGeometry +
+            metrics_score * weightMetrics +
+            structure_score * weightStructure +
+            wl_score * weightWL
+        )
+
+        if total_weight <= 0:
+            overall_score = 0
+        else:
+            overall_score = weighted_sum / total_weight
+        
+        return  { "attribute": round(attribute_score, mantissa),
+                "geometry": round(geometry_score, mantissa),
+                "metrics": round(metrics_score, mantissa),
+                "structure": round(structure_score, mantissa),
+                "wl": round(wl_score, mantissa),
+                "overall": round(overall_score, mantissa)
+                }
+
+    @staticmethod
     def Complement(graph, tolerance=0.0001, silent=False):
         """
         Creates the complement graph of the input graph. See https://en.wikipedia.org/wiki/Complement_graph
