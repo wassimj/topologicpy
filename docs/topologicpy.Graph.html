@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.8.20 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.8.21 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.20
+                0.8.21
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -250,7 +250,7 @@
 <td><p>Computes the best community partition of the input graph based on the Louvain method.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Compare" title="topologicpy.Graph.Graph.Compare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compare</span></code></a>(graphA, graphB[, weightAttributes, ...])</p></td>
-<td><p>Compares two graphs and returns a similarity score based on attributres, geometry, metrics, structure, and the Weisfeiler-Lehman graph kernel.</p></td>
+<td><p>Compares two graphs and returns a similarity score based on attributres, geometry, metrics, structure,  the Weisfeiler-Lehman graph kernel.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Complement" title="topologicpy.Graph.Graph.Complement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Complement</span></code></a>(graph[, tolerance, silent])</p></td>
 <td><p>Creates the complement graph of the input graph.</p></td>
@@ -485,6 +485,9 @@
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.VisibilityGraph" title="topologicpy.Graph.Graph.VisibilityGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VisibilityGraph</span></code></a>(face[, viewpointsA, ...])</p></td>
 <td><p>Creates a 2D visibility graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WeightedJaccardSimilarity" title="topologicpy.Graph.Graph.WeightedJaccardSimilarity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WeightedJaccardSimilarity</span></code></a>(graphA, graphB, ...)</p></td>
+<td><p>Computes the weighted Jaccard similarity between two vertices based on their neighbors and edge weights.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1690,9 +1693,10 @@ Any vertices that have been pre-colored will not be affected. See <a class="refe
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.Compare">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightAttributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightGeometry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightMetrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightStructure</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightWL</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Compare" title="Permalink to this definition"></a></dt>
-<dd><p>Compares two graphs and returns a similarity score based on attributres, geometry, metrics, structure, and
-the Weisfeiler-Lehman graph kernel. See <a class="reference external" href="https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test">https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test</a></p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Compare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightAttributes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightGeometry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightMetrics</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightStructure</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightWL</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightJaccard</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexIDKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWeightKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Compare" title="Permalink to this definition"></a></dt>
+<dd><p>Compares two graphs and returns a similarity score based on attributres, geometry, metrics, structure, 
+the Weisfeiler-Lehman graph kernel. See <a class="reference external" href="https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test">https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test</a>
+, and the weight Jaccard Similarity. See <a class="reference external" href="https://www.statology.org/jaccard-similarity/">https://www.statology.org/jaccard-similarity/</a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -1710,6 +1714,14 @@ The compared metrics are: betweenness centrality, closeness centrality, clusteri
 <dt><strong>weightStructure</strong><span class="classifier">float , optional</span></dt><dd><p>The desired weight for structural similarity (number of vertices and edges). Default is 1.0.</p>
 </dd>
 <dt><strong>weightWL</strong><span class="classifier">float , optional</span></dt><dd><p>The desired weight for Weisfeiler-Lehman kernel similarity (iterative label propagation). Default is 1.0.</p>
+</dd>
+<dt><strong>weightJaccard: float , optional</strong></dt><dd><p>The desired weight for the Weighted Jaccard similarity. Default is 1.0.</p>
+</dd>
+<dt><strong>vertexIDKey: str , optional</strong></dt><dd><p>The dictionary key under which to find the unique vertex ID. The default is “id”.</p>
+</dd>
+<dt><strong>edgeWeightKey: str , optional</strong></dt><dd><p>The dictionary key under which to find the weight of the edge for weighted graphs.
+If this parameter is specified as “length” or “distance” then the length of the edge is used as its weight.
+The default is None which means all edges are treated as if they have a weight of 1.</p>
 </dd>
 <dt><strong>iterations</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of Weisfeiler-Lehman iterations. Default is 3.</p>
 </dd>
@@ -4164,6 +4176,44 @@ This is used in weighted graphs. if weightKey is set to “Length” or “Dista
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Graph</dt><dd><p>The visibility graph.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.WeightedJaccardSimilarity">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">WeightedJaccardSimilarity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexIDKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWeightKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.WeightedJaccardSimilarity" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the weighted Jaccard similarity between two vertices based on their neighbors and
+edge weights. Accepts either one graph (both vertices are in the same graph) or two graphs
+(each vertex is in a separate graph).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphA</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The first graph</p>
+</dd>
+<dt><strong>graphB</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The second graph (this can be the same as the first graph)</p>
+</dd>
+<dt><strong>vertexA</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The first vertex.</p>
+</dd>
+<dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second vertex.</p>
+</dd>
+<dt><strong>vertexIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the unique vertex ID. The default is “id”.</p>
+</dd>
+<dt><strong>edgeWeightKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the weight of the edge for weighted graphs.
+If this parameter is specified as “length” or “distance” then the length of the edge is used as its weight.
+The default is None which means all edges are treated as if they have a weight of 1.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>Weighted Jaccard similarity score between 0 (no overlap) and 1 (perfect match).</p>
 </dd>
 </dl>
 </dd>
