@@ -4384,12 +4384,16 @@ class Graph:
                 weightMetrics: float = 1.0,
                 weightStructure: float = 1.0,
                 weightWL: float = 1.0,
+                weightJaccard: float = 1.0,
+                vertexIDKey: str = "id",
+                edgeWeightKey: str = None,
                 iterations: int = 3,
                 mantissa: int = 6,
                 silent: bool = False):
         """
-        Compares two graphs and returns a similarity score based on attributres, geometry, metrics, structure, and
+        Compares two graphs and returns a similarity score based on attributres, geometry, metrics, structure, 
         the Weisfeiler-Lehman graph kernel. See https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test
+        , and the weight Jaccard Similarity. See https://www.statology.org/jaccard-similarity/
 
         Parameters
         ----------
@@ -4408,6 +4412,14 @@ class Graph:
             The desired weight for structural similarity (number of vertices and edges). Default is 1.0.
         weightWL : float , optional
             The desired weight for Weisfeiler-Lehman kernel similarity (iterative label propagation). Default is 1.0.
+        weightJaccard: float , optional
+            The desired weight for the Weighted Jaccard similarity. Default is 1.0.
+        vertexIDKey: str , optional
+            The dictionary key under which to find the unique vertex ID. The default is "id".
+        edgeWeightKey: str , optional
+            The dictionary key under which to find the weight of the edge for weighted graphs.
+            If this parameter is specified as "length" or "distance" then the length of the edge is used as its weight.
+            The default is None which means all edges are treated as if they have a weight of 1.
         iterations : int , optional
             The desired number of Weisfeiler-Lehman iterations. Default is 3.
         mantissa : int , optional
@@ -4472,6 +4484,72 @@ class Graph:
                 total_dist += sum((i - j) ** 2 for i, j in zip(p1, p2)) ** 0.5
             avg_dist = total_dist / len(v1)
             return round(1 / (1 + avg_dist), mantissa) # Inverse average distance
+        
+        def weighted_jaccard_similarity(graph1, graph2, vertexIDKey="id", edgeWeightKey=None, mantissa=6):
+            """
+            Computes weighted Jaccard similarity between two graphs by comparing their edge weights.
+
+            Parameters
+            ----------
+            graph1 : topologic Graph
+                First graph.
+            graph2 : topologic Graph
+                Second graph.
+            vertexIDKey: str , optional
+                The dictionary key under which to find the unique vertex ID. The default is "id".
+            edgeWeightKey: str , optional
+                The dictionary key under which to find the weight of the edge for weighted graphs.
+                If this parameter is specified as "length" or "distance" then the length of the edge is used as its weight.
+                The default is None which means all edges are treated as if they have a weight of 1.
+            iterations : int , optional
+                The desired number of Weisfeiler-Lehman iterations. Default is 3.
+            mantissa : int , optional
+                The desired length of the mantissa. The default is 6.
+
+            Returns
+            -------
+            float
+                Similarity score between 0 and 1.
+            """
+            from topologicpy.Vertex import Vertex
+            from topologicpy.Graph import Graph
+            from topologicpy.Topology import Topology
+            from topologicpy.Dictionary import Dictionary
+            from topologicpy.Edge import Edge
+
+
+            def edge_id(edge, vertexIDKey="id", mantissa=6):
+                v1 = Edge.StartVertex(edge)
+                v2 = Edge.EndVertex(edge)
+                d1 = Topology.Dictionary(v1)
+                d2 = Topology.Dictionary(v2)
+                v1_id = Dictionary.ValueAtKey(d1, vertexIDKey) if d1 and Dictionary.ValueAtKey(d1, vertexIDKey) is not None else str(sorted(Vertex.Coordinates(v1, mantissa=mantissa)))
+                v2_id = Dictionary.ValueAtKey(d2, vertexIDKey) if d2 and Dictionary.ValueAtKey(d2, vertexIDKey) is not None else str(sorted(Vertex.Coordinates(v2, mantissa=mantissa)))
+
+                return tuple(sorted(tuple([v1_id, v2_id])))
+
+            def edge_weights(graph, edgeWeightKey=None, mantissa=6):
+                weights = {}
+                for edge in Graph.Edges(graph):
+                    if edgeWeightKey == None:
+                        weight = 1
+                    elif edgeWeightKey.lower() == "length" or edgeWeightKey.lower() == "distance":
+                        weight = Edge.Length(edge)
+                    else:
+                        d = Topology.Dictionary(edge)
+                        weight = Dictionary.ValueAtKey(d, edgeWeightKey) if d and Dictionary.ValueAtKey(d, edgeWeightKey) is not None else 1.0
+                    eid = edge_id(edge, vertexIDKey=vertexIDKey, mantissa=mantissa)
+                    weights[eid] = weight
+                return weights
+            
+            w1 = edge_weights(graph1, edgeWeightKey=edgeWeightKey)
+            w2 = edge_weights(graph2, edgeWeightKey=edgeWeightKey)
+            keys = set(w1.keys()) | set(w2.keys())
+
+            numerator = sum(min(w1.get(k, 0), w2.get(k, 0)) for k in keys)
+            denominator = sum(max(w1.get(k, 0), w2.get(k, 0)) for k in keys)
+
+            return numerator / denominator if denominator > 0 else 0.0
         
         def metrics_similarity(graphA, graphB, mantissa=6):
             # Example using global metrics + mean of node metrics
@@ -4562,10 +4640,11 @@ class Graph:
                 print("Graph.Compare - Error: The graphB input parameter is not a valid topologic graph. Returning None.")
             return 
         
-        total_weight = weightAttributes + weightGeometry + weightMetrics + weightStructure + weightWL
+        total_weight = weightAttributes + weightGeometry + weightMetrics + weightStructure + weightWL + weightJaccard
 
         attribute_score = attribute_similarity(graphA, graphB, mantissa=mantissa) if weightAttributes else 0
         geometry_score = geometry_similarity(graphA, graphB, mantissa=mantissa) if weightGeometry else 0
+        jaccard_score = weighted_jaccard_similarity(graphA, graphB, vertexIDKey=vertexIDKey, edgeWeightKey=edgeWeightKey, mantissa=mantissa) if weightJaccard else 0
         metrics_score = metrics_similarity(graphA, graphB, mantissa=mantissa) if weightMetrics else 0
         structure_score = structure_similarity(graphA, graphB, mantissa=mantissa) if weightStructure else 0
         wl_score = weisfeiler_lehman_similarity(graphA, graphB, iterations, mantissa=mantissa) if weightWL else 0
@@ -4573,6 +4652,7 @@ class Graph:
         weighted_sum = (
             attribute_score * weightAttributes +
             geometry_score * weightGeometry +
+            jaccard_score * weightJaccard +
             metrics_score * weightMetrics +
             structure_score * weightStructure +
             wl_score * weightWL
@@ -4583,12 +4663,14 @@ class Graph:
         else:
             overall_score = weighted_sum / total_weight
         
-        return  { "attribute": round(attribute_score, mantissa),
-                "geometry": round(geometry_score, mantissa),
-                "metrics": round(metrics_score, mantissa),
-                "structure": round(structure_score, mantissa),
-                "wl": round(wl_score, mantissa),
-                "overall": round(overall_score, mantissa)
+        return  {
+                 "attribute": round(attribute_score, mantissa),
+                 "geometry": round(geometry_score, mantissa),
+                 "jaccard": round(jaccard_score, mantissa),
+                 "metrics": round(metrics_score, mantissa),
+                 "structure": round(structure_score, mantissa),
+                 "wl": round(wl_score, mantissa),
+                 "overall": round(overall_score, mantissa)
                 }
 
     @staticmethod
@@ -11018,3 +11100,85 @@ class Graph:
             g = Graph.ByVerticesEdges(final_vertices, final_edges)
             return g
         return None
+
+    @staticmethod
+    def WeightedJaccardSimilarity(graphA, graphB, vertexA, vertexB, vertexIDKey="id", edgeWeightKey=None, mantissa=6, silent=False):
+        """
+        Computes the weighted Jaccard similarity between two vertices based on their neighbors and
+        edge weights. Accepts either one graph (both vertices are in the same graph) or two graphs
+        (each vertex is in a separate graph).
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first graph
+        graphB : topologic_core.Graph
+            The second graph (this can be the same as the first graph)
+        vertexA : topologic_core.Vertex
+            The first vertex.
+        vertexB : topologic_core.Vertex
+            The second vertex.
+        vertexIDKey : str , optional
+            The dictionary key under which to find the unique vertex ID. The default is "id".
+        edgeWeightKey : str , optional
+            The dictionary key under which to find the weight of the edge for weighted graphs.
+            If this parameter is specified as "length" or "distance" then the length of the edge is used as its weight.
+            The default is None which means all edges are treated as if they have a weight of 1.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
+        Returns
+        -------
+        float
+            Weighted Jaccard similarity score between 0 (no overlap) and 1 (perfect match).
+
+        """
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+
+        if graphB == None:
+            graphB = graphA
+
+        def edge_id(edge, vertexIDKey="id", mantissa=6):
+            v1 = Edge.StartVertex(edge)
+            v2 = Edge.EndVertex(edge)
+            d1 = Topology.Dictionary(v1)
+            d2 = Topology.Dictionary(v2)
+            v1_id = Dictionary.ValueAtKey(d1, vertexIDKey) if d1 and Dictionary.ValueAtKey(d1, vertexIDKey) is not None else str(sorted(Vertex.Coordinates(v1, mantissa=mantissa)))
+            v2_id = Dictionary.ValueAtKey(d2, vertexIDKey) if d2 and Dictionary.ValueAtKey(d2, vertexIDKey) is not None else str(sorted(Vertex.Coordinates(v2, mantissa=mantissa)))
+            return tuple(sorted([v1_id, v2_id]))
+        
+        def get_neighbors_with_weights(graph, vertex, vertexIDKey="id", edgeWeightKey=None, mantissa=6):
+            weights = {}
+            for edge in Graph.Edges(graph, [vertex]):
+                eid = edge_id(edge, vertexIDKey=vertexIDKey, mantissa=mantissa)
+                if edgeWeightKey == None:
+                    weight = 1.0
+                elif edgeWeightKey.lower() == "length" or edgeWeightKey.lower() == "distance":
+                    weight = Edge.Length(edge, mantissa=mantissa)
+                else:
+                    d = Topology.Dictionary(edge)
+                    d_weight = Dictionary.ValueAtKey(d, edgeWeightKey, silent=silent)
+                    if not d or d_weight is None:
+                        if not silent:
+                            print(f"Graph.WeightedJaccardSimilarity - Warning: The dictionary of edge {eid} is missing '{edgeWeightKey}' key. Defaulting the edge weight to 1.0.")
+                        weight = 1.0
+                    else:
+                        weight = d_weight
+                weights[eid] = weight
+            return weights
+
+        weights1 = get_neighbors_with_weights(graphA, vertexA, vertexIDKey=vertexIDKey, edgeWeightKey=edgeWeightKey, mantissa=mantissa)
+        weights2 = get_neighbors_with_weights(graphB, vertexB, vertexIDKey=vertexIDKey, edgeWeightKey=edgeWeightKey, mantissa=mantissa)
+
+        keys = set(weights1.keys()) | set(weights2.keys())
+
+        numerator = sum(min(weights1.get(k, 0), weights2.get(k, 0)) for k in keys)
+        denominator = sum(max(weights1.get(k, 0), weights2.get(k, 0)) for k in keys)
+
+        return round(numerator / denominator, mantissa) if denominator != 0 else 0.0
