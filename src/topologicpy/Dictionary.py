@@ -773,7 +773,7 @@ class Dictionary():
             return None
     
     @staticmethod
-    def ValueAtKey(dictionary, key, silent=False):
+    def ValueAtKey(dictionary, key, defaultValue=None, silent=False):
         """
         Returns the value of the input key in the input dictionary.
 
@@ -783,6 +783,8 @@ class Dictionary():
             The input dictionary.
         key : string
             The input key.
+        defaultValue : any , optional
+            The default value to return if the key or value are not found. The default is None.
         silent : bool , optional
             If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
@@ -804,10 +806,10 @@ class Dictionary():
             return None
         if Topology.IsInstance(dictionary, "Dictionary"):
             dic = Dictionary.PythonDictionary(dictionary)
-            return dic.get(key, None)
+            return dic.get(key, defaultValue)
         elif isinstance(dictionary, dict):
-            return dictionary.get(key, None)
-        return None
+            return dictionary.get(key, defaultValue)
+        return defaultValue
         
         # if isinstance(dictionary, dict):
         #     attr = dictionary[key]

@@ -4379,12 +4379,17 @@ class Graph:
     
     @staticmethod
     def Compare(graphA, graphB,
-                weightAttributes: float = 1.0,
-                weightGeometry: float = 1.0,
-                weightMetrics: float = 1.0,
-                weightStructure: float = 1.0,
-                weightWL: float = 1.0,
-                weightJaccard: float = 1.0,
+                weightAttributes: float = 0.0,
+                weightGeometry: float = 0.0,
+                weightBetwennessCentrality: float = 0.0,
+                weightClosenessCentrality: float = 0.0,
+                weightDegreeCentrality: float = 0.0,
+                weightDiameter: float = 0.0,
+                weightGlobalClusteringCoefficient: float = 0.0,
+                weightPageRank: float = 0.0,
+                weightStructure: float = 0.0,
+                weightWeisfeilerLehman: float = 0.0,
+                weightJaccard: float = 0.0,
                 vertexIDKey: str = "id",
                 edgeWeightKey: str = None,
                 iterations: int = 3,
@@ -4402,18 +4407,28 @@ class Graph:
         graphB : topologic Graph
             The second input graph.
         weightAttributes : float , optional
-            The desired weight for attribute similarity (dictionary key overlap at vertices). Default is 1.0.
+            The desired weight for attribute similarity (dictionary key overlap at vertices). Default is 0.0.
+        weightBetwennessCentrality : float , optional
+            The desired weight for betweenness centrality similarity (graph-level and node-level). Default is 0.0.
+        weightClosenessCentrality : float , optional
+            The desired weight for closeness centrality similarity (graph-level and node-level). Default is 0.0.
+        weightDegreeCentrality : float , optional
+            The desired weight for degree centrality similarity (graph-level and node-level). Default is 0.0.
+        weightDiameter : float , optional
+            The desired weight for diameter similarity (graph-level and node-level). Default is 0.0.
         weightGeometry : float , optional
-            The desired weight for geometric similarity (vertex positions). Default is 1.0.
-        weightMetrics : float , optional
-            The desired weight for metric similarity (graph-level and node-level). Default is 1.0.
-            The compared metrics are: betweenness centrality, closeness centrality, clustering coefficient, degree, diameter, and pagerank.
-        weightStructure : float , optional
-            The desired weight for structural similarity (number of vertices and edges). Default is 1.0.
-        weightWL : float , optional
-            The desired weight for Weisfeiler-Lehman kernel similarity (iterative label propagation). Default is 1.0.
+            The desired weight for geometric similarity (vertex positions). Default is 0.0.
+        weightGlobalClusteringCoefficient : float , optional
+            The desired weight for global clustering coefficient similarity (graph-level and node-level). Default is 0.0.
         weightJaccard: float , optional
-            The desired weight for the Weighted Jaccard similarity. Default is 1.0.
+            The desired weight for the Weighted Jaccard similarity. Default is 0.0.
+        weightPageRank : float , optional
+            The desired weight for PageRank similarity (graph-level and node-level). Default is 0.0.
+        weightStructure : float , optional
+            The desired weight for structural similarity (number of vertices and edges). Default is 0.0.
+        weightWeisfeilerLehman : float , optional
+            The desired weight for Weisfeiler-Lehman kernel similarity (iterative label propagation). Default is 0.0.
+        
         vertexIDKey: str , optional
             The dictionary key under which to find the unique vertex ID. The default is "id".
         edgeWeightKey: str , optional
@@ -4433,12 +4448,16 @@ class Graph:
             A dictionary of similarity scores between 0 (completely dissimilar) and 1 (identical), based on weighted components.
             The keys in the dictionary are:
             "attribute"
+            "betwenness_centrality"
+            "closeness_centrality"
+            "degree_centrality"
             "geometry"
-            "metrics"
+            "global_clustering_coefficient"
+            "jaccard"
+            "pagerank"
             "structure"
-            "wl"
+            "weisfeiler_lehman"
             "overall"
-
         """
         
         import hashlib
@@ -4551,40 +4570,56 @@ class Graph:
 
             return numerator / denominator if denominator > 0 else 0.0
         
-        def metrics_similarity(graphA, graphB, mantissa=6):
-            # Example using global metrics + mean of node metrics
-            def safe_mean(lst):
+        def safe_mean(lst):
                 return sum(lst)/len(lst) if lst else 0
-
-            metrics1 = {
-                "closeness": safe_mean(Graph.ClosenessCentrality(graphA)),
-                "betweenness": safe_mean(Graph.BetweennessCentrality(graphA)),
-                "degree": safe_mean(Graph.DegreeCentrality(graphA)),
-                "pagerank": safe_mean(Graph.PageRank(graphA)),
-                "clustering": Graph.GlobalClusteringCoefficient(graphA),
-                "diameter": Graph.Diameter(graphA)
-            }
-
-            metrics2 = {
-                "closeness": safe_mean(Graph.ClosenessCentrality(graphB)),
-                "betweenness": safe_mean(Graph.BetweennessCentrality(graphB)),
-                "degree": safe_mean(Graph.DegreeCentrality(graphB)),
-                "pagerank": safe_mean(Graph.PageRank(graphB)),
-                "clustering": Graph.GlobalClusteringCoefficient(graphB),
-                "diameter": Graph.Diameter(graphB)
-            }
-
-            # Compute similarity as 1 - normalized absolute difference
-            similarities = []
-            for key in metrics1:
-                v1, v2 = metrics1[key], metrics2[key]
-                if v1 == 0 and v2 == 0:
-                    similarities.append(1)
-                else:
-                    diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
-                    similarities.append(1 - diff)
-
-            return round(sum(similarities) / len(similarities), mantissa)
+        
+        def betweenness_centrality_similarity(graphA, graphB, mantissa=6):
+            v1 = safe_mean(Graph.BetweennessCentrality(graphA))
+            v2 = safe_mean(Graph.BetweennessCentrality(graphB))
+            if v1 == 0 and v2 == 0:
+                return 1
+            diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
+            return round((1 - diff), mantissa)
+        
+        def closeness_centrality_similarity(graphA, graphB, mantissa=6):
+            v1 = safe_mean(Graph.ClosenessCentrality(graphA))
+            v2 = safe_mean(Graph.ClosenessCentrality(graphB))
+            if v1 == 0 and v2 == 0:
+                return 1
+            diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
+            return round((1 - diff), mantissa)
+        
+        def degree_centrality_similarity(graphA, graphB, mantissa=6):
+            v1 = safe_mean(Graph.DegreeCentrality(graphA))
+            v2 = safe_mean(Graph.DegreeCentrality(graphB))
+            if v1 == 0 and v2 == 0:
+                return 1
+            diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
+            return round((1 - diff), mantissa)
+        
+        def diameter_similarity(graphA, graphB, mantissa=6):
+            v1 = Graph.Diameter(graphA)
+            v2 = Graph.Diameter(graphB)
+            if v1 == 0 and v2 == 0:
+                return 1
+            diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
+            return round((1 - diff), mantissa)
+        
+        def global_clustering_coefficient_similarity(graphA, graphB, mantissa=6):
+            v1 = Graph.GlobalClusteringCoefficient(graphA)
+            v2 = Graph.GlobalClusteringCoefficient(graphB)
+            if v1 == 0 and v2 == 0:
+                return 1
+            diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
+            return round((1 - diff), mantissa)
+        
+        def pagerank_similarity(graphA, graphB, mantissa=6):
+            v1 = safe_mean(Graph.PageRank(graphA))
+            v2 = safe_mean(Graph.PageRank(graphB))
+            if v1 == 0 and v2 == 0:
+                return 1
+            diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
+            return round((1 - diff), mantissa)
         
         def structure_similarity(graphA, graphB, mantissa=6):
             v1 = Graph.Vertices(graphA)
@@ -4640,22 +4675,42 @@ class Graph:
                 print("Graph.Compare - Error: The graphB input parameter is not a valid topologic graph. Returning None.")
             return 
         
-        total_weight = weightAttributes + weightGeometry + weightMetrics + weightStructure + weightWL + weightJaccard
+        total_weight = sum([weightAttributes,
+                            weightGeometry,
+                            weightBetwennessCentrality,
+                            weightClosenessCentrality,
+                            weightDegreeCentrality,
+                            weightDiameter,
+                            weightGlobalClusteringCoefficient,
+                            weightPageRank,
+                            weightStructure,
+                            weightWeisfeilerLehman,
+                            weightJaccard])
 
         attribute_score = attribute_similarity(graphA, graphB, mantissa=mantissa) if weightAttributes else 0
+        betweenness_centrality_score = betweenness_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightBetwennessCentrality else 0
+        closeness_centrality_score = closeness_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightClosenessCentrality else 0
+        degree_centrality_score = degree_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightDegreeCentrality else 0
+        diameter_score = diameter_similarity(graphA, graphB, mantissa=mantissa) if weightDiameter else 0
+        global_clustering_coefficient_score = global_clustering_coefficient_similarity(graphA, graphB, mantissa=mantissa) if weightGlobalClusteringCoefficient else 0
         geometry_score = geometry_similarity(graphA, graphB, mantissa=mantissa) if weightGeometry else 0
         jaccard_score = weighted_jaccard_similarity(graphA, graphB, vertexIDKey=vertexIDKey, edgeWeightKey=edgeWeightKey, mantissa=mantissa) if weightJaccard else 0
-        metrics_score = metrics_similarity(graphA, graphB, mantissa=mantissa) if weightMetrics else 0
+        pagerank_score = pagerank_similarity(graphA, graphB, mantissa=mantissa) if weightPageRank else 0
         structure_score = structure_similarity(graphA, graphB, mantissa=mantissa) if weightStructure else 0
-        wl_score = weisfeiler_lehman_similarity(graphA, graphB, iterations, mantissa=mantissa) if weightWL else 0
+        weisfeiler_lehman_score = weisfeiler_lehman_similarity(graphA, graphB, iterations, mantissa=mantissa) if weightWeisfeilerLehman else 0
 
         weighted_sum = (
             attribute_score * weightAttributes +
+            betweenness_centrality_score * weightBetwennessCentrality +
+            closeness_centrality_score * weightClosenessCentrality +
+            degree_centrality_score * weightDegreeCentrality +
+            diameter_score * weightDiameter +
             geometry_score * weightGeometry +
+            global_clustering_coefficient_score * weightGlobalClusteringCoefficient +
             jaccard_score * weightJaccard +
-            metrics_score * weightMetrics +
+            pagerank_score * weightPageRank +
             structure_score * weightStructure +
-            wl_score * weightWL
+            weisfeiler_lehman_score * weightWeisfeilerLehman
         )
 
         if total_weight <= 0:
@@ -4665,11 +4720,15 @@ class Graph:
         
         return  {
                  "attribute": round(attribute_score, mantissa),
+                 "betwenness_centrality": round(betweenness_centrality_score, mantissa),
+                 "closeness_centrality": round(closeness_centrality_score, mantissa),
+                 "degree_centrality": round(degree_centrality_score, mantissa),
                  "geometry": round(geometry_score, mantissa),
+                 "global_clustering_coefficient": round(global_clustering_coefficient_score, mantissa),
                  "jaccard": round(jaccard_score, mantissa),
-                 "metrics": round(metrics_score, mantissa),
+                 "pagerank": round(pagerank_score, mantissa),
                  "structure": round(structure_score, mantissa),
-                 "wl": round(wl_score, mantissa),
+                 "weisfeiler_lehman": round(weisfeiler_lehman_score, mantissa),
                  "overall": round(overall_score, mantissa)
                 }
 
