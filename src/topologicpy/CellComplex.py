@@ -1,4 +1,4 @@
-# Copyright (C) 2024
+# Copyright (C) 2025
 # Wassim Jabi <wassim.jabi@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it under
@@ -450,6 +450,44 @@ class CellComplex():
         _ = cellComplex.Cells(None, cells) # Hook to Core
         return cells
 
+    @staticmethod
+    def Cube(origin= None,
+            size: float = 1.0,
+            uSides: int = 2, vSides: int = 2, wSides: int = 2,
+            direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+        """
+        Creates a cube with internal cells.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The origin location of the cube. The default is None which results in the cube being placed at (0, 0, 0).
+        size : float , optional
+            The size of the cube. The default is 1.
+        uSides : int , optional
+            The number of sides along the width. The default is 1.
+        vSides : int, optional
+            The number of sides along the length. The default is 1.
+        wSides : int , optional
+            The number of sides along the height. The default is 1.
+        direction : list , optional
+            The vector representing the up direction of the cube. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the cube. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        topologic_core.CellComplex
+            The created cube.
+
+        """
+        return CellComplex.Prism(origin=origin,
+                                 width=size, length=size, height=size,
+                                 uSides=uSides, vSides=vSides, wSides=wSides,
+                                 direction=direction, placement=placement, tolerance=tolerance)
+    
     @staticmethod
     def Decompose(cellComplex, tiltAngle: float = 10.0, tolerance: float = 0.0001) -> dict:
         """

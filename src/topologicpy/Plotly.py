@@ -1,4 +1,4 @@
-# Copyright (C) 2024
+# Copyright (C) 2025
 # Wassim Jabi <wassim.jabi@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it under
@@ -511,7 +511,7 @@ class Plotly:
         borderSizes = []
         for i in range(len(vertices)):
             sizes.append(size)
-            labels.append("Vertex_"+str(i+1).zfill(n))
+            labels.append("")
             colors.append(Color.AnyToHex(color))
             borderColors.append(borderColor)
             borderSizes.append(size+borderWidth*2)
@@ -543,7 +543,7 @@ class Plotly:
                             if not temp_color == None:
                                 colors[m] = Color.AnyToHex(temp_color)
                         if not labelKey == None:
-                            labels[m] = str(Dictionary.ValueAtKey(d, key=labelKey)) or labels[m]
+                            labels[m] = Dictionary.ValueAtKey(d, key=labelKey, defaultValue=" ")
                         if not sizeKey == None:
                             sizes[m] = Dictionary.ValueAtKey(d, key=sizeKey)
                             if sizes[m] == None:

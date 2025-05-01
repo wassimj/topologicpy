@@ -1,4 +1,4 @@
-# Copyright (C) 2024
+# Copyright (C) 2025
 # Wassim Jabi <wassim.jabi@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it under
@@ -846,7 +846,7 @@ class Topology():
         return apTopologies
     
     @staticmethod
-    def Union(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+    def Union(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         See Topology.Boolean()
 
@@ -879,15 +879,15 @@ class Topology():
                         else:
                             internal_boundaries.append(eb)
                     return Face.ByWires(external_boundary, internal_boundaries)
-        return Topology.Boolean(topologyA, topologyB, operation="union", tranDict=tranDict, tolerance=tolerance)
+        return Topology.Boolean(topologyA, topologyB, operation="union", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def Difference(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+    def Difference(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         See Topology.Boolean().
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="difference", tranDict=tranDict, tolerance=tolerance)
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="difference", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def ExternalBoundary(topology):
@@ -1006,63 +1006,63 @@ class Topology():
             return Topology.SelfMerge(Topology.SelfMerge(Cluster.ByTopologies(results)))
     
     @staticmethod
-    def SymmetricDifference(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+    def SymmetricDifference(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         See Topology.Boolean().
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance)
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def SymDif(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+    def SymDif(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         See Topology.Boolean().
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance)
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def XOR(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+    def XOR(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         See Topology.Boolean().
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance)
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def Merge(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+    def Merge(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         See Topology.Boolean().
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance)
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def Slice(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+    def Slice(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         See Topology.Boolean().
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="slice", tranDict=tranDict, tolerance=tolerance)
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="slice", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def Impose(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+    def Impose(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         See Topology.Boolean().
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="impose", tranDict=tranDict, tolerance=tolerance)
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="impose", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def Imprint(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+    def Imprint(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         See Topology.Boolean().
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance)
+        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def Boolean(topologyA, topologyB, operation="union", tranDict=False, tolerance=0.0001):
+    def Boolean(topologyA, topologyB, operation: str = "union", tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Execute the input boolean operation type on the input operand topologies and return the result. See https://en.wikipedia.org/wiki/Boolean_operation.
 
@@ -1078,6 +1078,8 @@ class Topology():
             If set to True the dictionaries of the operands are merged and transferred to the result. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1087,23 +1089,26 @@ class Topology():
         """
         from topologicpy.Dictionary import Dictionary
         if not Topology.IsInstance(topologyA, "Topology"):
-            print("Topology.Boolean - Error: the input topologyA parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Boolean - Error: the input topologyA parameter is not a valid topology. Returning None.")
             return None
         if not Topology.IsInstance(topologyB, "Topology"):
-            print("Topology.Boolean - Error: the input topologyB parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Boolean - Error: the input topologyB parameter is not a valid topology. Returning None.")
             return None
         if not isinstance(operation, str):
-            print("Topology.Boolean - Error: the input operation parameter is not a valid string. Returning None.")
+            if not silent:
+                print("Topology.Boolean - Error: the input operation parameter is not a valid string. Returning None.")
             return None
         if not operation.lower() in ["union", "difference", "intersect", "symdif", "merge", "slice", "impose", "imprint"]:
-            print("Topology.Boolean - Error: the input operation parameter is not a recognized operation. Returning None.")
+            if not silent:
+                print("Topology.Boolean - Error: the input operation parameter is not a recognized operation. Returning None.")
             return None
         if not isinstance(tranDict, bool):
-            print("Topology.Boolean - Error: the input tranDict parameter is not a valid boolean. Returning None.")
+            if not silent:
+                print("Topology.Boolean - Error: the input tranDict parameter is not a valid boolean. Returning None.")
             return None
         topologyC = None
-        #topologyC = Topology.Intersect(topologyA, topologyB)
-        #try:
         if operation.lower() == "union":
             topologyC = topologyA.Union(topologyB, False)
         elif operation.lower() == "difference":
