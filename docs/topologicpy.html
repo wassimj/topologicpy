@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy package &mdash; topologicpy 0.8.22 documentation</title>
+  <title>topologicpy package &mdash; topologicpy 0.8.23 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.22
+                0.8.23
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -51,6 +51,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.ANN.html">topologicpy.ANN module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.BVH.html">topologicpy.BVH module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CSG.html">topologicpy.CSG module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
@@ -187,6 +188,18 @@
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.CSG.html">topologicpy.CSG module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.CSG.html#topologicpy.CSG.CSG"><code class="docutils literal notranslate"><span class="pre">CSG</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CSG.html#topologicpy.CSG.CSG.AddOperationVertex"><code class="docutils literal notranslate"><span class="pre">CSG.AddOperationVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CSG.html#topologicpy.CSG.CSG.AddTopologyVertex"><code class="docutils literal notranslate"><span class="pre">CSG.AddTopologyVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CSG.html#topologicpy.CSG.CSG.Connect"><code class="docutils literal notranslate"><span class="pre">CSG.Connect()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CSG.html#topologicpy.CSG.CSG.Init"><code class="docutils literal notranslate"><span class="pre">CSG.Init()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CSG.html#topologicpy.CSG.CSG.Invoke"><code class="docutils literal notranslate"><span class="pre">CSG.Invoke()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CSG.html#topologicpy.CSG.CSG.Topologies"><code class="docutils literal notranslate"><span class="pre">CSG.Topologies()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell"><code class="docutils literal notranslate"><span class="pre">Cell</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Area"><code class="docutils literal notranslate"><span class="pre">Cell.Area()</span></code></a></li>
@@ -203,6 +216,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Compactness"><code class="docutils literal notranslate"><span class="pre">Cell.Compactness()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Cone"><code class="docutils literal notranslate"><span class="pre">Cell.Cone()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.ContainmentStatus"><code class="docutils literal notranslate"><span class="pre">Cell.ContainmentStatus()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Cube"><code class="docutils literal notranslate"><span class="pre">Cell.Cube()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Cylinder"><code class="docutils literal notranslate"><span class="pre">Cell.Cylinder()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Decompose"><code class="docutils literal notranslate"><span class="pre">Cell.Decompose()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Cell.html#topologicpy.Cell.Cell.Dodecahedron"><code class="docutils literal notranslate"><span class="pre">Cell.Dodecahedron()</span></code></a></li>
@@ -245,6 +259,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.ByWires"><code class="docutils literal notranslate"><span class="pre">CellComplex.ByWires()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.ByWiresCluster"><code class="docutils literal notranslate"><span class="pre">CellComplex.ByWiresCluster()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Cells"><code class="docutils literal notranslate"><span class="pre">CellComplex.Cells()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Cube"><code class="docutils literal notranslate"><span class="pre">CellComplex.Cube()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Decompose"><code class="docutils literal notranslate"><span class="pre">CellComplex.Decompose()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Delaunay"><code class="docutils literal notranslate"><span class="pre">CellComplex.Delaunay()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.CellComplex.html#topologicpy.CellComplex.CellComplex.Edges"><code class="docutils literal notranslate"><span class="pre">CellComplex.Edges()</span></code></a></li>
@@ -798,7 +813,31 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle"><code class="docutils literal notranslate"><span class="pre">Speckle</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.BranchesByStream"><code class="docutils literal notranslate"><span class="pre">Speckle.BranchesByStream()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.ClientByURL"><code class="docutils literal notranslate"><span class="pre">Speckle.ClientByURL()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.CommitByID"><code class="docutils literal notranslate"><span class="pre">Speckle.CommitByID()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.CommitsByBranch"><code class="docutils literal notranslate"><span class="pre">Speckle.CommitsByBranch()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.Object"><code class="docutils literal notranslate"><span class="pre">Speckle.Object()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.Send"><code class="docutils literal notranslate"><span class="pre">Speckle.Send()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleBranchByID"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleBranchByID()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleCommitByURL"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleCommitByURL()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleCommitDelete"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleCommitDelete()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleGlobalsByStream"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleGlobalsByStream()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleObject"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleObject()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleSendObjects"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleSendObjects()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleStreamByID"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleStreamByID()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.SpeckleStreamByURL"><code class="docutils literal notranslate"><span class="pre">Speckle.SpeckleStreamByURL()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.StreamsByClient"><code class="docutils literal notranslate"><span class="pre">Speckle.StreamsByClient()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.TopologyBySpeckleObject"><code class="docutils literal notranslate"><span class="pre">Speckle.TopologyBySpeckleObject()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.get_name_from_IFC_name"><code class="docutils literal notranslate"><span class="pre">Speckle.get_name_from_IFC_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.mesh_to_speckle"><code class="docutils literal notranslate"><span class="pre">Speckle.mesh_to_speckle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Speckle.html#topologicpy.Speckle.Speckle.mesh_to_speckle_mesh"><code class="docutils literal notranslate"><span class="pre">Speckle.mesh_to_speckle_mesh()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun"><code class="docutils literal notranslate"><span class="pre">Sun</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Sun.html#topologicpy.Sun.Sun.Altitude"><code class="docutils literal notranslate"><span class="pre">Sun.Altitude()</span></code></a></li>
@@ -1167,7 +1206,7 @@
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2024, Wassim Jabi.</p>
+    <p>&#169; Copyright 2025, Wassim Jabi.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
