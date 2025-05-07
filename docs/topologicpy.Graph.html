@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.8.23 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.8.24 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.23
+                0.8.24
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -325,17 +325,23 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToGEXF" title="topologicpy.Graph.Graph.ExportToGEXF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGEXF</span></code></a>(graph[, path, graphWidth, ...])</p></td>
 <td><p>Exports the input graph to a Graph Exchange XML (GEXF) file format.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToJSON" title="topologicpy.Graph.Graph.ExportToJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToJSON</span></code></a>(graph, path[, verticesKey, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToGraphVizGraph" title="topologicpy.Graph.Graph.ExportToGraphVizGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGraphVizGraph</span></code></a>(graph, path[, device, ...])</p></td>
+<td><p>Exports the input graph to a GraphViz <cite>.gv</cite> (dot) file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToJSON" title="topologicpy.Graph.Graph.ExportToJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToJSON</span></code></a>(graph, path[, verticesKey, ...])</p></td>
 <td><p>Exports the input graph to a JSON file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.FiedlerVector" title="topologicpy.Graph.Graph.FiedlerVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FiedlerVector</span></code></a>(graph[, mantissa, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.FiedlerVector" title="topologicpy.Graph.Graph.FiedlerVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FiedlerVector</span></code></a>(graph[, mantissa, silent])</p></td>
 <td><p>Computes the Fiedler vector of a graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.FiedlerVectorPartition" title="topologicpy.Graph.Graph.FiedlerVectorPartition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FiedlerVectorPartition</span></code></a>(graph[, key, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.FiedlerVectorPartition" title="topologicpy.Graph.Graph.FiedlerVectorPartition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FiedlerVectorPartition</span></code></a>(graph[, key, ...])</p></td>
 <td><p>Partitions the input graph based on FiedlerVector method.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.GlobalClusteringCoefficient" title="topologicpy.Graph.Graph.GlobalClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GlobalClusteringCoefficient</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.GlobalClusteringCoefficient" title="topologicpy.Graph.Graph.GlobalClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GlobalClusteringCoefficient</span></code></a>(graph)</p></td>
 <td><p>Returns the global clustering coefficient of the input graph.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.GraphVizGraph" title="topologicpy.Graph.Graph.GraphVizGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphVizGraph</span></code></a>(graph[, device, deviceKey, ...])</p></td>
+<td><p>Converts the input graph to a GraphViz graph.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Guid" title="topologicpy.Graph.Graph.Guid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Guid</span></code></a>(graph)</p></td>
 <td><p>Returns the guid of the input graph</p></td>
@@ -2570,6 +2576,150 @@ the edge weight is set to the value defined by defaultEdgeWeight parameter. The 
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.ExportToGraphVizGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToGraphVizGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'svg_inline'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deviceKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaleKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directedKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dot'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layoutKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rankDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'TB'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rankDirKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bgColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'white'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bgColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Arial'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontNameKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontSizeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexSep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexSepKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rankSep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rankSepKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">splines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'True'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">splinesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showGraphLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabelLoc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'t'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabelLocKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showVertexLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelPrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexWidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexWidthKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexHeight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexHeightKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFixedSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFixedSizeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexShape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circle'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexShapeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexStyle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'filled'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexStyleKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFillColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lightgray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFillColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFontColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFontColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showEdgeLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelPrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWidthKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeStyle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'solid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeStyleKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeArrowhead</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'normal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeArrowheadKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFontColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFontColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ExportToGraphVizGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Exports the input graph to a GraphViz <cite>.gv</cite> (dot) file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the output file (e.g., “output.gv”).</p>
+</dd>
+<dt><strong>device</strong><span class="classifier">str, optional</span></dt><dd><p>The output format device, such as ‘svg_inline’, ‘pdf’, or ‘png’. The default is ‘svg_inline’.</p>
+</dd>
+<dt><strong>deviceKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override the <cite>device</cite> value. Default is None.</p>
+</dd>
+<dt><strong>scale</strong><span class="classifier">float, optional</span></dt><dd><p>Global scaling factor. Default is 1.</p>
+</dd>
+<dt><strong>scaleKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override the <cite>scale</cite> per-graph. Default is None.</p>
+</dd>
+<dt><strong>directed</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to treat the graph as directed. Default is False.</p>
+</dd>
+<dt><strong>directedKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override the <cite>directed</cite> flag per-graph. Default is None.</p>
+</dd>
+<dt><strong>layout</strong><span class="classifier">str, optional</span></dt><dd><p>Layout engine to use. Options include ‘dot’, ‘circo’, ‘fdp’, ‘neato’, ‘osage’, ‘sfdp’, etc. Default is ‘dot’.</p>
+</dd>
+<dt><strong>layoutKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override the <cite>layout</cite> per-graph. Default is None.</p>
+</dd>
+<dt><strong>rankDir</strong><span class="classifier">str, optional</span></dt><dd><p>Direction of graph ranking. Options: ‘TB’ (top-bottom), ‘LR’ (left-right), ‘RL’, ‘BT’. Default is ‘TB’.</p>
+</dd>
+<dt><strong>rankDirKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>rankDir</cite> per-graph. Default is None.</p>
+</dd>
+<dt><strong>bgColor</strong><span class="classifier">str, optional</span></dt><dd><p>Background color. Default is ‘white’.</p>
+</dd>
+<dt><strong>bgColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>bgColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>fontName</strong><span class="classifier">str, optional</span></dt><dd><p>Name of the font to use for all text. Default is ‘Arial’.</p>
+</dd>
+<dt><strong>fontNameKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>fontName</cite>. Default is None.</p>
+</dd>
+<dt><strong>fontSize</strong><span class="classifier">int or float, optional</span></dt><dd><p>Size of font in points. Default is 12.</p>
+</dd>
+<dt><strong>fontSizeKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>fontSize</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexSep</strong><span class="classifier">float, optional</span></dt><dd><p>Minimum separation between vertices. Default is 0.5.</p>
+</dd>
+<dt><strong>vertexSepKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexSep</cite>. Default is None.</p>
+</dd>
+<dt><strong>rankSep</strong><span class="classifier">float, optional</span></dt><dd><p>Separation between ranks. Default is 0.5.</p>
+</dd>
+<dt><strong>rankSepKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>rankSep</cite>. Default is None.</p>
+</dd>
+<dt><strong>splines</strong><span class="classifier">str, optional</span></dt><dd><p>Whether to use spline edges. Can be ‘true’, ‘false’, or ‘polyline’. Default is ‘True’.</p>
+</dd>
+<dt><strong>splinesKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>splines</cite>. Default is None.</p>
+</dd>
+<dt><strong>showGraphLabel</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to show a label for the whole graph. Default is False.</p>
+</dd>
+<dt><strong>graphLabel</strong><span class="classifier">str, optional</span></dt><dd><p>Text for the graph label. Default is an empty string.</p>
+</dd>
+<dt><strong>graphLabelKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>graphLabel</cite>. Default is None.</p>
+</dd>
+<dt><strong>graphLabelLoc</strong><span class="classifier">str, optional</span></dt><dd><p>Position of the graph label: ‘t’ (top), ‘b’ (bottom), ‘c’ (center). Default is ‘t’.</p>
+</dd>
+<dt><strong>graphLabelLocKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>graphLabelLoc</cite>. Default is None.</p>
+</dd>
+<dt><strong>showVertexLabel</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to display vertex labels. Default is False.</p>
+</dd>
+<dt><strong>vertexLabelPrefix</strong><span class="classifier">str, optional</span></dt><dd><p>Text prefix for vertex labels. Default is empty string.</p>
+</dd>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key used to retrieve label text from vertex dictionary. Default is None.</p>
+</dd>
+<dt><strong>vertexWidth</strong><span class="classifier">float, optional</span></dt><dd><p>Width of each vertex. Default is 0.5.</p>
+</dd>
+<dt><strong>vertexWidthKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexWidth</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexHeight</strong><span class="classifier">float, optional</span></dt><dd><p>Height of each vertex. Default is 0.5.</p>
+</dd>
+<dt><strong>vertexHeightKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexHeight</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexFixedSize</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether vertices should be fixed in size. Default is False.</p>
+</dd>
+<dt><strong>vertexFixedSizeKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexFixedSize</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexShape</strong><span class="classifier">str, optional</span></dt><dd><p>Shape of the vertex (‘circle’, ‘ellipse’, ‘box’, etc.). Default is ‘circle’.</p>
+</dd>
+<dt><strong>vertexShapeKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexShape</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexStyle</strong><span class="classifier">str, optional</span></dt><dd><p>Style of vertex (e.g., ‘filled’, ‘dashed’). Default is ‘filled’.</p>
+</dd>
+<dt><strong>vertexStyleKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexStyle</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexFillColor</strong><span class="classifier">str, optional</span></dt><dd><p>Fill color for vertices. Default is ‘lightgray’.</p>
+</dd>
+<dt><strong>vertexFillColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexFillColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexColor</strong><span class="classifier">str, optional</span></dt><dd><p>Border color for vertices. Default is ‘black’.</p>
+</dd>
+<dt><strong>vertexColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexFontColor</strong><span class="classifier">str, optional</span></dt><dd><p>Font color for vertex labels. Default is ‘black’.</p>
+</dd>
+<dt><strong>vertexFontColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexFontColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>showEdgeLabel</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to display edge labels. Default is False.</p>
+</dd>
+<dt><strong>edgeLabelPrefix</strong><span class="classifier">str, optional</span></dt><dd><p>Text prefix for edge labels. Default is empty string.</p>
+</dd>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key used to retrieve label text from edge dictionary. Default is None.</p>
+</dd>
+<dt><strong>edgeColor</strong><span class="classifier">str, optional</span></dt><dd><p>Color of edges. Default is ‘black’.</p>
+</dd>
+<dt><strong>edgeColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>edgeColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>edgeWidth</strong><span class="classifier">float, optional</span></dt><dd><p>Width (thickness) of edges. Default is 1.</p>
+</dd>
+<dt><strong>edgeWidthKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>edgeWidth</cite>. Default is None.</p>
+</dd>
+<dt><strong>edgeStyle</strong><span class="classifier">str, optional</span></dt><dd><p>Style of the edge line (e.g., ‘solid’, ‘dashed’). Default is ‘solid’.</p>
+</dd>
+<dt><strong>edgeStyleKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>edgeStyle</cite>. Default is None.</p>
+</dd>
+<dt><strong>edgeArrowhead</strong><span class="classifier">str, optional</span></dt><dd><p>Arrowhead style for directed edges. Default is ‘normal’.</p>
+</dd>
+<dt><strong>edgeArrowheadKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>edgeArrowhead</cite>. Default is None.</p>
+</dd>
+<dt><strong>edgeFontColor</strong><span class="classifier">str, optional</span></dt><dd><p>Font color for edge labels. Default is ‘black’.</p>
+</dd>
+<dt><strong>edgeFontColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>edgeFontColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, overwrites existing files at the given path. Default is False.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, suppresses console output. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the graph was successfully exported. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.ExportToJSON">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToJSON</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verticesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vertices'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'edges'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'z'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sortKeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ExportToJSON" title="Permalink to this definition"></a></dt>
 <dd><p>Exports the input graph to a JSON file.</p>
@@ -2682,6 +2832,148 @@ Valid partition numbers start from 1. Cut edges receive a partition number of 0.
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>int</dt><dd><p>The computed global clustering coefficient.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.GraphVizGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphVizGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'svg_inline'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deviceKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaleKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directedKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dot'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layoutKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rankDir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'TB'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rankDirKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bgColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'white'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bgColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Arial'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontNameKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fontSizeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexSep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexSepKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rankSep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rankSepKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">splines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'true'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">splinesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showGraphLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabelLoc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'t'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabelLocKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showVertexLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelPrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexWidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexWidthKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexHeight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexHeightKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFixedSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFixedSizeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexShape</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'circle'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexShapeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexStyle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'filled'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexStyleKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFillColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lightgray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFillColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFontColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFontColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showEdgeLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelPrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWidthKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeStyle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'solid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeStyleKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeArrowhead</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'normal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeArrowheadKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFontColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFontColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.GraphVizGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Converts the input graph to a GraphViz graph. GraphViz should be installed separately, using your system’s package manager.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>device</strong><span class="classifier">str, optional</span></dt><dd><p>The output format device, such as ‘svg_inline’, ‘pdf’, or ‘png’. The default is ‘svg_inline’.</p>
+</dd>
+<dt><strong>deviceKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override the <cite>device</cite> value. Default is None.</p>
+</dd>
+<dt><strong>scale</strong><span class="classifier">float, optional</span></dt><dd><p>Global scaling factor. Default is 1.</p>
+</dd>
+<dt><strong>scaleKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override the <cite>scale</cite> per-graph. Default is None.</p>
+</dd>
+<dt><strong>directed</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to treat the graph as directed. Default is False.</p>
+</dd>
+<dt><strong>directedKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override the <cite>directed</cite> flag per-graph. Default is None.</p>
+</dd>
+<dt><strong>layout</strong><span class="classifier">str, optional</span></dt><dd><p>Layout engine to use. Options include ‘dot’, ‘circo’, ‘fdp’, ‘neato’, ‘osage’, ‘sfdp’, etc. Default is ‘dot’.</p>
+</dd>
+<dt><strong>layoutKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override the <cite>layout</cite> per-graph. Default is None.</p>
+</dd>
+<dt><strong>rankDir</strong><span class="classifier">str, optional</span></dt><dd><p>Direction of graph ranking. Options: ‘TB’ (top-bottom), ‘LR’ (left-right), ‘RL’, ‘BT’. Default is ‘TB’.</p>
+</dd>
+<dt><strong>rankDirKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>rankDir</cite> per-graph. Default is None.</p>
+</dd>
+<dt><strong>bgColor</strong><span class="classifier">str, optional</span></dt><dd><p>Background color. Default is ‘white’.</p>
+</dd>
+<dt><strong>bgColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>bgColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>fontName</strong><span class="classifier">str, optional</span></dt><dd><p>Name of the font to use for all text. Default is ‘Arial’.</p>
+</dd>
+<dt><strong>fontNameKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>fontName</cite>. Default is None.</p>
+</dd>
+<dt><strong>fontSize</strong><span class="classifier">int or float, optional</span></dt><dd><p>Size of font in points. Default is 12.</p>
+</dd>
+<dt><strong>fontSizeKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>fontSize</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexSep</strong><span class="classifier">float, optional</span></dt><dd><p>Minimum separation between vertices. Default is 0.5.</p>
+</dd>
+<dt><strong>vertexSepKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexSep</cite>. Default is None.</p>
+</dd>
+<dt><strong>rankSep</strong><span class="classifier">float, optional</span></dt><dd><p>Separation between ranks. Default is 0.5.</p>
+</dd>
+<dt><strong>rankSepKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>rankSep</cite>. Default is None.</p>
+</dd>
+<dt><strong>splines</strong><span class="classifier">str, optional</span></dt><dd><p>Whether to use spline edges. Can be ‘true’, ‘false’, or ‘polyline’. Default is ‘True’.</p>
+</dd>
+<dt><strong>splinesKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>splines</cite>. Default is None.</p>
+</dd>
+<dt><strong>showGraphLabel</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to show a label for the whole graph. Default is False.</p>
+</dd>
+<dt><strong>graphLabel</strong><span class="classifier">str, optional</span></dt><dd><p>Text for the graph label. Default is an empty string.</p>
+</dd>
+<dt><strong>graphLabelKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>graphLabel</cite>. Default is None.</p>
+</dd>
+<dt><strong>graphLabelLoc</strong><span class="classifier">str, optional</span></dt><dd><p>Position of the graph label: ‘t’ (top), ‘b’ (bottom), ‘c’ (center). Default is ‘t’.</p>
+</dd>
+<dt><strong>graphLabelLocKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>graphLabelLoc</cite>. Default is None.</p>
+</dd>
+<dt><strong>showVertexLabel</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to display vertex labels. Default is False.</p>
+</dd>
+<dt><strong>vertexLabelPrefix</strong><span class="classifier">str, optional</span></dt><dd><p>Text prefix for vertex labels. Default is empty string.</p>
+</dd>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key used to retrieve label text from vertex dictionary. Default is None.</p>
+</dd>
+<dt><strong>vertexWidth</strong><span class="classifier">float, optional</span></dt><dd><p>Width of each vertex. Default is 0.5.</p>
+</dd>
+<dt><strong>vertexWidthKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexWidth</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexHeight</strong><span class="classifier">float, optional</span></dt><dd><p>Height of each vertex. Default is 0.5.</p>
+</dd>
+<dt><strong>vertexHeightKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexHeight</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexFixedSize</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether vertices should be fixed in size. Default is False.</p>
+</dd>
+<dt><strong>vertexFixedSizeKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexFixedSize</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexShape</strong><span class="classifier">str, optional</span></dt><dd><p>Shape of the vertex (‘circle’, ‘ellipse’, ‘box’, etc.). Default is ‘circle’.</p>
+</dd>
+<dt><strong>vertexShapeKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexShape</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexStyle</strong><span class="classifier">str, optional</span></dt><dd><p>Style of vertex (e.g., ‘filled’, ‘dashed’). Default is ‘filled’.</p>
+</dd>
+<dt><strong>vertexStyleKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexStyle</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexFillColor</strong><span class="classifier">str, optional</span></dt><dd><p>Fill color for vertices. Default is ‘lightgray’.</p>
+</dd>
+<dt><strong>vertexFillColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexFillColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexColor</strong><span class="classifier">str, optional</span></dt><dd><p>Border color for vertices. Default is ‘black’.</p>
+</dd>
+<dt><strong>vertexColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>vertexFontColor</strong><span class="classifier">str, optional</span></dt><dd><p>Font color for vertex labels. Default is ‘black’.</p>
+</dd>
+<dt><strong>vertexFontColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>vertexFontColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>showEdgeLabel</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to display edge labels. Default is False.</p>
+</dd>
+<dt><strong>edgeLabelPrefix</strong><span class="classifier">str, optional</span></dt><dd><p>Text prefix for edge labels. Default is empty string.</p>
+</dd>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key used to retrieve label text from edge dictionary. Default is None.</p>
+</dd>
+<dt><strong>edgeColor</strong><span class="classifier">str, optional</span></dt><dd><p>Color of edges. Default is ‘black’.</p>
+</dd>
+<dt><strong>edgeColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>edgeColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>edgeWidth</strong><span class="classifier">float, optional</span></dt><dd><p>Width (thickness) of edges. Default is 1.</p>
+</dd>
+<dt><strong>edgeWidthKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>edgeWidth</cite>. Default is None.</p>
+</dd>
+<dt><strong>edgeStyle</strong><span class="classifier">str, optional</span></dt><dd><p>Style of the edge line (e.g., ‘solid’, ‘dashed’). Default is ‘solid’.</p>
+</dd>
+<dt><strong>edgeStyleKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>edgeStyle</cite>. Default is None.</p>
+</dd>
+<dt><strong>edgeArrowhead</strong><span class="classifier">str, optional</span></dt><dd><p>Arrowhead style for directed edges. Default is ‘normal’.</p>
+</dd>
+<dt><strong>edgeArrowheadKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>edgeArrowhead</cite>. Default is None.</p>
+</dd>
+<dt><strong>edgeFontColor</strong><span class="classifier">str, optional</span></dt><dd><p>Font color for edge labels. Default is ‘black’.</p>
+</dd>
+<dt><strong>edgeFontColorKey</strong><span class="classifier">str, optional</span></dt><dd><p>Dictionary key to override <cite>edgeFontColor</cite>. Default is None.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, overwrites existing files at the given path. Default is False.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, suppresses console output. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>graphviz.graphs.Graph</dt><dd><p>The created GraphViz graph.</p>
 </dd>
 </dl>
 </dd>
